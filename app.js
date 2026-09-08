@@ -194,11 +194,10 @@ function home() {
   const hidden = db.decks.some(d => d.hidden);
   const list = db.decks.filter(d => (peek || !d.hidden) && (!filter || d.subject === filter));
   $.innerHTML = `
-    <div class="bar"><div style="flex:1"></div>
+    <div class="top">
+      <div class="hero">Mes paquets</div>
       ${hidden ? `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>` : ''}
-      <button class="ic" data-act="paste">${svg(I.down)}</button>
     </div>
-    <div class="hero">Mes paquets</div>
     ${used.length > 1 ? pills(filter, used, 'filt') : ''}
     ${list.length ? `<div class="grid">${list.map(tile).join('')}</div>`
       : `<div class="empty">${svg(I.layers)}</div>`}
@@ -455,8 +454,7 @@ function quizHome() {
   const list = live().filter(d => !filter || d.subject === filter);
   const total = buildPool(live().flatMap(d => d.cards)).length;
   $.innerHTML = `
-    <div class="bar"><div style="flex:1"></div></div>
-    <div class="hero">Quiz</div>
+    <div class="top"><div class="hero">Quiz</div></div>
     ${used.length > 1 ? pills(filter, used, 'filt') : ''}
     ${live().length ? `<div class="grid">
       ${!filter ? `<button class="tile all" data-q="all" style="--i:0">
