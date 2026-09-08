@@ -19,3 +19,5 @@ EOF
 
 Sortie : `decks/<slug>.json` + `decks/index.json` (commit = deck poussé dans l'app) et un lien
 `…/#i=<payload>` qui importe le deck en un tap.
+
+Contenu livré : cours 2.1 (sections 2.1.1, 2.1.3, 2.1.4, 2.1.5) — `tools/build_2_1.py`.

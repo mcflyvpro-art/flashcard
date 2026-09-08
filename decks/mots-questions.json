@@ -1,0 +1,99 @@
+{
+ "key": "mots-questions",
+ "name": "Mots · questions",
+ "color": 3,
+ "cards": [
+  [
+   "garçon",
+   "ragazzo"
+  ],
+  [
+   "fille",
+   "ragazza"
+  ],
+  [
+   "italien",
+   "italiano"
+  ],
+  [
+   "italienne",
+   "italiana"
+  ],
+  [
+   "pizza",
+   "pizza"
+  ],
+  [
+   "table",
+   "tavolo"
+  ],
+  [
+   "salle",
+   "aula"
+  ],
+  [
+   "ami",
+   "amico"
+  ],
+  [
+   "amie",
+   "amica"
+  ],
+  [
+   "vérité",
+   "verità"
+  ],
+  [
+   "montre",
+   "orologio"
+  ],
+  [
+   "matin",
+   "mattina"
+  ],
+  [
+   "professeure",
+   "professoressa"
+  ],
+  [
+   "école",
+   "scuola"
+  ],
+  [
+   "exercice",
+   "esercizio"
+  ],
+  [
+   "homme",
+   "uomo"
+  ],
+  [
+   "femme",
+   "donna"
+  ],
+  [
+   "euro",
+   "euro"
+  ],
+  [
+   "livre",
+   "libro"
+  ],
+  [
+   "lycée",
+   "liceo"
+  ],
+  [
+   "Qu'est-ce que… ? / que… ?",
+   "Che cosa?"
+  ],
+  [
+   "Où… ?",
+   "Dove?"
+  ],
+  [
+   "Comment… ?",
+   "Come?"
+  ]
+ ]
+}
