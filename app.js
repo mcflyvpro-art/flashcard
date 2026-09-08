@@ -165,12 +165,60 @@ function render() {
   const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome, run: quizView };
   (v[view.name] || home)();
   if (animate) { $.classList.remove('fade'); void $.offsetWidth; $.classList.add('fade'); }
+  if (pageDir) {
+    const pg = document.getElementById('page');
+    if (pg) pg.classList.add(pageDir < 0 ? 'in-right' : 'in-left');
+    pageDir = 0;
+  }
   animate = false;
   const on = $.querySelector('.pills .p.on');
   if (on && on.previousElementSibling) on.scrollIntoView({ block: 'nearest', inline: 'center' });
   if (menu) paintMenu();
 }
-function go(name, id) { closeMenu(); view = { name, id }; animate = true; render(); window.scrollTo(0, 0); }
+let pageDir = 0;
+function go(name, id, dir) {
+  closeMenu(); pageDir = dir || 0; view = { name, id }; animate = !dir;
+  render(); window.scrollTo(0, 0);
+}
+
+/* balayage horizontal entre « Mes paquets » et « Quiz » */
+function bindPager() {
+  const pg = document.getElementById('page'); if (!pg) return;
+  const home = view.name === 'home';
+  let x0 = 0, y0 = 0, dx = 0, on = false, lock = 0, t0 = 0;
+  pg.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button) return;
+    if (e.target.closest('.pills')) return;   // laisse défiler les matières
+    on = true; lock = 0; dx = 0; x0 = e.clientX; y0 = e.clientY; t0 = Date.now();
+    pg.style.transition = 'none';
+  });
+  pg.addEventListener('pointermove', e => {
+    if (!on) return;
+    const ax = e.clientX - x0, ay = e.clientY - y0;
+    if (!lock) {
+      if (Math.abs(ax) < 10 && Math.abs(ay) < 10) return;
+      lock = Math.abs(ax) > Math.abs(ay) * 1.3 ? 1 : -1;
+      if (lock < 0) { on = false; pg.style.transition = ''; return; }
+    }
+    dx = ax;
+    const edge = home ? dx > 0 : dx < 0;          // rien de l'autre côté
+    const d = edge ? dx * .26 : dx;
+    pg.style.transform = `translateX(${d}px)`;
+    pg.style.opacity = String(Math.max(.5, 1 - Math.abs(d) / 480));
+  });
+  const end = () => {
+    if (!on) return;
+    on = false; pg.style.transition = ''; pg.style.transform = ''; pg.style.opacity = '';
+    if (lock !== 1) return;
+    const fast = Math.abs(dx) / Math.max(1, Date.now() - t0) > .5;
+    if (Math.abs(dx) < innerWidth * .26 && !fast) return;
+    if (home && dx < 0) go('quiz', null, -1);
+    else if (!home && dx > 0) go('home', null, 1);
+  };
+  pg.addEventListener('pointerup', end);
+  pg.addEventListener('pointercancel', end);
+  pg.addEventListener('pointerleave', end);
+}
 
 const tabs = on => `<div class="tabs">
   <div class="sl" style="transform:translateX(${on === 'quiz' ? 74 : 0}px)"></div>
@@ -194,15 +242,18 @@ function home() {
   const hidden = db.decks.some(d => d.hidden);
   const list = db.decks.filter(d => (peek || !d.hidden) && (!filter || d.subject === filter));
   $.innerHTML = `
-    <div class="top">
-      <div class="hero">Mes paquets</div>
-      ${hidden ? `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>` : ''}
+    <div class="page" id="page">
+      <div class="top">
+        <div class="hero">Mes paquets</div>
+        ${hidden ? `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>` : ''}
+      </div>
+      ${used.length > 1 ? pills(filter, used, 'filt') : ''}
+      ${list.length ? `<div class="grid">${list.map(tile).join('')}</div>`
+        : `<div class="empty">${svg(I.layers)}</div>`}
     </div>
-    ${used.length > 1 ? pills(filter, used, 'filt') : ''}
-    ${list.length ? `<div class="grid">${list.map(tile).join('')}</div>`
-      : `<div class="empty">${svg(I.layers)}</div>`}
     <button class="fab" data-act="new">${svg(I.plus)}</button>
     ${tabs('home')}`;
+  bindPager();
 }
 
 function deckView() {
@@ -454,16 +505,19 @@ function quizHome() {
   const list = live().filter(d => !filter || d.subject === filter);
   const total = buildPool(live().flatMap(d => d.cards)).length;
   $.innerHTML = `
-    <div class="top"><div class="hero">Quiz</div></div>
-    ${used.length > 1 ? pills(filter, used, 'filt') : ''}
-    ${live().length ? `<div class="grid">
-      ${!filter ? `<button class="tile all" data-q="all" style="--i:0">
-        <span class="n">Tout</span><span class="m">${svg(I.target)}${total}</span></button>` : ''}
-      ${list.map((d, i) => `<button class="tile" data-q="${d.id}" style="${sty(subj(d.subject))};--i:${i + 1}">
-        <span class="n">${esc(d.name)}</span>
-        <span class="m">${svg(I.card)}${buildPool(d.cards).length}</span></button>`).join('')}
-    </div>` : `<div class="empty">${svg(I.pen)}</div>`}
+    <div class="page" id="page">
+      <div class="top"><div class="hero">Quiz</div></div>
+      ${used.length > 1 ? pills(filter, used, 'filt') : ''}
+      ${live().length ? `<div class="grid">
+        ${!filter ? `<button class="tile all" data-q="all" style="--i:0">
+          <span class="n">Tout</span><span class="m">${svg(I.target)}${total}</span></button>` : ''}
+        ${list.map((d, i) => `<button class="tile" data-q="${d.id}" style="${sty(subj(d.subject))};--i:${i + 1}">
+          <span class="n">${esc(d.name)}</span>
+          <span class="m">${svg(I.card)}${buildPool(d.cards).length}</span></button>`).join('')}
+      </div>` : `<div class="empty">${svg(I.pen)}</div>`}
+    </div>
     ${tabs('quiz')}`;
+  bindPager();
 }
 function quizView() {
   const bar = n => `<div class="bar">
