@@ -405,23 +405,19 @@ const pct = () => study.total ? Math.round(study.ok / study.total * 100) : 0;
 const cardOf = n => deck(study.id).cards.find(x => x.id === study.queue[study.i + n]);
 function paintStack() {
   const st = document.getElementById('stack'); if (!st) return;
-  const html = [];
-  for (let n = 2; n >= 0; n--) {
-    const c = cardOf(n); if (!c) continue;
-    html.push(n === 0
-      ? `<div class="card g1" id="top">
-          <div class="flipper">
-            <div class="face"><span>${esc(c.f)}</span></div>
-            <div class="face bk"><span>${esc(c.b)}</span></div>
-          </div>
-          <div class="ov y">${svg(I.check)}</div>
-          <div class="ov n">${svg(I.x)}</div>
-        </div>`
-      : `<div class="card g${n}"><div class="face"></div></div>`);
-  }
-  st.innerHTML = html.join('');
+  const c = cardOf(0);
+  if (!c) { st.innerHTML = ''; return; }
+  st.innerHTML = `<div class="card in" id="top">
+      <div class="flipper">
+        <div class="face"><span>${esc(c.f)}</span></div>
+        <div class="face bk"><span>${esc(c.b)}</span></div>
+      </div>
+      <div class="ov y">${svg(I.check)}</div>
+      <div class="ov n">${svg(I.x)}</div>
+    </div>`;
   const top = document.getElementById('top');
-  if (top) { requestAnimationFrame(() => top.classList.remove('g1')); bindDrag(top); }
+  requestAnimationFrame(() => top.classList.remove('in'));
+  bindDrag(top);
 }
 function paintFoot() {
   const f = document.getElementById('foot'); if (!f) return;

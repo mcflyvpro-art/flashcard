@@ -170,8 +170,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .card{position:absolute;inset:0;border-radius:30px;will-change:transform;
   touch-action:none;-webkit-user-select:none;user-select:none;
   transition:transform .52s var(--sp),opacity .34s var(--e)}
-.card.g1{transform:translateY(16px) scale(.945);opacity:.7}
-.card.g2{transform:translateY(30px) scale(.895);opacity:.4}
+.card.in{transform:translateY(14px) scale(.94);opacity:0}
 .flipper{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;
   transition:transform .42s cubic-bezier(.2,.65,.8,.35)}
 .card.flip .flipper{transform:rotateY(180deg)}
