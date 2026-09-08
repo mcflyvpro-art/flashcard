@@ -162,20 +162,20 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   transition:transform .52s var(--sp),opacity .34s var(--e)}
 .card.g1{transform:translateY(16px) scale(.945);opacity:.7}
 .card.g2{transform:translateY(30px) scale(.895);opacity:.4}
-.flipper{position:absolute;inset:0;transform-style:preserve-3d;
-  transition:transform .66s var(--e)}
+.flipper{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;
+  transition:transform .42s cubic-bezier(.2,.65,.8,.35)}
 .card.flip .flipper{transform:rotateY(180deg)}
 .face{position:absolute;inset:0;border-radius:30px;display:grid;place-items:center;
   padding:34px;text-align:center;backface-visibility:hidden;-webkit-backface-visibility:hidden;
   background:var(--c);color:var(--ci);box-shadow:var(--s3);overflow:hidden;
-  opacity:1;transition:opacity 0s linear .33s}
+  opacity:1;transform:translateZ(0);transition:opacity 0s linear .2s}
 .face::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),inset 0 1.5px 0 rgba(255,255,255,.5)}
 .face::after{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
   background:linear-gradient(158deg,rgba(255,255,255,.42),rgba(255,255,255,0) 60%)}
 .face span{position:relative;z-index:1;font-weight:800;font-size:clamp(28px,8.4vw,48px);line-height:1.16;
   letter-spacing:-1.1px;max-height:100%;overflow:auto}
-.face.bk{transform:rotateY(180deg);background:var(--ci);color:var(--c);opacity:0}
+.face.bk{transform:rotateY(180deg) translateZ(0);background:var(--ci);color:var(--c);opacity:0}
 .card.flip .face{opacity:0}
 .card.flip .face.bk{opacity:1}
 .face.bk::before{box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
