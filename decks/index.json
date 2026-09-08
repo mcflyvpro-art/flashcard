@@ -3,14 +3,14 @@
   "key": "mots-questions",
   "file": "mots-questions.json",
   "name": "Mots · questions",
-  "rev": "aff38a2a",
+  "rev": "ac210e34",
   "n": 23
  },
  {
   "key": "verbes-je-tu",
   "file": "verbes-je-tu.json",
   "name": "Verbes · je + tu",
-  "rev": "5f7f62ad",
+  "rev": "2af3012d",
   "n": 40
  }
 ]

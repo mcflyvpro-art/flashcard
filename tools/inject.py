@@ -40,7 +40,8 @@ def main():
     ap.add_argument('name')
     ap.add_argument('-t', '--text', help='texte brut (sinon stdin)')
     ap.add_argument('-b', '--base', default=os.environ.get('CARTES_URL', ''), help='URL de l app pour le lien')
-    ap.add_argument('-c', '--color', type=int, default=None, help='0-7')
+    ap.add_argument('-s', '--subject', default='',
+                    help='italien | anglais | philo | eco | management | lettres')
     ap.add_argument('--append', action='store_true', help='ajoute aux cartes existantes du deck')
     a = ap.parse_args()
 
@@ -56,9 +57,7 @@ def main():
         seen = {tuple(c) for c in cards}
         cards = [c for c in old if tuple(c) not in seen] + cards
 
-    pack = {'key': key, 'name': a.name, 'cards': cards}
-    if a.color is not None:
-        pack['color'] = a.color % 8
+    pack = {'key': key, 'name': a.name, 'subject': a.subject, 'cards': cards}
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(pack, f, ensure_ascii=False, indent=1)

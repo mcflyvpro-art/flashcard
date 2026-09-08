@@ -39,9 +39,9 @@ TU = [
 ]
 
 DECKS = [
-    {"key": "verbes-je-tu", "name": "Verbes · je + tu", "color": 5,
+    {"key": "verbes-je-tu", "name": "Verbes · je + tu", "subject": "italien",
      "cards": [list(c) for c in JE + TU]},
-    {"key": "mots-questions", "name": "Mots · questions", "color": 3,
+    {"key": "mots-questions", "name": "Mots · questions", "subject": "italien",
      "cards": [list(c) for c in MOTS + QUESTIONS]},
 ]
 

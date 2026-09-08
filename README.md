@@ -1,23 +1,28 @@
 # Cartes
 
-PWA flashcards. 100 % statique, aucune dépendance, aucun backend. Données en `localStorage`.
+PWA de flashcards. 100 % statique, aucune dépendance, aucun backend, thème clair unique.
+Données en `localStorage`.
 
 ```
 index.html · app.css · app.js · sw.js · manifest.webmanifest
-decks/      decks livrés avec l'app (injection par commit)
-tools/inject.py   texte brut -> deck + lien d'import
+logoflashcard.png    source des icônes
+icons/               icônes PWA générées
+decks/               paquets livrés avec l'app (injection par commit)
+tools/inject.py      texte brut -> paquet + lien d'import
+tools/build_2_1.py   paquets du cours 2.1
+tools/make_icons.py  logoflashcard.png -> icons/
 ```
+
+Matières : `italien` `anglais` `philo` `eco` `droit` `management` `lettres`.
 
 Injection :
 
 ```bash
-python3 tools/inject.py "Anglais · verbes" -b https://<url-de-lapp> <<'EOF'
-hablar = parler
-comer = manger
+python3 tools/inject.py "Vocabulaire éco" -s eco -b https://<url-de-lapp> <<'EOF'
+inflation = hausse générale des prix
+PIB = production intérieure
 EOF
 ```
 
-Sortie : `decks/<slug>.json` + `decks/index.json` (commit = deck poussé dans l'app) et un lien
-`…/#i=<payload>` qui importe le deck en un tap.
-
-Contenu livré : cours 2.1 (sections 2.1.1, 2.1.3, 2.1.4, 2.1.5) — `tools/build_2_1.py`.
+Sortie : `decks/<slug>.json` + `decks/index.json` (commit = paquet poussé dans l'app)
+et un lien `…/#i=<payload>` qui importe le paquet en un tap.
