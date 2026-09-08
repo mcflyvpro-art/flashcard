@@ -26,3 +26,18 @@ EOF
 
 Sortie : `decks/<slug>.json` + `decks/index.json` (commit = paquet poussé dans l'app)
 et un lien `…/#i=<payload>` qui importe le paquet en un tap.
+
+## Publier depuis l'app
+
+Le bouton nuage (accueil, ou menu ⋯ d'un paquet) écrit `decks/<clé>.json` et
+`decks/index.json` dans ce dépôt en **un seul commit**, via l'API Git de GitHub.
+Aucun serveur : le navigateur appelle `api.github.com` directement.
+
+Au premier usage, l'app demande un jeton. Prendre un **fine-grained personal
+access token** limité à ce seul dépôt, avec la permission **Contents:
+read and write** et rien d'autre. Il est conservé dans le `localStorage` de
+l'appareil sous la clé `cartes.gh` et n'est jamais écrit dans le dépôt.
+
+Un paquet publié porte une `key` et une `rev` identiques à celles de
+`decks/index.json`, donc la synchronisation descendante au démarrage le
+reconnaît au lieu de le dupliquer.

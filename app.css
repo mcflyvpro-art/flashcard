@@ -298,6 +298,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .mi.warn{color:var(--ko)} .mi.warn svg{color:var(--ko)}
 .mi .tail{margin-left:auto;font-size:14px;font-weight:700;color:var(--soft)}
 .msep{height:1px;background:var(--hair);margin:5px 16px}
+.tok{width:calc(100% - 14px);margin:2px 7px 4px;padding:15px 16px;border-radius:17px;
+  background:var(--surf);font-size:15px;font-weight:600;letter-spacing:.2px}
+.tok::placeholder{color:var(--soft);opacity:.5}
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:7px 7px 3px}
 .ms{display:flex;align-items:center;gap:9px;height:46px;padding:0 14px;border-radius:16px;
   background:var(--surf);font-size:14.5px;font-weight:700;transition:background .22s,color .22s}

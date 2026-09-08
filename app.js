@@ -59,7 +59,10 @@ const I = {
   tag: '<path d="M11.4 3.6H20v8.6l-8.8 8.8a1.6 1.6 0 0 1-2.3 0l-6.3-6.3a1.6 1.6 0 0 1 0-2.3z"/><circle cx="16.3" cy="7.7" r="1.3"/>',
   trophy: '<path d="M7.5 4.5h9v4.2a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 5.8H5a2 2 0 0 0 2 3.4M16.5 5.8H19a2 2 0 0 1-2 3.4"/><path d="M12 13.2v3.3M8.7 19.5h6.6a3.3 3.3 0 0 0-3.3-3v0a3.3 3.3 0 0 0-3.3 3z"/>',
   target: '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
-  swipe: '<path d="M22 6l-5 6 5 6M17 12h13M50 6l5 6-5 6M55 12H42"/>'
+  swipe: '<path d="M22 6l-5 6 5 6M17 12h13M50 6l5 6-5 6M55 12H42"/>',
+  cloud: '<path d="M7.2 18.4a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6-1.1 3.8 3.8 0 0 1-.4 9.1"/><path d="M12 20.4v-8.6m0 0L9.3 14.5M12 11.8l2.7 2.7"/>',
+  cloudok: '<path d="M7.2 18.4a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6-1.1 3.8 3.8 0 0 1-.4 9.1"/><path d="M9.6 14.2l1.9 1.9 3.2-3.6"/>',
+  key: '<circle cx="8.2" cy="15.8" r="3.5"/><path d="M10.7 13.3L19.4 4.6M16.4 7.6l2.1 2.1M14 10l2.1 2.1"/>'
 };
 const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
 const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
@@ -245,6 +248,7 @@ function home() {
     <div class="page" id="page">
       <div class="top">
         <div class="hero">Mes paquets</div>
+        ${db.decks.length ? `<button class="ic" data-act="puball">${svg(I.cloud)}</button>` : ''}
         ${hidden ? `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>` : ''}
       </div>
       ${used.length > 1 ? pills(filter, used, 'filt') : ''}
@@ -270,6 +274,7 @@ function deckView() {
       <div class="s">
         <span>${svg(I.tag)}${esc(s.n)}</span><b></b>
         <span>${svg(I.card)}${plur(d.cards.length, 'carte')}</span>
+        ${d.key ? `<b></b><span>${svg(I.cloudok)}Publié</span>` : ''}
         ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
       </div>
     </div>
@@ -304,13 +309,126 @@ function deckView() {
   }));
 }
 
+
+/* ---------- publication GitHub (aucun serveur) ----------
+   Écrit decks/<clé>.json + decks/index.json en un seul commit via l'API Git.
+   Le jeton reste dans le stockage local de l'appareil, jamais dans le dépôt. */
+const GHKEY = 'cartes.gh';
+function ghCfg() {
+  let c = {};
+  try { c = JSON.parse(localStorage.getItem(GHKEY)) || {}; } catch (e) {}
+  if (!c.owner || !c.repo) {                       // déduit depuis l'URL GitHub Pages
+    const m = location.hostname.match(/^([\w-]+)\.github\.io$/);
+    const seg = location.pathname.split('/').filter(Boolean)[0];
+    if (m) { c.owner = c.owner || m[1]; c.repo = c.repo || seg || (m[1] + '.github.io'); }
+  }
+  c.branch = c.branch || 'main';
+  return c;
+}
+function ghSave(c) { localStorage.setItem(GHKEY, JSON.stringify(c)); }
+const slugify = n => (n || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'paquet';
+
+async function ghApi(path, opt = {}) {
+  const c = ghCfg();
+  const r = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}${path}`, {
+    ...opt,
+    headers: {
+      Authorization: 'Bearer ' + c.token,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(opt.body ? { 'Content-Type': 'application/json' } : {})
+    }
+  });
+  return r;
+}
+const b64json = t => JSON.parse(new TextDecoder().decode(
+  Uint8Array.from(atob(t.replace(/\s/g, '')), ch => ch.charCodeAt(0))));
+
+async function ghPublish(list) {
+  const c = ghCfg();
+  if (!c.token) return openMenu('token');
+  const decks = list.filter(d => d.cards.length);
+  if (!decks.length) return;
+  busy(true);
+  try {
+    // index actuel du dépôt
+    let idx = [];
+    const ri = await ghApi(`/contents/decks/index.json?ref=${c.branch}`);
+    if (ri.ok) idx = b64json((await ri.json()).content);
+    else if (ri.status === 401 || ri.status === 403) throw new Error('jeton refusé');
+    else if (ri.status === 404 && !(await ghApi('')).ok) throw new Error('dépôt introuvable');
+
+    const files = [];
+    const stamped = [];
+    for (const d of decks) {
+      const key = d.key || slugify(d.name);
+      const rev = Math.random().toString(36).slice(2, 10);
+      const pack = { key, name: d.name, subject: d.subject || '', cards: d.cards.map(x => [x.f, x.b]) };
+      files.push({ path: `decks/${key}.json`, mode: '100644', type: 'blob',
+                   content: JSON.stringify(pack, null, 1) });
+      idx = idx.filter(i => i.key !== key);
+      idx.push({ key, file: key + '.json', name: d.name, rev, n: pack.cards.length });
+      stamped.push([d, key, rev]);
+    }
+    idx.sort((a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+    files.push({ path: 'decks/index.json', mode: '100644', type: 'blob',
+                 content: JSON.stringify(idx, null, 1) });
+
+    // un seul commit : ref -> commit -> arbre -> commit -> ref
+    const ref = await (await ghApi(`/git/ref/heads/${c.branch}`)).json();
+    const head = ref.object.sha;
+    const base = (await (await ghApi(`/git/commits/${head}`)).json()).tree.sha;
+    const tree = await (await ghApi('/git/trees', { method: 'POST',
+      body: JSON.stringify({ base_tree: base, tree: files }) })).json();
+    if (!tree.sha) throw new Error('écriture refusée');
+    const msg = decks.length === 1 ? `Mise à jour du paquet « ${decks[0].name} »`
+                                   : `Mise à jour de ${decks.length} paquets`;
+    const commit = await (await ghApi('/git/commits', { method: 'POST',
+      body: JSON.stringify({ message: msg, tree: tree.sha, parents: [head] }) })).json();
+    const up = await ghApi(`/git/refs/heads/${c.branch}`, { method: 'PATCH',
+      body: JSON.stringify({ sha: commit.sha }) });
+    if (!up.ok) throw new Error('poussée refusée');
+
+    stamped.forEach(([d, key, rev]) => { d.key = key; d.rev = rev; });
+    save(); busy(false); closeMenu(); render();
+    toast(I.cloudok, decks.length === 1 ? 'Publié' : decks.length + ' paquets publiés');
+  } catch (e) {
+    busy(false);
+    const m = String(e.message || e);
+    toast(I.x, m.slice(0, 40));
+    if (/jeton|dépôt/.test(m)) openMenu('token');   // laisse corriger tout de suite
+  }
+}
+function busy(on) {
+  document.querySelectorAll('[data-mact="pub"],[data-act="puball"]').forEach(b => {
+    b.style.opacity = on ? '.45' : ''; b.style.pointerEvents = on ? 'none' : '';
+  });
+}
+
 /* ---------- menu contextuel ---------- */
 function openMenu(kind) { menu = kind; paintMenu(); }
 function closeMenu() { menu = null; document.querySelectorAll('.scrim,.menu').forEach(n => n.remove()); }
 function paintMenu() {
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
-  const d = deck(view.id); if (!d) return;
   const w = document.createElement('div');
+  if (menu === 'token') {
+    const c = ghCfg();
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.key)}Jeton GitHub</div>
+        <input class="tok" id="tok" type="password" autocomplete="off" autocapitalize="none"
+          autocorrect="off" spellcheck="false" placeholder="github_pat_…" value="${esc(c.token || '')}">
+        <div class="mi" style="font-size:13.5px;color:var(--soft);height:auto;padding:2px 16px 10px">
+          ${esc(c.owner || '?')}/${esc(c.repo || '?')} · ${esc(c.branch)}</div>
+        <button class="mi" data-mact="savetok" style="justify-content:center;font-weight:700">
+          ${svg(I.check)}Enregistrer</button>
+      </div>`;
+    document.body.append(...w.childNodes);
+    setTimeout(() => { const t = document.getElementById('tok'); if (t && !c.token) t.focus(); }, 60);
+    return;
+  }
+  const d = deck(view.id); if (!d) return;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
       <div class="mgrid">
@@ -319,6 +437,7 @@ function paintMenu() {
       </div>
       <div class="msep"></div>
       <button class="mi" data-mact="hide">${svg(d.hidden ? I.eye : I.eyeoff)}${d.hidden ? 'Réafficher' : 'Masquer'}</button>
+      <button class="mi" data-mact="pub">${svg(d.key ? I.cloudok : I.cloud)}${d.key ? 'Republier' : 'Publier sur GitHub'}</button>
       <button class="mi" data-mact="share">${svg(I.share)}Partager</button>
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
@@ -330,6 +449,12 @@ document.addEventListener('click', e => {
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; save(); render(); return; }
   const a = b.dataset.mact;
   if (a === 'close') return closeMenu();
+  if (a === 'savetok') {
+    const c = ghCfg(); c.token = document.getElementById('tok').value.trim(); ghSave(c);
+    closeMenu(); if (c.token) toast(I.check, 'Jeton enregistré');
+    return;
+  }
+  if (a === 'pub') return ghPublish([d]);
   if (a === 'hide') { d.hidden = !d.hidden; save(); closeMenu(); render(); toast(d.hidden ? I.eyeoff : I.eye); return; }
   if (a === 'share') {
     closeMenu();
@@ -627,6 +752,7 @@ $.addEventListener('click', e => {
   if (a === 'home' || a === 'tab-home') return go('home');
   if (a === 'tab-quiz') return go('quiz');
   if (a === 'peek') { peek = !peek; render(); return; }
+  if (a === 'puball') return ghPublish(db.decks);
   if (a === 'new') { draft = ''; return go('import'); }
   if (a === 'paste') { draft = ''; return go('import', view.name === 'deck' ? view.id : null); }
   if (a === 'deck') return go('deck', (study && study.id) || view.id);
