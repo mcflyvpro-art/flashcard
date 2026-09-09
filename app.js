@@ -62,6 +62,7 @@ const I = {
   swipe: '<path d="M22 6l-5 6 5 6M17 12h13M50 6l5 6-5 6M55 12H42"/>',
   cloud: '<path d="M7.2 18.4a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6-1.1 3.8 3.8 0 0 1-.4 9.1"/><path d="M12 20.4v-8.6m0 0L9.3 14.5M12 11.8l2.7 2.7"/>',
   cloudok: '<path d="M7.2 18.4a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6-1.1 3.8 3.8 0 0 1-.4 9.1"/><path d="M9.6 14.2l1.9 1.9 3.2-3.6"/>',
+  swap: '<path d="M4 8.6h13.5m0 0l-3.6-3.6M17.5 8.6l-3.6 3.6"/><path d="M20 15.4H6.5m0 0l3.6-3.6M6.5 15.4l3.6 3.6"/>',
   key: '<circle cx="8.2" cy="15.8" r="3.5"/><path d="M10.7 13.3L19.4 4.6M16.4 7.6l2.1 2.1M14 10l2.1 2.1"/>'
 };
 const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
@@ -473,9 +474,10 @@ document.addEventListener('click', e => {
 });
 
 /* ---------- révision ---------- */
-function startStudy(id) {
+function startStudy(id, rev) {
   const d = deck(id); if (!d || !d.cards.length) return;
-  study = { id, queue: shuffle(d.cards.map(c => c.id)), i: 0, again: [], flip: false, ok: 0, total: d.cards.length };
+  study = { id, rev: !!rev, queue: shuffle(d.cards.map(c => c.id)),
+            i: 0, again: [], flip: false, ok: 0, total: d.cards.length };
   go('study', id);
 }
 const ring = (ok, total) => {
@@ -503,6 +505,7 @@ function studyView() {
       <button class="ic" data-act="deck">${svg(I.back)}</button>
       <h1>${esc(d.name)}</h1>
       ${n}
+      <button class="ic ${study.rev ? 'solid' : ''}" data-act="swap">${svg(I.swap)}</button>
       <button class="ic" data-act="restart">${svg(I.shuffle)}</button>
     </div>`;
   if (study.i >= study.queue.length) {
@@ -532,10 +535,11 @@ function paintStack() {
   const st = document.getElementById('stack'); if (!st) return;
   const c = cardOf(0);
   if (!c) { st.innerHTML = ''; return; }
+  const front = study.rev ? c.b : c.f, back = study.rev ? c.f : c.b;
   st.innerHTML = `<div class="card in" id="top">
       <div class="flipper">
-        <div class="face"><span>${esc(c.f)}</span></div>
-        <div class="face bk"><span>${esc(c.b)}</span></div>
+        <div class="face"><span>${esc(front)}</span></div>
+        <div class="face bk"><span>${esc(back)}</span></div>
       </div>
       <div class="ov y">${svg(I.check)}</div>
       <div class="ov n">${svg(I.x)}</div>
@@ -601,6 +605,57 @@ function commit(ok) {
 /* ---------- quiz ---------- */
 const norm = s => String(s).trim().toLowerCase()
   .replace(/[’‘‛´`]/g, "'").replace(/\s+/g, ' ').replace(/[?!.…]+$/, '').trim();
+
+/* --- validation avec marge d'erreur --- */
+// mots outils et tirets neutralisés : « to be cool-headed » == « be cool headed »
+const strip = s => norm(s).replace(/[-–—_]/g, ' ').replace(/\s+/g, ' ')
+  .replace(/^(?:to|the|an?|le|la|les|l'|un|une|des|de)\s+/, '').trim();
+function lev(a, b) {
+  if (a === b) return 0;
+  const m = a.length, n = b.length;
+  if (!m || !n) return m || n;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j), cur = new Array(n + 1);
+  for (let i = 1; i <= m; i++) {
+    cur[0] = i;
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    [prev, cur] = [cur, prev];
+  }
+  return prev[n];
+}
+// marge proportionnelle : un accent ou une lettre sur un mot, ~8 % sur une phrase
+function near(x, y) {
+  const a = strip(x), b = strip(y);
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const L = Math.max(a.length, b.length);
+  const allow = L <= 4 ? 0 : L <= 9 ? 1 : Math.max(2, Math.round(L * 0.08));
+  return lev(a, b) <= allow;
+}
+const parts = s => norm(s).split(/\s*[,;/·|]+\s*/).map(x => x.trim()).filter(Boolean);
+// accepte l'ordre libre d'une énumération, et un seul synonyme d'une liste courte
+function accepts(typed, answers) {
+  for (const a of answers) {
+    if (near(typed, a)) return true;
+    const exp = parts(a), got = parts(typed);
+    if (exp.length < 2) continue;
+    if (got.length === exp.length) {
+      const pool = exp.slice();
+      let all = true;
+      for (const g of got) {
+        const k = pool.findIndex(e => near(g, e));
+        if (k < 0) { all = false; break; }
+        pool.splice(k, 1);
+      }
+      if (all) return true;
+    }
+    const synonyms = exp.every(e => e.split(' ').length <= 3);
+    if (synonyms && got.length && got.length < exp.length &&
+        got.every(g => exp.some(e => near(g, e)))) return true;
+  }
+  return false;
+}
 function buildPool(cards) {
   const m = new Map();
   for (const c of cards) {
@@ -612,11 +667,12 @@ function buildPool(cards) {
   }
   return [...m.values()];
 }
-function startQuiz(id, pool) {
-  const src = id === 'all' ? live().flatMap(d => d.cards) : (deck(id) || { cards: [] }).cards;
+function startQuiz(id, pool, rev) {
+  let src = id === 'all' ? live().flatMap(d => d.cards) : (deck(id) || { cards: [] }).cards;
+  if (rev) src = src.map(c => ({ f: c.b, b: c.f }));
   const items = pool || shuffle(buildPool(src));
   if (!items.length) return;
-  quiz = { id, name: id === 'all' ? 'Tout' : (deck(id) || {}).name || '',
+  quiz = { id, rev: !!rev, name: id === 'all' ? 'Tout' : (deck(id) || {}).name || '',
            sub: id === 'all' ? '' : (deck(id) || {}).subject,
            pool: items, i: 0, ok: 0, bad: [], state: 'ask', typed: '' };
   go('run');
@@ -645,6 +701,7 @@ function quizView() {
       <button class="ic" data-act="tab-quiz">${svg(I.back)}</button>
       <h1>${esc(quiz.name)}</h1>
       ${n}
+      <button class="ic ${quiz.rev ? 'solid' : ''}" data-act="swapq">${svg(I.swap)}</button>
       <button class="ic" data-act="requiz">${svg(I.shuffle)}</button>
     </div>`;
   if (quiz.i >= quiz.pool.length) {
@@ -668,8 +725,12 @@ function quizView() {
       <input id="ans" class="ans ${quiz.state}" value="${esc(quiz.typed)}" placeholder="Réponse"
         autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
         enterkeyhint="go" ${quiz.state === 'ask' ? '' : 'readonly'}>
-      <button class="cta" style="margin-top:11px" data-act="${quiz.state === 'ask' ? 'send' : 'next'}">
-        ${quiz.state === 'ask' ? 'Valider' : 'Suivant'}${svg(I.arrow)}</button>
+      ${quiz.state === 'bad' ? `<div class="duo" style="margin:11px 0 0">
+          <button data-act="anyway">${svg(I.check)}Compter juste</button>
+          <button class="prim" data-act="next">Suivant${svg(I.arrow)}</button>
+        </div>`
+        : `<button class="cta" style="margin-top:11px" data-act="${quiz.state === 'ask' ? 'send' : 'next'}">
+            ${quiz.state === 'ask' ? 'Valider' : 'Suivant'}${svg(I.arrow)}</button>`}
     </div>`;
   requestAnimationFrame(() => {
     const p = document.getElementById('pg');
@@ -685,7 +746,7 @@ function quizView() {
 function submit() {
   if (quiz.state !== 'ask' || !quiz.typed.trim()) return;
   const q = quiz.pool[quiz.i];
-  if (q.a.some(a => norm(a) === norm(quiz.typed))) {
+  if (accepts(quiz.typed, q.a)) {
     quiz.ok++; quiz.state = 'good'; render();
     setTimeout(() => { if (quiz && quiz.state === 'good') nextQ(); }, 560);
   } else { quiz.bad.push(q); quiz.state = 'bad'; render(); }
@@ -759,11 +820,17 @@ $.addEventListener('click', e => {
   if (a === 'menu') return openMenu('deck');
   if (a === 'study') return startStudy(view.id);
   if (a === 'quizdeck') return startQuiz(view.id);
-  if (a === 'restart') return startStudy(study ? study.id : view.id);
+  if (a === 'restart') return startStudy(study ? study.id : view.id, study && study.rev);
+  if (a === 'swap') { toast(I.swap, study.rev ? 'Sens normal' : 'Sens inversé'); return startStudy(study.id, !study.rev); }
+  if (a === 'swapq') { toast(I.swap, quiz.rev ? 'Sens normal' : 'Sens inversé'); return startQuiz(quiz.id, null, !quiz.rev); }
+  if (a === 'anyway') {
+    if (quiz.state !== 'bad') return;
+    quiz.ok++; quiz.bad.pop(); return nextQ();
+  }
   if (a === 'send') return submit();
   if (a === 'next') return nextQ();
-  if (a === 'requiz') return startQuiz(quiz.id);
-  if (a === 'redo') return startQuiz(quiz.id, shuffle(quiz.bad.slice()));
+  if (a === 'requiz') return startQuiz(quiz.id, null, quiz.rev);
+  if (a === 'redo') return startQuiz(quiz.id, shuffle(quiz.bad.slice()), quiz.rev);
   if (a === 'add') {
     d.cards.push({ id: uid(), f: '', b: '' }); save(); render();
     const i = $.querySelector('.rows .row:last-of-type input'); if (i) i.focus();

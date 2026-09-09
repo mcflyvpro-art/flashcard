@@ -1,0 +1,19 @@
+{
+ "key": "art-42-43-46-cpc",
+ "name": "Art 42, 43, 46 CPC",
+ "subject": "droit",
+ "cards": [
+  [
+   "Article 42",
+   "La juridiction territorialement compétente est, sauf disposition contraire, celle du lieu où demeure le défendeur.\nS'il y a plusieurs défendeurs, le demandeur saisit, à son choix, la juridiction du lieu où demeure l'un d'eux."
+  ],
+  [
+   "Article 43",
+   "Le lieu où demeure le défendeur s'entend, s'il s'agit d'une personne physique, du lieu de son domicile ou de sa résidence ; s'il s'agit d'une personne morale, du lieu où elle est établie."
+  ],
+  [
+   "Article 46",
+   "Le demandeur peut saisir à son choix, outre la juridiction du domicile du défendeur : en matière contractuelle, la juridiction du lieu de la livraison de la chose ou d'exécution de la prestation ; en matière délictuelle, la juridiction du lieu du fait dommageable ou du lieu où le dommage a été subi."
+  ]
+ ]
+}
