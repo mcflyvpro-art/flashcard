@@ -1,50 +1,225 @@
-/* Cartes — révision + quiz. PWA locale, sans dépendance. */
-const KEY = 'cartes.v2';
+/* Cartes — révision + quiz. PWA, comptes cloisonnés sur Supabase. */
+const SB = {
+  url: 'https://qqbzefpdeinlynjtarqr.supabase.co',
+  // clé publique : elle est faite pour vivre dans le code client.
+  // Ce sont les règles RLS de la base qui cloisonnent réellement les comptes.
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxYnplZnBkZWlubHluanRhcnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5Nzk0MTIsImV4cCI6MjEwNDU1NTQxMn0.CLTRJl1ZOg1tbzSIEBiRhhoiiJIVD4cHqkk1qBwV9FI'
+};
+const AKEY = 'cartes.auth';
 const $ = document.getElementById('app');
 
-/* ---------- matières ---------- */
-const SUBJ = [
-  { id: 'italien',    n: 'Italien',    c: '#F6D2CB', ci: '#6B2A20', d: '#C5503F' },
-  { id: 'anglais',    n: 'Anglais',    c: '#DBD7DD', ci: '#201D25', d: '#2A2730' },
-  { id: 'philo',      n: 'Philo',      c: '#FADCB8', ci: '#6A4014', d: '#D4842E' },
-  { id: 'eco',        n: 'Éco',        c: '#CFE7D3', ci: '#1D4630', d: '#4C9862' },
-  { id: 'droit',      n: 'Droit',      c: '#F8D2E3', ci: '#63234A', d: '#CB6C9E' },
-  { id: 'management', n: 'Management', c: '#F7E7AE', ci: '#5C4810', d: '#C9A526' },
-  { id: 'lettres',    n: 'Lettres',    c: '#F0E9E0', ci: '#4A4137', d: '#A99A88' }
+/* ---------- palette : 16 teintes accordées à l'app ---------- */
+const PALETTE = {
+  red:      { c: '#F6D2CB', ci: '#6B2A20', d: '#C5503F' },
+  coral:    { c: '#FAD7C7', ci: '#6B3319', d: '#D0703C' },
+  orange:   { c: '#FADCB8', ci: '#6A4014', d: '#D4842E' },
+  amber:    { c: '#F8E4B0', ci: '#61460F', d: '#CE9A21' },
+  yellow:   { c: '#F7E7AE', ci: '#5C4810', d: '#C9A526' },
+  lime:     { c: '#E4EBB4', ci: '#454E15', d: '#93A32C' },
+  green:    { c: '#CFE7D3', ci: '#1D4630', d: '#4C9862' },
+  teal:     { c: '#C4E6E4', ci: '#12433F', d: '#3B9490' },
+  cyan:     { c: '#C8E4EF', ci: '#14414F', d: '#3E8FA8' },
+  blue:     { c: '#CFDDF2', ci: '#1B3A5E', d: '#4A7FBE' },
+  indigo:   { c: '#D6D7F0', ci: '#2A2C5C', d: '#6366B4' },
+  violet:   { c: '#DFD3F0', ci: '#3A2559', d: '#7C5CB0' },
+  purple:   { c: '#EBD4EF', ci: '#4A2352', d: '#9857A6' },
+  pink:     { c: '#F8D2E3', ci: '#63234A', d: '#CB6C9E' },
+  sand:     { c: '#F0E9E0', ci: '#4A4137', d: '#A99A88' },
+  graphite: { c: '#DBD7DD', ci: '#201D25', d: '#2A2730' }
+};
+const COLORS = Object.keys(PALETTE);
+const SEED = [
+  ['italien', 'Italien', 'red'], ['anglais', 'Anglais', 'graphite'],
+  ['philo', 'Philo', 'orange'], ['eco', 'Éco', 'green'],
+  ['droit', 'Droit', 'pink'], ['management', 'Management', 'yellow'],
+  ['lettres', 'Lettres', 'sand']
 ];
-const NONE = { id: '', n: 'Sans matière', c: '#E8E3E9', ci: '#2A2530', d: '#8E8794' };
-const subj = id => SUBJ.find(s => s.id === id) || NONE;
+const NONE = { id: '', name: 'Sans matière', color: 'graphite',
+               c: '#E8E3E9', ci: '#2A2530', d: '#8E8794' };
+const subj = id => {
+  const t = db.subjects.find(x => x.id === id);
+  return t ? { ...t, ...(PALETTE[t.color] || PALETTE.graphite) } : NONE;
+};
 const sty = s => `--c:${s.c};--ci:${s.ci};--d:${s.d}`;
 
 /* ---------- état ---------- */
-let db = load();
+let auth = loadAuth();
+let db = { subjects: [], decks: [], hist: {} };
 let view = { name: 'home' };
 let filter = '';
 let peek = false;
-let study = null, quiz = null, menu = null;
+let study = null, quiz = null, menu = null, typing = 0;
+let dirty = {}, gone = [], online = true;
+
+function loadAuth() { try { return JSON.parse(localStorage.getItem(AKEY)); } catch (e) { return null; } }
+function saveAuth(a) { auth = a; a ? localStorage.setItem(AKEY, JSON.stringify(a)) : localStorage.removeItem(AKEY); }
+const cacheKey = () => 'cartes.cache.' + (auth && auth.uid);
 
 function load() {
-  let d = null;
-  try { d = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-  if (!d) { try { d = JSON.parse(localStorage.getItem('cartes.v1')); } catch (e) {} }
-  if (!d || !Array.isArray(d.decks)) d = { decks: [] };
-  d.decks.forEach(k => { k.subject = k.subject || ''; k.hidden = !!k.hidden; });
-  return d;
+  try {
+    const d = JSON.parse(localStorage.getItem(cacheKey()));
+    if (d && Array.isArray(d.decks)) return { subjects: d.subjects || [], decks: d.decks, hist: d.hist || {} };
+  } catch (e) {}
+  return { subjects: [], decks: [], hist: {} };
 }
-function save() { localStorage.setItem(KEY, JSON.stringify(db)); }
+function save() {
+  if (auth) localStorage.setItem(cacheKey(), JSON.stringify(db));
+}
+/* enregistre localement puis pousse en base */
+function saveDeck(d) { save(); if (d) { dirty[d.id] = 1; flush(); } }
+
 function pushHist(id, mode, pct) {
-  db.hist = db.hist || {};
   const k = id + ':' + mode;
   (db.hist[k] = db.hist[k] || []).push({ t: Date.now(), p: pct });
   if (db.hist[k].length > 24) db.hist[k].shift();
   save();
+  api('/rest/v1/sessions', 'POST', [{ user_id: auth.uid, deck_id: String(id), mode, pct }]).catch(() => {});
   return db.hist[k];
 }
-const histOf = (id, mode) => (db.hist && db.hist[id + ':' + mode]) || [];
-const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+const histOf = (id, mode) => db.hist[id + ':' + mode] || [];
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID()
+  : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    }));
 const deck = id => db.decks.find(d => d.id === id);
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[a[i], a[j]] = [a[j], a[i]]; } return a; };
 const live = () => db.decks.filter(d => !d.hidden);
+const slugify = n => (n || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'matiere';
+
+/* ---------- accès à Supabase ---------- */
+async function api(path, method = 'GET', body, extra = {}) {
+  const h = { apikey: SB.key, 'Content-Type': 'application/json', ...extra };
+  if (auth && auth.token) h.Authorization = 'Bearer ' + auth.token;
+  const r = await fetch(SB.url + path, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
+  if (r.status === 401 && auth && auth.refresh) {
+    if (await refreshToken()) return api(path, method, body, extra);
+  }
+  if (!r.ok) throw new Error(await r.text().catch(() => r.status));
+  return r.status === 204 ? null : r.json().catch(() => null);
+}
+function keepSession(j) {
+  saveAuth({
+    token: j.access_token, refresh: j.refresh_token,
+    exp: Date.now() + (j.expires_in || 3600) * 1000,
+    uid: j.user.id, email: j.user.email
+  });
+}
+async function signIn(email, password) {
+  const r = await fetch(SB.url + '/auth/v1/token?grant_type=password', {
+    method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase(), password })
+  });
+  const j = await r.json();
+  if (!r.ok || !j.access_token) throw new Error(j.error_description || j.msg || j.error || 'Connexion refusée');
+  keepSession(j);
+  return j;
+}
+async function refreshToken() {
+  try {
+    const r = await fetch(SB.url + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: auth.refresh })
+    });
+    const j = await r.json();
+    if (!r.ok || !j.access_token) return false;
+    keepSession(j);
+    return true;
+  } catch (e) { return false; }
+}
+
+const rowOf = d => ({ id: d.id, user_id: auth.uid, name: d.name, subject: d.subject,
+                      hidden: !!d.hidden, cards: d.cards, pos: d.pos || 0 });
+
+/* pousse tout ce qui est en attente ; garde la file si le réseau manque */
+let flushing = false;
+async function flush() {
+  if (flushing || !auth) return;
+  flushing = true;
+  try {
+    const ids = Object.keys(dirty);
+    if (ids.length) {
+      const rows = ids.map(deck).filter(Boolean).map(rowOf);
+      if (rows.length) await api('/rest/v1/decks', 'POST', rows,
+        { Prefer: 'resolution=merge-duplicates,return=minimal' });
+      ids.forEach(i => delete dirty[i]);
+    }
+    while (gone.length) {
+      const id = gone[0];
+      await api(`/rest/v1/decks?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+      gone.shift();
+    }
+    setOnline(true);
+  } catch (e) { setOnline(false); }
+  flushing = false;
+}
+function setOnline(v) {
+  if (online === v) return;
+  online = v;
+  const n = document.getElementById('offdot');
+  if (n) n.style.display = v ? 'none' : '';
+}
+
+/* récupère matières, paquets et historique du compte */
+async function pull() {
+  const [subs, decks, sess] = await Promise.all([
+    api('/rest/v1/subjects?select=*&order=pos.asc'),
+    api('/rest/v1/decks?select=*&order=pos.asc'),
+    api('/rest/v1/sessions?select=deck_id,mode,pct,created_at&order=created_at.asc')
+  ]);
+  db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
+  db.decks = decks.map(x => ({
+    id: x.id, name: x.name, subject: x.subject, hidden: x.hidden,
+    pos: x.pos, cards: (x.cards || []).map(c => ({ id: c.id || uid(), f: c.f, b: c.b }))
+  }));
+  db.hist = {};
+  for (const r of sess) {
+    const k = r.deck_id + ':' + r.mode;
+    (db.hist[k] = db.hist[k] || []).push({ t: +new Date(r.created_at), p: r.pct });
+    if (db.hist[k].length > 24) db.hist[k].shift();
+  }
+  if (!db.subjects.length) await seedSubjects();
+  save();
+}
+async function seedSubjects() {
+  db.subjects = SEED.map(([id, name, color], i) => ({ id, name, color, pos: i }));
+  await api('/rest/v1/subjects', 'POST',
+    db.subjects.map(s => ({ ...s, user_id: auth.uid })),
+    { Prefer: 'resolution=merge-duplicates,return=minimal' });
+}
+async function pushSubject(s) {
+  save();
+  return api('/rest/v1/subjects', 'POST', [{ ...s, user_id: auth.uid }],
+    { Prefer: 'resolution=merge-duplicates,return=minimal' }).catch(() => setOnline(false));
+}
+async function delSubject(id) {
+  save();
+  return api(`/rest/v1/subjects?id=eq.${encodeURIComponent(id)}`, 'DELETE').catch(() => setOnline(false));
+}
+
+/* reprise unique de l'ancienne bibliothèque locale */
+async function importLegacy() {
+  const flag = 'cartes.migrated.' + auth.uid;
+  if (localStorage.getItem(flag)) return 0;
+  localStorage.setItem(flag, '1');
+  let old = null;
+  try { old = JSON.parse(localStorage.getItem('cartes.v2')); } catch (e) {}
+  if (!old || !Array.isArray(old.decks) || !old.decks.length) return 0;
+  const have = new Set(db.decks.map(d => d.name));
+  const add = old.decks.filter(d => d.cards && d.cards.length && !have.has(d.name));
+  if (!add.length) return 0;
+  let pos = db.decks.length;
+  for (const d of add) {
+    const nd = { id: uid(), name: d.name, subject: d.subject || '', hidden: !!d.hidden,
+                 pos: pos++, cards: d.cards.map(c => ({ id: uid(), f: c.f, b: c.b })) };
+    db.decks.push(nd); dirty[nd.id] = 1;
+  }
+  await flush();
+  save();
+  return add.length;
+}
 
 /* ---------- icônes ---------- */
 const I = {
@@ -71,6 +246,10 @@ const I = {
   swipe: '<path d="M22 6l-5 6 5 6M17 12h13M50 6l5 6-5 6M55 12H42"/>',
   cloud: '<path d="M7.2 18.4a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6-1.1 3.8 3.8 0 0 1-.4 9.1"/><path d="M12 20.4v-8.6m0 0L9.3 14.5M12 11.8l2.7 2.7"/>',
   cloudok: '<path d="M7.2 18.4a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6-1.1 3.8 3.8 0 0 1-.4 9.1"/><path d="M9.6 14.2l1.9 1.9 3.2-3.6"/>',
+  gear: '<circle cx="12" cy="12" r="3.1"/><path d="M19.4 14.4a1.6 1.6 0 0 0 .3 1.8l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1h-.2a1.9 1.9 0 1 1 0-3.8h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.6 1.6 0 0 0 1.8.3h.1a1.6 1.6 0 0 0 1-1.5v-.2a1.9 1.9 0 1 1 3.8 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
+  user: '<circle cx="12" cy="8.2" r="3.8"/><path d="M4.6 20.2a7.4 7.4 0 0 1 14.8 0"/>',
+  mail: '<rect x="2.8" y="5.2" width="18.4" height="13.6" rx="3"/><path d="M3.4 7.6l8.6 5.6 8.6-5.6"/>',
+  lock: '<rect x="4.6" y="10.4" width="14.8" height="9.4" rx="3"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/>',
   swap: '<path d="M4 8.6h13.5m0 0l-3.6-3.6M17.5 8.6l-3.6 3.6"/><path d="M20 15.4H6.5m0 0l3.6-3.6M6.5 15.4l3.6 3.6"/>',
   key: '<circle cx="8.2" cy="15.8" r="3.5"/><path d="M10.7 13.3L19.4 4.6M16.4 7.6l2.1 2.1M14 10l2.1 2.1"/>'
 };
@@ -122,45 +301,24 @@ function parseText(txt) {
 
 /* ---------- paquets ---------- */
 function addDeck(name, cards, subject) {
-  const d = { id: uid(), name: (name || '').trim() || 'Paquet', subject: subject || '', hidden: false,
+  const d = { id: uid(), name: (name || '').trim() || 'Paquet', subject: subject || '',
+              hidden: false, pos: -Date.now() / 1000 | 0,
               cards: cards.map(c => ({ id: uid(), f: c.f, b: c.b })) };
-  db.decks.unshift(d); save(); return d;
+  db.decks.unshift(d); saveDeck(d); return d;
 }
 function importPayload(p) {
   let last = null;
   for (const k of (Array.isArray(p) ? p : [p])) {
     const cards = (k.cards || []).map(c => Array.isArray(c) ? { f: c[0], b: c[1] } : c).filter(c => c && c.f);
     if (!cards.length) continue;
-    const ex = k.key && db.decks.find(d => d.key === k.key);
+    const ex = db.decks.find(d => d.name === k.name);
     if (ex) {
-      ex.name = k.name || ex.name; ex.subject = k.subject ?? ex.subject;
-      ex.cards = cards.map(c => ({ id: uid(), f: c.f, b: c.b })); last = ex;
-    } else { last = addDeck(k.name, cards, k.subject); last.key = k.key; }
+      ex.subject = k.subject ?? ex.subject;
+      ex.cards = cards.map(c => ({ id: uid(), f: c.f, b: c.b }));
+      last = ex; dirty[ex.id] = 1;
+    } else last = addDeck(k.name, cards, k.subject);
   }
-  save(); return last;
-}
-async function syncRepo() {
-  try {
-    const r = await fetch('decks/index.json', { cache: 'no-store' }); if (!r.ok) return;
-    let changed = false;
-    for (const it of await r.json()) {
-      const cur = db.decks.find(d => d.key === it.key);
-      if (cur && cur.rev === it.rev) continue;
-      const dr = await fetch('decks/' + it.file, { cache: 'no-store' }); if (!dr.ok) continue;
-      const pack = await dr.json();
-      const cards = (pack.cards || []).map(c => Array.isArray(c) ? { f: c[0], b: c[1] } : c).filter(c => c && c.f);
-      if (!cards.length) continue;
-      if (cur) {
-        cur.name = pack.name || cur.name; cur.subject = pack.subject ?? cur.subject;
-        cur.cards = cards.map(c => ({ id: uid(), f: c.f, b: c.b })); cur.rev = it.rev;
-      } else {
-        const nd = addDeck(pack.name || it.key, cards, pack.subject);
-        nd.key = it.key; nd.rev = it.rev;
-      }
-      changed = true;
-    }
-    if (changed) { save(); if (view.name === 'home' || view.name === 'quiz') render(); }
-  } catch (e) {}
+  save(); flush(); return last;
 }
 
 /* ---------- toast ---------- */
@@ -175,7 +333,8 @@ function toast(icon, text) {
 /* ---------- rendu ---------- */
 let animate = true;
 function render() {
-  const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome, run: quizView };
+  const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome,
+              run: quizView, login: loginView, settings: settingsView };
   (v[view.name] || home)();
   if (animate) { $.classList.remove('fade'); void $.offsetWidth; $.classList.add('fade'); }
   if (pageDir) {
@@ -242,7 +401,7 @@ const tabs = on => `<div class="tabs">
 const pills = (active, list, act) => `<div class="pills">
   <button class="p ${active === '' ? 'on' : ''}" data-${act}="">Tout</button>
   ${list.map(s => `<button class="p ${active === s.id ? 'on' : ''}" data-${act}="${s.id}" style="--d:${s.d}">
-    <i></i>${s.n}</button>`).join('')}
+    <i></i>${esc(s.name)}</button>`).join('')}
 </div>`;
 
 const tile = (d, i) => `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="${d.id}" style="${sty(subj(d.subject))};--i:${i}">
@@ -251,14 +410,15 @@ const tile = (d, i) => `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="
 </button>`;
 
 function home() {
-  const used = SUBJ.filter(s => db.decks.some(d => d.subject === s.id && (peek || !d.hidden)));
+  const used = db.subjects.filter(s => db.decks.some(d => d.subject === s.id && (peek || !d.hidden))).map(x => subj(x.id));
   const hidden = db.decks.some(d => d.hidden);
   const list = db.decks.filter(d => (peek || !d.hidden) && (!filter || d.subject === filter));
   $.innerHTML = `
     <div class="page" id="page">
       <div class="top">
         <div class="hero">Mes paquets</div>
-        ${db.decks.length ? `<button class="ic" data-act="puball">${svg(I.cloud)}</button>` : ''}
+        <span id="offdot" class="off-dot" style="display:${online ? 'none' : ''}"></span>
+        <button class="ic" data-act="settings">${svg(I.gear)}</button>
         ${hidden ? `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>` : ''}
       </div>
       ${used.length > 1 ? pills(filter, used, 'filt') : ''}
@@ -284,7 +444,6 @@ function deckView() {
       <div class="s">
         <span>${svg(I.tag)}${esc(s.n)}</span><b></b>
         <span>${svg(I.card)}${plur(d.cards.length, 'carte')}</span>
-        ${d.key ? `<b></b><span>${svg(I.cloudok)}Publié</span>` : ''}
         ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
       </div>
     </div>
@@ -310,110 +469,98 @@ function deckView() {
   const t = document.getElementById('dn');
   t.addEventListener('blur', () => {
     const v = t.textContent.replace(/\s+/g, ' ').trim();
-    if (v !== d.name) { d.name = v || 'Paquet'; save(); t.textContent = d.name; }
+    if (v !== d.name) { d.name = v || 'Paquet'; saveDeck(d); t.textContent = d.name; }
   });
   t.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); t.blur(); } });
   $.querySelectorAll('.row input').forEach(inp => inp.addEventListener('input', () => {
     const c = d.cards.find(x => x.id === inp.closest('.row').dataset.id);
-    if (c) { c[inp.dataset.k] = inp.value; save(); }
+    if (c) { c[inp.dataset.k] = inp.value; clearTimeout(typing); typing = setTimeout(() => saveDeck(d), 700); }
   }));
 }
 
 
-/* ---------- publication GitHub (aucun serveur) ----------
-   Écrit decks/<clé>.json + decks/index.json en un seul commit via l'API Git.
-   Le jeton reste dans le stockage local de l'appareil, jamais dans le dépôt. */
-const GHKEY = 'cartes.gh';
-function ghCfg() {
-  let c = {};
-  try { c = JSON.parse(localStorage.getItem(GHKEY)) || {}; } catch (e) {}
-  if (!c.owner || !c.repo) {                       // déduit depuis l'URL GitHub Pages
-    const m = location.hostname.match(/^([\w-]+)\.github\.io$/);
-    const seg = location.pathname.split('/').filter(Boolean)[0];
-    if (m) { c.owner = c.owner || m[1]; c.repo = c.repo || seg || (m[1] + '.github.io'); }
-  }
-  c.branch = c.branch || 'main';
-  return c;
-}
-function ghSave(c) { localStorage.setItem(GHKEY, JSON.stringify(c)); }
-const slugify = n => (n || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
-  .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'paquet';
-
-async function ghApi(path, opt = {}) {
-  const c = ghCfg();
-  const r = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}${path}`, {
-    ...opt,
-    headers: {
-      Authorization: 'Bearer ' + c.token,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(opt.body ? { 'Content-Type': 'application/json' } : {})
+/* ---------- connexion ---------- */
+let loginBusy = false;
+function loginView() {
+  $.innerHTML = `<div class="login">
+    <img class="logo" src="icons/icon-192.png" alt="">
+    <div class="lt">Cartes</div>
+    <form class="lf" id="lf" autocomplete="on">
+      <div class="lrow">${svg(I.mail)}
+        <input id="em" type="email" placeholder="Adresse e-mail" autocomplete="username"
+          autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next"></div>
+      <div class="lrow">${svg(I.lock)}
+        <input id="pw" type="password" placeholder="Mot de passe" autocomplete="current-password"
+          autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go">
+        <button type="button" class="peek" id="pk">${svg(I.eye)}</button></div>
+      <div class="lerr" id="le"></div>
+      <button class="cta" id="go" type="submit">Se connecter${svg(I.arrow)}</button>
+    </form>
+  </div>`;
+  const em = document.getElementById('em'), pw = document.getElementById('pw'),
+        err = document.getElementById('le'), btn = document.getElementById('go');
+  document.getElementById('pk').onclick = () => {
+    const on = pw.type === 'password';
+    pw.type = on ? 'text' : 'password';
+    document.getElementById('pk').innerHTML = svg(on ? I.eyeoff : I.eye);
+    pw.focus();
+  };
+  document.getElementById('lf').onsubmit = async e => {
+    e.preventDefault();
+    if (loginBusy) return;
+    if (!em.value.trim() || !pw.value) { err.textContent = 'Renseigne les deux champs'; return; }
+    loginBusy = true; btn.disabled = true; err.textContent = '';
+    btn.firstChild.textContent = 'Connexion…';
+    try {
+      await signIn(em.value, pw.value);
+      db = load();
+      await pull();
+      const n = await importLegacy();
+      go('home');
+      if (n) toast(I.check, plur(n, 'paquet') + ' repris');
+    } catch (x) {
+      err.textContent = /Invalid|credentials|refus/i.test(String(x.message))
+        ? 'E-mail ou mot de passe incorrect' : 'Connexion impossible';
+      btn.disabled = false; btn.firstChild.textContent = 'Se connecter';
     }
-  });
-  return r;
+    loginBusy = false;
+  };
+  setTimeout(() => em.focus(), 80);
 }
-const b64json = t => JSON.parse(new TextDecoder().decode(
-  Uint8Array.from(atob(t.replace(/\s/g, '')), ch => ch.charCodeAt(0))));
 
-async function ghPublish(list) {
-  const c = ghCfg();
-  if (!c.token) return openMenu('token');
-  const decks = list.filter(d => d.cards.length);
-  if (!decks.length) return;
-  busy(true);
-  try {
-    // index actuel du dépôt
-    let idx = [];
-    const ri = await ghApi(`/contents/decks/index.json?ref=${c.branch}`);
-    if (ri.ok) idx = b64json((await ri.json()).content);
-    else if (ri.status === 401 || ri.status === 403) throw new Error('jeton refusé');
-    else if (ri.status === 404 && !(await ghApi('')).ok) throw new Error('dépôt introuvable');
-
-    const files = [];
-    const stamped = [];
-    for (const d of decks) {
-      const key = d.key || slugify(d.name);
-      const rev = Math.random().toString(36).slice(2, 10);
-      const pack = { key, name: d.name, subject: d.subject || '', cards: d.cards.map(x => [x.f, x.b]) };
-      files.push({ path: `decks/${key}.json`, mode: '100644', type: 'blob',
-                   content: JSON.stringify(pack, null, 1) });
-      idx = idx.filter(i => i.key !== key);
-      idx.push({ key, file: key + '.json', name: d.name, rev, n: pack.cards.length });
-      stamped.push([d, key, rev]);
-    }
-    idx.sort((a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
-    files.push({ path: 'decks/index.json', mode: '100644', type: 'blob',
-                 content: JSON.stringify(idx, null, 1) });
-
-    // un seul commit : ref -> commit -> arbre -> commit -> ref
-    const ref = await (await ghApi(`/git/ref/heads/${c.branch}`)).json();
-    const head = ref.object.sha;
-    const base = (await (await ghApi(`/git/commits/${head}`)).json()).tree.sha;
-    const tree = await (await ghApi('/git/trees', { method: 'POST',
-      body: JSON.stringify({ base_tree: base, tree: files }) })).json();
-    if (!tree.sha) throw new Error('écriture refusée');
-    const msg = decks.length === 1 ? `Mise à jour du paquet « ${decks[0].name} »`
-                                   : `Mise à jour de ${decks.length} paquets`;
-    const commit = await (await ghApi('/git/commits', { method: 'POST',
-      body: JSON.stringify({ message: msg, tree: tree.sha, parents: [head] }) })).json();
-    const up = await ghApi(`/git/refs/heads/${c.branch}`, { method: 'PATCH',
-      body: JSON.stringify({ sha: commit.sha }) });
-    if (!up.ok) throw new Error('poussée refusée');
-
-    stamped.forEach(([d, key, rev]) => { d.key = key; d.rev = rev; });
-    save(); busy(false); closeMenu(); render();
-    toast(I.cloudok, decks.length === 1 ? 'Publié' : decks.length + ' paquets publiés');
-  } catch (e) {
-    busy(false);
-    const m = String(e.message || e);
-    toast(I.x, m.slice(0, 40));
-    if (/jeton|dépôt/.test(m)) openMenu('token');   // laisse corriger tout de suite
-  }
+/* ---------- réglages ---------- */
+let subjEdit = null, subjColor = 'graphite', subjName = '';
+function openSubject(id) {
+  subjEdit = id;
+  const t = db.subjects.find(x => x.id === id);
+  subjColor = t ? t.color : COLORS[db.subjects.length % COLORS.length];
+  subjName = t ? t.name : '';
+  openMenu('subject');
 }
-function busy(on) {
-  document.querySelectorAll('[data-mact="pub"],[data-act="puball"]').forEach(b => {
-    b.style.opacity = on ? '.45' : ''; b.style.pointerEvents = on ? 'none' : '';
-  });
+function settingsView() {
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home">${svg(I.back)}</button></div>
+    <div class="page">
+      <div class="top"><div class="hero">Réglages</div></div>
+      <div class="lbl"><span>Matières</span><span>${db.subjects.length}</span></div>
+      <div class="slist">
+        ${db.subjects.map(t => {
+          const pal = PALETTE[t.color] || PALETTE.graphite;
+          const n = db.decks.filter(d => d.subject === t.id).length;
+          return `<button class="sr" data-sub="${t.id}" style="${sty(pal)}">
+            <i></i><span class="n">${esc(t.name)}</span>
+            <span class="c">${n || ''}</span>${svg(I.arrow)}</button>`;
+        }).join('')}
+        <button class="sr add" data-sub="">${svg(I.plus)}<span class="n">Nouvelle matière</span></button>
+      </div>
+      <div class="lbl"><span>Compte</span></div>
+      <div class="slist">
+        <div class="sr flat">${svg(I.user)}<span class="n">${esc(auth ? auth.email : '')}</span></div>
+        <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
+          <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
+      </div>
+      <div class="foot">${online ? 'Synchronisé' : 'Hors ligne — reprise automatique'}</div>
+    </div>`;
 }
 
 /* ---------- menu contextuel ---------- */
@@ -422,61 +569,72 @@ function closeMenu() { menu = null; document.querySelectorAll('.scrim,.menu').fo
 function paintMenu() {
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
   const w = document.createElement('div');
-  if (menu === 'token') {
-    const c = ghCfg();
+  if (menu === 'subject') {
+    const t = db.subjects.find(x => x.id === subjEdit) || { id: '', name: '', color: 'graphite' };
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mi" style="font-weight:750">${svg(I.key)}Jeton GitHub</div>
-        <input class="tok" id="tok" type="password" autocomplete="off" autocapitalize="none"
-          autocorrect="off" spellcheck="false" placeholder="github_pat_…" value="${esc(c.token || '')}">
-        <div class="mi" style="font-size:13.5px;color:var(--soft);height:auto;padding:2px 16px 10px">
-          ${esc(c.owner || '?')}/${esc(c.repo || '?')} · ${esc(c.branch)}</div>
-        <button class="mi" data-mact="savetok" style="justify-content:center;font-weight:700">
-          ${svg(I.check)}Enregistrer</button>
+        <input class="tok" id="sn" placeholder="Nom de la matière" spellcheck="false"
+          enterkeyhint="done" value="${esc(subjName)}">
+        <div class="swatch">${COLORS.map(k => `<button class="sw2 ${k === subjColor ? 'on' : ''}"
+          data-color="${k}" style="background:${PALETTE[k].c};--dd:${PALETTE[k].d}"></button>`).join('')}</div>
+        <div class="msep"></div>
+        ${t.id ? `<button class="mi warn" data-mact="subjdel">${svg(I.trash)}<span>Supprimer</span></button>` : ''}
+        <button class="mi" data-mact="subjok" style="justify-content:center;font-weight:700">
+          ${svg(I.check)}${t.id ? 'Enregistrer' : 'Créer'}</button>
       </div>`;
     document.body.append(...w.childNodes);
-    setTimeout(() => { const t = document.getElementById('tok'); if (t && !c.token) t.focus(); }, 60);
-    return;
-  }
-  if (menu === 'backup') {
-    const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <button class="mi" data-mact="backup">${svg(I.share)}Sauvegarder
-          <span class="tail">${n} · ${c}</span></button>
-        <button class="mi" data-mact="puball">${svg(I.cloud)}Publier sur GitHub</button>
-      </div>`;
-    document.body.append(...w.childNodes);
+    const sn = document.getElementById('sn');
+    sn.addEventListener('input', () => subjName = sn.value);
+    sn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sn.blur(); } });
+    setTimeout(() => { if (!subjName) sn.focus(); }, 60);
     return;
   }
   const d = deck(view.id); if (!d) return;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
       <div class="mgrid">
-        ${SUBJ.map(s => `<button class="ms ${d.subject === s.id ? 'on' : ''}" data-msubj="${s.id}" style="--d:${s.d}">
-          <i></i>${s.n}</button>`).join('')}
+        ${db.subjects.map(x => subj(x.id)).map(s => `<button class="ms ${d.subject === s.id ? 'on' : ''}"
+          data-msubj="${s.id}" style="--d:${s.d}"><i></i>${esc(s.name)}</button>`).join('')}
       </div>
       <div class="msep"></div>
       <button class="mi" data-mact="hide">${svg(d.hidden ? I.eye : I.eyeoff)}${d.hidden ? 'Réafficher' : 'Masquer'}</button>
-      <button class="mi" data-mact="pub">${svg(d.key ? I.cloudok : I.cloud)}${d.key ? 'Republier' : 'Publier sur GitHub'}</button>
       <button class="mi" data-mact="share">${svg(I.share)}Partager</button>
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
   document.body.append(...w.childNodes);
 }
 document.addEventListener('click', e => {
-  const b = e.target.closest('[data-mact],[data-msubj]'); if (!b) return;
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color]'); if (!b) return;
   const d = deck(view.id);
-  if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; save(); render(); return; }
+  if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   const a = b.dataset.mact;
   if (a === 'close') return closeMenu();
-  if (a === 'savetok') {
-    const c = ghCfg(); c.token = document.getElementById('tok').value.trim(); ghSave(c);
-    closeMenu(); if (c.token) toast(I.check, 'Jeton enregistré');
-    return;
+  if (b.dataset.color) { subjColor = b.dataset.color; return paintMenu(); }
+  if (a === 'subjok') {
+    const name = (document.getElementById('sn').value || subjName).trim();
+    if (!name) return;
+    if (subjEdit) {
+      const t = db.subjects.find(x => x.id === subjEdit);
+      t.name = name; t.color = subjColor; pushSubject(t);
+    } else {
+      let id = slugify(name), n = 2;
+      while (db.subjects.some(x => x.id === id)) id = slugify(name) + '-' + n++;
+      const t = { id, name, color: subjColor, pos: db.subjects.length };
+      db.subjects.push(t); pushSubject(t);
+    }
+    closeMenu(); return render();
   }
-  if (a === 'pub') return ghPublish([d]);
-  if (a === 'puball') { closeMenu(); return ghPublish(db.decks); }
+  if (a === 'subjdel') {
+    const lab = b.querySelector('span');
+    if (!b.dataset.arm) {
+      b.dataset.arm = 1; b.style.background = 'rgba(196,86,107,.12)'; lab.textContent = 'Confirmer';
+      setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.style.background = ''; lab.textContent = 'Supprimer'; } }, 3000);
+      return;
+    }
+    db.subjects = db.subjects.filter(x => x.id !== subjEdit);
+    db.decks.filter(x => x.subject === subjEdit).forEach(x => { x.subject = ''; dirty[x.id] = 1; });
+    delSubject(subjEdit); flush(); closeMenu(); return render();
+  }
   if (a === 'backup') {
     closeMenu();
     const url = location.origin + location.pathname + '#i=' + enc(db.decks.map(x =>
@@ -485,18 +643,22 @@ document.addEventListener('click', e => {
     else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Sauvegarde copiée'));
     return;
   }
-  if (a === 'hide') { d.hidden = !d.hidden; save(); closeMenu(); render(); toast(d.hidden ? I.eyeoff : I.eye); return; }
+  if (a === 'hide') { d.hidden = !d.hidden; saveDeck(d); closeMenu(); render(); toast(d.hidden ? I.eyeoff : I.eye); return; }
   if (a === 'share') {
     closeMenu();
     const url = location.origin + location.pathname + '#i=' +
-      enc({ key: d.key || d.id, name: d.name, subject: d.subject, cards: d.cards.map(c => [c.f, c.b]) });
+      enc({ name: d.name, subject: d.subject, cards: d.cards.map(c => [c.f, c.b]) });
     if (navigator.share) navigator.share({ url }).catch(() => {});
     else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Lien copié'));
     return;
   }
   if (a === 'del') {
     const lab = b.querySelector('span');
-    if (b.dataset.arm) { db.decks = db.decks.filter(x => x.id !== d.id); save(); closeMenu(); return go('home'); }
+    if (b.dataset.arm) {
+      db.decks = db.decks.filter(x => x.id !== d.id);
+      delete dirty[d.id]; gone.push(d.id); save(); flush();
+      closeMenu(); return go('home');
+    }
     b.dataset.arm = 1; b.style.background = 'rgba(196,86,107,.12)'; lab.textContent = 'Confirmer la suppression';
     setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.style.background = ''; lab.textContent = 'Supprimer'; } }, 3000);
   }
@@ -761,7 +923,7 @@ function startQuiz(id, pool, rev) {
   go('run');
 }
 function quizHome() {
-  const used = SUBJ.filter(s => live().some(d => d.subject === s.id));
+  const used = db.subjects.filter(s => live().some(d => d.subject === s.id)).map(x => subj(x.id));
   const list = live().filter(d => !filter || d.subject === filter);
   const total = buildPool(live().flatMap(d => d.cards)).length;
   $.innerHTML = `
@@ -856,7 +1018,7 @@ function importView() {
     <div class="sheet">
       ${t ? '' : `<div class="field"><input id="nm" placeholder="Nom du paquet" spellcheck="false"
         enterkeyhint="next" value="${esc(comp.name || '')}"></div>
-        ${pills(comp.subject, SUBJ, 'nsubj')}`}
+        ${pills(comp.subject, db.subjects.map(x => subj(x.id)), 'nsubj')}`}
       ${comp.bulk ? `
         <div class="ta"><textarea id="tx" placeholder="chat = gatto&#10;chien = cane&#10;maison = casa"
           autocapitalize="off" autocorrect="off" spellcheck="false">${esc(comp.text)}</textarea></div>
@@ -921,7 +1083,7 @@ function importView() {
   document.getElementById('ok').onclick = () => {
     if (!comp.cards.length) return;
     const cards = comp.cards.slice();
-    if (t) { t.cards.push(...cards.map(c => ({ id: uid(), f: c.f, b: c.b }))); save(); resetComp(); go('deck', t.id); }
+    if (t) { t.cards.push(...cards.map(c => ({ id: uid(), f: c.f, b: c.b }))); saveDeck(t); resetComp(); go('deck', t.id); }
     else { const d = addDeck(comp.name, cards, comp.subject); resetComp(); go('deck', d.id); }
     toast(I.check, plur(cards.length, 'carte'));
   };
@@ -940,7 +1102,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub]');
   if (!b) return;
   const ds = b.dataset;
   if (ds.dl !== undefined) {
@@ -958,14 +1120,17 @@ $.addEventListener('click', e => {
     if (c) c.setAttribute('style', sty(subj(comp.subject)));
     return;
   }
+  if (ds.sub !== undefined) return openSubject(ds.sub || null);
   if (ds.go) return go('deck', ds.go);
   if (ds.q) return startQuiz(ds.q);
   if (ds.a) return fling(ds.a === 'yes' ? -1 : 1);
-  if (ds.rm) { const d = deck(view.id); d.cards = d.cards.filter(c => c.id !== ds.rm); save(); return render(); }
+  if (ds.rm) { const d = deck(view.id); d.cards = d.cards.filter(c => c.id !== ds.rm); saveDeck(d); return render(); }
   const a = ds.act, d = view.id ? deck(view.id) : null;
   if (a === 'home' || a === 'tab-home') return go('home');
   if (a === 'tab-quiz') return go('quiz');
   if (a === 'peek') { peek = !peek; render(); return; }
+  if (a === 'settings') return go('settings');
+  if (a === 'backup2') return openMenu('backup');
   if (a === 'puball') return openMenu('backup');
   if (a === 'new') { resetComp(); return go('import'); }
   if (a === 'paste') { resetComp(); return go('import', view.name === 'deck' ? view.id : null); }
@@ -989,7 +1154,7 @@ $.addEventListener('click', e => {
   if (a === 'requiz') return startQuiz(quiz.id, null, quiz.rev);
   if (a === 'redo') return startQuiz(quiz.id, shuffle(quiz.bad.slice()), quiz.rev);
   if (a === 'add') {
-    d.cards.push({ id: uid(), f: '', b: '' }); save(); render();
+    d.cards.push({ id: uid(), f: '', b: '' }); saveDeck(d); render();
     const i = $.querySelector('.rows .row:last-of-type input'); if (i) i.focus();
   }
 });
@@ -1013,9 +1178,27 @@ function consumeHash() {
 }
 
 /* ---------- démarrage ---------- */
-if (!consumeHash()) render();
+async function boot() {
+  if (!auth) { view = { name: 'login' }; return render(); }
+  db = load();
+  if (!consumeHash()) render();          // le cache s'affiche tout de suite
+  try {
+    if (auth.exp && Date.now() > auth.exp - 60000 && !(await refreshToken())) throw new Error('session');
+    await pull();
+    const n = await importLegacy();
+    setOnline(true);
+    render();
+    if (n) toast(I.check, plur(n, 'paquet') + ' repris');
+    flush();
+  } catch (e) {
+    if (/JWT|session|401/i.test(String(e.message || e))) { saveAuth(null); view = { name: 'login' }; render(); }
+    else setOnline(false);
+  }
+}
+boot();
 window.addEventListener('hashchange', consumeHash);
-syncRepo();
+window.addEventListener('online', flush);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) flush(); });
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
   let reloaded = false;
