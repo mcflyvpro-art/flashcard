@@ -229,6 +229,48 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .done .b .prim{background:var(--ink);color:var(--bg)}
 .done .b svg{width:19px;height:19px;stroke-width:2.1}
 
+/* ---------- bilan de fin de session ---------- */
+.rev{flex:1;min-height:0;overflow:auto;scrollbar-width:none;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  padding:10px 0 24px}
+.rev::-webkit-scrollbar{display:none}
+.rev .ring{flex:none}
+.rev .b{display:flex;gap:9px;width:100%;animation:rise .5s var(--e) .2s both}
+.rev .b button{flex:1;height:52px;border-radius:18px;display:flex;align-items:center;
+  justify-content:center;gap:8px;font-weight:700;font-size:14.5px;letter-spacing:-.2px;
+  background:var(--card);box-shadow:var(--s1);transition:transform .3s var(--sp)}
+.rev .b button:active{transform:scale(.95)}
+.rev .b .prim{background:var(--ink);color:var(--bg)}
+.rev .b svg{width:17px;height:17px;stroke-width:2.2}
+.rev .lbl{width:100%;margin:0 2px -8px}
+
+.tiles{display:flex;gap:8px;width:100%;animation:rise .5s var(--e) .1s both}
+.st{flex:1;min-width:0;background:var(--card);box-shadow:var(--s1);border-radius:17px;
+  padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.st b{font-weight:800;font-size:21px;letter-spacing:-.7px;font-variant-numeric:tabular-nums}
+.st span{font-size:10.5px;font-weight:750;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--soft);white-space:nowrap}
+
+.strip{display:flex;gap:3px;width:100%;height:9px;animation:rise .5s var(--e) .14s both}
+.strip i{flex:1;min-width:3px;border-radius:3px;background:var(--ok);opacity:.85}
+.strip i.n{background:var(--ko)}
+
+.hist{display:flex;align-items:flex-end;gap:5px;width:100%;height:58px;
+  animation:rise .5s var(--e) .18s both}
+.hb{flex:1;height:100%;display:flex;align-items:flex-end}
+.hb i{width:100%;border-radius:6px;background:var(--surf2);transition:height .7s var(--e)}
+.hb.now i{background:var(--ink)}
+
+.miss{display:flex;flex-direction:column;gap:8px;width:100%}
+.mr{background:var(--card);box-shadow:var(--s1);border-radius:17px;padding:12px 15px;
+  display:flex;flex-direction:column;gap:5px;animation:pop .45s var(--e) both}
+.mr .q{font-weight:750;letter-spacing:-.25px;font-size:15.5px}
+.mr .w,.mr .g{display:flex;align-items:flex-start;gap:7px;font-size:14.5px;font-weight:600;line-height:1.42}
+.mr .w{color:var(--soft);text-decoration:line-through;text-decoration-color:rgba(196,86,107,.5)}
+.mr .g{color:var(--ok);font-weight:700}
+.mr svg{width:14px;height:14px;stroke-width:2.6;flex:none;margin-top:4px}
+.mr .w svg{color:var(--ko)}
+
 /* ---------- quiz ---------- */
 .qz{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:22px;padding:14px 0 18px;min-height:0}
@@ -282,6 +324,42 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   font-variant-numeric:tabular-nums;transition:background .3s var(--e),color .3s}
 .count.on{background:var(--ink);color:var(--bg)}
 .count svg{width:14px;height:14px;stroke-width:2.3}
+
+/* ---------- composeur de cartes ---------- */
+.comp{position:relative;border-radius:24px;padding:18px 20px 18px;background:var(--c);color:var(--ci);
+  box-shadow:var(--s1);overflow:hidden;animation:pop .5s var(--e) both}
+.comp::before{content:'';position:absolute;inset:0;border-radius:24px;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),inset 0 1px 0 rgba(255,255,255,.6)}
+.comp::after{content:'';position:absolute;inset:0;border-radius:24px;pointer-events:none;
+  background:linear-gradient(155deg,rgba(255,255,255,.5),rgba(255,255,255,0) 58%)}
+.comp input{position:relative;z-index:1;width:100%;padding:5px 58px 5px 0;color:inherit}
+.comp .cf{font-weight:800;font-size:20px;letter-spacing:-.5px}
+.comp .cb{font-weight:600;font-size:17px;letter-spacing:-.2px;opacity:.85}
+.comp input::placeholder{color:currentColor;opacity:.4;font-weight:600}
+.csep{position:relative;z-index:1;height:1px;background:currentColor;opacity:.16;margin:11px 0}
+.cadd{position:absolute;z-index:2;right:14px;top:50%;transform:translateY(-50%);
+  width:46px;height:46px;border-radius:16px;display:grid;place-items:center;
+  background:var(--ink);color:var(--bg);box-shadow:var(--s1);
+  transition:transform .3s var(--sp)}
+.cadd:active{transform:translateY(-50%) scale(.86)}
+.cadd svg{width:21px;height:21px;stroke-width:2.4}
+
+.dlist{flex:1;min-height:0;overflow:auto;scrollbar-width:none;
+  display:flex;flex-direction:column;gap:7px;padding-bottom:2px}
+.dlist::-webkit-scrollbar{display:none}
+.dc{display:flex;align-items:center;gap:8px;background:var(--card);box-shadow:var(--s1);
+  border-radius:16px;padding:10px 8px 10px 15px;animation:pop .42s var(--e) both;
+  transition:box-shadow .25s,transform .25s var(--sp)}
+.dc:active{transform:scale(.985)}
+.dc.on{box-shadow:var(--s2),inset 0 0 0 2px var(--ink)}
+.dc .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.dc b{font-weight:750;font-size:15.5px;letter-spacing:-.25px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dc span{color:var(--soft);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dc .x{width:30px;height:30px;flex:none;display:grid;place-items:center;color:var(--soft);
+  border-radius:10px;transition:transform .3s var(--sp),color .2s,background .2s}
+.dc .x:active{transform:scale(.82);color:var(--ko);background:rgba(196,86,107,.1)}
+.dc .x svg{width:15px;height:15px;stroke-width:2.4}
 
 /* ---------- menu ---------- */
 .scrim{position:fixed;inset:0;background:rgba(27,24,29,.3);z-index:40;

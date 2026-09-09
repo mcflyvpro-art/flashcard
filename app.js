@@ -21,7 +21,7 @@ let db = load();
 let view = { name: 'home' };
 let filter = '';
 let peek = false;
-let study = null, quiz = null, menu = null, draft = '';
+let study = null, quiz = null, menu = null;
 
 function load() {
   let d = null;
@@ -32,6 +32,15 @@ function load() {
   return d;
 }
 function save() { localStorage.setItem(KEY, JSON.stringify(db)); }
+function pushHist(id, mode, pct) {
+  db.hist = db.hist || {};
+  const k = id + ':' + mode;
+  (db.hist[k] = db.hist[k] || []).push({ t: Date.now(), p: pct });
+  if (db.hist[k].length > 24) db.hist[k].shift();
+  save();
+  return db.hist[k];
+}
+const histOf = (id, mode) => (db.hist && db.hist[id + ':' + mode]) || [];
 const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
 const deck = id => db.decks.find(d => d.id === id);
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -429,6 +438,17 @@ function paintMenu() {
     setTimeout(() => { const t = document.getElementById('tok'); if (t && !c.token) t.focus(); }, 60);
     return;
   }
+  if (menu === 'backup') {
+    const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <button class="mi" data-mact="backup">${svg(I.share)}Sauvegarder
+          <span class="tail">${n} · ${c}</span></button>
+        <button class="mi" data-mact="puball">${svg(I.cloud)}Publier sur GitHub</button>
+      </div>`;
+    document.body.append(...w.childNodes);
+    return;
+  }
   const d = deck(view.id); if (!d) return;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
@@ -456,6 +476,15 @@ document.addEventListener('click', e => {
     return;
   }
   if (a === 'pub') return ghPublish([d]);
+  if (a === 'puball') { closeMenu(); return ghPublish(db.decks); }
+  if (a === 'backup') {
+    closeMenu();
+    const url = location.origin + location.pathname + '#i=' + enc(db.decks.map(x =>
+      ({ key: x.key || x.id, name: x.name, subject: x.subject, cards: x.cards.map(c => [c.f, c.b]) })));
+    if (navigator.share) navigator.share({ url }).catch(() => {});
+    else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Sauvegarde copiée'));
+    return;
+  }
   if (a === 'hide') { d.hidden = !d.hidden; save(); closeMenu(); render(); toast(d.hidden ? I.eyeoff : I.eye); return; }
   if (a === 'share') {
     closeMenu();
@@ -474,16 +503,18 @@ document.addEventListener('click', e => {
 });
 
 /* ---------- révision ---------- */
-function startStudy(id, rev) {
+function startStudy(id, rev, subset) {
   const d = deck(id); if (!d || !d.cards.length) return;
-  study = { id, rev: !!rev, queue: shuffle(d.cards.map(c => c.id)),
-            i: 0, again: [], flip: false, ok: 0, total: d.cards.length };
+  const ids = subset && subset.length ? subset.slice() : d.cards.map(c => c.id);
+  study = { id, rev: !!rev, queue: shuffle(ids), i: 0, again: [], flip: false,
+            ok: 0, total: ids.length, t0: Date.now(), tried: {}, missSet: {},
+            miss: [], log: [], saved: false };
   go('study', id);
 }
+const ringCol = p => p >= .8 ? 'var(--ok)' : p >= .5 ? '#C9A526' : 'var(--ko)';
 const ring = (ok, total) => {
   const p = total ? ok / total : 0;
-  const col = p >= .8 ? 'var(--ok)' : p >= .5 ? '#C9A526' : 'var(--ko)';
-  return `<div class="ring" style="--rc:${col}">
+  return `<div class="ring" style="--rc:${ringCol(p)}">
     <svg viewBox="0 0 172 172">
       <circle class="bgc" cx="86" cy="86" r="75"/>
       <circle class="fgc" cx="86" cy="86" r="75" style="stroke-dashoffset:471"/>
@@ -498,6 +529,48 @@ function fillRing(ok, total) {
     if (c) c.style.strokeDashoffset = String(471 * (1 - (total ? ok / total : 0)));
   });
 }
+const mmss = ms => {
+  const t = Math.max(0, Math.round(ms / 1000));
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+};
+const bestRun = log => { let b = 0, c = 0; for (const v of log) { c = v ? c + 1 : 0; if (c > b) b = c; } return b; };
+
+/* bilan de fin de session : chiffres, séries, historique, liste des ratés */
+function review(o) {
+  const p = o.total ? o.ok / o.total : 0;
+  const per = o.log.length ? o.ms / o.log.length : 0;
+  const hist = o.hist || [];
+  const tiles = [
+    [o.total - o.ok, 'erreurs'],
+    [bestRun(o.log), 'série'],
+    [mmss(o.ms), 'durée'],
+    [(per / 1000).toFixed(1).replace('.', ',') + 's', 'par carte']
+  ];
+  if (o.forced) tiles.splice(1, 0, [o.forced, 'forcées']);
+  return `<div class="rev">
+    ${ring(o.ok, o.total)}
+    <div class="tiles">
+      ${tiles.map(([v, l]) => `<div class="st"><b>${v}</b><span>${l}</span></div>`).join('')}
+    </div>
+    <div class="strip">${o.log.map(v => `<i class="${v ? 'y' : 'n'}"></i>`).join('')}</div>
+    ${hist.length > 1 ? `<div class="lbl"><span>Sessions</span><span>${hist.length}</span></div>
+      <div class="hist">${hist.slice(-12).map((h, i, a) =>
+        `<div class="hb ${i === a.length - 1 ? 'now' : ''}"><i style="height:${Math.max(4, h.p * 100)}%"></i></div>`
+      ).join('')}</div>` : ''}
+    <div class="b">
+      ${o.miss.length ? `<button data-act="${o.redo}">${svg(I.target)}Erreurs</button>` : ''}
+      <button data-act="${o.again}">${svg(I.redo)}Rejouer</button>
+      <button class="prim" data-act="${o.done}">${svg(I.check)}Fin</button>
+    </div>
+    ${o.miss.length ? `<div class="lbl"><span>À revoir</span><span>${o.miss.length}</span></div>
+      <div class="miss">${o.miss.map((m, i) => `<div class="mr" style="animation-delay:${i * 22}ms">
+        <div class="q">${esc(m.q)}</div>
+        ${m.typed ? `<div class="w">${svg(I.x)}${esc(m.typed)}</div>` : ''}
+        <div class="g">${svg(I.check)}${esc(m.a)}</div>
+      </div>`).join('')}</div>` : ''}
+  </div>`;
+}
+
 function studyView() {
   const d = deck(study.id); if (!d) return go('home');
   const s = subj(d.subject);
@@ -511,12 +584,12 @@ function studyView() {
   if (study.i >= study.queue.length) {
     if (study.again.length) { study.queue = study.again; study.again = []; study.i = 0; study.flip = false; }
     else {
-      $.innerHTML = bar('') + `<div class="done">
-        ${ring(study.ok, study.total)}
-        <div class="b">
-          <button data-act="restart">${svg(I.redo)}Rejouer</button>
-          <button class="prim" data-act="deck">${svg(I.check)}Terminer</button>
-        </div></div>`;
+      if (!study.saved) { study.saved = true; study.ms = Date.now() - study.t0;
+        study.hist = pushHist(study.id, 'study', study.total ? study.ok / study.total : 0); }
+      $.innerHTML = bar('') + review({
+        ok: study.ok, total: study.total, log: study.log, ms: study.ms, hist: study.hist,
+        miss: study.miss, redo: 'redostudy', again: 'restart', done: 'deck'
+      });
       return fillRing(study.ok, study.total);
     }
   }
@@ -593,7 +666,16 @@ function fling(dir) {
   setTimeout(() => commit(dir < 0), 250);
 }
 function commit(ok) {
-  if (ok) study.ok++; else study.again.push(study.queue[study.i]);
+  const id = study.queue[study.i];
+  if (!study.tried[id]) { study.tried[id] = 1; if (ok) study.ok++; study.log.push(ok ? 1 : 0); }
+  if (!ok) {
+    study.again.push(id);
+    if (!study.missSet[id]) {
+      study.missSet[id] = 1;
+      const c = deck(study.id).cards.find(x => x.id === id);
+      if (c) study.miss.push({ id, q: study.rev ? c.b : c.f, a: study.rev ? c.f : c.b });
+    }
+  }
   study.i++; study.flip = false;
   if (study.i >= study.queue.length) return studyView();
   paintStack(); paintFoot();
@@ -674,7 +756,8 @@ function startQuiz(id, pool, rev) {
   if (!items.length) return;
   quiz = { id, rev: !!rev, name: id === 'all' ? 'Tout' : (deck(id) || {}).name || '',
            sub: id === 'all' ? '' : (deck(id) || {}).subject,
-           pool: items, i: 0, ok: 0, bad: [], state: 'ask', typed: '' };
+           pool: items, i: 0, ok: 0, bad: [], miss: [], log: [], forced: 0,
+           t0: Date.now(), saved: false, state: 'ask', typed: '' };
   go('run');
 }
 function quizHome() {
@@ -705,14 +788,14 @@ function quizView() {
       <button class="ic" data-act="requiz">${svg(I.shuffle)}</button>
     </div>`;
   if (quiz.i >= quiz.pool.length) {
-    $.innerHTML = bar('') + `<div class="done">
-      ${ring(quiz.ok, quiz.pool.length)}
-      <div class="b">
-        ${quiz.bad.length ? `<button data-act="redo">${svg(I.target)}Erreurs</button>` : ''}
-        <button data-act="requiz">${svg(I.redo)}Rejouer</button>
-        <button class="prim" data-act="tab-quiz">${svg(I.check)}Fin</button>
-      </div></div>`;
-    return fillRing(quiz.ok, quiz.pool.length);
+    const n = quiz.pool.length;
+    if (!quiz.saved) { quiz.saved = true; quiz.ms = Date.now() - quiz.t0;
+      quiz.hist = pushHist(quiz.id, 'quiz', n ? quiz.ok / n : 0); }
+    $.innerHTML = bar('') + review({
+      ok: quiz.ok, total: n, log: quiz.log, ms: quiz.ms, hist: quiz.hist, forced: quiz.forced,
+      miss: quiz.miss, redo: 'redo', again: 'requiz', done: 'tab-quiz'
+    });
+    return fillRing(quiz.ok, n);
   }
   const q = quiz.pool[quiz.i];
   $.innerHTML = bar(`<span class="num">${quiz.i + 1}/${quiz.pool.length}</span>`)
@@ -747,62 +830,132 @@ function submit() {
   if (quiz.state !== 'ask' || !quiz.typed.trim()) return;
   const q = quiz.pool[quiz.i];
   if (accepts(quiz.typed, q.a)) {
-    quiz.ok++; quiz.state = 'good'; render();
+    quiz.ok++; quiz.log.push(1); quiz.state = 'good'; render();
     setTimeout(() => { if (quiz && quiz.state === 'good') nextQ(); }, 560);
-  } else { quiz.bad.push(q); quiz.state = 'bad'; render(); }
+  } else {
+    quiz.bad.push(q); quiz.log.push(0);
+    quiz.miss.push({ q: q.f, a: q.a.join('  ·  '), typed: quiz.typed.trim() });
+    quiz.state = 'bad'; render();
+  }
 }
 function nextQ() { quiz.i++; quiz.state = 'ask'; quiz.typed = ''; render(); }
 
 /* ---------- création / import ---------- */
-let newSubject = '';
+let comp = { subject: '', cards: [], edit: -1, bulk: false, text: '' };
+const resetComp = () => { comp = { subject: '', cards: [], edit: -1, bulk: false, text: '' }; };
+
 function importView() {
   const t = view.id ? deck(view.id) : null;
+  const s = subj(t ? t.subject : comp.subject);
   $.innerHTML = `
     <div class="bar">
       <button class="ic" data-act="${t ? 'deck' : 'home'}">${svg(I.back)}</button>
       <h1>${t ? esc(t.name) : 'Nouveau paquet'}</h1>
+      <button class="ic ${comp.bulk ? 'solid' : ''}" data-act="bulk">${svg(I.down)}</button>
     </div>
     <div class="sheet">
-      ${t ? '' : `<div class="field"><input id="nm" placeholder="Nom du paquet" spellcheck="false" enterkeyhint="next"></div>
-        ${pills(newSubject, SUBJ, 'nsubj')}`}
-      <div class="ta"><textarea id="tx" placeholder="chat = gatto&#10;chien = cane&#10;maison = casa"
-        autocapitalize="off" autocorrect="off" spellcheck="false">${esc(draft)}</textarea></div>
-      <div class="prev" id="prev"></div>
-      <div class="count" id="cnt">${svg(I.card)}<span>0</span></div>
-      <button class="cta" id="ok" disabled>${t ? 'Ajouter' : 'Créer'}${svg(I.check)}</button>
+      ${t ? '' : `<div class="field"><input id="nm" placeholder="Nom du paquet" spellcheck="false"
+        enterkeyhint="next" value="${esc(comp.name || '')}"></div>
+        ${pills(comp.subject, SUBJ, 'nsubj')}`}
+      ${comp.bulk ? `
+        <div class="ta"><textarea id="tx" placeholder="chat = gatto&#10;chien = cane&#10;maison = casa"
+          autocapitalize="off" autocorrect="off" spellcheck="false">${esc(comp.text)}</textarea></div>
+        <div class="prev" id="prev"></div>
+        <button class="cta" id="bulkadd" disabled>Ajouter${svg(I.plus)}</button>`
+      : `
+        <div class="comp" id="comp" style="${sty(s)}">
+          <input id="cf" class="cf" placeholder="Recto" enterkeyhint="next" spellcheck="false">
+          <div class="csep"></div>
+          <input id="cb" class="cb" placeholder="Verso" enterkeyhint="done" spellcheck="false">
+          <button class="cadd" id="cadd">${svg(comp.edit >= 0 ? I.check : I.plus)}</button>
+        </div>
+        <div class="lbl"><span>Cartes</span><span id="cn">${comp.cards.length}</span></div>
+        <div class="dlist" id="dlist"></div>`}
+      ${comp.bulk ? '' : `<button class="cta" id="ok" ${comp.cards.length ? '' : 'disabled'}>
+        ${t ? 'Ajouter' : 'Créer'}${svg(I.check)}</button>`}
     </div>`;
-  const tx = document.getElementById('tx'), cnt = document.getElementById('cnt'),
-        ok = document.getElementById('ok'), prev = document.getElementById('prev');
-  const up = () => {
-    draft = tx.value;
-    const cards = parseText(tx.value);
-    cnt.querySelector('span').textContent = cards.length;
-    cnt.classList.toggle('on', !!cards.length);
-    ok.disabled = !cards.length;
-    prev.innerHTML = cards.slice(0, 40).map((c, i) => `<div class="pr" style="animation-delay:${i * 18}ms">
-      <span class="a">${esc(c.f)}</span>${svg(I.arrow)}<span class="b">${esc(c.b)}</span></div>`).join('');
+
+  const nm = document.getElementById('nm');
+  if (nm) nm.addEventListener('input', () => comp.name = nm.value);
+
+  if (comp.bulk) {
+    const tx = document.getElementById('tx'), prev = document.getElementById('prev'),
+          add = document.getElementById('bulkadd');
+    const up = () => {
+      comp.text = tx.value;
+      const cards = parseText(tx.value);
+      add.disabled = !cards.length;
+      add.firstChild.textContent = cards.length ? `Ajouter ${cards.length} ` : 'Ajouter';
+      prev.innerHTML = cards.slice(0, 40).map((c, i) => `<div class="pr" style="animation-delay:${i * 18}ms">
+        <span class="a">${esc(c.f)}</span>${svg(I.arrow)}<span class="b">${esc(c.b)}</span></div>`).join('');
+    };
+    const fit = () => { tx.style.height = 'auto'; tx.style.height = Math.min(tx.scrollHeight + 2, innerHeight * .3) + 'px'; };
+    tx.addEventListener('input', () => { fit(); up(); }); fit(); up();
+    setTimeout(() => tx.focus(), 60);
+    add.onclick = () => {
+      const cards = parseText(tx.value); if (!cards.length) return;
+      comp.cards.push(...cards); comp.text = ''; comp.bulk = false;
+      render(); toast(I.check, plur(cards.length, 'carte'));
+    };
+    return;
+  }
+
+  const cf = document.getElementById('cf'), cb = document.getElementById('cb');
+  if (comp.edit >= 0) { cf.value = comp.cards[comp.edit].f; cb.value = comp.cards[comp.edit].b; }
+  paintDraft();
+  setTimeout(() => (comp.cards.length || comp.edit >= 0 ? cf : (nm || cf)).focus(), 60);
+
+  const addCard = () => {
+    const f = cf.value.trim(), b = cb.value.trim();
+    if (!f && !b) return;
+    if (comp.edit >= 0) { comp.cards[comp.edit] = { f, b }; comp.edit = -1; }
+    else comp.cards.push({ f, b });
+    cf.value = ''; cb.value = ''; cf.focus();
+    document.getElementById('cadd').innerHTML = svg(I.plus);
+    paintDraft();
   };
-  const fit = () => { tx.style.height = 'auto'; tx.style.height = Math.min(tx.scrollHeight + 2, innerHeight * .3) + 'px'; };
-  tx.addEventListener('input', () => { fit(); up(); }); fit(); up();
-  setTimeout(() => (document.getElementById('nm') || tx).focus(), 60);
-  ok.onclick = () => {
-    const cards = parseText(tx.value); if (!cards.length) return;
-    draft = '';
-    if (t) { t.cards.push(...cards.map(c => ({ id: uid(), f: c.f, b: c.b }))); save(); go('deck', t.id); }
-    else { const d = addDeck(document.getElementById('nm').value, cards, newSubject); newSubject = ''; go('deck', d.id); }
+  cf.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cb.focus(); } });
+  cb.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCard(); } });
+  document.getElementById('cadd').onclick = addCard;
+
+  document.getElementById('ok').onclick = () => {
+    if (!comp.cards.length) return;
+    const cards = comp.cards.slice();
+    if (t) { t.cards.push(...cards.map(c => ({ id: uid(), f: c.f, b: c.b }))); save(); resetComp(); go('deck', t.id); }
+    else { const d = addDeck(comp.name, cards, comp.subject); resetComp(); go('deck', d.id); }
     toast(I.check, plur(cards.length, 'carte'));
   };
 }
 
+function paintDraft() {
+  const l = document.getElementById('dlist'); if (!l) return;
+  l.innerHTML = comp.cards.map((c, i) => `<div class="dc ${i === comp.edit ? 'on' : ''}" data-ed="${i}"
+      style="animation-delay:${Math.min(i, 12) * 20}ms">
+      <div class="tx"><b>${esc(c.f) || '—'}</b><span>${esc(c.b) || '—'}</span></div>
+      <button class="x" data-dl="${i}">${svg(I.x)}</button>
+    </div>`).reverse().join('');
+  const n = document.getElementById('cn'); if (n) n.textContent = comp.cards.length;
+  const ok = document.getElementById('ok'); if (ok) ok.disabled = !comp.cards.length;
+}
+
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-q],[data-filt],[data-nsubj]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl]');
   if (!b) return;
   const ds = b.dataset;
+  if (ds.dl !== undefined) {
+    const i = +ds.dl;
+    comp.cards.splice(i, 1);
+    if (comp.edit === i) comp.edit = -1; else if (comp.edit > i) comp.edit--;
+    return render();
+  }
+  if (ds.ed !== undefined) { comp.edit = +ds.ed; return render(); }
   if (ds.filt !== undefined) { filter = ds.filt; render(); return; }
   if (ds.nsubj !== undefined) {
-    newSubject = ds.nsubj;
-    $.querySelectorAll('[data-nsubj]').forEach(x => x.classList.toggle('on', x.dataset.nsubj === newSubject));
+    comp.subject = ds.nsubj;
+    $.querySelectorAll('[data-nsubj]').forEach(x => x.classList.toggle('on', x.dataset.nsubj === comp.subject));
+    const c = document.getElementById('comp');
+    if (c) c.setAttribute('style', sty(subj(comp.subject)));
     return;
   }
   if (ds.go) return go('deck', ds.go);
@@ -813,9 +966,10 @@ $.addEventListener('click', e => {
   if (a === 'home' || a === 'tab-home') return go('home');
   if (a === 'tab-quiz') return go('quiz');
   if (a === 'peek') { peek = !peek; render(); return; }
-  if (a === 'puball') return ghPublish(db.decks);
-  if (a === 'new') { draft = ''; return go('import'); }
-  if (a === 'paste') { draft = ''; return go('import', view.name === 'deck' ? view.id : null); }
+  if (a === 'puball') return openMenu('backup');
+  if (a === 'new') { resetComp(); return go('import'); }
+  if (a === 'paste') { resetComp(); return go('import', view.name === 'deck' ? view.id : null); }
+  if (a === 'bulk') { comp.bulk = !comp.bulk; comp.edit = -1; return render(); }
   if (a === 'deck') return go('deck', (study && study.id) || view.id);
   if (a === 'menu') return openMenu('deck');
   if (a === 'study') return startStudy(view.id);
@@ -825,8 +979,11 @@ $.addEventListener('click', e => {
   if (a === 'swapq') { toast(I.swap, quiz.rev ? 'Sens normal' : 'Sens inversé'); return startQuiz(quiz.id, null, !quiz.rev); }
   if (a === 'anyway') {
     if (quiz.state !== 'bad') return;
-    quiz.ok++; quiz.bad.pop(); return nextQ();
+    quiz.ok++; quiz.forced++; quiz.bad.pop(); quiz.miss.pop();
+    quiz.log[quiz.log.length - 1] = 1;
+    return nextQ();
   }
+  if (a === 'redostudy') return startStudy(study.id, study.rev, study.miss.map(m => m.id));
   if (a === 'send') return submit();
   if (a === 'next') return nextQ();
   if (a === 'requiz') return startQuiz(quiz.id, null, quiz.rev);

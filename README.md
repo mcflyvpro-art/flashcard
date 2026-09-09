@@ -41,3 +41,13 @@ l'appareil sous la clé `cartes.gh` et n'est jamais écrit dans le dépôt.
 Un paquet publié porte une `key` et une `rev` identiques à celles de
 `decks/index.json`, donc la synchronisation descendante au démarrage le
 reconnaît au lieu de le dupliquer.
+
+## Partage à plusieurs
+
+L'app n'a pas de comptes et n'en a pas besoin : `localStorage` est cloisonné
+par origine **et par appareil**. Deux personnes qui installent la même URL ont
+chacune leur propre bibliothèque, invisible de l'autre. Rien à configurer.
+
+Filet de sécurité sans jeton : le bouton nuage de l'accueil propose
+**Sauvegarder**, qui produit un lien `#i=…` contenant tous les paquets. Ouvrir
+ce lien restaure la bibliothèque, sur n'importe quel appareil.
