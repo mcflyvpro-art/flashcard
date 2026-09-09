@@ -424,6 +424,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .sr.add > svg:first-child{width:19px;height:19px;opacity:1;color:var(--ink)}
 .sr.flat{box-shadow:var(--s1)}
 .sr.flat > svg:first-child{width:19px;height:19px;color:var(--soft);opacity:1}
+.sr.warn .n{color:var(--ko)}
+.sr.warn > svg:first-child{color:var(--ko)}
 .foot{text-align:center;font-size:12.5px;font-weight:700;color:var(--soft);opacity:.7;
   padding:4px 0 100px;letter-spacing:.2px}
 .off-dot{width:8px;height:8px;border-radius:50%;background:var(--ko);flex:none;

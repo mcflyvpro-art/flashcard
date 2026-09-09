@@ -251,7 +251,8 @@ const I = {
   mail: '<rect x="2.8" y="5.2" width="18.4" height="13.6" rx="3"/><path d="M3.4 7.6l8.6 5.6 8.6-5.6"/>',
   lock: '<rect x="4.6" y="10.4" width="14.8" height="9.4" rx="3"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/>',
   swap: '<path d="M4 8.6h13.5m0 0l-3.6-3.6M17.5 8.6l-3.6 3.6"/><path d="M20 15.4H6.5m0 0l3.6-3.6M6.5 15.4l3.6 3.6"/>',
-  key: '<circle cx="8.2" cy="15.8" r="3.5"/><path d="M10.7 13.3L19.4 4.6M16.4 7.6l2.1 2.1M14 10l2.1 2.1"/>'
+  key: '<circle cx="8.2" cy="15.8" r="3.5"/><path d="M10.7 13.3L19.4 4.6M16.4 7.6l2.1 2.1M14 10l2.1 2.1"/>',
+  exit: '<path d="M9.5 4.5H6a1.9 1.9 0 0 0-1.9 1.9v11.2A1.9 1.9 0 0 0 6 19.5h3.5"/><path d="M13.5 8.2l3.8 3.8-3.8 3.8M17 12H9.5"/>'
 };
 const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
 const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
@@ -558,6 +559,7 @@ function settingsView() {
         <div class="sr flat">${svg(I.user)}<span class="n">${esc(auth ? auth.email : '')}</span></div>
         <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
           <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
+        <button class="sr flat warn" data-act="logout">${svg(I.exit)}<span class="n">Se déconnecter</span></button>
       </div>
       <div class="foot">${online ? 'Synchronisé' : 'Hors ligne — reprise automatique'}</div>
     </div>`;
@@ -1131,6 +1133,7 @@ $.addEventListener('click', e => {
   if (a === 'peek') { peek = !peek; render(); return; }
   if (a === 'settings') return go('settings');
   if (a === 'backup2') return openMenu('backup');
+  if (a === 'logout') return logout();
   if (a === 'puball') return openMenu('backup');
   if (a === 'new') { resetComp(); return go('import'); }
   if (a === 'paste') { resetComp(); return go('import', view.name === 'deck' ? view.id : null); }
@@ -1175,6 +1178,17 @@ function consumeHash() {
     if (d) { go('deck', d.id); toast(I.check, plur(d.cards.length, 'carte')); return true; }
   } catch (e) { history.replaceState(null, '', location.pathname); }
   return false;
+}
+
+function logout() {
+  flush();
+  const key = cacheKey();
+  saveAuth(null);
+  if (key) { try { localStorage.removeItem(key); } catch (e) {} }
+  db = { subjects: [], decks: [], hist: {} };
+  view = { name: 'login' }; filter = ''; peek = false;
+  study = null; quiz = null; menu = null;
+  animate = true; render();
 }
 
 /* ---------- démarrage ---------- */
