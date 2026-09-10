@@ -55,15 +55,26 @@ function loadAuth() { try { return JSON.parse(localStorage.getItem(AKEY)); } cat
 function saveAuth(a) { auth = a; a ? localStorage.setItem(AKEY, JSON.stringify(a)) : localStorage.removeItem(AKEY); }
 const cacheKey = () => 'cartes.cache.' + (auth && auth.uid);
 
+/* ---------- réglages du compte ----------
+   simple  : moteur coupé, on ne fait plus que swiper
+   simpleAt: date de bascule, pour étaler l'arriéré au retour du moteur       */
+const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false,
+                   font: 1, tol: 'normal', name: '', simple: false, simpleAt: 0 };
+let prefs = { ...DEFPREFS };
+let prefsTimer = 0;
+
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(cacheKey()));
-    if (d && Array.isArray(d.decks)) return { subjects: d.subjects || [], decks: d.decks, hist: d.hist || {} };
+    if (d && Array.isArray(d.decks)) {
+      prefs = { ...DEFPREFS, ...(d.prefs || {}) };     // le mode reste le bon hors ligne
+      return { subjects: d.subjects || [], decks: d.decks, hist: d.hist || {}, today: d.today };
+    }
   } catch (e) {}
   return { subjects: [], decks: [], hist: {} };
 }
 function save() {
-  if (auth) localStorage.setItem(cacheKey(), JSON.stringify(db));
+  if (auth) localStorage.setItem(cacheKey(), JSON.stringify({ ...db, prefs }));
 }
 /* enregistre localement puis pousse en base */
 function saveDeck(d) { save(); if (d) { dirty[d.id] = 1; flush(); } }
@@ -192,8 +203,10 @@ async function pull() {
     api('/rest/v1/prefs?select=*'),
     api(`/rest/v1/reviews?select=id&created_at=gte.${midnight.toISOString()}`)
   ]);
+  const wasSimple = prefs.simple;
   prefs = { ...DEFPREFS, ...((pf && pf[0] && pf[0].data) || {}) };
   if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
+  if (study && prefs.simple !== wasSimple) prefs.simple = wasSimple;   // pas de bascule à chaud
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   db.decks = decks.map(x => ({
@@ -278,7 +291,9 @@ const I = {
   lock: '<rect x="4.6" y="10.4" width="14.8" height="9.4" rx="3"/><path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6"/>',
   swap: '<path d="M4 8.6h13.5m0 0l-3.6-3.6M17.5 8.6l-3.6 3.6"/><path d="M20 15.4H6.5m0 0l3.6-3.6M6.5 15.4l3.6 3.6"/>',
   key: '<circle cx="8.2" cy="15.8" r="3.5"/><path d="M10.7 13.3L19.4 4.6M16.4 7.6l2.1 2.1M14 10l2.1 2.1"/>',
-  exit: '<path d="M9.5 4.5H6a1.9 1.9 0 0 0-1.9 1.9v11.2A1.9 1.9 0 0 0 6 19.5h3.5"/><path d="M13.5 8.2l3.8 3.8-3.8 3.8M17 12H9.5"/>'
+  exit: '<path d="M9.5 4.5H6a1.9 1.9 0 0 0-1.9 1.9v11.2A1.9 1.9 0 0 0 6 19.5h3.5"/><path d="M13.5 8.2l3.8 3.8-3.8 3.8M17 12H9.5"/>',
+  spark: '<path d="M11 3.6l1.6 4.4 4.4 1.6-4.4 1.6L11 15.6 9.4 11.2 5 9.6l4.4-1.6z"/><path d="M18 14.6l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/>',
+  brain: '<path d="M12 5.6v12.8"/><path d="M12 6.6a2.5 2.5 0 1 0-3.5 2.3 2.5 2.5 0 0 0-.9 4.6 2.5 2.5 0 0 0 4.4 1.7"/><path d="M12 6.6a2.5 2.5 0 1 1 3.5 2.3 2.5 2.5 0 0 1 .9 4.6 2.5 2.5 0 0 1-4.4 1.7"/>'
 };
 const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
 const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
@@ -344,21 +359,32 @@ const STATE = { new: 'Nouvelle', learn: 'En apprentissage', young: 'Jeune',
 const isLeech = c => (c.l || 0) >= 4;
 const isDue = c => !c.x && (!c.d || c.d <= Date.now());
 
-/* SM-2 allégé. rating : 0 encore · 1 difficile · 2 correct · 3 facile */
+/* Échelons de reprise recommandés en pédagogie scolaire.
+   Ebbinghaus pour la forme de la courbe, Cepeda & Pashler pour l'écart :
+   l'espacement optimal vaut 10 à 20 % de l'horizon visé, d'où J+1, J+3,
+   J+7, J+15, J+30 — la série enseignée en collège et lycée — puis on
+   double jusqu'à l'année. Rien n'est calculé au hasard : la carte monte
+   d'un échelon quand elle passe, redescend d'un quand elle résiste. */
+const LADDER = [1, 3, 7, 15, 30, 60, 120, 240, 365];
+const rung = i => { for (let k = LADDER.length - 1; k >= 0; k--) if (i >= LADDER[k] - .01) return k; return -1; };
+const step = k => LADDER[Math.max(0, Math.min(LADDER.length - 1, k))];
+
+/* rating : 0 encore · 1 difficile · 2 correct · 3 facile */
 function grade(c, rating) {
   const now = Date.now();
   c.e = Math.min(2.9, Math.max(1.3, (c.e || 2.5) + [-0.2, -0.15, 0, 0.15][rating]));
-  if (rating === 0) {
+  const known = c.n && c.i >= 1;
+  if (rating === 0) {                          // rechute : retour à l'apprentissage
     c.l = (c.l || 0) + 1;
-    const wasKnown = c.i >= 1;
     c.i = 0;
-    c.d = now + (wasKnown ? 10 * MIN : MIN);   // une carte mûre qui tombe reprend plus tard
-  } else if (!c.n || !c.i) {
-    c.i = rating === 3 ? 1 : 0;
-    c.d = now + (rating === 1 ? 6 * MIN : rating === 2 ? 10 * MIN : DAY);
-  } else {
-    const f = rating === 1 ? 1.2 : rating === 3 ? c.e * 1.3 : c.e;
-    c.i = Math.max(1, Math.round(c.i * f * 10) / 10);
+    c.d = now + (known ? 10 * MIN : MIN);      // une carte connue qui tombe reprend plus tard
+  } else if (!known) {                         // paliers du jour, puis première reprise
+    c.i = rating === 1 ? 0 : rating === 2 ? 1 : 3;
+    c.d = rating === 1 ? now + 10 * MIN : now + c.i * DAY;
+  } else {                                     // sur l'échelle
+    const k = rung(c.i);
+    const up = rating === 3 ? 2 : c.e < 1.9 ? 0 : 1;   // carte pénible : on ne monte pas
+    c.i = step(rating === 1 ? k - 1 : k + up);
     c.d = now + c.i * DAY;
   }
   c.n = (c.n || 0) + (rating > 0 ? 1 : 0);
@@ -381,6 +407,33 @@ function preview(c, rating) {
   return nextIn(copy);
 }
 
+/* ---------- génération de cartes ----------
+   La clé Anthropic n'est jamais ici. app.js est servi par GitHub Pages, donc
+   public : la clé vit dans un secret de la fonction Supabase « ai », qui seule
+   parle à l'API. L'app n'envoie que le texte, avec son jeton de session. */
+const AIERR = {
+  budget: 'Budget IA atteint', quota: 'Quota du jour atteint',
+  long: 'Texte trop long', short: 'Texte trop court',
+  nokey: 'IA non configurée', empty: 'Rien à extraire'
+};
+async function aiCards(text, hint) {
+  if (auth && auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
+  const call = () => fetch(SB.url + '/functions/v1/ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: SB.key,
+               Authorization: 'Bearer ' + (auth && auth.token) },
+    body: JSON.stringify({ op: 'cards', text, hint: hint || '' })
+  });
+  let r = await call();
+  if (r.status === 401 && auth && auth.refresh && await refreshToken()) r = await call();
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'net');
+  return (j.cards || []).map(c => ({
+    f: String(c.f || '').replace(/[\t\r\n]+/g, ' ').trim(),
+    b: String(c.b || '').replace(/[\t\r\n]+/g, ' ').trim()
+  })).filter(c => c.f && c.b);
+}
+
 /* ---------- construction d'une file ---------- */
 function buildQueue(cards, o = {}) {
   let list = cards.filter(c => !c.x || o.susp);
@@ -399,17 +452,42 @@ function buildQueue(cards, o = {}) {
 }
 const dueCount = d => d.cards.filter(c => !c.x && isDue(c)).length;
 
-/* ---------- réglages du compte ---------- */
-const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false,
-                   font: 1, tol: 'normal', name: '' };
-let prefs = { ...DEFPREFS };
-let prefsTimer = 0;
+/* ---------- mode simple ----------
+   Le moteur est coupé : plus d'échéance, plus de note, on swipe et c'est tout.
+   Rien n'est effacé. d, i, e, n, l restent inscrits dans chaque carte et
+   reprennent exactement où ils en étaient le jour où le moteur revient. */
+const simpleMode = () => !!prefs.simple;
+const allCards = () => db.decks.flatMap(d => d.cards.map(c => [c, d]));
+/* ce qui retombera d'un coup si on rallume le moteur maintenant */
+const backlog = () => allCards().filter(([c]) => !c.x && c.n && c.d && c.d <= Date.now()).length;
+/* Rallumage : sans étalement tout l'arriéré retombe le même jour et la
+   reprise devient ingérable. On répartit sur autant de jours qu'il faut
+   pour tenir l'objectif quotidien, les plus vieilles cartes en premier. */
+function spreadBacklog() {
+  const now = Date.now();
+  const late = allCards().filter(([c]) => !c.x && c.n && c.d && c.d <= now)
+    .sort((a, b) => (a[0].d || 0) - (b[0].d || 0));
+  const per = Math.max(5, prefs.goal || 30);
+  if (late.length <= per) return 0;
+  const touched = {};
+  late.forEach(([c, d], i) => {
+    const day = Math.floor(i / per);
+    if (!day) return;
+    c.d = now + day * DAY;
+    touched[d.id] = 1;
+  });
+  Object.keys(touched).forEach(id => { dirty[id] = 1; });
+  save(); flush();
+  return Math.ceil(late.length / per);
+}
+
 function savePrefs() {
   clearTimeout(prefsTimer);
   prefsTimer = setTimeout(() => {
+    save();                                            // le cache local garde le mode
     api('/rest/v1/prefs', 'POST', [{ user_id: auth.uid, name: prefs.name || null, data: prefs }],
       { Prefer: 'resolution=merge-duplicates,return=minimal' }).catch(() => setOnline(false));
-  }, 500);
+  }, 400);
 }
 /* Progression du jour, pour l'anneau d'objectif */
 function todayCount() {
@@ -553,7 +631,7 @@ const pills = (active, list, act) => `<div class="pills">
 </div>`;
 
 const tile = (d, i) => {
-  const due = dueCount(d);
+  const due = simpleMode() ? 0 : dueCount(d);
   return `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="${d.id}" style="${sty(subj(d.subject))};--i:${i}">
   ${due ? `<i class="due">${due}</i>` : ''}
   <span class="n">${esc(d.name)}</span>
@@ -588,7 +666,7 @@ function home() {
       ${used.length > 1 ? pills(filter, used, 'filt') : ''}
       ${list.length ? `<div class="grid">${list.map(tile).join('')}</div>`
         : `<div class="empty">${svg(I.layers)}</div>`}
-      ${allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
+      ${!simpleMode() && allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
         <span>Marathon</span><i>${allDue()} cartes dues, toutes matières</i></button>` : ''}
     </div>
     <button class="fab" data-act="new">${svg(I.plus)}<span>Nouveau paquet</span></button>
@@ -634,7 +712,7 @@ function deckView() {
       <div class="s">
         <span>${svg(I.tag)}${esc(s.name)}</span><b></b>
         <span>${svg(I.card)}${plur(d.cards.length, 'carte')}</span>
-        ${dueCount(d) ? `<b></b><span>${svg(I.play)}${dueCount(d)} à revoir</span>` : ''}
+        ${!simpleMode() && dueCount(d) ? `<b></b><span>${svg(I.play)}${dueCount(d)} à revoir</span>` : ''}
         ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
       </div>
     </div>
@@ -642,12 +720,12 @@ function deckView() {
       <button class="prim" data-act="study">${svg(I.play)}Réviser</button>
       <button data-act="quizdeck">${svg(I.pen)}Quiz</button>
     </div>
-    ${mixBar(d)}
+    ${simpleMode() ? '' : mixBar(d)}
     <div class="lbl"><span>Cartes</span><span>${d.cards.length}</span></div>
     <div class="rows">
       ${d.cards.map((c, i) => `
         <div class="row ${c.x ? 'off' : ''}" data-id="${c.id}" style="--i:${i}">
-          <i class="st ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>
+          ${simpleMode() ? '' : `<i class="st ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>`}
           <div class="fl">
             <input value="${esc(c.f)}" data-k="f" placeholder="Recto">
             <input class="b" value="${esc(c.b)}" data-k="b" placeholder="Verso">
@@ -778,20 +856,32 @@ function settingsView() {
       </div>
       <div class="lbl"><span>Révision</span></div>
       <div class="slist">
+        <button class="sr flat" data-act="tglsimple">${svg(I.brain)}
+          <span class="n">Mode simple</span>
+          <span class="sw2 ${prefs.simple ? 'on' : ''}"></span></button>
+        <div class="note">${prefs.simple
+          ? `Le moteur est éteint. Les cartes défilent dans l’ordre choisi, sans échéance
+             et sans note : tu balaies à gauche si tu sais, à droite sinon. La progression
+             déjà enregistrée est conservée intacte et repart où elle en était dès que tu
+             rallumes le moteur.`
+          : `Le moteur choisit quand chaque carte revient — le lendemain, puis à 3, 7, 15
+             et 30 jours, en s’ajustant à ce que tu réponds. Le désactiver rend l’app
+             purement manuelle : uniquement le balayage, comme au tout début.`}</div>
         <div class="sr flat col">
           <div class="srh">${svg(I.target)}<span class="n">Objectif du jour</span>
             <span class="c">${prefs.goal} cartes</span></div>
           <input class="rng" id="pGoal" type="range" min="5" max="200" step="5" value="${prefs.goal}">
         </div>
-        <div class="sr flat col">
+        ${prefs.simple ? '' : `<div class="sr flat col">
           <div class="srh">${svg(I.plus)}<span class="n">Nouvelles cartes par session</span>
             <span class="c">${prefs.cap || 'sans limite'}</span></div>
           <input class="rng" id="pCap" type="range" min="0" max="60" step="5" value="${prefs.cap}">
-        </div>
+        </div>`}
         <div class="sr flat col">
           <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des cartes</span></div>
           <div class="seg" id="pOrder">
             ${[['random', 'Aléatoire'], ['deck', 'Du paquet'], ['worst', 'Ratées'], ['due', 'Urgentes']]
+              .filter(([v]) => !(prefs.simple && v === 'due'))
               .map(([v, l]) => `<button data-ord="${v}" class="${prefs.order === v ? 'on' : ''}">${l}</button>`).join('')}
           </div>
         </div>
@@ -819,7 +909,7 @@ function settingsView() {
     prefs.goal = +g.value; savePrefs();
     g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' cartes';
   });
-  c.addEventListener('input', () => {
+  if (c) c.addEventListener('input', () => {
     prefs.cap = +c.value; savePrefs();
     c.closest('.sr').querySelector('.c').textContent = prefs.cap || 'sans limite';
   });
@@ -861,6 +951,74 @@ function paintMenu() {
       <div class="menu">
         <button class="mi" data-mact="backup">${svg(I.share)}Sauvegarder
           <span class="tail">${n} · ${c}</span></button>
+      </div>`;
+    document.body.append(...w.childNodes);
+    return;
+  }
+  if (menu === 'simple' || menu === 'engine') {
+    const on = menu === 'simple';
+    const n = backlog(), per = Math.max(5, prefs.goal || 30), j = Math.max(1, Math.ceil(n / per));
+    const ago = prefs.simpleAt ? Date.now() - prefs.simpleAt : 0;
+    const since = ago >= DAY ? Math.round(ago / DAY) : 0;
+    const bloc = (t, items) => `<div class="pvh">${t}</div><ul class="pvl">${items.map(x => `<li>${x}</li>`).join('')}</ul>`;
+    const body = on ? [
+      bloc('Ce qui s’arrête', [
+        `Les échéances. Plus aucune carte n’arrive à date : les pastilles de rappel sur les
+         paquets et le marathon toutes matières disparaissent.`,
+        `Les quatre boutons <b>Encore · Difficile · Correct · Facile</b> disparaissent. Il ne
+         reste que le balayage : à gauche je sais, à droite je ne sais pas.`,
+        `Les intervalles n’avancent plus. Une carte revue en mode simple reste exactement à
+         l’échelon où elle était — réviser en mode simple ne fait pas progresser le moteur.`,
+        `La barre de maturité et les pastilles d’état ne s’affichent plus.`,
+        `Le tri « Urgentes » disparaît : il n’y a plus de date pour trier.`
+      ]),
+      bloc('Ce qui est conservé', [
+        `<b>Rien n’est effacé.</b> Échéance, intervalle, facilité et nombre de réussites
+         restent écrits dans chaque carte et t’attendent.`,
+        `Le quiz, l’objectif du jour, le résumé de fin de session, les courbes, les matières,
+         les cartes suspendues et les sauvegardes fonctionnent à l’identique.`,
+        `Les cartes ratées continuent d’être comptées : le tri « Ratées » et les cartes
+         coriaces restent justes.`
+      ]),
+      bloc('Quand tu rallumeras le moteur', [
+        `Il repartira exactement où il s’est arrêté, sans rien réapprendre.`,
+        `Les cartes dont la date sera passée entre-temps seront <b>étalées automatiquement</b>
+         sur plusieurs jours, à hauteur de ton objectif, pour t’éviter un rattrapage massif
+         le même jour.`,
+        `Les cartes jamais notées avant la bascule repartiront comme des cartes neuves.`
+      ]),
+      bloc('Bon à savoir', [
+        `Le réglage appartient à ton compte : il suit sur tous tes appareils.`,
+        `Une session en cours est abandonnée par la bascule, pour qu’aucune carte ne soit
+         validée dans un mode et enregistrée dans l’autre.`,
+        `Tu peux revenir en arrière à tout moment, ici même.`
+      ])
+    ].join('') : [
+      bloc('Ce qui revient', [
+        `Les quatre boutons de notation, les échéances, les pastilles de rappel, la barre de
+         maturité et le marathon.`,
+        `Les échelons de reprise : le lendemain, puis 3, 7, 15 et 30 jours, puis 2, 4, 8 mois
+         et un an — la carte monte d’un cran quand elle passe, redescend quand elle résiste.`
+      ]),
+      bloc('Où en est ta progression', [
+        `Le moteur reprend au point exact où il s’était arrêté${since ? ` il y a ${since} jour${since > 1 ? 's' : ''}` : ''}.
+         Aucune donnée n’a été perdue pendant le mode simple.`,
+        n ? `<b>${n > 1 ? `${n} cartes ont dépassé leur échéance.` : `Une carte a dépassé son échéance.`}</b> ${n > per
+              ? `Elles seront réparties sur ${j} jour${j > 1 ? 's' : ''}, environ ${per} par jour,
+                 les plus anciennes d’abord.`
+              : n > 1 ? `Elles seront à revoir dès la prochaine session.`
+                      : `Elle sera à revoir dès la prochaine session.`}`
+          : `Aucune carte en retard : la reprise se fera au fil de l’eau.`,
+        `Les cartes vues en mode simple n’ont pas progressé. Celles qui n’avaient jamais été
+         notées repartent comme des cartes neuves.`
+      ])
+    ].join('');
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu pv">
+        <div class="mi" style="font-weight:750">${svg(on ? I.swap : I.brain)}${on ? 'Passer en mode simple' : 'Rallumer le moteur'}</div>
+        <div class="pvb">${body}</div>
+        <button class="mi" data-mact="do-${on ? 'simple' : 'engine'}"
+          style="justify-content:center;font-weight:700">${svg(I.check)}<span>${on ? 'Passer en mode simple' : 'Rallumer le moteur'}</span></button>
       </div>`;
     document.body.append(...w.childNodes);
     return;
@@ -908,6 +1066,8 @@ document.addEventListener('click', e => {
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   const a = b.dataset.mact;
   if (a === 'close') return closeMenu();
+  if (a === 'do-simple') return setSimple(true);
+  if (a === 'do-engine') return setSimple(false);
   if (a === 'do-rename') {
     prefs.name = document.getElementById('fld').value.trim(); savePrefs();
     closeMenu(); render(); toast(I.check, 'Nom enregistré'); return;
@@ -993,9 +1153,27 @@ document.addEventListener('click', e => {
   }
 });
 
+/* Bascule du moteur. Une seule porte d'entrée, pour que rien ne traverse
+   la frontière : la file en cours, la note en attente et la reprise
+   sauvegardée appartiennent au mode qui les a créées. */
+function setSimple(on) {
+  closeMenu();
+  study = null; pendingGrade = null;
+  try { localStorage.removeItem('cartes.resume.' + auth.uid); } catch (e) {}
+  const days = (!on && prefs.simple) ? spreadBacklog() : 0;   // rallumage : on étale l'arriéré
+  prefs.simple = !!on;
+  prefs.simpleAt = on ? Date.now() : 0;
+  save(); savePrefs();
+  if (view.name === 'study') view = { name: 'home' };
+  render();
+  toast(on ? I.swap : I.brain, on ? 'Mode simple'
+    : days > 1 ? `Moteur rallumé · rattrapage sur ${days} jours` : 'Moteur rallumé');
+}
+
 /* ---------- révision ---------- */
 function startStudy(id, rev, subset, opt) {
   const o = opt || {};
+  const sm = simpleMode();          // figé pour toute la session : pas de bascule à chaud
   let cards, name, ids;
   if (id === 'all') {                                  // mode marathon
     cards = live().flatMap(d => d.cards.map(c => ({ ...c, _d: d.id })));
@@ -1008,12 +1186,15 @@ function startStudy(id, rev, subset, opt) {
     const keep = new Set(subset);
     ids = cards.filter(c => keep.has(c.id)).map(c => c.id);
   } else {
-    ids = buildQueue(cards, { ...o, order: o.order || prefs.order, fresh: prefs.fresh }).map(c => c.id);
+    ids = buildQueue(cards, sm
+      ? { order: prefs.order === 'due' ? 'random' : prefs.order, cap: 0,
+          fresh: prefs.fresh, only: o.only === 'leech' ? 'leech' : '' }
+      : { ...o, order: o.order || prefs.order, fresh: prefs.fresh }).map(c => c.id);
   }
   if (!ids.length) { toast(I.check, 'Rien à revoir ici'); return; }
   study = { id, name, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
             ok: 0, total: ids.length, t0: Date.now(), tq: Date.now(), tried: {}, missSet: {},
-            miss: [], log: [], saved: false, opt: o,
+            miss: [], log: [], saved: false, opt: o, simple: sm,
             dirs: Object.fromEntries(ids.map(x => [x, o.both ? Math.random() < .5 : !!rev])) };
   saveResume();
   go('study', id);
@@ -1028,7 +1209,8 @@ function saveResume() {
 function loadResume() {
   try {
     const r = JSON.parse(localStorage.getItem('cartes.resume.' + auth.uid));
-    if (r && Date.now() - r.t < 3 * DAY && r.i < r.queue.length) return r;
+    if (r && Date.now() - r.t < 3 * DAY && r.i < r.queue.length
+        && !!r.simple === simpleMode()) return r;      // snapshot d'un autre mode : on l'ignore
   } catch (e) {}
   return null;
 }
@@ -1157,7 +1339,7 @@ function paintStack() {
 function paintFoot() {
   const f = document.getElementById('foot'); if (!f) return;
   const c = cardOf(0) || {};
-  f.innerHTML = study.flip
+  f.innerHTML = study.flip && !study.simple
     ? `<div class="grades">
         ${[[0, 'Encore', 'g0'], [1, 'Difficile', 'g1'], [2, 'Correct', 'g2'], [3, 'Facile', 'g3']]
           .map(([r, lab, cl]) => `<button class="gr ${cl}" data-g="${r}">
@@ -1210,11 +1392,16 @@ function commit(ok, rating) {
   const ms = Date.now() - (study.tq || Date.now());
   study.tq = Date.now();
   if (c) {
-    grade(c, r);
+    /* Mode simple : on ne planifie pas et on ne touche ni à n, ni à i, ni à d.
+       La carte garde son état exact, seul le compteur de ratés avance —
+       il sert au tri « ratées » et vaut dans les deux modes. */
+    if (study.simple) { if (!ok) c.l = (c.l || 0) + 1; }
+    else grade(c, r);
     if (d) { dirty[d.id] = 1; save(); scheduleFlush(); }
     api('/rest/v1/reviews', 'POST', [{
       user_id: auth.uid, deck_id: d ? d.id : study.id, card_id: id,
-      mode: 'study', rating: r, correct: r > 0, ms: Math.min(ms, 600000), reversed: !!rv
+      mode: study.simple ? 'simple' : 'study',
+      rating: study.simple ? null : r, correct: !!ok, ms: Math.min(ms, 600000), reversed: !!rv
     }]).catch(() => {});
     bumpToday();
   }
@@ -1393,6 +1580,7 @@ function nextQ() { quiz.i++; quiz.state = 'ask'; quiz.typed = ''; render(); }
 
 /* ---------- création / import ---------- */
 let comp = { subject: '', cards: [], edit: -1, bulk: false, text: '' };
+let aiBusy = false;
 const resetComp = () => { comp = { subject: '', cards: [], edit: -1, bulk: false, text: '' }; };
 
 function importView() {
@@ -1411,8 +1599,11 @@ function importView() {
       ${comp.bulk ? `
         <div class="ta"><textarea id="tx" placeholder="chat = gatto&#10;chien = cane&#10;maison = casa"
           autocapitalize="off" autocorrect="off" spellcheck="false">${esc(comp.text)}</textarea></div>
-        <div class="prev" id="prev"></div>
-        <button class="cta" id="bulkadd" disabled>Ajouter${svg(I.plus)}</button>`
+        <div class="airow">
+          <button class="ai" id="aigen" title="Fabriquer les cartes">${svg(I.spark)}</button>
+          <button class="cta" id="bulkadd" disabled>Ajouter${svg(I.plus)}</button>
+        </div>
+        <div class="prev" id="prev"></div>`
       : `
         <div class="comp" id="comp" style="${sty(s)}">
           <input id="cf" class="cf" placeholder="Recto" enterkeyhint="next" spellcheck="false">
@@ -1431,11 +1622,12 @@ function importView() {
 
   if (comp.bulk) {
     const tx = document.getElementById('tx'), prev = document.getElementById('prev'),
-          add = document.getElementById('bulkadd');
+          add = document.getElementById('bulkadd'), gen = document.getElementById('aigen');
     const up = () => {
       comp.text = tx.value;
       const cards = parseText(tx.value);
       add.disabled = !cards.length;
+      gen.disabled = aiBusy || tx.value.trim().length < 40;
       add.firstChild.textContent = cards.length ? `Ajouter ${cards.length} ` : 'Ajouter';
       prev.innerHTML = cards.slice(0, 40).map((c, i) => `<div class="pr" style="animation-delay:${i * 18}ms">
         <span class="a">${esc(c.f)}</span>${svg(I.arrow)}<span class="b">${esc(c.b)}</span></div>`).join('');
@@ -1443,6 +1635,21 @@ function importView() {
     const fit = () => { tx.style.height = 'auto'; tx.style.height = Math.min(tx.scrollHeight + 2, innerHeight * .3) + 'px'; };
     tx.addEventListener('input', () => { fit(); up(); }); fit(); up();
     setTimeout(() => tx.focus(), 60);
+    /* Colle un cours, un tableau de vocabulaire, une liste : le texte revient
+       découpé en cartes, éditable avant l'ajout. */
+    gen.onclick = async () => {
+      if (aiBusy || gen.disabled) return;
+      aiBusy = true; gen.classList.add('busy'); gen.disabled = true;
+      try {
+        const cards = await aiCards(tx.value, t ? t.name : comp.name);
+        if (!cards.length) throw new Error('empty');
+        tx.value = cards.map(c => c.f + '\t' + c.b).join('\n');
+        fit(); up(); toast(I.spark, plur(cards.length, 'carte'));
+      } catch (x) {
+        toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
+      }
+      aiBusy = false; gen.classList.remove('busy'); up();
+    };
     add.onclick = () => {
       const cards = parseText(tx.value); if (!cards.length) return;
       comp.cards.push(...cards); comp.text = ''; comp.bulk = false;
@@ -1532,6 +1739,7 @@ $.addEventListener('click', e => {
   if (a === 'settings') return go('settings');
   if (a === 'backup2') return openMenu('backup');
   if (a === 'logout') return logout();
+  if (a === 'tglsimple') return openMenu(prefs.simple ? 'engine' : 'simple');
   if (a === 'tglfresh') { prefs.fresh = !prefs.fresh; savePrefs(); return render(); }
   if (a === 'tglboth') { prefs.both = !prefs.both; savePrefs(); return render(); }
   if (a === 'rename') return openMenu('rename');
@@ -1575,7 +1783,7 @@ $.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && menu) return closeMenu();
   if (view.name !== 'study' || /INPUT|TEXTAREA/.test(e.target.tagName) || e.target.isContentEditable) return;
-  if (study && study.flip && '1234'.includes(e.key)) {
+  if (study && study.flip && !study.simple && '1234'.includes(e.key)) {
     pendingGrade = +e.key - 1;
     return fling(pendingGrade > 0 ? -1 : 1);
   }
