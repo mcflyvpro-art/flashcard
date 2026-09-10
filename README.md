@@ -55,12 +55,16 @@ Les matières se créent, se renomment, se recolorent et se suppriment depuis
 l'écran **Réglages** (engrenage, en haut de l'accueil), sur une palette de
 16 teintes.
 
-## Reprise de l'ancienne bibliothèque
+## D'où viennent les cartes
 
-À la première connexion d'un compte, si l'appareil contient encore une
-bibliothèque `localStorage` de l'ancienne version, elle est envoyée dans le
-compte — une seule fois, en ignorant les paquets déjà présents. Le dossier
-`seed/` conserve les paquets d'origine en archive ; l'app ne le lit plus.
+De la base, et de nulle part ailleurs. Aucun paquet n'est écrit dans le code,
+aucun n'est livré avec l'app : chaque carte appartient à une ligne `decks` d'un
+compte, et les règles RLS de Supabase interdisent d'en lire une autre. Le cache
+local n'est qu'une copie de ce que le compte connecté a déjà reçu.
+
+Seules les sept matières de départ (Italien, Anglais, Philo, Éco, Droit,
+Management, Lettres) sont créées à l'ouverture d'un compte — ce sont des lignes
+`subjects` du compte, renommables, recolorables et supprimables.
 
 ## Génération de cartes par IA
 

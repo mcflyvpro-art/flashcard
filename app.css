@@ -42,13 +42,13 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .hero{margin:12px 1px 20px;font-weight:800;font-size:36px;line-height:1.04;letter-spacing:-1.5px}
 /* pages balayables */
 .page{flex:1;min-height:0;display:flex;flex-direction:column;will-change:transform;
-  transition:transform .4s var(--e),opacity .4s var(--e)}
+  transition:transform .4s var(--e)}
 #page{padding-bottom:150px}
 .page.in-right{animation:inR .42s var(--e) both}
 .page.in-left{animation:inL .42s var(--e) both}
 @keyframes inR{from{opacity:0;transform:translateX(48px)}}
 @keyframes inL{from{opacity:0;transform:translateX(-48px)}}
-.page > .top,.grid,.empty{touch-action:pan-y}
+#page{touch-action:pan-y}
 
 .top{display:flex;align-items:flex-end;gap:10px;margin:14px 1px 20px}
 .top .hero{flex:1;margin:0}
@@ -786,8 +786,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .tv svg{width:20px;height:20px;stroke-width:2.4}
 .tv.y{color:var(--ok)}
 .tv.n{color:var(--ko)}
-.tfv{height:62px;display:grid;place-items:center}
-.tfv svg{width:34px;height:34px;stroke-width:2.6}
+.tfv{height:62px;display:flex;align-items:center;justify-content:center;gap:12px}
+.tfv > svg{width:34px;height:34px;stroke-width:2.6;flex:none}
+.tfv .cta{flex:1;height:62px;margin:0;color:var(--bg)}
 .tfv.y{color:var(--ok)}
 .tfv.n{color:var(--ko)}
 

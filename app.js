@@ -59,7 +59,7 @@ const cacheKey = () => 'cartes.cache.' + (auth && auth.uid);
    simple  : moteur coupé, on ne fait plus que swiper
    simpleAt: date de bascule, pour étaler l'arriéré au retour du moteur       */
 const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false,
-                   font: 1, tol: 'normal', name: '', simple: false, simpleAt: 0 };
+                   font: 1, tol: 'normal', name: '', simple: false, simpleAt: 0, fast: false };
 let prefs = { ...DEFPREFS };
 let prefsTimer = 0;
 
@@ -253,27 +253,6 @@ async function delSubject(id) {
 }
 
 /* reprise unique de l'ancienne bibliothèque locale */
-async function importLegacy() {
-  const flag = 'cartes.migrated.' + auth.uid;
-  if (localStorage.getItem(flag)) return 0;
-  localStorage.setItem(flag, '1');
-  let old = null;
-  try { old = JSON.parse(localStorage.getItem('cartes.v2')); } catch (e) {}
-  if (!old || !Array.isArray(old.decks) || !old.decks.length) return 0;
-  const have = new Set(db.decks.map(d => d.name));
-  const add = old.decks.filter(d => d.cards && d.cards.length && !have.has(d.name));
-  if (!add.length) return 0;
-  let pos = db.decks.length;
-  for (const d of add) {
-    const nd = { id: uid(), name: d.name, subject: d.subject || '', hidden: !!d.hidden,
-                 pos: pos++, cards: d.cards.map(c => ({ id: uid(), f: c.f, b: c.b })) };
-    db.decks.push(nd); dirty[nd.id] = 1;
-  }
-  await flush();
-  save();
-  return add.length;
-}
-
 /* ---------- icônes ---------- */
 const I = {
   plus: '<path d="M12 5.5v13M5.5 12h13"/>',
@@ -802,11 +781,25 @@ function go(name, id, dir) {
 function bindPager() {
   const pg = document.getElementById('page'); if (!pg) return;
   const home = view.name === 'home';
-  let x0 = 0, y0 = 0, dx = 0, on = false, lock = 0, t0 = 0;
+  let x0 = 0, y0 = 0, dx = 0, on = false, lock = 0, t0 = 0, raf = 0, pid = -1;
+  /* Une seule écriture de style par image : le doigt émet jusqu'à 120
+     événements par seconde, en écrire autant fait saccader le glissé.
+     translate3d garde le déplacement sur le compositeur, et l'opacité ne
+     bouge plus du tout — la faire varier repeignait toute la grille. */
+  const draw = () => {
+    raf = 0;
+    if (!on) return;
+    const edge = home ? dx > 0 : dx < 0;          // rien de l'autre côté
+    pg.style.transform = `translate3d(${(edge ? dx * .26 : dx).toFixed(1)}px,0,0)`;
+  };
+  const reset = () => {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    pg.style.transition = ''; pg.style.transform = '';
+  };
   pg.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button) return;
     if (e.target.closest('.pills')) return;   // laisse défiler les matières
-    on = true; lock = 0; dx = 0; x0 = e.clientX; y0 = e.clientY; t0 = Date.now();
+    on = true; lock = 0; dx = 0; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); pid = e.pointerId;
     pg.style.transition = 'none';
   });
   pg.addEventListener('pointermove', e => {
@@ -815,17 +808,15 @@ function bindPager() {
     if (!lock) {
       if (Math.abs(ax) < 10 && Math.abs(ay) < 10) return;
       lock = Math.abs(ax) > Math.abs(ay) * 1.3 ? 1 : -1;
-      if (lock < 0) { on = false; pg.style.transition = ''; return; }
+      if (lock < 0) { on = false; reset(); return; }   // c'est un défilement vertical
+      try { pg.setPointerCapture(pid); } catch (x) {}
     }
     dx = ax;
-    const edge = home ? dx > 0 : dx < 0;          // rien de l'autre côté
-    const d = edge ? dx * .26 : dx;
-    pg.style.transform = `translateX(${d}px)`;
-    pg.style.opacity = String(Math.max(.5, 1 - Math.abs(d) / 480));
+    if (!raf) raf = requestAnimationFrame(draw);
   });
   const end = () => {
     if (!on) return;
-    on = false; pg.style.transition = ''; pg.style.transform = ''; pg.style.opacity = '';
+    on = false; reset();
     if (lock !== 1) return;
     const fast = Math.abs(dx) / Math.max(1, Date.now() - t0) > .5;
     if (Math.abs(dx) < innerWidth * .26 && !fast) return;
@@ -834,14 +825,16 @@ function bindPager() {
   };
   pg.addEventListener('pointerup', end);
   pg.addEventListener('pointercancel', end);
-  pg.addEventListener('pointerleave', end);
 }
 
 function paintRail() {
   let r = document.getElementById('rail');
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
-  if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
   const on = /quiz|run/.test(view.name) ? 'quiz' : view.name === 'settings' ? 'settings' : 'home';
+  const sig = on + '\u0000' + (prefs.name || auth.email);
+  if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
+  if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
+  r.dataset.sig = sig;
   r.innerHTML = `
     <div class="brand"><img src="icons/icon-192.png" alt=""><span>Cartes</span></div>
     <nav>
@@ -1061,9 +1054,7 @@ function loginView() {
       } else await signIn(em.value, pw.value);
       db = load();
       await pull();
-      const n = await importLegacy();
       go('home');
-      if (n) toast(I.check, plur(n, 'paquet') + ' repris');
     } catch (x) {
       const m = String(x.message || '');
       err.textContent = /already|exist|registered/i.test(m) ? 'Cette adresse a déjà un compte'
@@ -1124,7 +1115,7 @@ function settingsView() {
         ${prefs.simple ? '' : `<div class="sr flat col">
           <div class="srh">${svg(I.plus)}<span class="n">Nouvelles cartes par session</span>
             <span class="c">${prefs.cap || 'sans limite'}</span></div>
-          <input class="rng" id="pCap" type="range" min="0" max="60" step="5" value="${prefs.cap}">
+          <input class="rng" id="pCap" type="range" min="0" max="100" step="5" value="${prefs.cap}">
         </div>`}
         <div class="sr flat col">
           <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des cartes</span></div>
@@ -1140,6 +1131,15 @@ function settingsView() {
         <button class="sr flat" data-act="tglboth">${svg(I.swap)}
           <span class="n">Mélanger les deux sens</span>
           <span class="tgl ${prefs.both ? 'on' : ''}"></span></button>
+        <button class="sr flat" data-act="tglfast">${svg(I.skip)}
+          <span class="n">Mode rapide</span>
+          <span class="tgl ${prefs.fast ? 'on' : ''}"></span></button>
+        <div class="note">${prefs.fast
+          ? `Une bonne réponse enchaîne toute seule sur la suivante, au quiz
+             comme en QCM et en vrai/faux. Pratique quand on connaît déjà bien
+             le paquet et qu'on veut dérouler vite.`
+          : `Rien ne défile tout seul : après chaque réponse, la correction
+             reste à l'écran jusqu'à ce que tu appuies sur Suivant.`}</div>
       </div>
       <div class="lbl"><span>Compte</span></div>
       <div class="slist">
@@ -1793,15 +1793,19 @@ function paintMCQ() {
     const right = norm(plain(o)) === good;
     const cl = study.pick == null ? '' : right ? ' ok' : (study.pick === k ? ' ko' : ' dim');
     return `<button class="op${cl}" data-pick="${k}">${rt(o)}</button>`;
-  }).join('')}</div>`;
+  }).join('')}</div>
+  ${study.pick != null && !prefs.fast
+    ? `<button class="cta" style="margin-top:9px" data-act="nextcard">Suivant${svg(I.arrow)}</button>` : ''}`;
 }
 function pickMCQ(k) {
   if (study.pick != null) return;
   const c = cardOf(0); if (!c) return;
   study.pick = k;
-  const ok = norm(plain(study.opts[k])) === norm(plain(c.b));
+  study.pickOk = norm(plain(study.opts[k])) === norm(plain(c.b));
   paintMCQ();
-  setTimeout(() => { if (study) commit(ok, ok ? 2 : 0); }, ok ? 560 : 1150);
+  if (prefs.fast) setTimeout(() => {
+    if (study && study.pick != null) commit(study.pickOk, study.pickOk ? 2 : 0);
+  }, study.pickOk ? 560 : 1150);
 }
 
 /* ---------- association ----------
@@ -1865,8 +1869,10 @@ function answerTF(said) {
   const top = document.getElementById('top');
   if (top) top.classList.add('flip');
   paintFoot();
-  pendingGrade = study.tf ? 2 : 0;
-  setTimeout(() => { if (study && study.tf != null) fling(study.tf ? -1 : 1); }, 820);
+  if (prefs.fast) {
+    pendingGrade = study.tf ? 2 : 0;
+    setTimeout(() => { if (study && study.tf != null) fling(study.tf ? -1 : 1); }, 820);
+  }
 }
 function paintFoot() {
   const f = document.getElementById('foot'); if (!f) return;
@@ -1877,7 +1883,9 @@ function paintFoot() {
           <button class="tv y" data-tf="1">${svg(I.check)}<span>Vrai</span></button>
           <button class="tv n" data-tf="0">${svg(I.x)}<span>Faux</span></button>
         </div>`
-      : `<div class="tfv ${study.tf ? 'y' : 'n'}">${svg(study.tf ? I.check : I.x)}</div>`;
+      : `<div class="tfv ${study.tf ? 'y' : 'n'}">${svg(study.tf ? I.check : I.x)}
+          ${prefs.fast ? '' : `<button class="cta" data-act="nextcard">Suivant${svg(I.arrow)}</button>`}
+        </div>`;
     return;
   }
   f.innerHTML = study.flip && !study.simple
@@ -2116,6 +2124,10 @@ function startQuiz(id, pool, rev, opt) {
               avec leur contenu. */
            tol: m.tol, qlang: rev ? m.langb : m.langf, alang: rev ? m.langf : m.langb, timer: m.timer,
            streak: 0, best: 0, hint: 0, hints: 0, opts: null, optsFor: -1 };
+  if (o.at) {
+    const k = quiz.pool.findIndex(q => norm(plain(q.f)) === o.at);
+    if (k > 0) quiz.i = k;
+  }
   go('run');
 }
 /* ---------- chrono par question ----------
@@ -2264,7 +2276,9 @@ function win() {
   quiz.ok++; quiz.log.push(1);
   quiz.streak++; quiz.best = Math.max(quiz.best, quiz.streak);
   quiz.state = 'good'; stopTimer(); render();
-  setTimeout(() => { if (quiz && quiz.state === 'good') nextQ(); }, 560);
+  /* Par défaut on s'arrête sur la bonne réponse : c'est le moment où on la
+     lit vraiment. Le mode rapide enchaîne à la place. */
+  if (prefs.fast) setTimeout(() => { if (quiz && quiz.state === 'good') nextQ(); }, 560);
 }
 function fail() {
   const q = quiz.pool[quiz.i];
@@ -2469,6 +2483,7 @@ $.addEventListener('click', e => {
   if (a === 'tglsimple') return openMenu(prefs.simple ? 'engine' : 'simple');
   if (a === 'tglfresh') { prefs.fresh = !prefs.fresh; savePrefs(); return render(); }
   if (a === 'tglboth') { prefs.both = !prefs.both; savePrefs(); return render(); }
+  if (a === 'tglfast') { prefs.fast = !prefs.fast; savePrefs(); return render(); }
   if (a === 'rename') return openMenu('rename');
   if (a === 'chpwd') return openMenu('pwd');
   if (a === 'delacc') return openMenu('delacc');
@@ -2490,13 +2505,38 @@ $.addEventListener('click', e => {
   if (a === 'quizdeck') return startQuiz(view.id);
   if (a === 'restart') return startStudy(study ? study.id : view.id, study && study.rev, null,
     study ? { mode: study.mode, both: study.both } : {});
-  if (a === 'swap') { toast(I.swap, study.rev ? 'Sens normal' : 'Sens inversé'); return startStudy(study.id, !study.rev); }
-  if (a === 'swapq') { toast(I.swap, quiz.rev ? 'Sens normal' : 'Sens inversé'); return startQuiz(quiz.id, null, !quiz.rev); }
+  if (a === 'swap') {
+    if (!study) return;
+    study.rev = !study.rev;
+    study.both = false;                       // un sens choisi à la main l'emporte sur le mélange
+    if (study.dirs) for (const x of study.queue) study.dirs[x] = study.rev;
+    study.flip = false; study.tf = null; study.pick = null; study.opts = null;
+    saveResume();
+    toast(I.swap, study.rev ? 'Sens inversé' : 'Sens normal');
+    const bar = document.querySelector('.bar [data-act="swap"]');
+    if (bar) bar.classList.toggle('solid', study.rev);
+    return paintQ();
+  }
+  if (a === 'swapq') {
+    if (!quiz) return;
+    /* La réponse d'aujourd'hui devient la question de demain : on repart sur
+       le même mot plutôt qu'au hasard ailleurs dans le paquet. */
+    const cur = quiz.pool[quiz.i];
+    const at = cur ? norm(plain(cur.a[0])) : '';
+    toast(I.swap, quiz.rev ? 'Sens normal' : 'Sens inversé');
+    return startQuiz(quiz.id, null, !quiz.rev, { at });
+  }
   if (a === 'anyway') {
     if (quiz.state !== 'bad') return;
     quiz.ok++; quiz.forced++; quiz.bad.pop(); quiz.miss.pop();
     quiz.log[quiz.log.length - 1] = 1;
     return nextQ();
+  }
+  if (a === 'nextcard') {
+    if (!study) return;
+    if (study.mode === 'mcq' && study.pick != null) return commit(study.pickOk, study.pickOk ? 2 : 0);
+    if (study.tf != null) { pendingGrade = study.tf ? 2 : 0; return fling(study.tf ? -1 : 1); }
+    return;
   }
   if (a === 'redostudy') return startStudy(study.id, study.rev, study.miss.map(m => m.id));
   if (ds.qp !== undefined) return pickQuiz(+ds.qp);
@@ -2578,10 +2618,8 @@ async function boot() {
   try {
     if (auth.exp && Date.now() > auth.exp - 60000 && !(await refreshToken())) throw new Error('session');
     await pull();
-    const n = await importLegacy();
     setOnline(true);
     render();
-    if (n) toast(I.check, plur(n, 'paquet') + ' repris');
     flush();
   } catch (e) {
     if (/JWT|session|401/i.test(String(e.message || e))) { saveAuth(null); view = { name: 'login' }; render(); }
