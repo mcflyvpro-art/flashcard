@@ -2036,10 +2036,18 @@ function diffHtml(typed, answers) {
   }
   return out.join('');
 }
-/* Indice : on dévoile lettre à lettre la plus courte réponse attendue. */
+/* Indice : on dévoile lettre à lettre la plus courte réponse attendue.
+   Les espaces gardent leur vraie valeur (pas d'espace insécable) pour que
+   la ligne puisse toujours se couper — sinon, dès que la partie masquée
+   dépasse la largeur de l'écran, elle n'a plus aucun point de coupure et
+   sort du cadre. Une définition très longue est en plus tronquée : un mur
+   de points au-delà d'une certaine longueur n'aide plus personne. */
+const HINT_MAX = 90;
 function hintMask(q, n) {
-  const a = q.a.map(plain).sort((x, y) => x.length - y.length)[0] || '';
-  return [...a].map((ch, k) => k < n ? ch : (/\s/.test(ch) ? '\u00a0' : '·')).join('');
+  const full = q.a.map(plain).sort((x, y) => x.length - y.length)[0] || '';
+  const cut = full.length > HINT_MAX ? full.slice(0, HINT_MAX) : full;
+  const mask = [...cut].map((ch, k) => (k < n || /\s/.test(ch)) ? ch : '·').join('');
+  return full.length > HINT_MAX ? mask + ' …' : mask;
 }
 function buildPool(cards) {
   const m = new Map();

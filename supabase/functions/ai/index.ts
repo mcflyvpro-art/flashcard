@@ -9,7 +9,10 @@
 
    verify_jwt est actif : seul un compte connecté peut appeler la fonction. */
 
-import Anthropic from "npm:@anthropic-ai/sdk@0.72.0";
+/* Appel HTTP direct plutôt que le SDK npm : dans le runtime Edge de Deno,
+   le SDK échoue au démarrage (« Could not find package 'zod' » — un de ses
+   sous-modules internes ne se résout pas ici) et la fonction ne répond
+   jamais. curl/HTTP brut n'a pas ce problème. */
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const MODEL = "claude-sonnet-5";
@@ -127,28 +130,40 @@ Deno.serve(async (req) => {
   if ((mine ?? 0) >= DAILY_CALLS) return json({ error: "quota" }, 429);
 
   const hint = String(body.hint ?? "").slice(0, 200).trim();
-  const client = new Anthropic({ apiKey: key });
 
-  let res;
+  let res: Response;
   try {
-    res = await client.messages.create({
-      model: MODEL,
-      max_tokens: 16000,
-      system: SYSTEM,
-      thinking: { type: "adaptive" },
-      output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
-      messages: [{
-        role: "user",
-        content: (hint ? `Consigne : ${hint}\n\n` : "") + "Texte :\n\n" + text,
-      }],
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 16000,
+        system: SYSTEM,
+        thinking: { type: "adaptive" },
+        output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
+        messages: [{
+          role: "user",
+          content: (hint ? `Consigne : ${hint}\n\n` : "") + "Texte :\n\n" + text,
+        }],
+      }),
     });
   } catch (e) {
-    console.error("anthropic", e instanceof Error ? e.message : e);
+    console.error("fetch anthropic", e instanceof Error ? e.message : e);
     return json({ error: "upstream" }, 502);
   }
+  if (!res.ok) {
+    console.error("anthropic status", res.status, await res.text().catch(() => ""));
+    return json({ error: "upstream" }, 502);
+  }
+  const data = await res.json();
 
-  const inTok = res.usage.input_tokens ?? 0;
-  const outTok = res.usage.output_tokens ?? 0;
+  const inTok = data.usage?.input_tokens ?? 0;
+  const outTok = data.usage?.output_tokens ?? 0;
   const cents = inTok * CENTS_IN + outTok * CENTS_OUT;
   admin.from("ai_usage").insert({
     user_id: uid, day: today, op: "cards",
@@ -156,9 +171,10 @@ Deno.serve(async (req) => {
   }).then(() => {}, () => {});
 
   let cards: { f: string; b: string }[] = [];
-  const parsed = (res as { parsed_output?: { cards?: unknown } }).parsed_output;
+  const parsed = (data as { parsed_output?: { cards?: unknown } }).parsed_output;
   const raw = parsed ?? (() => {
-    const t = res.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+    const content = (data.content ?? []) as { type: string; text?: string }[];
+    const t = content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
     try { return JSON.parse(t); } catch { return null; }
   })();
   if (raw && Array.isArray((raw as { cards?: unknown }).cards)) {
