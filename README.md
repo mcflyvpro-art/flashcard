@@ -111,3 +111,44 @@ Une carte monte d'un échelon quand elle passe, de deux avec « Facile »,
 redescend d'un avec « Difficile », et retourne à l'apprentissage du jour avec
 « Encore ». Une carte durablement pénible reste sur son échelon au lieu de
 monter.
+
+## Types de cartes et modes d'exercice
+
+Chaque ligne de carte porte un bouton dont l'icône dit ce qu'elle contient :
+`…` carte simple, `T` vrai/faux, une image, un haut-parleur, une étiquette.
+Il ouvre la feuille d'édition : type, image et son au recto comme au verso,
+étiquettes libres.
+
+**Mise en forme.** `**gras**`, `*italique*`, `__souligné__`, retours à la ligne
+et listes à puces (`- `). Les formules s'écrivent entre `$` en LaTeX :
+`$\frac{a+b}{2} \ge \sqrt{ab}$`. Le rendu couvre fractions, racines, indices,
+exposants, lettres grecques et opérateurs courants — sans aucune bibliothèque,
+pour que l'app démarre toujours hors ligne.
+
+**Son.** Un enregistrement peut être attaché à une face ; sinon, si le paquet
+déclare une langue, le navigateur lit le texte. Dans le quiz, le micro dicte la
+réponse au lieu de la taper.
+
+**Vrai / faux.** Le verso vaut `vrai` ou `faux`. Deux boutons remplacent le
+balayage, la réponse est immédiate — pas de note à choisir, il n'y a pas de
+nuance sur une question binaire.
+
+**QCM.** Les trois mauvaises réponses sortent du paquet lui-même : ce sont des
+réponses plausibles, pas du remplissage. Les cartes vrai/faux en sont exclues.
+
+**Association.** Six paires par lot, on relie de gauche à droite. Une paire
+trouvée du premier coup compte juste, sinon elle est comptée ratée.
+
+## Quiz
+
+- **Tolérance** réglable par paquet : stricte (au caractère près), normale,
+  souple. Réglages du paquet, dans le menu `…`.
+- **Chrono** par question : aucun, 5, 10 ou 20 secondes. À zéro la question est
+  perdue.
+- **Indice** : dévoile la réponse lettre à lettre. Le nombre d'indices utilisés
+  apparaît dans le bilan.
+- **Je ne sais pas** : passe sans deviner, compté raté honnêtement.
+- **Choix multiples** : bascule à la volée quand taper est trop lent.
+- **Différence surlignée** : sur une réponse fausse, les lettres qui clochent
+  sont marquées dans le bilan plutôt qu'un simple « faux ».
+- **Série** : à partir de cinq bonnes réponses d'affilée, un petit compteur.

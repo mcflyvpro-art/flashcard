@@ -160,7 +160,11 @@ async function refreshToken() {
 
 const rowOf = d => ({ id: d.id, user_id: auth.uid, name: d.name, subject: d.subject,
                       hidden: !!d.hidden, cards: d.cards, pos: d.pos || 0,
-                      pinned: !!d.pinned });
+                      pinned: !!d.pinned, meta: d.meta || {} });
+/* réglages propres à un paquet : tolérance du quiz, langue de lecture, chrono */
+const DEFMETA = { tol: 'normal', lang: '', timer: 0 };
+const metaOf = d => ({ ...DEFMETA, ...((d && d.meta) || {}) });
+function setMeta(d, patch) { d.meta = { ...metaOf(d), ...patch }; saveDeck(d); }
 
 /* pousse tout ce qui est en attente ; garde la file si le réseau manque */
 let flushTimer = 0;
@@ -211,7 +215,8 @@ async function pull() {
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   db.decks = decks.map(x => ({
     id: x.id, name: x.name, subject: x.subject, hidden: x.hidden,
-    pos: x.pos, pinned: x.pinned, cards: (x.cards || []).map(c => ({ ...c, id: c.id || uid() }))
+    pos: x.pos, pinned: x.pinned, meta: x.meta || {},
+    cards: (x.cards || []).map(c => ({ ...c, id: c.id || uid() }))
   }));
   db.hist = {};
   for (const r of sess) {
@@ -293,12 +298,228 @@ const I = {
   key: '<circle cx="8.2" cy="15.8" r="3.5"/><path d="M10.7 13.3L19.4 4.6M16.4 7.6l2.1 2.1M14 10l2.1 2.1"/>',
   exit: '<path d="M9.5 4.5H6a1.9 1.9 0 0 0-1.9 1.9v11.2A1.9 1.9 0 0 0 6 19.5h3.5"/><path d="M13.5 8.2l3.8 3.8-3.8 3.8M17 12H9.5"/>',
   spark: '<path d="M11 3.6l1.6 4.4 4.4 1.6-4.4 1.6L11 15.6 9.4 11.2 5 9.6l4.4-1.6z"/><path d="M18 14.6l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/>',
+  sound: '<path d="M4.5 9.4h3L12 5.8v12.4L7.5 14.6h-3z"/><path d="M15.9 9.4a3.6 3.6 0 0 1 0 5.2M18.3 7a7 7 0 0 1 0 10"/>',
+  mute: '<path d="M4.5 9.4h3L12 5.8v12.4L7.5 14.6h-3z"/><path d="M16 9.6l4.4 4.8M20.4 9.6L16 14.4"/>',
+  mic: '<rect x="9" y="3.2" width="6" height="11" rx="3"/><path d="M5.5 11.4a6.5 6.5 0 0 0 13 0M12 18v2.8"/>',
+  image: '<rect x="3" y="5" width="18" height="14" rx="3.2"/><circle cx="8.6" cy="10" r="1.5"/><path d="M4.2 17.4l4.6-4.3 3.4 3 3-2.6 4.6 4"/>',
+  clock: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/>',
+  bulb: '<path d="M9.6 17.6h4.8M10.2 20.4h3.6"/><path d="M12 3.6a5.6 5.6 0 0 0-3.3 10.1c.6.5 1 1.2 1 1.9h4.6c0-.7.4-1.4 1-1.9A5.6 5.6 0 0 0 12 3.6z"/>',
+  flame: '<path d="M12 3.5c3 3 4.8 5.3 4.8 8.2a4.8 4.8 0 1 1-9.6 0c0-1.7.8-3.2 2-4.4.1 1.6.8 2.5 1.7 2.5 1 0 1.6-.9 1.6-2.4 0-1.4-.3-2.7-.5-3.9z"/>',
+  grid: '<rect x="3.6" y="3.6" width="7" height="7" rx="2"/><rect x="13.4" y="3.6" width="7" height="7" rx="2"/><rect x="3.6" y="13.4" width="7" height="7" rx="2"/><rect x="13.4" y="13.4" width="7" height="7" rx="2"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.4 6.9"/><path d="M14 10a4 4 0 0 0-5.7 0L5.5 12.8a4 4 0 0 0 5.7 5.7l1.4-1.4"/>',
+  type: '<path d="M4.5 7.5V5.5h15v2M12 5.5v13M8.8 18.5h6.4"/>',
+  skip: '<path d="M6 5.6l9 6.4-9 6.4z"/><path d="M18 5.6v12.8"/>',
   brain: '<path d="M12 5.6v12.8"/><path d="M12 6.6a2.5 2.5 0 1 0-3.5 2.3 2.5 2.5 0 0 0-.9 4.6 2.5 2.5 0 0 0 4.4 1.7"/><path d="M12 6.6a2.5 2.5 0 1 1 3.5 2.3 2.5 2.5 0 0 1 .9 4.6 2.5 2.5 0 0 1-4.4 1.7"/>'
 };
 const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
 const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const plur = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
+
+/* ---------- rendu du contenu d'une carte ----------
+   Sous-ensemble volontairement étroit : ce qu'on écrit vraiment sur une fiche.
+   **gras**, *italique*, __souligné__, retours à la ligne, listes à puces,
+   et $formule$ pour les matières scientifiques. Aucune dépendance : l'app
+   doit continuer de démarrer hors ligne et de tenir dans un cache.          */
+const GREEK = { alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', varepsilon: 'ε',
+  zeta: 'ζ', eta: 'η', theta: 'θ', iota: 'ι', kappa: 'κ', lambda: 'λ', mu: 'μ', nu: 'ν',
+  xi: 'ξ', pi: 'π', rho: 'ρ', sigma: 'σ', tau: 'τ', upsilon: 'υ', phi: 'φ', varphi: 'φ',
+  chi: 'χ', psi: 'ψ', omega: 'ω', Gamma: 'Γ', Delta: 'Δ', Theta: 'Θ', Lambda: 'Λ',
+  Xi: 'Ξ', Pi: 'Π', Sigma: 'Σ', Phi: 'Φ', Psi: 'Ψ', Omega: 'Ω' };
+const OPS = { times: '×', div: '÷', pm: '±', mp: '∓', cdot: '·', ast: '∗',
+  le: '≤', leq: '≤', ge: '≥', geq: '≥', ne: '≠', neq: '≠', approx: '≈', equiv: '≡',
+  infty: '∞', to: '→', rightarrow: '→', Rightarrow: '⇒', leftarrow: '←', Leftarrow: '⇐',
+  leftrightarrow: '↔', Leftrightarrow: '⇔', mapsto: '↦', sum: '∑', prod: '∏', int: '∫',
+  oint: '∮', partial: '∂', nabla: '∇', in: '∈', notin: '∉', ni: '∋', subset: '⊂',
+  subseteq: '⊆', supset: '⊃', cup: '∪', cap: '∩', setminus: '∖', emptyset: '∅',
+  varnothing: '∅', forall: '∀', exists: '∃', nexists: '∄', angle: '∠', perp: '⊥',
+  parallel: '∥', circ: '∘', deg: '°', prime: '′', ldots: '…', cdots: '⋯', dots: '…',
+  neg: '¬', land: '∧', lor: '∨', therefore: '∴', because: '∵', propto: '∝', sim: '∼',
+  simeq: '≃', cong: '≅', hbar: 'ℏ', ell: 'ℓ', aleph: 'ℵ', star: '⋆', bullet: '•',
+  oplus: '⊕', otimes: '⊗', bot: '⊥', top: '⊤' };
+
+/* LaTeX → HTML sur le sous-ensemble scolaire : fractions, racines, indices,
+   exposants, lettres grecques et opérateurs. Ce qui n'est pas reconnu est
+   rendu tel quel plutôt que perdu. */
+function mathHtml(src) {
+  let i = 0, out = '';
+  const grp = () => {
+    while (src[i] === ' ') i++;
+    if (src[i] === '{') {
+      const start = ++i;
+      let depth = 1;
+      while (i < src.length && depth) { if (src[i] === '{') depth++; else if (src[i] === '}') depth--; i++; }
+      return mathHtml(src.slice(start, i - 1));
+    }
+    if (src[i] === '\\') {
+      const j = i++;
+      while (/[a-zA-Z]/.test(src[i] || '')) i++;
+      return mathHtml(src.slice(j, i));
+    }
+    return esc(src[i++] || '');
+  };
+  while (i < src.length) {
+    const ch = src[i];
+    if (ch === '\\') {
+      let j = i + 1, name = '';
+      while (/[a-zA-Z]/.test(src[j] || '')) name += src[j++];
+      i = j;
+      if (!name) { out += esc(src[i] || ''); i++; }
+      else if (name === 'frac' || name === 'dfrac' || name === 'tfrac') {
+        const a = grp(), b = grp();
+        out += `<span class="fr"><i>${a}</i><i>${b}</i></span>`;
+      } else if (name === 'sqrt') {
+        let idx = '';
+        if (src[i] === '[') {
+          const k = src.indexOf(']', i);
+          if (k > 0) { idx = mathHtml(src.slice(i + 1, k)); i = k + 1; }
+        }
+        out += `<span class="rt">${idx ? `<i class="ri">${idx}</i>` : ''}<i class="rs">√</i><i class="rb">${grp()}</i></span>`;
+      } else if (name === 'text' || name === 'mathrm' || name === 'mbox') {
+        out += `<span class="tx">${grp()}</span>`;
+      } else if (name === 'left' || name === 'right' || name === 'displaystyle') { /* le délimiteur suit */ }
+      else if (GREEK[name]) out += GREEK[name];
+      else if (OPS[name]) out += OPS[name];
+      else out += esc(name);
+      continue;
+    }
+    if (ch === '^') { i++; out += `<sup>${grp()}</sup>`; continue; }
+    if (ch === '_') { i++; out += `<sub>${grp()}</sub>`; continue; }
+    i++;
+    out += esc(ch);
+  }
+  return out;
+}
+
+/* Texte d'une carte → HTML. Toujours passer par ici, jamais par esc() seul :
+   c'est le seul endroit qui échappe et met en forme d'un coup. */
+const MK = '\u0001';
+function rt(s) {
+  s = String(s == null ? '' : s);
+  const math = [];
+  s = s.replace(/\$([^$\n]+)\$/g, (_, m) => MK + (math.push(mathHtml(m)) - 1) + MK);
+  const inl = t => esc(t)
+    .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>')
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>')
+    .replace(/__([^_\n]+)__/g, '<u>$1</u>')
+    .replace(new RegExp(MK + '(\\d+)' + MK, 'g'), (_, k) => `<span class="mth">${math[+k]}</span>`);
+  const out = [];
+  let list = null;
+  for (const raw of s.split(/\r?\n/)) {
+    const m = /^\s*(?:[-*•·–]|\d+[.)])\s+(.+)$/.exec(raw);
+    if (m) { (list = list || []).push(`<li>${inl(m[1])}</li>`); continue; }
+    if (list) { out.push(`<ul>${list.join('')}</ul>`); list = null; }
+    if (raw.trim()) out.push(inl(raw));
+  }
+  if (list) out.push(`<ul>${list.join('')}</ul>`);
+  return out.join('<br>').replace(/<br>(?=<ul>)/g, '').replace(/<\/ul><br>/g, '</ul>');
+}
+/* Version texte brut : comparaison de réponses, recherche, synthèse vocale.
+   Les symboles connus sont traduits plutôt que supprimés, sinon « πr² » se
+   lirait « r ». */
+const plain = s => String(s == null ? '' : s)
+  .replace(/\$([^$\n]+)\$/g, '$1')
+  .replace(/\\(?:d|t)?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, '($1)/($2)')
+  .replace(/\\sqrt\s*(?:\[[^\]]*\])?\s*\{([^{}]*)\}/g, '√($1)')
+  .replace(/\\(?:text|mathrm|mbox)\s*\{([^{}]*)\}/g, '$1')
+  .replace(/\\([a-zA-Z]+)/g, (m, n) => GREEK[n] || OPS[n] || n)
+  .replace(/[*_`{}]/g, '')
+  .replace(/\s+/g, ' ').trim();
+
+/* ---------- médias ----------
+   Les fichiers partent dans le seau « media » du projet, sous un dossier au
+   nom du compte : les règles d'accès n'autorisent l'écriture que là. */
+async function upload(file) {
+  if (!auth) throw new Error('auth');
+  if (file.size > 7.5e6) throw new Error('big');
+  const ext = ((file.name || '').split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
+  const path = `${auth.uid}/${uid()}.${ext}`;
+  if (auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
+  const r = await fetch(`${SB.url}/storage/v1/object/media/${path}`, {
+    method: 'POST',
+    headers: { apikey: SB.key, Authorization: 'Bearer ' + auth.token,
+               'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
+    body: file
+  });
+  if (!r.ok) throw new Error('up');
+  return `${SB.url}/storage/v1/object/public/media/${path}`;
+}
+/* Choisit un fichier sans laisser d'input traîner dans le DOM. */
+function pickFile(accept) {
+  return new Promise(res => {
+    const i = document.createElement('input');
+    i.type = 'file'; i.accept = accept; i.style.display = 'none';
+    i.onchange = () => { res(i.files && i.files[0]); i.remove(); };
+    document.body.appendChild(i); i.click();
+  });
+}
+let recorder = null, recChunks = [];
+const REC = typeof MediaRecorder !== 'undefined' &&
+            typeof navigator !== 'undefined' && !!(navigator.mediaDevices || {}).getUserMedia;
+async function recStart() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  recChunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
+  recorder.onstop = () => stream.getTracks().forEach(t => t.stop());
+  recorder.start();
+}
+function recStop() {
+  return new Promise(res => {
+    if (!recorder) return res(null);
+    const r = recorder; recorder = null;
+    r.addEventListener('stop', () => {
+      const b = new Blob(recChunks, { type: r.mimeType || 'audio/webm' });
+      b.name = 'voix.webm';
+      res(b);
+    }, { once: true });
+    r.stop();
+  });
+}
+/* Dictée : le navigateur transcrit, l'app corrige comme une réponse tapée. */
+const ASRC = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+function listen(lang, done) {
+  if (!ASRC) return null;
+  try {
+    const r = new ASRC();
+    r.lang = lang || 'fr-FR';
+    r.interimResults = false;
+    r.maxAlternatives = 3;
+    r.onresult = e => done([...e.results[0]].map(x => x.transcript));
+    r.onerror = () => done(null);
+    r.onend = () => done(undefined);
+    r.start();
+    return r;
+  } catch (e) { return null; }
+}
+
+/* ---------- son ----------
+   Deux sources : un enregistrement attaché à la carte, ou la synthèse vocale
+   du navigateur quand le paquet déclare une langue. Aucun fichier à héberger
+   dans le second cas. */
+const TTS = typeof speechSynthesis !== 'undefined';
+const LANGS = [['', 'Aucune'], ['fr-FR', 'Français'], ['it-IT', 'Italien'],
+               ['en-GB', 'Anglais'], ['es-ES', 'Espagnol'], ['de-DE', 'Allemand']];
+let player = null;
+function play(url) {
+  try {
+    if (player) player.pause();
+    player = new Audio(url);
+    player.play().catch(() => {});
+  } catch (e) {}
+}
+function say(text, lang) {
+  const t = plain(text);
+  if (!TTS || !t) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(t);
+    if (lang) u.lang = lang;
+    u.rate = 0.95;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
 
 /* ---------- base64url <-> unicode ---------- */
 function enc(o) {
@@ -555,7 +776,9 @@ function render() {
 }
 let pageDir = 0;
 function go(name, id, dir) {
-  closeMenu(); pageDir = dir || 0; view = { name, id }; animate = !dir;
+  closeMenu();
+  if (name !== 'run') stopTimer();
+  pageDir = dir || 0; view = { name, id }; animate = !dir;
   render(); window.scrollTo(0, 0);
 }
 
@@ -700,6 +923,11 @@ function mixBar(d) {
       ${leech ? `<span class="lee">${svg(I.target)}${leech} coriace${leech > 1 ? 's' : ''}</span>` : ''}
     </div></div>`;
 }
+/* Une carte est « enrichie » dès qu'elle porte autre chose que deux textes. */
+const cardRich = c => !!(c.t || c.fi || c.bi || c.fa || c.ba || (c.g || []).length);
+const cardIcon = c => c.t === 'tf' ? I.type : (c.fi || c.bi) ? I.image
+                    : (c.fa || c.ba) ? I.sound : (c.g || []).length ? I.tag : I.more;
+
 function deckView() {
   const d = deck(view.id); if (!d) return go('home');
   const s = subj(d.subject);
@@ -732,6 +960,8 @@ function deckView() {
             <input value="${esc(c.f)}" data-k="f" placeholder="Recto">
             <input class="b" value="${esc(c.b)}" data-k="b" placeholder="Verso">
           </div>
+          <button class="x ${cardRich(c) ? 'on' : ''}" data-card="${c.id}"
+            title="Type, étiquettes, image, son">${svg(cardIcon(c))}</button>
           <button class="x sus ${c.x ? 'on' : ''}" data-sus="${c.id}"
             title="${c.x ? 'Réactiver' : 'Suspendre'}">${svg(c.x ? I.eyeoff : I.eye)}</button>
           <button class="x" data-rm="${c.id}">${svg(I.x)}</button>
@@ -833,6 +1063,7 @@ function loginView() {
 
 /* ---------- réglages ---------- */
 let subjEdit = null, subjColor = 'graphite', subjName = '';
+let cardEdit = null;
 function openSubject(id) {
   subjEdit = id;
   const t = db.subjects.find(x => x.id === id);
@@ -957,6 +1188,63 @@ function paintMenu() {
     document.body.append(...w.childNodes);
     return;
   }
+  if (menu === 'card') {
+    const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
+    if (!c) { menu = null; return; }
+    const med = (side, kind) => {
+      const k = side + (kind === 'img' ? 'i' : 'a');
+      const has = c[k];
+      return `<button class="mb ${has ? 'on' : ''}" data-mact="med-${k}">
+        ${kind === 'img' && has ? `<img src="${esc(has)}" alt="">` : svg(kind === 'img' ? I.image : I.mic)}
+        ${has ? `<i class="rmv" data-mact="del-${k}">${svg(I.x)}</i>` : ''}</button>`;
+    };
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.card)}Carte</div>
+        <div class="seg mseg">
+          ${[['', 'Basique'], ['tf', 'Vrai / faux']].map(([v, l]) =>
+            `<button data-ct="${v}" class="${(c.t || '') === v ? 'on' : ''}">${l}</button>`).join('')}
+        </div>
+        <div class="mrow">
+          <span class="ml">${svg(I.arrow)}Recto</span>${med('f', 'img')}${med('f', 'aud')}
+        </div>
+        <div class="mrow">
+          <span class="ml">${svg(I.swap)}Verso</span>${med('b', 'img')}${med('b', 'aud')}
+        </div>
+        <input class="tok" id="ctags" placeholder="Étiquettes, séparées par des virgules"
+          value="${esc((c.g || []).join(', '))}" autocapitalize="none" spellcheck="false">
+        ${recorder ? `<button class="mi warn" data-mact="rec-stop"
+          style="justify-content:center;font-weight:700">${svg(I.mic)}<span>Arrêter l’enregistrement</span></button>` : ''}
+        <button class="mi" data-mact="card-ok"
+          style="justify-content:center;font-weight:700">${svg(I.check)}<span>Enregistrer</span></button>
+      </div>`;
+    document.body.append(...w.childNodes);
+    return;
+  }
+  if (menu === 'deckset') {
+    const d = deck(view.id); if (!d) { menu = null; return; }
+    const m = metaOf(d);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.gear)}Réglages du paquet</div>
+        <div class="mrow col"><span class="ml">${svg(I.target)}Tolérance du quiz</span>
+          <div class="seg mseg">
+            ${[['strict', 'Stricte'], ['normal', 'Normale'], ['soft', 'Souple']].map(([v, l]) =>
+              `<button data-tol="${v}" class="${m.tol === v ? 'on' : ''}">${l}</button>`).join('')}
+          </div></div>
+        <div class="mrow col"><span class="ml">${svg(I.sound)}Langue lue</span>
+          <div class="seg mseg wrap">
+            ${LANGS.map(([v, l]) => `<button data-lg="${v}" class="${m.lang === v ? 'on' : ''}">${l}</button>`).join('')}
+          </div></div>
+        <div class="mrow col"><span class="ml">${svg(I.clock)}Chrono par question</span>
+          <div class="seg mseg">
+            ${[[0, 'Aucun'], [5, '5 s'], [10, '10 s'], [20, '20 s']].map(([v, l]) =>
+              `<button data-tm="${v}" class="${m.timer === v ? 'on' : ''}">${l}</button>`).join('')}
+          </div></div>
+      </div>`;
+    document.body.append(...w.childNodes);
+    return;
+  }
   if (menu === 'simple' || menu === 'engine') {
     const on = menu === 'simple';
     const n = backlog(), per = Math.max(5, prefs.goal || 30), j = Math.max(1, Math.ceil(n / per));
@@ -1056,18 +1344,76 @@ function paintMenu() {
       <div class="msep"></div>
       <button class="mi" data-mact="hide">${svg(d.hidden ? I.eye : I.eyeoff)}${d.hidden ? 'Réafficher' : 'Masquer'}</button>
       <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
+      <button class="mi" data-mact="mcq">${svg(I.grid)}QCM</button>
+      <button class="mi" data-mact="match">${svg(I.link)}Association</button>
+      <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du paquet</button>
       ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
       <button class="mi" data-mact="share">${svg(I.share)}Partager</button>
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
   document.body.append(...w.childNodes);
 }
-document.addEventListener('click', e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color]'); if (!b) return;
+let recKey = null;
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lg],[data-tm],[data-ct]');
+  if (!b) return;
   const d = deck(view.id);
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
+  /* réglages propres au paquet, dans leur feuille */
+  if (b.dataset.tol) { setMeta(d, { tol: b.dataset.tol }); return paintMenu(); }
+  if (b.dataset.lg !== undefined) { setMeta(d, { lang: b.dataset.lg }); return paintMenu(); }
+  if (b.dataset.tm !== undefined) { setMeta(d, { timer: +b.dataset.tm }); return paintMenu(); }
+  if (b.dataset.ct !== undefined) {
+    const c = d && d.cards.find(x => x.id === cardEdit);
+    if (c) { if (b.dataset.ct) c.t = b.dataset.ct; else delete c.t; saveDeck(d); }
+    return paintMenu();
+  }
   const a = b.dataset.mact;
   if (a === 'close') return closeMenu();
+  if (a === 'card-ok') {
+    const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
+    const t = document.getElementById('ctags');
+    if (c && t) {
+      const tags = t.value.split(',').map(x => x.trim()).filter(Boolean).slice(0, 6);
+      if (tags.length) c.g = tags; else delete c.g;
+      saveDeck(d);
+    }
+    closeMenu(); return render();
+  }
+  if (a && a.startsWith('del-')) {
+    const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
+    if (c) { delete c[a.slice(4)]; saveDeck(d); }
+    return paintMenu();
+  }
+  if (a === 'rec-stop') {
+    const key = recKey; recKey = null;
+    const blob = await recStop();
+    paintMenu();
+    if (!blob || !blob.size) return;
+    try {
+      const url = await upload(blob);
+      const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
+      if (c) { c[key] = url; saveDeck(d); }
+      toast(I.check, 'Son enregistré');
+    } catch (x) { toast(I.x, x.message === 'big' ? 'Fichier trop lourd' : 'Envoi impossible'); }
+    return paintMenu();
+  }
+  if (a && a.startsWith('med-')) {
+    const key = a.slice(4);
+    const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
+    if (!c) return;
+    if (key.endsWith('a') && REC && !recorder) {
+      try { await recStart(); recKey = key; return paintMenu(); }
+      catch (x) { /* micro refusé : on retombe sur le choix de fichier */ }
+    }
+    const f = await pickFile(key.endsWith('i') ? 'image/*' : 'audio/*');
+    if (!f) return;
+    toast(I.share, 'Envoi…');
+    try { c[key] = await upload(f); saveDeck(d); toast(I.check); }
+    catch (x) { toast(I.x, x.message === 'big' ? 'Fichier trop lourd' : 'Envoi impossible'); }
+    return paintMenu();
+  }
+  if (a === 'deckset') { closeMenu(); return openMenu('deckset'); }
   if (a === 'do-simple') return setSimple(true);
   if (a === 'do-engine') return setSimple(false);
   if (a === 'do-rename') {
@@ -1100,6 +1446,10 @@ document.addEventListener('click', e => {
   if (a === 'studyall' || a === 'studyleech') {
     closeMenu();
     return startStudy(view.id, false, null, a === 'studyleech' ? { only: 'leech' } : {});
+  }
+  if (a === 'mcq' || a === 'match') {
+    closeMenu();
+    return startStudy(view.id, false, null, { mode: a });
   }
   if (a === 'subjok') {
     const name = (document.getElementById('sn').value || subjName).trim();
@@ -1194,7 +1544,24 @@ function startStudy(id, rev, subset, opt) {
       : { ...o, order: o.order || prefs.order, fresh: prefs.fresh }).map(c => c.id);
   }
   if (!ids.length) { toast(I.check, 'Rien à revoir ici'); return; }
-  study = { id, name, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
+  const lang = id === 'all' ? '' : metaOf(deck(id)).lang;
+  const mode = o.mode || '';
+  /* Le QCM a besoin d'au moins deux réponses distinctes pour avoir un sens. */
+  let pool = [];
+  if (mode === 'mcq') {
+    const seen = new Set();
+    for (const c of cards) {
+      if (isTF(c) || isBool(c.b)) continue;
+      const k = norm(plain(c.b));
+      if (k && !seen.has(k)) { seen.add(k); pool.push(c.b); }
+    }
+    if (pool.length < 2) { toast(I.x, 'Pas assez de réponses différentes'); return; }
+    /* une carte vrai/faux n'a pas sa place dans un QCM à quatre entrées */
+    const keep = new Set(cards.filter(c => !isTF(c)).map(c => c.id));
+    ids = ids.filter(x => keep.has(x));
+    if (!ids.length) { toast(I.x, 'Rien à mettre en QCM'); return; }
+  }
+  study = { id, name, lang, mode, pool, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
             ok: 0, total: ids.length, t0: Date.now(), tq: Date.now(), tried: {}, missSet: {},
             miss: [], log: [], saved: false, opt: o, simple: sm,
             dirs: Object.fromEntries(ids.map(x => [x, o.both ? Math.random() < .5 : !!rev])) };
@@ -1204,7 +1571,9 @@ function startStudy(id, rev, subset, opt) {
 /* Reprise : l'état de la session survit à la fermeture de l'app */
 function saveResume() {
   try {
-    if (!study || study.i >= study.queue.length) localStorage.removeItem('cartes.resume.' + auth.uid);
+    /* QCM et association sont des exercices courts, et leur état porte des
+       références de cartes : on ne les met pas en reprise. */
+    if (!study || study.mode || study.i >= study.queue.length) localStorage.removeItem('cartes.resume.' + auth.uid);
     else localStorage.setItem('cartes.resume.' + auth.uid, JSON.stringify({ ...study, t: Date.now() }));
   } catch (e) {}
 }
@@ -1261,6 +1630,7 @@ function review(o) {
     [(per / 1000).toFixed(1).replace('.', ',') + 's', 'par carte']
   ];
   if (o.forced) tiles.splice(1, 0, [o.forced, 'forcées']);
+  if (o.hints) tiles.push([o.hints, 'indices']);
   return `<div class="rev">
     ${ring(o.ok, o.total)}
     <div class="tiles">
@@ -1278,9 +1648,9 @@ function review(o) {
     </div>
     ${o.miss.length ? `<div class="lbl lm"><span>À revoir</span><span>${o.miss.length}</span></div>
       <div class="miss">${o.miss.map((m, i) => `<div class="mr" style="animation-delay:${i * 22}ms">
-        <div class="q">${esc(m.q)}</div>
-        ${m.typed ? `<div class="w">${svg(I.x)}${esc(m.typed)}</div>` : ''}
-        <div class="g">${svg(I.check)}${esc(m.a)}</div>
+        <div class="q">${rt(m.q)}</div>
+        ${m.typed ? `<div class="w">${svg(I.x)}${m.diff || esc(m.typed)}</div>` : ''}
+        <div class="g">${svg(I.check)}${rt(m.a)}</div>
       </div>`).join('')}</div>` : ''}
   </div>`;
 }
@@ -1309,38 +1679,178 @@ function studyView() {
       return fillRing(study.ok, study.total);
     }
   }
+  if (study.mode === 'match') {
+    if (!study.batch) nextBatch();
+    $.innerHTML = bar(`<span class="num">${Math.min(study.i + (study.batch || []).length, study.queue.length)}/${study.queue.length}</span>`)
+      + `<div class="study">
+        <div class="prog"><i id="pg" style="width:0%"></i></div>
+        <div class="mwrap" id="mwrap" style="${sty(s)}">${matchBody()}</div>
+      </div>`;
+    requestAnimationFrame(() => { const p = document.getElementById('pg'); if (p) p.style.width = pct() + '%'; });
+    return;
+  }
   $.innerHTML = bar(`<span class="num">${Math.min(study.i + 1, study.queue.length)}/${study.queue.length}</span>`)
-    + `<div class="study">
+    + `<div class="study${study.mode === 'mcq' ? ' mcq' : ''}">
       <div class="prog"><i id="pg" style="width:0%"></i></div>
-      <div class="stage"><div class="stack" id="stack" style="${sty(s)}"></div></div>
+      ${study.mode === 'mcq'
+        ? `<div class="qcard" id="stack" style="${sty(s)}"></div>`
+        : `<div class="stage"><div class="stack" id="stack" style="${sty(s)}"></div></div>`}
       <div id="foot"></div>
     </div>`;
-  paintStack(); paintFoot();
+  paintQ();
   requestAnimationFrame(() => { const p = document.getElementById('pg'); if (p) p.style.width = pct() + '%'; });
 }
 const pct = () => study.total ? Math.round(study.ok / study.total * 100) : 0;
 const cardOf = n => findCard(study.queue[study.i + n])[0];
+/* Une face : image, texte mis en forme, bouton de son. Le bouton lit
+   l'enregistrement de la carte s'il y en a un, sinon fait parler le
+   navigateur quand le paquet déclare une langue. */
+function faceHtml(bk, txt, img, aud, lang) {
+  const snd = aud || (lang && TTS && plain(txt));
+  return `<div class="face${bk ? ' bk' : ''}">
+    ${img ? `<img class="fim" src="${esc(img)}" alt="">` : ''}
+    ${plain(txt) ? `<span>${rt(txt)}</span>` : ''}
+    ${snd ? `<button class="snd" data-snd="${bk ? 'b' : 'f'}">${svg(I.sound)}</button>` : ''}
+  </div>`;
+}
+const isTF = c => c && c.t === 'tf';
+const isBool = t => /^(vrai|faux|true|false|oui|non|yes|no)$/i.test(plain(t).trim());
+const tfTruth = c => /^\s*(v|vrai|true|oui|yes|1|y)\b/i.test(plain(c.b));
+
 function paintStack() {
   const st = document.getElementById('stack'); if (!st) return;
   const c = cardOf(0);
   if (!c) { st.innerHTML = ''; return; }
-  const rv = study.dirs ? study.dirs[c.id] : study.rev;
+  study.tf = null;                                   // verdict vrai/faux de la carte courante
+  const tf = isTF(c);
+  const rv = !tf && (study.dirs ? study.dirs[c.id] : study.rev);
+  const lang = study.lang || '';
   const front = rv ? c.b : c.f, back = rv ? c.f : c.b;
-  st.innerHTML = `<div class="card in" id="top">
+  const fimg = rv ? c.bi : c.fi, bimg = rv ? c.fi : c.bi;
+  const faud = rv ? c.ba : c.fa, baud = rv ? c.fa : c.ba;
+  st.innerHTML = `<div class="card in${tf ? ' tf' : ''}" id="top">
       <div class="flipper">
-        <div class="face"><span>${esc(front)}</span></div>
-        <div class="face bk"><span>${esc(back)}</span></div>
+        ${faceHtml(false, front, fimg, faud, lang)}
+        ${faceHtml(true, back, bimg, baud, lang)}
       </div>
+      ${(c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
+        `<i>${esc(t)}</i>`).join('')}</div>` : ''}
       <div class="ov y">${svg(I.check)}</div>
       <div class="ov n">${svg(I.x)}</div>
     </div>`;
   const top = document.getElementById('top');
   requestAnimationFrame(() => top.classList.remove('in'));
-  bindDrag(top);
+  if (!tf) bindDrag(top);
+}
+/* QCM : les distracteurs sortent du paquet lui-même, ce sont donc des
+   réponses plausibles et non du remplissage. Trois au maximum, moins si le
+   paquet est court. */
+function paintMCQ() {
+  const st = document.getElementById('stack'), f = document.getElementById('foot');
+  const c = cardOf(0);
+  if (!c || !st || !f) return;
+  if (!study.opts || study.optsFor !== c.id) {
+    const good = norm(plain(c.b));
+    const wrong = shuffle(study.pool.filter(x => norm(plain(x)) !== good)).slice(0, 3);
+    study.opts = shuffle([c.b, ...wrong]);
+    study.optsFor = c.id;
+    study.pick = null;
+  }
+  st.innerHTML = `${c.fi ? `<img class="fim" src="${esc(c.fi)}" alt="">` : ''}
+    <span>${rt(c.f)}</span>
+    ${(c.fa || (study.lang && TTS)) ? `<button class="snd" data-snd="f">${svg(I.sound)}</button>` : ''}`;
+  const good = norm(plain(c.b));
+  f.innerHTML = `<div class="opts">${study.opts.map((o, k) => {
+    const right = norm(plain(o)) === good;
+    const cl = study.pick == null ? '' : right ? ' ok' : (study.pick === k ? ' ko' : ' dim');
+    return `<button class="op${cl}" data-pick="${k}">${rt(o)}</button>`;
+  }).join('')}</div>`;
+}
+function pickMCQ(k) {
+  if (study.pick != null) return;
+  const c = cardOf(0); if (!c) return;
+  study.pick = k;
+  const ok = norm(plain(study.opts[k])) === norm(plain(c.b));
+  paintMCQ();
+  setTimeout(() => { if (study) commit(ok, ok ? 2 : 0); }, ok ? 560 : 1150);
+}
+
+/* ---------- association ----------
+   Six paires par lot : on choisit à gauche, on relie à droite. Une paire
+   trouvée du premier coup compte juste, sinon elle est comptée ratée — sans
+   ça le format serait un jeu de devinettes gratuit. */
+function nextBatch() {
+  const cards = study.queue.slice(study.i, study.i + 6).map(id => findCard(id)[0]).filter(Boolean);
+  study.batch = cards;
+  study.right = shuffle(cards.map(c => c.id));
+  study.sel = null; study.done = {}; study.wrong = {};
+}
+function matchBody() {
+  const cards = study.batch || [];
+  const byId = Object.fromEntries(cards.map(c => [c.id, c]));
+  const cell = (side, c, on, done) => `<button class="mc${on ? ' on' : ''}${done ? ' done' : ''}"
+      data-mt="${side}:${c.id}">${rt(side === 'L' ? c.f : c.b)}</button>`;
+  return `<div class="match">
+    <div class="mcol">${cards.map(c => cell('L', c, study.sel === c.id, !!study.done[c.id])).join('')}</div>
+    <div class="mcol">${study.right.map(id => cell('R', byId[id], false, !!study.done[id])).join('')}</div>
+  </div>`;
+}
+function paintMatch() {
+  const w = document.getElementById('mwrap');
+  if (w) w.innerHTML = matchBody();
+}
+function pickMatch(side, id) {
+  if (study.done[id]) return;
+  if (side === 'L') { study.sel = study.sel === id ? null : id; return paintMatch(); }
+  if (!study.sel) return;
+  if (study.sel === id) {
+    study.done[id] = 1;
+    scoreCard(id, !study.wrong[id], study.wrong[id] ? 0 : 2);
+    study.sel = null;
+    paintMatch();
+    const p = document.getElementById('pg');
+    if (p) p.style.width = pct() + '%';
+    if (Object.keys(study.done).length >= study.batch.length) {
+      setTimeout(() => {
+        if (!study) return;
+        study.i += study.batch.length;
+        saveResume();
+        if (study.i < study.queue.length) nextBatch();
+        studyView();
+      }, 480);
+    }
+    return;
+  }
+  study.wrong[study.sel] = 1;
+  const el = document.querySelector(`[data-mt="R:${id}"]`);
+  if (el) { el.classList.add('shk'); setTimeout(() => el.classList.remove('shk'), 380); }
+}
+
+/* Vrai / faux : pas de note à choisir, la réponse est binaire. On révèle,
+   on laisse une seconde pour voir, on enchaîne. */
+function answerTF(said) {
+  const c = cardOf(0);
+  if (!c || !isTF(c) || study.tf != null) return;
+  study.tf = (said === tfTruth(c));
+  study.flip = true;
+  const top = document.getElementById('top');
+  if (top) top.classList.add('flip');
+  paintFoot();
+  pendingGrade = study.tf ? 2 : 0;
+  setTimeout(() => { if (study && study.tf != null) fling(study.tf ? -1 : 1); }, 820);
 }
 function paintFoot() {
   const f = document.getElementById('foot'); if (!f) return;
   const c = cardOf(0) || {};
+  if (isTF(c)) {
+    f.innerHTML = study.tf == null
+      ? `<div class="tfb">
+          <button class="tv y" data-tf="1">${svg(I.check)}<span>Vrai</span></button>
+          <button class="tv n" data-tf="0">${svg(I.x)}<span>Faux</span></button>
+        </div>`
+      : `<div class="tfv ${study.tf ? 'y' : 'n'}">${svg(study.tf ? I.check : I.x)}</div>`;
+    return;
+  }
   f.innerHTML = study.flip && !study.simple
     ? `<div class="grades">
         ${[[0, 'Encore', 'g0'], [1, 'Difficile', 'g1'], [2, 'Correct', 'g2'], [3, 'Facile', 'g3']]
@@ -1358,6 +1868,7 @@ function bindDrag(el) {
   let x0 = 0, dx = 0, on = false, moved = false, t0 = 0;
   const ov = (k, v) => { const n = el.querySelector('.ov.' + k); if (n) { n.style.opacity = v; n.style.transform = `scale(${.55 + v * .45})`; } };
   el.addEventListener('pointerdown', e => {
+    if (e.target.closest('[data-snd]')) return;      // le son ne retourne pas la carte
     on = true; moved = false; dx = 0; x0 = e.clientX; t0 = Date.now();
     el.setPointerCapture(e.pointerId); el.style.transition = 'none';
   });
@@ -1386,39 +1897,43 @@ function fling(dir) {
   const g = pendingGrade; pendingGrade = null;
   setTimeout(() => commit(g != null ? g > 0 : dir < 0, g), 250);
 }
-function commit(ok, rating) {
-  const id = study.queue[study.i];
+/* Note une carte et l'inscrit au journal. Partagé par la révision, le QCM et
+   l'association : un seul endroit décide de ce qui est écrit dans la carte. */
+function scoreCard(id, ok, rating) {
   const r = rating != null ? rating : (ok ? 2 : 0);
   const [c, d] = findCard(id);
-  const rv = study.dirs ? study.dirs[id] : study.rev;
+  if (!c) return [null, null, false];
+  const rv = !isTF(c) && (study.dirs ? study.dirs[id] : study.rev);
   const ms = Date.now() - (study.tq || Date.now());
   study.tq = Date.now();
-  if (c) {
-    /* Mode simple : on ne planifie pas et on ne touche ni à n, ni à i, ni à d.
-       La carte garde son état exact, seul le compteur de ratés avance —
-       il sert au tri « ratées » et vaut dans les deux modes. */
-    if (study.simple) { if (!ok) c.l = (c.l || 0) + 1; }
-    else grade(c, r);
-    if (d) { dirty[d.id] = 1; save(); scheduleFlush(); }
-    api('/rest/v1/reviews', 'POST', [{
-      user_id: auth.uid, deck_id: d ? d.id : study.id, card_id: id,
-      mode: study.simple ? 'simple' : 'study',
-      rating: study.simple ? null : r, correct: !!ok, ms: Math.min(ms, 600000), reversed: !!rv
-    }]).catch(() => {});
-    bumpToday();
-  }
+  /* Mode simple : on ne planifie pas et on ne touche ni à n, ni à i, ni à d.
+     La carte garde son état exact, seul le compteur de ratés avance —
+     il sert au tri « ratées » et vaut dans les deux modes. */
+  if (study.simple) { if (!ok) c.l = (c.l || 0) + 1; }
+  else grade(c, r);
+  if (d) { dirty[d.id] = 1; save(); scheduleFlush(); }
+  api('/rest/v1/reviews', 'POST', [{
+    user_id: auth.uid, deck_id: d ? d.id : study.id, card_id: id,
+    mode: study.simple ? 'simple' : (study.mode || 'study'),
+    rating: study.simple ? null : r, correct: !!ok, ms: Math.min(ms, 600000), reversed: !!rv
+  }]).catch(() => {});
+  bumpToday();
   if (!study.tried[id]) { study.tried[id] = 1; if (ok) study.ok++; study.log.push(ok ? 1 : 0); }
-  if (!ok) {
-    study.again.push(id);
-    if (!study.missSet[id]) {
-      study.missSet[id] = 1;
-      if (c) study.miss.push({ id, q: rv ? c.b : c.f, a: rv ? c.f : c.b });
-    }
+  if (!ok && !study.missSet[id]) {
+    study.missSet[id] = 1;
+    study.miss.push({ id, q: rv ? c.b : c.f, a: rv ? c.f : c.b });
   }
-  study.i++; study.flip = false;
+  return [c, d, !!rv];
+}
+const paintQ = () => { study.mode === 'mcq' ? paintMCQ() : (paintStack(), paintFoot()); };
+function commit(ok, rating) {
+  const id = study.queue[study.i];
+  scoreCard(id, ok, rating);
+  if (!ok) study.again.push(id);
+  study.i++; study.flip = false; study.pick = null; study.opts = null;
   saveResume();
   if (study.i >= study.queue.length) return studyView();
-  paintStack(); paintFoot();
+  paintQ();
   const p = document.getElementById('pg'); if (p) p.style.width = pct() + '%';
   const n = document.querySelector('.bar .num');
   if (n) n.textContent = `${study.i + 1}/${study.queue.length}`;
@@ -1447,26 +1962,34 @@ function lev(a, b) {
   return prev[n];
 }
 // marge proportionnelle : un accent ou une lettre sur un mot, ~8 % sur une phrase
-function near(x, y) {
+/* Marge d'erreur acceptée, réglable par paquet : stricte pour le droit où un
+   mot près change le sens, souple pour du vocabulaire où l'accent oublié
+   n'apprend rien. */
+function near(x, y, tol) {
   const a = strip(x), b = strip(y);
   if (a === b) return true;
   if (!a || !b) return false;
+  if (tol === 'strict') return norm(x) === norm(y);
   const L = Math.max(a.length, b.length);
-  const allow = L <= 4 ? 0 : L <= 9 ? 1 : Math.max(2, Math.round(L * 0.08));
+  const allow = tol === 'soft'
+    ? (L <= 4 ? 1 : L <= 9 ? 2 : Math.max(3, Math.round(L * 0.16)))
+    : (L <= 4 ? 0 : L <= 9 ? 1 : Math.max(2, Math.round(L * 0.08)));
   return lev(a, b) <= allow;
 }
 const parts = s => norm(s).split(/\s*[,;/·|]+\s*/).map(x => x.trim()).filter(Boolean);
 // accepte l'ordre libre d'une énumération, et un seul synonyme d'une liste courte
-function accepts(typed, answers) {
-  for (const a of answers) {
-    if (near(typed, a)) return true;
+function accepts(typed, answers, tol) {
+  for (const raw of answers) {
+    const a = plain(raw);
+    if (near(typed, a, tol)) return true;
+    if (tol === 'strict') continue;
     const exp = parts(a), got = parts(typed);
     if (exp.length < 2) continue;
     if (got.length === exp.length) {
       const pool = exp.slice();
       let all = true;
       for (const g of got) {
-        const k = pool.findIndex(e => near(g, e));
+        const k = pool.findIndex(e => near(g, e, tol));
         if (k < 0) { all = false; break; }
         pool.splice(k, 1);
       }
@@ -1474,9 +1997,49 @@ function accepts(typed, answers) {
     }
     const synonyms = exp.every(e => e.split(' ').length <= 3);
     if (synonyms && got.length && got.length < exp.length &&
-        got.every(g => exp.some(e => near(g, e)))) return true;
+        got.every(g => exp.some(e => near(g, e, tol)))) return true;
   }
   return false;
+}
+
+/* ---------- différence surlignée ----------
+   « faux » n'apprend rien ; on montre la lettre qui cloche. Alignement par
+   programmation dynamique sur la réponse attendue la plus proche. */
+function diffHtml(typed, answers) {
+  const t = norm(typed).slice(0, 200);
+  let best = plain(answers[0]), bd = Infinity;
+  for (const raw of answers) {
+    const a = plain(raw), d = lev(t, norm(a));
+    if (d < bd) { bd = d; best = a; }
+  }
+  const b = norm(best).slice(0, 200);
+  const m = t.length, n = b.length;
+  const D = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => i === 0 ? j : j === 0 ? i : 0));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      D[i][j] = Math.min(D[i - 1][j] + 1, D[i][j - 1] + 1,
+                         D[i - 1][j - 1] + (t[i - 1] === b[j - 1] ? 0 : 1));
+    }
+  }
+  let i = m, j = n;
+  const out = [];
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && D[i][j] === D[i - 1][j - 1] + (t[i - 1] === b[j - 1] ? 0 : 1)) {
+      out.unshift(t[i - 1] === b[j - 1] ? esc(t[i - 1]) : `<i class="df">${esc(t[i - 1])}</i>`);
+      i--; j--;
+    } else if (i > 0 && D[i][j] === D[i - 1][j] + 1) {
+      out.unshift(`<i class="df">${esc(t[i - 1])}</i>`); i--;
+    } else {
+      out.unshift('<i class="df gap"></i>'); j--;
+    }
+  }
+  return out.join('');
+}
+/* Indice : on dévoile lettre à lettre la plus courte réponse attendue. */
+function hintMask(q, n) {
+  const a = q.a.map(plain).sort((x, y) => x.length - y.length)[0] || '';
+  return [...a].map((ch, k) => k < n ? ch : (/\s/.test(ch) ? '\u00a0' : '·')).join('');
 }
 function buildPool(cards) {
   const m = new Map();
@@ -1489,16 +2052,75 @@ function buildPool(cards) {
   }
   return [...m.values()];
 }
-function startQuiz(id, pool, rev) {
+function startQuiz(id, pool, rev, opt) {
+  const o = opt || {};
   let src = id === 'all' ? live().flatMap(d => d.cards) : (deck(id) || { cards: [] }).cards;
-  if (rev) src = src.map(c => ({ f: c.b, b: c.f }));
+  if (rev) src = src.map(c => ({ ...c, f: c.b, b: c.f, fi: c.bi, bi: c.fi, fa: c.ba, ba: c.fa }));
   const items = pool || shuffle(buildPool(src));
   if (!items.length) return;
+  const m = id === 'all' ? DEFMETA : metaOf(deck(id));
+  const seen = new Set(), answers = [];
+  for (const it of items) {
+    for (const a of it.a) {
+      if (isBool(a)) continue;
+      const k = norm(plain(a));
+      if (k && !seen.has(k)) { seen.add(k); answers.push(a); }
+    }
+  }
+  const mode = o.mode !== undefined ? o.mode : (quiz && quiz.id === id ? quiz.mode : '');
   quiz = { id, rev: !!rev, name: id === 'all' ? 'Tout' : (deck(id) || {}).name || '',
            sub: id === 'all' ? '' : (deck(id) || {}).subject,
-           pool: items, i: 0, ok: 0, bad: [], miss: [], log: [], forced: 0,
-           t0: Date.now(), saved: false, state: 'ask', typed: '' };
+           pool: items, answers, i: 0, ok: 0, bad: [], miss: [], log: [], forced: 0,
+           t0: Date.now(), saved: false, state: 'ask', typed: '',
+           mode: mode === 'qcm' && answers.length >= 2 ? 'qcm' : '',
+           tol: m.tol, lang: m.lang, timer: m.timer,
+           streak: 0, best: 0, hint: 0, hints: 0, opts: null, optsFor: -1 };
   go('run');
+}
+/* ---------- chrono par question ----------
+   La barre se vide ; à zéro la question est perdue, comme à l'oral. */
+let asrOn = false, asrRec = null;
+/* Dictée : le navigateur transcrit, on garde la variante qui passe la
+   correction, sinon la première. */
+function dictate() {
+  if (asrOn) { try { asrRec && asrRec.stop(); } catch (e) {} return; }
+  const q = quiz.pool[quiz.i];
+  asrOn = true; render();
+  asrRec = listen(quiz.lang, alts => {
+    if (alts) {
+      const best = alts.find(t => accepts(t, q.a, quiz.tol)) || alts[0];
+      quiz.typed = best;
+    }
+    if (alts !== null && alts !== undefined) { asrOn = false; asrRec = null; render(); submit(); return; }
+    asrOn = false; asrRec = null; render();
+  });
+  if (!asrRec) { asrOn = false; toast(I.x, 'Dictée indisponible'); render(); }
+}
+let quizTick = 0;
+function stopTimer() { clearInterval(quizTick); quizTick = 0; }
+function armTimer() {
+  stopTimer();
+  if (!quiz || quiz.state !== 'ask' || !quiz.timer) return;
+  const span = quiz.timer * 1000;
+  quiz.tEnd = Date.now() + span;
+  quizTick = setInterval(() => {
+    if (!quiz || quiz.state !== 'ask') return stopTimer();
+    const left = Math.max(0, quiz.tEnd - Date.now());
+    const el = document.getElementById('tmr');
+    if (el) {
+      el.style.width = (left / span * 100) + '%';
+      el.classList.toggle('low', left < span * 0.3);
+    }
+    if (left <= 0) { stopTimer(); if (quiz.state === 'ask') fail(); }
+  }, 90);
+}
+function quizOpts(q) {
+  if (quiz.optsFor === quiz.i && quiz.opts) return quiz.opts;
+  const good = norm(plain(q.a[0]));
+  const wrong = shuffle(quiz.answers.filter(x => norm(plain(x)) !== good)).slice(0, 3);
+  quiz.opts = shuffle([q.a[0], ...wrong]);
+  quiz.optsFor = quiz.i;
+  return quiz.opts;
 }
 function quizHome() {
   const used = db.subjects.filter(s => live().some(d => d.subject === s.id)).map(x => subj(x.id));
@@ -1520,65 +2142,114 @@ function quizHome() {
   bindPager();
 }
 function quizView() {
+  const qcm = quiz.mode === 'qcm';
   const bar = n => `<div class="bar">
       <button class="ic" data-act="tab-quiz">${svg(I.back)}</button>
       <h1>${esc(quiz.name)}</h1>
       ${n}
+      ${quiz.streak >= 5 ? `<span class="strk">${svg(I.flame)}${quiz.streak}</span>` : ''}
       <button class="ic ${quiz.rev ? 'solid' : ''}" data-act="swapq">${svg(I.swap)}</button>
       <button class="ic" data-act="requiz">${svg(I.shuffle)}</button>
     </div>`;
   if (quiz.i >= quiz.pool.length) {
+    stopTimer();
     const n = quiz.pool.length;
     if (!quiz.saved) { quiz.saved = true; quiz.ms = Date.now() - quiz.t0;
       quiz.hist = pushHist(quiz.id, 'quiz', n ? quiz.ok / n : 0); }
     $.innerHTML = bar('') + review({
       ok: quiz.ok, total: n, log: quiz.log, ms: quiz.ms, hist: quiz.hist, forced: quiz.forced,
+      hints: quiz.hints,
       miss: quiz.miss, redo: 'redo', again: 'requiz', done: 'tab-quiz'
     });
     return fillRing(quiz.ok, n);
   }
   const q = quiz.pool[quiz.i];
+  const ask = quiz.state === 'ask';
+  const canSay = quiz.lang && TTS && plain(q.f);
   $.innerHTML = bar(`<span class="num">${quiz.i + 1}/${quiz.pool.length}</span>`)
     + `<div class="study">
       <div class="prog"><i id="pg" style="width:0%"></i></div>
+      ${quiz.timer ? `<div class="tbar"><i id="tmr" style="width:100%"></i></div>` : ''}
       <div class="qz">
-        <div class="ask ${quiz.state}">${esc(q.f)}</div>
-        ${quiz.state === 'bad' ? `<div class="sol">${svg(I.check)}${q.a.map(esc).join('  ·  ')}</div>` : ''}
+        <div class="ask ${quiz.state}">${rt(q.f)}
+          ${canSay ? `<button class="snd sm" data-qsay>${svg(I.sound)}</button>` : ''}</div>
+        ${ask && quiz.hint ? `<div class="hmask">${esc(hintMask(q, quiz.hint))}</div>` : ''}
+        ${quiz.state === 'bad' ? `<div class="sol">${svg(I.check)}${q.a.map(rt).join('  ·  ')}</div>` : ''}
       </div>
-      <input id="ans" class="ans ${quiz.state}" value="${esc(quiz.typed)}" placeholder="Réponse"
-        autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
-        enterkeyhint="go" ${quiz.state === 'ask' ? '' : 'readonly'}>
-      ${quiz.state === 'bad' ? `<div class="duo" style="margin:11px 0 0">
-          <button data-act="anyway">${svg(I.check)}Compter juste</button>
-          <button class="prim" data-act="next">Suivant${svg(I.arrow)}</button>
-        </div>`
-        : `<button class="cta" style="margin-top:11px" data-act="${quiz.state === 'ask' ? 'send' : 'next'}">
-            ${quiz.state === 'ask' ? 'Valider' : 'Suivant'}${svg(I.arrow)}</button>`}
+      ${qcm
+        ? `<div class="opts qopts">${quizOpts(q).map((o, k) => {
+            const right = norm(plain(o)) === norm(plain(q.a[0]));
+            const cl = ask ? '' : right ? ' ok' : (quiz.pickd === k ? ' ko' : ' dim');
+            return `<button class="op${cl}" data-qp="${k}">${rt(o)}</button>`;
+          }).join('')}</div>`
+        : `<div class="arow">
+            <input id="ans" class="ans ${quiz.state}" value="${esc(quiz.typed)}" placeholder="Réponse"
+              autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
+              enterkeyhint="go" ${ask ? '' : 'readonly'}>
+            ${ASRC && ask ? `<button class="ai mic ${asrOn ? 'busy' : ''}" data-act="asr">${svg(I.mic)}</button>` : ''}
+          </div>`}
+      ${quiz.state === 'bad'
+        ? `<div class="duo" style="margin:11px 0 0">
+            <button data-act="anyway">${svg(I.check)}Compter juste</button>
+            <button class="prim" data-act="next">Suivant${svg(I.arrow)}</button>
+          </div>`
+        : ask
+        ? `<div class="qrow">
+            ${qcm ? '' : `<button class="qb" data-act="hint" title="Indice">${svg(I.bulb)}</button>
+            <button class="qb" data-act="idk" title="Je ne sais pas">${svg(I.skip)}</button>`}
+            ${quiz.answers.length >= 2
+              ? `<button class="qb ${qcm ? 'on' : ''}" data-act="qcm2" title="Choix multiples">${svg(I.grid)}</button>`
+              : ''}
+            ${qcm ? '<div style="flex:1"></div>'
+                  : `<button class="cta" data-act="send">Valider${svg(I.arrow)}</button>`}
+          </div>`
+        : `<button class="cta" style="margin-top:11px" data-act="next">Suivant${svg(I.arrow)}</button>`}
     </div>`;
   requestAnimationFrame(() => {
     const p = document.getElementById('pg');
     if (p) p.style.width = Math.round(quiz.i / quiz.pool.length * 100) + '%';
   });
   const inp = document.getElementById('ans');
-  inp.addEventListener('input', () => quiz.typed = inp.value);
-  inp.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); quiz.state === 'ask' ? submit() : nextQ(); }
-  });
-  if (quiz.state === 'ask') setTimeout(() => inp.focus(), 40);
+  if (inp) {
+    inp.addEventListener('input', () => quiz.typed = inp.value);
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); ask ? submit() : nextQ(); }
+    });
+    if (ask && !asrOn) setTimeout(() => inp.focus(), 40);
+  }
+  armTimer();
+}
+function win() {
+  quiz.ok++; quiz.log.push(1);
+  quiz.streak++; quiz.best = Math.max(quiz.best, quiz.streak);
+  quiz.state = 'good'; stopTimer(); render();
+  setTimeout(() => { if (quiz && quiz.state === 'good') nextQ(); }, 560);
+}
+function fail() {
+  const q = quiz.pool[quiz.i];
+  const typed = quiz.typed.trim();
+  quiz.bad.push(q); quiz.log.push(0); quiz.streak = 0;
+  quiz.miss.push({ q: q.f, a: q.a.join('  ·  '), typed,
+                   diff: typed ? diffHtml(typed, q.a) : '' });
+  quiz.state = 'bad'; stopTimer(); render();
 }
 function submit() {
   if (quiz.state !== 'ask' || !quiz.typed.trim()) return;
-  const q = quiz.pool[quiz.i];
-  if (accepts(quiz.typed, q.a)) {
-    quiz.ok++; quiz.log.push(1); quiz.state = 'good'; render();
-    setTimeout(() => { if (quiz && quiz.state === 'good') nextQ(); }, 560);
-  } else {
-    quiz.bad.push(q); quiz.log.push(0);
-    quiz.miss.push({ q: q.f, a: q.a.join('  ·  '), typed: quiz.typed.trim() });
-    quiz.state = 'bad'; render();
-  }
+  accepts(quiz.typed, quiz.pool[quiz.i].a, quiz.tol) ? win() : fail();
 }
-function nextQ() { quiz.i++; quiz.state = 'ask'; quiz.typed = ''; render(); }
+function pickQuiz(k) {
+  if (quiz.state !== 'ask') return;
+  const q = quiz.pool[quiz.i];
+  quiz.pickd = k;
+  quiz.typed = quiz.opts[k];
+  norm(plain(quiz.opts[k])) === norm(plain(q.a[0])) ? win() : fail();
+}
+function nextQ() {
+  stopTimer();
+  quiz.i++; quiz.state = 'ask'; quiz.typed = '';
+  quiz.hint = 0; quiz.pickd = null; quiz.opts = null; quiz.optsFor = -1;
+  render();
+}
 
 /* ---------- création / import ---------- */
 let comp = { subject: '', cards: [], edit: -1, bulk: false, text: '' };
@@ -1700,7 +2371,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay]');
   if (!b) return;
   const ds = b.dataset;
   if (ds.dl !== undefined) {
@@ -1729,6 +2400,20 @@ $.addEventListener('click', e => {
     c.x = !c.x; saveDeck(d); return render();
   }
   const a = ds.act, d = view.id ? deck(view.id) : null;
+  if (ds.card) { cardEdit = ds.card; return openMenu('card'); }
+  if (b.dataset.tf !== undefined) return answerTF(b.dataset.tf === '1');
+  if (b.dataset.pick !== undefined) return pickMCQ(+b.dataset.pick);
+  if (b.dataset.mt) { const [sd, mid] = b.dataset.mt.split(':'); return pickMatch(sd, mid); }
+  if (b.dataset.snd !== undefined) {
+    const c = cardOf(0); if (!c) return;
+    const bk = b.dataset.snd === 'b';
+    const tf = isTF(c);
+    const rv = !tf && (study.dirs ? study.dirs[c.id] : study.rev);
+    const useBack = bk !== !!rv;
+    const aud = useBack ? c.ba : c.fa, txt = useBack ? c.b : c.f;
+    if (aud) play(aud); else say(txt, study.lang);
+    return;
+  }
   if (a === 'home' || a === 'tab-home') return go('home');
   if (a === 'tab-quiz') return go('quiz');
   if (a === 'peek') { peek = !peek; render(); return; }
@@ -1763,7 +2448,8 @@ $.addEventListener('click', e => {
   if (a === 'studyall') { closeMenu(); return startStudy(view.id, false, null, {}); }
   if (a === 'studyleech') { closeMenu(); return startStudy(view.id, false, null, { only: 'leech' }); }
   if (a === 'quizdeck') return startQuiz(view.id);
-  if (a === 'restart') return startStudy(study ? study.id : view.id, study && study.rev);
+  if (a === 'restart') return startStudy(study ? study.id : view.id, study && study.rev, null,
+    study ? { mode: study.mode, both: study.both } : {});
   if (a === 'swap') { toast(I.swap, study.rev ? 'Sens normal' : 'Sens inversé'); return startStudy(study.id, !study.rev); }
   if (a === 'swapq') { toast(I.swap, quiz.rev ? 'Sens normal' : 'Sens inversé'); return startQuiz(quiz.id, null, !quiz.rev); }
   if (a === 'anyway') {
@@ -1773,6 +2459,21 @@ $.addEventListener('click', e => {
     return nextQ();
   }
   if (a === 'redostudy') return startStudy(study.id, study.rev, study.miss.map(m => m.id));
+  if (ds.qp !== undefined) return pickQuiz(+ds.qp);
+  if (ds.qsay !== undefined) return say(quiz.pool[quiz.i].f, quiz.lang);
+  if (a === 'hint') {
+    if (quiz.state !== 'ask') return;
+    if (!quiz.hint) quiz.hints++;
+    quiz.hint++; return render();
+  }
+  if (a === 'idk') { if (quiz.state === 'ask') fail(); return; }
+  if (a === 'qcm2') {
+    if (quiz.answers.length < 2) return;
+    quiz.mode = quiz.mode === 'qcm' ? '' : 'qcm';
+    quiz.opts = null; quiz.optsFor = -1;
+    return render();
+  }
+  if (a === 'asr') return dictate();
   if (a === 'send') return submit();
   if (a === 'next') return nextQ();
   if (a === 'requiz') return startQuiz(quiz.id, null, quiz.rev);
@@ -1785,7 +2486,19 @@ $.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && menu) return closeMenu();
   if (view.name !== 'study' || /INPUT|TEXTAREA/.test(e.target.tagName) || e.target.isContentEditable) return;
-  if (study && study.flip && !study.simple && '1234'.includes(e.key)) {
+  if (!study) return;
+  if (study.mode === 'match') return;
+  const cur = cardOf(0);
+  if (isTF(cur)) {                                   // vrai / faux : v ou f
+    if (e.key === 'v' || e.key === 'V' || e.key === 'ArrowLeft') return answerTF(true);
+    if (e.key === 'f' || e.key === 'F' || e.key === 'ArrowRight') return answerTF(false);
+    return;
+  }
+  if (study.mode === 'mcq') {
+    if ('1234'.includes(e.key)) { const k = +e.key - 1; if (study.opts && k < study.opts.length) pickMCQ(k); }
+    return;
+  }
+  if (study.flip && !study.simple && '1234'.includes(e.key)) {
     pendingGrade = +e.key - 1;
     return fling(pendingGrade > 0 ? -1 : 1);
   }
