@@ -1,4 +1,4 @@
-const C = 'cartes-v20';
+const C = 'cartes-v21';
 const SHELL = ['.', 'index.html', 'app.css', 'app.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png', 'icons/icon-maskable.png'];
 self.addEventListener('install', e => {

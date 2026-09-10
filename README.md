@@ -126,8 +126,13 @@ exposants, lettres grecques et opérateurs courants — sans aucune bibliothèqu
 pour que l'app démarre toujours hors ligne.
 
 **Son.** Un enregistrement peut être attaché à une face ; sinon, si le paquet
-déclare une langue, le navigateur lit le texte. Dans le quiz, le micro dicte la
-réponse au lieu de la taper.
+déclare une langue, le navigateur lit le texte. Recto et verso ont chacun leur
+langue (réglages du paquet), et la lecture suit le **contenu**, pas le côté
+physique de la carte : si le paquet est inversé ou mélangé (bouton d'inversion,
+« mélanger les deux sens »), le texte qui était au recto continue de se lire
+dans sa langue d'origine même s'il s'affiche maintenant au verso. Dans le quiz,
+le micro dicte la réponse au lieu de la taper, dans la langue de la réponse
+attendue — qui suit la même logique si le quiz est inversé.
 
 **Vrai / faux.** Le verso vaut `vrai` ou `faux`. Deux boutons remplacent le
 balayage, la réponse est immédiate — pas de note à choisir, il n'y a pas de
@@ -138,6 +143,10 @@ réponses plausibles, pas du remplissage. Les cartes vrai/faux en sont exclues.
 
 **Association.** Six paires par lot, on relie de gauche à droite. Une paire
 trouvée du premier coup compte juste, sinon elle est comptée ratée.
+
+**Longues définitions.** Le texte d'une carte rétrécit automatiquement selon
+sa longueur pour tenir dans le cadre ; au-delà d'une définition vraiment
+longue, il défile à l'intérieur de la carte plutôt que d'en déborder.
 
 ## Quiz
 

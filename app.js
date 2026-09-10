@@ -161,9 +161,18 @@ async function refreshToken() {
 const rowOf = d => ({ id: d.id, user_id: auth.uid, name: d.name, subject: d.subject,
                       hidden: !!d.hidden, cards: d.cards, pos: d.pos || 0,
                       pinned: !!d.pinned, meta: d.meta || {} });
-/* réglages propres à un paquet : tolérance du quiz, langue de lecture, chrono */
-const DEFMETA = { tol: 'normal', lang: '', timer: 0 };
-const metaOf = d => ({ ...DEFMETA, ...((d && d.meta) || {}) });
+/* réglages propres à un paquet : tolérance du quiz, langue par face, chrono.
+   La langue suit le CONTENU (recto/verso), jamais le côté physique de la
+   carte : si le paquet est inversé (bouton « inverser », mélange des deux
+   sens), le texte qui était au recto continue de se lire dans sa langue
+   d'origine, même s'il s'affiche maintenant au verso. */
+const DEFMETA = { tol: 'normal', langf: '', langb: '', timer: 0 };
+const metaOf = d => {
+  const raw = (d && d.meta) || {};
+  const m = { ...DEFMETA, ...raw };
+  if (raw.lang && !raw.langb) m.langb = raw.lang;   // ancien réglage : une seule langue, côté verso
+  return m;
+};
 function setMeta(d, patch) { d.meta = { ...metaOf(d), ...patch }; saveDeck(d); }
 
 /* pousse tout ce qui est en attente ; garde la file si le réseau manque */
@@ -757,13 +766,20 @@ function toast(icon, text) {
 
 /* ---------- rendu ---------- */
 let animate = true;
+/* .fade porte l'entrée en douceur des listes (tuiles, lignes, boutons…) —
+   voir app.css. Elle n'est présente qu'au moment exact où le contenu neuf
+   est inséré lors d'une vraie navigation (animate === true) ; retirée
+   avant toute reconstruction en place (un réglage qu'on bascule, une
+   carte qu'on suspend) pour qu'aucun élément ne rejoue son apparition. */
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome,
               run: quizView, login: loginView, settings: settingsView };
+  $.classList.remove('fade');
+  if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
   (v[view.name] || home)();
   $.dataset.view = view.name;
   paintRail();
-  if (animate) { $.classList.remove('fade'); void $.offsetWidth; $.classList.add('fade'); }
+  if (animate) $.classList.add('fade');
   if (pageDir) {
     const pg = document.getElementById('page');
     if (pg) pg.classList.add(pageDir < 0 ? 'in-right' : 'in-left');
@@ -1232,9 +1248,13 @@ function paintMenu() {
             ${[['strict', 'Stricte'], ['normal', 'Normale'], ['soft', 'Souple']].map(([v, l]) =>
               `<button data-tol="${v}" class="${m.tol === v ? 'on' : ''}">${l}</button>`).join('')}
           </div></div>
-        <div class="mrow col"><span class="ml">${svg(I.sound)}Langue lue</span>
+        <div class="mrow col"><span class="ml">${svg(I.sound)}Langue du recto</span>
           <div class="seg mseg wrap">
-            ${LANGS.map(([v, l]) => `<button data-lg="${v}" class="${m.lang === v ? 'on' : ''}">${l}</button>`).join('')}
+            ${LANGS.map(([v, l]) => `<button data-lgf="${v}" class="${m.langf === v ? 'on' : ''}">${l}</button>`).join('')}
+          </div></div>
+        <div class="mrow col"><span class="ml">${svg(I.sound)}Langue du verso</span>
+          <div class="seg mseg wrap">
+            ${LANGS.map(([v, l]) => `<button data-lgb="${v}" class="${m.langb === v ? 'on' : ''}">${l}</button>`).join('')}
           </div></div>
         <div class="mrow col"><span class="ml">${svg(I.clock)}Chrono par question</span>
           <div class="seg mseg">
@@ -1355,13 +1375,14 @@ function paintMenu() {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lg],[data-tm],[data-ct]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   /* réglages propres au paquet, dans leur feuille */
   if (b.dataset.tol) { setMeta(d, { tol: b.dataset.tol }); return paintMenu(); }
-  if (b.dataset.lg !== undefined) { setMeta(d, { lang: b.dataset.lg }); return paintMenu(); }
+  if (b.dataset.lgf !== undefined) { setMeta(d, { langf: b.dataset.lgf }); return paintMenu(); }
+  if (b.dataset.lgb !== undefined) { setMeta(d, { langb: b.dataset.lgb }); return paintMenu(); }
   if (b.dataset.tm !== undefined) { setMeta(d, { timer: +b.dataset.tm }); return paintMenu(); }
   if (b.dataset.ct !== undefined) {
     const c = d && d.cards.find(x => x.id === cardEdit);
@@ -1544,7 +1565,7 @@ function startStudy(id, rev, subset, opt) {
       : { ...o, order: o.order || prefs.order, fresh: prefs.fresh }).map(c => c.id);
   }
   if (!ids.length) { toast(I.check, 'Rien à revoir ici'); return; }
-  const lang = id === 'all' ? '' : metaOf(deck(id)).lang;
+  const dm = id === 'all' ? DEFMETA : metaOf(deck(id));
   const mode = o.mode || '';
   /* Le QCM a besoin d'au moins deux réponses distinctes pour avoir un sens. */
   let pool = [];
@@ -1561,7 +1582,7 @@ function startStudy(id, rev, subset, opt) {
     ids = ids.filter(x => keep.has(x));
     if (!ids.length) { toast(I.x, 'Rien à mettre en QCM'); return; }
   }
-  study = { id, name, lang, mode, pool, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
+  study = { id, name, langf: dm.langf, langb: dm.langb, mode, pool, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
             ok: 0, total: ids.length, t0: Date.now(), tq: Date.now(), tried: {}, missSet: {},
             miss: [], log: [], saved: false, opt: o, simple: sm,
             dirs: Object.fromEntries(ids.map(x => [x, o.both ? Math.random() < .5 : !!rev])) };
@@ -1705,11 +1726,19 @@ const cardOf = n => findCard(study.queue[study.i + n])[0];
 /* Une face : image, texte mis en forme, bouton de son. Le bouton lit
    l'enregistrement de la carte s'il y en a un, sinon fait parler le
    navigateur quand le paquet déclare une langue. */
+/* Le texte grandit ou rétrécit selon sa longueur, sinon une longue
+   définition déborde d'une carte à hauteur fixe. Au-delà, le repli est un
+   vrai défilement interne (la carte reste lisible en entier, sans jamais
+   couper le contenu ou sortir du cadre). */
+const faceSize = txt => {
+  const n = plain(txt).length;
+  return n > 260 ? ' xxl' : n > 160 ? ' xl' : n > 90 ? ' l' : '';
+};
 function faceHtml(bk, txt, img, aud, lang) {
   const snd = aud || (lang && TTS && plain(txt));
-  return `<div class="face${bk ? ' bk' : ''}">
+  return `<div class="face${bk ? ' bk' : ''}${faceSize(txt)}">
     ${img ? `<img class="fim" src="${esc(img)}" alt="">` : ''}
-    ${plain(txt) ? `<span>${rt(txt)}</span>` : ''}
+    ${plain(txt) ? `<div class="tx">${rt(txt)}</div>` : ''}
     ${snd ? `<button class="snd" data-snd="${bk ? 'b' : 'f'}">${svg(I.sound)}</button>` : ''}
   </div>`;
 }
@@ -1724,14 +1753,14 @@ function paintStack() {
   study.tf = null;                                   // verdict vrai/faux de la carte courante
   const tf = isTF(c);
   const rv = !tf && (study.dirs ? study.dirs[c.id] : study.rev);
-  const lang = study.lang || '';
   const front = rv ? c.b : c.f, back = rv ? c.f : c.b;
   const fimg = rv ? c.bi : c.fi, bimg = rv ? c.fi : c.bi;
   const faud = rv ? c.ba : c.fa, baud = rv ? c.fa : c.ba;
+  const frontLang = rv ? study.langb : study.langf, backLang = rv ? study.langf : study.langb;
   st.innerHTML = `<div class="card in${tf ? ' tf' : ''}" id="top">
       <div class="flipper">
-        ${faceHtml(false, front, fimg, faud, lang)}
-        ${faceHtml(true, back, bimg, baud, lang)}
+        ${faceHtml(false, front, fimg, faud, frontLang)}
+        ${faceHtml(true, back, bimg, baud, backLang)}
       </div>
       ${(c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
         `<i>${esc(t)}</i>`).join('')}</div>` : ''}
@@ -1758,7 +1787,7 @@ function paintMCQ() {
   }
   st.innerHTML = `${c.fi ? `<img class="fim" src="${esc(c.fi)}" alt="">` : ''}
     <span>${rt(c.f)}</span>
-    ${(c.fa || (study.lang && TTS)) ? `<button class="snd" data-snd="f">${svg(I.sound)}</button>` : ''}`;
+    ${(c.fa || (study.langf && TTS)) ? `<button class="snd" data-snd="f">${svg(I.sound)}</button>` : ''}`;
   const good = norm(plain(c.b));
   f.innerHTML = `<div class="opts">${study.opts.map((o, k) => {
     const right = norm(plain(o)) === good;
@@ -2081,7 +2110,11 @@ function startQuiz(id, pool, rev, opt) {
            pool: items, answers, i: 0, ok: 0, bad: [], miss: [], log: [], forced: 0,
            t0: Date.now(), saved: false, state: 'ask', typed: '',
            mode: mode === 'qcm' && answers.length >= 2 ? 'qcm' : '',
-           tol: m.tol, lang: m.lang, timer: m.timer,
+           /* qlang lit la question, alang attend/écoute la réponse — la langue
+              suit ce qui est vraiment affiché à chaque rôle, pas un côté fixe :
+              si le quiz est inversé, question et réponse ont échangé de langue
+              avec leur contenu. */
+           tol: m.tol, qlang: rev ? m.langb : m.langf, alang: rev ? m.langf : m.langb, timer: m.timer,
            streak: 0, best: 0, hint: 0, hints: 0, opts: null, optsFor: -1 };
   go('run');
 }
@@ -2094,7 +2127,7 @@ function dictate() {
   if (asrOn) { try { asrRec && asrRec.stop(); } catch (e) {} return; }
   const q = quiz.pool[quiz.i];
   asrOn = true; render();
-  asrRec = listen(quiz.lang, alts => {
+  asrRec = listen(quiz.alang, alts => {
     if (alts) {
       const best = alts.find(t => accepts(t, q.a, quiz.tol)) || alts[0];
       quiz.typed = best;
@@ -2173,7 +2206,7 @@ function quizView() {
   }
   const q = quiz.pool[quiz.i];
   const ask = quiz.state === 'ask';
-  const canSay = quiz.lang && TTS && plain(q.f);
+  const canSay = quiz.qlang && TTS && plain(q.f);
   $.innerHTML = bar(`<span class="num">${quiz.i + 1}/${quiz.pool.length}</span>`)
     + `<div class="study">
       <div class="prog"><i id="pg" style="width:0%"></i></div>
@@ -2310,7 +2343,7 @@ function importView() {
       add.disabled = !cards.length;
       gen.disabled = aiBusy || tx.value.trim().length < 40;
       add.firstChild.textContent = cards.length ? `Ajouter ${cards.length} ` : 'Ajouter';
-      prev.innerHTML = cards.slice(0, 40).map((c, i) => `<div class="pr" style="animation-delay:${i * 18}ms">
+      prev.innerHTML = cards.slice(0, 40).map(c => `<div class="pr">
         <span class="a">${esc(c.f)}</span>${svg(I.arrow)}<span class="b">${esc(c.b)}</span></div>`).join('');
     };
     const fit = () => { tx.style.height = 'auto'; tx.style.height = Math.min(tx.scrollHeight + 2, innerHeight * .3) + 'px'; };
@@ -2368,8 +2401,7 @@ function importView() {
 
 function paintDraft() {
   const l = document.getElementById('dlist'); if (!l) return;
-  l.innerHTML = comp.cards.map((c, i) => `<div class="dc ${i === comp.edit ? 'on' : ''}" data-ed="${i}"
-      style="animation-delay:${Math.min(i, 12) * 20}ms">
+  l.innerHTML = comp.cards.map((c, i) => `<div class="dc ${i === comp.edit ? 'on' : ''}" data-ed="${i}">
       <div class="tx"><b>${esc(c.f) || '—'}</b><span>${esc(c.b) || '—'}</span></div>
       <button class="x" data-dl="${i}">${svg(I.x)}</button>
     </div>`).reverse().join('');
@@ -2419,7 +2451,7 @@ $.addEventListener('click', e => {
     const rv = !tf && (study.dirs ? study.dirs[c.id] : study.rev);
     const useBack = bk !== !!rv;
     const aud = useBack ? c.ba : c.fa, txt = useBack ? c.b : c.f;
-    if (aud) play(aud); else say(txt, study.lang);
+    if (aud) play(aud); else say(txt, useBack ? study.langb : study.langf);
     return;
   }
   if (a === 'home' || a === 'tab-home') return go('home');
@@ -2468,7 +2500,7 @@ $.addEventListener('click', e => {
   }
   if (a === 'redostudy') return startStudy(study.id, study.rev, study.miss.map(m => m.id));
   if (ds.qp !== undefined) return pickQuiz(+ds.qp);
-  if (ds.qsay !== undefined) return say(quiz.pool[quiz.i].f, quiz.lang);
+  if (ds.qsay !== undefined) return say(quiz.pool[quiz.i].f, quiz.qlang);
   if (a === 'hint') {
     if (quiz.state !== 'ask') return;
     if (!quiz.hint) quiz.hints++;
