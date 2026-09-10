@@ -529,6 +529,8 @@ function toast(icon, text) {
   clearTimeout(tt); document.querySelectorAll('.toast').forEach(n => n.remove());
   const n = document.createElement('div'); n.className = 'toast';
   n.innerHTML = svg(icon) + (text ? `<span>${esc(text)}</span>` : '');
+  /* sans barre d'onglets (réglages, révision, quiz) le toast descend d'autant */
+  if (!document.querySelector('.tabs')) n.style.bottom = 'calc(22px + env(safe-area-inset-bottom))';
   document.body.appendChild(n); tt = setTimeout(() => n.remove(), 1600);
 }
 
@@ -725,7 +727,7 @@ function deckView() {
     <div class="rows">
       ${d.cards.map((c, i) => `
         <div class="row ${c.x ? 'off' : ''}" data-id="${c.id}" style="--i:${i}">
-          ${simpleMode() ? '' : `<i class="st ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>`}
+          ${simpleMode() ? '' : `<i class="cst ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>`}
           <div class="fl">
             <input value="${esc(c.f)}" data-k="f" placeholder="Recto">
             <input class="b" value="${esc(c.b)}" data-k="b" placeholder="Verso">
@@ -858,7 +860,7 @@ function settingsView() {
       <div class="slist">
         <button class="sr flat" data-act="tglsimple">${svg(I.brain)}
           <span class="n">Mode simple</span>
-          <span class="sw2 ${prefs.simple ? 'on' : ''}"></span></button>
+          <span class="tgl ${prefs.simple ? 'on' : ''}"></span></button>
         <div class="note">${prefs.simple
           ? `Le moteur est éteint. Les cartes défilent dans l’ordre choisi, sans échéance
              et sans note : tu balaies à gauche si tu sais, à droite sinon. La progression
@@ -887,10 +889,10 @@ function settingsView() {
         </div>
         <button class="sr flat" data-act="tglfresh">${svg(I.card)}
           <span class="n">Nouvelles cartes d'abord</span>
-          <span class="sw2 ${prefs.fresh ? 'on' : ''}"></span></button>
+          <span class="tgl ${prefs.fresh ? 'on' : ''}"></span></button>
         <button class="sr flat" data-act="tglboth">${svg(I.swap)}
           <span class="n">Mélanger les deux sens</span>
-          <span class="sw2 ${prefs.both ? 'on' : ''}"></span></button>
+          <span class="tgl ${prefs.both ? 'on' : ''}"></span></button>
       </div>
       <div class="lbl"><span>Compte</span></div>
       <div class="slist">

@@ -255,10 +255,12 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .strip i{flex:1;min-width:3px;border-radius:3px;background:var(--ok);opacity:.85}
 .strip i.n{background:var(--ko)}
 
-.hist{display:flex;align-items:flex-end;gap:5px;width:100%;height:58px;
+.hist{display:flex;align-items:flex-end;gap:6px;width:100%;height:62px;
+  padding-bottom:1px;border-bottom:1px solid var(--hair);
   animation:rise .5s var(--e) .18s both}
-.hb{flex:1;height:100%;display:flex;align-items:flex-end}
-.hb i{width:100%;border-radius:6px;background:var(--surf2);transition:height .7s var(--e)}
+.hb{flex:1;max-width:46px;height:100%;display:flex;align-items:flex-end}
+.hb i{width:100%;min-height:5px;border-radius:8px 8px 3px 3px;background:var(--surf2);
+  transition:height .7s var(--e)}
 .hb.now i{background:var(--ink)}
 
 .miss{display:flex;flex-direction:column;gap:8px;width:100%}
@@ -597,10 +599,10 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 
 /* ══════════ moteur d'apprentissage ══════════ */
 /* état d'une carte : nouvelle · apprentissage · jeune · mûre · suspendue */
-.st{width:7px;height:7px;border-radius:50%;flex:none;align-self:center;margin-right:-2px}
-.st.new{background:#4A7FBE} .st.learn{background:#D4842E}
-.st.young{background:#4C9862} .st.mature{background:#2A2730;opacity:.5}
-.st.susp{background:var(--soft);opacity:.4}
+.cst{width:7px;height:7px;border-radius:50%;flex:none;align-self:center;margin-right:-2px}
+.cst.new{background:#4A7FBE} .cst.learn{background:#D4842E}
+.cst.young{background:#4C9862} .cst.mature{background:#2A2730;opacity:.5}
+.cst.susp{background:var(--soft);opacity:.4}
 .row.off{opacity:.45}
 .x.sus{color:var(--soft)}
 .x.sus.on{color:var(--ink)}
@@ -668,12 +670,12 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .seg button{flex:1;min-width:88px;height:38px;border-radius:13px;background:var(--surf);
   font-size:13px;font-weight:700;color:var(--ink2);transition:background .2s,color .2s}
 .seg button.on{background:var(--ink);color:var(--bg)}
-.sw2{width:42px;height:25px;border-radius:13px;background:var(--surf2);flex:none;position:relative;
+.tgl{width:42px;height:25px;border-radius:13px;background:var(--surf2);flex:none;position:relative;
   transition:background .26s var(--e)}
-.sw2::after{content:'';position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;
+.tgl::after{content:'';position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;
   background:var(--card);box-shadow:var(--s1);transition:transform .3s var(--sp)}
-.sw2.on{background:var(--ok)}
-.sw2.on::after{transform:translateX(17px)}
+.tgl.on{background:var(--ok)}
+.tgl.on::after{transform:translateX(17px)}
 .mrr{min-height:17px;text-align:center;font-size:13px;font-weight:650;color:var(--ko);padding:0 16px}
 
 /* ══════════ connexion ══════════ */
