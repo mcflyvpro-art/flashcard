@@ -4,7 +4,6 @@
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#FAF7F2",
   "theme_color": "#FAF7F2",
   "icons": [
@@ -25,6 +24,21 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "description": "Révision par cartes et quiz, avec comptes séparés.",
+  "screenshots": [
+    {
+      "src": "shots/wide.png",
+      "sizes": "1440x900",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "shots/narrow.png",
+      "sizes": "414x896",
+      "type": "image/png",
+      "form_factor": "narrow"
     }
   ]
 }

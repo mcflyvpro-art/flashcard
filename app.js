@@ -337,6 +337,8 @@ function render() {
   const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome,
               run: quizView, login: loginView, settings: settingsView };
   (v[view.name] || home)();
+  $.dataset.view = view.name;
+  paintRail();
   if (animate) { $.classList.remove('fade'); void $.offsetWidth; $.classList.add('fade'); }
   if (pageDir) {
     const pg = document.getElementById('page');
@@ -393,6 +395,28 @@ function bindPager() {
   pg.addEventListener('pointerleave', end);
 }
 
+function paintRail() {
+  let r = document.getElementById('rail');
+  if (!auth || view.name === 'login') { if (r) r.remove(); return; }
+  if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
+  const on = /quiz|run/.test(view.name) ? 'quiz' : view.name === 'settings' ? 'settings' : 'home';
+  r.innerHTML = `
+    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Cartes</span></div>
+    <nav>
+      <button class="${on === 'home' ? 'on' : ''}" data-r="home">${svg(I.layers)}<span>Paquets</span></button>
+      <button class="${on === 'quiz' ? 'on' : ''}" data-r="quiz">${svg(I.pen)}<span>Quiz</span></button>
+    </nav>
+    <div class="sp"></div>
+    <nav>
+      <button class="${on === 'settings' ? 'on' : ''}" data-r="settings">${svg(I.gear)}<span>Réglages</span></button>
+    </nav>
+    <div class="who">${svg(I.user)}<span>${esc(auth.email)}</span></div>`;
+  r.onclick = e => {
+    const b = e.target.closest('[data-r]'); if (!b) return;
+    go(b.dataset.r === 'quiz' ? 'quiz' : b.dataset.r === 'settings' ? 'settings' : 'home');
+  };
+}
+
 const tabs = on => `<div class="tabs">
   <div class="sl" style="transform:translateX(${on === 'quiz' ? 74 : 0}px)"></div>
   <button class="${on === 'home' ? 'on' : ''}" data-act="tab-home">${svg(I.layers)}</button>
@@ -426,7 +450,7 @@ function home() {
       ${list.length ? `<div class="grid">${list.map(tile).join('')}</div>`
         : `<div class="empty">${svg(I.layers)}</div>`}
     </div>
-    <button class="fab" data-act="new">${svg(I.plus)}</button>
+    <button class="fab" data-act="new">${svg(I.plus)}<span>Nouveau paquet</span></button>
     ${tabs('home')}`;
   bindPager();
 }
@@ -443,7 +467,7 @@ function deckView() {
     <div class="head" style="${sty(s)}">
       <div class="t" id="dn" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(d.name)}</div>
       <div class="s">
-        <span>${svg(I.tag)}${esc(s.n)}</span><b></b>
+        <span>${svg(I.tag)}${esc(s.name)}</span><b></b>
         <span>${svg(I.card)}${plur(d.cards.length, 'carte')}</span>
         ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
       </div>
@@ -717,7 +741,7 @@ function review(o) {
       ${tiles.map(([v, l]) => `<div class="st"><b>${v}</b><span>${l}</span></div>`).join('')}
     </div>
     <div class="strip">${o.log.map(v => `<i class="${v ? 'y' : 'n'}"></i>`).join('')}</div>
-    ${hist.length > 1 ? `<div class="lbl"><span>Sessions</span><span>${hist.length}</span></div>
+    ${hist.length > 1 ? `<div class="lbl lh"><span>Sessions</span><span>${hist.length}</span></div>
       <div class="hist">${hist.slice(-12).map((h, i, a) =>
         `<div class="hb ${i === a.length - 1 ? 'now' : ''}"><i style="height:${Math.max(4, h.p * 100)}%"></i></div>`
       ).join('')}</div>` : ''}
@@ -726,7 +750,7 @@ function review(o) {
       <button data-act="${o.again}">${svg(I.redo)}Rejouer</button>
       <button class="prim" data-act="${o.done}">${svg(I.check)}Fin</button>
     </div>
-    ${o.miss.length ? `<div class="lbl"><span>À revoir</span><span>${o.miss.length}</span></div>
+    ${o.miss.length ? `<div class="lbl lm"><span>À revoir</span><span>${o.miss.length}</span></div>
       <div class="miss">${o.miss.map((m, i) => `<div class="mr" style="animation-delay:${i * 22}ms">
         <div class="q">${esc(m.q)}</div>
         ${m.typed ? `<div class="w">${svg(I.x)}${esc(m.typed)}</div>` : ''}
@@ -792,7 +816,8 @@ function paintFoot() {
         <button class="act yes" data-a="yes">${svg(I.check)}</button>
         <button class="act no" data-a="no">${svg(I.x)}</button>
       </div>`
-    : `<div class="hint">${SWIPE}</div>`;
+    : `<div class="hint">${SWIPE}<span class="keys">
+        <kbd>←</kbd>${svg(I.check)}<kbd>→</kbd>${svg(I.x)}<kbd>espace</kbd>${svg(I.swap)}</span></div>`;
 }
 function toggleFlip() {
   const top = document.getElementById('top'); if (!top) return;
@@ -1017,7 +1042,7 @@ function importView() {
       <h1>${t ? esc(t.name) : 'Nouveau paquet'}</h1>
       <button class="ic ${comp.bulk ? 'solid' : ''}" data-act="bulk">${svg(I.down)}</button>
     </div>
-    <div class="sheet">
+    <div class="sheet ${comp.bulk ? 'sh-bulk' : 'sh-comp'}">
       ${t ? '' : `<div class="field"><input id="nm" placeholder="Nom du paquet" spellcheck="false"
         enterkeyhint="next" value="${esc(comp.name || '')}"></div>
         ${pills(comp.subject, db.subjects.map(x => subj(x.id)), 'nsubj')}`}

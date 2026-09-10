@@ -448,3 +448,145 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .toast svg{width:17px;height:17px;stroke-width:2.4}
 @keyframes tin{from{opacity:0;transform:translate(-50%,16px) scale(.88)}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.1s !important}}
+
+/* ══════════════════════════════════════════════════════════════
+   Desktop — rail latéral, contenu cadré, mises en page à deux colonnes
+   ══════════════════════════════════════════════════════════════ */
+#rail{display:none}
+.fab > span,.hint .keys{display:none}
+
+@media (min-width:900px){
+  :root{--rail:248px;--gut:44px;--wide:1180px}
+
+  /* ---------- rail ---------- */
+  .tabs{display:none}
+  #rail{
+    position:fixed;left:0;top:0;bottom:0;width:var(--rail);z-index:30;
+    display:flex;flex-direction:column;gap:4px;padding:22px 14px 16px;
+    background:var(--bg2);border-right:1px solid var(--hair);
+    animation:rise .5s var(--e) both}
+  #rail .brand{display:flex;align-items:center;gap:11px;padding:0 10px 20px}
+  #rail .brand img{width:32px;height:32px;border-radius:10px;box-shadow:var(--s1)}
+  #rail .brand span{font-weight:800;font-size:17px;letter-spacing:-.4px}
+  #rail nav{display:flex;flex-direction:column;gap:3px}
+  #rail nav button{display:flex;align-items:center;gap:12px;width:100%;height:44px;
+    padding:0 12px;border-radius:13px;font-weight:650;font-size:15px;letter-spacing:-.2px;
+    color:var(--ink2);transition:background .2s var(--e),color .2s var(--e)}
+  #rail nav button svg{width:19px;height:19px;flex:none;color:var(--soft);transition:color .2s}
+  #rail nav button:hover{background:var(--surf)}
+  #rail nav button.on{background:var(--ink);color:var(--bg)}
+  #rail nav button.on svg{color:var(--bg)}
+  #rail .sp{flex:1}
+  #rail .who{display:flex;align-items:center;gap:10px;padding:12px 12px 4px;margin-top:6px;
+    border-top:1px solid var(--hair);font-size:12.5px;font-weight:650;color:var(--soft)}
+  #rail .who svg{width:16px;height:16px;flex:none}
+  #rail .who span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ---------- cadre général ---------- */
+  #app{padding:26px var(--gut) 56px calc(var(--rail) + var(--gut));min-height:100vh}
+  #app > *{width:100%;max-width:var(--wide);margin-inline:auto}
+  #app > .fab,#app > .tabs{width:auto;max-width:none;margin:0}
+  .top [data-act="settings"]{display:none}   /* le rail porte déjà Réglages */
+  .hero{font-size:44px;letter-spacing:-2px;margin:6px 1px 24px}
+  .top{margin:6px 1px 24px}
+  .bar{min-height:52px;margin-bottom:6px}
+  .bar h1{font-size:21px}
+
+  /* ---------- accueil ---------- */
+  .grid{grid-template-columns:repeat(auto-fill,minmax(216px,1fr));gap:16px;padding-bottom:24px}
+  .tile{min-height:150px;border-radius:26px;padding:19px 18px 16px}
+  .tile .n{font-size:17.5px}
+  .fab{right:var(--gut);bottom:34px;width:auto;height:54px;border-radius:18px;
+    padding:0 22px 0 18px;display:flex;align-items:center;gap:10px}
+  .fab > span{display:inline;font-weight:700;font-size:15px;letter-spacing:-.2px}
+  .fab:active{transform:scale(.96)}
+  .pills{margin:0 0 22px;padding:2px 0 6px}
+
+  /* ---------- fiche paquet : panneau figé + liste ---------- */
+  #app[data-view="deck"]{display:grid;justify-content:center;column-gap:26px;
+    grid-template-columns:minmax(0,352px) minmax(0,760px);
+    grid-template-rows:auto auto auto 1fr;align-content:start;max-width:none}
+  #app[data-view="deck"] > *{max-width:none;margin:0}
+  #app[data-view="deck"] .bar{grid-column:1/-1}
+  #app[data-view="deck"] .head{grid-column:1;grid-row:2;margin-bottom:12px}
+  #app[data-view="deck"] .head .t{font-size:30px}
+  #app[data-view="deck"] .duo{grid-column:1;grid-row:3;position:sticky;top:26px}
+  #app[data-view="deck"] .lbl{grid-column:2;grid-row:2;margin-top:10px}
+  #app[data-view="deck"] .rows{grid-column:2;grid-row:3/-1}
+  .row{padding:13px 10px 13px 17px;border-radius:19px}
+
+  /* ---------- révision ---------- */
+  #app > .study{max-width:720px;margin-inline:auto}
+  .stack{height:min(62vh,500px)}
+  .face{border-radius:34px}
+  .acts{gap:14px}
+  .act{height:66px}
+  .hint .keys{display:flex;align-items:center;gap:7px;color:var(--soft)}
+  .hint svg:first-child{display:none}
+  .hint .keys svg{width:16px;height:16px;stroke-width:2.6;margin-right:8px}
+  .hint .keys svg:nth-of-type(1){color:var(--ok)}
+  .hint .keys svg:nth-of-type(2){color:var(--ko)}
+  .hint .keys svg:nth-of-type(3){color:var(--soft);opacity:.7}
+  .hint .keys kbd{font:inherit;font-size:11.5px;font-weight:750;letter-spacing:.3px;
+    padding:5px 9px;border-radius:8px;background:var(--surf);
+    box-shadow:inset 0 0 0 1px var(--hair);color:var(--ink2)}
+
+  /* ---------- quiz ---------- */
+  .qz{max-width:720px;margin-inline:auto}
+  /* question, champ et bouton forment un bloc, au lieu de s'écarter en hauteur */
+  #app[data-view="run"] .qz{flex:none;margin-top:clamp(28px,11vh,110px);padding:0 0 24px}
+  #app[data-view="run"] .study > .ans,
+  #app[data-view="run"] .study > .cta,
+  #app[data-view="run"] .study > .duo{max-width:720px;margin-inline:auto;width:100%}
+
+  /* ---------- bilan : chiffres à gauche, ratés à droite ---------- */
+  .rev{display:grid;justify-content:center;column-gap:34px;align-content:start;
+    grid-template-columns:minmax(0,380px) minmax(0,600px);
+    grid-template-rows:auto auto auto auto auto 1fr;gap:16px 34px;max-width:none}
+  .rev > *{grid-column:1}
+  .rev .ring{grid-row:1;justify-self:center}
+  .rev .lbl.lm{grid-column:2;grid-row:1;align-self:start;margin:4px 2px 0}
+  .rev .miss{grid-column:2;grid-row:2/-1;align-self:start}
+  .rev .b{margin-top:4px}
+
+  /* ---------- création : composeur figé + liste ---------- */
+  .sheet.sh-comp{display:grid;column-gap:28px;justify-content:center;align-content:start;
+    grid-template-columns:minmax(0,440px) minmax(0,640px);
+    grid-template-rows:auto auto auto auto 1fr;gap:12px 28px}
+  .sheet.sh-comp > *{grid-column:1}
+  .sheet.sh-comp .lbl{grid-column:2;grid-row:1;margin-top:10px}
+  .sheet.sh-comp .dlist{grid-column:2;grid-row:2/-1;max-height:none}
+  .sheet.sh-bulk{max-width:760px;margin-inline:auto}
+  .comp{border-radius:26px;padding:22px 24px}
+  .comp .cf{font-size:22px}
+  .dc{padding:12px 10px 12px 17px}
+
+  /* ---------- réglages ---------- */
+  #app[data-view="settings"] .page,
+  #app[data-view="settings"] .bar{max-width:720px;margin-inline:auto}
+
+  /* ---------- connexion ---------- */
+  .login{max-width:380px;margin-inline:auto}
+  .login .logo{width:86px;height:86px;border-radius:24px}
+  .login .lt{font-size:30px;margin:18px 0 34px}
+
+  /* ---------- survol ---------- */
+  @media (hover:hover){
+    .tile:hover{transform:translateY(-3px);box-shadow:var(--s2)}
+    .tile:active{transform:translateY(-1px) scale(.99)}
+    .row:hover,.dc:hover,.sr:hover{box-shadow:var(--s2)}
+    .sr:hover{transform:translateY(-1px)}
+    .p:hover:not(.on),.ic:hover{background:var(--surf2)}
+    .duo button:hover,.act:hover,.rev .b button:hover{transform:translateY(-2px);box-shadow:var(--s2)}
+    .cta:hover:not([disabled]),.fab:hover{transform:translateY(-2px);box-shadow:var(--s3)}
+    .mi:hover,.ms:hover:not(.on){background:var(--surf)}
+    .x:hover,.peek:hover{background:var(--surf2)}
+    .sw2:hover{transform:scale(1.08)}
+  }
+  :focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:8px}
+}
+
+@media (min-width:1500px){
+  :root{--wide:1280px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(228px,1fr))}
+}
