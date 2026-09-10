@@ -48,7 +48,7 @@ let db = { subjects: [], decks: [], hist: {} };
 let view = { name: 'home' };
 let filter = '';
 let peek = false;
-let study = null, quiz = null, menu = null, typing = 0;
+let study = null, quiz = null, menu = null, typing = 0, pendingGrade = null;
 let dirty = {}, gone = [], online = true;
 
 function loadAuth() { try { return JSON.parse(localStorage.getItem(AKEY)); } catch (e) { return null; } }
@@ -107,6 +107,23 @@ function keepSession(j) {
     uid: j.user.id, email: j.user.email
   });
 }
+async function signUp(email, password) {
+  const r = await fetch(SB.url + '/auth/v1/signup', {
+    method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase(), password })
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.msg || j.error_description || j.message || 'Inscription refusée');
+  if (j.access_token) { keepSession(j); return true; }
+  return false;                       // confirmation par e-mail exigée par le projet
+}
+async function resetPassword(email) {
+  const r = await fetch(SB.url + '/auth/v1/recover', {
+    method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase() })
+  });
+  if (!r.ok) throw new Error('Envoi impossible');
+}
 async function signIn(email, password) {
   const r = await fetch(SB.url + '/auth/v1/token?grant_type=password', {
     method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' },
@@ -131,9 +148,12 @@ async function refreshToken() {
 }
 
 const rowOf = d => ({ id: d.id, user_id: auth.uid, name: d.name, subject: d.subject,
-                      hidden: !!d.hidden, cards: d.cards, pos: d.pos || 0 });
+                      hidden: !!d.hidden, cards: d.cards, pos: d.pos || 0,
+                      pinned: !!d.pinned });
 
 /* pousse tout ce qui est en attente ; garde la file si le réseau manque */
+let flushTimer = 0;
+function scheduleFlush() { clearTimeout(flushTimer); flushTimer = setTimeout(flush, 2500); }
 let flushing = false;
 async function flush() {
   if (flushing || !auth) return;
@@ -164,15 +184,21 @@ function setOnline(v) {
 
 /* récupère matières, paquets et historique du compte */
 async function pull() {
-  const [subs, decks, sess] = await Promise.all([
+  const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+  const [subs, decks, sess, pf, today] = await Promise.all([
     api('/rest/v1/subjects?select=*&order=pos.asc'),
-    api('/rest/v1/decks?select=*&order=pos.asc'),
-    api('/rest/v1/sessions?select=deck_id,mode,pct,created_at&order=created_at.asc')
+    api('/rest/v1/decks?select=*&deleted_at=is.null&order=pos.asc'),
+    api('/rest/v1/sessions?select=deck_id,mode,pct,created_at&order=created_at.asc'),
+    api('/rest/v1/prefs?select=*'),
+    api(`/rest/v1/reviews?select=id&created_at=gte.${midnight.toISOString()}`)
   ]);
+  prefs = { ...DEFPREFS, ...((pf && pf[0] && pf[0].data) || {}) };
+  if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
+  db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   db.decks = decks.map(x => ({
     id: x.id, name: x.name, subject: x.subject, hidden: x.hidden,
-    pos: x.pos, cards: (x.cards || []).map(c => ({ id: c.id || uid(), f: c.f, b: c.b }))
+    pos: x.pos, pinned: x.pinned, cards: (x.cards || []).map(c => ({ ...c, id: c.id || uid() }))
   }));
   db.hist = {};
   for (const r of sess) {
@@ -300,6 +326,103 @@ function parseText(txt) {
   return out;
 }
 
+
+/* ---------- moteur de planification ----------
+   État par carte, rangé dans la carte elle-même :
+   d = échéance (ms) · i = intervalle (jours) · e = facilité · n = réussites
+   l = rechutes · x = suspendue · fl = signalée coriace                       */
+const DAY = 864e5;
+const MIN = 6e4;
+const cstate = c => {
+  if (c.x) return 'susp';
+  if (!c.n) return 'new';
+  if (!c.i || c.i < 1) return 'learn';
+  return c.i < 21 ? 'young' : 'mature';
+};
+const STATE = { new: 'Nouvelle', learn: 'En apprentissage', young: 'Jeune',
+                mature: 'Mûre', susp: 'Suspendue' };
+const isLeech = c => (c.l || 0) >= 4;
+const isDue = c => !c.x && (!c.d || c.d <= Date.now());
+
+/* SM-2 allégé. rating : 0 encore · 1 difficile · 2 correct · 3 facile */
+function grade(c, rating) {
+  const now = Date.now();
+  c.e = Math.min(2.9, Math.max(1.3, (c.e || 2.5) + [-0.2, -0.15, 0, 0.15][rating]));
+  if (rating === 0) {
+    c.l = (c.l || 0) + 1;
+    const wasKnown = c.i >= 1;
+    c.i = 0;
+    c.d = now + (wasKnown ? 10 * MIN : MIN);   // une carte mûre qui tombe reprend plus tard
+  } else if (!c.n || !c.i) {
+    c.i = rating === 3 ? 1 : 0;
+    c.d = now + (rating === 1 ? 6 * MIN : rating === 2 ? 10 * MIN : DAY);
+  } else {
+    const f = rating === 1 ? 1.2 : rating === 3 ? c.e * 1.3 : c.e;
+    c.i = Math.max(1, Math.round(c.i * f * 10) / 10);
+    c.d = now + c.i * DAY;
+  }
+  c.n = (c.n || 0) + (rating > 0 ? 1 : 0);
+  return c;
+}
+/* Formulation lisible du prochain passage */
+function nextIn(c) {
+  if (!c.d) return '';
+  const ms = c.d - Date.now();
+  if (ms <= 0) return 'maintenant';
+  if (ms < 45 * MIN) return Math.max(1, Math.round(ms / MIN)) + ' min';
+  if (ms < DAY) return Math.round(ms / (60 * MIN)) + ' h';
+  const j = Math.round(ms / DAY);
+  return j < 31 ? j + ' j' : Math.round(j / 30) + ' mois';
+}
+/* Ce que proposerait chaque bouton, pour l'afficher dessus */
+function preview(c, rating) {
+  const copy = { ...c };
+  grade(copy, rating);
+  return nextIn(copy);
+}
+
+/* ---------- construction d'une file ---------- */
+function buildQueue(cards, o = {}) {
+  let list = cards.filter(c => !c.x || o.susp);
+  if (o.only === 'due') list = list.filter(isDue);
+  if (o.only === 'leech') list = list.filter(isLeech);
+  const fresh = list.filter(c => !c.n), seen = list.filter(c => c.n);
+  const cap = o.cap != null ? o.cap : prefs.cap;
+  const kept = cap > 0 ? fresh.slice(0, cap) : fresh;
+  if (o.order === 'deck') list = [...kept, ...seen];
+  else if (o.order === 'worst') list = [...kept, ...seen].sort((a, b) => (b.l || 0) - (a.l || 0));
+  else if (o.order === 'due') list = [...kept, ...seen].sort((a, b) => (a.d || 0) - (b.d || 0));
+  else if (o.fresh) list = [...shuffle(kept), ...shuffle(seen)];
+  else list = shuffle([...kept, ...seen]);
+  if (o.limit > 0) list = list.slice(0, o.limit);
+  return list;
+}
+const dueCount = d => d.cards.filter(c => !c.x && isDue(c)).length;
+
+/* ---------- réglages du compte ---------- */
+const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false,
+                   font: 1, tol: 'normal', name: '' };
+let prefs = { ...DEFPREFS };
+let prefsTimer = 0;
+function savePrefs() {
+  clearTimeout(prefsTimer);
+  prefsTimer = setTimeout(() => {
+    api('/rest/v1/prefs', 'POST', [{ user_id: auth.uid, name: prefs.name || null, data: prefs }],
+      { Prefer: 'resolution=merge-duplicates,return=minimal' }).catch(() => setOnline(false));
+  }, 500);
+}
+/* Progression du jour, pour l'anneau d'objectif */
+function todayCount() {
+  const day = new Date(); day.setHours(0, 0, 0, 0);
+  return (db.today && db.today.d === +day) ? db.today.n : 0;
+}
+function bumpToday() {
+  const day = new Date(); day.setHours(0, 0, 0, 0);
+  if (!db.today || db.today.d !== +day) db.today = { d: +day, n: 0 };
+  db.today.n++;
+  save();
+}
+
 /* ---------- paquets ---------- */
 function addDeck(name, cards, subject) {
   const d = { id: uid(), name: (name || '').trim() || 'Paquet', subject: subject || '',
@@ -410,7 +533,7 @@ function paintRail() {
     <nav>
       <button class="${on === 'settings' ? 'on' : ''}" data-r="settings">${svg(I.gear)}<span>Réglages</span></button>
     </nav>
-    <div class="who">${svg(I.user)}<span>${esc(auth.email)}</span></div>`;
+    <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
   r.onclick = e => {
     const b = e.target.closest('[data-r]'); if (!b) return;
     go(b.dataset.r === 'quiz' ? 'quiz' : b.dataset.r === 'settings' ? 'settings' : 'home');
@@ -429,10 +552,24 @@ const pills = (active, list, act) => `<div class="pills">
     <i></i>${esc(s.name)}</button>`).join('')}
 </div>`;
 
-const tile = (d, i) => `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="${d.id}" style="${sty(subj(d.subject))};--i:${i}">
+const tile = (d, i) => {
+  const due = dueCount(d);
+  return `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="${d.id}" style="${sty(subj(d.subject))};--i:${i}">
+  ${due ? `<i class="due">${due}</i>` : ''}
   <span class="n">${esc(d.name)}</span>
   <span class="m">${svg(d.hidden ? I.eyeoff : I.card)}${d.cards.length}</span>
 </button>`;
+};
+/* Anneau d'objectif du jour, en tête de l'accueil */
+function goalRing() {
+  const n = todayCount(), g = Math.max(1, prefs.goal || 30);
+  const p = Math.min(1, n / g);
+  return `<button class="goal" data-act="goalinfo" title="${n} / ${g} aujourd'hui">
+    <svg viewBox="0 0 44 44"><circle class="b" cx="22" cy="22" r="18"/>
+      <circle class="f" cx="22" cy="22" r="18"
+        style="stroke-dasharray:113;stroke-dashoffset:${(113 * (1 - p)).toFixed(1)}"/></svg>
+    <b>${n}</b></button>`;
+}
 
 function home() {
   const used = db.subjects.filter(s => db.decks.some(d => d.subject === s.id && (peek || !d.hidden))).map(x => subj(x.id));
@@ -443,18 +580,46 @@ function home() {
       <div class="top">
         <div class="hero">Mes paquets</div>
         <span id="offdot" class="off-dot" style="display:${online ? 'none' : ''}"></span>
+        ${goalRing()}
         <button class="ic" data-act="settings">${svg(I.gear)}</button>
         ${hidden ? `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>` : ''}
       </div>
+      ${resumeBanner()}
       ${used.length > 1 ? pills(filter, used, 'filt') : ''}
       ${list.length ? `<div class="grid">${list.map(tile).join('')}</div>`
         : `<div class="empty">${svg(I.layers)}</div>`}
+      ${allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
+        <span>Marathon</span><i>${allDue()} cartes dues, toutes matières</i></button>` : ''}
     </div>
     <button class="fab" data-act="new">${svg(I.plus)}<span>Nouveau paquet</span></button>
     ${tabs('home')}`;
   bindPager();
 }
 
+const allDue = () => live().reduce((a, d) => a + dueCount(d), 0);
+function resumeBanner() {
+  const r = loadResume();
+  if (!r) return '';
+  const left = r.queue.length - r.i;
+  return `<button class="resume" data-act="resume">${svg(I.play)}
+    <span>Reprendre ${esc(r.name || '')}</span><i>${left} carte${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}</i></button>`;
+}
+/* Répartition nouvelle / apprentissage / jeune / mûre, en une barre */
+function mixBar(d) {
+  const n = d.cards.length; if (!n) return '';
+  const k = { new: 0, learn: 0, young: 0, mature: 0, susp: 0 };
+  d.cards.forEach(c => k[cstate(c)]++);
+  const seg = ['new', 'learn', 'young', 'mature', 'susp']
+    .filter(x => k[x]).map(x => `<i class="${x}" style="flex:${k[x]}" title="${STATE[x]} : ${k[x]}"></i>`).join('');
+  const leech = d.cards.filter(isLeech).length;
+  return `<div class="mixwrap">
+    <div class="mix">${seg}</div>
+    <div class="mixk">
+      ${['new', 'learn', 'young', 'mature'].filter(x => k[x])
+        .map(x => `<span><i class="${x}"></i>${STATE[x]} ${k[x]}</span>`).join('')}
+      ${leech ? `<span class="lee">${svg(I.target)}${leech} coriace${leech > 1 ? 's' : ''}</span>` : ''}
+    </div></div>`;
+}
 function deckView() {
   const d = deck(view.id); if (!d) return go('home');
   const s = subj(d.subject);
@@ -469,6 +634,7 @@ function deckView() {
       <div class="s">
         <span>${svg(I.tag)}${esc(s.name)}</span><b></b>
         <span>${svg(I.card)}${plur(d.cards.length, 'carte')}</span>
+        ${dueCount(d) ? `<b></b><span>${svg(I.play)}${dueCount(d)} à revoir</span>` : ''}
         ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
       </div>
     </div>
@@ -476,14 +642,18 @@ function deckView() {
       <button class="prim" data-act="study">${svg(I.play)}Réviser</button>
       <button data-act="quizdeck">${svg(I.pen)}Quiz</button>
     </div>
+    ${mixBar(d)}
     <div class="lbl"><span>Cartes</span><span>${d.cards.length}</span></div>
     <div class="rows">
       ${d.cards.map((c, i) => `
-        <div class="row" data-id="${c.id}" style="--i:${i}">
+        <div class="row ${c.x ? 'off' : ''}" data-id="${c.id}" style="--i:${i}">
+          <i class="st ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>
           <div class="fl">
             <input value="${esc(c.f)}" data-k="f" placeholder="Recto">
             <input class="b" value="${esc(c.b)}" data-k="b" placeholder="Verso">
           </div>
+          <button class="x sus ${c.x ? 'on' : ''}" data-sus="${c.id}"
+            title="${c.x ? 'Réactiver' : 'Suspendre'}">${svg(c.x ? I.eyeoff : I.eye)}</button>
           <button class="x" data-rm="${c.id}">${svg(I.x)}</button>
         </div>`).join('')}
       <div class="duo ghost">
@@ -505,11 +675,16 @@ function deckView() {
 
 
 /* ---------- connexion ---------- */
-let loginBusy = false;
+let loginBusy = false, loginMode = 'in';
 function loginView() {
+  const up = loginMode === 'up';
   $.innerHTML = `<div class="login">
     <img class="logo" src="icons/icon-192.png" alt="">
     <div class="lt">Cartes</div>
+    <div class="seg lseg" id="lmode">
+      <button data-lm="in" class="${up ? '' : 'on'}">Connexion</button>
+      <button data-lm="up" class="${up ? 'on' : ''}">Créer un compte</button>
+    </div>
     <form class="lf" id="lf" autocomplete="on">
       <div class="lrow">${svg(I.mail)}
         <input id="em" type="email" placeholder="Adresse e-mail" autocomplete="username"
@@ -519,9 +694,14 @@ function loginView() {
           autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go">
         <button type="button" class="peek" id="pk">${svg(I.eye)}</button></div>
       <div class="lerr" id="le"></div>
-      <button class="cta" id="go" type="submit">Se connecter${svg(I.arrow)}</button>
+      <button class="cta" id="go" type="submit">${up ? 'Créer le compte' : 'Se connecter'}${svg(I.arrow)}</button>
+      ${up ? '' : `<button class="lnk" id="forgot" type="button">Mot de passe oublié</button>`}
     </form>
   </div>`;
+  document.getElementById('lmode').onclick = e => {
+    const b = e.target.closest('[data-lm]'); if (!b) return;
+    loginMode = b.dataset.lm; loginView();
+  };
   const em = document.getElementById('em'), pw = document.getElementById('pw'),
         err = document.getElementById('le'), btn = document.getElementById('go');
   document.getElementById('pk').onclick = () => {
@@ -530,23 +710,41 @@ function loginView() {
     document.getElementById('pk').innerHTML = svg(on ? I.eyeoff : I.eye);
     pw.focus();
   };
+  const fg = document.getElementById('forgot');
+  if (fg) fg.onclick = async () => {
+    if (!em.value.trim()) { err.textContent = 'Renseigne ton adresse d’abord'; em.focus(); return; }
+    err.textContent = 'Envoi…';
+    try { await resetPassword(em.value); err.textContent = 'Lien envoyé à ' + em.value.trim(); }
+    catch (x) { err.textContent = 'Envoi impossible'; }
+  };
   document.getElementById('lf').onsubmit = async e => {
     e.preventDefault();
     if (loginBusy) return;
     if (!em.value.trim() || !pw.value) { err.textContent = 'Renseigne les deux champs'; return; }
+    if (up && pw.value.length < 6) { err.textContent = 'Mot de passe : 6 caractères minimum'; return; }
     loginBusy = true; btn.disabled = true; err.textContent = '';
-    btn.firstChild.textContent = 'Connexion…';
+    btn.firstChild.textContent = up ? 'Création…' : 'Connexion…';
     try {
-      await signIn(em.value, pw.value);
+      if (up) {
+        const done = await signUp(em.value, pw.value);
+        if (!done) {
+          err.textContent = 'Compte créé. Confirme l’e-mail reçu, puis connecte-toi.';
+          loginMode = 'in'; loginBusy = false; loginView();
+          return;
+        }
+      } else await signIn(em.value, pw.value);
       db = load();
       await pull();
       const n = await importLegacy();
       go('home');
       if (n) toast(I.check, plur(n, 'paquet') + ' repris');
     } catch (x) {
-      err.textContent = /Invalid|credentials|refus/i.test(String(x.message))
-        ? 'E-mail ou mot de passe incorrect' : 'Connexion impossible';
-      btn.disabled = false; btn.firstChild.textContent = 'Se connecter';
+      const m = String(x.message || '');
+      err.textContent = /already|exist|registered/i.test(m) ? 'Cette adresse a déjà un compte'
+        : /Invalid|credentials|refus/i.test(m) ? 'E-mail ou mot de passe incorrect'
+        : up ? 'Inscription impossible' : 'Connexion impossible';
+      btn.disabled = false;
+      btn.firstChild.textContent = up ? 'Créer le compte' : 'Se connecter';
     }
     loginBusy = false;
   };
@@ -578,15 +776,57 @@ function settingsView() {
         }).join('')}
         <button class="sr add" data-sub="">${svg(I.plus)}<span class="n">Nouvelle matière</span></button>
       </div>
+      <div class="lbl"><span>Révision</span></div>
+      <div class="slist">
+        <div class="sr flat col">
+          <div class="srh">${svg(I.target)}<span class="n">Objectif du jour</span>
+            <span class="c">${prefs.goal} cartes</span></div>
+          <input class="rng" id="pGoal" type="range" min="5" max="200" step="5" value="${prefs.goal}">
+        </div>
+        <div class="sr flat col">
+          <div class="srh">${svg(I.plus)}<span class="n">Nouvelles cartes par session</span>
+            <span class="c">${prefs.cap || 'sans limite'}</span></div>
+          <input class="rng" id="pCap" type="range" min="0" max="60" step="5" value="${prefs.cap}">
+        </div>
+        <div class="sr flat col">
+          <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des cartes</span></div>
+          <div class="seg" id="pOrder">
+            ${[['random', 'Aléatoire'], ['deck', 'Du paquet'], ['worst', 'Ratées'], ['due', 'Urgentes']]
+              .map(([v, l]) => `<button data-ord="${v}" class="${prefs.order === v ? 'on' : ''}">${l}</button>`).join('')}
+          </div>
+        </div>
+        <button class="sr flat" data-act="tglfresh">${svg(I.card)}
+          <span class="n">Nouvelles cartes d'abord</span>
+          <span class="sw2 ${prefs.fresh ? 'on' : ''}"></span></button>
+        <button class="sr flat" data-act="tglboth">${svg(I.swap)}
+          <span class="n">Mélanger les deux sens</span>
+          <span class="sw2 ${prefs.both ? 'on' : ''}"></span></button>
+      </div>
       <div class="lbl"><span>Compte</span></div>
       <div class="slist">
-        <div class="sr flat">${svg(I.user)}<span class="n">${esc(auth ? auth.email : '')}</span></div>
+        <button class="sr flat" data-act="rename">${svg(I.user)}
+          <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
           <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
         <button class="sr flat warn" data-act="logout">${svg(I.exit)}<span class="n">Se déconnecter</span></button>
+        <button class="sr flat warn" data-act="delacc">${svg(I.trash)}<span class="n">Supprimer le compte</span></button>
       </div>
       <div class="foot">${online ? 'Synchronisé' : 'Hors ligne — reprise automatique'}</div>
     </div>`;
+  const g = document.getElementById('pGoal'), c = document.getElementById('pCap');
+  g.addEventListener('input', () => {
+    prefs.goal = +g.value; savePrefs();
+    g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' cartes';
+  });
+  c.addEventListener('input', () => {
+    prefs.cap = +c.value; savePrefs();
+    c.closest('.sr').querySelector('.c').textContent = prefs.cap || 'sans limite';
+  });
+  document.getElementById('pOrder').addEventListener('click', e => {
+    const b = e.target.closest('[data-ord]'); if (!b) return;
+    prefs.order = b.dataset.ord; savePrefs(); render();
+  });
 }
 
 /* ---------- menu contextuel ---------- */
@@ -615,6 +855,37 @@ function paintMenu() {
     setTimeout(() => { if (!subjName) sn.focus(); }, 60);
     return;
   }
+  if (menu === 'backup') {
+    const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <button class="mi" data-mact="backup">${svg(I.share)}Sauvegarder
+          <span class="tail">${n} · ${c}</span></button>
+      </div>`;
+    document.body.append(...w.childNodes);
+    return;
+  }
+  if (menu === 'rename' || menu === 'pwd' || menu === 'delacc') {
+    const conf = {
+      rename: ['Nom affiché', I.user, 'text', 'Comment on t’appelle', prefs.name || '', 'Enregistrer'],
+      pwd: ['Nouveau mot de passe', I.lock, 'password', 'Au moins 6 caractères', '', 'Changer'],
+      delacc: ['Supprimer le compte', I.trash, null, '', '', 'Tout supprimer']
+    }[menu];
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(conf[1])}${conf[0]}</div>
+        ${conf[2] ? `<input class="tok" id="fld" type="${conf[2]}" placeholder="${esc(conf[3])}"
+            value="${esc(conf[4])}" autocapitalize="none" autocorrect="off" spellcheck="false">`
+          : `<div class="mi" style="font-size:13.5px;color:var(--soft);height:auto;padding:0 16px 12px;
+               line-height:1.45">Tes paquets, tes matières et ton historique seront effacés définitivement.</div>`}
+        <div class="mrr" id="mrr"></div>
+        <button class="mi ${menu === 'delacc' ? 'warn' : ''}" data-mact="do-${menu}"
+          style="justify-content:center;font-weight:700">${svg(I.check)}<span>${conf[5]}</span></button>
+      </div>`;
+    document.body.append(...w.childNodes);
+    setTimeout(() => { const f = document.getElementById('fld'); if (f) f.focus(); }, 60);
+    return;
+  }
   const d = deck(view.id); if (!d) return;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
@@ -624,6 +895,8 @@ function paintMenu() {
       </div>
       <div class="msep"></div>
       <button class="mi" data-mact="hide">${svg(d.hidden ? I.eye : I.eyeoff)}${d.hidden ? 'Réafficher' : 'Masquer'}</button>
+      <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
+      ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
       <button class="mi" data-mact="share">${svg(I.share)}Partager</button>
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
@@ -635,7 +908,37 @@ document.addEventListener('click', e => {
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   const a = b.dataset.mact;
   if (a === 'close') return closeMenu();
+  if (a === 'do-rename') {
+    prefs.name = document.getElementById('fld').value.trim(); savePrefs();
+    closeMenu(); render(); toast(I.check, 'Nom enregistré'); return;
+  }
+  if (a === 'do-pwd') {
+    const v = document.getElementById('fld').value, err = document.getElementById('mrr');
+    if (v.length < 6) { err.textContent = 'Au moins 6 caractères'; return; }
+    err.textContent = 'Envoi…';
+    api('/auth/v1/user', 'PUT', { password: v })
+      .then(() => { closeMenu(); toast(I.check, 'Mot de passe changé'); })
+      .catch(() => { err.textContent = 'Changement impossible'; });
+    return;
+  }
+  if (a === 'do-delacc') {
+    const lab = b.querySelector('span'), err = document.getElementById('mrr');
+    if (!b.dataset.arm) {
+      b.dataset.arm = 1; lab.textContent = 'Confirmer la suppression';
+      setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; lab.textContent = 'Tout supprimer'; } }, 3000);
+      return;
+    }
+    err.textContent = 'Suppression…';
+    api('/rest/v1/rpc/delete_me', 'POST', {})
+      .then(() => { closeMenu(); logout(); })
+      .catch(() => { err.textContent = 'Suppression impossible'; });
+    return;
+  }
   if (b.dataset.color) { subjColor = b.dataset.color; return paintMenu(); }
+  if (a === 'studyall' || a === 'studyleech') {
+    closeMenu();
+    return startStudy(view.id, false, null, a === 'studyleech' ? { only: 'leech' } : {});
+  }
   if (a === 'subjok') {
     const name = (document.getElementById('sn').value || subjName).trim();
     if (!name) return;
@@ -691,13 +994,52 @@ document.addEventListener('click', e => {
 });
 
 /* ---------- révision ---------- */
-function startStudy(id, rev, subset) {
-  const d = deck(id); if (!d || !d.cards.length) return;
-  const ids = subset && subset.length ? subset.slice() : d.cards.map(c => c.id);
-  study = { id, rev: !!rev, queue: shuffle(ids), i: 0, again: [], flip: false,
-            ok: 0, total: ids.length, t0: Date.now(), tried: {}, missSet: {},
-            miss: [], log: [], saved: false };
+function startStudy(id, rev, subset, opt) {
+  const o = opt || {};
+  let cards, name, ids;
+  if (id === 'all') {                                  // mode marathon
+    cards = live().flatMap(d => d.cards.map(c => ({ ...c, _d: d.id })));
+    name = 'Marathon';
+  } else {
+    const d = deck(id); if (!d) return;
+    cards = d.cards; name = d.name;
+  }
+  if (subset && subset.length) {
+    const keep = new Set(subset);
+    ids = cards.filter(c => keep.has(c.id)).map(c => c.id);
+  } else {
+    ids = buildQueue(cards, { ...o, order: o.order || prefs.order, fresh: prefs.fresh }).map(c => c.id);
+  }
+  if (!ids.length) { toast(I.check, 'Rien à revoir ici'); return; }
+  study = { id, name, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
+            ok: 0, total: ids.length, t0: Date.now(), tq: Date.now(), tried: {}, missSet: {},
+            miss: [], log: [], saved: false, opt: o,
+            dirs: Object.fromEntries(ids.map(x => [x, o.both ? Math.random() < .5 : !!rev])) };
+  saveResume();
   go('study', id);
+}
+/* Reprise : l'état de la session survit à la fermeture de l'app */
+function saveResume() {
+  try {
+    if (!study || study.i >= study.queue.length) localStorage.removeItem('cartes.resume.' + auth.uid);
+    else localStorage.setItem('cartes.resume.' + auth.uid, JSON.stringify({ ...study, t: Date.now() }));
+  } catch (e) {}
+}
+function loadResume() {
+  try {
+    const r = JSON.parse(localStorage.getItem('cartes.resume.' + auth.uid));
+    if (r && Date.now() - r.t < 3 * DAY && r.i < r.queue.length) return r;
+  } catch (e) {}
+  return null;
+}
+/* Retrouve la carte d'une file, y compris en marathon */
+function findCard(cid) {
+  if (study.id === 'all') {
+    for (const d of db.decks) { const c = d.cards.find(x => x.id === cid); if (c) return [c, d]; }
+    return [null, null];
+  }
+  const d = deck(study.id);
+  return [d ? d.cards.find(x => x.id === cid) : null, d];
 }
 const ringCol = p => p >= .8 ? 'var(--ok)' : p >= .5 ? '#C9A526' : 'var(--ko)';
 const ring = (ok, total) => {
@@ -760,11 +1102,12 @@ function review(o) {
 }
 
 function studyView() {
-  const d = deck(study.id); if (!d) return go('home');
-  const s = subj(d.subject);
+  const d = study.id === 'all' ? null : deck(study.id);
+  if (study.id !== 'all' && !d) return go('home');
+  const s = subj(d ? d.subject : '');
   const bar = n => `<div class="bar">
       <button class="ic" data-act="deck">${svg(I.back)}</button>
-      <h1>${esc(d.name)}</h1>
+      <h1>${esc(study.name || (d ? d.name : ''))}</h1>
       ${n}
       <button class="ic ${study.rev ? 'solid' : ''}" data-act="swap">${svg(I.swap)}</button>
       <button class="ic" data-act="restart">${svg(I.shuffle)}</button>
@@ -773,7 +1116,8 @@ function studyView() {
     if (study.again.length) { study.queue = study.again; study.again = []; study.i = 0; study.flip = false; }
     else {
       if (!study.saved) { study.saved = true; study.ms = Date.now() - study.t0;
-        study.hist = pushHist(study.id, 'study', study.total ? study.ok / study.total : 0); }
+        study.hist = pushHist(study.id, 'study', study.total ? study.ok / study.total : 0);
+        saveResume(); }
       $.innerHTML = bar('') + review({
         ok: study.ok, total: study.total, log: study.log, ms: study.ms, hist: study.hist,
         miss: study.miss, redo: 'redostudy', again: 'restart', done: 'deck'
@@ -791,12 +1135,13 @@ function studyView() {
   requestAnimationFrame(() => { const p = document.getElementById('pg'); if (p) p.style.width = pct() + '%'; });
 }
 const pct = () => study.total ? Math.round(study.ok / study.total * 100) : 0;
-const cardOf = n => deck(study.id).cards.find(x => x.id === study.queue[study.i + n]);
+const cardOf = n => findCard(study.queue[study.i + n])[0];
 function paintStack() {
   const st = document.getElementById('stack'); if (!st) return;
   const c = cardOf(0);
   if (!c) { st.innerHTML = ''; return; }
-  const front = study.rev ? c.b : c.f, back = study.rev ? c.f : c.b;
+  const rv = study.dirs ? study.dirs[c.id] : study.rev;
+  const front = rv ? c.b : c.f, back = rv ? c.f : c.b;
   st.innerHTML = `<div class="card in" id="top">
       <div class="flipper">
         <div class="face"><span>${esc(front)}</span></div>
@@ -811,10 +1156,12 @@ function paintStack() {
 }
 function paintFoot() {
   const f = document.getElementById('foot'); if (!f) return;
+  const c = cardOf(0) || {};
   f.innerHTML = study.flip
-    ? `<div class="acts">
-        <button class="act yes" data-a="yes">${svg(I.check)}</button>
-        <button class="act no" data-a="no">${svg(I.x)}</button>
+    ? `<div class="grades">
+        ${[[0, 'Encore', 'g0'], [1, 'Difficile', 'g1'], [2, 'Correct', 'g2'], [3, 'Facile', 'g3']]
+          .map(([r, lab, cl]) => `<button class="gr ${cl}" data-g="${r}">
+            <span>${lab}</span><i>${esc(preview(c, r))}</i></button>`).join('')}
       </div>`
     : `<div class="hint">${SWIPE}<span class="keys">
         <kbd>←</kbd>${svg(I.check)}<kbd>→</kbd>${svg(I.x)}<kbd>espace</kbd>${svg(I.swap)}</span></div>`;
@@ -852,20 +1199,35 @@ function fling(dir) {
   el.dataset.gone = 1; el.classList.add('gone');
   el.style.transform = `translateX(${dir * 130}vw) rotate(${dir * 20}deg)`;
   el.style.opacity = 0;
-  setTimeout(() => commit(dir < 0), 250);
+  const g = pendingGrade; pendingGrade = null;
+  setTimeout(() => commit(g != null ? g > 0 : dir < 0, g), 250);
 }
-function commit(ok) {
+function commit(ok, rating) {
   const id = study.queue[study.i];
+  const r = rating != null ? rating : (ok ? 2 : 0);
+  const [c, d] = findCard(id);
+  const rv = study.dirs ? study.dirs[id] : study.rev;
+  const ms = Date.now() - (study.tq || Date.now());
+  study.tq = Date.now();
+  if (c) {
+    grade(c, r);
+    if (d) { dirty[d.id] = 1; save(); scheduleFlush(); }
+    api('/rest/v1/reviews', 'POST', [{
+      user_id: auth.uid, deck_id: d ? d.id : study.id, card_id: id,
+      mode: 'study', rating: r, correct: r > 0, ms: Math.min(ms, 600000), reversed: !!rv
+    }]).catch(() => {});
+    bumpToday();
+  }
   if (!study.tried[id]) { study.tried[id] = 1; if (ok) study.ok++; study.log.push(ok ? 1 : 0); }
   if (!ok) {
     study.again.push(id);
     if (!study.missSet[id]) {
       study.missSet[id] = 1;
-      const c = deck(study.id).cards.find(x => x.id === id);
-      if (c) study.miss.push({ id, q: study.rev ? c.b : c.f, a: study.rev ? c.f : c.b });
+      if (c) study.miss.push({ id, q: rv ? c.b : c.f, a: rv ? c.f : c.b });
     }
   }
   study.i++; study.flip = false;
+  saveResume();
   if (study.i >= study.queue.length) return studyView();
   paintStack(); paintFoot();
   const p = document.getElementById('pg'); if (p) p.style.width = pct() + '%';
@@ -1129,7 +1491,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord]');
   if (!b) return;
   const ds = b.dataset;
   if (ds.dl !== undefined) {
@@ -1151,21 +1513,45 @@ $.addEventListener('click', e => {
   if (ds.go) return go('deck', ds.go);
   if (ds.q) return startQuiz(ds.q);
   if (ds.a) return fling(ds.a === 'yes' ? -1 : 1);
+  if (ds.g !== undefined) { pendingGrade = +ds.g; return fling(+ds.g > 0 ? -1 : 1); }
   if (ds.rm) { const d = deck(view.id); d.cards = d.cards.filter(c => c.id !== ds.rm); saveDeck(d); return render(); }
+  if (ds.sus) {
+    const d = deck(view.id), c = d.cards.find(x => x.id === ds.sus);
+    c.x = !c.x; saveDeck(d); return render();
+  }
   const a = ds.act, d = view.id ? deck(view.id) : null;
   if (a === 'home' || a === 'tab-home') return go('home');
   if (a === 'tab-quiz') return go('quiz');
   if (a === 'peek') { peek = !peek; render(); return; }
+  if (a === 'marathon') return startStudy('all', false, null, { only: 'due', both: prefs.both });
+  if (a === 'goalinfo') return go('settings');
+  if (a === 'resume') {
+    const r = loadResume(); if (!r) return render();
+    study = r; return go('study', r.id);
+  }
   if (a === 'settings') return go('settings');
   if (a === 'backup2') return openMenu('backup');
   if (a === 'logout') return logout();
+  if (a === 'tglfresh') { prefs.fresh = !prefs.fresh; savePrefs(); return render(); }
+  if (a === 'tglboth') { prefs.both = !prefs.both; savePrefs(); return render(); }
+  if (a === 'rename') return openMenu('rename');
+  if (a === 'chpwd') return openMenu('pwd');
+  if (a === 'delacc') return openMenu('delacc');
   if (a === 'puball') return openMenu('backup');
   if (a === 'new') { resetComp(); return go('import'); }
   if (a === 'paste') { resetComp(); return go('import', view.name === 'deck' ? view.id : null); }
   if (a === 'bulk') { comp.bulk = !comp.bulk; comp.edit = -1; return render(); }
-  if (a === 'deck') return go('deck', (study && study.id) || view.id);
+  if (a === 'deck') {
+    const t = (study && study.id) || view.id;
+    return t === 'all' ? go('home') : go('deck', t);
+  }
   if (a === 'menu') return openMenu('deck');
-  if (a === 'study') return startStudy(view.id);
+  if (a === 'study') {
+    const d = deck(view.id);
+    return startStudy(view.id, false, null, { only: dueCount(d) ? 'due' : null, both: prefs.both });
+  }
+  if (a === 'studyall') { closeMenu(); return startStudy(view.id, false, null, {}); }
+  if (a === 'studyleech') { closeMenu(); return startStudy(view.id, false, null, { only: 'leech' }); }
   if (a === 'quizdeck') return startQuiz(view.id);
   if (a === 'restart') return startStudy(study ? study.id : view.id, study && study.rev);
   if (a === 'swap') { toast(I.swap, study.rev ? 'Sens normal' : 'Sens inversé'); return startStudy(study.id, !study.rev); }
@@ -1189,6 +1575,10 @@ $.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && menu) return closeMenu();
   if (view.name !== 'study' || /INPUT|TEXTAREA/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (study && study.flip && '1234'.includes(e.key)) {
+    pendingGrade = +e.key - 1;
+    return fling(pendingGrade > 0 ? -1 : 1);
+  }
   if (e.key === 'ArrowLeft') fling(-1);
   else if (e.key === 'ArrowRight') fling(1);
   else if (e.key === ' ') { e.preventDefault(); toggleFlip(); }
@@ -1211,7 +1601,8 @@ function logout() {
   saveAuth(null);
   if (key) { try { localStorage.removeItem(key); } catch (e) {} }
   db = { subjects: [], decks: [], hist: {} };
-  view = { name: 'login' }; filter = ''; peek = false;
+  prefs = { ...DEFPREFS };
+  view = { name: 'login' }; filter = ''; peek = false; loginMode = 'in';
   study = null; quiz = null; menu = null;
   animate = true; render();
 }
