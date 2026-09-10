@@ -1,0 +1,27 @@
+name: Réveil Supabase
+
+# Le projet Supabase gratuit se met en pause après 7 jours sans requête.
+# On l'interroge tous les 3 jours pour rester large sous ce seuil.
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Requête légère sur l'API REST
+        run: |
+          # clé publique (anon) : déjà en clair dans app.js, servi par GitHub Pages.
+          # Les règles RLS de la base cloisonnent les comptes, pas cette clé.
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            "https://qqbzefpdeinlynjtarqr.supabase.co/rest/v1/subjects?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxYnplZnBkZWlubHluanRhcnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5Nzk0MTIsImV4cCI6MjEwNDU1NTQxMn0.CLTRJl1ZOg1tbzSIEBiRhhoiiJIVD4cHqkk1qBwV9FI")
+          echo "réponse : $code"
+          # RLS refuse la lecture anonyme (401/403) — c'est attendu et prouve que
+          # la requête a bien atteint la base. Seul un timeout ou un 5xx est un échec.
+          if [ "$code" -ge 500 ] || [ "$code" -eq 000 ]; then
+            echo "Supabase ne répond pas correctement" >&2
+            exit 1
+          fi
