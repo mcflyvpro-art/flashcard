@@ -67,6 +67,7 @@ function pushUndo(label, ids) {
   if (undos.length > 10) undos.shift();
 }
 function canUndo() { return undos.length > 0; }
+const undoLabel = () => (undos.length ? undos[undos.length - 1].label : '');
 function doUndo() {
   const u = undos.pop();
   if (!u) return false;
@@ -344,6 +345,7 @@ const I = {
   grid: '<rect x="3.6" y="3.6" width="7" height="7" rx="2"/><rect x="13.4" y="3.6" width="7" height="7" rx="2"/><rect x="3.6" y="13.4" width="7" height="7" rx="2"/><rect x="13.4" y="13.4" width="7" height="7" rx="2"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.4 6.9"/><path d="M14 10a4 4 0 0 0-5.7 0L5.5 12.8a4 4 0 0 0 5.7 5.7l1.4-1.4"/>',
   grip: '<path d="M9.4 6.4h.02M9.4 12h.02M9.4 17.6h.02M14.6 6.4h.02M14.6 12h.02M14.6 17.6h.02" stroke-width="2.9" stroke-linecap="round"/>',
+  pick: '<path d="M5.4 9.2V6.6a1.2 1.2 0 0 1 1.2-1.2h2.6M14.8 5.4h2.6a1.2 1.2 0 0 1 1.2 1.2v2.6"/><path d="M18.6 14.8v2.6a1.2 1.2 0 0 1-1.2 1.2h-2.6M9.2 18.6H6.6a1.2 1.2 0 0 1-1.2-1.2v-2.6"/><path d="m9.3 12.1 2 2 3.4-3.9"/>',
   search: '<circle cx="10.8" cy="10.8" r="6.4"/><path d="M15.5 15.5 20 20"/>',
   copy: '<rect x="8.6" y="8.6" width="11.8" height="11.8" rx="3"/><path d="M15.4 5.6a2 2 0 0 0-2-2H6.6a3 3 0 0 0-3 3v6.8a2 2 0 0 0 2 2"/>',
   split: '<path d="M12 3.6v6.8"/><path d="M12 10.4 6.6 15v5.4M12 10.4 17.4 15v5.4"/><circle cx="12" cy="3.6" r="0"/>',
@@ -1307,7 +1309,8 @@ function deckView() {
     </div>
     ${simpleMode() ? '' : mixBar(d)}
     <div class="lbl"><span>Cartes</span>
-      ${d.cards.length ? `<button class="lnk" data-act="selmode">${sel ? 'Terminer' : 'Sélectionner'}</button>` : ''}
+      ${d.cards.length ? `<button class="pick ${sel ? 'on' : ''}" data-act="selmode">${
+        svg(sel ? I.check : I.pick)}${sel ? 'Terminer' : 'Sélectionner'}</button>` : ''}
       <span>${d.cards.length}</span></div>
     <div class="rows ${sel ? 'picking' : ''}">
       ${d.cards.map((c, i) => `
@@ -1555,6 +1558,8 @@ function settingsView() {
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
           <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
+        ${canUndo() ? `<button class="sr flat" data-act="undo2">${svg(I.redo)}
+          <span class="n">Annuler ${esc(undoLabel().toLowerCase())}</span></button>` : ''}
         <button class="sr flat" data-act="trash">${svg(I.trash)}<span class="n">Corbeille</span>
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat warn" data-act="logout">${svg(I.exit)}<span class="n">Se déconnecter</span></button>
@@ -1978,6 +1983,7 @@ function paintMenu() {
       <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du paquet</button>
       ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
       <div class="msep"></div>
+      ${canUndo() ? `<button class="mi" data-mact="undo">${svg(I.redo)}Annuler<span class="tail">${esc(undoLabel())}</span></button>` : ''}
       ${d.cards.length ? `<button class="mi" data-mact="fnropen">${svg(I.search)}Chercher et remplacer</button>` : ''}
       <button class="mi" data-mact="clone">${svg(I.copy)}Dupliquer</button>
       ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
@@ -2145,6 +2151,7 @@ document.addEventListener('click', async e => {
     const n = cloneDeck(d); closeMenu(); go('deck', n.id);
     return toast(I.copy, n.cards.length + ' carte' + (n.cards.length > 1 ? 's' : '') + ' dupliquée' + (n.cards.length > 1 ? 's' : ''), true);
   }
+  if (a === 'undo') { closeMenu(); doUndo(); return; }
   if (a === 'fnropen') { fnr.q = ''; fnr.r = ''; return openMenu('fnr'); }
   if (a === 'fnrcase') { fnr.cs = !fnr.cs; return paintMenu(); }
   if (a === 'dofnr') {
@@ -3239,6 +3246,7 @@ $.addEventListener('click', e => {
   }
   if (a === 'settings') return go('settings');
   if (a === 'backup2') return openMenu('backup');
+  if (a === 'undo2') { doUndo(); return; }
   if (a === 'trash') { trash.list = null; trashPull(); return go('trash'); }
   /* ---- sélection multiple ---- */
   if (a === 'selmode') { sel = sel ? null : new Set(); return render(); }
