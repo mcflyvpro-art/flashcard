@@ -61,6 +61,8 @@ let previewOf = null;         // paquet dont on regarde l'aperçu
 let findQ = '';               // recherche globale
 let deckQ = '';               // recherche à l'intérieur d'un paquet
 let deckOpen = false;         // son champ est-il déployé
+const DECKPAGE = 80;          // cartes posées d'un coup dans la liste
+let deckShow = DECKPAGE;
 let leaving = null;           // action de sortie en attente de confirmation
 let friends = null;          // annuaire des autres comptes, pour choisir un destinataire
 let sendTo = null;           // destinataire choisi dans la feuille d'envoi
@@ -122,21 +124,37 @@ const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false
 let prefs = { ...DEFPREFS };
 let prefsTimer = 0;
 
+/* La file d'attente est enregistrée avec les données. Sans elle, une
+   modification faite dans le métro survivait à l'écran mais pas au
+   rechargement : le prochain démarrage relisait la base et remplaçait
+   tout par la version du serveur, sans un mot. Ce qui est en attente est
+   donc noté noir sur blanc, et repart dès que le réseau revient. */
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(cacheKey()));
     if (d && Array.isArray(d.decks)) {
       prefs = { ...DEFPREFS, ...(d.prefs || {}) };     // le mode reste le bon hors ligne
+      dirty = d.dirty && typeof d.dirty === 'object' ? { ...d.dirty } : {};
+      gone = Array.isArray(d.gone) ? d.gone.slice() : [];
       return { subjects: d.subjects || [], decks: d.decks, hist: d.hist || {}, today: d.today };
     }
   } catch (e) {}
   return { subjects: [], decks: [], hist: {} };
 }
 function save() {
-  if (auth) localStorage.setItem(cacheKey(), JSON.stringify({ ...db, prefs }));
+  if (auth) localStorage.setItem(cacheKey(), JSON.stringify({ ...db, prefs, dirty, gone }));
 }
+/* combien de changements attendent leur tour */
+const pending = () => Object.keys(dirty).length + gone.length;
 /* enregistre localement puis pousse en base */
-function saveDeck(d) { save(); if (d) { dirty[d.id] = 1; flush(); } }
+function saveDeck(d) {
+  /* marquer d'abord, enregistrer ensuite : dans l'autre sens, la copie
+     écrite sur l'appareil ignorait que ce paquet restait à envoyer, et un
+     rechargement hors ligne effaçait le travail en le relisant du serveur. */
+  if (d) dirty[d.id] = 1;
+  save();
+  if (d) flush();
+}
 
 function pushHist(id, mode, pct) {
   const k = id + ':' + mode;
@@ -161,6 +179,10 @@ const slugify = n => (n || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
 
 /* ---------- accès à Supabase ---------- */
 async function api(path, method = 'GET', body, extra = {}) {
+  /* On renouvelle avant d'essuyer un refus plutôt qu'après : un 401 au
+     milieu d'un envoi coûte un aller-retour et, sur une requête d'écriture,
+     la refaire n'est pas toujours anodin. */
+  if (auth && auth.refresh && auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
   const h = { apikey: SB.key, 'Content-Type': 'application/json', ...extra };
   if (auth && auth.token) h.Authorization = 'Bearer ' + auth.token;
   const r = await fetch(SB.url + path, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
@@ -204,18 +226,49 @@ async function signIn(email, password) {
   keepSession(j);
   return j;
 }
-async function refreshToken() {
-  try {
-    const r = await fetch(SB.url + '/auth/v1/token?grant_type=refresh_token', {
-      method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: auth.refresh })
-    });
-    const j = await r.json();
-    if (!r.ok || !j.access_token) return false;
-    keepSession(j);
-    return true;
-  } catch (e) { return false; }
+/* Supabase fait tourner le jeton de rafraîchissement : chaque échange en
+   rend un neuf et invalide l'ancien. Deux appels partis en même temps —
+   ce qui arrive dès qu'on revient sur l'app et que trois requêtes
+   redémarrent ensemble — se battaient donc pour le même jeton, et le
+   perdant déconnectait le compte. Un seul échange à la fois, tout le
+   monde attend le même. */
+let refreshing = null;
+function refreshToken() {
+  if (refreshing) return refreshing;
+  const had = auth && auth.refresh;
+  refreshing = (async () => {
+    try {
+      const r = await fetch(SB.url + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: had })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.access_token) {
+        /* Un refus net du serveur (jeton révoqué, compte supprimé
+           ailleurs) ne se répare pas en réessayant : autant le dire et
+           rendre la main à l'écran de connexion. Une panne réseau, elle,
+           laisse la session en place. */
+        if (r.status === 400 || r.status === 401) sessionLost();
+        return false;
+      }
+      keepSession(j);
+      return true;
+    } catch (e) { return false; }
+    finally { refreshing = null; }
+  })();
+  return refreshing;
 }
+function sessionLost() {
+  if (!auth) return;
+  flushSave();
+  saveAuth(null);
+  view = { name: 'login' }; menu = null; study = null; quiz = null;
+  animate = true; render();
+  toast(I.lock, 'Session expirée, reconnecte-toi');
+}
+/* ce qui attend encore reste sur l'appareil : une déconnexion ne doit pas
+   emporter des modifications qu'on n'a pas réussi à envoyer */
+function flushSave() { try { save(); } catch (e) {} }
 
 /* deleted_at: null est écrit à chaque fois, sans exception. Un paquet
    présent ici est vivant par définition ; sans cette ligne, annuler une
@@ -224,6 +277,56 @@ async function refreshToken() {
 const rowOf = d => ({ id: d.id, user_id: auth.uid, name: d.name, subject: d.subject,
                       hidden: !!d.hidden, cards: d.cards, pos: d.pos || 0,
                       pinned: !!d.pinned, meta: d.meta || {}, deleted_at: null });
+
+/* ---------- conflits entre appareils ----------
+   Deux téléphones sur le même compte, l'un hors ligne : au retour du
+   réseau, les deux versions existent et aucune n'est « la bonne ». On ne
+   choisit pas à la place de l'utilisateur — on montre les deux, avec de
+   quoi les départager, et « garder les deux » reste toujours possible. */
+let conflicts = [];
+async function raiseConflict(d) {
+  let row = null;
+  try {
+    const got = await api(`/rest/v1/decks?id=eq.${encodeURIComponent(d.id)}&select=*`);
+    row = got && got[0];
+  } catch (e) {}
+  if (!row) { d.rev = 0; dirty[d.id] = 1; return; }   // disparu : on le repose tel quel
+  if (conflicts.some(c => c.id === d.id)) return;
+  conflicts.push({
+    id: d.id,
+    mine: { name: d.name, subject: d.subject, hidden: !!d.hidden, pinned: !!d.pinned,
+            meta: d.meta || {}, cards: d.cards.slice() },
+    theirs: { name: row.name, subject: row.subject, hidden: !!row.hidden, pinned: !!row.pinned,
+              meta: row.meta || {}, rev: row.rev,
+              cards: (row.cards || []).map(c => ({ ...c, id: c.id || uid() })),
+              at: row.updated_at }
+  });
+  save();
+  if (!menu) openMenu('conflict');
+}
+function applyTo(d, v) {
+  d.name = v.name; d.subject = v.subject; d.hidden = v.hidden;
+  d.pinned = v.pinned; d.meta = v.meta; d.cards = v.cards;
+}
+function solveConflict(how) {
+  const c = conflicts.shift(); if (!c) return closeMenu();
+  const d = deck(c.id);
+  if (!d) { closeMenu(); return render(); }
+  d.rev = c.theirs.rev;                      // dans tous les cas on repart de la sienne
+  if (how === 'mine') { applyTo(d, c.mine); dirty[d.id] = 1; }
+  else if (how === 'theirs') applyTo(d, c.theirs);
+  else {
+    applyTo(d, c.theirs);
+    const n = addDeck(freeName(c.mine.name + ' (cet appareil)'), c.mine.cards, c.mine.subject);
+    n.cards = c.mine.cards.map(x => ({ ...x }));   // la progression suit la copie
+    dirty[n.id] = 1;
+  }
+  save(); flush();
+  closeMenu();
+  if (conflicts.length) return openMenu('conflict');
+  render();
+  toast(I.check, how === 'both' ? 'Les deux versions sont gardées' : 'Version choisie');
+}
 /* réglages propres à un paquet : tolérance du quiz, langue par face, chrono.
    La langue suit le CONTENU (recto/verso), jamais le côté physique de la
    carte : si le paquet est inversé (bouton « inverser », mélange des deux
@@ -242,34 +345,73 @@ function setMeta(d, patch) { d.meta = { ...metaOf(d), ...patch }; saveDeck(d); }
 let flushTimer = 0;
 function scheduleFlush() { clearTimeout(flushTimer); flushTimer = setTimeout(flush, 2500); }
 let flushing = false;
+/* Envoi d'un paquet, en tenant compte de ce que le serveur a déjà.
+   Chaque ligne porte un numéro de révision ; on n'écrit que si ce numéro
+   est encore celui qu'on a lu. Sinon c'est qu'un autre appareil est passé
+   entre-temps, et écraser sa version sans rien dire était la façon la plus
+   simple de perdre une soirée de travail. Rend false dans ce cas.
+
+   Un paquet créé ici n'a pas encore de révision : il s'insère simplement. */
+async function pushDeck(d) {
+  const row = rowOf(d);
+  if (!d.rev) {
+    /* Sans numéro connu, on insère sans en imposer un : si la ligne
+       existait déjà, écrire « rev: 1 » la ferait reculer et ferait crier
+       au conflit l'appareil qui, lui, est à jour. */
+    const got = await api('/rest/v1/decks', 'POST', [row],
+      { Prefer: 'resolution=merge-duplicates,return=representation' });
+    d.rev = (got && got[0] && got[0].rev) || 1;
+    return true;
+  }
+  const got = await api(`/rest/v1/decks?id=eq.${encodeURIComponent(d.id)}&rev=eq.${d.rev}`,
+    'PATCH', { ...row, rev: d.rev + 1 }, { Prefer: 'return=representation' });
+  /* Une liste vide, c'est net : aucune ligne ne portait ce numéro, donc
+     quelqu'un est passé avant. Pas de corps du tout, en revanche, veut
+     seulement dire que le serveur n'a rien renvoyé — ce n'est pas un
+     désaccord, et ouvrir une fenêtre de conflit là-dessus serait
+     inquiéter pour rien. */
+  if (Array.isArray(got) && !got.length) return false;
+  d.rev = (got && got[0] && got[0].rev) || d.rev + 1;
+  return true;
+}
 async function flush() {
   if (flushing || !auth) return;
   flushing = true;
   try {
     const ids = Object.keys(dirty);
-    if (ids.length) {
-      const rows = ids.map(deck).filter(Boolean).map(rowOf);
-      if (rows.length) await api('/rest/v1/decks', 'POST', rows,
-        { Prefer: 'resolution=merge-duplicates,return=minimal' });
-      ids.forEach(i => delete dirty[i]);
+    for (const id of ids) {
+      const d = deck(id);
+      if (!d) { delete dirty[id]; continue; }
+      if (await pushDeck(d)) delete dirty[id];
+      else { delete dirty[id]; await raiseConflict(d); }
     }
+    if (ids.length) save();
     /* Supprimer un paquet le marque, ne l'efface pas : il reste
        récupérable trente jours depuis la corbeille. */
     while (gone.length) {
       const id = gone[0];
       await api(`/rest/v1/decks?id=eq.${encodeURIComponent(id)}`, 'PATCH',
         { deleted_at: new Date().toISOString() }, { Prefer: 'return=minimal' });
-      gone.shift();
+      gone.shift(); save();
     }
     setOnline(true);
   } catch (e) { setOnline(false); }
   flushing = false;
 }
 function setOnline(v) {
-  if (online === v) return;
+  const was = online;
   online = v;
   const n = document.getElementById('offdot');
   if (n) n.style.display = v ? 'none' : '';
+  /* la pastille porte un compteur : elle change aussi quand la file bouge,
+     pas seulement quand le réseau bascule */
+  if (view.name === 'home' && (was !== v || document.querySelector('.qchip'))) {
+    const top = $.querySelector('.top');
+    if (top) {
+      const old = top.querySelector('.qchip,#offdot');
+      if (old) old.outerHTML = queueChip();
+    }
+  }
 }
 
 /* récupère matières, paquets et historique du compte */
@@ -293,11 +435,22 @@ async function pull() {
   upsertProfile();
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
-  db.decks = decks.map(x => ({
-    id: x.id, name: x.name, subject: x.subject, hidden: x.hidden,
-    pos: x.pos, pinned: x.pinned, meta: x.meta || {},
-    cards: (x.cards || []).map(c => ({ ...c, id: c.id || uid() }))
-  }));
+  /* Ce qui attend d'être envoyé ne se fait pas écraser par la relecture :
+     on garde la version locale et son tour dans la file. Sans cette
+     réserve, ouvrir l'app hors ligne puis retrouver le réseau effaçait la
+     dernière séance de travail au moment même où elle allait partir. */
+  const held = new Map(db.decks.filter(d => dirty[d.id]).map(d => [d.id, d]));
+  db.decks = decks.map(x => {
+    const mine = held.get(x.id);
+    if (mine) { mine.rev = x.rev; held.delete(x.id); return mine; }
+    return {
+      id: x.id, name: x.name, subject: x.subject, hidden: x.hidden,
+      pos: x.pos, pinned: x.pinned, meta: x.meta || {}, rev: x.rev,
+      cards: (x.cards || []).map(c => ({ ...c, id: c.id || uid() }))
+    };
+  });
+  /* un paquet créé hors ligne n'est encore nulle part : il reprend sa place */
+  for (const d of held.values()) db.decks.push(d);
   db.hist = {};
   for (const r of sess) {
     const k = r.deck_id + ':' + r.mode;
@@ -759,6 +912,21 @@ function parseRaw(raw) {
    Deux cartes font doublon si leur recto se lit pareil une fois la
    ponctuation et la casse mises de côté. On les signale, on ne les jette
    jamais sans le dire : c'est parfois voulu (deux sens d'un même mot). */
+/* Un paquet entier tient dans une seule ligne de base : une carte
+   démesurée ne gêne pas qu'elle-même, elle fait grossir chaque envoi du
+   paquet et finit par les faire échouer tous. Les bornes sont larges — un
+   article de code entre sans problème — mais elles existent. */
+const MAXF = 500, MAXB = 4000;
+const overLen = c => plain(c.f || '').length > MAXF ? 'f'
+                   : plain(c.b || '').length > MAXB ? 'b' : '';
+function markOver(cards) {
+  let n = 0;
+  for (const c of cards) {
+    const o = overLen(c);
+    if (o) { c.big = o; n++; } else delete c.big;
+  }
+  return n;
+}
 function markDups(cards, target) {
   const here = new Set((target ? target.cards : []).map(c => norm(c.f || '')));
   const seen = new Set();
@@ -1005,6 +1173,7 @@ function cloneDeck(d) {
    deux côtés — même recto et même verso — n'est pas recopiée. */
 function mergeDecks(target, src) {
   pushUndo('Fusion', [target.id, src.id]);
+  snapVersion(target, 'avant fusion');
   const seen = new Set(target.cards.map(c => key2(c)));
   const add = src.cards.filter(c => !seen.has(key2(c)));
   target.cards.push(...copyCards(add));
@@ -1019,6 +1188,7 @@ const key2 = c => norm(c.f || '') + ' ' + norm(c.b || '');
    où elles sont. L'original file à la corbeille plutôt que d'être effacé,
    pour que l'opération reste réversible même après un rechargement. */
 function splitDeck(d, size) {
+  snapVersion(d, 'avant découpe');
   const parts = [];
   for (let i = 0; i < d.cards.length; i += size) parts.push(d.cards.slice(i, i + size));
   if (parts.length < 2) return null;
@@ -1076,6 +1246,7 @@ function fnrApply(d) {
   const { hits } = fnrScan(d);
   if (!hits) return 0;
   pushUndo('Remplacement', [d.id]);
+  snapVersion(d, 'avant remplacement');
   for (const c of d.cards)
     for (const s of fnrSides())
       if (c[s]) c[s] = fnrSwap(String(c[s]), fnr.q, fnr.r);
@@ -1096,6 +1267,7 @@ function importPayload(p, fresh) {
     if (!cards.length) continue;
     const ex = fresh ? null : db.decks.find(d => d.name === k.name);
     if (ex) {
+      snapVersion(ex, 'avant réimport');
       ex.subject = k.subject || ex.subject;      // sans matière à l'import : on garde la sienne
       ex.cards = cards.map(c => ({ id: uid(), f: c.f, b: c.b }));
       last = ex; dirty[ex.id] = 1;
@@ -1182,7 +1354,7 @@ let pageDir = 0;
 function go(name, id, dir) {
   closeMenu();
   if (name !== 'run') stopTimer();
-  if (name !== 'deck' || id !== view.id) { selOff(); deckQ = ''; deckOpen = false; }
+  if (name !== 'deck' || id !== view.id) { selOff(); deckQ = ''; deckOpen = false; deckShow = DECKPAGE; }
   pageDir = dir || 0; view = { name, id }; animate = !dir;
   render(); window.scrollTo(0, 0);
 }
@@ -1347,6 +1519,17 @@ function goalRing() {
     <b>${n}</b></button>`;
 }
 
+/* Le point gris disait « hors ligne » sans dire ce qui attendait. Un
+   compteur vaut mieux : on sait ce qu'on risque en fermant l'app, et on
+   peut relancer l'envoi à la main sans attendre la prochaine minute. */
+function queueChip() {
+  const n = pending();
+  if (online && !n) return '<span id="offdot" class="off-dot" style="display:none"></span>';
+  return `<button class="qchip ${online ? '' : 'off'}" data-act="retry"
+    aria-label="${n ? n + ' modification' + (n > 1 ? 's' : '') + ' en attente d’envoi'
+      : 'Hors ligne'}${online ? '' : ', hors ligne'}">
+    ${svg(online ? I.cloud : I.warn)}${n ? `<b>${n}</b>` : 'hors ligne'}</button>`;
+}
 function home() {
   const used = db.subjects.filter(s => db.decks.some(d => d.subject === s.id && (peek || !d.hidden))).map(x => subj(x.id));
   const hidden = db.decks.some(d => d.hidden);
@@ -1355,7 +1538,7 @@ function home() {
     <div class="page" id="page">
       <div class="top">
         <div class="hero">Mes paquets</div>
-        <span id="offdot" class="off-dot" style="display:${online ? 'none' : ''}"></span>
+        ${queueChip()}
         ${goalRing()}
         <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
         <button class="ic icmail" data-act="mail" aria-label="Boîte de réception">${svg(I.mail)}${mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
@@ -1541,6 +1724,12 @@ function deckView() {
   const nq = norm(deckQ);
   const shown = nq ? d.cards.filter(c => norm(plain(c.f)).includes(nq) || norm(plain(c.b)).includes(nq))
                    : d.cards;
+  /* Un paquet de mille cartes, c'est quatre mille champs de saisie à
+     construire avant d'afficher quoi que ce soit : plusieurs secondes de
+     page blanche sur un téléphone. On en pose une page, le reste arrive
+     quand le bas de la liste approche. */
+  const part = shown.slice(0, deckShow);
+  const rest = shown.length - part.length;
   $.innerHTML = `
     <div class="bar">
       <button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
@@ -1572,7 +1761,7 @@ function deckView() {
       spellcheck="false" value="${esc(deckQ)}" aria-label="Chercher dans ce paquet"></div>` : ''}
     <div class="rows ${sel ? 'picking' : ''}">
       ${!shown.length ? `<div class="note" style="padding:14px 4px">Aucune carte ne contient « ${esc(deckQ)} ».</div>` : ''}
-      ${shown.map((c, i) => `
+      ${part.map((c, i) => `
         <div class="row ${c.x ? 'off' : ''} ${sel && sel.has(c.id) ? 'pk' : ''}" data-id="${c.id}" style="--i:${i}">
           ${sel ? `<button class="ck" data-pkc="${c.id}" aria-label="Sélectionner">${svg(I.check)}</button>`
             : `${nq ? '' : `<button class="grip" aria-label="Déplacer">${svg(I.grip)}</button>`}
@@ -1587,12 +1776,22 @@ function deckView() {
             title="${c.x ? 'Réactiver' : 'Suspendre'}">${svg(c.x ? I.eyeoff : I.eye)}</button>
           <button class="x" data-rm="${c.id}">${svg(I.x)}</button>`}
         </div>`).join('')}
+      ${rest ? `<div class="more" id="more">${plur(rest, 'carte')} de plus…</div>` : ''}
       ${sel ? '' : `<div class="duo ghost">
         <button data-act="add">${svg(I.plus)}Carte</button>
         <button data-act="paste">${svg(I.down)}Coller</button>
       </div>`}
     </div>
     ${sel ? selBar(d) : ''}`;
+  const more = document.getElementById('more');
+  if (more) {
+    const io2 = new IntersectionObserver(es => {
+      if (!es.some(e => e.isIntersecting)) return;
+      io2.disconnect();
+      deckShow += DECKPAGE; animate = false; render();
+    }, { rootMargin: '400px' });
+    io2.observe(more);
+  }
   const t = document.getElementById('dn');
   t.addEventListener('blur', () => {
     const v = t.textContent.replace(/\s+/g, ' ').trim();
@@ -1601,7 +1800,21 @@ function deckView() {
   t.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); t.blur(); } });
   $.querySelectorAll('.row input').forEach(inp => inp.addEventListener('input', () => {
     const c = d.cards.find(x => x.id === inp.closest('.row').dataset.id);
-    if (c) { c[inp.dataset.k] = inp.value; clearTimeout(typing); typing = setTimeout(() => saveDeck(d), 700); }
+    if (!c) return;
+    c[inp.dataset.k] = inp.value;
+    /* On n'empêche pas d'écrire — perdre ce qu'on vient de taper serait
+       pire que tout — mais on le signale, et le compte restant apparaît
+       quand on approche de la limite. */
+    const max = inp.dataset.k === 'f' ? MAXF : MAXB;
+    const len = plain(inp.value).length;
+    inp.classList.toggle('over', len > max);
+    let tag = inp.parentElement.querySelector('.lim');
+    if (len > max * .8) {
+      if (!tag) { tag = document.createElement('i'); tag.className = 'lim'; inp.parentElement.appendChild(tag); }
+      tag.textContent = (max - len) + '';
+      tag.classList.toggle('ko', len > max);
+    } else if (tag) tag.remove();
+    clearTimeout(typing); typing = setTimeout(() => saveDeck(d), 700);
   }));
   if (!nq) bindReorder(d);
   const dq = document.getElementById('dq');
@@ -1845,7 +2058,9 @@ function settingsView() {
         <button class="sr flat warn" data-act="logout">${svg(I.exit)}<span class="n">Se déconnecter</span></button>
         <button class="sr flat warn" data-act="delacc">${svg(I.trash)}<span class="n">Supprimer le compte</span></button>
       </div>
-      <div class="foot">${online ? 'Synchronisé' : 'Hors ligne — reprise automatique'}</div>
+      <div class="foot">${pending()
+        ? plur(pending(), 'modification') + ' en attente' + (online ? ' d’envoi' : ' — reprise dès le retour du réseau')
+        : online ? 'Synchronisé' : 'Hors ligne — rien en attente'}</div>
     </div>`;
   const g = document.getElementById('pGoal'), c = document.getElementById('pCap');
   g.addEventListener('input', () => {
@@ -2045,6 +2260,58 @@ async function delMail(id) {
   closeMenu(); render();
   try { await api(`/rest/v1/mail?id=eq.${id}`, 'DELETE', null, { Prefer: 'return=minimal' }); }
   catch (e) {}
+}
+
+/* ---------- historique d'un paquet ----------
+   Annuler ne va pas plus loin que la session en cours et ne suit pas
+   l'appareil. Avant chaque opération qui remplace le contenu d'un paquet
+   — remplacement en masse, fusion, découpe, réimport — on en garde une
+   photo côté serveur. Dix par paquet : au-delà, ce n'est plus de
+   l'histoire, c'est du stockage. */
+const VERSN = 10;
+async function snapVersion(d, why) {
+  if (!auth || !d || !d.cards.length) return;
+  try {
+    await api('/rest/v1/deck_versions', 'POST',
+      [{ user_id: auth.uid, deck_id: d.id, name: d.name, why: why || '',
+         cards: d.cards.map(c => [c.f, c.b, c.id]) }], { Prefer: 'return=minimal' });
+    const old = await api(`/rest/v1/deck_versions?deck_id=eq.${encodeURIComponent(d.id)}`
+      + `&select=id&order=created_at.desc&offset=${VERSN}`);
+    if (old && old.length) {
+      await api(`/rest/v1/deck_versions?id=in.(${old.map(r => r.id).join(',')})`, 'DELETE',
+        null, { Prefer: 'return=minimal' });
+    }
+  } catch (e) {}
+}
+let vers = { list: null, err: 0, of: null };
+async function versPull(id) {
+  vers = { list: null, err: 0, of: id };
+  paintMenu();
+  try {
+    vers.list = await api(`/rest/v1/deck_versions?deck_id=eq.${encodeURIComponent(id)}`
+      + '&select=id,name,why,cards,created_at&order=created_at.desc') || [];
+  } catch (e) { vers.err = 1; }
+  if (menu === 'vers') paintMenu();
+}
+function versRestore(vid) {
+  const v = (vers.list || []).find(x => x.id === vid);
+  const d = deck(vers.of);
+  if (!v || !d) return closeMenu();
+  pushUndo('Restauration', [d.id]);
+  snapVersion(d, 'avant restauration');
+  /* La progression suit la carte, pas son texte : une version garde
+     l'identifiant de chaque carte, donc restaurer un libellé — même après
+     un remplacement en masse qui a réécrit les deux faces — ne remet pas à
+     zéro trois semaines de révision. Le recto sert de repêchage pour les
+     versions enregistrées avant que les identifiants ne soient gardés. */
+  const byId = new Map(d.cards.map(c => [c.id, c]));
+  const byF = new Map(d.cards.map(c => [norm(plain(c.f)), c]));
+  d.cards = v.cards.map(([f, b, id]) => {
+    const old = (id && byId.get(id)) || byF.get(norm(plain(f)));
+    return old ? { ...old, f, b } : { id: id || uid(), f, b };
+  });
+  saveDeck(d); closeMenu(); render();
+  toast(I.redo, plur(d.cards.length, 'carte') + ' restaurée' + (d.cards.length > 1 ? 's' : ''), true);
 }
 
 /* ══════════ partage : lien, bibliothèque, défis, classement ══════════
@@ -2974,6 +3241,50 @@ function paintMenu() {
     mountMenu(w);
     return;
   }
+  if (menu === 'vers') {
+    const d = deck(view.id); if (!d) { menu = null; return; }
+    const l = vers.list;
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.clock)}
+          <span class="mhx"><b>Historique de « ${esc(d.name)} »</b>
+            <i>les ${VERSN} dernières versions, avant chaque remplacement</i></span></div>
+        ${!l ? `<div class="note">${vers.err ? 'Historique indisponible.' : 'Chargement…'}</div>`
+          : !l.length ? `<div class="note">Rien encore. Une version est gardée avant chaque
+              opération qui remplace les cartes : remplacement en masse, fusion, découpe, réimport.</div>`
+          : `<div class="mscroll">${l.map(v => `<button class="mi" data-vers="${v.id}">
+              ${svg(I.redo)}<span class="ml2"><span class="n">${esc(v.why || 'version')}</span>
+                <span class="sub">${plur((v.cards || []).length, 'carte')} · ${timeAgo(v.created_at)}</span></span>
+              </button>`).join('')}</div>`}
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'conflict') {
+    const c = conflicts[0];
+    if (!c) { menu = null; return; }
+    const side = (v, lab, when) => `<div class="cside">
+      <b>${lab}</b><i>${plur(v.cards.length, 'carte')}${when ? ' · ' + when : ''}</i>
+      <span>${esc(v.name)}</span></div>`;
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.warn)}
+          <span class="mhx"><b>Modifié sur un autre appareil</b>
+            <i>« ${esc(c.mine.name)} » a changé des deux côtés</i></span></div>
+        <div class="note">Rien n’est perdu pour l’instant : les deux versions sont là,
+          et tu peux les garder toutes les deux si tu hésites.</div>
+        <div class="csides">
+          ${side(c.mine, 'Ici', null)}
+          ${side(c.theirs, 'Ailleurs', c.theirs.at ? timeAgo(c.theirs.at) : null)}
+        </div>
+        <button class="mi" data-mact="cfboth" style="justify-content:center;font-weight:700">
+          ${svg(I.copy)}Garder les deux</button>
+        <button class="mi" data-mact="cfmine">${svg(I.down)}Garder celle d’ici</button>
+        <button class="mi" data-mact="cftheirs">${svg(I.cloud)}Prendre celle de l’autre appareil</button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
   if (menu === 'libitem') {
     const it = (lib.list || []).find(x => x.deck_id === lib.open);
     if (!it) { menu = null; return; }
@@ -3172,6 +3483,7 @@ function paintMenu() {
       <div class="msep"></div>
       ${canUndo() ? `<button class="mi" data-mact="undo">${svg(I.redo)}Annuler<span class="tail">${esc(undoLabel())}</span></button>` : ''}
       ${d.cards.length ? `<button class="mi" data-mact="fnropen">${svg(I.search)}Chercher et remplacer</button>` : ''}
+      <button class="mi" data-mact="versopen">${svg(I.clock)}Historique du paquet</button>
       <button class="mi" data-mact="clone">${svg(I.copy)}Dupliquer</button>
       ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
       ${d.cards.length > 3 ? `<button class="mi" data-mact="splitopen">${svg(I.split)}Scinder<span class="tail">${d.cards.length}</span></button>` : ''}
@@ -3182,10 +3494,11 @@ function paintMenu() {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
+  if (b.dataset.vers !== undefined) return versRestore(+b.dataset.vers);
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
   if (b.dataset.friend !== undefined) { sendTo = b.dataset.friend; return paintMenu(); }
@@ -3394,6 +3707,10 @@ document.addEventListener('click', async e => {
   if (a === 'publish') { if (d) libPublish(d); return; }
   if (a === 'unpublish') { if (d) libRemove(d); return; }
   if (a === 'duelnew2') { if (d) duelMake(d); return; }
+  if (a === 'versopen') { if (!d) return; openMenu('vers'); return versPull(d.id); }
+  if (a === 'cfmine') return solveConflict('mine');
+  if (a === 'cftheirs') return solveConflict('theirs');
+  if (a === 'cfboth') return solveConflict('both');
   if (a === 'libadd') { const it = (lib.list || []).find(x => x.deck_id === lib.open); if (it) libAdd(it); return; }
   if (a === 'libdrop') { const it = (lib.list || []).find(x => x.deck_id === lib.open); const t = it && deck(it.deck_id); if (t) libRemove(t); return; }
   if (a === 'duelgo') { const du = (duels.list || []).find(x => x.id === duels.open); if (du) duelStart(du); return; }
@@ -4290,20 +4607,27 @@ function importView() {
       comp.text = tx.value;
       const cards = parseText(tx.value);
       const dup = markDups(cards, t);
-      const keep = comp.dups ? cards.length : cards.length - dup.total;
+      const big = markOver(cards);
+      const keep = (comp.dups ? cards.length : cards.length - dup.total) - big;
       add.disabled = !keep;
       gen.disabled = aiBusy || tx.value.trim().length < 40;
       add.firstChild.textContent = keep ? `Ajouter ${keep} ` : 'Ajouter';
-      prev.innerHTML = (dup.total ? `<div class="dupb">
+      prev.innerHTML = (big ? `<div class="dupb warn">
+          <span>${big} carte${big > 1 ? 's' : ''} trop longue${big > 1 ? 's' : ''} — recto ${MAXF}
+            caractères, verso ${MAXB}</span>
+          <button class="dupt" disabled>Écartée${big > 1 ? 's' : ''}</button>
+        </div>` : '')
+        + (dup.total ? `<div class="dupb">
           <span>${dup.total} doublon${dup.total > 1 ? 's' : ''}${
             dup.already ? ` · ${dup.already} déjà dans le paquet` : ''}${
             dup.inside ? ` · ${dup.inside} en double dans le texte` : ''}</span>
           <button class="dupt ${comp.dups ? 'on' : ''}" id="dupt">${
             comp.dups ? 'Les ajouter quand même' : 'Ignorés'}</button>
         </div>` : '')
-        + cards.slice(0, 40).map(c => `<div class="pr ${c.dup && !comp.dups ? 'dup' : ''}">
-          <span class="a">${esc(c.f)}</span>${svg(I.arrow)}<span class="b">${esc(c.b)}</span>
-          ${c.dup ? `<i class="dpi" title="${c.dup === 'deck' ? 'Déjà dans le paquet' : 'En double dans le texte'}">${svg(I.copy)}</i>` : ''}
+        + cards.slice(0, 40).map(c => `<div class="pr ${(c.dup && !comp.dups) || c.big ? 'dup' : ''}">
+          <span class="a">${esc(c.f.slice(0, 120))}</span>${svg(I.arrow)}<span class="b">${esc(c.b.slice(0, 120))}</span>
+          ${c.big ? `<i class="dpi" title="${c.big === 'f' ? 'Recto' : 'Verso'} trop long">${svg(I.warn)}</i>`
+            : c.dup ? `<i class="dpi" title="${c.dup === 'deck' ? 'Déjà dans le paquet' : 'En double dans le texte'}">${svg(I.copy)}</i>` : ''}
         </div>`).join('');
       const dt = document.getElementById('dupt');
       if (dt) dt.onclick = () => { comp.dups = !comp.dups; up(); };
@@ -4371,13 +4695,16 @@ function importView() {
     add.onclick = () => {
       let cards = parseText(tx.value); if (!cards.length) return;
       const dup = markDups(cards, t);
+      const big = markOver(cards);
       if (!comp.dups) cards = cards.filter(c => !c.dup);
+      cards = cards.filter(c => !c.big);
       cards = cards.map(c => ({ f: c.f, b: c.b }));
       if (!cards.length) return;
       comp.cards.push(...cards); comp.text = ''; comp.bulk = false;
       render();
       toast(I.check, plur(cards.length, 'carte')
-        + (!comp.dups && dup.total ? ` · ${dup.total} doublon${dup.total > 1 ? 's' : ''} écarté${dup.total > 1 ? 's' : ''}` : ''));
+        + (!comp.dups && dup.total ? ` · ${dup.total} doublon${dup.total > 1 ? 's' : ''} écarté${dup.total > 1 ? 's' : ''}` : '')
+        + (big ? ` · ${big} trop longue${big > 1 ? 's' : ''}` : ''));
     };
     return;
   }
@@ -4501,6 +4828,12 @@ $.addEventListener('click', e => {
   if (a === 'tab-quiz') return go('quiz');
   if (a === 'peek') { peek = !peek; render(); return; }
   if (a === 'marathon') return startStudy('all', false, null, { only: 'due', both: prefs.both });
+  if (a === 'retry') {
+    if (!pending()) return toast(I.check, 'Tout est enregistré');
+    toast(I.cloud, 'Envoi…');
+    flush().then(() => { animate = false; render(); if (online && !pending()) toast(I.check, 'À jour'); });
+    return;
+  }
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (a === 'group') { groupPull(); return go('group'); }
   if (a === 'duelnew') return openMenu('duelnew');
