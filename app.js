@@ -356,6 +356,7 @@ const I = {
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.4 6.9"/><path d="M14 10a4 4 0 0 0-5.7 0L5.5 12.8a4 4 0 0 0 5.7 5.7l1.4-1.4"/>',
   grip: '<path d="M9.4 6.4h.02M9.4 12h.02M9.4 17.6h.02M14.6 6.4h.02M14.6 12h.02M14.6 17.6h.02" stroke-width="2.9" stroke-linecap="round"/>',
   pick: '<path d="M5.4 9.2V6.6a1.2 1.2 0 0 1 1.2-1.2h2.6M14.8 5.4h2.6a1.2 1.2 0 0 1 1.2 1.2v2.6"/><path d="M18.6 14.8v2.6a1.2 1.2 0 0 1-1.2 1.2h-2.6M9.2 18.6H6.6a1.2 1.2 0 0 1-1.2-1.2v-2.6"/><path d="m9.3 12.1 2 2 3.4-3.9"/>',
+  quote: '<rect x="3.6" y="4.4" width="16.8" height="12.2" rx="3.4"/><path d="M8.8 16.6v3.3l4.2-3.3"/>',
   search: '<circle cx="10.8" cy="10.8" r="6.4"/><path d="M15.5 15.5 20 20"/>',
   copy: '<rect x="8.6" y="8.6" width="11.8" height="11.8" rx="3"/><path d="M15.4 5.6a2 2 0 0 0-2-2H6.6a3 3 0 0 0-3 3v6.8a2 2 0 0 0 2 2"/>',
   split: '<path d="M12 3.6v6.8"/><path d="M12 10.4 6.6 15v5.4M12 10.4 17.4 15v5.4"/><circle cx="12" cy="3.6" r="0"/>',
@@ -367,6 +368,22 @@ const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
 const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const plur = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
+/* iOS souligne et rend cliquable tout ce qui ressemble à une adresse
+   e-mail : un appui sur le nom de l'expéditeur ouvrait l'app Mail. Un
+   liant invisible avant l'arobase suffit à l'en dissuader, sans rien
+   changer à ce qu'on lit. */
+const noDetect = s => String(s).replace(/@/g, '\u2060@');
+/* Un compte qui n'a pas choisi de nom retombe sur son adresse. Dans une
+   liste, la garder entière mange la place du paquet — on n'en montre donc
+   que ce qui identifie, « Sam » plutôt que « sam@gmail.com ». L'adresse
+   complète reste affichée dans le message ouvert, là où il y a la place
+   et où lever un doute compte. */
+const shortWho = s => {
+  const t = String(s || '').trim(), at = t.indexOf('@');
+  if (at < 1) return t;
+  const l = t.slice(0, at).replace(/[._-]+/g, ' ').trim();
+  return l.charAt(0).toUpperCase() + l.slice(1);
+};
 
 /* ---------- rendu du contenu d'une carte ----------
    Sous-ensemble volontairement étroit : ce qu'on écrit vraiment sur une fiche.
@@ -1737,7 +1754,12 @@ function mailView() {
         : `<div class="slist">${l.map(it => `
           <button class="sr flat mlrow ${!it.read_at ? 'unread' : ''}" data-mail="${it.id}">
             ${it.read_at ? svg(I.mail) : '<i class="mdot"></i>'}
-            <span class="n">${esc(it.from_name || 'Un ami')} → ${esc(it.deck_name)}</span>
+            <span class="ml2">
+              <span class="n">${esc(shortWho(it.from_name) || 'Un ami')} → ${esc(it.deck_name)}</span>
+              <span class="sub">${it.message
+                ? `« ${esc(it.message)} »`
+                : plur((it.cards || []).length, 'carte')}</span>
+            </span>
             <span class="c">${timeAgo(it.created_at)}</span>${svg(I.arrow)}
           </button>`).join('')}</div>`}
     </div>`;
@@ -2059,8 +2081,8 @@ function paintMenu() {
               <i class="tri" style="--c:var(--soft)"></i>${esc(p.name || p.email)}
               ${sendTo === p.id ? svg(I.check) : ''}</button>`).join('')}</div>
         ${chosen ? `
-          <textarea class="tok" id="mmsg" rows="3" placeholder="Un petit mot (facultatif)"
-            spellcheck="false">${esc(sendMsg)}</textarea>
+          <textarea class="tok msgin" id="mmsg" rows="3" placeholder="Écris un mot à ${
+            esc(shortWho(chosen.name || chosen.email))} (facultatif)">${esc(sendMsg)}</textarea>
           <button class="mi" data-mact="sendmail" style="justify-content:center;font-weight:700">
             ${svg(I.share)}Envoyer à ${esc(chosen.name || chosen.email)}</button>` : ''}
       </div>`;
@@ -2072,11 +2094,15 @@ function paintMenu() {
   if (menu === 'mailitem') {
     const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen);
     if (!it) { menu = null; return; }
+    const n = (it.cards || []).length;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mi" style="font-weight:750">${svg(I.mail)}${esc(it.from_name || 'Un ami')}</div>
-        <div class="note">« ${esc(it.deck_name)} » · ${plur((it.cards || []).length, 'carte')}${
-          it.message ? ` <br>« ${esc(it.message)} »` : ''}</div>
+        <div class="mhd">${svg(I.mail)}
+          <span class="mhx"><b>${esc(it.deck_name)}</b>
+            <i>${esc(noDetect(it.from_name || 'Un ami'))} · ${plur(n, 'carte')} · ${timeAgo(it.created_at)}</i>
+          </span>
+        </div>
+        ${it.message ? `<div class="mmsg">${svg(I.quote)}<p>${esc(it.message)}</p></div>` : ''}
         <div class="mscroll">${(it.cards || []).slice(0, 60).map(c => `<div class="pr">
           <span class="a">${esc(c[0])}</span>${svg(I.arrow)}<span class="b">${esc(c[1])}</span></div>`).join('')}</div>
         <button class="mi" data-mact="addmail" style="justify-content:center;font-weight:700">

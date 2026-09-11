@@ -537,9 +537,45 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 #rail nav button .icb{margin-left:auto;box-shadow:0 0 0 2px var(--card)}
 #rail nav button.on .icb{box-shadow:0 0 0 2px var(--ink)}
 
+.mlrow{align-items:center}
+.mlrow .ml2{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.mlrow .ml2 .n{font-size:15px}
 .mlrow.unread .n{font-weight:800}
+/* la deuxième ligne porte le mot de l'expéditeur : c'est ce qu'on venait
+   lire, il ne peut pas rester invisible dans la liste */
+.mlrow .sub{font-size:12.5px;font-weight:600;color:var(--soft);letter-spacing:-.1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mlrow.unread .sub{color:var(--ink2)}
 .mlrow .mdot{width:9px;height:9px;border-radius:50%;background:var(--ko);flex:none}
 .mlrow:not(.unread) > svg:first-child{opacity:.45}
+
+/* en-tête d'un message ouvert : le paquet est le sujet, l'expéditeur, le
+   nombre de cartes et la date passent derrière, sur une seule ligne */
+.mhd{display:flex;align-items:flex-start;gap:13px;padding:8px 16px 11px}
+.mhd > svg{width:20px;height:20px;color:var(--soft);flex:none;margin-top:3px}
+.mhx{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mhx b{font-weight:780;font-size:17px;letter-spacing:-.3px;overflow-wrap:anywhere}
+.mhx i{font-style:normal;font-size:12.5px;font-weight:640;color:var(--soft);
+  letter-spacing:-.05px;overflow-wrap:anywhere}
+
+/* le mot de l'expéditeur : le seul endroit où quelqu'un s'adresse à vous.
+   Sur fond plein et en encre pleine, il ne se confond plus avec les
+   informations grises du paquet juste au-dessus. */
+.mmsg{display:flex;gap:11px;margin:0 7px 9px;padding:13px 15px;border-radius:16px;
+  background:var(--surf);color:var(--ink)}
+.mmsg > svg{width:16px;height:16px;flex:none;margin-top:2px;opacity:.45}
+.mmsg p{margin:0;min-width:0;font-size:14.5px;line-height:1.5;font-weight:620;
+  letter-spacing:-.1px;overflow-wrap:anywhere}
+
+/* destinataire choisi : une coche grise seule ne se remarquait pas */
+.mi.on{background:var(--surf)}
+.mi.on > svg:last-child{color:var(--ink);opacity:1}
+
+/* le champ du mot à joindre : sur fond plein, cerné, il se lit comme
+   quelque chose où l'on écrit — pas comme un bloc d'aide de plus */
+.msgin{min-height:88px;line-height:1.5;font-weight:600;background:var(--card);
+  box-shadow:inset 0 0 0 1.5px var(--surf2)}
+.msgin::placeholder{color:var(--soft);opacity:.72}
 
 .swatch{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;padding:4px 7px 8px}
 .sw2{aspect-ratio:1;border-radius:13px;position:relative;
