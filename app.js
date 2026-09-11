@@ -336,6 +336,7 @@ const I = {
   sound: '<path d="M4.5 9.4h3L12 5.8v12.4L7.5 14.6h-3z"/><path d="M15.9 9.4a3.6 3.6 0 0 1 0 5.2M18.3 7a7 7 0 0 1 0 10"/>',
   mute: '<path d="M4.5 9.4h3L12 5.8v12.4L7.5 14.6h-3z"/><path d="M16 9.6l4.4 4.8M20.4 9.6L16 14.4"/>',
   mic: '<rect x="9" y="3.2" width="6" height="11" rx="3"/><path d="M5.5 11.4a6.5 6.5 0 0 0 13 0M12 18v2.8"/>',
+  file: '<path d="M13.4 3.6H7.4a2 2 0 0 0-2 2v12.8a2 2 0 0 0 2 2h9.2a2 2 0 0 0 2-2V8.8z"/><path d="M13.4 3.6v5.2h5.2"/><path d="M8.8 13.4h6.4M8.8 16.6h4.2"/>',
   image: '<rect x="3" y="5" width="18" height="14" rx="3.2"/><circle cx="8.6" cy="10" r="1.5"/><path d="M4.2 17.4l4.6-4.3 3.4 3 3-2.6 4.6 4"/>',
   clock: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/>',
   bulb: '<path d="M9.6 17.6h4.8M10.2 20.4h3.6"/><path d="M12 3.6a5.6 5.6 0 0 0-3.3 10.1c.6.5 1 1.2 1 1.9h4.6c0-.7.4-1.4 1-1.9A5.6 5.6 0 0 0 12 3.6z"/>',
@@ -575,7 +576,77 @@ function dec(t) {
 
 /* ---------- texte brut -> cartes ---------- */
 const SEPS = [/\s*\t+\s*/, /\s*::\s*/, /\s*=>?\s*/, /\s*\|\s*/, /\s+[–—]\s+/, /\s+-\s+/, /\s*:\s*/, /\s*;\s*/, /\s*,\s*/];
-function parseText(txt) {
+const BULLET = /^\s*(?:[-*•·–—]|\d+[.)])\s+/;
+
+/* ---------- lecture d'un texte collé ----------
+   Un export (Quizlet et les autres) emploie le MÊME séparateur sur toutes
+   les lignes. Choisir ligne par ligne, comme on le faisait, casse dès
+   qu'une définition contient une virgule ou un deux-points : la ligne se
+   coupe au mauvais endroit alors que la suivante se coupe correctement.
+   On élit donc un séparateur pour tout le bloc, celui qui découpe le plus
+   de lignes en exactement deux morceaux pleins. */
+const SEPNAMES = [
+  ['tabulation', /\t+/, /\s*\t+\s*/],
+  ['«  :: »', /::/, /\s*::\s*/],
+  ['«  | »', /\|/, /\s*\|\s*/],
+  ['flèche', /\s=>\s|\s?→\s?/, /\s*(?:=>|→)\s*/],
+  ['«  = »', /=/, /\s*=\s*/],
+  ['tiret', /\s[–—-]\s/, /\s+[–—-]\s+/],
+  ['deux-points', /:/, /\s*:\s*/],
+  ['point-virgule', /;/, /\s*;\s*/],
+  ['virgule', /,/, /\s*,\s*/]
+];
+function sniffSep(rows) {
+  let best = null;
+  for (const [name, find, split] of SEPNAMES) {
+    let once = 0, many = 0, zero = 0;
+    for (const r of rows) {
+      const n = (r.match(new RegExp(find.source, 'g')) || []).length;
+      if (!n) { zero++; continue; }
+      const p = r.split(split);
+      if (p.length === 2 && p[0].trim() && p[1].trim()) once++;
+      else many++;
+    }
+    const score = once - many * .5 - zero;
+    if (once >= rows.length * .6 && (!best || score > best.score))
+      best = { name, split, score, once };
+  }
+  return best;
+}
+/* En-tête d'un export Anki « notes en texte brut » : des lignes de
+   directives, puis les notes, souvent avec du HTML dans les champs.
+   On lit la directive de séparateur, on jette le reste de l'en-tête et
+   on remet le HTML à plat. */
+const ANKISEP = { tab: '\t', comma: ',', semicolon: ';', space: ' ', pipe: '|', colon: ':' };
+function deAnki(t) {
+  /* Anki écrit aussi « #notetype column:1 », avec une espace : la clé
+     peut faire plusieurs mots */
+  if (!/^#(?:separator|html|tags|notetype|deck|columns)\b[^\n]*:/im.test(t.slice(0, 400))) return t;
+  let sep = '';
+  const keep = [];
+  for (const line of t.split(/\r?\n/)) {
+    const m = /^#([a-z]+(?: [a-z]+)*)\s*:(.*)$/i.exec(line);
+    if (m) { if (/^separator$/i.test(m[1])) sep = ANKISEP[m[2].trim().toLowerCase()] || m[2].trim(); continue; }
+    keep.push(line);
+  }
+  let out = keep.join('\n');
+  if (sep && sep !== '\t') out = out.split(sep).join('\t');   // ramené au cas le plus sûr
+  return out;
+}
+const deHtml = s => s
+  .replace(/<br\s*\/?>|<\/(?:div|p|li)>/gi, ' ')
+  .replace(/<[^>]+>/g, '')
+  .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;/g, "'")
+  .replace(/\s+/g, ' ').trim();
+
+/* le HTML des exports Anki est remis à plat ici, une fois pour toutes,
+   quelle que soit la façon dont le texte a été découpé */
+function parseText(raw) {
+  return parseRaw(raw).map(c => ({ f: deHtml(c.f), b: deHtml(c.b) })).filter(c => c.f && c.b);
+}
+function parseRaw(raw) {
+  const txt = deAnki(String(raw));
   const t = txt.trim(); if (!t) return [];
   if (t[0] === '{' || t[0] === '[') {
     try {
@@ -587,10 +658,43 @@ function parseText(txt) {
       if (out.length) return out;
     } catch (e) {}
   }
+  /* Blocs séparés par une ligne vide, deux lignes chacun : recto dessus,
+     verso dessous. C'est ce qui sort d'un copier-coller de page web. */
+  if (/\n\s*\n/.test(t)) {
+    const blocks = t.split(/\n\s*\n+/).map(x => x.trim()).filter(Boolean);
+    const pairs = blocks.map(x => x.split(/\r?\n/).map(l => l.replace(BULLET, '').trim()).filter(Boolean));
+    if (blocks.length >= 2 && pairs.every(p => p.length === 2))
+      return pairs.map(([f, b]) => ({ f, b }));
+  }
+  let rows = t.split(/\r?\n/).map(l => l.replace(BULLET, '').trim()).filter(Boolean);
+  /* Tout sur une seule ligne : les lignes sont alors séparées par « ; »
+     ou « | », le choix que Quizlet propose pour les rangées. */
+  if (rows.length === 1) {
+    for (const rs of [/\s*\|\s*/, /\s*;\s*/]) {
+      const p = rows[0].split(rs).map(x => x.trim()).filter(Boolean);
+      if (p.length >= 2 && sniffSep(p)) { rows = p; break; }
+    }
+  }
+  const sep = sniffSep(rows);
+  if (sep) {
+    const out = [];
+    for (const r of rows) {
+      const p = r.split(sep.split);
+      if (p.length < 2) continue;
+      const f = p[0].trim(), b = p.slice(1).join(' ').trim();
+      if (f && b) out.push({ f, b });
+    }
+    if (out.length) return out;
+  }
+  /* Une ligne sur deux : recto, verso, recto, verso… */
+  if (rows.length >= 4 && rows.length % 2 === 0 && !rows.some(r => SEPS.some(s => s.test(r)))) {
+    const out = [];
+    for (let i = 0; i < rows.length; i += 2) out.push({ f: rows[i], b: rows[i + 1] });
+    return out;
+  }
+  /* dernier recours : ligne par ligne, comme avant */
   const out = [];
-  for (let line of t.split(/\r?\n/)) {
-    line = line.replace(/^\s*(?:[-*•·–—]|\d+[.)])\s+/, '').trim();
-    if (!line) continue;
+  for (const line of rows) {
     for (const s of SEPS) {
       const m = line.split(s);
       if (m.length >= 2 && m[0].trim() && m.slice(1).join(' ').trim()) {
@@ -599,6 +703,24 @@ function parseText(txt) {
     }
   }
   return out;
+}
+
+/* ---------- doublons ----------
+   Deux cartes font doublon si leur recto se lit pareil une fois la
+   ponctuation et la casse mises de côté. On les signale, on ne les jette
+   jamais sans le dire : c'est parfois voulu (deux sens d'un même mot). */
+function markDups(cards, target) {
+  const here = new Set((target ? target.cards : []).map(c => norm(c.f || '')));
+  const seen = new Set();
+  let inside = 0, already = 0;
+  for (const c of cards) {
+    const k = norm(c.f || '');
+    if (seen.has(k)) { c.dup = 'inside'; inside++; }
+    else if (here.has(k)) { c.dup = 'deck'; already++; }
+    else delete c.dup;
+    seen.add(k);
+  }
+  return { inside, already, total: inside + already };
 }
 
 
@@ -673,16 +795,18 @@ function preview(c, rating) {
    parle à l'API. L'app n'envoie que le texte, avec son jeton de session. */
 const AIERR = {
   budget: 'Budget IA atteint', quota: 'Quota du jour atteint',
+  fquota: 'Quota photos et PDF du jour atteint',
   long: 'Texte trop long', short: 'Texte trop court',
+  big: 'Fichier trop lourd', mime: 'Format non reconnu',
   nokey: 'IA non configurée', empty: 'Rien à extraire'
 };
-async function aiCards(text, hint) {
+async function aiCall(payload) {
   if (auth && auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
   const call = () => fetch(SB.url + '/functions/v1/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: SB.key,
                Authorization: 'Bearer ' + (auth && auth.token) },
-    body: JSON.stringify({ op: 'cards', text, hint: hint || '' })
+    body: JSON.stringify(payload)
   });
   let r = await call();
   if (r.status === 401 && auth && auth.refresh && await refreshToken()) r = await call();
@@ -692,6 +816,42 @@ async function aiCards(text, hint) {
     f: String(c.f || '').replace(/[\t\r\n]+/g, ' ').trim(),
     b: String(c.b || '').replace(/[\t\r\n]+/g, ' ').trim()
   })).filter(c => c.f && c.b);
+}
+const aiCards = (text, hint) => aiCall({ op: 'cards', text, hint: hint || '' });
+
+/* ---------- photo d'une page, PDF ----------
+   La photo est réduite avant d'être envoyée : au-delà de 1568 pixels de
+   côté, l'API la réduit elle-même sans rien y gagner en lisibilité, et
+   une photo de téléphone brute pèse dix fois le nécessaire — donc dix
+   fois le prix. Le PDF part tel quel ; ce sont les pages demandées qui
+   limitent le travail. */
+const IMGMAX = 1568;
+function shrink(file) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const s = Math.min(1, IMGMAX / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * s); cv.height = Math.round(img.height * s);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      const out = cv.toDataURL('image/jpeg', .82);
+      res({ mime: 'image/jpeg', data: out.slice(out.indexOf(',') + 1) });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('mime')); };
+    img.src = url;
+  });
+}
+const asB64 = file => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res({ mime: file.type, data: String(r.result).slice(String(r.result).indexOf(',') + 1) });
+  r.onerror = () => rej(new Error('mime'));
+  r.readAsDataURL(file);
+});
+async function aiFromFile(file, hint, pages) {
+  const pdf = file.type === 'application/pdf';
+  const { mime, data } = pdf ? await asB64(file) : await shrink(file);
+  return aiCall({ op: pdf ? 'pdf' : 'ocr', mime, data, hint: hint || '', pages: pages || '' });
 }
 
 /* ---------- construction d'une file ---------- */
@@ -1486,6 +1646,33 @@ async function trashPurge(id) {
       { Prefer: 'return=minimal' });
     toast(I.trash, 'Supprimé définitivement');
   } catch (e) { trash.list = null; trashPull(); toast(I.x, "Suppression impossible"); }
+}
+
+/* ---------- pages d'un PDF ----------
+   Une feuille légère, hors du système de menus : elle se referme d'
+   elle-même et rend la main au code qui l'a ouverte. Laisser le champ
+   vide prend tout le document. */
+function askPages(done) {
+  document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
+  const w = document.createElement('div');
+  w.innerHTML = `<div class="scrim" id="pgx"></div>
+    <div class="menu">
+      <div class="mi" style="font-weight:750">${svg(I.file)}Quelles pages ?</div>
+      <input class="tok" id="pgin" placeholder="Toutes les pages" spellcheck="false"
+        autocapitalize="none" inputmode="numeric" enterkeyhint="done">
+      <div class="note">Par exemple <b>3-7</b> pour une suite, <b>2, 5, 9</b> pour un choix,
+        ou rien du tout pour prendre le document entier.</div>
+      <button class="mi" id="pgok" style="justify-content:center;font-weight:700">
+        ${svg(I.check)}Lire le PDF</button>
+    </div>`;
+  document.body.append(...w.childNodes);
+  const inp = document.getElementById('pgin');
+  const close = () => document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
+  const go2 = () => { const v = inp.value.trim(); close(); done(v); };
+  document.getElementById('pgok').onclick = go2;
+  document.getElementById('pgx').onclick = close;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go2(); } });
+  setTimeout(() => inp.focus(), 60);
 }
 
 /* ---------- menu contextuel ---------- */
@@ -2778,9 +2965,9 @@ function nextQ() {
 }
 
 /* ---------- création / import ---------- */
-let comp = { subject: '', cards: [], edit: -1, bulk: false, text: '' };
+let comp = { subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false };
 let aiBusy = false;
-const resetComp = () => { comp = { subject: '', cards: [], edit: -1, bulk: false, text: '' }; };
+const resetComp = () => { comp = { subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false }; };
 
 function importView() {
   const t = view.id ? deck(view.id) : null;
@@ -2799,9 +2986,13 @@ function importView() {
         <div class="ta"><textarea id="tx" placeholder="chat = gatto&#10;chien = cane&#10;maison = casa"
           autocapitalize="off" autocorrect="off" spellcheck="false">${esc(comp.text)}</textarea></div>
         <div class="airow">
+          <button class="ai" id="aishot" title="Photo d'une page de cours">${svg(I.image)}</button>
+          <button class="ai" id="aipdf" title="Fichier : PDF, texte, CSV, export Anki ou Quizlet">${svg(I.file)}</button>
           <button class="ai" id="aigen" title="Fabriquer les cartes">${svg(I.spark)}</button>
           <button class="cta" id="bulkadd" disabled>Ajouter${svg(I.plus)}</button>
         </div>
+        <input type="file" id="fshot" accept="image/*" capture="environment" hidden>
+        <input type="file" id="fpdf" accept=".pdf,.txt,.csv,.tsv,.apkg,application/pdf,text/plain,text/csv" hidden>
         <div class="prev" id="prev"></div>`
       : `
         <div class="comp" id="comp" style="${sty(s)}">
@@ -2825,11 +3016,24 @@ function importView() {
     const up = () => {
       comp.text = tx.value;
       const cards = parseText(tx.value);
-      add.disabled = !cards.length;
+      const dup = markDups(cards, t);
+      const keep = comp.dups ? cards.length : cards.length - dup.total;
+      add.disabled = !keep;
       gen.disabled = aiBusy || tx.value.trim().length < 40;
-      add.firstChild.textContent = cards.length ? `Ajouter ${cards.length} ` : 'Ajouter';
-      prev.innerHTML = cards.slice(0, 40).map(c => `<div class="pr">
-        <span class="a">${esc(c.f)}</span>${svg(I.arrow)}<span class="b">${esc(c.b)}</span></div>`).join('');
+      add.firstChild.textContent = keep ? `Ajouter ${keep} ` : 'Ajouter';
+      prev.innerHTML = (dup.total ? `<div class="dupb">
+          <span>${dup.total} doublon${dup.total > 1 ? 's' : ''}${
+            dup.already ? ` · ${dup.already} déjà dans le paquet` : ''}${
+            dup.inside ? ` · ${dup.inside} en double dans le texte` : ''}</span>
+          <button class="dupt ${comp.dups ? 'on' : ''}" id="dupt">${
+            comp.dups ? 'Les ajouter quand même' : 'Ignorés'}</button>
+        </div>` : '')
+        + cards.slice(0, 40).map(c => `<div class="pr ${c.dup && !comp.dups ? 'dup' : ''}">
+          <span class="a">${esc(c.f)}</span>${svg(I.arrow)}<span class="b">${esc(c.b)}</span>
+          ${c.dup ? `<i class="dpi" title="${c.dup === 'deck' ? 'Déjà dans le paquet' : 'En double dans le texte'}">${svg(I.copy)}</i>` : ''}
+        </div>`).join('');
+      const dt = document.getElementById('dupt');
+      if (dt) dt.onclick = () => { comp.dups = !comp.dups; up(); };
     };
     const fit = () => { tx.style.height = 'auto'; tx.style.height = Math.min(tx.scrollHeight + 2, innerHeight * .3) + 'px'; };
     tx.addEventListener('input', () => { fit(); up(); }); fit(); up();
@@ -2849,10 +3053,58 @@ function importView() {
       }
       aiBusy = false; gen.classList.remove('busy'); up();
     };
+    /* Photo et PDF passent par la même passerelle : ils reviennent sous
+       forme de texte tabulé dans la zone, donc tout ce qui suit — aperçu,
+       doublons, correction à la main — fonctionne à l'identique. */
+    const shot = document.getElementById('aishot'), pdf = document.getElementById('aipdf');
+    const fshot = document.getElementById('fshot'), fpdf = document.getElementById('fpdf');
+    const grab = async (btn, file, pages) => {
+      if (aiBusy || !file) return;
+      aiBusy = true; btn.classList.add('busy'); [shot, pdf, gen].forEach(x => x.disabled = true);
+      try {
+        const cards = await aiFromFile(file, t ? t.name : comp.name, pages);
+        if (!cards.length) throw new Error('empty');
+        const had = tx.value.trim();
+        tx.value = (had ? had + '\n' : '') + cards.map(c => c.f + '\t' + c.b).join('\n');
+        fit(); up(); toast(I.spark, plur(cards.length, 'carte'));
+      } catch (x) {
+        toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
+      }
+      aiBusy = false; btn.classList.remove('busy');
+      [shot, pdf].forEach(x => x.disabled = false); up();
+    };
+    shot.onclick = () => { if (!aiBusy) fshot.click(); };
+    pdf.onclick = () => { if (!aiBusy) fpdf.click(); };
+    fshot.onchange = () => { grab(shot, fshot.files[0]); fshot.value = ''; };
+    /* Un fichier texte (export « notes en texte brut » d'Anki, export
+       Quizlet, CSV d'un tableur) se lit ici même : pas de réseau, pas
+       d'IA, pas d'attente — l'analyseur reconnaît le séparateur seul.
+       Seul le PDF a besoin de la passerelle. */
+    fpdf.onchange = async () => {
+      const f = fpdf.files[0]; fpdf.value = '';
+      if (!f) return;
+      const nm = f.name.toLowerCase();
+      if (nm.endsWith('.apkg')) return toast(I.x, 'Exporte en texte depuis Anki');
+      if (f.type === 'application/pdf' || nm.endsWith('.pdf'))
+        return askPages(p => grab(pdf, f, p));
+      let txt = '';
+      try { txt = await f.text(); } catch (x) { return toast(I.x, 'Fichier illisible'); }
+      const found = parseText(txt);
+      if (!found.length) return toast(I.x, 'Aucune carte reconnue');
+      const had = tx.value.trim();
+      tx.value = (had ? had + '\n' : '') + found.map(c => c.f + '\t' + c.b).join('\n');
+      fit(); up(); toast(I.check, plur(found.length, 'carte'));
+    };
     add.onclick = () => {
-      const cards = parseText(tx.value); if (!cards.length) return;
+      let cards = parseText(tx.value); if (!cards.length) return;
+      const dup = markDups(cards, t);
+      if (!comp.dups) cards = cards.filter(c => !c.dup);
+      cards = cards.map(c => ({ f: c.f, b: c.b }));
+      if (!cards.length) return;
       comp.cards.push(...cards); comp.text = ''; comp.bulk = false;
-      render(); toast(I.check, plur(cards.length, 'carte'));
+      render();
+      toast(I.check, plur(cards.length, 'carte')
+        + (!comp.dups && dup.total ? ` · ${dup.total} doublon${dup.total > 1 ? 's' : ''} écarté${dup.total > 1 ? 's' : ''}` : ''));
     };
     return;
   }
