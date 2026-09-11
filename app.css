@@ -313,6 +313,42 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .st span{font-size:10.5px;font-weight:750;letter-spacing:.4px;text-transform:uppercase;
   color:var(--soft);white-space:nowrap}
 
+/* ══════════ statistiques ══════════ */
+.tiles.st4{flex-wrap:wrap;animation:none}
+.tiles.st4 .st{flex:1 1 calc(50% - 4px);min-width:calc(50% - 4px)}
+.card2{background:var(--card);box-shadow:var(--s1);border-radius:20px;padding:14px 16px}
+/* sur cet écran les sections s'enchaînent : chaque intitulé a besoin
+   d'air au-dessus, sinon il colle au bloc précédent */
+#app[data-view="stats"] .lbl{margin-top:24px}
+#app[data-view="stats"] .slist{gap:8px}
+
+/* calendrier d'assiduité : une colonne par semaine, une case par jour */
+.heat{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.heat::-webkit-scrollbar{display:none}
+.hc{display:flex;flex-direction:column;gap:3px;flex:none}
+.hc i{width:13px;height:13px;border-radius:4px;background:var(--surf)}
+.hc i.l1{background:color-mix(in srgb,var(--ok) 26%,var(--surf))}
+.hc i.l2{background:color-mix(in srgb,var(--ok) 48%,var(--surf))}
+.hc i.l3{background:color-mix(in srgb,var(--ok) 72%,var(--surf))}
+.hc i.l4{background:var(--ok)}
+.heatk{display:flex;justify-content:space-between;margin-top:8px;font-size:11.5px;
+  font-weight:650;color:var(--soft)}
+
+/* barres comparées : rétention, progression, temps par matière */
+.brow{display:flex;align-items:center;gap:10px;padding:5px 0}
+.brow .bl{flex:0 0 46%;min-width:0;font-size:13px;font-weight:650;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brow .bt{flex:1;min-width:0;height:8px;border-radius:5px;background:var(--surf);overflow:hidden}
+.brow .bt i{display:block;height:100%;border-radius:5px;background:var(--ink);
+  transition:width .5s var(--e)}
+.brow .bv{flex:none;min-width:44px;text-align:right;font-size:12.5px;font-weight:750;
+  color:var(--soft);font-variant-numeric:tabular-nums}
+
+/* cartes les plus ratées : le nombre d'échecs porte l'information */
+.wrow .wn{flex:none;min-width:26px;height:26px;padding:0 6px;border-radius:9px;
+  background:rgba(196,86,107,.13);color:var(--ko);display:grid;place-items:center;
+  font-style:normal;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums}
+
 .strip{display:flex;gap:3px;width:100%;height:9px;animation:rise .5s var(--e) .14s both}
 .strip i{flex:1;min-width:3px;border-radius:3px;background:var(--ok);opacity:.85}
 .strip i.n{background:var(--ko)}
@@ -833,9 +869,11 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 /* ══════════ connexion ══════════ */
 .lseg{width:100%;margin-bottom:16px}
 .lseg button{height:40px}
-.lnk{margin-top:12px;align-self:center;font-size:13.5px;font-weight:650;color:var(--soft);
+.lnk{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  margin-top:12px;align-self:center;font-size:13.5px;font-weight:650;color:var(--soft);
   padding:8px 12px;border-radius:10px;transition:background .2s,color .2s}
 .lnk:hover{background:var(--surf);color:var(--ink)}
+.lnk svg{width:15px;height:15px;flex:none}
 
 @media (min-width:900px){
   .grades{gap:10px}

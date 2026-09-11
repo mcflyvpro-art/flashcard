@@ -55,6 +55,7 @@ let splitSize = 12;
 /* boîte de réception : n = non lus (toujours à jour), list = plein détail
    (chargé seulement à l'ouverture de l'écran, comme la corbeille) */
 let mailbox = { n: 0, list: null, err: 0 };
+let stats = { rows: null, err: 0, range: 30 };
 let friends = null;          // annuaire des autres comptes, pour choisir un destinataire
 let sendTo = null;           // destinataire choisi dans la feuille d'envoi
 let mailOpen = null;         // id de l'e-mail affiché dans sa feuille de détail
@@ -356,6 +357,7 @@ const I = {
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.4 6.9"/><path d="M14 10a4 4 0 0 0-5.7 0L5.5 12.8a4 4 0 0 0 5.7 5.7l1.4-1.4"/>',
   grip: '<path d="M9.4 6.4h.02M9.4 12h.02M9.4 17.6h.02M14.6 6.4h.02M14.6 12h.02M14.6 17.6h.02" stroke-width="2.9" stroke-linecap="round"/>',
   pick: '<path d="M5.4 9.2V6.6a1.2 1.2 0 0 1 1.2-1.2h2.6M14.8 5.4h2.6a1.2 1.2 0 0 1 1.2 1.2v2.6"/><path d="M18.6 14.8v2.6a1.2 1.2 0 0 1-1.2 1.2h-2.6M9.2 18.6H6.6a1.2 1.2 0 0 1-1.2-1.2v-2.6"/><path d="m9.3 12.1 2 2 3.4-3.9"/>',
+  chart: '<path d="M4 20V4"/><path d="M4 20h16"/><rect x="7.4" y="12" width="3" height="5" rx="1"/><rect x="12.4" y="8.4" width="3" height="8.6" rx="1"/><rect x="17.4" y="5.6" width="3" height="11.4" rx="1"/>',
   quote: '<rect x="3.6" y="4.4" width="16.8" height="12.2" rx="3.4"/><path d="M8.8 16.6v3.3l4.2-3.3"/>',
   search: '<circle cx="10.8" cy="10.8" r="6.4"/><path d="M15.5 15.5 20 20"/>',
   copy: '<rect x="8.6" y="8.6" width="11.8" height="11.8" rx="3"/><path d="M15.4 5.6a2 2 0 0 0-2-2H6.6a3 3 0 0 0-3 3v6.8a2 2 0 0 0 2 2"/>',
@@ -1101,7 +1103,7 @@ let animate = true;
    carte qu'on suspend) pour qu'aucun élément ne rejoue son apparition. */
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome,
-              run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView };
+              run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView };
   $.classList.remove('fade');
   if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
   (v[view.name] || home)();
@@ -1181,7 +1183,7 @@ function paintRail() {
   let r = document.getElementById('rail');
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
   const on = /quiz|run/.test(view.name) ? 'quiz' : view.name === 'settings' ? 'settings'
-    : view.name === 'mail' ? 'mail' : 'home';
+    : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats' : 'home';
   const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n;
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
   if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
@@ -1194,6 +1196,7 @@ function paintRail() {
     </nav>
     <div class="sp"></div>
     <nav>
+      <button class="${on === 'stats' ? 'on' : ''}" data-r="stats">${svg(I.chart)}<span>Stats</span></button>
       <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Boîte</span>${
         mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
       <button class="${on === 'settings' ? 'on' : ''}" data-r="settings">${svg(I.gear)}<span>Réglages</span></button>
@@ -1202,6 +1205,7 @@ function paintRail() {
   r.onclick = e => {
     const b = e.target.closest('[data-r]'); if (!b) return;
     if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
+    if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
     go(b.dataset.r === 'quiz' ? 'quiz' : b.dataset.r === 'settings' ? 'settings' : 'home');
   };
 }
@@ -1588,6 +1592,7 @@ function settingsView() {
         <button class="sr flat" data-act="rename">${svg(I.user)}
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Statistiques</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
           <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
         ${canUndo() ? `<button class="sr flat" data-act="undo2">${svg(I.redo)}
@@ -1792,6 +1797,247 @@ async function delMail(id) {
   closeMenu(); render();
   try { await api(`/rest/v1/mail?id=eq.${id}`, 'DELETE', null, { Prefer: 'return=minimal' }); }
   catch (e) {}
+}
+
+/* ══════════ statistiques ══════════
+   Tout se calcule à partir de la table des révisions : une ligne par
+   carte jouée, avec la date, la réussite et le temps passé. Rien n'est
+   pré-agrégé côté serveur — à l'échelle de quelques milliers de lignes,
+   le navigateur va plus vite que l'aller-retour, et ça évite une vue SQL
+   de plus à maintenir. */
+const dayKey = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return +d; };
+const dayLabel = t => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+
+async function statsPull() {
+  try {
+    const since = new Date(Date.now() - 365 * DAY).toISOString();
+    const rows = await api('/rest/v1/reviews?select=deck_id,card_id,mode,rating,correct,ms,created_at'
+      + `&created_at=gte.${since}&order=created_at.asc&limit=20000`);
+    stats.rows = rows || [];
+    stats.err = 0;
+  } catch (e) { stats.err = 1; }
+  if (view.name === 'stats') render();
+}
+
+/* index texte des cartes, pour nommer celles qui reviennent dans le top */
+function cardIndex() {
+  const m = new Map();
+  for (const d of db.decks) for (const c of d.cards) m.set(c.id, { c, d });
+  return m;
+}
+
+function computeStats() {
+  const all = stats.rows || [];
+  const cut = stats.range ? Date.now() - stats.range * DAY : 0;
+  const R = all.filter(r => +new Date(r.created_at) >= cut);
+
+  let ok = 0, ms = 0;
+  const byDay = new Map(), byCard = new Map(), bySubj = new Map();
+  for (const r of R) {
+    if (r.correct) ok++;
+    ms += r.ms || 0;
+    const k = dayKey(r.created_at);
+    const d = byDay.get(k) || { n: 0, ok: 0, ms: 0 };
+    d.n++; if (r.correct) d.ok++; d.ms += r.ms || 0;
+    byDay.set(k, d);
+    if (!r.correct) byCard.set(r.card_id, (byCard.get(r.card_id) || 0) + 1);
+    const deck = db.decks.find(x => x.id === r.deck_id);
+    const sname = deck ? subj(deck.subject).name : 'Autres';
+    bySubj.set(sname, (bySubj.get(sname) || 0) + (r.ms || 0));
+  }
+
+  /* Rétention : pour chaque carte, l'écart avec sa révision précédente dit
+     à quelle distance la mémoire a été sollicitée. On garde trois paliers,
+     ceux que tout le monde lit d'un coup d'œil. Calculé sur l'année pleine,
+     pas sur la fenêtre choisie : à sept jours il n'y aurait rien à voir. */
+  const seen = new Map(), ret = { 1: [0, 0], 7: [0, 0], 30: [0, 0] };
+  for (const r of all) {
+    const t = +new Date(r.created_at), prev = seen.get(r.card_id);
+    if (prev != null) {
+      const gap = (t - prev) / DAY;
+      const b = gap < 3 ? 1 : gap < 14 ? 7 : gap < 90 ? 30 : 0;
+      if (b) { ret[b][1]++; if (r.correct) ret[b][0]++; }
+    }
+    seen.set(r.card_id, t);
+  }
+
+  /* Série de jours : un jour de grâce par semaine entamée, sinon un
+     week-end chez les grands-parents efface trois mois d'assiduité. */
+  let streak = 0, grace = 0, cur = dayKey(Date.now());
+  if (!byDay.has(cur)) cur -= DAY;               // la journée peut n'avoir pas commencé
+  for (let k = cur; ; k -= DAY) {
+    if (byDay.has(k)) { streak++; continue; }
+    if (grace < Math.floor(streak / 7) + (streak ? 1 : 0)) { grace++; continue; }
+    break;
+  }
+
+  const maxSubj = Math.max(1, ...bySubj.values());
+  return {
+    n: R.length, ok, ms, byDay, streak,
+    per: R.length ? ms / R.length : 0,
+    ret,
+    subjects: [...bySubj.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, v, p: v / maxSubj })),
+    worst: [...byCard.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
+  };
+}
+
+/* Progression d'un paquet : la part des cartes vraiment installées.
+   Elle se lit sur les cartes elles-mêmes, pas sur l'historique — c'est
+   l'état actuel qui compte, pas le chemin parcouru. */
+function deckProgress() {
+  return live().map(d => {
+    const k = { new: 0, learn: 0, young: 0, mature: 0, susp: 0 };
+    d.cards.forEach(c => k[cstate(c)]++);
+    const n = d.cards.length || 1;
+    return { d, k, n: d.cards.length, pct: Math.round(k.mature / n * 100) };
+  }).sort((a, b) => b.pct - a.pct);
+}
+
+function statsCSV() {
+  const S = computeStats();
+  const q = v => `"${String(v).replace(/"/g, '""')}"`;
+  const lines = [['section', 'clé', 'valeur'].join(';')];
+  lines.push(['résumé', 'cartes revues', S.n].map(q).join(';'));
+  lines.push(['résumé', 'réussite %', S.n ? Math.round(S.ok / S.n * 100) : 0].map(q).join(';'));
+  lines.push(['résumé', 'temps total (min)', Math.round(S.ms / 60000)].map(q).join(';'));
+  lines.push(['résumé', 'secondes par carte', (S.per / 1000).toFixed(1)].map(q).join(';'));
+  lines.push(['résumé', 'série de jours', S.streak].map(q).join(';'));
+  for (const [k, v] of [...S.byDay.entries()].sort((a, b) => a[0] - b[0]))
+    lines.push(['jour', new Date(k).toISOString().slice(0, 10), v.n + ' cartes, ' + v.ok + ' justes'].map(q).join(';'));
+  for (const s of S.subjects)
+    lines.push(['temps par matière', s.k, Math.round(s.v / 60000) + ' min'].map(q).join(';'));
+  for (const [b, [o, t]] of Object.entries(S.ret))
+    if (t) lines.push(['rétention', b + ' jour(s)', Math.round(o / t * 100) + ' % sur ' + t].map(q).join(';'));
+  const idx = cardIndex();
+  for (const [id, fails] of S.worst) {
+    const e = idx.get(id);
+    lines.push(['carte ratée', e ? e.c.f : id, fails + ' échecs'].map(q).join(';'));
+  }
+  for (const p of deckProgress())
+    lines.push(['paquet', p.d.name, p.pct + ' % mûres sur ' + p.n].map(q).join(';'));
+  return '﻿' + lines.join('\n');       // BOM : Excel ouvre l'UTF-8 correctement
+}
+
+async function exportStats() {
+  const csv = statsCSV();
+  const name = 'cartes-stats-' + new Date().toISOString().slice(0, 10) + '.csv';
+  const file = new File([csv], name, { type: 'text/csv' });
+  /* Sur iPhone, une ancre à télécharger ne donne rien dans une app
+     installée : la feuille de partage est le seul chemin qui aboutit. */
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Statistiques Cartes' });
+      return;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  try {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast(I.check, 'Export téléchargé');
+  } catch (e) {
+    try { await navigator.clipboard.writeText(csv); toast(I.check, 'Export copié'); }
+    catch (x) { toast(I.x, 'Export impossible'); }
+  }
+}
+
+function statsView() {
+  if (!stats.rows) {
+    $.innerHTML = `<div class="bar"><button class="ic" data-act="home">${svg(I.back)}</button></div>
+      <div class="page"><div class="top"><div class="hero">Statistiques</div></div>
+      <div class="empty">${svg(I.chart)}<p>${stats.err ? 'Statistiques indisponibles' : 'Chargement…'}</p></div></div>`;
+    return;
+  }
+  const S = computeStats();
+  const pct = S.n ? Math.round(S.ok / S.n * 100) : 0;
+  const prog = deckProgress();
+  const idx = cardIndex();
+
+  /* dix-huit semaines de cases : le passé proche, celui sur lequel on peut
+     encore agir. Au-delà, c'est de la décoration. */
+  const days = [];
+  const end = dayKey(Date.now());
+  for (let k = end - 125 * DAY; k <= end; k += DAY) days.push(k);
+  const maxDay = Math.max(1, ...[...S.byDay.values()].map(v => v.n));
+  const cols = [];
+  for (let i = 0; i < days.length; i += 7) cols.push(days.slice(i, i + 7));
+
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home">${svg(I.back)}</button></div>
+    <div class="page">
+      <div class="top"><div class="hero">Statistiques</div></div>
+      <div class="seg" id="stRange">
+        ${[[7, '7 jours'], [30, '30 jours'], [0, 'Tout']].map(([v, l]) =>
+          `<button data-strange="${v}" class="${stats.range === v ? 'on' : ''}">${l}</button>`).join('')}
+      </div>
+
+      <div class="tiles st4">
+        <div class="st"><b>${S.n}</b><span>cartes revues</span></div>
+        <div class="st"><b>${pct}%</b><span>de réussite</span></div>
+        <div class="st"><b>${Math.round(S.ms / 60000)}</b><span>minutes</span></div>
+        <div class="st"><b>${(S.per / 1000).toFixed(1).replace('.', ',')}s</b><span>par carte</span></div>
+      </div>
+
+      <div class="lbl"><span>Assiduité</span><span>${S.streak ? S.streak + ' jour' + (S.streak > 1 ? 's' : '') + ' d’affilée' : ''}</span></div>
+      <div class="card2">
+        <div class="heat">${cols.map(col => `<div class="hc">${col.map(k => {
+          const v = S.byDay.get(k);
+          const lvl = !v ? 0 : v.n >= maxDay * .66 ? 4 : v.n >= maxDay * .33 ? 3 : v.n >= 2 ? 2 : 1;
+          return `<i class="l${lvl}" title="${dayLabel(k)}${v ? ' · ' + v.n + ' cartes' : ''}"></i>`;
+        }).join('')}</div>`).join('')}</div>
+        <div class="heatk"><span>${dayLabel(days[0])}</span><span>aujourd’hui</span></div>
+      </div>
+
+      <div class="lbl"><span>Rétention</span><span>sur un an</span></div>
+      <div class="card2">
+        <div class="note" style="padding:0 0 10px">La part de bonnes réponses selon le temps écoulé
+          depuis la fois précédente. C’est la mesure qui dit si le moteur tient ses promesses.</div>
+        ${[[1, 'Le lendemain'], [7, 'Après une semaine'], [30, 'Après un mois']].map(([b, l]) => {
+          const [o, t] = S.ret[b];
+          const p = t ? Math.round(o / t * 100) : 0;
+          return `<div class="brow"><span class="bl">${l}</span>
+            <span class="bt"><i style="width:${t ? p : 0}%;background:${ringCol(t ? o / t : 0)}"></i></span>
+            <span class="bv">${t ? p + '%' : '—'}</span></div>`;
+        }).join('')}
+      </div>
+
+      <div class="lbl"><span>Progression</span><span>${prog.length} paquet${prog.length > 1 ? 's' : ''}</span></div>
+      <div class="card2">
+        <div class="note" style="padding:0 0 10px">La part de cartes mûres, celles dont l’échéance
+          dépasse trois semaines : ce qui est réellement installé.</div>
+        ${prog.length ? prog.map(p => `<div class="brow"><span class="bl">${esc(p.d.name)}</span>
+          <span class="bt"><i style="width:${p.pct}%;background:${subj(p.d.subject).d}"></i></span>
+          <span class="bv">${p.pct}%</span></div>`).join('')
+          : '<div class="note">Aucun paquet pour l’instant.</div>'}
+      </div>
+
+      ${S.subjects.length ? `<div class="lbl"><span>Temps par matière</span></div>
+      <div class="card2">
+        ${S.subjects.map(x => `<div class="brow"><span class="bl">${esc(x.k)}</span>
+          <span class="bt"><i style="width:${Math.round(x.p * 100)}%"></i></span>
+          <span class="bv">${x.v >= 60000 ? Math.round(x.v / 60000) + ' min' : Math.round(x.v / 1000) + ' s'}</span></div>`).join('')}
+      </div>` : ''}
+
+      ${S.worst.length ? `<div class="lbl"><span>Cartes les plus ratées</span><span>${S.worst.length}</span></div>
+      <div class="slist">
+        ${S.worst.map(([id, fails]) => {
+          const e = idx.get(id);
+          return `<button class="sr flat wrow" ${e ? `data-go="${e.d.id}"` : ''}>
+            <i class="wn">${fails}</i>
+            <span class="ml2"><span class="n">${e ? esc(e.c.f) : 'Carte supprimée'}</span>
+              <span class="sub">${e ? esc(e.c.b) : ''}</span></span>
+            ${e ? svg(I.arrow) : ''}</button>`;
+        }).join('')}
+      </div>` : ''}
+
+      <button class="lnk" data-act="expstats" style="margin:16px auto 0">${svg(I.down)}Exporter en CSV</button>
+    </div>`;
+  const seg = document.getElementById('stRange');
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('[data-strange]'); if (!b) return;
+    stats.range = +b.dataset.strange; animate = false; render();
+  });
 }
 
 /* ---------- pages d'un PDF ----------
@@ -3473,7 +3719,8 @@ $.addEventListener('click', e => {
   if (a === 'tab-quiz') return go('quiz');
   if (a === 'peek') { peek = !peek; render(); return; }
   if (a === 'marathon') return startStudy('all', false, null, { only: 'due', both: prefs.both });
-  if (a === 'goalinfo') return go('settings');
+  if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
+  if (a === 'expstats') return exportStats();
   if (a === 'resume') {
     const r = loadResume(); if (!r) return render();
     study = r; return go('study', r.id);
