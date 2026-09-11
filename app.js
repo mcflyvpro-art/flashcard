@@ -1670,7 +1670,7 @@ function askPages(done) {
       <button class="mi" id="pgok" style="justify-content:center;font-weight:700">
         ${svg(I.check)}Lire le PDF</button>
     </div>`;
-  document.body.append(...w.childNodes);
+  mountMenu(w);
   const inp = document.getElementById('pgin');
   const close = () => document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
   const go2 = () => { const v = inp.value.trim(); close(); done(v); };
@@ -1683,6 +1683,23 @@ function askPages(done) {
 /* ---------- menu contextuel ---------- */
 function openMenu(kind) { menu = kind; paintMenu(); }
 function closeMenu() { menu = null; document.querySelectorAll('.scrim,.menu').forEach(n => n.remove()); }
+/* Une feuille peut porter beaucoup de contenu (les matières, la liste
+   des paquets à fusionner…) : plus que l'écran n'en montre d'un coup.
+   Elle défile donc sur elle-même — poignée et croix restent fixes en
+   tête, toujours à portée, et le reste du texte qui suit prend la place
+   qu'il lui faut sans jamais entraîner l'écran de dessous. */
+function mountMenu(w) {
+  const box = w.querySelector('.menu');
+  if (box) {
+    const body = document.createElement('div');
+    body.className = 'mbody';
+    while (box.firstChild) body.appendChild(box.firstChild);
+    box.insertAdjacentHTML('afterbegin',
+      `<div class="mtop"><i class="mgrip"></i><button class="mx" data-mact="close" aria-label="Fermer">${svg(I.x)}</button></div>`);
+    box.appendChild(body);
+  }
+  document.body.append(...w.childNodes);
+}
 function paintMenu() {
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
   const w = document.createElement('div');
@@ -1699,7 +1716,7 @@ function paintMenu() {
         <button class="mi" data-mact="subjok" style="justify-content:center;font-weight:700">
           ${svg(I.check)}${t.id ? 'Enregistrer' : 'Créer'}</button>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     const sn = document.getElementById('sn');
     sn.addEventListener('input', () => subjName = sn.value);
     sn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sn.blur(); } });
@@ -1713,7 +1730,7 @@ function paintMenu() {
         <button class="mi" data-mact="backup">${svg(I.share)}Sauvegarder
           <span class="tail">${n} · ${c}</span></button>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     return;
   }
   if (menu === 'card') {
@@ -1746,7 +1763,7 @@ function paintMenu() {
         <button class="mi" data-mact="card-ok"
           style="justify-content:center;font-weight:700">${svg(I.check)}<span>Enregistrer</span></button>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     return;
   }
   if (menu === 'deckset') {
@@ -1774,7 +1791,7 @@ function paintMenu() {
               `<button data-tm="${v}" class="${m.timer === v ? 'on' : ''}">${l}</button>`).join('')}
           </div></div>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     return;
   }
   if (menu === 'simple' || menu === 'engine') {
@@ -1842,7 +1859,7 @@ function paintMenu() {
         <button class="mi" data-mact="do-${on ? 'simple' : 'engine'}"
           style="justify-content:center;font-weight:700">${svg(I.check)}<span>${on ? 'Passer en mode simple' : 'Rallumer le moteur'}</span></button>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     return;
   }
   if (menu === 'merge') {
@@ -1858,7 +1875,7 @@ function paintMenu() {
           <i class="tri" style="--c:${subj(x.subject).c}"></i>${esc(x.name)}
           <span class="tail">${x.cards.length}</span></button>`).join('')}</div>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     return;
   }
   if (menu === 'fnr') {
@@ -1881,7 +1898,7 @@ function paintMenu() {
         <button class="mi" data-mact="dofnr" ${s.hits ? '' : 'disabled'}
           style="justify-content:center;font-weight:700">${svg(I.check)}<span>Remplacer</span></button>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     /* on ne repeint jamais la feuille en cours de frappe : cela arracherait
        le curseur du champ. Seuls le compte et le bouton se mettent à jour. */
     const q = document.getElementById('fq'), r = document.getElementById('fr');
@@ -1908,7 +1925,7 @@ function paintMenu() {
           <i class="tri" style="--c:${subj(x.subject).c}"></i>${esc(x.name)}
           <span class="tail">${x.cards.length}</span></button>`).join('')}</div>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     return;
   }
   if (menu === 'split') {
@@ -1929,7 +1946,7 @@ function paintMenu() {
         <button class="mi" data-mact="dosplit" style="justify-content:center;font-weight:700">
           ${svg(I.check)}Scinder en ${parts}</button>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     /* on retouche les libellés au lieu de reconstruire le menu : redessiner
        pendant le glissé arracherait le curseur des doigts */
     const r = document.getElementById('spSize');
@@ -1964,7 +1981,7 @@ function paintMenu() {
         <button class="mi ${menu === 'delacc' ? 'warn' : ''}" data-mact="do-${menu}"
           style="justify-content:center;font-weight:700">${svg(I.check)}<span>${conf[5]}</span></button>
       </div>`;
-    document.body.append(...w.childNodes);
+    mountMenu(w);
     setTimeout(() => { const f = document.getElementById('fld'); if (f) f.focus(); }, 60);
     return;
   }
@@ -1991,7 +2008,7 @@ function paintMenu() {
       <button class="mi" data-mact="share">${svg(I.share)}Partager</button>
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
-  document.body.append(...w.childNodes);
+  mountMenu(w);
 }
 let recKey = null;
 document.addEventListener('click', async e => {
