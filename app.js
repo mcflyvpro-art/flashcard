@@ -52,6 +52,13 @@ let study = null, quiz = null, menu = null, typing = 0, pendingGrade = null;
 let dirty = {}, gone = [], online = true;
 let trash = { n: 0, list: null, err: 0 };
 let splitSize = 12;
+/* boîte de réception : n = non lus (toujours à jour), list = plein détail
+   (chargé seulement à l'ouverture de l'écran, comme la corbeille) */
+let mailbox = { n: 0, list: null, err: 0 };
+let friends = null;          // annuaire des autres comptes, pour choisir un destinataire
+let sendTo = null;           // destinataire choisi dans la feuille d'envoi
+let mailOpen = null;         // id de l'e-mail affiché dans sa feuille de détail
+let sendMsg = '';            // message en cours de frappe dans la feuille d'envoi
 
 /* ---------- annuler ----------
    Avant toute action qui écrase ou efface, on photographie les paquets
@@ -254,19 +261,22 @@ function setOnline(v) {
 /* récupère matières, paquets et historique du compte */
 async function pull() {
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-  const [subs, decks, sess, pf, today, bin] = await Promise.all([
+  const [subs, decks, sess, pf, today, bin, unread] = await Promise.all([
     api('/rest/v1/subjects?select=*&order=pos.asc'),
     api('/rest/v1/decks?select=*&deleted_at=is.null&order=pos.asc'),
     api('/rest/v1/sessions?select=deck_id,mode,pct,created_at&order=created_at.asc'),
     api('/rest/v1/prefs?select=*'),
     api(`/rest/v1/reviews?select=id&created_at=gte.${midnight.toISOString()}`),
-    api('/rest/v1/decks?select=id&deleted_at=not.is.null')
+    api('/rest/v1/decks?select=id&deleted_at=not.is.null'),
+    api('/rest/v1/mail?select=id&read_at=is.null')
   ]);
   trash.n = (bin || []).length;
+  mailbox.n = (unread || []).length;
   const wasSimple = prefs.simple;
   prefs = { ...DEFPREFS, ...((pf && pf[0] && pf[0].data) || {}) };
   if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
   if (study && prefs.simple !== wasSimple) prefs.simple = wasSimple;   // pas de bascule à chaud
+  upsertProfile();
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   db.decks = decks.map(x => ({
@@ -1074,7 +1084,7 @@ let animate = true;
    carte qu'on suspend) pour qu'aucun élément ne rejoue son apparition. */
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome,
-              run: quizView, login: loginView, settings: settingsView, trash: trashView };
+              run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView };
   $.classList.remove('fade');
   if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
   (v[view.name] || home)();
@@ -1153,8 +1163,9 @@ function bindPager() {
 function paintRail() {
   let r = document.getElementById('rail');
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
-  const on = /quiz|run/.test(view.name) ? 'quiz' : view.name === 'settings' ? 'settings' : 'home';
-  const sig = on + '\u0000' + (prefs.name || auth.email);
+  const on = /quiz|run/.test(view.name) ? 'quiz' : view.name === 'settings' ? 'settings'
+    : view.name === 'mail' ? 'mail' : 'home';
+  const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n;
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
   if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
   r.dataset.sig = sig;
@@ -1166,11 +1177,14 @@ function paintRail() {
     </nav>
     <div class="sp"></div>
     <nav>
+      <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Boîte</span>${
+        mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
       <button class="${on === 'settings' ? 'on' : ''}" data-r="settings">${svg(I.gear)}<span>Réglages</span></button>
     </nav>
     <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
   r.onclick = e => {
     const b = e.target.closest('[data-r]'); if (!b) return;
+    if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
     go(b.dataset.r === 'quiz' ? 'quiz' : b.dataset.r === 'settings' ? 'settings' : 'home');
   };
 }
@@ -1216,6 +1230,7 @@ function home() {
         <div class="hero">Mes paquets</div>
         <span id="offdot" class="off-dot" style="display:${online ? 'none' : ''}"></span>
         ${goalRing()}
+        <button class="ic icmail" data-act="mail">${svg(I.mail)}${mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
         <button class="ic" data-act="settings">${svg(I.gear)}</button>
         ${hidden ? `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>` : ''}
       </div>
@@ -1653,6 +1668,110 @@ async function trashPurge(id) {
   } catch (e) { trash.list = null; trashPull(); toast(I.x, "Suppression impossible"); }
 }
 
+/* ---------- annuaire des comptes ----------
+   De quoi choisir un destinataire, rien de plus : un nom, un identifiant.
+   Chaque connexion réécrit sa propre ligne ; jamais celle d'un autre. */
+async function upsertProfile() {
+  if (!auth) return;
+  try {
+    await api('/rest/v1/profiles', 'POST',
+      [{ id: auth.uid, email: auth.email, name: prefs.name || null }],
+      { Prefer: 'resolution=merge-duplicates,return=minimal' });
+  } catch (e) {}
+}
+async function friendsPull() {
+  friends = friends || null;
+  try {
+    const rows = await api('/rest/v1/profiles?select=id,name,email');
+    friends = (rows || []).filter(p => p.id !== auth.uid)
+      .sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+  } catch (e) { friends = []; }
+  if (menu === 'sendfriend' || menu === 'sharepick') paintMenu();
+}
+
+/* ---------- envoyer un paquet à un ami ----------
+   Seuls le recto et le verso voyagent, jamais la progression : la
+   révision de l'expéditeur ne veut rien dire chez quelqu'un d'autre, qui
+   doit pouvoir repartir de zéro sur ce paquet comme sur les siens. */
+async function sendDeck(d, p) {
+  const msg = sendMsg.trim(), cards = d.cards.map(c => [c.f, c.b]);
+  sendTo = null; sendMsg = '';
+  try {
+    await api('/rest/v1/mail', 'POST', [{
+      from_user: auth.uid, to_user: p.id, from_name: prefs.name || auth.email,
+      deck_name: d.name, message: msg, cards
+    }], { Prefer: 'return=minimal' });
+    toast(I.check, 'Envoyé à ' + (p.name || p.email));
+  } catch (e) { toast(I.x, 'Envoi impossible'); }
+}
+
+/* ---------- boîte de réception ----------
+   Le détail (cartes, message) n'arrive qu'à l'ouverture de l'écran, comme
+   la corbeille ; seul le compte de non-lus voyage à chaque connexion,
+   pour que le petit repère au-dessus du gear reste à jour sans attendre. */
+async function mailPull() {
+  try {
+    const rows = await api('/rest/v1/mail?select=id,from_name,deck_name,message,cards,created_at,read_at,added_at&order=created_at.desc');
+    mailbox.list = rows || [];
+    mailbox.n = mailbox.list.filter(r => !r.read_at).length;
+    mailbox.err = 0;
+  } catch (e) { mailbox.err = 1; }
+  if (view.name === 'mail') render();
+}
+function timeAgo(iso) {
+  const ms = Date.now() - Date.parse(iso);
+  if (ms < MIN) return 'à l’instant';
+  if (ms < 60 * MIN) return Math.round(ms / MIN) + ' min';
+  if (ms < DAY) return Math.round(ms / (60 * MIN)) + ' h';
+  const j = Math.round(ms / DAY);
+  return j < 31 ? j + ' j' : Math.round(j / 30) + ' mois';
+}
+function mailView() {
+  const l = mailbox.list;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home">${svg(I.back)}</button></div>
+    <div class="page">
+      <div class="top"><div class="hero">Boîte de réception</div></div>
+      ${!l ? `<div class="empty">${svg(I.mail)}<p>${mailbox.err ? 'Boîte indisponible' : 'Chargement…'}</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.mail)}<p>Rien pour l’instant</p></div>`
+        : `<div class="slist">${l.map(it => `
+          <button class="sr flat mlrow ${!it.read_at ? 'unread' : ''}" data-mail="${it.id}">
+            ${it.read_at ? svg(I.mail) : '<i class="mdot"></i>'}
+            <span class="n">${esc(it.from_name || 'Un ami')} → ${esc(it.deck_name)}</span>
+            <span class="c">${timeAgo(it.created_at)}</span>${svg(I.arrow)}
+          </button>`).join('')}</div>`}
+    </div>`;
+}
+async function openMail(id) {
+  mailOpen = id;
+  const it = mailbox.list && mailbox.list.find(x => x.id === id);
+  openMenu('mailitem');
+  if (it && !it.read_at) {
+    it.read_at = new Date().toISOString();
+    mailbox.n = mailbox.list.filter(r => !r.read_at).length;
+    if (view.name === 'mail') render();
+    try { await api(`/rest/v1/mail?id=eq.${id}`, 'PATCH', { read_at: it.read_at }, { Prefer: 'return=minimal' }); }
+    catch (e) {}
+  }
+}
+async function addMail(it) {
+  const n = (it.cards || []).length;
+  const d = importPayload({ name: it.deck_name, subject: '', cards: it.cards });
+  it.added_at = new Date().toISOString();
+  closeMenu();
+  if (d) go('deck', d.id);
+  toast(I.check, plur(n, 'carte') + ' ajoutée' + (n > 1 ? 's' : ''));
+  try { await api(`/rest/v1/mail?id=eq.${it.id}`, 'PATCH', { added_at: it.added_at }, { Prefer: 'return=minimal' }); }
+  catch (e) {}
+}
+async function delMail(id) {
+  mailbox.list = mailbox.list.filter(x => x.id !== id);
+  mailbox.n = mailbox.list.filter(r => !r.read_at).length;
+  closeMenu(); render();
+  try { await api(`/rest/v1/mail?id=eq.${id}`, 'DELETE', null, { Prefer: 'return=minimal' }); }
+  catch (e) {}
+}
+
 /* ---------- pages d'un PDF ----------
    Une feuille légère, hors du système de menus : elle se referme d'
    elle-même et rend la main au code qui l'a ouverte. Laisser le champ
@@ -1913,6 +2032,60 @@ function paintMenu() {
     setTimeout(() => q.focus(), 60);
     return;
   }
+  if (menu === 'sharepick') {
+    const d = deck(view.id); if (!d) { menu = null; return; }
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.share)}Partager « ${esc(d.name)} »</div>
+        <button class="mi" data-mact="copylink">${svg(I.link)}Copier le lien</button>
+        <button class="mi" data-mact="sendfriend">${svg(I.mail)}Envoyer à un ami<span class="tail">${friends ? friends.length : ''}</span></button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'sendfriend') {
+    const d = deck(view.id); if (!d) { menu = null; return; }
+    const list = friends || [];
+    const chosen = list.find(p => p.id === sendTo);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.mail)}Envoyer « ${esc(d.name)} » à</div>
+        <div class="note">${plur(d.cards.length, 'carte')} copiée${d.cards.length > 1 ? 's' : ''}, sans ta
+          progression : la personne repart de zéro sur ce paquet, comme elle le ferait sur le sien.</div>
+        <div class="mscroll">${friends === null
+          ? `<div class="mi" style="color:var(--soft)">Chargement…</div>`
+          : !list.length ? `<div class="mi" style="color:var(--soft)">Aucun autre compte pour l’instant.</div>`
+          : list.map(p => `<button class="mi ${sendTo === p.id ? 'on' : ''}" data-friend="${p.id}">
+              <i class="tri" style="--c:var(--soft)"></i>${esc(p.name || p.email)}
+              ${sendTo === p.id ? svg(I.check) : ''}</button>`).join('')}</div>
+        ${chosen ? `
+          <textarea class="tok" id="mmsg" rows="3" placeholder="Un petit mot (facultatif)"
+            spellcheck="false">${esc(sendMsg)}</textarea>
+          <button class="mi" data-mact="sendmail" style="justify-content:center;font-weight:700">
+            ${svg(I.share)}Envoyer à ${esc(chosen.name || chosen.email)}</button>` : ''}
+      </div>`;
+    mountMenu(w);
+    const ta = document.getElementById('mmsg');
+    if (ta) { ta.addEventListener('input', () => sendMsg = ta.value); setTimeout(() => ta.focus(), 60); }
+    return;
+  }
+  if (menu === 'mailitem') {
+    const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen);
+    if (!it) { menu = null; return; }
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.mail)}${esc(it.from_name || 'Un ami')}</div>
+        <div class="note">« ${esc(it.deck_name)} » · ${plur((it.cards || []).length, 'carte')}${
+          it.message ? ` <br>« ${esc(it.message)} »` : ''}</div>
+        <div class="mscroll">${(it.cards || []).slice(0, 60).map(c => `<div class="pr">
+          <span class="a">${esc(c[0])}</span>${svg(I.arrow)}<span class="b">${esc(c[1])}</span></div>`).join('')}</div>
+        <button class="mi" data-mact="addmail" style="justify-content:center;font-weight:700">
+          ${svg(it.added_at ? I.check : I.plus)}${it.added_at ? 'Déjà dans mes paquets · Ajouter à nouveau' : 'Ajouter à mes paquets'}</button>
+        <button class="mi warn" data-mact="delmail">${svg(I.trash)}<span>Supprimer</span></button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
   if (menu === 'move') {
     const d = deck(view.id); if (!d || !sel) { menu = null; return; }
     const n = [...sel].filter(i => d.cards.some(c => c.id === i)).length;
@@ -2005,18 +2178,19 @@ function paintMenu() {
       <button class="mi" data-mact="clone">${svg(I.copy)}Dupliquer</button>
       ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
       ${d.cards.length > 3 ? `<button class="mi" data-mact="splitopen">${svg(I.split)}Scinder<span class="tail">${d.cards.length}</span></button>` : ''}
-      <button class="mi" data-mact="share">${svg(I.share)}Partager</button>
+      <button class="mi" data-mact="sharepick">${svg(I.share)}Partager</button>
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
   mountMenu(w);
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
+  if (b.dataset.friend !== undefined) { sendTo = b.dataset.friend; return paintMenu(); }
   if (b.dataset.move !== undefined) {
     const t = deck(b.dataset.move); if (!t || !d || !sel) return;
     const moved = d.cards.filter(c => sel.has(c.id));
@@ -2185,7 +2359,8 @@ document.addEventListener('click', async e => {
     go('home');
     return toast(I.split, made.length + ' paquets créés', true);
   }
-  if (a === 'share') {
+  if (a === 'sharepick') { if (!friends) friendsPull(); return openMenu('sharepick'); }
+  if (a === 'copylink') {
     closeMenu();
     const url = location.origin + location.pathname + '#i=' +
       enc({ name: d.name, subject: d.subject, cards: d.cards.map(c => [c.f, c.b]) });
@@ -2193,6 +2368,21 @@ document.addEventListener('click', async e => {
     else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Lien copié'));
     return;
   }
+  if (a === 'sendfriend') {
+    sendTo = null; sendMsg = '';
+    if (!friends) friendsPull();
+    return openMenu('sendfriend');
+  }
+  if (a === 'sendmail') {
+    const p = (friends || []).find(x => x.id === sendTo); if (!p || !d) return;
+    closeMenu();
+    return sendDeck(d, p);
+  }
+  if (a === 'addmail') {
+    const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen); if (!it) return;
+    return addMail(it);
+  }
+  if (a === 'delmail') return delMail(mailOpen);
   if (a === 'del') {
     const lab = b.querySelector('span');
     if (b.dataset.arm) {
@@ -3190,9 +3380,10 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail]');
   if (!b) return;
   const ds = b.dataset;
+  if (ds.mail !== undefined) return openMail(+ds.mail);
   if (ds.pkc !== undefined && sel) {
     /* on ne repeint que la ligne touchée et le décompte : reconstruire la
        liste entière ferait sauter le défilement à chaque coche */
@@ -3264,6 +3455,7 @@ $.addEventListener('click', e => {
   if (a === 'settings') return go('settings');
   if (a === 'backup2') return openMenu('backup');
   if (a === 'undo2') { doUndo(); return; }
+  if (a === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
   if (a === 'trash') { trash.list = null; trashPull(); return go('trash'); }
   /* ---- sélection multiple ---- */
   if (a === 'selmode') { sel = sel ? null : new Set(); return render(); }

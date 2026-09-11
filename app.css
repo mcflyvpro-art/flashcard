@@ -525,6 +525,22 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .off-dot{width:8px;height:8px;border-radius:50%;background:var(--ko);flex:none;
   align-self:center;margin-right:2px}
 
+/* ---------- boîte de réception ----------
+   Le badge est un simple élément de flux par défaut (il se pose à la fin
+   d'une ligne du rail, poussé par margin-left:auto) ; seul .icmail, la
+   petite icône ronde de l'accueil, le sort du flux pour le poser dessus. */
+.icb{min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--ko);
+  color:#fff;display:grid;place-items:center;font-size:10px;font-weight:800;
+  line-height:1;font-variant-numeric:tabular-nums;flex:none}
+.icmail{position:relative}
+.icmail .icb{position:absolute;top:-2px;right:-2px;box-shadow:0 0 0 2px var(--bg)}
+#rail nav button .icb{margin-left:auto;box-shadow:0 0 0 2px var(--card)}
+#rail nav button.on .icb{box-shadow:0 0 0 2px var(--ink)}
+
+.mlrow.unread .n{font-weight:800}
+.mlrow .mdot{width:9px;height:9px;border-radius:50%;background:var(--ko);flex:none}
+.mlrow:not(.unread) > svg:first-child{opacity:.45}
+
 .swatch{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;padding:4px 7px 8px}
 .sw2{aspect-ratio:1;border-radius:13px;position:relative;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);transition:transform .3s var(--sp)}
@@ -591,7 +607,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   #app{padding:26px var(--gut) 56px calc(var(--rail) + var(--gut));min-height:100vh}
   #app > *{width:100%;max-width:var(--wide);margin-inline:auto}
   #app > .fab,#app > .tabs{width:auto;max-width:none;margin:0}
-  .top [data-act="settings"]{display:none}   /* le rail porte déjà Réglages */
+  .top [data-act="settings"],.top [data-act="mail"]{display:none}   /* le rail porte déjà Réglages et la Boîte */
   .hero{font-size:44px;letter-spacing:-2px;margin:6px 1px 24px}
   .top{margin:6px 1px 24px}
   .bar{min-height:52px;margin-bottom:6px}
