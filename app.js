@@ -56,6 +56,12 @@ let splitSize = 12;
    (chargé seulement à l'ouverture de l'écran, comme la corbeille) */
 let mailbox = { n: 0, list: null, err: 0 };
 let stats = { rows: null, err: 0, range: 30 };
+let reorder = false;          // l'accueil est en cours de réorganisation
+let previewOf = null;         // paquet dont on regarde l'aperçu
+let findQ = '';               // recherche globale
+let deckQ = '';               // recherche à l'intérieur d'un paquet
+let deckOpen = false;         // son champ est-il déployé
+let leaving = null;           // action de sortie en attente de confirmation
 let friends = null;          // annuaire des autres comptes, pour choisir un destinataire
 let sendTo = null;           // destinataire choisi dans la feuille d'envoi
 let mailOpen = null;         // id de l'e-mail affiché dans sa feuille de détail
@@ -105,7 +111,8 @@ const cacheKey = () => 'cartes.cache.' + (auth && auth.uid);
    simple  : moteur coupé, on ne fait plus que swiper
    simpleAt: date de bascule, pour étaler l'arriéré au retour du moteur       */
 const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false,
-                   font: 1, tol: 'normal', name: '', simple: false, simpleAt: 0, fast: false };
+                   font: 1, tol: 'normal', name: '', simple: false, simpleAt: 0, fast: false,
+                   sort: 'manual', list: false, zen: false };
 let prefs = { ...DEFPREFS };
 let prefsTimer = 0;
 
@@ -357,6 +364,11 @@ const I = {
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.4 6.9"/><path d="M14 10a4 4 0 0 0-5.7 0L5.5 12.8a4 4 0 0 0 5.7 5.7l1.4-1.4"/>',
   grip: '<path d="M9.4 6.4h.02M9.4 12h.02M9.4 17.6h.02M14.6 6.4h.02M14.6 12h.02M14.6 17.6h.02" stroke-width="2.9" stroke-linecap="round"/>',
   pick: '<path d="M5.4 9.2V6.6a1.2 1.2 0 0 1 1.2-1.2h2.6M14.8 5.4h2.6a1.2 1.2 0 0 1 1.2 1.2v2.6"/><path d="M18.6 14.8v2.6a1.2 1.2 0 0 1-1.2 1.2h-2.6M9.2 18.6H6.6a1.2 1.2 0 0 1-1.2-1.2v-2.6"/><path d="m9.3 12.1 2 2 3.4-3.9"/>',
+  warn: '<path d="M12 4.6 3.2 19.4h17.6z"/><path d="M12 10.2v4.2M12 17.1h.02" stroke-width="2.4"/>',
+  zen: '<path d="M8.6 3.8H5.6a1.8 1.8 0 0 0-1.8 1.8v3M15.4 3.8h3a1.8 1.8 0 0 1 1.8 1.8v3"/><path d="M8.6 20.2h-3a1.8 1.8 0 0 1-1.8-1.8v-3M15.4 20.2h3a1.8 1.8 0 0 0 1.8-1.8v-3"/>',
+  pin: '<path d="M9.4 3.8h5.2l-.6 5.2 3 3.2H7l3-3.2z"/><path d="M12 12.2v7.4"/>',
+  sort: '<path d="M4.6 7h9.8M4.6 12h6.6M4.6 17h3.4"/><path d="M17.4 6.6v10.8m0 0 2.4-2.6m-2.4 2.6-2.4-2.6"/>',
+  rows: '<rect x="3.6" y="5" width="16.8" height="4.4" rx="1.6"/><rect x="3.6" y="14.6" width="16.8" height="4.4" rx="1.6"/>',
   chart: '<path d="M4 20V4"/><path d="M4 20h16"/><rect x="7.4" y="12" width="3" height="5" rx="1"/><rect x="12.4" y="8.4" width="3" height="8.6" rx="1"/><rect x="17.4" y="5.6" width="3" height="11.4" rx="1"/>',
   quote: '<rect x="3.6" y="4.4" width="16.8" height="12.2" rx="3.4"/><path d="M8.8 16.6v3.3l4.2-3.3"/>',
   search: '<circle cx="10.8" cy="10.8" r="6.4"/><path d="M15.5 15.5 20 20"/>',
@@ -1079,11 +1091,35 @@ function importPayload(p) {
   save(); flush(); return last;
 }
 
+/* ---------- sons ----------
+   Deux notes synthétisées à la volée : rien à télécharger, rien à mettre
+   en cache, et le son ne part jamais avant un vrai geste de l'utilisateur
+   (iOS refuse d'ouvrir le contexte audio autrement). */
+let actx = null;
+function beep(good) {
+  if (!prefs.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const t = actx.currentTime;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(good ? 660 : 300, t);
+    o.frequency.exponentialRampToValueAtTime(good ? 880 : 220, t + .09);
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(.12, t + .012);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .16);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + .18);
+  } catch (e) {}
+}
+
 /* ---------- toast ---------- */
 let tt;
 function toast(icon, text, undo) {
   clearTimeout(tt); document.querySelectorAll('.toast').forEach(n => n.remove());
   const n = document.createElement('div'); n.className = 'toast';
+  n.setAttribute('role', 'status'); n.setAttribute('aria-live', 'polite');
   n.innerHTML = svg(icon) + (text ? `<span>${esc(text)}</span>` : '')
     + (undo ? `<button class="tun">${svg(I.redo)}Annuler</button>` : '');
   if (undo) n.querySelector('.tun').onclick = () => { n.remove(); doUndo(); };
@@ -1101,13 +1137,21 @@ let animate = true;
    est inséré lors d'une vraie navigation (animate === true) ; retirée
    avant toute reconstruction en place (un réglage qu'on bascule, une
    carte qu'on suspend) pour qu'aucun élément ne rejoue son apparition. */
+/* La taille du texte des cartes est un réglage de confort : les articles
+   du CPC sont longs, les mots italiens courts. Une seule variable, posée
+   sur la racine, que les tailles des faces multiplient. */
+function applyFont() {
+  document.documentElement.style.setProperty('--fs', prefs.font || 1);
+}
+
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome,
-              run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView };
+              run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView };
   $.classList.remove('fade');
   if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
   (v[view.name] || home)();
   $.dataset.view = view.name;
+  applyFont();
   paintRail();
   if (animate) $.classList.add('fade');
   if (pageDir) {
@@ -1124,7 +1168,7 @@ let pageDir = 0;
 function go(name, id, dir) {
   closeMenu();
   if (name !== 'run') stopTimer();
-  if (name !== 'deck' || id !== view.id) selOff();   // la sélection appartient à un paquet
+  if (name !== 'deck' || id !== view.id) { selOff(); deckQ = ''; deckOpen = false; }
   pageDir = dir || 0; view = { name, id }; animate = !dir;
   render(); window.scrollTo(0, 0);
 }
@@ -1212,8 +1256,10 @@ function paintRail() {
 
 const tabs = on => `<div class="tabs">
   <div class="sl" style="transform:translateX(${on === 'quiz' ? 74 : 0}px)"></div>
-  <button class="${on === 'home' ? 'on' : ''}" data-act="tab-home">${svg(I.layers)}</button>
-  <button class="${on === 'quiz' ? 'on' : ''}" data-act="tab-quiz">${svg(I.pen)}</button>
+  <button class="${on === 'home' ? 'on' : ''}" data-act="tab-home" aria-label="Mes paquets"
+    aria-current="${on === 'home' ? 'page' : 'false'}">${svg(I.layers)}</button>
+  <button class="${on === 'quiz' ? 'on' : ''}" data-act="tab-quiz" aria-label="Mes quiz"
+    aria-current="${on === 'quiz' ? 'page' : 'false'}">${svg(I.pen)}</button>
 </div>`;
 
 const pills = (active, list, act) => `<div class="pills">
@@ -1222,14 +1268,57 @@ const pills = (active, list, act) => `<div class="pills">
     <i></i>${esc(s.name)}</button>`).join('')}
 </div>`;
 
+const maturePct = d => d.cards.length
+  ? Math.round(d.cards.filter(c => cstate(c) === 'mature').length / d.cards.length * 100) : 0;
+
 const tile = (d, i) => {
   const due = simpleMode() ? 0 : dueCount(d);
-  return `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="${d.id}" style="${sty(subj(d.subject))};--i:${i}">
+  const p = simpleMode() ? 0 : maturePct(d);
+  return `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="${d.id}" data-peek="${d.id}"
+  style="${sty(subj(d.subject))};--i:${i}">
   ${due ? `<i class="due">${due}</i>` : ''}
+  ${d.pinned ? `<i class="pind">${svg(I.pin)}</i>` : ''}
   <span class="n">${esc(d.name)}</span>
   <span class="m">${svg(d.hidden ? I.eyeoff : I.card)}${d.cards.length}</span>
+  ${p ? `<i class="tbar"><b style="width:${p}%"></b></i>` : ''}
 </button>`;
 };
+
+/* Vue liste : plus dense que la grille dès qu'il y a beaucoup de paquets,
+   et c'est elle qui porte la poignée quand on réorganise. */
+const listRow = (d, i) => {
+  const due = simpleMode() ? 0 : dueCount(d);
+  const p = simpleMode() ? 0 : maturePct(d);
+  return `<div class="lrow ${d.hidden ? 'mute' : ''}" style="${sty(subj(d.subject))};--i:${i}"
+    data-id="${d.id}" data-pin="${d.pinned ? 1 : 0}">
+    ${reorder ? `<button class="grip" aria-label="Déplacer">${svg(I.grip)}</button>`
+      : `<i class="ldot"></i>`}
+    <button class="lmain" data-go="${d.id}" data-peek="${d.id}">
+      <span class="n">${esc(d.name)}${d.pinned ? svg(I.pin) : ''}</span>
+      <span class="s">${plur(d.cards.length, 'carte')}${p ? ' · ' + p + ' % mûres' : ''}</span>
+    </button>
+    ${due ? `<i class="ldue">${due}</i>` : ''}
+  </div>`;
+};
+
+/* Tri de l'accueil. « Manuel » garde l'ordre que tu as posé toi-même ;
+   les paquets épinglés passent devant dans tous les cas. */
+const SORTS = { manual: 'Manuel', recent: 'Récents', az: 'A → Z', size: 'Taille', best: 'Réussite' };
+function sortDecks(list) {
+  const rate = d => {
+    const h = [];
+    for (const k of Object.keys(db.hist)) if (k.startsWith(d.id + ':')) h.push(...db.hist[k]);
+    return h.length ? h.reduce((a, x) => a + x.p, 0) / h.length : -1;
+  };
+  const by = {
+    manual: (a, b) => (a.pos || 0) - (b.pos || 0),
+    recent: (a, b) => (b.pos || 0) - (a.pos || 0),
+    az: (a, b) => a.name.localeCompare(b.name, 'fr'),
+    size: (a, b) => b.cards.length - a.cards.length,
+    best: (a, b) => rate(b) - rate(a)
+  }[prefs.sort] || ((a, b) => (a.pos || 0) - (b.pos || 0));
+  return [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || by(a, b));
+}
 /* Anneau d'objectif du jour, en tête de l'accueil */
 function goalRing() {
   const n = todayCount(), g = Math.max(1, prefs.goal || 30);
@@ -1251,20 +1340,125 @@ function home() {
         <div class="hero">Mes paquets</div>
         <span id="offdot" class="off-dot" style="display:${online ? 'none' : ''}"></span>
         ${goalRing()}
-        <button class="ic icmail" data-act="mail">${svg(I.mail)}${mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
-        <button class="ic" data-act="settings">${svg(I.gear)}</button>
+        <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
+        <button class="ic icmail" data-act="mail" aria-label="Boîte de réception">${svg(I.mail)}${mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
+        <button class="ic" data-act="settings" aria-label="Réglages">${svg(I.gear)}</button>
         ${hidden ? `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>` : ''}
       </div>
       ${resumeBanner()}
       ${used.length > 1 ? pills(filter, used, 'filt') : ''}
-      ${list.length ? `<div class="grid">${list.map(tile).join('')}</div>`
-        : `<div class="empty">${svg(I.layers)}</div>`}
+      ${list.length ? subBar(list) : ''}
+      ${list.length > 2 ? `<div class="hbar">
+        <button class="lnk" data-act="sortpick">${svg(I.sort)}${SORTS[prefs.sort] || 'Manuel'}</button>
+        <div style="flex:1"></div>
+        ${reorder ? `<button class="lnk on" data-act="reorder">${svg(I.check)}Terminer</button>`
+          : `<button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>`}
+      </div>` : ''}
+      ${!list.length ? `<div class="empty">${svg(I.layers)}<p>Aucun paquet pour l’instant</p></div>`
+        : prefs.list || reorder
+          ? `<div class="rows lst ${reorder ? 'dragging0' : ''}">${sortDecks(list).map(listRow).join('')}</div>`
+          : `<div class="grid">${sortDecks(list).map(tile).join('')}</div>`}
       ${!simpleMode() && allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
         <span>Marathon</span><i>${allDue()} cartes dues, toutes matières</i></button>` : ''}
     </div>
-    <button class="fab" data-act="new">${svg(I.plus)}<span>Nouveau paquet</span></button>
+    ${reorder ? '' : `<button class="fab" data-act="new" aria-label="Nouveau paquet">${svg(I.plus)}<span>Nouveau paquet</span></button>`}
     ${tabs('home')}`;
   bindPager();
+  if (reorder) bindDeckOrder();
+  bindPeek();
+}
+
+/* Progression de la sélection courante, en une ligne fine : la part de
+   chaque état de carte, matière par matière quand aucun filtre n'est posé. */
+function subBar(list) {
+  if (simpleMode()) return '';
+  const k = { new: 0, learn: 0, young: 0, mature: 0, susp: 0 };
+  list.forEach(d => d.cards.forEach(c => k[cstate(c)]++));
+  const tot = k.new + k.learn + k.young + k.mature;
+  if (!tot) return '';
+  return `<div class="sbar" title="${k.mature} mûres sur ${tot}">
+    ${['mature', 'young', 'learn', 'new'].filter(x => k[x])
+      .map(x => `<i class="${x}" style="flex:${k[x]}"></i>`).join('')}
+  </div>`;
+}
+
+/* Réorganisation des paquets : même mécanique que pour les cartes, sur
+   la vue liste. L'ordre n'est écrit qu'au lâcher, et il devient l'ordre
+   « Manuel » — le tri bascule dessus tout seul, sinon on réorganiserait
+   une liste que le tri remettrait aussitôt dans un autre ordre. */
+function bindDeckOrder() {
+  const wrap = $.querySelector('.rows.lst'); if (!wrap) return;
+  let g = null;
+  const draw = () => {
+    g.raf = 0;
+    const { row, rows, from, step, lo, hi } = g;
+    row.style.transform = `translate3d(0,${g.dy}px,0)`;
+    g.to = Math.max(lo, Math.min(hi, from + Math.round(g.dy / step)));
+    rows.forEach((r, i) => {
+      if (r === row) return;
+      const shift = g.to > from && i > from && i <= g.to ? -step
+                  : g.to < from && i >= g.to && i < from ? step : 0;
+      r.style.transform = shift ? `translate3d(0,${shift}px,0)` : '';
+    });
+  };
+  wrap.addEventListener('pointerdown', e => {
+    const h = e.target.closest('.grip'); if (!h || g) return;
+    const rows = [...wrap.querySelectorAll('.lrow')];
+    const row = h.closest('.lrow'), from = rows.indexOf(row);
+    if (from < 0 || rows.length < 2) return;
+    /* Les épinglés restent devant, quel que soit l'ordre : on borne donc
+       le déplacement à son propre groupe. Sans ça, tirer un paquet
+       épinglé vers le bas n'aurait aucun effet visible — le tri le
+       remonterait aussitôt, et le geste passerait pour cassé. */
+    const grp = row.dataset.pin;
+    const same = rows.map((r, i) => r.dataset.pin === grp ? i : -1).filter(i => i >= 0);
+    g = { row, rows, from, to: from, dy: 0, raf: 0, y0: e.clientY,
+          lo: same[0], hi: same[same.length - 1],
+          step: rows[1].offsetTop - rows[0].offsetTop, pid: e.pointerId };
+    try { h.setPointerCapture(e.pointerId); } catch (x) {}
+    row.classList.add('drag'); wrap.classList.add('dragging');
+    e.preventDefault();
+  });
+  wrap.addEventListener('pointermove', e => {
+    if (!g || e.pointerId !== g.pid) return;
+    g.dy = e.clientY - g.y0;
+    if (!g.raf) g.raf = requestAnimationFrame(draw);
+  });
+  const drop = e => {
+    if (!g || (e && e.pointerId !== g.pid)) return;
+    cancelAnimationFrame(g.raf);
+    const { from, to, rows, row } = g;
+    rows.forEach(r => r.style.transform = '');
+    row.classList.remove('drag'); wrap.classList.remove('dragging');
+    const ids = rows.map(r => r.dataset.id);
+    g = null;
+    if (from === to) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    pushUndo('Ordre des paquets', ids);
+    ids.forEach((id, i) => { const d = deck(id); if (d) { d.pos = i; dirty[id] = 1; } });
+    if (prefs.sort !== 'manual') { prefs.sort = 'manual'; savePrefs(); }
+    save(); flush(); animate = false; render();
+  };
+  wrap.addEventListener('pointerup', drop);
+  wrap.addEventListener('pointercancel', drop);
+}
+
+/* Aperçu : un appui long sur un paquet (ou le survol sur un écran qui en
+   a un) montre ses premières cartes sans quitter l'accueil. */
+function bindPeek() {
+  let t = 0, moved = false;
+  const start = e => {
+    const b = e.target.closest('[data-peek]'); if (!b) return;
+    moved = false;
+    clearTimeout(t);
+    t = setTimeout(() => { if (!moved) { previewOf = b.dataset.peek; openMenu('preview'); } }, 480);
+  };
+  const stop = () => { moved = true; clearTimeout(t); };
+  $.addEventListener('pointerdown', start);
+  $.addEventListener('pointermove', stop);
+  $.addEventListener('pointerup', stop);
+  $.addEventListener('pointercancel', stop);
+  $.addEventListener('scroll', stop, true);
 }
 
 const allDue = () => live().reduce((a, d) => a + dueCount(d), 0);
@@ -1324,11 +1518,17 @@ function selBar(d) {
 function deckView() {
   const d = deck(view.id); if (!d) return go('home');
   const s = subj(d.subject);
+  /* Le filtre ne retire jamais de carte : il n'en montre qu'une partie.
+     Tant qu'il est posé, la poignée disparaît — réordonner une liste
+     filtrée écrirait des positions qui ne veulent rien dire. */
+  const nq = norm(deckQ);
+  const shown = nq ? d.cards.filter(c => norm(plain(c.f)).includes(nq) || norm(plain(c.b)).includes(nq))
+                   : d.cards;
   $.innerHTML = `
     <div class="bar">
-      <button class="ic" data-act="home">${svg(I.back)}</button>
+      <button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
       <div style="flex:1"></div>
-      <button class="ic" data-act="menu">${svg(I.more)}</button>
+      <button class="ic" data-act="menu" aria-label="Menu du paquet">${svg(I.more)}</button>
     </div>
     <div class="head" style="${sty(s)}">
       <div class="t" id="dn" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(d.name)}</div>
@@ -1345,14 +1545,20 @@ function deckView() {
     </div>
     ${simpleMode() ? '' : mixBar(d)}
     <div class="lbl"><span>Cartes</span>
+      ${d.cards.length > 5 ? `<button class="pick ${deckQ ? 'on' : ''}" data-act="deckfind"
+        aria-label="Chercher dans ce paquet">${svg(I.search)}</button>` : ''}
       ${d.cards.length ? `<button class="pick ${sel ? 'on' : ''}" data-act="selmode">${
         svg(sel ? I.check : I.pick)}${sel ? 'Terminer' : 'Sélectionner'}</button>` : ''}
-      <span>${d.cards.length}</span></div>
+      <span>${shown.length === d.cards.length ? d.cards.length : shown.length + ' / ' + d.cards.length}</span></div>
+    ${deckOpen ? `<div class="fld deckfld"><input id="dq" type="search"
+      placeholder="Chercher dans ce paquet" autocomplete="off" autocapitalize="none"
+      spellcheck="false" value="${esc(deckQ)}" aria-label="Chercher dans ce paquet"></div>` : ''}
     <div class="rows ${sel ? 'picking' : ''}">
-      ${d.cards.map((c, i) => `
+      ${!shown.length ? `<div class="note" style="padding:14px 4px">Aucune carte ne contient « ${esc(deckQ)} ».</div>` : ''}
+      ${shown.map((c, i) => `
         <div class="row ${c.x ? 'off' : ''} ${sel && sel.has(c.id) ? 'pk' : ''}" data-id="${c.id}" style="--i:${i}">
           ${sel ? `<button class="ck" data-pkc="${c.id}" aria-label="Sélectionner">${svg(I.check)}</button>`
-            : `<button class="grip" aria-label="Déplacer">${svg(I.grip)}</button>
+            : `${nq ? '' : `<button class="grip" aria-label="Déplacer">${svg(I.grip)}</button>`}
               ${simpleMode() ? '' : `<i class="cst ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>`}`}
           <div class="fl">
             <input value="${esc(c.f)}" data-k="f" placeholder="Recto" ${sel ? 'tabindex="-1"' : ''}>
@@ -1380,7 +1586,12 @@ function deckView() {
     const c = d.cards.find(x => x.id === inp.closest('.row').dataset.id);
     if (c) { c[inp.dataset.k] = inp.value; clearTimeout(typing); typing = setTimeout(() => saveDeck(d), 700); }
   }));
-  bindReorder(d);
+  if (!nq) bindReorder(d);
+  const dq = document.getElementById('dq');
+  if (dq) {
+    dq.addEventListener('input', () => { deckQ = dq.value; animate = false; render(); });
+    if (!deckQ) setTimeout(() => dq.focus(), 50);
+  }
 }
 
 /* ---------- réordonner par glisser-déposer ----------
@@ -1526,7 +1737,7 @@ function openSubject(id) {
 }
 function settingsView() {
   $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="home">${svg(I.back)}</button></div>
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Réglages</div></div>
       <div class="lbl"><span>Matières</span><span>${db.subjects.length}</span></div>
@@ -1580,6 +1791,16 @@ function settingsView() {
         <button class="sr flat" data-act="tglfast">${svg(I.skip)}
           <span class="n">Mode rapide</span>
           <span class="tgl ${prefs.fast ? 'on' : ''}"></span></button>
+        <button class="sr flat" data-act="tglsound">${svg(I.sound)}
+          <span class="n">Sons</span>
+          <span class="tgl ${prefs.sound ? 'on' : ''}"></span></button>
+        <div class="sr flat col">
+          <div class="srh">${svg(I.card)}<span class="n">Taille du texte des cartes</span>
+            <span class="c">${Math.round((prefs.font || 1) * 100)} %</span></div>
+          <input class="rng" id="pFont" type="range" min="80" max="140" step="5"
+            value="${Math.round((prefs.font || 1) * 100)}" aria-label="Taille du texte des cartes">
+          <div class="fprev" style="font-size:calc(17px * var(--fs,1))">Aperçu : la casa</div>
+        </div>
         <div class="note">${prefs.fast
           ? `Une bonne réponse enchaîne toute seule sur la suivante, au quiz
              comme en QCM et en vrai/faux. Pratique quand on connaît déjà bien
@@ -1613,6 +1834,11 @@ function settingsView() {
     prefs.cap = +c.value; savePrefs();
     c.closest('.sr').querySelector('.c').textContent = prefs.cap || 'sans limite';
   });
+  const fo = document.getElementById('pFont');
+  if (fo) fo.addEventListener('input', () => {
+    prefs.font = +fo.value / 100; savePrefs(); applyFont();
+    fo.closest('.sr').querySelector('.c').textContent = fo.value + ' %';
+  });
   document.getElementById('pOrder').addEventListener('click', e => {
     const b = e.target.closest('[data-ord]'); if (!b) return;
     prefs.order = b.dataset.ord; savePrefs(); render();
@@ -1645,7 +1871,7 @@ async function trashPull() {
 function trashView() {
   const l = trash.list;
   $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="settings">${svg(I.back)}</button></div>
+    <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Corbeille</div></div>
       <div class="note">Un paquet supprimé reste ici ${KEEP} jours, avec toutes ses cartes
@@ -1751,7 +1977,7 @@ function timeAgo(iso) {
 function mailView() {
   const l = mailbox.list;
   $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="home">${svg(I.back)}</button></div>
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Boîte de réception</div></div>
       ${!l ? `<div class="empty">${svg(I.mail)}<p>${mailbox.err ? 'Boîte indisponible' : 'Chargement…'}</p></div>`
@@ -1942,9 +2168,73 @@ async function exportStats() {
   }
 }
 
+/* ---------- recherche globale ----------
+   Un seul champ pour les paquets et les cartes : on cherche un mot, pas
+   un endroit où chercher. Tout se fait en mémoire, la bibliothèque tient
+   déjà entière dans le navigateur. */
+function findResults(q) {
+  const n = norm(q);
+  if (!n) return { decks: [], cards: [] };
+  const decks = live().filter(d => norm(d.name).includes(n)).slice(0, 12);
+  const cards = [];
+  for (const d of live()) {
+    for (const c of d.cards) {
+      if (norm(plain(c.f)).includes(n) || norm(plain(c.b)).includes(n)) cards.push({ c, d });
+      if (cards.length >= 60) break;
+    }
+    if (cards.length >= 60) break;
+  }
+  return { decks, cards };
+}
+
+function findView() {
+  const r = findResults(findQ);
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
+      <div class="fld"><input id="fq" type="search" placeholder="Chercher un mot, un paquet…"
+        autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search"
+        value="${esc(findQ)}" aria-label="Recherche"></div></div>
+    <div class="page">
+      ${!findQ.trim() ? `<div class="empty">${svg(I.search)}<p>Tape un mot : il est cherché
+        dans les noms de paquets et dans les deux faces de toutes les cartes.</p></div>`
+        : (!r.decks.length && !r.cards.length) ? `<div class="empty">${svg(I.search)}<p>Rien pour « ${esc(findQ)} »</p></div>`
+        : `${r.decks.length ? `<div class="lbl"><span>Paquets</span><span>${r.decks.length}</span></div>
+          <div class="slist">${r.decks.map(d => `<button class="sr flat" data-go="${d.id}">
+            <i class="ldot" style="${sty(subj(d.subject))}"></i>
+            <span class="n">${esc(d.name)}</span>
+            <span class="c">${d.cards.length}</span>${svg(I.arrow)}</button>`).join('')}</div>` : ''}
+        ${r.cards.length ? `<div class="lbl"><span>Cartes</span><span>${r.cards.length}</span></div>
+          <div class="slist">${r.cards.map(({ c, d }) => `<button class="sr flat" data-go="${d.id}">
+            <span class="ml2"><span class="n">${hl(plain(c.f), findQ)}</span>
+              <span class="sub">${hl(plain(c.b), findQ)} · ${esc(d.name)}</span></span>
+            ${svg(I.arrow)}</button>`).join('')}</div>` : ''}`}
+    </div>`;
+  const f = document.getElementById('fq');
+  f.addEventListener('input', () => { findQ = f.value; animate = false; render(); });
+  setTimeout(() => { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }, 50);
+}
+
+/* surligne ce qui a été cherché, sans jamais laisser passer de balise */
+function hl(txt, q) {
+  const t = String(txt), n = norm(q);
+  if (!n) return esc(t);
+  const i = norm(t).indexOf(n);
+  if (i < 0) return esc(t);
+  return esc(t.slice(0, i)) + '<mark>' + esc(t.slice(i, i + q.trim().length)) + '</mark>'
+    + esc(t.slice(i + q.trim().length));
+}
+
+/* Ce qui serait perdu en quittant maintenant : un exercice court, sans
+   reprise possible, et déjà entamé. */
+function lostOnLeave() {
+  if (quiz && quiz.pool && quiz.i > 0 && quiz.i < quiz.pool.length) return true;
+  if (study && study.mode && study.i > 0 && study.i < study.queue.length) return true;
+  return false;
+}
+
 function statsView() {
   if (!stats.rows) {
-    $.innerHTML = `<div class="bar"><button class="ic" data-act="home">${svg(I.back)}</button></div>
+    $.innerHTML = `<div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
       <div class="page"><div class="top"><div class="hero">Statistiques</div></div>
       <div class="empty">${svg(I.chart)}<p>${stats.err ? 'Statistiques indisponibles' : 'Chargement…'}</p></div></div>`;
     return;
@@ -1964,7 +2254,7 @@ function statsView() {
   for (let i = 0; i < days.length; i += 7) cols.push(days.slice(i, i + 7));
 
   $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="home">${svg(I.back)}</button></div>
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Statistiques</div></div>
       <div class="seg" id="stRange">
@@ -2083,6 +2373,8 @@ function mountMenu(w) {
     while (box.firstChild) body.appendChild(box.firstChild);
     box.insertAdjacentHTML('afterbegin',
       `<div class="mtop"><i class="mgrip"></i><button class="mx" data-mact="close" aria-label="Fermer">${svg(I.x)}</button></div>`);
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
     box.appendChild(body);
   }
   document.body.append(...w.childNodes);
@@ -2300,6 +2592,53 @@ function paintMenu() {
     setTimeout(() => q.focus(), 60);
     return;
   }
+  if (menu === 'leave') {
+    const n = quiz && quiz.pool ? quiz.pool.length - quiz.i : study.queue.length - study.i;
+    w.innerHTML = `<div class="scrim" data-mact="leavestay"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.warn)}Quitter cet exercice ?</div>
+        <div class="note">Il reste ${plur(n, 'question')}. Cet exercice-là ne se reprend pas :
+          en sortant maintenant, les réponses déjà données ne comptent pas.</div>
+        <button class="mi" data-mact="leavestay" style="justify-content:center;font-weight:700">
+          ${svg(I.play)}Continuer</button>
+        <button class="mi warn" data-mact="leavego">${svg(I.exit)}<span>Quitter quand même</span></button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'sortpick') {
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.sort)}Trier les paquets</div>
+        ${Object.entries(SORTS).map(([k, l]) => `<button class="mi ${prefs.sort === k ? 'on' : ''}"
+          data-sortby="${k}">${l}${prefs.sort === k ? svg(I.check) : ''}</button>`).join('')}
+        <div class="msep"></div>
+        <button class="mi" data-mact="reorderon">${svg(I.grip)}Réorganiser à la main</button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'preview') {
+    const d = deck(previewOf); if (!d) { menu = null; return; }
+    const due = simpleMode() ? 0 : dueCount(d);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.card)}
+          <span class="mhx"><b>${esc(d.name)}</b>
+            <i>${esc(subj(d.subject).name)} · ${plur(d.cards.length, 'carte')}${due ? ' · ' + due + ' à revoir' : ''}</i>
+          </span>
+        </div>
+        <div class="mscroll">${d.cards.slice(0, 12).map(c => `<div class="pr">
+          <span class="a">${esc(plain(c.f))}</span>${svg(I.arrow)}<span class="b">${esc(plain(c.b))}</span></div>`).join('')
+          || '<div class="note">Ce paquet est vide.</div>'}</div>
+        ${d.cards.length > 12 ? `<div class="note">…et ${d.cards.length - 12} autres.</div>` : ''}
+        <button class="mi" data-mact="pindeck">${svg(I.pin)}${d.pinned ? 'Détacher' : 'Épingler en haut'}</button>
+        <button class="mi" data-mact="openpeek" style="justify-content:center;font-weight:700">
+          ${svg(I.play)}Ouvrir le paquet</button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
   if (menu === 'sharepick') {
     const d = deck(view.id); if (!d) { menu = null; return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -2438,6 +2777,7 @@ function paintMenu() {
           data-msubj="${s.id}" style="--d:${s.d}"><i></i>${esc(s.name)}</button>`).join('')}
       </div>
       <div class="msep"></div>
+      <button class="mi" data-mact="pindeck">${svg(I.pin)}${d.pinned ? 'Détacher' : 'Épingler en haut'}</button>
       <button class="mi" data-mact="hide">${svg(d.hidden ? I.eye : I.eyeoff)}${d.hidden ? 'Réafficher' : 'Masquer'}</button>
       <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
       <button class="mi" data-mact="mcq">${svg(I.grid)}QCM</button>
@@ -2457,12 +2797,16 @@ function paintMenu() {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
   if (b.dataset.friend !== undefined) { sendTo = b.dataset.friend; return paintMenu(); }
+  if (b.dataset.sortby !== undefined) {
+    prefs.sort = b.dataset.sortby; savePrefs();
+    closeMenu(); animate = false; return render();
+  }
   if (b.dataset.move !== undefined) {
     const t = deck(b.dataset.move); if (!t || !d || !sel) return;
     const moved = d.cards.filter(c => sel.has(c.id));
@@ -2631,6 +2975,23 @@ document.addEventListener('click', async e => {
     go('home');
     return toast(I.split, made.length + ' paquets créés', true);
   }
+  if (a === 'leavestay') { leaving = null; return closeMenu(); }
+  if (a === 'leavego') {
+    const act = leaving; leaving = null; closeMenu();
+    quiz = null; study = study && study.mode ? null : study;
+    return go(act === 'tab-quiz' ? 'quiz' : act === 'deck' ? 'deck' : 'home',
+      act === 'deck' ? view.id : null);
+  }
+  if (a === 'reorderon') { closeMenu(); reorder = true; prefs.sort = 'manual'; savePrefs(); animate = false; return render(); }
+  if (a === 'pindeck') {
+    /* la même entrée sert depuis l'aperçu et depuis le menu du paquet :
+       c'est la feuille ouverte qui dit de quel paquet on parle */
+    const t = (menu === 'preview' ? deck(previewOf) : d) || d; if (!t) return;
+    t.pinned = !t.pinned; saveDeck(t);
+    closeMenu(); animate = false; render();
+    return toast(I.pin, t.pinned ? 'Épinglé en haut' : 'Détaché');
+  }
+  if (a === 'openpeek') { const id = previewOf; closeMenu(); return go('deck', id); }
   if (a === 'sharepick') { if (!friends) friendsPull(); return openMenu('sharepick'); }
   if (a === 'copylink') {
     closeMenu();
@@ -2827,11 +3188,13 @@ function studyView() {
   if (study.id !== 'all' && !d) return go('home');
   const s = subj(d ? d.subject : '');
   const bar = n => `<div class="bar">
-      <button class="ic" data-act="deck">${svg(I.back)}</button>
+      <button class="ic" data-act="deck" aria-label="Retour">${svg(I.back)}</button>
       <h1>${esc(study.name || (d ? d.name : ''))}</h1>
       ${n}
-      <button class="ic ${study.rev ? 'solid' : ''}" data-act="swap">${svg(I.swap)}</button>
-      <button class="ic" data-act="restart">${svg(I.shuffle)}</button>
+      <button class="ic ${prefs.zen ? 'solid' : ''}" data-act="zen"
+        aria-label="Mode sans distraction">${svg(I.zen)}</button>
+      <button class="ic ${study.rev ? 'solid' : ''}" data-act="swap" aria-label="Inverser le sens">${svg(I.swap)}</button>
+      <button class="ic" data-act="restart" aria-label="Mélanger">${svg(I.shuffle)}</button>
     </div>`;
   if (study.i >= study.queue.length) {
     if (study.again.length) { study.queue = study.again; study.again = []; study.i = 0; study.flip = false; }
@@ -2857,7 +3220,7 @@ function studyView() {
     return;
   }
   $.innerHTML = bar(`<span class="num">${Math.min(study.i + 1, study.queue.length)}/${study.queue.length}</span>`)
-    + `<div class="study${study.mode === 'mcq' ? ' mcq' : ''}">
+    + `<div class="study${study.mode === 'mcq' ? ' mcq' : ''}${prefs.zen ? ' zen' : ''}">
       <div class="prog"><i id="pg" style="width:0%"></i></div>
       ${study.mode === 'mcq'
         ? `<div class="qcard" id="stack" style="${sty(s)}"></div>`
@@ -3117,6 +3480,7 @@ function scoreCard(id, ok, rating) {
     rating: study.simple ? null : r, correct: !!ok, ms: Math.min(ms, 600000), reversed: !!rv
   }]).catch(() => {});
   bumpToday();
+  beep(ok);
   if (!study.tried[id]) { study.tried[id] = 1; if (ok) study.ok++; study.log.push(ok ? 1 : 0); }
   if (!ok && !study.missSet[id]) {
     study.missSet[id] = 1;
@@ -3359,12 +3723,12 @@ function quizHome() {
 function quizView() {
   const qcm = quiz.mode === 'qcm';
   const bar = n => `<div class="bar">
-      <button class="ic" data-act="tab-quiz">${svg(I.back)}</button>
+      <button class="ic" data-act="tab-quiz" aria-label="Retour">${svg(I.back)}</button>
       <h1>${esc(quiz.name)}</h1>
       ${n}
       ${quiz.streak >= 5 ? `<span class="strk">${svg(I.flame)}${quiz.streak}</span>` : ''}
       <button class="ic ${quiz.rev ? 'solid' : ''}" data-act="swapq">${svg(I.swap)}</button>
-      <button class="ic" data-act="requiz">${svg(I.shuffle)}</button>
+      <button class="ic" data-act="requiz" aria-label="Relancer">${svg(I.shuffle)}</button>
     </div>`;
   if (quiz.i >= quiz.pool.length) {
     stopTimer();
@@ -3478,7 +3842,7 @@ function importView() {
   const s = subj(t ? t.subject : comp.subject);
   $.innerHTML = `
     <div class="bar">
-      <button class="ic" data-act="${t ? 'deck' : 'home'}">${svg(I.back)}</button>
+      <button class="ic" data-act="${t ? 'deck' : 'home'}" aria-label="Retour">${svg(I.back)}</button>
       <h1>${t ? esc(t.name) : 'Nouveau paquet'}</h1>
       <button class="ic ${comp.bulk ? 'solid' : ''}" data-act="bulk">${svg(I.down)}</button>
     </div>
@@ -3655,6 +4019,14 @@ $.addEventListener('click', e => {
   const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail]');
   if (!b) return;
   const ds = b.dataset;
+  const a0 = ds.act;
+  /* Une révision simple se reprend là où elle s'est arrêtée : la quitter
+     ne coûte rien. Un quiz, un QCM ou une association, non — vingt
+     minutes disparaissent pour de bon. Ce sont les seules qu'on protège,
+     sinon la question deviendrait un réflexe qu'on clique sans lire. */
+  if (/^(home|tab-home|tab-quiz|deck)$/.test(a0 || '') && lostOnLeave() && !leaving) {
+    leaving = a0; return openMenu('leave');
+  }
   if (ds.mail !== undefined) return openMail(+ds.mail);
   if (ds.pkc !== undefined && sel) {
     /* on ne repeint que la ligne touchée et le décompte : reconstruire la
@@ -3721,6 +4093,20 @@ $.addEventListener('click', e => {
   if (a === 'marathon') return startStudy('all', false, null, { only: 'due', both: prefs.both });
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (a === 'expstats') return exportStats();
+  if (a === 'find') { findQ = ''; return go('find'); }
+  if (a === 'deckfind') {
+    deckOpen = !deckOpen;
+    if (!deckOpen) deckQ = '';
+    animate = false; return render();
+  }
+  if (a === 'zen') { prefs.zen = !prefs.zen; savePrefs(); animate = false; return render(); }
+  if (a === 'sortpick') return openMenu('sortpick');
+  if (a === 'listview') { prefs.list = !prefs.list; savePrefs(); animate = false; return render(); }
+  if (a === 'reorder') {
+    reorder = !reorder;
+    if (reorder && prefs.sort !== 'manual') { prefs.sort = 'manual'; savePrefs(); }
+    animate = false; return render();
+  }
   if (a === 'resume') {
     const r = loadResume(); if (!r) return render();
     study = r; return go('study', r.id);
@@ -3760,6 +4146,7 @@ $.addEventListener('click', e => {
   if (a === 'tglfresh') { prefs.fresh = !prefs.fresh; savePrefs(); return render(); }
   if (a === 'tglboth') { prefs.both = !prefs.both; savePrefs(); return render(); }
   if (a === 'tglfast') { prefs.fast = !prefs.fast; savePrefs(); return render(); }
+  if (a === 'tglsound') { prefs.sound = !prefs.sound; savePrefs(); render(); if (prefs.sound) beep(true); return; }
   if (a === 'rename') return openMenu('rename');
   if (a === 'chpwd') return openMenu('pwd');
   if (a === 'delacc') return openMenu('delacc');

@@ -85,6 +85,44 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .tile::after{content:'';position:absolute;inset:0;border-radius:24px;pointer-events:none;
   background:linear-gradient(155deg,rgba(255,255,255,.5),rgba(255,255,255,0) 58%)}
 .tile:active{transform:scale(.955);box-shadow:var(--s2)}
+/* épingle et barre de maturité posées sur la tuile, sans rien pousser */
+.tile .pind{position:absolute;top:13px;left:13px;z-index:2;opacity:.55;display:grid;place-items:center}
+.tile .pind svg{width:13px;height:13px;stroke-width:2.4}
+.tile .tbar{position:absolute;left:15px;right:15px;bottom:9px;height:3px;border-radius:3px;
+  background:rgba(255,255,255,.45);overflow:hidden;z-index:1}
+.tile .tbar b{display:block;height:100%;border-radius:3px;background:var(--ci);opacity:.5}
+
+/* barre de contrôles de l'accueil : tri à gauche, affichage à droite */
+.hbar{display:flex;align-items:center;gap:8px;margin:0 1px 10px}
+.hbar .lnk{margin:0;padding:6px 11px;background:var(--card);box-shadow:var(--s1);color:var(--ink2)}
+.hbar .lnk.on{background:var(--ink);color:var(--bg);box-shadow:none}
+
+/* progression de la sélection, une ligne fine sous les pastilles */
+.sbar{display:flex;gap:2px;height:4px;margin:0 2px 12px;border-radius:3px;overflow:hidden}
+.sbar i{border-radius:3px;background:var(--surf2)}
+.sbar i.mature{background:var(--ok)}
+.sbar i.young{background:#7FB08F}
+.sbar i.learn{background:#C9A526}
+.sbar i.new{background:var(--surf2)}
+
+/* vue liste des paquets */
+.rows.lst{padding-bottom:34px}
+.lrow{display:flex;align-items:center;gap:10px;background:var(--card);box-shadow:var(--s1);
+  border-radius:18px;padding:11px 14px;margin-bottom:8px;
+  transition:box-shadow .3s,transform .3s var(--sp)}
+.fade .lrow{animation:pop .5s var(--e) both;animation-delay:calc(var(--i) * 14ms)}
+.lrow.mute{opacity:.5}
+.lrow .ldot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--d)}
+.lrow .lmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
+.lrow .n{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15.5px;
+  letter-spacing:-.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .n svg{width:12px;height:12px;flex:none;color:var(--soft)}
+.lrow .s{font-size:12.5px;font-weight:600;color:var(--soft)}
+.lrow .ldue{flex:none;min-width:24px;height:24px;padding:0 7px;border-radius:9px;
+  background:var(--ink);color:var(--bg);display:grid;place-items:center;font-style:normal;
+  font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.lrow.drag{position:relative;z-index:3;box-shadow:var(--s3)}
+.rows.dragging .lrow:not(.drag){transition:transform .2s var(--e)}
 .tile .n{position:relative;z-index:1;font-weight:700;font-size:16.5px;line-height:1.26;letter-spacing:-.35px;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .tile .m{position:relative;z-index:1;display:flex;align-items:center;gap:6px;margin-top:12px;
@@ -238,11 +276,15 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
    passé cette limite, défiler plutôt que déborder du cadre. La taille se
    règle selon la longueur du texte (.l/.xl/.xxl, posées par faceSize() en
    JS) pour qu'une longue définition rétrécisse au lieu de couper. */
+/* --fs est le réglage de confort ; il multiplie les quatre paliers sans
+   toucher à la façon dont ils sont choisis (c'est la longueur du texte
+   qui décide du palier, la préférence ne fait que l'échelle). */
 .face .tx{position:relative;z-index:1;max-width:100%;max-height:100%;overflow:auto;
-  font-weight:800;font-size:clamp(28px,8.4vw,48px);line-height:1.16;letter-spacing:-1.1px}
-.face.l .tx{font-size:clamp(21px,6.6vw,34px);line-height:1.22;letter-spacing:-.7px}
-.face.xl .tx{font-size:clamp(17px,5.2vw,26px);line-height:1.3;letter-spacing:-.4px;font-weight:750}
-.face.xxl .tx{font-size:clamp(15px,4.2vw,20px);line-height:1.36;letter-spacing:-.2px;font-weight:700}
+  font-weight:800;font-size:calc(clamp(28px,8.4vw,48px) * var(--fs,1));
+  line-height:1.16;letter-spacing:-1.1px}
+.face.l .tx{font-size:calc(clamp(21px,6.6vw,34px) * var(--fs,1));line-height:1.22;letter-spacing:-.7px}
+.face.xl .tx{font-size:calc(clamp(17px,5.2vw,26px) * var(--fs,1));line-height:1.3;letter-spacing:-.4px;font-weight:750}
+.face.xxl .tx{font-size:calc(clamp(15px,4.2vw,20px) * var(--fs,1));line-height:1.36;letter-spacing:-.2px;font-weight:700}
 .face.bk{transform:rotateY(180deg) translateZ(0);background:var(--ci);color:var(--c);opacity:0}
 .card.flip .face{opacity:0}
 .card.flip .face.bk{opacity:1}
@@ -560,6 +602,28 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   padding:4px 0 100px;letter-spacing:.2px}
 .off-dot{width:8px;height:8px;border-radius:50%;background:var(--ko);flex:none;
   align-self:center;margin-right:2px}
+
+/* champ de recherche : dans la barre du haut, ou sous l'intitulé Cartes */
+.fld{flex:1;min-width:0;display:flex;align-items:center;background:var(--surf);
+  border-radius:14px;padding:0 14px;height:40px}
+.fld input{flex:1;min-width:0;height:100%;background:none;font-size:15px;font-weight:600;
+  letter-spacing:-.15px;color:var(--ink)}
+.fld input::placeholder{color:var(--soft);opacity:.7}
+.fld input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+.deckfld{margin:0 1px 10px}
+mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2px}
+
+/* aperçu du réglage de taille, juste sous le curseur */
+.fprev{padding:2px 2px 0;font-weight:750;letter-spacing:-.3px;color:var(--soft)}
+
+/* ---------- mode sans distraction ----------
+   Tout ce qui n'est pas la carte s'efface : il reste le geste et le mot.
+   Rien n'est démonté, seulement rendu invisible et inatteignable — on en
+   sort par le même bouton, qui lui reste. */
+.study.zen .prog,.study.zen #foot{opacity:0;pointer-events:none;transition:opacity .3s}
+.study.zen{gap:0}
+#app[data-view="study"] .study.zen ~ *{opacity:0}
+.study.zen .stage{flex:1}
 
 /* ---------- boîte de réception ----------
    Le badge est un simple élément de flux par défaut (il se pose à la fin
@@ -1092,3 +1156,19 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   .mc:hover,.op:hover{transform:translateY(-2px);box-shadow:var(--s2)}
   .mc.done:hover{transform:none;box-shadow:none}
 }
+
+/* ══════════ accessibilité ══════════
+   Le contour de focus n'existait que sur la mise en page de bureau : un
+   clavier branché sur un iPad ne montrait plus où l'on se trouvait. Les
+   cibles tactiles atteignent partout la hauteur du doigt, et le mode
+   contraste renforcé du système assombrit les gris secondaires. */
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:8px}
+.ic,.tabs button,.mx,.trb,.sba .x,.pick,.lnk{min-height:40px}
+.mi,.sr{min-height:48px}
+@media (prefers-contrast:more){
+  :root{--soft:#6A6472; --ink2:#2A262F; --hair:rgba(27,24,29,.16)}
+  .note,.sub,.mhx i{color:var(--ink2)}
+}
+/* seule la carte du dessus est interactive : les suivantes ne doivent
+   être ni cliquables ni annoncées */
+.stack .card:not(#top){pointer-events:none}
