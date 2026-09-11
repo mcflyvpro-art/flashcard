@@ -50,6 +50,43 @@ let filter = '';
 let peek = false;
 let study = null, quiz = null, menu = null, typing = 0, pendingGrade = null;
 let dirty = {}, gone = [], online = true;
+let trash = { n: 0, list: null, err: 0 };
+let splitSize = 12;
+
+/* ---------- annuler ----------
+   Avant toute action qui écrase ou efface, on photographie les paquets
+   touchés. Annuler repose la photo et la repousse en base. Dix pas en
+   arrière suffisent : au-delà, ce n'est plus une erreur qu'on rattrape. */
+let undos = [];
+const snap = ids => ids.map(id => {
+  const d = db.decks.find(x => x.id === id);
+  return { id, deck: d ? JSON.parse(JSON.stringify(d)) : null };
+});
+function pushUndo(label, ids) {
+  undos.push({ label, before: snap(ids) });
+  if (undos.length > 10) undos.shift();
+}
+function canUndo() { return undos.length > 0; }
+function doUndo() {
+  const u = undos.pop();
+  if (!u) return false;
+  for (const { id, deck } of u.before) {
+    const k = db.decks.findIndex(x => x.id === id);
+    if (deck) {
+      if (k < 0) db.decks.push(deck); else db.decks[k] = deck;
+      dirty[id] = 1;
+      const g = gone.indexOf(id);           // un paquet ressuscité n'est plus à jeter
+      if (g >= 0) gone.splice(g, 1);
+    } else if (k >= 0) {
+      db.decks.splice(k, 1);                // il n'existait pas avant : on le retire
+      gone.push(id);
+    }
+  }
+  save(); flush();
+  toast(I.redo, u.label ? 'Annulé · ' + u.label : 'Annulé');
+  render();
+  return true;
+}
 
 function loadAuth() { try { return JSON.parse(localStorage.getItem(AKEY)); } catch (e) { return null; } }
 function saveAuth(a) { auth = a; a ? localStorage.setItem(AKEY, JSON.stringify(a)) : localStorage.removeItem(AKEY); }
@@ -158,9 +195,13 @@ async function refreshToken() {
   } catch (e) { return false; }
 }
 
+/* deleted_at: null est écrit à chaque fois, sans exception. Un paquet
+   présent ici est vivant par définition ; sans cette ligne, annuler une
+   suppression le remettrait à l'écran tout en le laissant marqué
+   supprimé en base — il repartirait au prochain chargement. */
 const rowOf = d => ({ id: d.id, user_id: auth.uid, name: d.name, subject: d.subject,
                       hidden: !!d.hidden, cards: d.cards, pos: d.pos || 0,
-                      pinned: !!d.pinned, meta: d.meta || {} });
+                      pinned: !!d.pinned, meta: d.meta || {}, deleted_at: null });
 /* réglages propres à un paquet : tolérance du quiz, langue par face, chrono.
    La langue suit le CONTENU (recto/verso), jamais le côté physique de la
    carte : si le paquet est inversé (bouton « inverser », mélange des deux
@@ -190,9 +231,12 @@ async function flush() {
         { Prefer: 'resolution=merge-duplicates,return=minimal' });
       ids.forEach(i => delete dirty[i]);
     }
+    /* Supprimer un paquet le marque, ne l'efface pas : il reste
+       récupérable trente jours depuis la corbeille. */
     while (gone.length) {
       const id = gone[0];
-      await api(`/rest/v1/decks?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+      await api(`/rest/v1/decks?id=eq.${encodeURIComponent(id)}`, 'PATCH',
+        { deleted_at: new Date().toISOString() }, { Prefer: 'return=minimal' });
       gone.shift();
     }
     setOnline(true);
@@ -209,13 +253,15 @@ function setOnline(v) {
 /* récupère matières, paquets et historique du compte */
 async function pull() {
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-  const [subs, decks, sess, pf, today] = await Promise.all([
+  const [subs, decks, sess, pf, today, bin] = await Promise.all([
     api('/rest/v1/subjects?select=*&order=pos.asc'),
     api('/rest/v1/decks?select=*&deleted_at=is.null&order=pos.asc'),
     api('/rest/v1/sessions?select=deck_id,mode,pct,created_at&order=created_at.asc'),
     api('/rest/v1/prefs?select=*'),
-    api(`/rest/v1/reviews?select=id&created_at=gte.${midnight.toISOString()}`)
+    api(`/rest/v1/reviews?select=id&created_at=gte.${midnight.toISOString()}`),
+    api('/rest/v1/decks?select=id&deleted_at=not.is.null')
   ]);
+  trash.n = (bin || []).length;
   const wasSimple = prefs.simple;
   prefs = { ...DEFPREFS, ...((pf && pf[0] && pf[0].data) || {}) };
   if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
@@ -295,6 +341,8 @@ const I = {
   flame: '<path d="M12 3.5c3 3 4.8 5.3 4.8 8.2a4.8 4.8 0 1 1-9.6 0c0-1.7.8-3.2 2-4.4.1 1.6.8 2.5 1.7 2.5 1 0 1.6-.9 1.6-2.4 0-1.4-.3-2.7-.5-3.9z"/>',
   grid: '<rect x="3.6" y="3.6" width="7" height="7" rx="2"/><rect x="13.4" y="3.6" width="7" height="7" rx="2"/><rect x="3.6" y="13.4" width="7" height="7" rx="2"/><rect x="13.4" y="13.4" width="7" height="7" rx="2"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.4 6.9"/><path d="M14 10a4 4 0 0 0-5.7 0L5.5 12.8a4 4 0 0 0 5.7 5.7l1.4-1.4"/>',
+  copy: '<rect x="8.6" y="8.6" width="11.8" height="11.8" rx="3"/><path d="M15.4 5.6a2 2 0 0 0-2-2H6.6a3 3 0 0 0-3 3v6.8a2 2 0 0 0 2 2"/>',
+  split: '<path d="M12 3.6v6.8"/><path d="M12 10.4 6.6 15v5.4M12 10.4 17.4 15v5.4"/><circle cx="12" cy="3.6" r="0"/>',
   type: '<path d="M4.5 7.5V5.5h15v2M12 5.5v13M8.8 18.5h6.4"/>',
   skip: '<path d="M6 5.6l9 6.4-9 6.4z"/><path d="M18 5.6v12.8"/>',
   brain: '<path d="M12 5.6v12.8"/><path d="M12 6.6a2.5 2.5 0 1 0-3.5 2.3 2.5 2.5 0 0 0-.9 4.6 2.5 2.5 0 0 0 4.4 1.7"/><path d="M12 6.6a2.5 2.5 0 1 1 3.5 2.3 2.5 2.5 0 0 1 .9 4.6 2.5 2.5 0 0 1-4.4 1.7"/>'
@@ -717,6 +765,64 @@ function addDeck(name, cards, subject) {
               cards: cards.map(c => ({ id: uid(), f: c.f, b: c.b })) };
   db.decks.unshift(d); saveDeck(d); return d;
 }
+/* ---------- opérations sur les paquets ----------
+   Dupliquer, fusionner, scinder. Toutes passent par pushUndo avant de
+   toucher quoi que ce soit : les identifiants qui n'existaient pas encore
+   sont photographiés « absents », donc annuler les retire, tandis que les
+   paquets modifiés ou mis à la corbeille reviennent à l'identique.
+   Copier une carte, c'est copier tout son état d'apprentissage : un
+   doublon qui repartirait de zéro ferait réviser deux fois la même chose. */
+const copyCards = cs => cs.map(c => ({ ...c, id: uid() }));
+const freeName = base => {
+  if (!db.decks.some(d => d.name === base)) return base;
+  for (let i = 2; ; i++) if (!db.decks.some(d => d.name === base + ' ' + i)) return base + ' ' + i;
+};
+
+function cloneDeck(d) {
+  const n = { id: uid(), name: freeName(d.name + ' (copie)'), subject: d.subject,
+              hidden: !!d.hidden, pinned: false, pos: -Date.now() / 1000 | 0,
+              meta: { ...(d.meta || {}) }, cards: copyCards(d.cards) };
+  pushUndo('Duplication', [n.id]);
+  db.decks.unshift(n); saveDeck(n);
+  return n;
+}
+
+/* Fusion : les cartes de la source rejoignent la cible, la source part à
+   la corbeille (récupérable trente jours). Une carte déjà présente des
+   deux côtés — même recto et même verso — n'est pas recopiée. */
+function mergeDecks(target, src) {
+  pushUndo('Fusion', [target.id, src.id]);
+  const seen = new Set(target.cards.map(c => key2(c)));
+  const add = src.cards.filter(c => !seen.has(key2(c)));
+  target.cards.push(...copyCards(add));
+  db.decks = db.decks.filter(x => x.id !== src.id);
+  delete dirty[src.id]; gone.push(src.id);
+  dirty[target.id] = 1; save(); flush();
+  return { added: add.length, skipped: src.cards.length - add.length };
+}
+const key2 = c => norm(c.f || '') + ' ' + norm(c.b || '');
+
+/* Scission : le paquet devient N paquets de `size` cartes, dans l'ordre
+   où elles sont. L'original file à la corbeille plutôt que d'être effacé,
+   pour que l'opération reste réversible même après un rechargement. */
+function splitDeck(d, size) {
+  const parts = [];
+  for (let i = 0; i < d.cards.length; i += size) parts.push(d.cards.slice(i, i + size));
+  if (parts.length < 2) return null;
+  const made = parts.map((cards, i) => ({
+    id: uid(), name: d.name + ' · ' + (i + 1), subject: d.subject,
+    hidden: !!d.hidden, pinned: false, pos: (-Date.now() / 1000 | 0) + i,
+    meta: { ...(d.meta || {}) }, cards: copyCards(cards)
+  }));
+  pushUndo('Scission', [d.id, ...made.map(x => x.id)]);
+  db.decks = db.decks.filter(x => x.id !== d.id);
+  delete dirty[d.id]; gone.push(d.id);
+  db.decks.unshift(...made);
+  made.forEach(x => dirty[x.id] = 1);
+  save(); flush();
+  return made;
+}
+
 function importPayload(p) {
   let last = null;
   for (const k of (Array.isArray(p) ? p : [p])) {
@@ -734,13 +840,15 @@ function importPayload(p) {
 
 /* ---------- toast ---------- */
 let tt;
-function toast(icon, text) {
+function toast(icon, text, undo) {
   clearTimeout(tt); document.querySelectorAll('.toast').forEach(n => n.remove());
   const n = document.createElement('div'); n.className = 'toast';
-  n.innerHTML = svg(icon) + (text ? `<span>${esc(text)}</span>` : '');
+  n.innerHTML = svg(icon) + (text ? `<span>${esc(text)}</span>` : '')
+    + (undo ? `<button class="tun">${svg(I.redo)}Annuler</button>` : '');
+  if (undo) n.querySelector('.tun').onclick = () => { n.remove(); doUndo(); };
   /* sans barre d'onglets (réglages, révision, quiz) le toast descend d'autant */
   if (!document.querySelector('.tabs')) n.style.bottom = 'calc(22px + env(safe-area-inset-bottom))';
-  document.body.appendChild(n); tt = setTimeout(() => n.remove(), 1600);
+  document.body.appendChild(n); tt = setTimeout(() => n.remove(), undo ? 5200 : 1600);
 }
 
 /* ---------- rendu ---------- */
@@ -752,7 +860,7 @@ let animate = true;
    carte qu'on suspend) pour qu'aucun élément ne rejoue son apparition. */
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome,
-              run: quizView, login: loginView, settings: settingsView };
+              run: quizView, login: loginView, settings: settingsView, trash: trashView };
   $.classList.remove('fade');
   if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
   (v[view.name] || home)();
@@ -1148,6 +1256,8 @@ function settingsView() {
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
           <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="trash">${svg(I.trash)}<span class="n">Corbeille</span>
+          <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat warn" data-act="logout">${svg(I.exit)}<span class="n">Se déconnecter</span></button>
         <button class="sr flat warn" data-act="delacc">${svg(I.trash)}<span class="n">Supprimer le compte</span></button>
       </div>
@@ -1166,6 +1276,77 @@ function settingsView() {
     const b = e.target.closest('[data-ord]'); if (!b) return;
     prefs.order = b.dataset.ord; savePrefs(); render();
   });
+}
+
+/* ---------- corbeille ----------
+   Supprimer un paquet le marque d'une date au lieu de l'effacer. Il reste
+   là trente jours, restaurable en un geste ; passé ce délai il part pour
+   de bon, purgé à l'ouverture de la corbeille — personne n'a à y penser. */
+const KEEP = 30;
+const leftFor = iso => Math.max(0, KEEP - Math.floor((Date.now() - Date.parse(iso)) / DAY));
+
+async function trashPull() {
+  const cut = new Date(Date.now() - KEEP * DAY).toISOString();
+  try {
+    /* purge d'abord : ce qui s'affiche ensuite est exactement ce qui reste */
+    await api(`/rest/v1/decks?deleted_at=lt.${cut}`, 'DELETE', null, { Prefer: 'return=minimal' });
+    const rows = await api('/rest/v1/decks?select=id,name,subject,cards,deleted_at'
+      + '&deleted_at=not.is.null&order=deleted_at.desc');
+    trash.list = (rows || []).map(x => ({
+      id: x.id, name: x.name, subject: x.subject,
+      cards: (x.cards || []).length, at: x.deleted_at
+    }));
+    trash.n = trash.list.length; trash.err = 0;
+  } catch (e) { trash.err = 1; }
+  if (view.name === 'trash') render();
+}
+
+function trashView() {
+  const l = trash.list;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="settings">${svg(I.back)}</button></div>
+    <div class="page">
+      <div class="top"><div class="hero">Corbeille</div></div>
+      <div class="note">Un paquet supprimé reste ici ${KEEP} jours, avec toutes ses cartes
+        et leur progression. Passé ce délai il part pour de bon.</div>
+      ${!l ? `<div class="empty">${svg(I.clock)}<p>${trash.err ? 'Corbeille indisponible' : 'Chargement…'}</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.trash)}<p>La corbeille est vide</p></div>`
+        : `<div class="slist">${l.map(t => {
+            const s = subj(t.subject), d = leftFor(t.at);
+            return `<div class="sr flat col trr" style="${sty(s)}">
+              <div class="srh"><i class="tri"></i><span class="n">${esc(t.name)}</span>
+                <span class="c">${t.cards} carte${t.cards > 1 ? 's' : ''}</span></div>
+              <div class="trf">
+                <span class="trd ${d <= 3 ? 'soon' : ''}">${d
+                  ? 'Encore ' + d + ' jour' + (d > 1 ? 's' : '') : 'Part aujourd’hui'}</span>
+                <button class="trb" data-trr="${t.id}">${svg(I.redo)}Restaurer</button>
+                <button class="trb warn" data-trd="${t.id}">${svg(I.trash)}Supprimer</button>
+              </div></div>`;
+          }).join('')}</div>`}
+    </div>`;
+}
+
+async function trashRestore(id) {
+  const t = trash.list && trash.list.find(x => x.id === id); if (!t) return;
+  trash.list = trash.list.filter(x => x.id !== id); trash.n = trash.list.length;
+  render();
+  try {
+    await api(`/rest/v1/decks?id=eq.${encodeURIComponent(id)}`, 'PATCH',
+      { deleted_at: null }, { Prefer: 'return=minimal' });
+    await pull(); save();
+    if (view.name === 'trash') render();
+    toast(I.check, 'Paquet restauré');
+  } catch (e) { trash.list = null; trashPull(); toast(I.x, "Restauration impossible"); }
+}
+
+async function trashPurge(id) {
+  trash.list = trash.list.filter(x => x.id !== id); trash.n = trash.list.length;
+  render();
+  try {
+    await api(`/rest/v1/decks?id=eq.${encodeURIComponent(id)}`, 'DELETE', null,
+      { Prefer: 'return=minimal' });
+    toast(I.trash, 'Supprimé définitivement');
+  } catch (e) { trash.list = null; trashPull(); toast(I.x, "Suppression impossible"); }
 }
 
 /* ---------- menu contextuel ---------- */
@@ -1333,6 +1514,58 @@ function paintMenu() {
     document.body.append(...w.childNodes);
     return;
   }
+  if (menu === 'merge') {
+    const d = deck(view.id); if (!d) { menu = null; return; }
+    const others = db.decks.filter(x => x.id !== d.id);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.link)}Fusionner « ${esc(d.name)} » avec</div>
+        <div class="note">Les cartes du paquet choisi viennent rejoindre celui-ci. Le paquet
+          choisi part à la corbeille, d’où il reste récupérable. Les cartes déjà
+          présentes des deux côtés ne sont pas recopiées.</div>
+        <div class="mscroll">${others.map(x => `<button class="mi" data-merge="${x.id}">
+          <i class="tri" style="--c:${subj(x.subject).c}"></i>${esc(x.name)}
+          <span class="tail">${x.cards.length}</span></button>`).join('')}</div>
+      </div>`;
+    document.body.append(...w.childNodes);
+    return;
+  }
+  if (menu === 'split') {
+    const d = deck(view.id); if (!d) { menu = null; return; }
+    const n = d.cards.length;
+    const size = Math.min(Math.max(2, splitSize), n - 1);
+    const parts = Math.ceil(n / size), last = n - size * (parts - 1);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.split)}Scinder « ${esc(d.name)} »</div>
+        <div class="mrow col"><span class="ml">${svg(I.card)}Cartes par paquet
+          <b class="tail">${size}</b></span>
+          <input class="rng" id="spSize" type="range" min="2" max="${n - 1}" step="1" value="${size}">
+        </div>
+        <div class="note">${n} cartes → <b>${parts} paquets</b> de ${size}${
+          last !== size ? `, le dernier de ${last}` : ''}. Elles gardent leur ordre
+          et leur progression. L’original part à la corbeille, récupérable.</div>
+        <button class="mi" data-mact="dosplit" style="justify-content:center;font-weight:700">
+          ${svg(I.check)}Scinder en ${parts}</button>
+      </div>`;
+    document.body.append(...w.childNodes);
+    /* on retouche les libellés au lieu de reconstruire le menu : redessiner
+       pendant le glissé arracherait le curseur des doigts */
+    const r = document.getElementById('spSize');
+    const lab = r.closest('.mrow').querySelector('b');
+    const note = r.closest('.menu').querySelector('.note');
+    const btn = r.closest('.menu').querySelector('[data-mact="dosplit"] ');
+    r.addEventListener('input', () => {
+      splitSize = +r.value;
+      const p = Math.ceil(n / splitSize), lastN = n - splitSize * (p - 1);
+      lab.textContent = splitSize;
+      note.innerHTML = `${n} cartes → <b>${p} paquets</b> de ${splitSize}${
+        lastN !== splitSize ? `, le dernier de ${lastN}` : ''}. Elles gardent leur ordre
+        et leur progression. L’original part à la corbeille, récupérable.`;
+      btn.lastChild.textContent = 'Scinder en ' + p;
+    });
+    return;
+  }
   if (menu === 'rename' || menu === 'pwd' || menu === 'delacc') {
     const conf = {
       rename: ['Nom affiché', I.user, 'text', 'Comment on t’appelle', prefs.name || '', 'Enregistrer'],
@@ -1368,6 +1601,10 @@ function paintMenu() {
       <button class="mi" data-mact="match">${svg(I.link)}Association</button>
       <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du paquet</button>
       ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
+      <div class="msep"></div>
+      <button class="mi" data-mact="clone">${svg(I.copy)}Dupliquer</button>
+      ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
+      ${d.cards.length > 3 ? `<button class="mi" data-mact="splitopen">${svg(I.split)}Scinder<span class="tail">${d.cards.length}</span></button>` : ''}
       <button class="mi" data-mact="share">${svg(I.share)}Partager</button>
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
@@ -1375,10 +1612,17 @@ function paintMenu() {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
+  if (b.dataset.merge !== undefined) {
+    const src = deck(b.dataset.merge); if (!src || !d) return;
+    const r = mergeDecks(d, src);
+    closeMenu(); render();
+    return toast(I.link, r.added + ' carte' + (r.added > 1 ? 's' : '') + ' ajoutée'
+      + (r.added > 1 ? 's' : '') + (r.skipped ? ' · ' + r.skipped + ' en double ignorée' + (r.skipped > 1 ? 's' : '') : ''), true);
+  }
   /* réglages propres au paquet, dans leur feuille */
   if (b.dataset.tol) { setMeta(d, { tol: b.dataset.tol }); return paintMenu(); }
   if (b.dataset.lgf !== undefined) { setMeta(d, { langf: b.dataset.lgf }); return paintMenu(); }
@@ -1506,6 +1750,19 @@ document.addEventListener('click', async e => {
     return;
   }
   if (a === 'hide') { d.hidden = !d.hidden; saveDeck(d); closeMenu(); render(); toast(d.hidden ? I.eyeoff : I.eye); return; }
+  if (a === 'clone') {
+    const n = cloneDeck(d); closeMenu(); go('deck', n.id);
+    return toast(I.copy, n.cards.length + ' carte' + (n.cards.length > 1 ? 's' : '') + ' dupliquée' + (n.cards.length > 1 ? 's' : ''), true);
+  }
+  if (a === 'mergeopen') return openMenu('merge');
+  if (a === 'splitopen') { splitSize = Math.min(splitSize, d.cards.length - 1); return openMenu('split'); }
+  if (a === 'dosplit') {
+    const made = splitDeck(d, Math.min(Math.max(2, splitSize), d.cards.length - 1));
+    closeMenu();
+    if (!made) return toast(I.split, 'Rien à scinder');
+    go('home');
+    return toast(I.split, made.length + ' paquets créés', true);
+  }
   if (a === 'share') {
     closeMenu();
     const url = location.origin + location.pathname + '#i=' +
@@ -1517,9 +1774,12 @@ document.addEventListener('click', async e => {
   if (a === 'del') {
     const lab = b.querySelector('span');
     if (b.dataset.arm) {
+      pushUndo(d.name, [d.id]);
       db.decks = db.decks.filter(x => x.id !== d.id);
       delete dirty[d.id]; gone.push(d.id); save(); flush();
-      closeMenu(); return go('home');
+      closeMenu();
+      go('home');
+      return toast(I.trash, 'Paquet dans la corbeille', true);
     }
     b.dataset.arm = 1; b.style.background = 'rgba(196,86,107,.12)'; lab.textContent = 'Confirmer la suppression';
     setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.style.background = ''; lab.textContent = 'Supprimer'; } }, 3000);
@@ -2425,9 +2685,18 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd]');
   if (!b) return;
   const ds = b.dataset;
+  if (ds.trr !== undefined) return trashRestore(ds.trr);
+  if (ds.trd !== undefined) {
+    /* deux temps : la corbeille est le dernier filet, on ne le troue pas
+       sur un doigt qui glisse */
+    if (b.dataset.arm) return trashPurge(ds.trd);
+    b.dataset.arm = 1; b.classList.add('on'); b.lastChild.textContent = 'Confirmer';
+    setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.classList.remove('on'); b.lastChild.textContent = 'Supprimer'; } }, 3000);
+    return;
+  }
   if (ds.dl !== undefined) {
     const i = +ds.dl;
     comp.cards.splice(i, 1);
@@ -2479,6 +2748,7 @@ $.addEventListener('click', e => {
   }
   if (a === 'settings') return go('settings');
   if (a === 'backup2') return openMenu('backup');
+  if (a === 'trash') { trash.list = null; trashPull(); return go('trash'); }
   if (a === 'logout') return logout();
   if (a === 'tglsimple') return openMenu(prefs.simple ? 'engine' : 'simple');
   if (a === 'tglfresh') { prefs.fresh = !prefs.fresh; savePrefs(); return render(); }
@@ -2565,6 +2835,11 @@ $.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && menu) return closeMenu();
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z'
+      && !/INPUT|TEXTAREA/.test(e.target.tagName) && !e.target.isContentEditable) {
+    if (canUndo()) { e.preventDefault(); doUndo(); }
+    return;
+  }
   if (view.name !== 'study' || /INPUT|TEXTAREA/.test(e.target.tagName) || e.target.isContentEditable) return;
   if (!study) return;
   if (study.mode === 'match') return;

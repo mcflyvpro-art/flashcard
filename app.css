@@ -390,6 +390,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .mi.warn{color:var(--ko)} .mi.warn svg{color:var(--ko)}
 .mi .tail{margin-left:auto;font-size:14px;font-weight:700;color:var(--soft)}
 .msep{height:1px;background:var(--hair);margin:5px 16px}
+/* liste de paquets dans une feuille : au-delà de six elle défile toute seule */
+.mscroll{max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.mscroll .tri{margin-right:-2px}
 .tok{width:calc(100% - 14px);margin:2px 7px 4px;padding:15px 16px;border-radius:17px;
   background:var(--surf);font-size:15px;font-weight:600;letter-spacing:.2px}
 .tok::placeholder{color:var(--soft);opacity:.5}
@@ -461,6 +464,13 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   font-weight:700;font-size:15px;z-index:60;box-shadow:var(--s3);
   font-variant-numeric:tabular-nums;animation:tin .45s var(--sp)}
 .toast svg{width:17px;height:17px;stroke-width:2.4}
+/* « Annuler » posé dans le toast : la dernière action reste rattrapable
+   quelques secondes sans quitter l'écran où on l'a faite */
+.tun{display:flex;align-items:center;gap:6px;margin-left:4px;padding:5px 11px 5px 8px;
+  border-radius:11px;background:rgba(255,255,255,.14);color:var(--bg);
+  font-weight:780;font-size:14px;letter-spacing:-.2px}
+.tun:active{background:rgba(255,255,255,.26)}
+.tun svg{width:15px;height:15px}
 @keyframes tin{from{opacity:0;transform:translate(-50%,16px) scale(.88)}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.1s !important}}
 
@@ -724,6 +734,20 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .note{padding:2px 4px 4px;font-size:13px;line-height:1.5;font-weight:520;
   color:var(--soft);letter-spacing:-.05px}
 
+/* ---------- corbeille ---------- */
+.trr{gap:12px}
+.tri{width:9px;height:9px;flex:none;border-radius:50%;background:var(--c)}
+.trf{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.trd{flex:1;min-width:96px;font-size:12.5px;font-weight:650;color:var(--soft)}
+.trd.soon{color:var(--ko)}
+.trb{display:flex;align-items:center;gap:6px;padding:8px 13px;border-radius:12px;
+  background:var(--surf);color:var(--ink);font-weight:730;font-size:13.5px;
+  letter-spacing:-.2px;transition:transform .16s,background .16s}
+.trb svg{width:15px;height:15px;stroke-width:2.2}
+.trb:active{transform:scale(.95)}
+.trb.warn{color:var(--ko)}
+.trb.warn.on{background:rgba(196,86,107,.14)}
+
 /* ---------- génération de cartes ---------- */
 .airow{display:flex;gap:8px;align-items:stretch}
 .airow .cta{width:auto;flex:1;min-width:0}
@@ -829,6 +853,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 /* ══════════ feuilles : lignes de réglage ══════════ */
 .mrow{display:flex;align-items:center;gap:9px;padding:7px 12px}
 .mrow.col{flex-direction:column;align-items:stretch;gap:9px}
+.menu .note{padding:0 18px 10px}
+.menu .note b{font-weight:800;color:var(--ink)}
+.ml .tail{margin-left:auto;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
 .ml{display:flex;align-items:center;gap:9px;flex:1;font-size:14px;font-weight:700;color:var(--soft)}
 .ml svg{width:17px;height:17px;flex:none}
 .mb{width:52px;height:52px;flex:none;border-radius:17px;background:var(--surf);
