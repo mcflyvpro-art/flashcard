@@ -142,6 +142,7 @@ function load() {
   return { subjects: [], decks: [], hist: {} };
 }
 function save() {
+  if (demo) return;                       // la démonstration n'écrase pas le cache du compte
   if (auth) localStorage.setItem(cacheKey(), JSON.stringify({ ...db, prefs, dirty, gone }));
 }
 /* combien de changements attendent leur tour */
@@ -179,6 +180,9 @@ const slugify = n => (n || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
 
 /* ---------- accès à Supabase ---------- */
 async function api(path, method = 'GET', body, extra = {}) {
+  /* Pendant la visite guidée, aucune requête ne part : ni lecture, ni
+     écriture. Le compte de démonstration n'existe que dans cet onglet. */
+  if (demo) return [];
   /* On renouvelle avant d'essuyer un refus plutôt qu'après : un 401 au
      milieu d'un envoi coûte un aller-retour et, sur une requête d'écriture,
      la refaire n'est pas toujours anodin. */
@@ -375,7 +379,7 @@ async function pushDeck(d) {
   return true;
 }
 async function flush() {
-  if (flushing || !auth) return;
+  if (demo || flushing || !auth) return;
   flushing = true;
   try {
     const ids = Object.keys(dirty);
@@ -1281,8 +1285,8 @@ function importPayload(p, fresh) {
    en cache, et le son ne part jamais avant un vrai geste de l'utilisateur
    (iOS refuse d'ouvrir le contexte audio autrement). */
 let actx = null;
-function beep(good) {
-  if (!prefs.sound) return;
+function beep(good, force) {
+  if (!prefs.sound && !force) return;
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
     if (actx.state === 'suspended') actx.resume();
@@ -1891,6 +1895,7 @@ function loginView() {
          dans l'adresse : c'est maintenant qu'il faut le suivre, sinon on
          atterrit sur l'accueil sans savoir ce qu'on venait voir. */
       if (!consumeHash() && !consumeGoto()) go('home');
+      maybeTour();
     } catch (x) {
       const m = String(x.message || '');
       err.textContent = /already|exist|registered/i.test(m) ? 'Cette adresse a déjà un compte'
@@ -2025,6 +2030,8 @@ function settingsView() {
         <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
           <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="shortcuts">${svg(I.spark)}<span class="n">Raccourcis et Siri</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="help">${svg(I.bulb)}<span class="n">Aide</span>
+          <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
       </div>
 
       <div class="lbl"><span>Quitter</span></div>
@@ -3029,7 +3036,7 @@ function paintMenu() {
         `Les échéances. Plus aucune carte n’arrive à date : les pastilles de rappel sur les
          paquets et le marathon toutes matières disparaissent.`,
         `Les quatre boutons <b>Encore · Difficile · Correct · Facile</b> disparaissent. Il ne
-         reste que le balayage : à gauche je sais, à droite je ne sais pas.`,
+         reste que le balayage : à droite je sais, à gauche je ne sais pas.`,
         `Les intervalles n’avancent plus. Une carte revue en mode simple reste exactement à
          l’échelon où elle était — réviser en mode simple ne fait pas progresser le moteur.`,
         `La barre de maturité et les pastilles d’état ne s’affichent plus.`,
@@ -3203,6 +3210,7 @@ function paintMenu() {
     mountMenu(w);
     return;
   }
+  if (menu === 'tuto') return helpSheet(w);
   if (menu === 'help') {
     const h = HELP[helpKey];
     if (!h) { menu = null; return; }
@@ -3485,7 +3493,7 @@ function paintMenu() {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
@@ -3497,6 +3505,7 @@ document.addEventListener('click', async e => {
     return;
   }
   if (b.dataset.vers !== undefined) return versRestore(+b.dataset.vers);
+  if (b.dataset.chap !== undefined) { closeMenu(); return startTour(b.dataset.chap || null); }
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
   if (b.dataset.friend !== undefined) { sendTo = b.dataset.friend; return paintMenu(); }
@@ -4117,7 +4126,7 @@ function answerTF(said) {
   paintFoot();
   if (prefs.fast) {
     pendingGrade = study.tf ? 2 : 0;
-    setTimeout(() => { if (study && study.tf != null) fling(study.tf ? -1 : 1); }, 820);
+    setTimeout(() => { if (study && study.tf != null) fling(study.tf ? 1 : -1); }, 820);
   }
 }
 function paintFoot() {
@@ -4141,7 +4150,7 @@ function paintFoot() {
             <span>${lab}</span><i>${esc(preview(c, r))}</i></button>`).join('')}
       </div>`
     : `<div class="hint">${SWIPE}<span class="keys">
-        <kbd>←</kbd>${svg(I.check)}<kbd>→</kbd>${svg(I.x)}<kbd>espace</kbd>${svg(I.swap)}</span></div>`;
+        <kbd>←</kbd>${svg(I.x)}<kbd>→</kbd>${svg(I.check)}<kbd>espace</kbd>${svg(I.swap)}</span></div>`;
 }
 function toggleFlip() {
   const top = document.getElementById('top'); if (!top) return;
@@ -4159,8 +4168,8 @@ function bindDrag(el) {
     if (!on) return;
     dx = e.clientX - x0; if (Math.abs(dx) > 5) moved = true;
     el.style.transform = `translateX(${dx}px) rotate(${dx / 26}deg)`;
-    ov('y', dx < -20 ? Math.min(1, (-dx - 20) / 70) : 0);
-    ov('n', dx > 20 ? Math.min(1, (dx - 20) / 70) : 0);
+    ov('y', dx > 20 ? Math.min(1, (dx - 20) / 70) : 0);
+    ov('n', dx < -20 ? Math.min(1, (-dx - 20) / 70) : 0);
   });
   const end = () => {
     if (!on) return; on = false; el.style.transition = '';
@@ -4178,7 +4187,9 @@ function fling(dir) {
   el.style.transform = `translateX(${dir * 130}vw) rotate(${dir * 20}deg)`;
   el.style.opacity = 0;
   const g = pendingGrade; pendingGrade = null;
-  setTimeout(() => commit(g != null ? g > 0 : dir < 0, g), 250);
+  /* À droite je sais, à gauche à revoir : le sens des applications de
+     cartes, et celui des deux pastilles qui apparaissent sous le doigt. */
+  setTimeout(() => commit(g != null ? g > 0 : dir > 0, g), 250);
 }
 /* Note une carte et l'inscrit au journal. Partagé par la révision, le QCM et
    l'association : un seul endroit décide de ce qui est écrit dans la carte. */
@@ -4781,8 +4792,8 @@ $.addEventListener('click', e => {
   }
   if (ds.sub !== undefined) return openSubject(ds.sub || null);
   if (ds.go) return go('deck', ds.go);
-  if (ds.a) return fling(ds.a === 'yes' ? -1 : 1);
-  if (ds.g !== undefined) { pendingGrade = +ds.g; return fling(+ds.g > 0 ? -1 : 1); }
+  if (ds.a) return fling(ds.a === 'yes' ? 1 : -1);
+  if (ds.g !== undefined) { pendingGrade = +ds.g; return fling(+ds.g > 0 ? 1 : -1); }
   if (ds.rm) { const d = deck(view.id); d.cards = d.cards.filter(c => c.id !== ds.rm); saveDeck(d); return render(); }
   if (ds.sus) {
     const d = deck(view.id), c = d.cards.find(x => x.id === ds.sus);
@@ -4819,6 +4830,7 @@ $.addEventListener('click', e => {
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (a === 'group') { groupPull(); return go('group'); }
   if (a === 'shortcuts') return openMenu('shortcuts');
+  if (a === 'help') return openMenu('tuto');
   if (a === 'duelnew') return openMenu('duelnew');
   if (a === 'duelquit') { duelRun = null; return go('group'); }
   if (a === 'addshared') {
@@ -4944,7 +4956,7 @@ $.addEventListener('click', e => {
   if (a === 'nextcard') {
     if (!study) return;
     if (study.mode === 'mcq' && study.pick != null) return commit(study.pickOk, study.pickOk ? 2 : 0);
-    if (study.tf != null) { pendingGrade = study.tf ? 2 : 0; return fling(study.tf ? -1 : 1); }
+    if (study.tf != null) { pendingGrade = study.tf ? 2 : 0; return fling(study.tf ? 1 : -1); }
     return;
   }
   if (a === 'redostudy') return startStudy(study.id, study.rev, study.miss.map(m => m.id));
@@ -4994,7 +5006,7 @@ document.addEventListener('keydown', e => {
   }
   if (study.flip && !study.simple && '1234'.includes(e.key)) {
     pendingGrade = +e.key - 1;
-    return fling(pendingGrade > 0 ? -1 : 1);
+    return fling(pendingGrade > 0 ? 1 : -1);
   }
   if (e.key === 'ArrowLeft') fling(-1);
   else if (e.key === 'ArrowRight') fling(1);
@@ -5053,6 +5065,343 @@ function logout() {
   animate = true; render();
 }
 
+/* ══════════ visite guidée ══════════
+   Tout se joue sur un compte de démonstration fabriqué ici même : Léa, ses
+   quatre paquets, sa progression. Les paquets de l'utilisateur ne sont
+   jamais touchés, et pendant la visite rien ne part vers la base — ni
+   écriture, ni lecture. On sauvegarde l'état réel, on le remplace, on le
+   remet à la fin, à l'identique.
+
+   Une étape montre une zone, l'explique en deux phrases, et attend : soit
+   le bouton Suivant, soit le geste dont elle parle. Chaque étape sait se
+   remettre elle-même dans le bon écran, donc rien ne peut se coincer si
+   l'utilisateur prend de l'avance ou appuie sur Suivant trop tôt. */
+
+const DEMOSUBJ = [
+  { id: 'italien', name: 'Italien', color: 'red', pos: 0 },
+  { id: 'droit', name: 'Droit', color: 'pink', pos: 1 },
+  { id: 'anglais', name: 'Anglais', color: 'blue', pos: 2 },
+  { id: 'geo', name: 'Géographie', color: 'green', pos: 3 }
+];
+const DEMOCARDS = {
+  italien: [['la casa', 'la maison'], ['il cane', 'le chien'], ['il gatto', 'le chat'],
+    ['il libro', 'le livre'], ['l’acqua', 'l’eau'], ['il pane', 'le pain'],
+    ['il sole', 'le soleil'], ['la luna', 'la lune'], ['il mare', 'la mer'],
+    ['la città', 'la ville'], ['il vino', 'le vin'], ['la strada', 'la rue']],
+  droit: [['Contrat', 'Accord de volontés créant des obligations'],
+    ['Dol', 'Manœuvre trompeuse qui provoque le consentement'],
+    ['Cause', 'La raison pour laquelle on s’engage'],
+    ['Solidarité', 'Chaque débiteur peut être poursuivi pour le tout'],
+    ['Prescription', 'Extinction d’un droit par l’écoulement du temps'],
+    ['Novation', 'Remplacement d’une obligation par une autre'],
+    ['Subrogation', 'Transfert d’une créance à celui qui a payé'],
+    ['Astreinte', 'Somme due par jour de retard'],
+    ['Résolution', 'Anéantissement rétroactif du contrat'],
+    ['Nullité', 'Sanction d’une condition de formation manquante']],
+  anglais: [['to bring', 'brought'], ['to catch', 'caught'], ['to teach', 'taught'],
+    ['to seek', 'sought'], ['to buy', 'bought'], ['to think', 'thought'],
+    ['to fight', 'fought'], ['to leave', 'left'], ['to feel', 'felt'], ['to keep', 'kept']],
+  geo: [['Portugal', 'Lisbonne'], ['Hongrie', 'Budapest'], ['Norvège', 'Oslo'],
+    ['Croatie', 'Zagreb'], ['Finlande', 'Helsinki'], ['Irlande', 'Dublin'],
+    ['Autriche', 'Vienne'], ['Slovénie', 'Ljubljana']]
+};
+/* Des états variés, sinon les barres de couleur n'ont rien à montrer :
+   quelques cartes dues aujourd'hui, des jeunes, des mûres, une coriace. */
+function demoDeck(id, name, subject, pat) {
+  const now = Date.now();
+  const cards = DEMOCARDS[subject].map(([f, b], i) => {
+    const k = pat[i % pat.length];
+    const c = { id: id + 'c' + i, f, b };
+    if (k === 'new') return c;
+    if (k === 'due') return { ...c, n: 2, i: 3, e: 2.4, d: now - 6 * 3600e3 };
+    if (k === 'learn') return { ...c, n: 1, i: 1, e: 2.3, d: now + 14 * 3600e3 };
+    if (k === 'leech') return { ...c, n: 2, i: 2, e: 1.5, l: 5, d: now - 2 * 3600e3 };
+    if (k === 'young') return { ...c, n: 4, i: 9, e: 2.6, d: now + 5 * DAY };
+    return { ...c, n: 7, i: 42, e: 2.8, d: now + 28 * DAY };
+  });
+  return { id, name, subject, hidden: false, pinned: false, pos: 0, meta: {}, rev: 1, cards };
+}
+function demoDB() {
+  const mid = new Date(); mid.setHours(0, 0, 0, 0);
+  const decks = [
+    demoDeck('dmo1', 'Italien — les bases', 'italien', ['due', 'young', 'due', 'mature', 'learn', 'due']),
+    demoDeck('dmo2', 'Droit civil — définitions', 'droit', ['young', 'due', 'leech', 'mature', 'young']),
+    demoDeck('dmo3', 'Verbes irréguliers', 'anglais', ['mature', 'mature', 'young', 'due', 'mature']),
+    demoDeck('dmo4', 'Capitales d’Europe', 'geo', ['mature', 'mature', 'young', 'mature'])
+  ];
+  decks[0].meta = { langf: 'it-IT', langb: 'fr-FR' };
+  const hist = {};
+  for (const d of decks) hist[d.id + ':quiz'] = [{ t: Date.now() - 3 * DAY, p: .62 }, { t: Date.now() - DAY, p: .81 }];
+  return { subjects: DEMOSUBJ.map(x => ({ ...x })), decks, hist, today: { d: +mid, n: 14 } };
+}
+
+let tour = null, tourSave = null, tourPoll = 0;
+let demo = false;                       // pendant la visite : plus rien ne sort de l'appareil
+
+/* ---------- le fil des chapitres ----------
+   Chaque étape : où aller (go), quoi montrer (sel), quoi dire, et
+   éventuellement le geste qui la fait avancer toute seule (done). */
+const nav = (name, id) => () => { closeMenu(); view = { name, id }; };
+const CHAPTERS = [
+  { id: 'bases', name: 'Tes paquets', icon: 'layers', steps: [
+    { go: nav('home'), title: 'Bienvenue',
+      text: 'Deux minutes pour faire le tour. Tu es sur un compte de démonstration : ' +
+            'rien de ce qui se passe ici ne touche tes paquets.' },
+    { go: nav('home'), sel: '.grid .tile', title: 'Un paquet',
+      text: 'Un jeu de cartes sur un sujet. Le chiffre en haut à droite compte les cartes à revoir aujourd’hui.' },
+    { go: nav('home'), sel: '.grid .tile .tbar', pad: 6, title: 'La barre du paquet',
+      text: 'La part de cartes installées pour de bon — celles qui ne reviendront plus avant trois semaines.' },
+    { go: nav('home'), sel: '.sbar', title: 'L’état de toutes tes cartes',
+      text: 'Orange : en apprentissage. Vert clair : jeunes. Vert foncé : mûres. Elle se remplit à mesure que tu révises.' },
+    { go: nav('home'), sel: '.goal', title: 'Ton objectif du jour',
+      text: 'L’anneau se remplit à chaque carte revue. Tu fixes la cible dans les réglages.' },
+    { go: nav('home'), sel: '.marathon', title: 'Le marathon',
+      text: 'Toutes les cartes dues, tous paquets confondus, dans une seule séance.' },
+    { go: nav('home'), sel: '.grid .tile', pass: 1, tap: 'Touche le paquet',
+      done: () => view.name === 'deck', title: 'Ouvre-le',
+      text: 'Touche « Italien — les bases » pour entrer dedans.' }
+  ] },
+  { id: 'revi', name: 'Réviser', icon: 'play', steps: [
+    { go: nav('deck', 'dmo1'), sel: '.head', title: 'La fiche du paquet',
+      text: 'Matière, nombre de cartes, et combien sont à revoir maintenant.' },
+    { go: nav('deck', 'dmo1'), sel: '.mixwrap', title: 'Le détail',
+      text: 'La même barre, en grand, avec le compte de chaque état et les cartes coriaces — celles que tu rates sans arrêt.' },
+    { go: nav('deck', 'dmo1'), sel: '.duo .prim', pass: 1, tap: 'Touche Réviser',
+      done: () => view.name === 'study', title: 'Lance la séance',
+      text: 'Les cartes arrivent une par une, dans l’ordre choisi.' },
+    { go: () => { if (view.name !== 'study') startStudy('dmo1'); study.flip = false; },
+      sel: '#top', pass: 1, tap: 'Touche la carte',
+      done: () => study && study.flip, title: 'Retourne la carte',
+      text: 'Tu lis le recto, tu cherches, puis tu touches pour voir la réponse.' },
+    { go: () => { if (view.name !== 'study') startStudy('dmo1'); study.flip = false; prefs.simple = true; },
+      sel: '#top', swipe: 1, pass: 1, tap: 'Balaie à droite',
+      done: () => study && study.i > 0, title: 'À droite je sais',
+      text: 'Balaie la carte à droite quand tu sais, à gauche quand c’est à revoir. Les deux pastilles te le rappellent sous le doigt.' },
+    { go: () => { prefs.simple = false; if (view.name !== 'study') startStudy('dmo1'); study.flip = true; },
+      sel: '.grades', title: 'Ou les quatre boutons',
+      text: 'Encore, Difficile, Correct, Facile. Sous chacun, la date du prochain passage : c’est toi qui décides du rythme.' },
+    { go: () => { if (view.name !== 'study') startStudy('dmo1'); }, sel: '.bar', title: 'Pendant la séance',
+      text: 'Inverser le sens de la carte, mélanger, ou passer en mode zen où il ne reste que la carte.' }
+  ] },
+  { id: 'jeux', name: 'Les jeux', icon: 'pen', steps: [
+    { go: nav('deck', 'dmo1'), sel: '[data-act="quizdeck"]', pass: 1, tap: 'Touche Quiz',
+      done: () => view.name === 'run', title: 'Le quiz',
+      text: 'Tu écris la réponse au lieu de la reconnaître. Bien plus exigeant qu’une carte qu’on retourne.' },
+    { go: () => { if (view.name !== 'run' || !quiz) startQuiz('dmo1'); }, sel: '.qcard, .ans, .arow',
+      title: 'Une question',
+      text: 'Tape ta réponse. Les accents et la casse sont tolérés, tu règles la sévérité paquet par paquet.' },
+    { go: nav('deck', 'dmo1'), sel: '[data-act="menu"]', title: 'Les autres jeux',
+      text: 'Dans le menu du paquet : QCM, association, vrai/faux, et les cartes coriaces à part.' }
+  ] },
+  { id: 'creer', name: 'Créer des cartes', icon: 'plus', steps: [
+    { go: nav('home'), sel: '.fab', pass: 1, tap: 'Touche +',
+      done: () => view.name === 'import', title: 'Un nouveau paquet',
+      text: 'Le bouton rond, en bas à droite : nom, matière, puis les cartes.' },
+    { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
+      sel: '#tx', title: 'Coller une liste',
+      text: 'Colle un tableau de vocabulaire ou une liste : les cartes se découpent toutes seules, tabulation, virgule ou tiret.' },
+    { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
+      sel: '.airow', title: 'À partir d’un cours',
+      text: 'Colle ton cours et l’IA en tire des cartes. Une photo de page ou un PDF marchent aussi.' }
+  ] },
+  { id: 'ranger', name: 'Ranger et retrouver', icon: 'search', steps: [
+    { go: nav('deck', 'dmo2'), sel: '.lbl .pick', title: 'Sélectionner',
+      text: 'Coche plusieurs cartes d’un coup pour les déplacer, les suspendre ou les supprimer ensemble.' },
+    { go: nav('deck', 'dmo2'), sel: '.row .grip', pad: 4, title: 'Réordonner',
+      text: 'Attrape la poignée et déplace la carte. Même chose pour les paquets, sur l’accueil.' },
+    { go: nav('home'), sel: '[data-act="find"]', title: 'Chercher partout',
+      text: 'Un mot, et il est cherché dans les noms de paquets comme dans les deux faces de toutes les cartes.' },
+    { go: nav('settings'), sel: '[data-act="trash"]', title: 'Rien ne se perd',
+      text: 'Un paquet supprimé attend trente jours dans la corbeille. Et la dernière action reste annulable.' }
+  ] },
+  { id: 'partage', name: 'Partager et suivre', icon: 'share', steps: [
+    { go: () => { view = { name: 'deck', id: 'dmo1' }; menu = null; }, sel: '[data-act="menu"]',
+      title: 'Partager un paquet',
+      text: 'Depuis le menu du paquet : l’envoyer à un ami, en faire un lien de consultation, ou le publier dans la bibliothèque du groupe.' },
+    { go: () => { groupTab = 'lib'; lib.list = []; view = { name: 'group' }; menu = null; },
+      sel: '#gTabs', title: 'Le groupe',
+      text: 'L’étagère commune, les défis — dix questions, les mêmes pour tout le monde — et le classement de la semaine.' },
+    { go: () => { view = { name: 'mail' }; menu = null; }, sel: '.bar', title: 'Ta boîte',
+      text: 'Les paquets qu’on t’envoie arrivent là, avec un mot. Un geste pour les ajouter aux tiens.' },
+    { go: () => { stats.rows = []; stats.err = 0; view = { name: 'stats' }; menu = null; },
+      sel: '.tiles, .card2', title: 'Tes statistiques',
+      text: 'Cartes revues, taux de réussite, assiduité, rétention. De quoi voir si le rythme tient.' },
+    { go: nav('settings'), sel: '[data-act="help"]', title: 'Et pour revoir tout ça',
+      text: 'Réglages, puis Aide. Chaque chapitre se rejoue tout seul, sans toucher à tes paquets.' }
+  ] }
+];
+
+function tourSteps(chapId) {
+  const list = chapId ? CHAPTERS.filter(c => c.id === chapId) : CHAPTERS;
+  return list.flatMap((c, ci) => c.steps.map(s => ({ ...s, chap: c.name, ci, cn: list.length })));
+}
+
+function startTour(chapId) {
+  if (tour) return;
+  const steps = tourSteps(chapId);
+  if (!steps.length) return;
+  tourSave = { db, prefs, view, study, quiz, filter, peek, groupTab };
+  demo = true;
+  closeMenu(); selOff();
+  db = demoDB();
+  prefs = { ...DEFPREFS, name: 'Léa', goal: 40, sound: true };
+  study = null; quiz = null; filter = ''; peek = false; deckQ = ''; reorder = false;
+  tour = { i: 0, steps };
+  document.body.classList.add('touring');
+  runStep();
+}
+function runStep() {
+  if (!tour) return;
+  const s = tour.steps[tour.i];
+  if (!s) return endTour(true);
+  try { if (s.go) s.go(); } catch (e) {}
+  animate = false; render();
+  /* La cible peut être plus bas que l'écran — l'entrée « Aide » est en
+     fin de réglages. On l'amène au centre avant de mesurer, sinon le halo
+     se pose dans le vide et l'étape ne montre rien. */
+  requestAnimationFrame(() => {
+    const el = s.sel && document.querySelector(s.sel);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      if (r.top < 70 || r.bottom > innerHeight - 70) el.scrollIntoView({ block: 'center' });
+    } else window.scrollTo(0, 0);
+    requestAnimationFrame(paintTour);
+  });
+  clearInterval(tourPoll);
+  tourPoll = setInterval(() => {
+    if (!tour) return clearInterval(tourPoll);
+    paintTour();
+    if (s.done) { try { if (s.done()) nextStep(); } catch (e) {} }
+  }, 140);
+}
+function nextStep() {
+  if (!tour) return;
+  beep(true, true);
+  tour.i++;
+  runStep();
+}
+function endTour(done) {
+  clearInterval(tourPoll); tourPoll = 0;
+  const o = document.getElementById('tour'); if (o) o.remove();
+  document.body.classList.remove('touring');
+  tour = null;
+  const sv = tourSave; tourSave = null;
+  demo = false;
+  if (sv) {
+    db = sv.db; prefs = sv.prefs; view = sv.view; study = sv.study; quiz = sv.quiz;
+    filter = sv.filter; peek = sv.peek; groupTab = sv.groupTab;
+  }
+  closeMenu();
+  if (!prefs.tuto) { prefs.tuto = 1; savePrefs(); }
+  animate = true; render();
+  if (done) toast(I.check, 'Visite terminée');
+}
+
+/* ---------- l'habillage ----------
+   Un halo qui se déplace d'une zone à l'autre plutôt que d'apparaître et
+   disparaître : l'œil suit le mouvement et sait d'où il vient. Le reste de
+   l'écran s'assombrit par l'ombre portée de ce même halo — un seul élément
+   à animer, donc rien ne saccade. */
+function paintTour() {
+  if (!tour) return;
+  const s = tour.steps[tour.i];
+  let o = document.getElementById('tour');
+  if (!o) {
+    o = document.createElement('div');
+    o.id = 'tour'; o.className = 'tour';
+    o.innerHTML = '<i class="tspot"></i><i class="tring"></i>' +
+      '<i class="tblk t" data-t="1"></i><i class="tblk r" data-t="1"></i>' +
+      '<i class="tblk b" data-t="1"></i><i class="tblk l" data-t="1"></i>' +
+      '<i class="tblk h" data-t="1"></i><div class="tbub"></div>';
+    document.body.appendChild(o);
+    o.addEventListener('click', e => {
+      const b = e.target.closest('[data-tour]');
+      if (!b) return;
+      e.stopPropagation();
+      if (b.dataset.tour === 'next') nextStep();
+      else endTour(false);
+    });
+  }
+  const el = s.sel ? document.querySelector(s.sel) : null;
+  const r = el && el.getBoundingClientRect();
+  const W = innerWidth, H = innerHeight;
+  const spot = o.querySelector('.tspot'), ring = o.querySelector('.tring');
+  let box;
+  if (r && r.width > 2 && r.height > 2 && r.bottom > 0 && r.top < H) {
+    const p = s.pad == null ? 9 : s.pad;
+    box = { x: Math.max(4, r.left - p), y: Math.max(4, r.top - p),
+            w: Math.min(W - 8, r.width + p * 2), h: r.height + p * 2 };
+    spot.style.opacity = 1; ring.style.opacity = 1;
+  } else {
+    /* pas de cible : le voile couvre tout, le halo se réduit au centre */
+    box = { x: W / 2, y: H / 2, w: 0, h: 0 };
+    spot.style.opacity = 1; ring.style.opacity = 0;
+  }
+  for (const n of [spot, ring]) {
+    n.style.left = box.x + 'px'; n.style.top = box.y + 'px';
+    n.style.width = box.w + 'px'; n.style.height = box.h + 'px';
+  }
+  /* les quatre volets bloquent tout sauf la zone montrée ; le cinquième
+     ferme le trou quand l'étape n'attend aucun geste */
+  const set = (k, x, y, w, h) => { const n = o.querySelector('.tblk.' + k);
+    n.style.left = x + 'px'; n.style.top = y + 'px';
+    n.style.width = Math.max(0, w) + 'px'; n.style.height = Math.max(0, h) + 'px'; };
+  set('t', 0, 0, W, box.y);
+  set('b', 0, box.y + box.h, W, H - box.y - box.h);
+  set('l', 0, box.y, box.x, box.h);
+  set('r', box.x + box.w, box.y, W - box.x - box.w, box.h);
+  set('h', box.x, box.y, s.pass ? 0 : box.w, s.pass ? 0 : box.h);
+
+  const bub = o.querySelector('.tbub');
+  const last = tour.i === tour.steps.length - 1;
+  const pct = Math.round((tour.i + 1) / tour.steps.length * 100);
+  const html = `<i class="tprog"><b style="width:${pct}%"></b></i>
+    <i class="tchap">${esc(s.chap)} · ${tour.i + 1}/${tour.steps.length}</i>
+    <b>${esc(s.title)}</b><p>${esc(s.text)}</p>
+    ${s.swipe ? '<i class="tswipe">' + SWIPE + '</i>' : ''}
+    <div class="tnav">
+      ${s.tap ? `<i class="ttap">${svg(I.pick)}${esc(s.tap)}</i>` : ''}<i></i>
+      <button class="tskip" data-tour="skip">Passer</button>
+      <button class="tnext" data-tour="next">${last ? 'Terminer' : 'Suivant'}${svg(I.arrow)}</button>
+    </div>`;
+  if (bub.dataset.k !== String(tour.i)) { bub.dataset.k = String(tour.i); bub.innerHTML = html; }
+  /* la bulle se met du côté où il reste de la place */
+  const bh = bub.offsetHeight || 190;
+  const below = box.y + box.h + 14;
+  const above = box.y - bh - 14;
+  /* sous la zone si ça tient, sinon au-dessus, sinon collée en bas : une
+     carte de révision occupe presque tout l'écran et ne laisse le choix
+     qu'entre recouvrir un peu ou sortir de l'écran */
+  const top = (!r || box.h === 0) ? Math.round((H - bh) / 2)
+    : below + bh < H - 12 ? below
+    : above > 12 ? above
+    : H - bh - 14;
+  bub.style.top = top + 'px';
+}
+
+/* ---------- l'aide, chapitre par chapitre ---------- */
+function helpSheet(w) {
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">
+      <div class="mhd">${svg(I.bulb)}<span class="mhx"><b>Aide</b>
+        <i>rejouée sur un compte de démonstration, jamais sur tes paquets</i></span></div>
+      <button class="mi" data-chap="" style="font-weight:700">${svg(I.play)}Revoir toute la visite
+        <span class="tail">${CHAPTERS.reduce((a, c) => a + c.steps.length, 0)} étapes</span></button>
+      <div class="msep"></div>
+      <div class="mscroll">${CHAPTERS.map(c => `<button class="mi" data-chap="${c.id}">
+        ${svg(I[c.icon] || I.bulb)}${esc(c.name)}<span class="tail">${c.steps.length}</span></button>`).join('')}</div>
+    </div>`;
+  mountMenu(w);
+}
+
+/* Premier lancement d'un compte : la visite part toute seule. Elle ne
+   coupe jamais un lien de partage ou un raccourci en train de s'ouvrir —
+   on est venu pour autre chose, ce serait la pire des interruptions. */
+function maybeTour() {
+  if (prefs.tuto || tour || location.hash || location.search.includes('go=')) return;
+  setTimeout(() => { if (!tour && !prefs.tuto) startTour(); }, 600);
+}
+
 /* ---------- démarrage ---------- */
 async function boot() {
   if (!auth) { view = { name: 'login' }; return render(); }
@@ -5067,6 +5416,7 @@ async function boot() {
     setOnline(true);
     if (!(shortcut && consumeGoto())) render();
     flush();
+    maybeTour();
   } catch (e) {
     if (/JWT|session|401/i.test(String(e.message || e))) { saveAuth(null); view = { name: 'login' }; render(); }
     else setOnline(false);

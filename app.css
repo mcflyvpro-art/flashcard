@@ -1254,3 +1254,60 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .srw > .sr{width:100%}
 .srw > .hq{position:absolute;top:50%;right:66px;transform:translateY(-50%);z-index:2}
 .srw > .sr .n{padding-right:26px}
+
+/* ══════════ visite guidée ══════════
+   Un seul halo se déplace d'une zone à l'autre ; c'est son ombre portée,
+   démesurée, qui assombrit tout le reste. Une seule chose à animer, donc
+   le mouvement reste net même sur un vieux téléphone. */
+.tour{position:fixed;inset:0;z-index:70;pointer-events:none}
+.tspot{position:absolute;border-radius:20px;pointer-events:none;
+  box-shadow:0 0 0 9999px rgba(22,19,24,.66);
+  transition:left .5s var(--e),top .5s var(--e),width .5s var(--e),
+             height .5s var(--e),opacity .3s}
+.tring{position:absolute;border-radius:20px;pointer-events:none;
+  box-shadow:0 0 0 2px rgba(255,255,255,.92),0 0 26px 4px rgba(255,255,255,.28);
+  transition:left .5s var(--e),top .5s var(--e),width .5s var(--e),
+             height .5s var(--e),opacity .3s;
+  animation:tpulse 2.2s ease-in-out infinite}
+@keyframes tpulse{50%{box-shadow:0 0 0 4px rgba(255,255,255,.5),0 0 34px 8px rgba(255,255,255,.16)}}
+/* volets de blocage : tout est inerte sauf, si l'étape attend un geste,
+   la zone montrée */
+.tblk{position:absolute;pointer-events:auto}
+.tbub{position:absolute;left:14px;right:14px;pointer-events:auto;
+  background:var(--card);border-radius:24px;padding:16px 18px 14px;
+  box-shadow:var(--s3);animation:tbin .45s var(--sp) both;
+  transition:top .5s var(--e)}
+@keyframes tbin{from{opacity:0;transform:translateY(14px) scale(.97)}}
+.tprog{display:block;height:3px;border-radius:3px;background:var(--surf);overflow:hidden;
+  margin:0 0 12px}
+.tprog b{display:block;height:100%;border-radius:3px;background:var(--ink);
+  transition:width .5s var(--e)}
+.tchap{display:block;font-style:normal;font-size:11.5px;font-weight:800;
+  letter-spacing:.5px;text-transform:uppercase;color:var(--soft)}
+.tbub b:not(.tprog b){display:block;font-size:19px;font-weight:800;letter-spacing:-.5px;
+  margin:5px 0 6px}
+.tbub p{margin:0;font-size:15px;font-weight:550;line-height:1.5;color:var(--ink2)}
+.tswipe{display:block;margin:12px auto 0;width:96px;color:var(--soft);opacity:.7}
+.tswipe svg{width:96px;height:32px;animation:tsw 1.8s var(--e) infinite}
+@keyframes tsw{0%,100%{transform:translateX(-8px)}50%{transform:translateX(8px)}}
+.tnav{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
+/* le geste attendu passe sur sa propre ligne, au-dessus des boutons :
+   sur un écran étroit il se coupait en deux au milieu du mot */
+.ttap{flex:1 0 100%;order:-1;display:flex;align-items:center;gap:6px;font-style:normal;
+  font-size:13.5px;font-weight:750;color:var(--ok);margin-bottom:-2px}
+.ttap svg{width:15px;height:15px;flex:none}
+.tnav > i:empty{flex:1;order:0}
+.tskip{flex:none;height:42px;padding:0 14px;border-radius:14px;color:var(--soft);
+  font-weight:700;font-size:14.5px}
+.tnext{flex:none;display:flex;align-items:center;gap:7px;height:42px;padding:0 16px;
+  border-radius:15px;background:var(--ink);color:var(--bg);font-weight:750;font-size:15px;
+  transition:transform .25s var(--sp)}
+.tnext:active{transform:scale(.94)}
+.tnext svg{width:16px;height:16px;stroke-width:2.4}
+/* pendant la visite, rien d'autre ne doit attirer l'œil ni le doigt */
+/* le bouton rond fait partie de la visite : c'est le message passager,
+   lui, qui n'a rien à y faire */
+body.touring .toast{display:none}
+@media (min-width:900px){
+  .tbub{left:auto;right:34px;width:360px}
+}
