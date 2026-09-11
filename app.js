@@ -1944,7 +1944,7 @@ function loginView() {
       /* Un lien de partage ouvert alors qu'on n'était pas connecté attend
          dans l'adresse : c'est maintenant qu'il faut le suivre, sinon on
          atterrit sur l'accueil sans savoir ce qu'on venait voir. */
-      if (!consumeHash()) go('home');
+      if (!consumeHash() && !consumeGoto()) go('home');
     } catch (x) {
       const m = String(x.message || '');
       err.textContent = /already|exist|registered/i.test(m) ? 'Cette adresse a déjà un compte'
@@ -2047,6 +2047,7 @@ function settingsView() {
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Statistiques</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="shortcuts">${svg(I.spark)}<span class="n">Raccourcis et Siri</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="group">${svg(I.trophy)}<span class="n">Le groupe</span>
           <span class="c">bibliothèque, défis</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
@@ -3241,6 +3242,32 @@ function paintMenu() {
     mountMenu(w);
     return;
   }
+  if (menu === 'shortcuts') {
+    const base = location.origin + location.pathname;
+    const L = [['study', 'Réviser maintenant', 'les cartes du jour, tous paquets confondus'],
+               ['quiz', 'Quiz', 'l’écran des quiz'],
+               ['new', 'Nouveau paquet', 'la création d’un paquet'],
+               ['mail', 'Boîte de réception', 'les paquets reçus'],
+               ['group', 'Le groupe', 'bibliothèque, défis, classement']];
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.spark)}
+          <span class="mhx"><b>Raccourcis et Siri</b>
+            <i>ouvrir l’app à un endroit précis</i></span></div>
+        <div class="note">Sur Android, un appui long sur l’icône affiche déjà ces raccourcis.
+          Sur iPhone, ils passent par l’app <b>Raccourcis</b> : Nouveau raccourci →
+          <b>Ouvrir l’URL</b> → colle l’adresse → <b>Ajouter à Siri</b>, et choisis la phrase.</div>
+        <div class="mscroll">${L.map(([k, n, d]) => `
+          <button class="mi" data-copy="${base}?go=${k}">${svg(I.link)}
+            <span class="ml2"><span class="n">${n}</span><span class="sub">ouvre ${d}</span></span>
+            ${svg(I.copy)}</button>`).join('')}</div>
+        <div class="note">Chaque adresse ouvre l’app puis l’écran voulu. Le raccourci de
+          révision n’ouvre une séance que s’il y a des cartes dues ; sinon il reste
+          sur l’accueil et le dit.</div>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
   if (menu === 'vers') {
     const d = deck(view.id); if (!d) { menu = null; return; }
     const l = vers.list;
@@ -3494,10 +3521,17 @@ function paintMenu() {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
+  if (b.dataset.copy !== undefined) {
+    const url = b.dataset.copy;
+    if (navigator.share) navigator.share({ url }).catch(() => {});
+    else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Adresse copiée'),
+                                                 () => toast(I.x, 'Copie impossible'));
+    return;
+  }
   if (b.dataset.vers !== undefined) return versRestore(+b.dataset.vers);
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
@@ -4836,6 +4870,7 @@ $.addEventListener('click', e => {
   }
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (a === 'group') { groupPull(); return go('group'); }
+  if (a === 'shortcuts') return openMenu('shortcuts');
   if (a === 'duelnew') return openMenu('duelnew');
   if (a === 'duelquit') { duelRun = null; return go('group'); }
   if (a === 'addshared') {
@@ -5018,6 +5053,30 @@ document.addEventListener('keydown', e => {
   else if (e.key === ' ') { e.preventDefault(); toggleFlip(); }
 });
 
+/* ---------- raccourcis d'ouverture ----------
+   « ?go=… » ouvre l'app à un endroit précis. Android et les navigateurs de
+   bureau s'en servent pour le menu long appui sur l'icône, déclaré dans le
+   manifeste. iOS ne lit pas ces raccourcis-là, mais l'app Raccourcis sait
+   ouvrir une adresse : c'est le même chemin, et c'est ce qui permet de
+   dire « Dis Siri, révision ». Le paramètre est retiré aussitôt pour que
+   recharger la page ne rejoue pas l'action. */
+const GOTO = {
+  study: () => { if (!allDue()) { go('home'); return toast(I.check, 'Rien à revoir pour l’instant'); }
+                 startStudy('all', false, null, { only: 'due', both: prefs.both }); },
+  quiz: () => go('quiz'),
+  new: () => { resetComp(); go('import'); },
+  mail: () => { mailbox.list = null; mailPull(); go('mail'); },
+  group: () => { groupPull(); go('group'); },
+  stats: () => { stats.rows = null; statsPull(); go('stats'); }
+};
+function consumeGoto() {
+  const q = new URLSearchParams(location.search).get('go');
+  if (!q || !GOTO[q]) return false;
+  history.replaceState(null, '', location.pathname + location.hash);
+  try { GOTO[q](); } catch (e) { go('home'); }
+  return true;
+}
+
 /* ---------- lien d'injection ---------- */
 function consumeHash() {
   if (location.hash.startsWith('#s=')) {
@@ -5052,11 +5111,14 @@ async function boot() {
   if (!auth) { view = { name: 'login' }; return render(); }
   db = load();
   if (!consumeHash()) render();          // le cache s'affiche tout de suite
+  /* le raccourci attend d'avoir les paquets : « réviser » ne veut rien
+     dire tant qu'on ne sait pas ce qui est dû */
+  const shortcut = new URLSearchParams(location.search).get('go');
   try {
     if (auth.exp && Date.now() > auth.exp - 60000 && !(await refreshToken())) throw new Error('session');
     await pull();
     setOnline(true);
-    render();
+    if (!(shortcut && consumeGoto())) render();
     flush();
   } catch (e) {
     if (/JWT|session|401/i.test(String(e.message || e))) { saveAuth(null); view = { name: 'login' }; render(); }

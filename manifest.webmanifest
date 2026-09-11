@@ -40,5 +40,55 @@
       "type": "image/png",
       "form_factor": "narrow"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Réviser maintenant",
+      "short_name": "Réviser",
+      "description": "Ouvre directement les cartes du jour, tous paquets confondus.",
+      "url": "./?go=study",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Quiz",
+      "short_name": "Quiz",
+      "description": "Ouvre l’écran des quiz.",
+      "url": "./?go=quiz",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Nouveau paquet",
+      "short_name": "Nouveau",
+      "description": "Crée un paquet et ouvre sa première carte.",
+      "url": "./?go=new",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Boîte de réception",
+      "short_name": "Boîte",
+      "description": "Les paquets reçus des autres comptes.",
+      "url": "./?go=mail",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }
