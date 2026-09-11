@@ -852,6 +852,18 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   padding:4px 9px;border-radius:9px;color:var(--ci);
   background:rgba(255,255,255,.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
 
+/* ══════════ repère de matière (marathon) ══════════
+   En marathon les cartes viennent de partout : un petit rectangle en bas
+   à gauche dit d'où vient celle qu'on a sous les yeux. Il se pose sur la
+   carte, hors du retourneur, donc il ne bascule pas avec elle et reste
+   lisible des deux côtés. Volontairement discret : la couleur de la
+   matière est déjà portée par la carte entière. */
+.sbj{position:absolute;left:16px;bottom:16px;z-index:2;pointer-events:none;
+  display:flex;align-items:center;gap:6px;padding:5px 10px 5px 8px;border-radius:9px;
+  font-size:11.5px;font-weight:750;letter-spacing:.2px;color:var(--ci);
+  background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
+.sbj i{width:7px;height:7px;border-radius:2.5px;background:var(--ci);opacity:.75}
+
 /* ══════════ vrai / faux ══════════ */
 .card.tf .face .tx{font-size:clamp(20px,5.2vw,31px);font-weight:750;letter-spacing:-.5px}
 .tfb{display:flex;gap:10px;margin-top:4px}

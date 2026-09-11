@@ -2217,8 +2217,10 @@ function startStudy(id, rev, subset, opt) {
     const keep = new Set(subset);
     ids = cards.filter(c => keep.has(c.id)).map(c => c.id);
   } else {
+    /* un ordre demandé par l'appelant (le bouton mélanger) l'emporte sur
+       la préférence, dans les deux modes */
     ids = buildQueue(cards, sm
-      ? { order: prefs.order === 'due' ? 'random' : prefs.order, cap: 0,
+      ? { order: o.order || (prefs.order === 'due' ? 'random' : prefs.order), cap: 0,
           fresh: prefs.fresh, only: o.only === 'leech' ? 'leech' : '' }
       : { ...o, order: o.order || prefs.order, fresh: prefs.fresh }).map(c => c.id);
   }
@@ -2381,6 +2383,18 @@ function studyView() {
 }
 const pct = () => study.total ? Math.round(study.ok / study.total * 100) : 0;
 const cardOf = n => findCard(study.queue[study.i + n])[0];
+
+/* ---------- d'où vient la carte affichée ----------
+   En marathon les cartes viennent de paquets différents : la matière, sa
+   couleur et les langues des deux faces appartiennent au paquet de la
+   carte en cours, pas à la session. Hors marathon, tout le paquet partage
+   les mêmes, et on garde ce qui a été figé au démarrage. */
+function cardOrigin(c) {
+  if (!c || study.id !== 'all') return { langf: study.langf, langb: study.langb, subj: null };
+  const [, d] = findCard(c.id);
+  const m = d ? metaOf(d) : DEFMETA;
+  return { langf: m.langf, langb: m.langb, subj: d ? subj(d.subject) : null };
+}
 /* Une face : image, texte mis en forme, bouton de son. Le bouton lit
    l'enregistrement de la carte s'il y en a un, sinon fait parler le
    navigateur quand le paquet déclare une langue. */
@@ -2414,12 +2428,16 @@ function paintStack() {
   const front = rv ? c.b : c.f, back = rv ? c.f : c.b;
   const fimg = rv ? c.bi : c.fi, bimg = rv ? c.fi : c.bi;
   const faud = rv ? c.ba : c.fa, baud = rv ? c.fa : c.ba;
-  const frontLang = rv ? study.langb : study.langf, backLang = rv ? study.langf : study.langb;
+  const org = cardOrigin(c);
+  const frontLang = rv ? org.langb : org.langf, backLang = rv ? org.langf : org.langb;
+  /* la pile prend la couleur de la matière de la carte, carte après carte */
+  if (org.subj) st.setAttribute('style', sty(org.subj));
   st.innerHTML = `<div class="card in${tf ? ' tf' : ''}" id="top">
       <div class="flipper">
         ${faceHtml(false, front, fimg, faud, frontLang)}
         ${faceHtml(true, back, bimg, baud, backLang)}
       </div>
+      ${org.subj ? `<div class="sbj"><i></i>${esc(org.subj.name)}</div>` : ''}
       ${(c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
         `<i>${esc(t)}</i>`).join('')}</div>` : ''}
       <div class="ov y">${svg(I.check)}</div>
@@ -2445,7 +2463,7 @@ function paintMCQ() {
   }
   st.innerHTML = `${c.fi ? `<img class="fim" src="${esc(c.fi)}" alt="">` : ''}
     <span>${rt(c.f)}</span>
-    ${(c.fa || (study.langf && TTS)) ? `<button class="snd" data-snd="f">${svg(I.sound)}</button>` : ''}`;
+    ${(c.fa || (cardOrigin(c).langf && TTS)) ? `<button class="snd" data-snd="f">${svg(I.sound)}</button>` : ''}`;
   const good = norm(plain(c.b));
   f.innerHTML = `<div class="opts">${study.opts.map((o, k) => {
     const right = norm(plain(o)) === good;
@@ -3206,7 +3224,8 @@ $.addEventListener('click', e => {
     const rv = !tf && (study.dirs ? study.dirs[c.id] : study.rev);
     const useBack = bk !== !!rv;
     const aud = useBack ? c.ba : c.fa, txt = useBack ? c.b : c.f;
-    if (aud) play(aud); else say(txt, useBack ? study.langb : study.langf);
+    const org = cardOrigin(c);                 // en marathon, la langue du paquet d'origine
+    if (aud) play(aud); else say(txt, useBack ? org.langb : org.langf);
     return;
   }
   if (a === 'home' || a === 'tab-home') return go('home');
@@ -3270,8 +3289,17 @@ $.addEventListener('click', e => {
   if (a === 'studyall') { closeMenu(); return startStudy(view.id, false, null, {}); }
   if (a === 'studyleech') { closeMenu(); return startStudy(view.id, false, null, { only: 'leech' }); }
   if (a === 'quizdeck') return startQuiz(view.id);
-  if (a === 'restart') return startStudy(study ? study.id : view.id, study && study.rev, null,
-    study ? { mode: study.mode, both: study.both } : {});
+  if (a === 'restart') {
+    /* Le bouton porte un mélangeur : il mélange, quel que soit l'ordre
+       réglé dans les préférences. Avant, il reconstruisait la file avec
+       cet ordre — « du paquet », « urgentes » ou « ratées » redonnaient
+       exactement la même suite, et le bouton semblait mort.
+       Le reste de la session est conservé : le sens, le mode, et le
+       filtre (le marathon reste sur les cartes dues). */
+    const o = (study && study.opt) || {};
+    return startStudy(study ? study.id : view.id, study && study.rev, null,
+      study ? { ...o, mode: study.mode, both: study.both, order: 'random' } : { order: 'random' });
+  }
   if (a === 'swap') {
     if (!study) return;
     study.rev = !study.rev;
