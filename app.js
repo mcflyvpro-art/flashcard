@@ -1308,10 +1308,16 @@ function toast(icon, text, undo) {
   n.innerHTML = svg(icon) + (text ? `<span>${esc(text)}</span>` : '')
     + (undo ? `<button class="tun">${svg(I.redo)}Annuler</button>` : '');
   if (undo) n.querySelector('.tun').onclick = () => { n.remove(); doUndo(); };
-  /* il se pose au-dessus de ce qui occupe déjà le bas : barre d'onglets,
-     barre de sélection, ou rien du tout */
-  if (document.querySelector('.selb')) n.style.bottom = 'calc(84px + env(safe-area-inset-bottom))';
-  else if (!document.querySelector('.tabs')) n.style.bottom = 'calc(22px + env(safe-area-inset-bottom))';
+  /* Il se pose au-dessus de ce qui occupe déjà le bas — barre de
+     sélection, ou rien. Sauf si une feuille est ouverte : là il passe en
+     haut, sinon il se met pile sur son bouton principal et on croit lire
+     le bouton (« Envoi impossible » à la place d'« Enregistrer »). */
+  if (document.querySelector('.menu')) {
+    n.classList.add('up');
+    n.style.top = 'calc(12px + env(safe-area-inset-top))';
+    n.style.bottom = 'auto';
+  } else if (document.querySelector('.selb')) n.style.bottom = 'calc(84px + env(safe-area-inset-bottom))';
+  else n.style.bottom = 'calc(22px + env(safe-area-inset-bottom))';
   document.body.appendChild(n); tt = setTimeout(() => n.remove(), undo ? 5200 : 1600);
 }
 
@@ -1330,7 +1336,7 @@ function applyFont() {
 }
 
 function render() {
-  const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome,
+  const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
               group: groupView, shared: sharedView, duel: duelView };
   $.classList.remove('fade');
@@ -1359,60 +1365,10 @@ function go(name, id, dir) {
   render(); window.scrollTo(0, 0);
 }
 
-/* balayage horizontal entre « Mes paquets » et « Quiz » */
-function bindPager() {
-  const pg = document.getElementById('page'); if (!pg) return;
-  const home = view.name === 'home';
-  let x0 = 0, y0 = 0, dx = 0, on = false, lock = 0, t0 = 0, raf = 0, pid = -1;
-  /* Une seule écriture de style par image : le doigt émet jusqu'à 120
-     événements par seconde, en écrire autant fait saccader le glissé.
-     translate3d garde le déplacement sur le compositeur, et l'opacité ne
-     bouge plus du tout — la faire varier repeignait toute la grille. */
-  const draw = () => {
-    raf = 0;
-    if (!on) return;
-    const edge = home ? dx > 0 : dx < 0;          // rien de l'autre côté
-    pg.style.transform = `translate3d(${(edge ? dx * .26 : dx).toFixed(1)}px,0,0)`;
-  };
-  const reset = () => {
-    if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    pg.style.transition = ''; pg.style.transform = '';
-  };
-  pg.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'mouse' && e.button) return;
-    if (e.target.closest('.pills')) return;   // laisse défiler les matières
-    on = true; lock = 0; dx = 0; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); pid = e.pointerId;
-    pg.style.transition = 'none';
-  });
-  pg.addEventListener('pointermove', e => {
-    if (!on) return;
-    const ax = e.clientX - x0, ay = e.clientY - y0;
-    if (!lock) {
-      if (Math.abs(ax) < 10 && Math.abs(ay) < 10) return;
-      lock = Math.abs(ax) > Math.abs(ay) * 1.3 ? 1 : -1;
-      if (lock < 0) { on = false; reset(); return; }   // c'est un défilement vertical
-      try { pg.setPointerCapture(pid); } catch (x) {}
-    }
-    dx = ax;
-    if (!raf) raf = requestAnimationFrame(draw);
-  });
-  const end = () => {
-    if (!on) return;
-    on = false; reset();
-    if (lock !== 1) return;
-    const fast = Math.abs(dx) / Math.max(1, Date.now() - t0) > .5;
-    if (Math.abs(dx) < innerWidth * .26 && !fast) return;
-    if (home && dx < 0) go('quiz', null, -1);
-    else if (!home && dx > 0) go('home', null, 1);
-  };
-  pg.addEventListener('pointerup', end);
-  pg.addEventListener('pointercancel', end);
-}
-
 function paintRail() {
   let r = document.getElementById('rail');
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
-  const on = /quiz|run/.test(view.name) ? 'quiz' : view.name === 'settings' ? 'settings'
+  const on = view.name === 'settings' ? 'settings'
     : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats'
     : /group|duel|shared/.test(view.name) ? 'group' : 'home';
   const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n;
@@ -1423,7 +1379,6 @@ function paintRail() {
     <div class="brand"><img src="icons/icon-192.png" alt=""><span>Cartes</span></div>
     <nav>
       <button class="${on === 'home' ? 'on' : ''}" data-r="home">${svg(I.layers)}<span>Paquets</span></button>
-      <button class="${on === 'quiz' ? 'on' : ''}" data-r="quiz">${svg(I.pen)}<span>Quiz</span></button>
     </nav>
     <div class="sp"></div>
     <nav>
@@ -1439,17 +1394,10 @@ function paintRail() {
     if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
     if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
     if (b.dataset.r === 'group') { groupPull(); return go('group'); }
-    go(b.dataset.r === 'quiz' ? 'quiz' : b.dataset.r === 'settings' ? 'settings' : 'home');
+    go(b.dataset.r === 'settings' ? 'settings' : 'home');
   };
 }
 
-const tabs = on => `<div class="tabs">
-  <div class="sl" style="transform:translateX(${on === 'quiz' ? 74 : 0}px)"></div>
-  <button class="${on === 'home' ? 'on' : ''}" data-act="tab-home" aria-label="Mes paquets"
-    aria-current="${on === 'home' ? 'page' : 'false'}">${svg(I.layers)}</button>
-  <button class="${on === 'quiz' ? 'on' : ''}" data-act="tab-quiz" aria-label="Mes quiz"
-    aria-current="${on === 'quiz' ? 'page' : 'false'}">${svg(I.pen)}</button>
-</div>`;
 
 const pills = (active, list, act) => `<div class="pills">
   <button class="p ${active === '' ? 'on' : ''}" data-${act}="">Tout</button>
@@ -1554,16 +1502,14 @@ function home() {
         ${reorder ? `<button class="lnk on" data-act="reorder">${svg(I.check)}Terminer</button>`
           : `<button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>`}
       </div>` : ''}
-      ${!list.length ? `<div class="empty">${svg(I.layers)}<p>Aucun paquet pour l’instant</p></div>`
+      ${!list.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucun paquet</b>Appuie sur + pour en créer un.</p></div>`
         : prefs.list || reorder
           ? `<div class="rows lst ${reorder ? 'dragging0' : ''}">${sortDecks(list).map(listRow).join('')}</div>`
           : `<div class="grid">${sortDecks(list).map(tile).join('')}</div>`}
       ${!simpleMode() && allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
         <span>Marathon</span><i>${allDue()} cartes dues, toutes matières</i></button>` : ''}
     </div>
-    ${reorder ? '' : `<button class="fab" data-act="new" aria-label="Nouveau paquet">${svg(I.plus)}<span>Nouveau paquet</span></button>`}
-    ${tabs('home')}`;
-  bindPager();
+    ${reorder ? '' : `<button class="fab" data-act="new" aria-label="Nouveau paquet">${svg(I.plus)}<span>Nouveau paquet</span></button>`}`;
   if (reorder) bindDeckOrder();
   bindPeek();
 }
@@ -1958,6 +1904,34 @@ function loginView() {
   setTimeout(() => em.focus(), 80);
 }
 
+/* ---------- petites explications ----------
+   Les paragraphes posés sous chaque réglage se lisaient comme une notice
+   et noyaient les réglages eux-mêmes. Ne reste qu'une pastille « ? », et
+   seulement là où le nom ne suffit pas : ce qu'on perd en éteignant le
+   moteur, ce que « ratées » veut dire, ce que « rapide » enchaîne.
+   Tout ce qui se devine au premier coup d'œil n'a pas de pastille. */
+const HELP = {
+  simple: ['Mode simple',
+    'Le moteur choisit quand chaque carte revient : le lendemain, puis à 3, 7, 15 et 30 jours, ' +
+    'en s’ajustant à ce que tu réponds.\n\nL’éteindre rend l’app manuelle — les cartes défilent ' +
+    'dans l’ordre choisi, tu balaies à gauche si tu sais, à droite sinon. Ta progression reste ' +
+    'enregistrée et repart où elle en était dès que tu le rallumes.'],
+  order: ['Ordre des cartes',
+    'Aléatoire : mélangées à chaque séance.\nDu paquet : l’ordre dans lequel tu les as écrites.\n' +
+    'Ratées : celles que tu manques le plus souvent d’abord.\nUrgentes : les plus en retard d’abord.'],
+  fast: ['Mode rapide',
+    'Une bonne réponse enchaîne toute seule sur la suivante, au quiz comme en QCM et en vrai/faux. ' +
+    'Sans lui, la correction reste à l’écran jusqu’à ce que tu appuies sur Suivant.'],
+  retention: ['Rétention',
+    'La part de bonnes réponses selon le temps écoulé depuis la fois précédente. ' +
+    'C’est la mesure qui dit si les échéances choisies par le moteur tiennent.'],
+  mature: ['Progression',
+    'La part de cartes mûres : celles dont la prochaine échéance dépasse trois semaines. ' +
+    'C’est ce qui est réellement installé, par opposition à ce qui vient d’être vu.']
+};
+let helpKey = null;
+const hlp = k => `<button class="hq" data-help="${k}" aria-label="${esc(HELP[k][0])}, explication">?</button>`;
+
 /* ---------- réglages ---------- */
 let subjEdit = null, subjColor = 'graphite', subjName = '';
 let cardEdit = null;
@@ -1973,6 +1947,54 @@ function settingsView() {
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Réglages</div></div>
+      <div class="lbl"><span>Révision</span></div>
+      <div class="slist">
+        <div class="srw"><button class="sr flat" data-act="tglsimple">${svg(I.brain)}
+          <span class="n">Mode simple</span>
+          <span class="tgl ${prefs.simple ? 'on' : ''}"></span></button>${hlp('simple')}</div>
+        <div class="sr flat col">
+          <div class="srh">${svg(I.target)}<span class="n">Objectif du jour</span>
+            <span class="c">${prefs.goal} cartes</span></div>
+          <input class="rng" id="pGoal" type="range" min="5" max="200" step="5" value="${prefs.goal}"
+            aria-label="Objectif du jour"></div>
+        ${prefs.simple ? '' : `<div class="sr flat col">
+          <div class="srh">${svg(I.plus)}<span class="n">Nouvelles cartes par séance</span>
+            <span class="c">${prefs.cap || 'sans limite'}</span></div>
+          <input class="rng" id="pCap" type="range" min="0" max="100" step="5" value="${prefs.cap}"
+            aria-label="Nouvelles cartes par séance"></div>`}
+        <div class="sr flat col">
+          <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des cartes</span>${hlp('order')}</div>
+          <div class="seg" id="pOrder">
+            ${[['random', 'Aléatoire'], ['deck', 'Du paquet'], ['worst', 'Ratées'], ['due', 'Urgentes']]
+              .filter(([v]) => !(prefs.simple && v === 'due'))
+              .map(([v, l]) => `<button data-ord="${v}" class="${prefs.order === v ? 'on' : ''}">${l}</button>`).join('')}
+          </div>
+        </div>
+        <button class="sr flat" data-act="tglfresh">${svg(I.card)}
+          <span class="n">Nouvelles cartes d’abord</span>
+          <span class="tgl ${prefs.fresh ? 'on' : ''}"></span></button>
+        <button class="sr flat" data-act="tglboth">${svg(I.swap)}
+          <span class="n">Mélanger les deux sens</span>
+          <span class="tgl ${prefs.both ? 'on' : ''}"></span></button>
+        <div class="srw"><button class="sr flat" data-act="tglfast">${svg(I.skip)}
+          <span class="n">Mode rapide</span>
+          <span class="tgl ${prefs.fast ? 'on' : ''}"></span></button>${hlp('fast')}</div>
+      </div>
+
+      <div class="lbl"><span>Affichage</span></div>
+      <div class="slist">
+        <div class="sr flat col">
+          <div class="srh">${svg(I.card)}<span class="n">Taille du texte des cartes</span>
+            <span class="c">${Math.round((prefs.font || 1) * 100)} %</span></div>
+          <input class="rng" id="pFont" type="range" min="80" max="140" step="5"
+            value="${Math.round((prefs.font || 1) * 100)}" aria-label="Taille du texte des cartes">
+          <div class="fprev" style="font-size:calc(17px * var(--fs,1))">Aperçu : la casa</div>
+        </div>
+        <button class="sr flat" data-act="tglsound">${svg(I.sound)}
+          <span class="n">Sons</span>
+          <span class="tgl ${prefs.sound ? 'on' : ''}"></span></button>
+      </div>
+
       <div class="lbl"><span>Matières</span><span>${db.subjects.length}</span></div>
       <div class="slist">
         ${db.subjects.map(t => {
@@ -1984,78 +2006,29 @@ function settingsView() {
         }).join('')}
         <button class="sr add" data-sub="">${svg(I.plus)}<span class="n">Nouvelle matière</span></button>
       </div>
-      <div class="lbl"><span>Révision</span></div>
-      <div class="slist">
-        <button class="sr flat" data-act="tglsimple">${svg(I.brain)}
-          <span class="n">Mode simple</span>
-          <span class="tgl ${prefs.simple ? 'on' : ''}"></span></button>
-        <div class="note">${prefs.simple
-          ? `Le moteur est éteint. Les cartes défilent dans l’ordre choisi, sans échéance
-             et sans note : tu balaies à gauche si tu sais, à droite sinon. La progression
-             déjà enregistrée est conservée intacte et repart où elle en était dès que tu
-             rallumes le moteur.`
-          : `Le moteur choisit quand chaque carte revient — le lendemain, puis à 3, 7, 15
-             et 30 jours, en s’ajustant à ce que tu réponds. Le désactiver rend l’app
-             purement manuelle : uniquement le balayage, comme au tout début.`}</div>
-        <div class="sr flat col">
-          <div class="srh">${svg(I.target)}<span class="n">Objectif du jour</span>
-            <span class="c">${prefs.goal} cartes</span></div>
-          <input class="rng" id="pGoal" type="range" min="5" max="200" step="5" value="${prefs.goal}">
-        </div>
-        ${prefs.simple ? '' : `<div class="sr flat col">
-          <div class="srh">${svg(I.plus)}<span class="n">Nouvelles cartes par session</span>
-            <span class="c">${prefs.cap || 'sans limite'}</span></div>
-          <input class="rng" id="pCap" type="range" min="0" max="100" step="5" value="${prefs.cap}">
-        </div>`}
-        <div class="sr flat col">
-          <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des cartes</span></div>
-          <div class="seg" id="pOrder">
-            ${[['random', 'Aléatoire'], ['deck', 'Du paquet'], ['worst', 'Ratées'], ['due', 'Urgentes']]
-              .filter(([v]) => !(prefs.simple && v === 'due'))
-              .map(([v, l]) => `<button data-ord="${v}" class="${prefs.order === v ? 'on' : ''}">${l}</button>`).join('')}
-          </div>
-        </div>
-        <button class="sr flat" data-act="tglfresh">${svg(I.card)}
-          <span class="n">Nouvelles cartes d'abord</span>
-          <span class="tgl ${prefs.fresh ? 'on' : ''}"></span></button>
-        <button class="sr flat" data-act="tglboth">${svg(I.swap)}
-          <span class="n">Mélanger les deux sens</span>
-          <span class="tgl ${prefs.both ? 'on' : ''}"></span></button>
-        <button class="sr flat" data-act="tglfast">${svg(I.skip)}
-          <span class="n">Mode rapide</span>
-          <span class="tgl ${prefs.fast ? 'on' : ''}"></span></button>
-        <button class="sr flat" data-act="tglsound">${svg(I.sound)}
-          <span class="n">Sons</span>
-          <span class="tgl ${prefs.sound ? 'on' : ''}"></span></button>
-        <div class="sr flat col">
-          <div class="srh">${svg(I.card)}<span class="n">Taille du texte des cartes</span>
-            <span class="c">${Math.round((prefs.font || 1) * 100)} %</span></div>
-          <input class="rng" id="pFont" type="range" min="80" max="140" step="5"
-            value="${Math.round((prefs.font || 1) * 100)}" aria-label="Taille du texte des cartes">
-          <div class="fprev" style="font-size:calc(17px * var(--fs,1))">Aperçu : la casa</div>
-        </div>
-        <div class="note">${prefs.fast
-          ? `Une bonne réponse enchaîne toute seule sur la suivante, au quiz
-             comme en QCM et en vrai/faux. Pratique quand on connaît déjà bien
-             le paquet et qu'on veut dérouler vite.`
-          : `Rien ne défile tout seul : après chaque réponse, la correction
-             reste à l'écran jusqu'à ce que tu appuies sur Suivant.`}</div>
-      </div>
-      <div class="lbl"><span>Compte</span></div>
+
+      <div class="lbl"><span>Mon compte</span></div>
       <div class="slist">
         <button class="sr flat" data-act="rename">${svg(I.user)}
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Statistiques</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="shortcuts">${svg(I.spark)}<span class="n">Raccourcis et Siri</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="group">${svg(I.trophy)}<span class="n">Le groupe</span>
-          <span class="c">bibliothèque, défis</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
-          <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="group">${svg(I.trophy)}<span class="n">Le groupe</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
+      </div>
+
+      <div class="lbl"><span>Mes données</span></div>
+      <div class="slist">
         ${canUndo() ? `<button class="sr flat" data-act="undo2">${svg(I.redo)}
           <span class="n">Annuler ${esc(undoLabel().toLowerCase())}</span></button>` : ''}
         <button class="sr flat" data-act="trash">${svg(I.trash)}<span class="n">Corbeille</span>
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
+          <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="shortcuts">${svg(I.spark)}<span class="n">Raccourcis et Siri</span>${svg(I.arrow)}</button>
+      </div>
+
+      <div class="lbl"><span>Quitter</span></div>
+      <div class="slist">
         <button class="sr flat warn" data-act="logout">${svg(I.exit)}<span class="n">Se déconnecter</span></button>
         <button class="sr flat warn" data-act="delacc">${svg(I.trash)}<span class="n">Supprimer le compte</span></button>
       </div>
@@ -2112,10 +2085,9 @@ function trashView() {
     <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Corbeille</div></div>
-      <div class="note">Un paquet supprimé reste ici ${KEEP} jours, avec toutes ses cartes
-        et leur progression. Passé ce délai il part pour de bon.</div>
+      <div class="note">Gardés ${KEEP} jours, cartes et progression comprises.</div>
       ${!l ? `<div class="empty">${svg(I.clock)}<p>${trash.err ? 'Corbeille indisponible' : 'Chargement…'}</p></div>`
-        : !l.length ? `<div class="empty">${svg(I.trash)}<p>La corbeille est vide</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.trash)}<p><b>Corbeille vide</b></p></div>`
         : `<div class="slist">${l.map(t => {
             const s = subj(t.subject), d = leftFor(t.at);
             return `<div class="sr flat col trr" style="${sty(s)}">
@@ -2219,7 +2191,7 @@ function mailView() {
     <div class="page">
       <div class="top"><div class="hero">Boîte de réception</div></div>
       ${!l ? `<div class="empty">${svg(I.mail)}<p>${mailbox.err ? 'Boîte indisponible' : 'Chargement…'}</p></div>`
-        : !l.length ? `<div class="empty">${svg(I.mail)}<p>Rien pour l’instant</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.mail)}<p><b>Aucun message</b></p></div>`
         : `<div class="slist">${l.map(it => `
           <button class="sr flat mlrow ${!it.read_at ? 'unread' : ''}" data-mail="${it.id}">
             ${it.read_at ? svg(I.mail) : '<i class="mdot"></i>'}
@@ -2367,12 +2339,10 @@ function sharedView() {
       <h1>Paquet partagé</h1></div>
     <div class="page">
       ${s.st === 'load' ? `<div class="empty">${svg(I.link)}<p>Ouverture du lien…</p></div>`
-      : s.st !== 'ok' ? `<div class="empty">${svg(I.warn)}<p>${s.st === 'gone'
-          ? 'Ce lien a été révoqué, ou le paquet n’existe plus.'
-          : 'Lien illisible pour l’instant. Réessaie une fois connecté au réseau.'}</p></div>`
+      : s.st !== 'ok' ? `<div class="empty">${svg(I.warn)}<p><b>${s.st === 'gone' ? 'Lien révoqué' : 'Lien illisible'}</b>${
+          s.st === 'gone' ? 'Le paquet n’est plus partagé.' : 'Réessaie une fois en ligne.'}</p></div>`
       : `<div class="top"><div class="hero">${esc(d.name)}</div></div>
-        <div class="note">${plur(cards.length, 'carte')} en consultation. Rien n’arrive chez toi
-          tant que tu ne le demandes pas ; une fois ajouté, ton exemplaire vit sa propre vie.</div>
+        <div class="note">${plur(cards.length, 'carte')} en consultation, rien n’est ajouté chez toi.</div>
         <button class="cta" data-act="addshared">${svg(I.plus)}Ajouter à mes paquets</button>
         <div class="rows">${cards.slice(0, 300).map(c => `<div class="pr">
           <span class="a">${esc(plain(cf(c)))}</span>${svg(I.arrow)}<span class="b">${esc(plain(cb(c)))}</span>
@@ -2556,8 +2526,7 @@ function groupView() {
 function libPane() {
   const l = lib.list;
   return !l ? `<div class="empty">${svg(I.book)}<p>${lib.err ? 'Bibliothèque indisponible' : 'Chargement…'}</p></div>`
-    : !l.length ? `<div class="empty">${svg(I.book)}<p>L’étagère est vide. Depuis un paquet :
-        Partager, puis « Publier dans la bibliothèque ».</p></div>`
+    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>Un paquet s’y publie depuis Partager.</p></div>`
     : `<div class="slist">${l.map(it => `
         <button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
           <span class="ml2"><span class="n">${esc(it.name)}</span>
@@ -2569,8 +2538,7 @@ function duelPane() {
   const l = duels.list;
   const mk = `<button class="cta ghost" data-act="duelnew">${svg(I.flame)}Lancer un défi</button>`;
   if (!l) return `${mk}<div class="empty">${svg(I.flame)}<p>${duels.err ? 'Défis indisponibles' : 'Chargement…'}</p></div>`;
-  if (!l.length) return `${mk}<div class="empty">${svg(I.flame)}<p>Aucun défi en cours. Lance le premier :
-    dix questions tirées d’un de tes paquets, les mêmes pour tout le monde.</p></div>`;
+  if (!l.length) return `${mk}<div class="empty">${svg(I.flame)}<p><b>Aucun défi</b>Dix questions, les mêmes pour tous.</p></div>`;
   return `${mk}<div class="slist">${l.map(du => {
     const me = myScore(du.id), r = rankOf(du.id);
     const pos = me ? r.findIndex(s => s.user_id === auth.uid) + 1 : 0;
@@ -2587,7 +2555,7 @@ function boardPane() {
   const seg = `<div class="seg" id="bRange">${Object.entries(BRANGE).map(([k, n]) =>
     `<button class="${board.range === +k ? 'on' : ''}" data-brange="${k}">${n}</button>`).join('')}</div>`;
   if (!r) return `${seg}<div class="empty">${svg(I.trophy)}<p>${board.err ? 'Classement indisponible' : 'Chargement…'}</p></div>`;
-  if (!r.length) return `${seg}<div class="empty">${svg(I.trophy)}<p>Personne n’a révisé sur cette période.</p></div>`;
+  if (!r.length) return `${seg}<div class="empty">${svg(I.trophy)}<p><b>Personne n’a révisé</b>sur cette période.</p></div>`;
   const top = r[0].n || 1;
   const MED = ['🥇', '🥈', '🥉'];
   return `${seg}<div class="rows">${r.map((x, i) => `
@@ -2597,8 +2565,7 @@ function boardPane() {
         <i>${plur(+x.n, 'carte')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
         <em style="width:${Math.max(4, Math.round(x.n / top * 100))}%"></em></span>
     </div>`).join('')}</div>
-    <div class="note">Seul le nombre de cartes révisées circule entre les comptes ;
-      ni les paquets, ni les erreurs, ni les réponses.</div>`;
+    <div class="note">Seul le nombre de cartes révisées circule entre les comptes.</div>`;
 }
 function groupPull() {
   if (groupTab === 'lib' && !lib.list) libPull();
@@ -2776,9 +2743,8 @@ function findView() {
         autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search"
         value="${esc(findQ)}" aria-label="Recherche"></div></div>
     <div class="page">
-      ${!findQ.trim() ? `<div class="empty">${svg(I.search)}<p>Tape un mot : il est cherché
-        dans les noms de paquets et dans les deux faces de toutes les cartes.</p></div>`
-        : (!r.decks.length && !r.cards.length) ? `<div class="empty">${svg(I.search)}<p>Rien pour « ${esc(findQ)} »</p></div>`
+      ${!findQ.trim() ? `<div class="empty">${svg(I.search)}</div>`
+        : (!r.decks.length && !r.cards.length) ? `<div class="empty">${svg(I.search)}<p><b>Rien trouvé</b>pour « ${esc(findQ)} »</p></div>`
         : `${r.decks.length ? `<div class="lbl"><span>Paquets</span><span>${r.decks.length}</span></div>
           <div class="slist">${r.decks.map(d => `<button class="sr flat" data-go="${d.id}">
             <i class="ldot" style="${sty(subj(d.subject))}"></i>
@@ -2860,10 +2826,8 @@ function statsView() {
         <div class="heatk"><span>${dayLabel(days[0])}</span><span>aujourd’hui</span></div>
       </div>
 
-      <div class="lbl"><span>Rétention</span><span>sur un an</span></div>
+      <div class="lbl"><span>Rétention</span>${hlp('retention')}<span>sur un an</span></div>
       <div class="card2">
-        <div class="note" style="padding:0 0 10px">La part de bonnes réponses selon le temps écoulé
-          depuis la fois précédente. C’est la mesure qui dit si le moteur tient ses promesses.</div>
         ${[[1, 'Le lendemain'], [7, 'Après une semaine'], [30, 'Après un mois']].map(([b, l]) => {
           const [o, t] = S.ret[b];
           const p = t ? Math.round(o / t * 100) : 0;
@@ -2873,10 +2837,8 @@ function statsView() {
         }).join('')}
       </div>
 
-      <div class="lbl"><span>Progression</span><span>${prog.length} paquet${prog.length > 1 ? 's' : ''}</span></div>
+      <div class="lbl"><span>Progression</span>${hlp('mature')}<span>${prog.length} paquet${prog.length > 1 ? 's' : ''}</span></div>
       <div class="card2">
-        <div class="note" style="padding:0 0 10px">La part de cartes mûres, celles dont l’échéance
-          dépasse trois semaines : ce qui est réellement installé.</div>
         ${prog.length ? prog.map(p => `<div class="brow"><span class="bl">${esc(p.d.name)}</span>
           <span class="bt"><i style="width:${p.pct}%;background:${subj(p.d.subject).d}"></i></span>
           <span class="bv">${p.pct}%</span></div>`).join('')
@@ -3005,16 +2967,18 @@ function paintMenu() {
     };
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mi" style="font-weight:750">${svg(I.card)}Carte</div>
+        <div class="mhd">${svg(I.card)}
+          <span class="mhx"><b>${esc(plain(c.f) || 'Carte')}</b>
+            <i>${esc(plain(c.b)) || 'verso vide'}</i></span></div>
         <div class="seg mseg">
           ${[['', 'Basique'], ['tf', 'Vrai / faux']].map(([v, l]) =>
             `<button data-ct="${v}" class="${(c.t || '') === v ? 'on' : ''}">${l}</button>`).join('')}
         </div>
         <div class="mrow">
-          <span class="ml">${svg(I.arrow)}Recto</span>${med('f', 'img')}${med('f', 'aud')}
+          <span class="ml">Image et son du recto</span>${med('f', 'img')}${med('f', 'aud')}
         </div>
         <div class="mrow">
-          <span class="ml">${svg(I.swap)}Verso</span>${med('b', 'img')}${med('b', 'aud')}
+          <span class="ml">Image et son du verso</span>${med('b', 'img')}${med('b', 'aud')}
         </div>
         <input class="tok" id="ctags" placeholder="Étiquettes, séparées par des virgules"
           value="${esc((c.g || []).join(', '))}" autocapitalize="none" spellcheck="false">
@@ -3128,9 +3092,7 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.link)}Fusionner « ${esc(d.name)} » avec</div>
-        <div class="note">Les cartes du paquet choisi viennent rejoindre celui-ci. Le paquet
-          choisi part à la corbeille, d’où il reste récupérable. Les cartes déjà
-          présentes des deux côtés ne sont pas recopiées.</div>
+        <div class="note">Le paquet choisi part à la corbeille. Les doublons ne sont pas recopiés.</div>
         <div class="mscroll">${others.map(x => `<button class="mi" data-merge="${x.id}">
           <i class="tri" style="--c:${subj(x.subject).c}"></i>${esc(x.name)}
           <span class="tail">${x.cards.length}</span></button>`).join('')}</div>
@@ -3229,8 +3191,7 @@ function paintMenu() {
         <button class="mi" data-mact="sendfriend">${svg(I.mail)}Envoyer à un ami<span class="tail">${friends ? friends.length : ''}</span></button>
         <button class="mi" data-mact="rolink">${svg(I.link)}${m.tok ? 'Copier le lien de consultation' : 'Créer un lien de consultation'}</button>
         ${m.tok ? `<button class="mi warn" data-mact="roff">${svg(I.eyeoff)}Révoquer le lien</button>` : ''}
-        <div class="note">Le lien montre le paquet sans rien installer, et suit tes
-          modifications. Le révoquer le coupe aussitôt, même déjà envoyé.</div>
+        <div class="note">Se consulte sans rien installer, suit tes modifications, se révoque.</div>
         <div class="msep"></div>
         ${m.pub ? `<button class="mi" data-mact="publish">${svg(I.book)}Mettre à jour dans la bibliothèque</button>
                    <button class="mi warn" data-mact="unpublish">${svg(I.x)}Retirer de la bibliothèque</button>`
@@ -3242,10 +3203,20 @@ function paintMenu() {
     mountMenu(w);
     return;
   }
+  if (menu === 'help') {
+    const h = HELP[helpKey];
+    if (!h) { menu = null; return; }
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.bulb)}<span class="mhx"><b>${esc(h[0])}</b></span></div>
+        <div class="note htxt">${esc(h[1]).replace(/\n/g, '<br>')}</div>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
   if (menu === 'shortcuts') {
     const base = location.origin + location.pathname;
     const L = [['study', 'Réviser maintenant', 'les cartes du jour, tous paquets confondus'],
-               ['quiz', 'Quiz', 'l’écran des quiz'],
                ['new', 'Nouveau paquet', 'la création d’un paquet'],
                ['mail', 'Boîte de réception', 'les paquets reçus'],
                ['group', 'Le groupe', 'bibliothèque, défis, classement']];
@@ -3261,9 +3232,6 @@ function paintMenu() {
           <button class="mi" data-copy="${base}?go=${k}">${svg(I.link)}
             <span class="ml2"><span class="n">${n}</span><span class="sub">ouvre ${d}</span></span>
             ${svg(I.copy)}</button>`).join('')}</div>
-        <div class="note">Chaque adresse ouvre l’app puis l’écran voulu. Le raccourci de
-          révision n’ouvre une séance que s’il y a des cartes dues ; sinon il reste
-          sur l’accueil et le dit.</div>
       </div>`;
     mountMenu(w);
     return;
@@ -3278,7 +3246,7 @@ function paintMenu() {
             <i>les ${VERSN} dernières versions, avant chaque remplacement</i></span></div>
         ${!l ? `<div class="note">${vers.err ? 'Historique indisponible.' : 'Chargement…'}</div>`
           : !l.length ? `<div class="note">Rien encore. Une version est gardée avant chaque
-              opération qui remplace les cartes : remplacement en masse, fusion, découpe, réimport.</div>`
+              remplacement, fusion, découpe ou réimport.</div>`
           : `<div class="mscroll">${l.map(v => `<button class="mi" data-vers="${v.id}">
               ${svg(I.redo)}<span class="ml2"><span class="n">${esc(v.why || 'version')}</span>
                 <span class="sub">${plur((v.cards || []).length, 'carte')} · ${timeAgo(v.created_at)}</span></span>
@@ -3298,8 +3266,7 @@ function paintMenu() {
         <div class="mhd">${svg(I.warn)}
           <span class="mhx"><b>Modifié sur un autre appareil</b>
             <i>« ${esc(c.mine.name)} » a changé des deux côtés</i></span></div>
-        <div class="note">Rien n’est perdu pour l’instant : les deux versions sont là,
-          et tu peux les garder toutes les deux si tu hésites.</div>
+        <div class="note">Rien n’est perdu : tu peux garder les deux.</div>
         <div class="csides">
           ${side(c.mine, 'Ici', null)}
           ${side(c.theirs, 'Ailleurs', c.theirs.at ? timeAgo(c.theirs.at) : null)}
@@ -3349,8 +3316,7 @@ function paintMenu() {
             <span class="bdn"><b>${esc(shortWho(sc.who) || 'Compte')}</b>
               <i>${sc.score}/${du.total} · ${Math.round(sc.ms / 1000)} s</i></span></div>`).join('')
           : '<div class="note">Personne n’a encore joué.</div>'}</div>
-        ${me ? `<div class="note">Tu as fait ${me.score}/${du.total}. Un seul essai par personne :
-            sinon le classement ne dirait plus rien.</div>`
+        ${me ? `<div class="note">Un seul essai par personne.</div>`
           : `<button class="mi" data-mact="duelgo" style="justify-content:center;font-weight:700">
               ${svg(I.play)}Jouer les ${du.total} questions</button>`}
         ${mine ? `<button class="mi warn" data-mact="dueldrop">${svg(I.trash)}<span>Supprimer le défi</span></button>` : ''}
@@ -3363,8 +3329,7 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.flame)}Défier le groupe</div>
-        <div class="note">Jusqu’à ${DUELQ} questions tirées du paquet choisi, figées une fois
-          pour toutes : tout le monde répond aux mêmes, dans le même ordre.</div>
+        <div class="note">${DUELQ} questions figées : tout le monde répond aux mêmes.</div>
         <div class="mscroll">${list.length ? list.map(x => `
           <button class="mi" data-dnew="${esc(x.id)}"><i class="tri" style="--c:${subj(x.subject).d}"></i>
             ${esc(x.name)}<span class="tail">${x.cards.length}</span></button>`).join('')
@@ -3380,8 +3345,7 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.mail)}Envoyer « ${esc(d.name)} » à</div>
-        <div class="note">${plur(d.cards.length, 'carte')} copiée${d.cards.length > 1 ? 's' : ''}, sans ta
-          progression : la personne repart de zéro sur ce paquet, comme elle le ferait sur le sien.</div>
+        <div class="note">${plur(d.cards.length, 'carte')} copiée${d.cards.length > 1 ? 's' : ''}, sans ta progression.</div>
         <div class="mscroll">${friends === null
           ? `<div class="mi" style="color:var(--soft)">Chargement…</div>`
           : !list.length ? `<div class="mi" style="color:var(--soft)">Aucun autre compte pour l’instant.</div>`
@@ -3712,8 +3676,9 @@ document.addEventListener('click', async e => {
   if (a === 'leavego') {
     const act = leaving; leaving = null; closeMenu();
     quiz = null; study = study && study.mode ? null : study;
-    return go(act === 'tab-quiz' ? 'quiz' : act === 'deck' ? 'deck' : 'home',
-      act === 'deck' ? view.id : null);
+    const back = act === 'quitquiz' ? (quiz && quiz.id) : act === 'deck' ? view.id : null;
+    if (act === 'quitquiz') quiz = null;
+    return go(back && deck(back) ? 'deck' : 'home', back && deck(back) ? back : null);
   }
   if (a === 'reorderon') { closeMenu(); reorder = true; prefs.sort = 'manual'; savePrefs(); animate = false; return render(); }
   if (a === 'pindeck') {
@@ -4457,29 +4422,10 @@ function quizOpts(q) {
   quiz.optsFor = quiz.i;
   return quiz.opts;
 }
-function quizHome() {
-  const used = db.subjects.filter(s => live().some(d => d.subject === s.id)).map(x => subj(x.id));
-  const list = live().filter(d => !filter || d.subject === filter);
-  const total = buildPool(live().flatMap(d => d.cards)).length;
-  $.innerHTML = `
-    <div class="page" id="page">
-      <div class="top"><div class="hero">Quiz</div></div>
-      ${used.length > 1 ? pills(filter, used, 'filt') : ''}
-      ${live().length ? `<div class="grid">
-        ${!filter ? `<button class="tile all" data-q="all" style="--i:0">
-          <span class="n">Tout</span><span class="m">${svg(I.target)}${total}</span></button>` : ''}
-        ${list.map((d, i) => `<button class="tile" data-q="${d.id}" style="${sty(subj(d.subject))};--i:${i + 1}">
-          <span class="n">${esc(d.name)}</span>
-          <span class="m">${svg(I.card)}${buildPool(d.cards).length}</span></button>`).join('')}
-      </div>` : `<div class="empty">${svg(I.pen)}</div>`}
-    </div>
-    ${tabs('quiz')}`;
-  bindPager();
-}
 function quizView() {
   const qcm = quiz.mode === 'qcm';
   const bar = n => `<div class="bar">
-      <button class="ic" data-act="tab-quiz" aria-label="Retour">${svg(I.back)}</button>
+      <button class="ic" data-act="quitquiz" aria-label="Retour">${svg(I.back)}</button>
       <h1>${esc(quiz.name)}</h1>
       ${n}
       ${quiz.streak >= 5 ? `<span class="strk">${svg(I.flame)}${quiz.streak}</span>` : ''}
@@ -4494,7 +4440,7 @@ function quizView() {
     $.innerHTML = bar('') + review({
       ok: quiz.ok, total: n, log: quiz.log, ms: quiz.ms, hist: quiz.hist, forced: quiz.forced,
       hints: quiz.hints,
-      miss: quiz.miss, redo: 'redo', again: 'requiz', done: 'tab-quiz'
+      miss: quiz.miss, redo: 'redo', again: 'requiz', done: 'quitquiz'
     });
     return fillRing(quiz.ok, n);
   }
@@ -4782,7 +4728,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-brange],[data-dpick]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-brange],[data-dpick],[data-help]');
   if (!b) return;
   const ds = b.dataset;
   const a0 = ds.act;
@@ -4790,9 +4736,10 @@ $.addEventListener('click', e => {
      ne coûte rien. Un quiz, un QCM ou une association, non — vingt
      minutes disparaissent pour de bon. Ce sont les seules qu'on protège,
      sinon la question deviendrait un réflexe qu'on clique sans lire. */
-  if (/^(home|tab-home|tab-quiz|deck)$/.test(a0 || '') && lostOnLeave() && !leaving) {
+  if (/^(home|quitquiz|deck)$/.test(a0 || '') && lostOnLeave() && !leaving) {
     leaving = a0; return openMenu('leave');
   }
+  if (ds.help !== undefined) { helpKey = ds.help; return openMenu('help'); }
   if (ds.mail !== undefined) return openMail(+ds.mail);
   if (ds.dpick !== undefined) return duelPick(+ds.dpick);
   if (ds.lib !== undefined) { lib.open = ds.lib; return openMenu('libitem'); }
@@ -4834,7 +4781,6 @@ $.addEventListener('click', e => {
   }
   if (ds.sub !== undefined) return openSubject(ds.sub || null);
   if (ds.go) return go('deck', ds.go);
-  if (ds.q) return startQuiz(ds.q);
   if (ds.a) return fling(ds.a === 'yes' ? -1 : 1);
   if (ds.g !== undefined) { pendingGrade = +ds.g; return fling(+ds.g > 0 ? -1 : 1); }
   if (ds.rm) { const d = deck(view.id); d.cards = d.cards.filter(c => c.id !== ds.rm); saveDeck(d); return render(); }
@@ -4858,8 +4804,10 @@ $.addEventListener('click', e => {
     if (aud) play(aud); else say(txt, useBack ? org.langb : org.langf);
     return;
   }
-  if (a === 'home' || a === 'tab-home') return go('home');
-  if (a === 'tab-quiz') return go('quiz');
+  if (a === 'home') return go('home');
+  /* un quiz se lance depuis un paquet : en sortir, c'est y revenir */
+  if (a === 'quitquiz') { const id = quiz && quiz.id; quiz = null;
+    return deck(id) ? go('deck', id) : go('home'); }
   if (a === 'peek') { peek = !peek; render(); return; }
   if (a === 'marathon') return startStudy('all', false, null, { only: 'due', both: prefs.both });
   if (a === 'retry') {
@@ -5063,7 +5011,6 @@ document.addEventListener('keydown', e => {
 const GOTO = {
   study: () => { if (!allDue()) { go('home'); return toast(I.check, 'Rien à revoir pour l’instant'); }
                  startStudy('all', false, null, { only: 'due', both: prefs.both }); },
-  quiz: () => go('quiz'),
   new: () => { resetComp(); go('import'); },
   mail: () => { mailbox.list = null; mailPull(); go('mail'); },
   group: () => { groupPull(); go('group'); },

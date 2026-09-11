@@ -55,18 +55,6 @@
       ]
     },
     {
-      "name": "Quiz",
-      "short_name": "Quiz",
-      "description": "Ouvre l’écran des quiz.",
-      "url": "./?go=quiz",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
       "name": "Nouveau paquet",
       "short_name": "Nouveau",
       "description": "Crée un paquet et ouvre sa première carte.",

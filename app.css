@@ -133,29 +133,25 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .tile.all::before{box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
 .tile.all::after{background:linear-gradient(155deg,rgba(255,255,255,.09),rgba(255,255,255,0) 58%)}
 
-.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;color:var(--soft);opacity:.35;padding-bottom:80px}
-.empty svg{width:76px;height:76px;stroke-width:1.2}
+/* Un écran vide dit ce qui manque, en une ligne, et rien de plus. Le
+   pavé d'explications qu'il portait avant se lisait comme une notice et
+   décalait l'icône hors du centre. */
+.empty{flex:1;min-height:46vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:18px;color:var(--soft);text-align:center;padding:0 24px 12vh}
+.empty svg{width:56px;height:56px;stroke-width:1.3;opacity:.3}
+.empty p{margin:0;font-size:15.5px;font-weight:650;letter-spacing:-.2px;
+  max-width:19em;line-height:1.45;opacity:.85}
+.empty p b{display:block;font-size:18px;font-weight:750;letter-spacing:-.4px;
+  color:var(--ink2);margin-bottom:5px;opacity:.9}
 
-/* ---------- fab + onglets ---------- */
-.fab{position:fixed;right:var(--pad);bottom:calc(84px + env(safe-area-inset-bottom));
+/* ---------- bouton flottant ---------- */
+.fab{position:fixed;right:var(--pad);bottom:calc(22px + env(safe-area-inset-bottom));
   width:56px;height:56px;border-radius:20px;background:var(--ink);color:var(--bg);
   display:grid;place-items:center;box-shadow:var(--s3);z-index:20;
   transition:transform .38s var(--sp)}
 .fade .fab{animation:pop .55s var(--e) .12s both}
 .fab:active{transform:scale(.85)}
 .fab svg{width:23px;height:23px;stroke-width:2.3}
-.tabs{position:fixed;left:50%;bottom:calc(13px + env(safe-area-inset-bottom));
-  transform:translateX(-50%);display:flex;padding:5px;border-radius:20px;z-index:25;
-  background:rgba(255,255,255,.72);backdrop-filter:blur(24px) saturate(1.9);
-  -webkit-backdrop-filter:blur(24px) saturate(1.9);
-  box-shadow:var(--s2),inset 0 0 0 1px rgba(255,255,255,.7)}
-.tabs button{position:relative;z-index:1;width:74px;height:44px;border-radius:15px;
-  display:grid;place-items:center;color:var(--soft);transition:color .35s var(--e)}
-.tabs button.on{color:var(--bg)}
-.tabs svg{width:20px;height:20px;stroke-width:2}
-.tabs .sl{position:absolute;top:5px;left:5px;width:74px;height:44px;border-radius:15px;
-  background:var(--ink);transition:transform .46s var(--sp)}
 
 /* ---------- fiche paquet ---------- */
 .head{position:relative;border-radius:28px;padding:22px 20px 18px;margin-bottom:14px;
@@ -179,9 +175,11 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .duo svg{width:19px;height:19px;stroke-width:2.1}
 .duo .prim{background:var(--ink);color:var(--bg)}
 
-.lbl{display:flex;align-items:center;justify-content:space-between;
-  margin:0 3px 9px;font-size:12.5px;font-weight:750;letter-spacing:.5px;
+.lbl{display:flex;align-items:center;gap:8px;
+  margin:22px 3px 9px;font-size:12.5px;font-weight:750;letter-spacing:.5px;
   text-transform:uppercase;color:var(--soft)}
+.lbl > span:first-child{margin-right:auto}
+.page > .lbl:first-of-type,.top + .lbl{margin-top:0}
 .rows{padding-bottom:34px}
 .row{display:flex;align-items:center;gap:6px;background:var(--card);box-shadow:var(--s1);
   border-radius:18px;padding:11px 8px 11px 15px;margin-bottom:8px;
@@ -687,7 +685,8 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   border-radius:50%;background:var(--dd)}
 
 /* ---------- toast ---------- */
-.toast{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom));
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));
+  width:max-content;max-width:min(86vw,420px);
   transform:translateX(-50%);background:var(--ink);color:var(--bg);
   display:flex;align-items:center;gap:9px;padding:12px 18px;border-radius:16px;
   font-weight:700;font-size:15px;z-index:60;box-shadow:var(--s3);
@@ -1225,3 +1224,33 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .row input.over{box-shadow:inset 0 -2px 0 var(--ko)}
 .dupb.warn{background:rgba(196,86,107,.12)}
 .dupb.warn .dupt{opacity:.75}
+
+/* Un message qui arrive pendant qu'une feuille est ouverte se posait
+   pile sur son bouton principal : « Envoi impossible » recouvrait
+   « Enregistrer », au point qu'on croyait lire le bouton. Feuille
+   ouverte, le message passe en haut. */
+.toast.up{animation:tdown .45s var(--sp)}
+@keyframes tdown{from{opacity:0;transform:translate(-50%,-14px) scale(.97)}}
+
+/* Le contenu défilait derrière l'heure et la batterie : sur iPhone la
+   barre d'état est transparente et rien ne la doublait. Un bandeau de la
+   couleur du fond la garnit, et le contenu disparaît proprement dessous. */
+.statusmask{position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);
+  background:var(--bg);z-index:50;pointer-events:none}
+
+/* La pastille d'explication : posée contre le nom du réglage, elle ne
+   prend pas de ligne à elle et ne se lit que si on la touche. */
+.hq{flex:none;width:19px;height:19px;min-height:0;border-radius:50%;
+  background:var(--surf2);color:var(--soft);font-size:12px;font-weight:800;
+  line-height:19px;text-align:center;letter-spacing:0;text-transform:none}
+.hq:active{transform:scale(.86)}
+.lbl .hq{margin-left:-2px}
+.sr .hq,.srh .hq{margin-left:-4px}
+.htxt{padding:0 14px 14px;line-height:1.55}
+/* Une ligne à interrupteur est un bouton : on ne peut pas en imbriquer un
+   second dedans (le navigateur referme le premier et la ligne se casse en
+   deux). La pastille se pose donc par-dessus, à gauche de l'interrupteur. */
+.srw{position:relative;display:block}
+.srw > .sr{width:100%}
+.srw > .hq{position:absolute;top:50%;right:66px;transform:translateY(-50%);z-index:2}
+.srw > .sr .n{padding-right:26px}
