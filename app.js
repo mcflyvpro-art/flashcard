@@ -66,6 +66,12 @@ let friends = null;          // annuaire des autres comptes, pour choisir un des
 let sendTo = null;           // destinataire choisi dans la feuille d'envoi
 let mailOpen = null;         // id de l'e-mail affiché dans sa feuille de détail
 let sendMsg = '';            // message en cours de frappe dans la feuille d'envoi
+let lib = { list: null, err: 0, open: null };      // l'étagère commune du groupe
+let duels = { list: null, scores: null, err: 0, open: null };
+let board = { rows: null, err: 0, range: 7 };
+let shared = null;            // paquet ouvert par un lien de consultation
+let duelRun = null;           // défi en cours de partie
+let groupTab = 'lib';         // onglet courant de l'écran du groupe
 
 /* ---------- annuler ----------
    Avant toute action qui écrase ou efface, on photographie les paquets
@@ -339,6 +345,7 @@ const I = {
   more: '<circle cx="6" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.5" fill="currentColor" stroke="none"/>',
   card: '<rect x="3" y="5.2" width="18" height="13.6" rx="3"/><path d="M7.2 10h6M7.2 13.4h9"/>',
   tag: '<path d="M11.4 3.6H20v8.6l-8.8 8.8a1.6 1.6 0 0 1-2.3 0l-6.3-6.3a1.6 1.6 0 0 1 0-2.3z"/><circle cx="16.3" cy="7.7" r="1.3"/>',
+  book: '<path d="M5 4.5h9.5A2.5 2.5 0 0 1 17 7v12.5H7.5A2.5 2.5 0 0 1 5 17z"/><path d="M5 17a2.5 2.5 0 0 1 2.5-2.5H17"/>',
   trophy: '<path d="M7.5 4.5h9v4.2a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 5.8H5a2 2 0 0 0 2 3.4M16.5 5.8H19a2 2 0 0 1-2 3.4"/><path d="M12 13.2v3.3M8.7 19.5h6.6a3.3 3.3 0 0 0-3.3-3v0a3.3 3.3 0 0 0-3.3 3z"/>',
   target: '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
   swipe: '<path d="M22 6l-5 6 5 6M17 12h13M50 6l5 6-5 6M55 12H42"/>',
@@ -1076,17 +1083,23 @@ function fnrApply(d) {
   return hits;
 }
 
-function importPayload(p) {
+/* Réimporter son propre fichier doit remettre à jour le paquet du même
+   nom, pas en empiler des copies. Mais un paquet qui vient d'ailleurs —
+   lien, courrier, bibliothèque — n'a rien à voir avec le sien : « Italien »
+   est un nom que trois comptes sur trois utilisent, et l'écraser ferait
+   disparaître des cartes et toute leur progression sans un mot. D'où le
+   second argument : « celui-ci arrive de l'extérieur, mets-le à côté ». */
+function importPayload(p, fresh) {
   let last = null;
   for (const k of (Array.isArray(p) ? p : [p])) {
     const cards = (k.cards || []).map(c => Array.isArray(c) ? { f: c[0], b: c[1] } : c).filter(c => c && c.f);
     if (!cards.length) continue;
-    const ex = db.decks.find(d => d.name === k.name);
+    const ex = fresh ? null : db.decks.find(d => d.name === k.name);
     if (ex) {
-      ex.subject = k.subject ?? ex.subject;
+      ex.subject = k.subject || ex.subject;      // sans matière à l'import : on garde la sienne
       ex.cards = cards.map(c => ({ id: uid(), f: c.f, b: c.b }));
       last = ex; dirty[ex.id] = 1;
-    } else last = addDeck(k.name, cards, k.subject);
+    } else last = addDeck(fresh ? freeName((k.name || 'Paquet').trim() || 'Paquet') : k.name, cards, k.subject);
   }
   save(); flush(); return last;
 }
@@ -1146,7 +1159,8 @@ function applyFont() {
 
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView, quiz: quizHome,
-              run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView };
+              run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
+              group: groupView, shared: sharedView, duel: duelView };
   $.classList.remove('fade');
   if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
   (v[view.name] || home)();
@@ -1227,7 +1241,8 @@ function paintRail() {
   let r = document.getElementById('rail');
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
   const on = /quiz|run/.test(view.name) ? 'quiz' : view.name === 'settings' ? 'settings'
-    : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats' : 'home';
+    : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats'
+    : /group|duel|shared/.test(view.name) ? 'group' : 'home';
   const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n;
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
   if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
@@ -1241,6 +1256,7 @@ function paintRail() {
     <div class="sp"></div>
     <nav>
       <button class="${on === 'stats' ? 'on' : ''}" data-r="stats">${svg(I.chart)}<span>Stats</span></button>
+      <button class="${on === 'group' ? 'on' : ''}" data-r="group">${svg(I.trophy)}<span>Groupe</span></button>
       <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Boîte</span>${
         mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
       <button class="${on === 'settings' ? 'on' : ''}" data-r="settings">${svg(I.gear)}<span>Réglages</span></button>
@@ -1250,6 +1266,7 @@ function paintRail() {
     const b = e.target.closest('[data-r]'); if (!b) return;
     if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
     if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
+    if (b.dataset.r === 'group') { groupPull(); return go('group'); }
     go(b.dataset.r === 'quiz' ? 'quiz' : b.dataset.r === 'settings' ? 'settings' : 'home');
   };
 }
@@ -1711,7 +1728,10 @@ function loginView() {
       } else await signIn(em.value, pw.value);
       db = load();
       await pull();
-      go('home');
+      /* Un lien de partage ouvert alors qu'on n'était pas connecté attend
+         dans l'adresse : c'est maintenant qu'il faut le suivre, sinon on
+         atterrit sur l'accueil sans savoir ce qu'on venait voir. */
+      if (!consumeHash()) go('home');
     } catch (x) {
       const m = String(x.message || '');
       err.textContent = /already|exist|registered/i.test(m) ? 'Cette adresse a déjà un compte'
@@ -1814,6 +1834,8 @@ function settingsView() {
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Statistiques</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="group">${svg(I.trophy)}<span class="n">Le groupe</span>
+          <span class="c">bibliothèque, défis</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
           <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
         ${canUndo() ? `<button class="sr flat" data-act="undo2">${svg(I.redo)}
@@ -2009,7 +2031,7 @@ async function openMail(id) {
 }
 async function addMail(it) {
   const n = (it.cards || []).length;
-  const d = importPayload({ name: it.deck_name, subject: '', cards: it.cards });
+  const d = importPayload({ name: it.deck_name, subject: '', cards: it.cards }, true);
   it.added_at = new Date().toISOString();
   closeMenu();
   if (d) go('deck', d.id);
@@ -2023,6 +2045,297 @@ async function delMail(id) {
   closeMenu(); render();
   try { await api(`/rest/v1/mail?id=eq.${id}`, 'DELETE', null, { Prefer: 'return=minimal' }); }
   catch (e) {}
+}
+
+/* ══════════ partage : lien, bibliothèque, défis, classement ══════════
+   Trois façons de faire circuler un paquet, de la plus légère à la plus
+   engageante : un lien qu'on donne à qui on veut, une étagère commune au
+   groupe, et un défi où tout le monde répond aux mêmes questions.
+   Aucun de ces chemins n'ouvre la table des paquets : ce qui est partagé
+   voyage en copie, et decks reste privé à son propriétaire. */
+
+const cf = c => Array.isArray(c) ? c[0] : ((c && c.f) || '');
+const cb = c => Array.isArray(c) ? c[1] : ((c && c.b) || '');
+
+/* ---------- lien de consultation ----------
+   Le lien porte un jeton, pas les cartes : il tient sur une ligne quel que
+   soit le paquet, il montre toujours la version du jour, et le révoquer le
+   coupe pour de bon — alors qu'un lien qui contient tout reste valable à
+   jamais une fois copié. */
+const TOKC = 'abcdefghjkmnpqrstuvwxyz23456789';   // ni i, l, o, 0, 1 : indictables à l'oral
+const newTok = () => Array.from(crypto.getRandomValues(new Uint8Array(10)),
+                                b => TOKC[b % TOKC.length]).join('');
+
+async function shareLink(d) {
+  let tok = (d.meta || {}).tok;
+  if (!tok) {
+    tok = newTok();
+    await api('/rest/v1/shares', 'POST',
+      [{ token: tok, deck_id: d.id, user_id: auth.uid, mode: 'ro' }], { Prefer: 'return=minimal' });
+    setMeta(d, { tok });
+  }
+  return location.origin + location.pathname + '#s=' + tok;
+}
+async function revokeShare(d) {
+  const tok = (d.meta || {}).tok; if (!tok) return;
+  const m = { ...metaOf(d) }; delete m.tok; d.meta = m; saveDeck(d);
+  try { await api('/rest/v1/shares?token=eq.' + encodeURIComponent(tok), 'DELETE', null, { Prefer: 'return=minimal' }); }
+  catch (e) {}
+}
+async function openShared(tok) {
+  shared = { tok, st: 'load' };
+  view = { name: 'shared' }; animate = true; render(); window.scrollTo(0, 0);
+  try {
+    const rows = await api('/rest/v1/rpc/shared_deck', 'POST', { tok });
+    const r = (rows || [])[0];
+    shared = r ? { tok, st: 'ok', d: r } : { tok, st: 'gone' };
+  } catch (e) { shared = { tok, st: 'err' }; }
+  if (view.name === 'shared') render();
+}
+function sharedView() {
+  const s = shared || {}, d = s.d, cards = d ? (d.cards || []) : [];
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Paquet partagé</h1></div>
+    <div class="page">
+      ${s.st === 'load' ? `<div class="empty">${svg(I.link)}<p>Ouverture du lien…</p></div>`
+      : s.st !== 'ok' ? `<div class="empty">${svg(I.warn)}<p>${s.st === 'gone'
+          ? 'Ce lien a été révoqué, ou le paquet n’existe plus.'
+          : 'Lien illisible pour l’instant. Réessaie une fois connecté au réseau.'}</p></div>`
+      : `<div class="top"><div class="hero">${esc(d.name)}</div></div>
+        <div class="note">${plur(cards.length, 'carte')} en consultation. Rien n’arrive chez toi
+          tant que tu ne le demandes pas ; une fois ajouté, ton exemplaire vit sa propre vie.</div>
+        <button class="cta" data-act="addshared">${svg(I.plus)}Ajouter à mes paquets</button>
+        <div class="rows">${cards.slice(0, 300).map(c => `<div class="pr">
+          <span class="a">${esc(plain(cf(c)))}</span>${svg(I.arrow)}<span class="b">${esc(plain(cb(c)))}</span>
+          </div>`).join('')}</div>`}
+    </div>`;
+}
+
+/* ---------- bibliothèque commune ----------
+   Publier, c'est poser une copie sur l'étagère du groupe : le paquet
+   d'origine continue de vivre de son côté, et republier remplace la copie
+   par la version du jour. Chacun ne peut retirer que ses propres paquets. */
+async function libPull() {
+  try {
+    lib.list = await api('/rest/v1/library?select=deck_id,user_id,who,name,subject,cards,n,updated_at'
+      + '&order=updated_at.desc&limit=100') || [];
+    lib.err = 0;
+  } catch (e) { lib.err = 1; }
+  if (view.name === 'group') render();
+}
+async function libPublish(d) {
+  closeMenu();
+  const row = { deck_id: d.id, user_id: auth.uid, who: prefs.name || auth.email,
+                name: d.name, subject: d.subject ? subj(d.subject).name : '',
+                n: d.cards.length, cards: d.cards.map(c => [plain(c.f), plain(c.b)]),
+                updated_at: new Date().toISOString() };
+  try {
+    await api('/rest/v1/library', 'POST', [row], { Prefer: 'resolution=merge-duplicates,return=minimal' });
+    setMeta(d, { pub: 1 });
+    lib.list = null; libPull();
+    toast(I.book, 'Sur l’étagère du groupe');
+  } catch (e) { toast(I.x, 'Publication impossible'); }
+}
+async function libRemove(d) {
+  closeMenu();
+  setMeta(d, { pub: 0 });
+  lib.list = (lib.list || []).filter(x => x.deck_id !== d.id);
+  render();
+  try { await api('/rest/v1/library?deck_id=eq.' + encodeURIComponent(d.id), 'DELETE', null, { Prefer: 'return=minimal' }); }
+  catch (e) {}
+  toast(I.check, 'Retiré de la bibliothèque');
+}
+function libAdd(it) {
+  /* les identifiants de matière sont propres à chaque compte : on
+     rattache par le nom quand il existe déjà ici, sinon sans matière */
+  const s = db.subjects.find(x => x.name.toLowerCase() === String(it.subject || '').toLowerCase());
+  const n = (it.cards || []).length;
+  const d = importPayload({ name: it.name, subject: s ? s.id : '', cards: it.cards }, true);
+  closeMenu();
+  if (d) go('deck', d.id);
+  toast(I.check, plur(n, 'carte') + ' ajoutée' + (n > 1 ? 's' : ''));
+}
+
+/* ---------- défis ----------
+   Les questions sont figées à la création : tout le monde répond
+   exactement aux mêmes, dans le même ordre. Sinon comparer les scores ne
+   voudrait rien dire, et le paquet d'origine peut très bien changer
+   ensuite. Un essai par personne, pour la même raison. */
+const DUELQ = 10;
+async function duelsPull() {
+  try {
+    const [ds, sc] = await Promise.all([
+      api('/rest/v1/duels?select=id,owner,who,name,total,cards,created_at&order=created_at.desc&limit=40'),
+      api('/rest/v1/duel_scores?select=duel_id,user_id,who,score,ms')
+    ]);
+    duels.list = ds || []; duels.scores = sc || []; duels.err = 0;
+  } catch (e) { duels.err = 1; }
+  if (view.name === 'group') render();
+}
+const myScore = id => (duels.scores || []).find(s => s.duel_id === id && s.user_id === auth.uid);
+const rankOf = id => (duels.scores || []).filter(s => s.duel_id === id)
+  .sort((a, b) => b.score - a.score || a.ms - b.ms);
+
+async function duelMake(d) {
+  const uniq = [];
+  for (const c of d.cards) {
+    const b = plain(c.b).trim();
+    if (b && !uniq.some(x => x[1] === b)) uniq.push([plain(c.f).trim(), b]);
+  }
+  if (uniq.length < 4) { closeMenu(); return toast(I.x, 'Il faut 4 réponses différentes'); }
+  const cards = shuffle(uniq.slice()).slice(0, DUELQ);
+  closeMenu();
+  try {
+    await api('/rest/v1/duels', 'POST',
+      [{ deck_id: d.id, owner: auth.uid, who: prefs.name || auth.email,
+         name: d.name, total: cards.length, cards }], { Prefer: 'return=minimal' });
+    duels.list = null; groupTab = 'duel'; go('group'); duelsPull();
+    toast(I.flame, 'Défi lancé — ' + plur(cards.length, 'question'));
+  } catch (e) { toast(I.x, 'Défi impossible'); }
+}
+async function duelDrop(id) {
+  duels.list = (duels.list || []).filter(x => x.id !== id);
+  closeMenu(); render();
+  try { await api('/rest/v1/duels?id=eq.' + encodeURIComponent(id), 'DELETE', null, { Prefer: 'return=minimal' }); }
+  catch (e) { toast(I.x, 'Suppression impossible'); }
+}
+function duelOpts() {
+  const r = duelRun, c = r.cards[r.i];
+  const pool = r.cards.filter((_, k) => k !== r.i).map(x => x[1]).filter(v => v !== c[1]);
+  r.opts = shuffle([c[1], ...shuffle(pool).slice(0, 3)]);
+  r.pick = null;
+}
+function duelStart(du) {
+  if (myScore(du.id)) return;
+  duelRun = { id: du.id, name: du.name, cards: du.cards || [], i: 0, score: 0,
+              t0: Date.now(), pick: null, opts: [] };
+  if (duelRun.cards.length < 4) { duelRun = null; return toast(I.x, 'Défi incomplet'); }
+  duelOpts(); closeMenu();
+  view = { name: 'duel' }; animate = true; render();
+}
+function duelPick(k) {
+  const r = duelRun; if (!r || r.pick != null) return;
+  r.pick = k;
+  const good = r.opts[k] === r.cards[r.i][1];
+  if (good) r.score++;
+  beep(good);
+  render();
+  setTimeout(() => {
+    if (!duelRun || duelRun !== r) return;
+    if (r.i + 1 >= r.cards.length) return duelEnd();
+    r.i++; duelOpts(); render();
+  }, good ? 700 : 1300);
+}
+async function duelEnd() {
+  const r = duelRun; if (!r) return;
+  const row = { duel_id: r.id, user_id: auth.uid, who: prefs.name || auth.email,
+                score: r.score, ms: Date.now() - r.t0 };
+  duelRun = null;
+  duels.scores = (duels.scores || []).filter(s => !(s.duel_id === row.duel_id && s.user_id === auth.uid));
+  duels.scores.push(row);
+  duels.open = r.id; groupTab = 'duel';
+  go('group'); openMenu('duelitem');
+  try {
+    await api('/rest/v1/duel_scores', 'POST', [row],
+      { Prefer: 'resolution=merge-duplicates,return=minimal' });
+  } catch (e) { toast(I.x, 'Score non enregistré'); }
+}
+function duelView() {
+  const r = duelRun;
+  if (!r) { view = { name: 'group' }; return groupView(); }
+  const c = r.cards[r.i], good = c[1];
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="duelquit" aria-label="Abandonner">${svg(I.x)}</button>
+      <h1>${esc(r.name)}</h1>
+      <span class="num">${r.i + 1}/${r.cards.length}</span></div>
+    <div class="page">
+      <div class="dbar"><i style="width:${Math.round(r.i / r.cards.length * 100)}%"></i></div>
+      <div class="qcard"><span>${esc(c[0])}</span></div>
+      <div class="opts">${r.opts.map((o, k) => {
+        const cl = r.pick == null ? '' : o === good ? ' ok' : (r.pick === k ? ' ko' : ' dim');
+        return `<button class="op${cl}" data-dpick="${k}">${esc(o)}</button>`;
+      }).join('')}</div>
+    </div>`;
+}
+
+/* ---------- classement ----------
+   Les révisions de chacun restent privées : la fonction côté serveur ne
+   rend qu'un décompte par compte, jamais le détail des cartes ni des
+   erreurs. On compare un volume de travail, pas un contenu. */
+async function boardPull() {
+  try {
+    board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range }) || [];
+    board.err = 0;
+  } catch (e) { board.err = 1; }
+  if (view.name === 'group') render();
+}
+
+/* ---------- l'écran du groupe ---------- */
+const GTABS = { lib: 'Bibliothèque', duel: 'Défis', board: 'Classement' };
+const BRANGE = { 7: '7 jours', 30: '30 jours', 365: 'Toujours' };
+
+function groupView() {
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Le groupe</h1></div>
+    <div class="page">
+      <div class="seg" id="gTabs">${Object.entries(GTABS).map(([k, n]) =>
+        `<button class="${groupTab === k ? 'on' : ''}" data-gtab="${k}">${n}</button>`).join('')}</div>
+      ${groupTab === 'lib' ? libPane() : groupTab === 'duel' ? duelPane() : boardPane()}
+    </div>`;
+}
+function libPane() {
+  const l = lib.list;
+  return !l ? `<div class="empty">${svg(I.book)}<p>${lib.err ? 'Bibliothèque indisponible' : 'Chargement…'}</p></div>`
+    : !l.length ? `<div class="empty">${svg(I.book)}<p>L’étagère est vide. Depuis un paquet :
+        Partager, puis « Publier dans la bibliothèque ».</p></div>`
+    : `<div class="slist">${l.map(it => `
+        <button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
+          <span class="ml2"><span class="n">${esc(it.name)}</span>
+            <span class="sub">${esc(shortWho(it.who) || 'Un compte')}${
+              it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'carte')}</span></span>
+          <span class="c">${timeAgo(it.updated_at)}</span>${svg(I.arrow)}</button>`).join('')}</div>`;
+}
+function duelPane() {
+  const l = duels.list;
+  const mk = `<button class="cta ghost" data-act="duelnew">${svg(I.flame)}Lancer un défi</button>`;
+  if (!l) return `${mk}<div class="empty">${svg(I.flame)}<p>${duels.err ? 'Défis indisponibles' : 'Chargement…'}</p></div>`;
+  if (!l.length) return `${mk}<div class="empty">${svg(I.flame)}<p>Aucun défi en cours. Lance le premier :
+    dix questions tirées d’un de tes paquets, les mêmes pour tout le monde.</p></div>`;
+  return `${mk}<div class="slist">${l.map(du => {
+    const me = myScore(du.id), r = rankOf(du.id);
+    const pos = me ? r.findIndex(s => s.user_id === auth.uid) + 1 : 0;
+    return `<button class="sr flat" data-duel="${esc(du.id)}">${svg(I.flame)}
+      <span class="ml2"><span class="n">${esc(du.name)}</span>
+        <span class="sub">${esc(shortWho(du.who) || 'Un compte')} · ${plur(du.total, 'question')}${
+          r.length ? ' · ' + plur(r.length, 'joueur') : ''}</span></span>
+      <span class="c">${me ? `<b class="dsc">${me.score}/${du.total}</b> ${pos === 1 ? '🥇' : pos + 'ᵉ'}`
+        : '<span class="dnew">à jouer</span>'}</span>${svg(I.arrow)}</button>`;
+  }).join('')}</div>`;
+}
+function boardPane() {
+  const r = board.rows;
+  const seg = `<div class="seg" id="bRange">${Object.entries(BRANGE).map(([k, n]) =>
+    `<button class="${board.range === +k ? 'on' : ''}" data-brange="${k}">${n}</button>`).join('')}</div>`;
+  if (!r) return `${seg}<div class="empty">${svg(I.trophy)}<p>${board.err ? 'Classement indisponible' : 'Chargement…'}</p></div>`;
+  if (!r.length) return `${seg}<div class="empty">${svg(I.trophy)}<p>Personne n’a révisé sur cette période.</p></div>`;
+  const top = r[0].n || 1;
+  const MED = ['🥇', '🥈', '🥉'];
+  return `${seg}<div class="rows">${r.map((x, i) => `
+    <div class="bdr ${x.uid === auth.uid ? 'me' : ''}">
+      <span class="bdp">${MED[i] || (i + 1)}</span>
+      <span class="bdn"><b>${esc(shortWho(x.who) || 'Compte')}</b>
+        <i>${plur(+x.n, 'carte')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
+        <em style="width:${Math.max(4, Math.round(x.n / top * 100))}%"></em></span>
+    </div>`).join('')}</div>
+    <div class="note">Seul le nombre de cartes révisées circule entre les comptes ;
+      ni les paquets, ni les erreurs, ni les réponses.</div>`;
+}
+function groupPull() {
+  if (groupTab === 'lib' && !lib.list) libPull();
+  if (groupTab === 'duel' && !duels.list) duelsPull();
+  if (groupTab === 'board' && !board.rows) boardPull();
 }
 
 /* ══════════ statistiques ══════════
@@ -2641,11 +2954,83 @@ function paintMenu() {
   }
   if (menu === 'sharepick') {
     const d = deck(view.id); if (!d) { menu = null; return; }
+    const m = metaOf(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.share)}Partager « ${esc(d.name)} »</div>
-        <button class="mi" data-mact="copylink">${svg(I.link)}Copier le lien</button>
         <button class="mi" data-mact="sendfriend">${svg(I.mail)}Envoyer à un ami<span class="tail">${friends ? friends.length : ''}</span></button>
+        <button class="mi" data-mact="rolink">${svg(I.link)}${m.tok ? 'Copier le lien de consultation' : 'Créer un lien de consultation'}</button>
+        ${m.tok ? `<button class="mi warn" data-mact="roff">${svg(I.eyeoff)}Révoquer le lien</button>` : ''}
+        <div class="note">Le lien montre le paquet sans rien installer, et suit tes
+          modifications. Le révoquer le coupe aussitôt, même déjà envoyé.</div>
+        <div class="msep"></div>
+        ${m.pub ? `<button class="mi" data-mact="publish">${svg(I.book)}Mettre à jour dans la bibliothèque</button>
+                   <button class="mi warn" data-mact="unpublish">${svg(I.x)}Retirer de la bibliothèque</button>`
+          : `<button class="mi" data-mact="publish">${svg(I.book)}Publier dans la bibliothèque</button>`}
+        <button class="mi" data-mact="duelnew2">${svg(I.flame)}Lancer un défi<span class="tail">${Math.min(DUELQ, d.cards.length)}</span></button>
+        <div class="msep"></div>
+        <button class="mi" data-mact="copylink">${svg(I.down)}Lien hors ligne (tout le paquet)</button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'libitem') {
+    const it = (lib.list || []).find(x => x.deck_id === lib.open);
+    if (!it) { menu = null; return; }
+    const mine = it.user_id === auth.uid;
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.book)}
+          <span class="mhx"><b>${esc(it.name)}</b>
+            <i>${esc(noDetect(shortWho(it.who) || 'Un compte'))}${it.subject ? ' · ' + esc(it.subject) : ''}
+              · ${plur(it.n, 'carte')} · ${timeAgo(it.updated_at)}</i></span>
+        </div>
+        <div class="mscroll">${(it.cards || []).slice(0, 60).map(c => `<div class="pr">
+          <span class="a">${esc(cf(c))}</span>${svg(I.arrow)}<span class="b">${esc(cb(c))}</span></div>`).join('')}</div>
+        <button class="mi" data-mact="libadd" style="justify-content:center;font-weight:700">
+          ${svg(I.plus)}Ajouter à mes paquets</button>
+        ${mine ? `<button class="mi warn" data-mact="libdrop">${svg(I.trash)}<span>Retirer de la bibliothèque</span></button>` : ''}
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'duelitem') {
+    const du = (duels.list || []).find(x => x.id === duels.open);
+    if (!du) { menu = null; return; }
+    const r = rankOf(du.id), me = myScore(du.id), mine = du.owner === auth.uid;
+    const MED = ['🥇', '🥈', '🥉'];
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.flame)}
+          <span class="mhx"><b>${esc(du.name)}</b>
+            <i>lancé par ${esc(noDetect(shortWho(du.who) || 'un compte'))} · ${plur(du.total, 'question')}
+              · ${timeAgo(du.created_at)}</i></span>
+        </div>
+        <div class="mscroll">${r.length ? r.map((sc, i) => `<div class="bdr ${sc.user_id === auth.uid ? 'me' : ''}">
+            <span class="bdp">${MED[i] || (i + 1)}</span>
+            <span class="bdn"><b>${esc(shortWho(sc.who) || 'Compte')}</b>
+              <i>${sc.score}/${du.total} · ${Math.round(sc.ms / 1000)} s</i></span></div>`).join('')
+          : '<div class="note">Personne n’a encore joué.</div>'}</div>
+        ${me ? `<div class="note">Tu as fait ${me.score}/${du.total}. Un seul essai par personne :
+            sinon le classement ne dirait plus rien.</div>`
+          : `<button class="mi" data-mact="duelgo" style="justify-content:center;font-weight:700">
+              ${svg(I.play)}Jouer les ${du.total} questions</button>`}
+        ${mine ? `<button class="mi warn" data-mact="dueldrop">${svg(I.trash)}<span>Supprimer le défi</span></button>` : ''}
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'duelnew') {
+    const list = db.decks.filter(x => x.cards.length >= 4);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.flame)}Défier le groupe</div>
+        <div class="note">Jusqu’à ${DUELQ} questions tirées du paquet choisi, figées une fois
+          pour toutes : tout le monde répond aux mêmes, dans le même ordre.</div>
+        <div class="mscroll">${list.length ? list.map(x => `
+          <button class="mi" data-dnew="${esc(x.id)}"><i class="tri" style="--c:${subj(x.subject).d}"></i>
+            ${esc(x.name)}<span class="tail">${x.cards.length}</span></button>`).join('')
+          : '<div class="note">Il faut un paquet d’au moins 4 cartes.</div>'}</div>
       </div>`;
     mountMenu(w);
     return;
@@ -2797,9 +3182,10 @@ function paintMenu() {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew]');
   if (!b) return;
   const d = deck(view.id);
+  if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
   if (b.dataset.friend !== undefined) { sendTo = b.dataset.friend; return paintMenu(); }
@@ -2993,6 +3379,25 @@ document.addEventListener('click', async e => {
   }
   if (a === 'openpeek') { const id = previewOf; closeMenu(); return go('deck', id); }
   if (a === 'sharepick') { if (!friends) friendsPull(); return openMenu('sharepick'); }
+  if (a === 'rolink') {
+    if (!d) return;
+    closeMenu();
+    try {
+      const url = await shareLink(d);
+      if (navigator.share) navigator.share({ url }).catch(() => {});
+      else await navigator.clipboard.writeText(url);
+      toast(I.link, 'Lien de consultation copié');
+    } catch (err) { toast(I.x, 'Lien impossible hors ligne'); }
+    return;
+  }
+  if (a === 'roff') { if (!d) return; closeMenu(); await revokeShare(d); return toast(I.check, 'Lien coupé'); }
+  if (a === 'publish') { if (d) libPublish(d); return; }
+  if (a === 'unpublish') { if (d) libRemove(d); return; }
+  if (a === 'duelnew2') { if (d) duelMake(d); return; }
+  if (a === 'libadd') { const it = (lib.list || []).find(x => x.deck_id === lib.open); if (it) libAdd(it); return; }
+  if (a === 'libdrop') { const it = (lib.list || []).find(x => x.deck_id === lib.open); const t = it && deck(it.deck_id); if (t) libRemove(t); return; }
+  if (a === 'duelgo') { const du = (duels.list || []).find(x => x.id === duels.open); if (du) duelStart(du); return; }
+  if (a === 'dueldrop') { return duelDrop(duels.open); }
   if (a === 'copylink') {
     closeMenu();
     const url = location.origin + location.pathname + '#i=' +
@@ -4016,7 +4421,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-brange],[data-dpick]');
   if (!b) return;
   const ds = b.dataset;
   const a0 = ds.act;
@@ -4028,6 +4433,11 @@ $.addEventListener('click', e => {
     leaving = a0; return openMenu('leave');
   }
   if (ds.mail !== undefined) return openMail(+ds.mail);
+  if (ds.dpick !== undefined) return duelPick(+ds.dpick);
+  if (ds.lib !== undefined) { lib.open = ds.lib; return openMenu('libitem'); }
+  if (ds.duel !== undefined) { duels.open = ds.duel; return openMenu('duelitem'); }
+  if (ds.gtab !== undefined) { groupTab = ds.gtab; groupPull(); animate = false; return render(); }
+  if (ds.brange !== undefined) { board.range = +ds.brange; board.rows = null; animate = false; render(); return boardPull(); }
   if (ds.pkc !== undefined && sel) {
     /* on ne repeint que la ligne touchée et le décompte : reconstruire la
        liste entière ferait sauter le défilement à chaque coche */
@@ -4092,6 +4502,17 @@ $.addEventListener('click', e => {
   if (a === 'peek') { peek = !peek; render(); return; }
   if (a === 'marathon') return startStudy('all', false, null, { only: 'due', both: prefs.both });
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
+  if (a === 'group') { groupPull(); return go('group'); }
+  if (a === 'duelnew') return openMenu('duelnew');
+  if (a === 'duelquit') { duelRun = null; return go('group'); }
+  if (a === 'addshared') {
+    const sd = shared && shared.d; if (!sd) return;
+    const cards = (sd.cards || []).map(c => [cf(c), cb(c)]);
+    const nd = importPayload({ name: sd.name, subject: '', cards }, true);
+    shared = null;
+    if (nd) go('deck', nd.id); else go('home');
+    return toast(I.check, plur(cards.length, 'carte') + ' ajoutée' + (cards.length > 1 ? 's' : ''));
+  }
   if (a === 'expstats') return exportStats();
   if (a === 'find') { findQ = ''; return go('find'); }
   if (a === 'deckfind') {
@@ -4266,6 +4687,12 @@ document.addEventListener('keydown', e => {
 
 /* ---------- lien d'injection ---------- */
 function consumeHash() {
+  if (location.hash.startsWith('#s=')) {
+    const tok = location.hash.slice(3).replace(/[^a-z0-9]/gi, '').slice(0, 32);
+    history.replaceState(null, '', location.pathname);
+    if (tok) { openShared(tok); return true; }
+    return false;
+  }
   if (!location.hash.startsWith('#i=')) return false;
   try {
     const d = importPayload(dec(location.hash.slice(3)));
