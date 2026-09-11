@@ -316,6 +316,7 @@ const I = {
   eye: '<path d="M2.4 12S6 5.9 12 5.9 21.6 12 21.6 12 18 18.1 12 18.1 2.4 12 2.4 12z"/><circle cx="12" cy="12" r="2.7"/>',
   eyeoff: '<path d="M3.2 3.2l17.6 17.6"/><path d="M10.7 6.1A10.5 10.5 0 0 1 12 6c6 0 9.6 6 9.6 6a17.3 17.3 0 0 1-3.2 3.7M6.6 7.7A16.7 16.7 0 0 0 2.4 12s3.6 6 9.6 6a10 10 0 0 0 3.4-.6"/><path d="M9.9 10.1a2.8 2.8 0 0 0 4 4"/>',
   arrow: '<path d="M4.5 12h14m0 0l-5.2-5.2M18.5 12l-5.2 5.2"/>',
+  out: '<path d="M14 4.5h4.2a1.3 1.3 0 0 1 1.3 1.3v12.4a1.3 1.3 0 0 1-1.3 1.3H14"/><path d="M9.6 8.2 5.4 12l4.2 3.8M5.8 12H15"/>',
   more: '<circle cx="6" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.5" fill="currentColor" stroke="none"/>',
   card: '<rect x="3" y="5.2" width="18" height="13.6" rx="3"/><path d="M7.2 10h6M7.2 13.4h9"/>',
   tag: '<path d="M11.4 3.6H20v8.6l-8.8 8.8a1.6 1.6 0 0 1-2.3 0l-6.3-6.3a1.6 1.6 0 0 1 0-2.3z"/><circle cx="16.3" cy="7.7" r="1.3"/>',
@@ -341,6 +342,8 @@ const I = {
   flame: '<path d="M12 3.5c3 3 4.8 5.3 4.8 8.2a4.8 4.8 0 1 1-9.6 0c0-1.7.8-3.2 2-4.4.1 1.6.8 2.5 1.7 2.5 1 0 1.6-.9 1.6-2.4 0-1.4-.3-2.7-.5-3.9z"/>',
   grid: '<rect x="3.6" y="3.6" width="7" height="7" rx="2"/><rect x="13.4" y="3.6" width="7" height="7" rx="2"/><rect x="3.6" y="13.4" width="7" height="7" rx="2"/><rect x="13.4" y="13.4" width="7" height="7" rx="2"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.4 6.9"/><path d="M14 10a4 4 0 0 0-5.7 0L5.5 12.8a4 4 0 0 0 5.7 5.7l1.4-1.4"/>',
+  grip: '<path d="M9.4 6.4h.02M9.4 12h.02M9.4 17.6h.02M14.6 6.4h.02M14.6 12h.02M14.6 17.6h.02" stroke-width="2.9" stroke-linecap="round"/>',
+  search: '<circle cx="10.8" cy="10.8" r="6.4"/><path d="M15.5 15.5 20 20"/>',
   copy: '<rect x="8.6" y="8.6" width="11.8" height="11.8" rx="3"/><path d="M15.4 5.6a2 2 0 0 0-2-2H6.6a3 3 0 0 0-3 3v6.8a2 2 0 0 0 2 2"/>',
   split: '<path d="M12 3.6v6.8"/><path d="M12 10.4 6.6 15v5.4M12 10.4 17.4 15v5.4"/><circle cx="12" cy="3.6" r="0"/>',
   type: '<path d="M4.5 7.5V5.5h15v2M12 5.5v13M8.8 18.5h6.4"/>',
@@ -823,6 +826,53 @@ function splitDeck(d, size) {
   return made;
 }
 
+/* ---------- chercher et remplacer ----------
+   Recherche littérale, jamais une expression régulière : on remplace ce
+   qu'on a tapé, caractère pour caractère. Le compte des occurrences est
+   fait avant tout changement, pour qu'on sache ce qu'on s'apprête à faire. */
+let fnr = { q: '', r: '', side: 'both', cs: false };
+const fnrSides = () => fnr.side === 'both' ? ['f', 'b'] : [fnr.side];
+function fnrCount(txt, q) {
+  if (!q) return 0;
+  const h = fnr.cs ? txt : txt.toLowerCase(), n = fnr.cs ? q : q.toLowerCase();
+  let c = 0, i = 0;
+  while ((i = h.indexOf(n, i)) >= 0) { c++; i += n.length; }
+  return c;
+}
+function fnrScan(d) {
+  let hits = 0, cards = 0;
+  for (const c of d.cards) {
+    let k = 0;
+    for (const s of fnrSides()) k += fnrCount(String(c[s] || ''), fnr.q);
+    if (k) { hits += k; cards++; }
+  }
+  return { hits, cards };
+}
+function fnrSwap(txt, q, r) {
+  if (!fnr.cs) {
+    const h = txt.toLowerCase(), n = q.toLowerCase();
+    let out = '', i = 0, j;
+    while ((j = h.indexOf(n, i)) >= 0) { out += txt.slice(i, j) + r; i = j + n.length; }
+    return out + txt.slice(i);
+  }
+  return txt.split(q).join(r);
+}
+const fnrNote = s => !fnr.q ? 'Tape ce que tu cherches. La recherche est littérale : aucun caractère n’a de sens particulier.'
+  : !s.hits ? 'Aucune occurrence dans ce paquet.'
+  : `<b>${s.hits} occurrence${s.hits > 1 ? 's' : ''}</b> dans ${s.cards} carte${s.cards > 1 ? 's' : ''}`
+    + (fnr.r ? ` → « ${esc(fnr.r)} »` : ', qui seront simplement retirées');
+
+function fnrApply(d) {
+  const { hits } = fnrScan(d);
+  if (!hits) return 0;
+  pushUndo('Remplacement', [d.id]);
+  for (const c of d.cards)
+    for (const s of fnrSides())
+      if (c[s]) c[s] = fnrSwap(String(c[s]), fnr.q, fnr.r);
+  saveDeck(d);
+  return hits;
+}
+
 function importPayload(p) {
   let last = null;
   for (const k of (Array.isArray(p) ? p : [p])) {
@@ -846,8 +896,10 @@ function toast(icon, text, undo) {
   n.innerHTML = svg(icon) + (text ? `<span>${esc(text)}</span>` : '')
     + (undo ? `<button class="tun">${svg(I.redo)}Annuler</button>` : '');
   if (undo) n.querySelector('.tun').onclick = () => { n.remove(); doUndo(); };
-  /* sans barre d'onglets (réglages, révision, quiz) le toast descend d'autant */
-  if (!document.querySelector('.tabs')) n.style.bottom = 'calc(22px + env(safe-area-inset-bottom))';
+  /* il se pose au-dessus de ce qui occupe déjà le bas : barre d'onglets,
+     barre de sélection, ou rien du tout */
+  if (document.querySelector('.selb')) n.style.bottom = 'calc(84px + env(safe-area-inset-bottom))';
+  else if (!document.querySelector('.tabs')) n.style.bottom = 'calc(22px + env(safe-area-inset-bottom))';
   document.body.appendChild(n); tt = setTimeout(() => n.remove(), undo ? 5200 : 1600);
 }
 
@@ -881,6 +933,7 @@ let pageDir = 0;
 function go(name, id, dir) {
   closeMenu();
   if (name !== 'run') stopTimer();
+  if (name !== 'deck' || id !== view.id) selOff();   // la sélection appartient à un paquet
   pageDir = dir || 0; view = { name, id }; animate = !dir;
   render(); window.scrollTo(0, 0);
 }
@@ -1045,6 +1098,31 @@ const cardRich = c => !!(c.t || c.fi || c.bi || c.fa || c.ba || (c.g || []).leng
 const cardIcon = c => c.t === 'tf' ? I.type : (c.fi || c.bi) ? I.image
                     : (c.fa || c.ba) ? I.sound : (c.g || []).length ? I.tag : I.more;
 
+/* ---------- sélection multiple ----------
+   `sel` est nul hors du mode ; sinon c'est l'ensemble des cartes cochées.
+   La barre du bas ne propose que ce qui a du sens : rien de grisé, rien
+   qui ne réponde pas. */
+let sel = null;
+const selOff = () => { sel = null; };
+function selBar(d) {
+  const ids = [...sel].filter(i => d.cards.some(c => c.id === i));
+  const n = ids.length;
+  const all = n === d.cards.length;
+  const anyOn = ids.some(i => !d.cards.find(c => c.id === i).x);
+  return `<div class="selb">
+    <button class="sbl" data-act="selall">${svg(all ? I.x : I.check)}${all ? 'Aucune' : 'Tout'}</button>
+    <span class="sbn">${n ? n + ' carte' + (n > 1 ? 's' : '') : 'Aucune carte'}</span>
+    <div class="sba">
+      <button class="x" data-act="selmove" ${n && db.decks.length > 1 ? '' : 'disabled'}
+        title="Déplacer vers un autre paquet">${svg(I.out)}</button>
+      <button class="x" data-act="selsus" ${n ? '' : 'disabled'}
+        title="${anyOn ? 'Suspendre' : 'Réactiver'}">${svg(anyOn ? I.eyeoff : I.eye)}</button>
+      <button class="x warn" data-act="seldel" ${n ? '' : 'disabled'}
+        title="Supprimer">${svg(I.trash)}</button>
+    </div>
+  </div>`;
+}
+
 function deckView() {
   const d = deck(view.id); if (!d) return go('home');
   const s = subj(d.subject);
@@ -1068,26 +1146,31 @@ function deckView() {
       <button data-act="quizdeck">${svg(I.pen)}Quiz</button>
     </div>
     ${simpleMode() ? '' : mixBar(d)}
-    <div class="lbl"><span>Cartes</span><span>${d.cards.length}</span></div>
-    <div class="rows">
+    <div class="lbl"><span>Cartes</span>
+      ${d.cards.length ? `<button class="lnk" data-act="selmode">${sel ? 'Terminer' : 'Sélectionner'}</button>` : ''}
+      <span>${d.cards.length}</span></div>
+    <div class="rows ${sel ? 'picking' : ''}">
       ${d.cards.map((c, i) => `
-        <div class="row ${c.x ? 'off' : ''}" data-id="${c.id}" style="--i:${i}">
-          ${simpleMode() ? '' : `<i class="cst ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>`}
+        <div class="row ${c.x ? 'off' : ''} ${sel && sel.has(c.id) ? 'pk' : ''}" data-id="${c.id}" style="--i:${i}">
+          ${sel ? `<button class="ck" data-pkc="${c.id}" aria-label="Sélectionner">${svg(I.check)}</button>`
+            : `<button class="grip" aria-label="Déplacer">${svg(I.grip)}</button>
+              ${simpleMode() ? '' : `<i class="cst ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>`}`}
           <div class="fl">
-            <input value="${esc(c.f)}" data-k="f" placeholder="Recto">
-            <input class="b" value="${esc(c.b)}" data-k="b" placeholder="Verso">
+            <input value="${esc(c.f)}" data-k="f" placeholder="Recto" ${sel ? 'tabindex="-1"' : ''}>
+            <input class="b" value="${esc(c.b)}" data-k="b" placeholder="Verso" ${sel ? 'tabindex="-1"' : ''}>
           </div>
-          <button class="x ${cardRich(c) ? 'on' : ''}" data-card="${c.id}"
+          ${sel ? '' : `<button class="x ${cardRich(c) ? 'on' : ''}" data-card="${c.id}"
             title="Type, étiquettes, image, son">${svg(cardIcon(c))}</button>
           <button class="x sus ${c.x ? 'on' : ''}" data-sus="${c.id}"
             title="${c.x ? 'Réactiver' : 'Suspendre'}">${svg(c.x ? I.eyeoff : I.eye)}</button>
-          <button class="x" data-rm="${c.id}">${svg(I.x)}</button>
+          <button class="x" data-rm="${c.id}">${svg(I.x)}</button>`}
         </div>`).join('')}
-      <div class="duo ghost">
+      ${sel ? '' : `<div class="duo ghost">
         <button data-act="add">${svg(I.plus)}Carte</button>
         <button data-act="paste">${svg(I.down)}Coller</button>
-      </div>
-    </div>`;
+      </div>`}
+    </div>
+    ${sel ? selBar(d) : ''}`;
   const t = document.getElementById('dn');
   t.addEventListener('blur', () => {
     const v = t.textContent.replace(/\s+/g, ' ').trim();
@@ -1098,6 +1181,62 @@ function deckView() {
     const c = d.cards.find(x => x.id === inp.closest('.row').dataset.id);
     if (c) { c[inp.dataset.k] = inp.value; clearTimeout(typing); typing = setTimeout(() => saveDeck(d), 700); }
   }));
+  bindReorder(d);
+}
+
+/* ---------- réordonner par glisser-déposer ----------
+   Seule la poignée prend le doigt (touch-action:none) : partout ailleurs
+   la page défile normalement. Pendant le glissé rien n'est reconstruit —
+   les lignes se décalent par transform, une écriture par image — et
+   l'ordre n'est enregistré qu'au lâcher. */
+function bindReorder(d) {
+  const wrap = $.querySelector('.rows'); if (!wrap || sel) return;
+  let g = null;
+  const draw = () => {
+    g.raf = 0;
+    const { row, rows, from, step } = g;
+    row.style.transform = `translate3d(0,${g.dy}px,0)`;
+    g.to = Math.max(0, Math.min(rows.length - 1, from + Math.round(g.dy / step)));
+    rows.forEach((r, i) => {
+      if (r === row) return;
+      const shift = g.to > from && i > from && i <= g.to ? -step
+                  : g.to < from && i >= g.to && i < from ? step : 0;
+      r.style.transform = shift ? `translate3d(0,${shift}px,0)` : '';
+    });
+  };
+  wrap.addEventListener('pointerdown', e => {
+    const h = e.target.closest('.grip'); if (!h || g) return;
+    const rows = [...wrap.querySelectorAll('.row')];
+    const row = h.closest('.row'), from = rows.indexOf(row);
+    if (from < 0 || rows.length < 2) return;
+    g = { row, rows, from, to: from, dy: 0, raf: 0, y0: e.clientY,
+          step: rows[1].offsetTop - rows[0].offsetTop, pid: e.pointerId };
+    /* le doigt garde la poignée même s'il sort de la liste ; si la capture
+       est refusée (doigt déjà relâché), le glissé marche quand même, les
+       mouvements étant écoutés sur la liste elle-même */
+    try { h.setPointerCapture(e.pointerId); } catch (x) {}
+    row.classList.add('drag'); wrap.classList.add('dragging');
+    e.preventDefault();
+  });
+  wrap.addEventListener('pointermove', e => {
+    if (!g || e.pointerId !== g.pid) return;
+    g.dy = e.clientY - g.y0;
+    if (!g.raf) g.raf = requestAnimationFrame(draw);
+  });
+  const drop = e => {
+    if (!g || (e && e.pointerId !== g.pid)) return;
+    cancelAnimationFrame(g.raf);
+    const { from, to, rows, row } = g;
+    rows.forEach(r => r.style.transform = '');
+    row.classList.remove('drag'); wrap.classList.remove('dragging');
+    g = null;
+    if (from === to) return;
+    pushUndo('Ordre des cartes', [d.id]);
+    d.cards.splice(to, 0, d.cards.splice(from, 1)[0]);
+    saveDeck(d); render();
+  };
+  wrap.addEventListener('pointerup', drop);
+  wrap.addEventListener('pointercancel', drop);
 }
 
 
@@ -1530,6 +1669,56 @@ function paintMenu() {
     document.body.append(...w.childNodes);
     return;
   }
+  if (menu === 'fnr') {
+    const d = deck(view.id); if (!d) { menu = null; return; }
+    const s = fnrScan(d);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.search)}Chercher et remplacer</div>
+        <div class="frow"><input class="tok" id="fq" placeholder="Chercher" spellcheck="false"
+          autocapitalize="none" value="${esc(fnr.q)}">
+          <button class="cs ${fnr.cs ? 'on' : ''}" data-mact="fnrcase" title="Respecter la casse">Aa</button></div>
+        <input class="tok" id="fr" placeholder="Remplacer par" spellcheck="false"
+          autocapitalize="none" value="${esc(fnr.r)}">
+        <div class="mrow col"><span class="ml">${svg(I.card)}Où chercher</span>
+          <div class="seg mseg">
+            ${[['both', 'Les deux'], ['f', 'Recto'], ['b', 'Verso']].map(([v, l]) =>
+              `<button data-fside="${v}" class="${fnr.side === v ? 'on' : ''}">${l}</button>`).join('')}
+          </div></div>
+        <div class="note" id="fnote">${fnrNote(s)}</div>
+        <button class="mi" data-mact="dofnr" ${s.hits ? '' : 'disabled'}
+          style="justify-content:center;font-weight:700">${svg(I.check)}<span>Remplacer</span></button>
+      </div>`;
+    document.body.append(...w.childNodes);
+    /* on ne repeint jamais la feuille en cours de frappe : cela arracherait
+       le curseur du champ. Seuls le compte et le bouton se mettent à jour. */
+    const q = document.getElementById('fq'), r = document.getElementById('fr');
+    const refresh = () => {
+      fnr.q = q.value; fnr.r = r.value;
+      const k = fnrScan(d);
+      document.getElementById('fnote').innerHTML = fnrNote(k);
+      const btn = document.querySelector('[data-mact="dofnr"]');
+      k.hits ? btn.removeAttribute('disabled') : btn.setAttribute('disabled', '');
+    };
+    q.addEventListener('input', refresh); r.addEventListener('input', refresh);
+    setTimeout(() => q.focus(), 60);
+    return;
+  }
+  if (menu === 'move') {
+    const d = deck(view.id); if (!d || !sel) { menu = null; return; }
+    const n = [...sel].filter(i => d.cards.some(c => c.id === i)).length;
+    const others = db.decks.filter(x => x.id !== d.id);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mi" style="font-weight:750">${svg(I.out)}Déplacer ${n} carte${n > 1 ? 's' : ''} vers</div>
+        <div class="note">Les cartes quittent « ${esc(d.name)} » avec leur progression intacte.</div>
+        <div class="mscroll">${others.map(x => `<button class="mi" data-move="${x.id}">
+          <i class="tri" style="--c:${subj(x.subject).c}"></i>${esc(x.name)}
+          <span class="tail">${x.cards.length}</span></button>`).join('')}</div>
+      </div>`;
+    document.body.append(...w.childNodes);
+    return;
+  }
   if (menu === 'split') {
     const d = deck(view.id); if (!d) { menu = null; return; }
     const n = d.cards.length;
@@ -1602,6 +1791,7 @@ function paintMenu() {
       <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du paquet</button>
       ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
       <div class="msep"></div>
+      ${d.cards.length ? `<button class="mi" data-mact="fnropen">${svg(I.search)}Chercher et remplacer</button>` : ''}
       <button class="mi" data-mact="clone">${svg(I.copy)}Dupliquer</button>
       ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
       ${d.cards.length > 3 ? `<button class="mi" data-mact="splitopen">${svg(I.split)}Scinder<span class="tail">${d.cards.length}</span></button>` : ''}
@@ -1612,10 +1802,24 @@ function paintMenu() {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
+  if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
+  if (b.dataset.move !== undefined) {
+    const t = deck(b.dataset.move); if (!t || !d || !sel) return;
+    const moved = d.cards.filter(c => sel.has(c.id));
+    if (!moved.length) return closeMenu();
+    pushUndo('Déplacement', [d.id, t.id]);
+    d.cards = d.cards.filter(c => !sel.has(c.id));
+    t.cards.push(...moved);                       // identifiants et progression conservés
+    sel = new Set();
+    dirty[d.id] = 1; dirty[t.id] = 1; save(); flush();
+    closeMenu(); render();
+    return toast(I.out, moved.length + ' carte' + (moved.length > 1 ? 's' : '')
+      + ' → ' + t.name, true);
+  }
   if (b.dataset.merge !== undefined) {
     const src = deck(b.dataset.merge); if (!src || !d) return;
     const r = mergeDecks(d, src);
@@ -1753,6 +1957,13 @@ document.addEventListener('click', async e => {
   if (a === 'clone') {
     const n = cloneDeck(d); closeMenu(); go('deck', n.id);
     return toast(I.copy, n.cards.length + ' carte' + (n.cards.length > 1 ? 's' : '') + ' dupliquée' + (n.cards.length > 1 ? 's' : ''), true);
+  }
+  if (a === 'fnropen') { fnr.q = ''; fnr.r = ''; return openMenu('fnr'); }
+  if (a === 'fnrcase') { fnr.cs = !fnr.cs; return paintMenu(); }
+  if (a === 'dofnr') {
+    const n = fnrApply(d);
+    closeMenu(); render();
+    return n ? toast(I.check, n + ' remplacement' + (n > 1 ? 's' : ''), true) : toast(I.x, 'Rien à remplacer');
   }
   if (a === 'mergeopen') return openMenu('merge');
   if (a === 'splitopen') { splitSize = Math.min(splitSize, d.cards.length - 1); return openMenu('split'); }
@@ -2685,9 +2896,18 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc]');
   if (!b) return;
   const ds = b.dataset;
+  if (ds.pkc !== undefined && sel) {
+    /* on ne repeint que la ligne touchée et le décompte : reconstruire la
+       liste entière ferait sauter le défilement à chaque coche */
+    sel.has(ds.pkc) ? sel.delete(ds.pkc) : sel.add(ds.pkc);
+    b.closest('.row').classList.toggle('pk', sel.has(ds.pkc));
+    const d = deck(view.id), bar = $.querySelector('.selb');
+    if (d && bar) bar.outerHTML = selBar(d);
+    return;
+  }
   if (ds.trr !== undefined) return trashRestore(ds.trr);
   if (ds.trd !== undefined) {
     /* deux temps : la corbeille est le dernier filet, on ne le troue pas
@@ -2749,6 +2969,31 @@ $.addEventListener('click', e => {
   if (a === 'settings') return go('settings');
   if (a === 'backup2') return openMenu('backup');
   if (a === 'trash') { trash.list = null; trashPull(); return go('trash'); }
+  /* ---- sélection multiple ---- */
+  if (a === 'selmode') { sel = sel ? null : new Set(); return render(); }
+  if (a === 'selall') {
+    const d = deck(view.id); if (!d) return;
+    sel = new Set(sel.size === d.cards.length ? [] : d.cards.map(c => c.id));
+    return render();
+  }
+  if (a === 'selmove') return openMenu('move');
+  if (a === 'selsus') {
+    const d = deck(view.id); if (!d || !sel.size) return;
+    const cs = d.cards.filter(c => sel.has(c.id));
+    const on = cs.some(c => !c.x);                   // tout d'un bloc, dans le même sens
+    pushUndo('Suspension', [d.id]);
+    cs.forEach(c => { if (on) c.x = 1; else delete c.x; });
+    saveDeck(d); render();
+    return toast(on ? I.eyeoff : I.eye, cs.length + (on ? ' suspendue' : ' réactivée') + (cs.length > 1 ? 's' : ''), true);
+  }
+  if (a === 'seldel') {
+    const d = deck(view.id); if (!d || !sel.size) return;
+    const n = d.cards.filter(c => sel.has(c.id)).length;
+    pushUndo('Suppression', [d.id]);
+    d.cards = d.cards.filter(c => !sel.has(c.id));
+    sel = new Set(); saveDeck(d); render();
+    return toast(I.trash, n + ' carte' + (n > 1 ? 's' : '') + ' supprimée' + (n > 1 ? 's' : ''), true);
+  }
   if (a === 'logout') return logout();
   if (a === 'tglsimple') return openMenu(prefs.simple ? 'engine' : 'simple');
   if (a === 'tglfresh') { prefs.fresh = !prefs.fresh; savePrefs(); return render(); }

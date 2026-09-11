@@ -158,6 +158,47 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .row .x:active{transform:scale(.82);color:var(--ko);background:rgba(196,86,107,.1)}
 .row .x svg{width:16px;height:16px;stroke-width:2.4}
 .duo.ghost button{background:var(--surf);box-shadow:none;height:50px;color:var(--ink2)}
+
+/* ---------- glisser pour réordonner ---------- */
+.grip{width:22px;height:34px;flex:none;display:grid;place-items:center;margin-left:-7px;
+  color:var(--soft);opacity:.38;cursor:grab;touch-action:none;
+  transition:opacity .22s,transform .22s var(--sp)}
+.grip svg{width:18px;height:18px}
+.grip:active{cursor:grabbing;opacity:.85;transform:scale(1.12)}
+.row.drag{position:relative;z-index:3;box-shadow:var(--s3);transform-origin:center;
+  transition:box-shadow .2s}
+.rows.dragging .row:not(.drag){transition:transform .2s var(--e)}
+.rows.dragging input{pointer-events:none}
+
+/* ---------- sélection multiple ----------
+   En mode sélection la ligne entière devient une cible : les champs de
+   saisie ne prennent plus le doigt, sinon taper sur un mot ouvrirait le
+   clavier au lieu de cocher. */
+.lbl .lnk{margin:0;padding:3px 10px;text-transform:none;letter-spacing:-.1px;font-size:12.5px}
+.rows.picking input{pointer-events:none;user-select:none}
+.rows.picking .row{cursor:pointer;padding-left:8px}
+.row .ck{width:26px;height:26px;flex:none;display:grid;place-items:center;border-radius:9px;
+  background:var(--surf);color:transparent;transition:background .2s,color .2s,transform .2s var(--sp)}
+.row .ck svg{width:15px;height:15px;stroke-width:3}
+.row.pk .ck{background:var(--ink);color:var(--bg)}
+.row.pk{box-shadow:var(--s2)}
+.row .ck:active{transform:scale(.85)}
+.selb{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
+  z-index:39;display:flex;align-items:center;gap:10px;padding:9px 10px 9px 8px;
+  background:var(--card);border-radius:20px;box-shadow:var(--s3);animation:up .42s var(--e)}
+.sbl{padding:8px 12px;border-radius:13px;background:var(--surf);color:var(--ink);
+  font-weight:730;font-size:13.5px;letter-spacing:-.2px;display:flex;align-items:center;gap:6px}
+.sbl svg{width:14px;height:14px;stroke-width:2.6}
+.sbn{flex:1;min-width:0;font-size:14px;font-weight:730;color:var(--soft);
+  letter-spacing:-.2px;font-variant-numeric:tabular-nums}
+.sba{display:flex;gap:2px}
+.sba .x{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:13px;
+  color:var(--ink);transition:transform .3s var(--sp),background .25s,opacity .25s}
+.sba .x svg{width:18px;height:18px;stroke-width:2.2}
+.sba .x.warn{color:var(--ko)}
+.sba .x:active{transform:scale(.86);background:var(--surf)}
+.sba .x[disabled]{opacity:.25;pointer-events:none}
+@media (min-width:900px){.selb{left:auto;right:40px;width:420px}}
 .duo.ghost button:active{background:var(--surf2)}
 
 /* ---------- révision ---------- */
@@ -853,6 +894,14 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 /* ══════════ feuilles : lignes de réglage ══════════ */
 .mrow{display:flex;align-items:center;gap:9px;padding:7px 12px}
 .mrow.col{flex-direction:column;align-items:stretch;gap:9px}
+/* chercher et remplacer : le « Aa » se glisse dans le champ de recherche */
+.frow{display:flex;align-items:center;gap:7px}
+.frow .tok{flex:1;min-width:0}
+.cs{width:44px;height:44px;flex:none;border-radius:14px;background:var(--surf);
+  color:var(--soft);font-weight:800;font-size:14px;letter-spacing:-.3px;
+  transition:background .22s,color .22s}
+.cs.on{background:var(--ink);color:var(--bg)}
+.mi[disabled]{opacity:.3;pointer-events:none}
 .menu .note{padding:0 18px 10px}
 .menu .note b{font-weight:800;color:var(--ink)}
 .ml .tail{margin-left:auto;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
