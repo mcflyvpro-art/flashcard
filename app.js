@@ -34,7 +34,7 @@ const SEED = [
   ['droit', 'Droit', 'pink'], ['management', 'Management', 'yellow'],
   ['lettres', 'Lettres', 'sand']
 ];
-const NONE = { id: '', name: 'Sans rayon', color: 'graphite',
+const NONE = { id: '', name: 'Sans matière', color: 'graphite',
                c: '#E8E3E9', ci: '#2A2530', d: '#8E8794' };
 const subj = id => {
   const t = db.subjects.find(x => x.id === id);
@@ -1421,7 +1421,7 @@ const tabs = on => `<div class="tabs">
   <div class="sl" style="transform:translateX(${on === 'commu' ? 74 : 0}px)"></div>
   <button class="${on === 'home' ? 'on' : ''}" data-act="tab-home" aria-label="Ma bibliothèque"
     aria-current="${on === 'home' ? 'page' : 'false'}">${svg(I.layers)}</button>
-  <button class="${on === 'commu' ? 'on' : ''}" data-act="tab-commu" aria-label="Le cercle"
+  <button class="${on === 'commu' ? 'on' : ''}" data-act="tab-commu" aria-label="Le cercle des lecteurs"
     aria-current="${on === 'commu' ? 'page' : 'false'}">${svg(I.user)}${
       (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
 </div>`;
@@ -1506,7 +1506,7 @@ const listRow = (d, i) => {
       : `<i class="ldot"></i>`}
     <button class="lmain" data-go="${d.id}" data-peek="${d.id}">
       <span class="n">${esc(d.name)}${d.pinned ? svg(I.pin) : ''}</span>
-      <span class="s">${plur(d.cards.length, 'fiche')}${p ? ' · ' + p + ' % mûres' : ''}</span>
+      <span class="s">${plur(d.cards.length, 'page')}${p ? ' · ' + p + ' % mûres' : ''}</span>
     </button>
     ${due ? `<i class="ldue">${due}</i>` : ''}
   </div>`;
@@ -1581,7 +1581,7 @@ function home() {
           ? `<div class="rows lst ${reorder ? 'dragging0' : ''}">${sortDecks(list).map(listRow).join('')}</div>`
           : `<div class="grid">${sortDecks(list).map(tile).join('')}</div>`}
       ${!simpleMode() && allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
-        <span>La tournée</span><i>${allDue()} fiches dues, tous rayons</i></button>` : ''}
+        <span>Lecture du jour</span><i>${allDue()} pages dues, toutes matières</i></button>` : ''}
     </div>
     ${reorder ? '' : `<button class="fab" data-act="new" aria-label="Nouveau livre">${svg(I.plus)}<span>Nouveau livre</span></button>`}
     ${tabs('home')}`;
@@ -1691,6 +1691,23 @@ function resumeBanner() {
   return `<button class="resume" data-act="resume">${svg(I.play)}
     <span>Reprendre ${esc(r.name || '')}</span><i>${left} carte${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}</i></button>`;
 }
+/* Où en est ce livre, en quatre chiffres : ce qu'il pèse, ce qu'il
+   réclame aujourd'hui, ce qui est acquis, et la dernière récitation. */
+function bookStats(d) {
+  const n = d.cards.length;
+  const due = dueCount(d);
+  const mat = n ? Math.round(d.cards.filter(c => cstate(c) === 'mature').length / n * 100) : 0;
+  const h = histOf(d.id, 'quiz');
+  const last = h.length ? Math.round(h[h.length - 1].p * 100) : null;
+  const one = (v, l) => `<div class="bs"><b>${v}</b><span>${l}</span></div>`;
+  return `<div class="bstats">
+    ${one(n, n > 1 ? 'pages' : 'page')}
+    ${one(due, 'à lire')}
+    ${one(mat + ' %', 'acquis')}
+    ${one(last == null ? '—' : last + ' %', 'récitation')}
+  </div>`;
+}
+
 /* Répartition nouvelle / apprentissage / jeune / mûre, en une barre */
 function mixBar(d) {
   const n = d.cards.length; if (!n) return '';
@@ -1762,17 +1779,22 @@ function deckView() {
       <div class="t" id="dn" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(d.name)}</div>
       <div class="s">
         <span>${svg(I.tag)}${esc(s.name)}</span><b></b>
-        <span>${svg(I.card)}${plur(d.cards.length, 'fiche')}</span>
+        <span>${svg(I.card)}${plur(d.cards.length, 'page')}</span>
         ${!simpleMode() && dueCount(d) ? `<b></b><span>${svg(I.play)}${dueCount(d)} à revoir</span>` : ''}
         ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
       </div>
     </div>
-    <div class="duo">
-      <button class="prim" data-act="study">${svg(I.play)}Lire</button>
+    ${simpleMode() ? '' : bookStats(d)}
+    <button class="cta read" data-act="study">${svg(I.play)}Lire${
+      !simpleMode() && dueCount(d) ? ` <b>${dueCount(d)}</b>` : ''}</button>
+    <div class="acts">
       <button data-act="quizdeck">${svg(I.pen)}Récitation</button>
+      <button data-act="mcq">${svg(I.grid)}QCM</button>
+      <button data-act="match">${svg(I.link)}Association</button>
+      <button data-act="sharepick">${svg(I.share)}Partager</button>
     </div>
     ${simpleMode() ? '' : mixBar(d)}
-    <div class="lbl"><span>Fiches</span>
+    <div class="lbl"><span>Pages</span>
       ${d.cards.length > 5 ? `<button class="pick ${deckQ ? 'on' : ''}" data-act="deckfind"
         aria-label="Chercher dans ce livre">${svg(I.search)}</button>` : ''}
       ${d.cards.length ? `<button class="pick ${sel ? 'on' : ''}" data-act="selmode">${
@@ -1798,9 +1820,9 @@ function deckView() {
             title="${c.x ? 'Réactiver' : 'Suspendre'}">${svg(c.x ? I.eyeoff : I.eye)}</button>
           <button class="x" data-rm="${c.id}">${svg(I.x)}</button>`}
         </div>`).join('')}
-      ${rest ? `<div class="more" id="more">${plur(rest, 'fiche')} de plus…</div>` : ''}
+      ${rest ? `<div class="more" id="more">${plur(rest, 'page')} de plus…</div>` : ''}
       ${sel ? '' : `<div class="duo ghost">
-        <button data-act="add">${svg(I.plus)}Fiche</button>
+        <button data-act="add">${svg(I.plus)}Page</button>
         <button data-act="paste">${svg(I.down)}Coller</button>
       </div>`}
     </div>
@@ -2032,16 +2054,16 @@ function settingsView() {
           <span class="tgl ${prefs.simple ? 'on' : ''}"></span></button>${hlp('simple')}</div>
         <div class="sr flat col">
           <div class="srh">${svg(I.target)}<span class="n">Objectif du jour</span>
-            <span class="c">${prefs.goal} fiches</span></div>
+            <span class="c">${prefs.goal} pages</span></div>
           <input class="rng" id="pGoal" type="range" min="5" max="200" step="5" value="${prefs.goal}"
             aria-label="Objectif du jour"></div>
         ${prefs.simple ? '' : `<div class="sr flat col">
-          <div class="srh">${svg(I.plus)}<span class="n">Nouvelles fiches par séance</span>
+          <div class="srh">${svg(I.plus)}<span class="n">Nouvelles pages par séance</span>
             <span class="c">${prefs.cap || 'sans limite'}</span></div>
           <input class="rng" id="pCap" type="range" min="0" max="100" step="5" value="${prefs.cap}"
-            aria-label="Nouvelles fiches par séance"></div>`}
+            aria-label="Nouvelles pages par séance"></div>`}
         <div class="sr flat col">
-          <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des fiches</span>${hlp('order')}</div>
+          <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des pages</span>${hlp('order')}</div>
           <div class="seg" id="pOrder">
             ${[['random', 'Aléatoire'], ['deck', 'Du livre'], ['worst', 'Ratées'], ['due', 'Urgentes']]
               .filter(([v]) => !(prefs.simple && v === 'due'))
@@ -2049,7 +2071,7 @@ function settingsView() {
           </div>
         </div>
         <button class="sr flat" data-act="tglfresh">${svg(I.card)}
-          <span class="n">Nouvelles fiches d’abord</span>
+          <span class="n">Nouvelles pages d’abord</span>
           <span class="tgl ${prefs.fresh ? 'on' : ''}"></span></button>
         <button class="sr flat" data-act="tglboth">${svg(I.swap)}
           <span class="n">Mélanger les deux sens</span>
@@ -2073,7 +2095,7 @@ function settingsView() {
           <span class="tgl ${prefs.sound ? 'on' : ''}"></span></button>
       </div>
 
-      <div class="lbl"><span>Rayons</span><span>${db.subjects.length}</span></div>
+      <div class="lbl"><span>Matières</span><span>${db.subjects.length}</span></div>
       <div class="slist">
         ${db.subjects.map(t => {
           const pal = PALETTE[t.color] || PALETTE.graphite;
@@ -2082,7 +2104,7 @@ function settingsView() {
             <i></i><span class="n">${esc(t.name)}</span>
             <span class="c">${n || ''}</span>${svg(I.arrow)}</button>`;
         }).join('')}
-        <button class="sr add" data-sub="">${svg(I.plus)}<span class="n">Nouveau rayon</span></button>
+        <button class="sr add" data-sub="">${svg(I.plus)}<span class="n">Nouvelle matière</span></button>
       </div>
 
       <div class="lbl"><span>Mon compte</span></div>
@@ -2118,7 +2140,7 @@ function settingsView() {
   const g = document.getElementById('pGoal'), c = document.getElementById('pCap');
   g.addEventListener('input', () => {
     prefs.goal = +g.value; savePrefs();
-    g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' fiches';
+    g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' pages';
   });
   if (c) c.addEventListener('input', () => {
     prefs.cap = +c.value; savePrefs();
@@ -2164,7 +2186,7 @@ function trashView() {
     <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Corbeille</div></div>
-      <div class="note">Gardés ${KEEP} jours, fiches et progression comprises.</div>
+      <div class="note">Gardés ${KEEP} jours, pages et progression comprises.</div>
       ${!l ? `<div class="empty">${svg(I.clock)}<p>${trash.err ? 'Corbeille indisponible' : 'Chargement…'}</p></div>`
         : !l.length ? `<div class="empty">${svg(I.trash)}<p><b>Corbeille vide</b></p></div>`
         : `<div class="slist">${l.map(t => {
@@ -2333,7 +2355,7 @@ function mailView() {
               <span class="n">${esc(shortWho(it.from_name) || 'Un ami')} → ${esc(it.deck_name)}</span>
               <span class="sub">${it.message
                 ? `« ${esc(it.message)} »`
-                : plur((it.cards || []).length, 'fiche')}</span>
+                : plur((it.cards || []).length, 'page')}</span>
             </span>
             <span class="c">${timeAgo(it.created_at)}</span>${svg(I.arrow)}
           </button>`).join('')}</div>`}
@@ -2357,7 +2379,7 @@ async function addMail(it) {
   it.added_at = new Date().toISOString();
   closeMenu();
   if (d) go('deck', d.id);
-  toast(I.check, plur(n, 'fiche') + ' ajoutée' + (n > 1 ? 's' : ''));
+  toast(I.check, plur(n, 'page') + ' ajoutée' + (n > 1 ? 's' : ''));
   try { await api(`/rest/v1/mail?id=eq.${it.id}`, 'PATCH', { added_at: it.added_at }, { Prefer: 'return=minimal' }); }
   catch (e) {}
 }
@@ -2418,7 +2440,7 @@ function versRestore(vid) {
     return old ? { ...old, f, b } : { id: id || uid(), f, b };
   });
   saveDeck(d); closeMenu(); render();
-  toast(I.redo, plur(d.cards.length, 'fiche') + ' restaurée' + (d.cards.length > 1 ? 's' : ''), true);
+  toast(I.redo, plur(d.cards.length, 'page') + ' restaurée' + (d.cards.length > 1 ? 's' : ''), true);
 }
 
 /* ══════════ partage : lien, bibliothèque, défis, classement ══════════
@@ -2505,7 +2527,7 @@ async function libPublish(d) {
     await api('/rest/v1/library', 'POST', [row], { Prefer: 'resolution=merge-duplicates,return=minimal' });
     setMeta(d, { pub: 1 });
     lib.list = null; libPull();
-    toast(I.book, 'Sur l’étagère du groupe');
+    toast(I.book, 'Dans la bibliothèque du cercle');
   } catch (e) { toast(I.x, 'Publication impossible'); }
 }
 async function libRemove(d) {
@@ -2525,7 +2547,7 @@ function libAdd(it) {
   const d = importPayload({ name: it.name, subject: s ? s.id : '', cards: it.cards }, true);
   closeMenu();
   if (d) go('deck', d.id);
-  toast(I.check, plur(n, 'fiche') + ' ajoutée' + (n > 1 ? 's' : ''));
+  toast(I.check, plur(n, 'page') + ' ajoutée' + (n > 1 ? 's' : ''));
 }
 
 /* ---------- défis ----------
@@ -2707,11 +2729,11 @@ function commuView() {
     <span class="cn">${lab}</span><span class="cv">${val}</span></button>`;
   $.innerHTML = `
     <div class="page" id="page">
-      <div class="top"><div class="hero">Le cercle</div></div>
+      <div class="top"><div class="hero">Le cercle des lecteurs</div></div>
       <button class="mecard" data-act="handle">
         <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
         <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : 'Choisis ton pseudo'}</b>
-          <i>${me && me.handle ? (mine >= 0 ? `${MED[mine] || (mine + 1) + 'ᵉ'} cette semaine · ${plur(+rows[mine].n, 'fiche')}`
+          <i>${me && me.handle ? (mine >= 0 ? `${MED[mine] || (mine + 1) + 'ᵉ'} cette semaine · ${plur(+rows[mine].n, 'page')}`
             : 'Pas encore révisé cette semaine')
             : 'C’est ce que tes amis taperont pour t’ajouter'}</i></span>
         ${svg(I.arrow)}</button>
@@ -2719,7 +2741,7 @@ function commuView() {
         ${tile('friends', I.user, 'Lecteurs', nMates || '—', nAsk)}
         ${tile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
         ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
-        ${tile('library', I.book, 'L’étagère', nLib || '—', 0)}
+        ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}
       </div>
       <div class="lbl"><span>Classement de la semaine</span>
         ${rows.length > 3 ? '<button class="lnk" data-act="board">Tout voir</button>' : ''}</div>
@@ -2736,7 +2758,7 @@ const bdRow = (x, i) => {
   return `<div class="bdr ${x.uid === auth.uid ? 'me' : ''}">
     <span class="bdp">${MED[i] || (i + 1)}</span>
     <span class="bdn"><b>${esc(x.who)}</b>
-      <i>${plur(+x.n, 'fiche')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
+      <i>${plur(+x.n, 'page')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
       <em style="width:${Math.max(4, Math.round(x.n / top * 100))}%"></em></span></div>`;
 };
 
@@ -2785,7 +2807,7 @@ function groupsView() {
         <button data-act="joingroup">${svg(I.link)}Rejoindre</button>
       </div>
       ${!groups ? `<div class="card2"><div class="note">Chargement…</div></div>`
-        : !l.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucun club</b>Une classe, un binôme : la même étagère et les mêmes défis pour tous.</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucun club</b>Une classe, un binôme : la même bibliothèque et les mêmes défis pour tous.</p></div>`
         : `<div class="slist">${l.map(g => `<button class="sr flat" data-group="${g.id}">
             ${svg(I.layers)}<span class="ml2"><span class="n">${esc(g.name)}</span>
               <span class="sub">code ${esc(g.code)}</span></span>${svg(I.arrow)}</button>`).join('')}</div>`}
@@ -2816,13 +2838,13 @@ function libraryView() {
   const l = lib.list;
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
-      <h1>L’étagère</h1></div>
+      <h1>Bibliothèque</h1></div>
     <div class="page">
       ${!l ? `<div class="card2"><div class="note">${lib.err ? 'Indisponible' : 'Chargement…'}</div></div>`
-        : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>Prête un livre depuis son menu Partager.</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Bibliothèque vide</b>Prête un livre depuis son menu Partager.</p></div>`
         : `<div class="slist">${l.map(it => `<button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
             <span class="ml2"><span class="n">${esc(it.name)}</span>
-              <span class="sub">${esc(shortWho(it.who) || 'Un ami')}${it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'fiche')}</span></span>
+              <span class="sub">${esc(shortWho(it.who) || 'Un ami')}${it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'page')}</span></span>
             <span class="c">${timeAgo(it.updated_at)}</span>${svg(I.arrow)}</button>`).join('')}</div>`}
     </div>`;
 }
@@ -2858,12 +2880,12 @@ function groupView() {
 function libPane() {
   const l = lib.list;
   return !l ? `<div class="empty">${svg(I.book)}<p>${lib.err ? 'Bibliothèque indisponible' : 'Chargement…'}</p></div>`
-    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>Prête un livre depuis son menu Partager.</p></div>`
+    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Bibliothèque vide</b>Prête un livre depuis son menu Partager.</p></div>`
     : `<div class="slist">${l.map(it => `
         <button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
           <span class="ml2"><span class="n">${esc(it.name)}</span>
             <span class="sub">${esc(shortWho(it.who) || 'Un compte')}${
-              it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'fiche')}</span></span>
+              it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'page')}</span></span>
           <span class="c">${timeAgo(it.updated_at)}</span>${svg(I.arrow)}</button>`).join('')}</div>`;
 }
 function duelPane() {
@@ -2894,7 +2916,7 @@ function boardPane() {
     <div class="bdr ${x.uid === auth.uid ? 'me' : ''}">
       <span class="bdp">${MED[i] || (i + 1)}</span>
       <span class="bdn"><b>${esc(shortWho(x.who) || 'Compte')}</b>
-        <i>${plur(+x.n, 'fiche')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
+        <i>${plur(+x.n, 'page')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
         <em style="width:${Math.max(4, Math.round(x.n / top * 100))}%"></em></span>
     </div>`).join('')}</div>
 `;
@@ -3011,13 +3033,13 @@ function statsCSV() {
   for (const [k, v] of [...S.byDay.entries()].sort((a, b) => a[0] - b[0]))
     lines.push(['jour', new Date(k).toISOString().slice(0, 10), v.n + ' cartes, ' + v.ok + ' justes'].map(q).join(';'));
   for (const s of S.subjects)
-    lines.push(['temps par rayon', s.k, Math.round(s.v / 60000) + ' min'].map(q).join(';'));
+    lines.push(['temps par matière', s.k, Math.round(s.v / 60000) + ' min'].map(q).join(';'));
   for (const [b, [o, t]] of Object.entries(S.ret))
     if (t) lines.push(['rétention', b + ' jour(s)', Math.round(o / t * 100) + ' % sur ' + t].map(q).join(';'));
   const idx = cardIndex();
   for (const [id, fails] of S.worst) {
     const e = idx.get(id);
-    lines.push(['fiche ratée', e ? e.c.f : id, fails + ' échecs'].map(q).join(';'));
+    lines.push(['page ratée', e ? e.c.f : id, fails + ' échecs'].map(q).join(';'));
   }
   for (const p of deckProgress())
     lines.push(['livre', p.d.name, p.pct + ' % mûres sur ' + p.n].map(q).join(';'));
@@ -3082,7 +3104,7 @@ function findView() {
             <i class="ldot" style="${sty(subj(d.subject))}"></i>
             <span class="n">${esc(d.name)}</span>
             <span class="c">${d.cards.length}</span>${svg(I.arrow)}</button>`).join('')}</div>` : ''}
-        ${r.cards.length ? `<div class="lbl"><span>Fiches</span><span>${r.cards.length}</span></div>
+        ${r.cards.length ? `<div class="lbl"><span>Pages</span><span>${r.cards.length}</span></div>
           <div class="slist">${r.cards.map(({ c, d }) => `<button class="sr flat" data-go="${d.id}">
             <span class="ml2"><span class="n">${hl(plain(c.f), findQ)}</span>
               <span class="sub">${hl(plain(c.b), findQ)} · ${esc(d.name)}</span></span>
@@ -3142,10 +3164,10 @@ function statsView() {
       </div>
 
       <div class="tiles st4">
-        <div class="st"><b>${S.n}</b><span>fiches lues</span></div>
+        <div class="st"><b>${S.n}</b><span>pages lues</span></div>
         <div class="st"><b>${pct}%</b><span>de réussite</span></div>
         <div class="st"><b>${Math.round(S.ms / 60000)}</b><span>minutes</span></div>
-        <div class="st"><b>${(S.per / 1000).toFixed(1).replace('.', ',')}s</b><span>par fiche</span></div>
+        <div class="st"><b>${(S.per / 1000).toFixed(1).replace('.', ',')}s</b><span>par page</span></div>
       </div>
 
       <div class="lbl"><span>Assiduité</span><span>${S.streak ? S.streak + ' jour' + (S.streak > 1 ? 's' : '') + ' d’affilée' : ''}</span></div>
@@ -3153,7 +3175,7 @@ function statsView() {
         <div class="heat">${cols.map(col => `<div class="hc">${col.map(k => {
           const v = S.byDay.get(k);
           const lvl = !v ? 0 : v.n >= maxDay * .66 ? 4 : v.n >= maxDay * .33 ? 3 : v.n >= 2 ? 2 : 1;
-          return `<i class="l${lvl}" title="${dayLabel(k)}${v ? ' · ' + v.n + ' fiches' : ''}"></i>`;
+          return `<i class="l${lvl}" title="${dayLabel(k)}${v ? ' · ' + v.n + ' pages' : ''}"></i>`;
         }).join('')}</div>`).join('')}</div>
         <div class="heatk"><span>${dayLabel(days[0])}</span><span>aujourd’hui</span></div>
       </div>
@@ -3177,14 +3199,14 @@ function statsView() {
           : '<div class="note">Aucun livre pour l’instant.</div>'}
       </div>
 
-      ${S.subjects.length ? `<div class="lbl"><span>Temps par rayon</span></div>
+      ${S.subjects.length ? `<div class="lbl"><span>Temps par matière</span></div>
       <div class="card2">
         ${S.subjects.map(x => `<div class="brow"><span class="bl">${esc(x.k)}</span>
           <span class="bt"><i style="width:${Math.round(x.p * 100)}%"></i></span>
           <span class="bv">${x.v >= 60000 ? Math.round(x.v / 60000) + ' min' : Math.round(x.v / 1000) + ' s'}</span></div>`).join('')}
       </div>` : ''}
 
-      ${S.worst.length ? `<div class="lbl"><span>Fiches les plus ratées</span><span>${S.worst.length}</span></div>
+      ${S.worst.length ? `<div class="lbl"><span>Pages les plus ratées</span><span>${S.worst.length}</span></div>
       <div class="slist">
         ${S.worst.map(([id, fails]) => {
           const e = idx.get(id);
@@ -3308,7 +3330,7 @@ function paintMenu() {
     const t = db.subjects.find(x => x.id === subjEdit) || { id: '', name: '', color: 'graphite' };
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <input class="tok" id="sn" placeholder="Nom du rayon" spellcheck="false"
+        <input class="tok" id="sn" placeholder="Nom de la matière" spellcheck="false"
           enterkeyhint="done" value="${esc(subjName)}">
         <div class="swatch">${COLORS.map(k => `<button class="sw2 ${k === subjColor ? 'on' : ''}"
           data-color="${k}" style="background:${PALETTE[k].c};--dd:${PALETTE[k].d}"></button>`).join('')}</div>
@@ -3419,7 +3441,7 @@ function paintMenu() {
          restent écrits dans chaque carte et t’attendent.`,
         `Le quiz, l’objectif du jour, le résumé de fin de session, les courbes, les matières,
          les cartes suspendues et les sauvegardes fonctionnent à l’identique.`,
-        `Les fiches ratées continuent d’être comptées : le tri « Ratées » et les fiches
+        `Les pages ratées continuent d’être comptées : le tri « Ratées » et les pages
          coriaces restent justes.`
       ]),
       bloc('Quand tu rallumeras le moteur', [
@@ -3445,7 +3467,7 @@ function paintMenu() {
       bloc('Où en est ta progression', [
         `Le moteur reprend au point exact où il s’était arrêté${since ? ` il y a ${since} jour${since > 1 ? 's' : ''}` : ''}.
          Aucune donnée n’a été perdue pendant le mode simple.`,
-        n ? `<b>${n > 1 ? `${n} fiches ont dépassé leur échéance.` : `Une fiche a dépassé son échéance.`}</b> ${n > per
+        n ? `<b>${n > 1 ? `${n} pages ont dépassé leur échéance.` : `Une page a dépassé son échéance.`}</b> ${n > per
               ? `Elles seront réparties sur ${j} jour${j > 1 ? 's' : ''}, environ ${per} par jour,
                  les plus anciennes d’abord.`
               : n > 1 ? `Elles seront à revoir dès la prochaine session.`
@@ -3546,16 +3568,19 @@ function paintMenu() {
       <div class="menu">
         <div class="mhd">${svg(I.card)}
           <span class="mhx"><b>${esc(d.name)}</b>
-            <i>${esc(subj(d.subject).name)} · ${plur(d.cards.length, 'fiche')}${due ? ' · ' + due + ' à revoir' : ''}</i>
+            <i>${esc(subj(d.subject).name)} · ${plur(d.cards.length, 'page')}${due ? ' · ' + due + ' à revoir' : ''}</i>
           </span>
         </div>
-        <div class="mscroll">${d.cards.slice(0, 12).map(c => `<div class="pr">
-          <span class="a">${esc(plain(c.f))}</span>${svg(I.arrow)}<span class="b">${esc(plain(c.b))}</span></div>`).join('')
-          || '<div class="note">Ce livre est vide.</div>'}</div>
-        ${d.cards.length > 12 ? `<div class="note">…et ${d.cards.length - 12} autres.</div>` : ''}
-        <button class="mi" data-mact="pindeck">${svg(I.pin)}${d.pinned ? 'Détacher' : 'Épingler en haut'}</button>
+        <div class="mgrid">
+          <button class="mg" data-mact="pkshare">${svg(I.share)}<span>Partager</span></button>
+          <button class="mg" data-mact="pkfind">${svg(I.search)}<span>Chercher</span></button>
+          <button class="mg" data-mact="pindeck">${svg(I.pin)}<span>${d.pinned ? 'Détacher' : 'Épingler'}</span></button>
+          <button class="mg" data-mact="pkhide">${svg(d.hidden ? I.eye : I.eyeoff)}<span>${d.hidden ? 'Réafficher' : 'Masquer'}</span></button>
+          <button class="mg ${d.cards.length > 3 ? '' : 'off'}" data-mact="pksplit">${svg(I.split)}<span>Scinder</span></button>
+          <button class="mg" data-mact="pkset">${svg(I.gear)}<span>Réglages</span></button>
+        </div>
         <button class="mi" data-mact="openpeek" style="justify-content:center;font-weight:700">
-          ${svg(I.play)}Ouvrir le paquet</button>
+          ${svg(I.play)}Ouvrir le livre</button>
       </div>`;
     mountMenu(w);
     return;
@@ -3665,7 +3690,7 @@ function paintMenu() {
               remplacement, fusion, découpe ou réimport.</div>`
           : `<div class="mscroll">${l.map(v => `<button class="mi" data-vers="${v.id}">
               ${svg(I.redo)}<span class="ml2"><span class="n">${esc(v.why || 'version')}</span>
-                <span class="sub">${plur((v.cards || []).length, 'fiche')} · ${timeAgo(v.created_at)}</span></span>
+                <span class="sub">${plur((v.cards || []).length, 'page')} · ${timeAgo(v.created_at)}</span></span>
               </button>`).join('')}</div>`}
       </div>`;
     mountMenu(w);
@@ -3675,7 +3700,7 @@ function paintMenu() {
     const c = conflicts[0];
     if (!c) { menu = null; return; }
     const side = (v, lab, when) => `<div class="cside">
-      <b>${lab}</b><i>${plur(v.cards.length, 'fiche')}${when ? ' · ' + when : ''}</i>
+      <b>${lab}</b><i>${plur(v.cards.length, 'page')}${when ? ' · ' + when : ''}</i>
       <span>${esc(v.name)}</span></div>`;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -3704,7 +3729,7 @@ function paintMenu() {
         <div class="mhd">${svg(I.book)}
           <span class="mhx"><b>${esc(it.name)}</b>
             <i>${esc(noDetect(shortWho(it.who) || 'Un compte'))}${it.subject ? ' · ' + esc(it.subject) : ''}
-              · ${plur(it.n, 'fiche')} · ${timeAgo(it.updated_at)}</i></span>
+              · ${plur(it.n, 'page')} · ${timeAgo(it.updated_at)}</i></span>
         </div>
         <div class="mscroll">${(it.cards || []).slice(0, 60).map(c => `<div class="pr">
           <span class="a">${esc(cf(c))}</span>${svg(I.arrow)}<span class="b">${esc(cb(c))}</span></div>`).join('')}</div>
@@ -3748,7 +3773,7 @@ function paintMenu() {
         <div class="mscroll">${list.length ? list.map(x => `
           <button class="mi" data-dnew="${esc(x.id)}"><i class="tri" style="--c:${subj(x.subject).d}"></i>
             ${esc(x.name)}<span class="tail">${x.cards.length}</span></button>`).join('')
-          : '<div class="note">Il faut un livre d’au moins 4 fiches.</div>'}</div>
+          : '<div class="note">Il faut un livre d’au moins 4 pages.</div>'}</div>
       </div>`;
     mountMenu(w);
     return;
@@ -3785,7 +3810,7 @@ function paintMenu() {
       <div class="menu">
         <div class="mhd">${svg(I.mail)}
           <span class="mhx"><b>${esc(it.deck_name)}</b>
-            <i>${esc(noDetect(it.from_name || 'Un ami'))} · ${plur(n, 'fiche')} · ${timeAgo(it.created_at)}</i>
+            <i>${esc(noDetect(it.from_name || 'Un ami'))} · ${plur(n, 'page')} · ${timeAgo(it.created_at)}</i>
           </span>
         </div>
         ${it.message ? `<div class="mmsg">${svg(I.quote)}<p>${esc(it.message)}</p></div>` : ''}
@@ -3820,11 +3845,11 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.split)}Scinder « ${esc(d.name)} »</div>
-        <div class="mrow col"><span class="ml">${svg(I.card)}Fiches par livre
+        <div class="mrow col"><span class="ml">${svg(I.card)}Pages par livre
           <b class="tail">${size}</b></span>
           <input class="rng" id="spSize" type="range" min="2" max="${n - 1}" step="1" value="${size}">
         </div>
-        <div class="note">${n} fiches → <b>${parts} livres</b> de ${size}${
+        <div class="note">${n} pages → <b>${parts} livres</b> de ${size}${
           last !== size ? `, le dernier de ${last}` : ''}. Elles gardent leur ordre
           et leur progression. L’original part à la corbeille, récupérable.</div>
         <button class="mi" data-mact="dosplit" style="justify-content:center;font-weight:700">
@@ -3841,7 +3866,7 @@ function paintMenu() {
       splitSize = +r.value;
       const p = Math.ceil(n / splitSize), lastN = n - splitSize * (p - 1);
       lab.textContent = splitSize;
-      note.innerHTML = `${n} fiches → <b>${p} livres</b> de ${splitSize}${
+      note.innerHTML = `${n} pages → <b>${p} livres</b> de ${splitSize}${
         lastN !== splitSize ? `, le dernier de ${lastN}` : ''}. Elles gardent leur ordre
         et leur progression. L’original part à la corbeille, récupérable.`;
       btn.lastChild.textContent = 'Scinder en ' + p;
@@ -3860,7 +3885,7 @@ function paintMenu() {
         ${conf[2] ? `<input class="tok" id="fld" type="${conf[2]}" placeholder="${esc(conf[3])}"
             value="${esc(conf[4])}" autocapitalize="none" autocorrect="off" spellcheck="false">`
           : `<div class="mi" style="font-size:13.5px;color:var(--soft);height:auto;padding:0 16px 12px;
-               line-height:1.45">Tes livres, tes rayons et ton journal seront effacés définitivement.</div>`}
+               line-height:1.45">Tes livres, tes matières et ton journal seront effacés définitivement.</div>`}
         <div class="mrr" id="mrr"></div>
         <button class="mi ${menu === 'delacc' ? 'warn' : ''}" data-mact="do-${menu}"
           style="justify-content:center;font-weight:700">${svg(I.check)}<span>${conf[5]}</span></button>
@@ -4104,6 +4129,20 @@ document.addEventListener('click', async e => {
     return toast(I.pin, t.pinned ? 'Épinglé en haut' : 'Détaché');
   }
   if (a === 'openpeek') { const id = previewOf; closeMenu(); return go('deck', id); }
+  if (a && a.startsWith('pk')) {
+    const id = previewOf, t = deck(id); if (!t) return closeMenu();
+    closeMenu();
+    if (a === 'pkhide') { t.hidden = !t.hidden; saveDeck(t); animate = false; render();
+      return toast(t.hidden ? I.eyeoff : I.eye, t.hidden ? 'Masqué' : 'Réaffiché'); }
+    go('deck', id);
+    if (a === 'pkshare') { if (!friends) friendsPull(); return openMenu('sharepick'); }
+    if (a === 'pkfind') { deckOpen = true; deckQ = ''; animate = false; render();
+      return setTimeout(() => { const i = document.getElementById('dq'); if (i) i.focus(); }, 80); }
+    if (a === 'pksplit') { if (t.cards.length < 4) return toast(I.x, 'Trop court pour être scindé');
+      splitSize = Math.min(splitSize, t.cards.length - 1); return openMenu('split'); }
+    if (a === 'pkset') return openMenu('deckset');
+    return;
+  }
   if (a === 'sharepick') { if (!friends) friendsPull(); return openMenu('sharepick'); }
   if (a === 'rolink') {
     if (!d) return;
@@ -5004,7 +5043,7 @@ function importView() {
         <div class="airow">
           <button class="ai" id="aishot" title="Photo d'une page de cours">${svg(I.image)}</button>
           <button class="ai" id="aipdf" title="Fichier : PDF, texte, CSV, export Anki ou Quizlet">${svg(I.file)}</button>
-          <button class="ai" id="aigen" title="Fabriquer les fiches">${svg(I.spark)}</button>
+          <button class="ai" id="aigen" title="Fabriquer les pages">${svg(I.spark)}</button>
           <button class="cta" id="bulkadd" disabled>Ajouter${svg(I.plus)}</button>
         </div>
         <input type="file" id="fshot" accept="image/*" capture="environment" hidden>
@@ -5017,7 +5056,7 @@ function importView() {
           <input id="cb" class="cb" placeholder="Verso" enterkeyhint="done" spellcheck="false">
           <button class="cadd" id="cadd">${svg(comp.edit >= 0 ? I.check : I.plus)}</button>
         </div>
-        <div class="lbl"><span>Fiches</span><span id="cn">${comp.cards.length}</span></div>
+        <div class="lbl"><span>Pages</span><span id="cn">${comp.cards.length}</span></div>
         <div class="dlist" id="dlist"></div>`}
       ${comp.bulk ? '' : `<button class="cta" id="ok" ${comp.cards.length ? '' : 'disabled'}>
         ${t ? 'Ajouter' : 'Créer'}${svg(I.check)}</button>`}
@@ -5070,7 +5109,7 @@ function importView() {
         const cards = await aiCards(tx.value, t ? t.name : comp.name);
         if (!cards.length) throw new Error('empty');
         tx.value = cards.map(c => c.f + '\t' + c.b).join('\n');
-        fit(); up(); toast(I.spark, plur(cards.length, 'fiche'));
+        fit(); up(); toast(I.spark, plur(cards.length, 'page'));
       } catch (x) {
         toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
       }
@@ -5089,7 +5128,7 @@ function importView() {
         if (!cards.length) throw new Error('empty');
         const had = tx.value.trim();
         tx.value = (had ? had + '\n' : '') + cards.map(c => c.f + '\t' + c.b).join('\n');
-        fit(); up(); toast(I.spark, plur(cards.length, 'fiche'));
+        fit(); up(); toast(I.spark, plur(cards.length, 'page'));
       } catch (x) {
         toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
       }
@@ -5116,7 +5155,7 @@ function importView() {
       if (!found.length) return toast(I.x, 'Aucune carte reconnue');
       const had = tx.value.trim();
       tx.value = (had ? had + '\n' : '') + found.map(c => c.f + '\t' + c.b).join('\n');
-      fit(); up(); toast(I.check, plur(found.length, 'fiche'));
+      fit(); up(); toast(I.check, plur(found.length, 'page'));
     };
     add.onclick = () => {
       let cards = parseText(tx.value); if (!cards.length) return;
@@ -5128,7 +5167,7 @@ function importView() {
       if (!cards.length) return;
       comp.cards.push(...cards); comp.text = ''; comp.bulk = false;
       render();
-      toast(I.check, plur(cards.length, 'fiche')
+      toast(I.check, plur(cards.length, 'page')
         + (!comp.dups && dup.total ? ` · ${dup.total} doublon${dup.total > 1 ? 's' : ''} écarté${dup.total > 1 ? 's' : ''}` : '')
         + (big ? ` · ${big} trop longue${big > 1 ? 's' : ''}` : ''));
     };
@@ -5158,7 +5197,7 @@ function importView() {
     const cards = comp.cards.slice();
     if (t) { t.cards.push(...cards.map(c => ({ id: uid(), f: c.f, b: c.b }))); saveDeck(t); resetComp(); go('deck', t.id); }
     else { const d = addDeck(comp.name, cards, comp.subject); resetComp(); go('deck', d.id); }
-    toast(I.check, plur(cards.length, 'fiche'));
+    toast(I.check, plur(cards.length, 'page'));
   };
 }
 
@@ -5276,6 +5315,7 @@ $.addEventListener('click', e => {
     flush().then(() => { animate = false; render(); if (online && !pending()) toast(I.check, 'À jour'); });
     return;
   }
+  if (a === 'mcq' || a === 'match') return startStudy(view.id, false, null, { mode: a });
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (a === 'group') { groupPull(); return go('group'); }
   if (a === 'help') return openMenu('tuto');
@@ -5287,7 +5327,7 @@ $.addEventListener('click', e => {
     const nd = importPayload({ name: sd.name, subject: '', cards }, true);
     shared = null;
     if (nd) go('deck', nd.id); else go('home');
-    return toast(I.check, plur(cards.length, 'fiche') + ' ajoutée' + (cards.length > 1 ? 's' : ''));
+    return toast(I.check, plur(cards.length, 'page') + ' ajoutée' + (cards.length > 1 ? 's' : ''));
   }
   if (a === 'expstats') return exportStats();
   if (a === 'find') { findQ = ''; return go('find'); }
@@ -5493,7 +5533,7 @@ function consumeHash() {
   try {
     const d = importPayload(dec(location.hash.slice(3)));
     history.replaceState(null, '', location.pathname);
-    if (d) { go('deck', d.id); toast(I.check, plur(d.cards.length, 'fiche')); return true; }
+    if (d) { go('deck', d.id); toast(I.check, plur(d.cards.length, 'page')); return true; }
   } catch (e) { history.replaceState(null, '', location.pathname); }
   return false;
 }
@@ -5592,7 +5632,7 @@ const CHAPTERS = [
     { go: nav('home'), title: 'Bienvenue',
       text: 'Tout ce que tu vas voir appartient à Léa, un compte d’essai. Tes livres à toi ne bougent pas.' },
     { go: nav('home'), sel: '.grid .tile', title: 'Un livre',
-      text: 'Chaque livre porte ses fiches. Le signet dit combien sont à lire aujourd’hui.' },
+      text: 'Chaque livre porte ses pages. Le signet dit combien sont à lire aujourd’hui.' },
     { go: nav('home'), sel: '.sbar', title: 'Les couleurs',
       text: 'Orange : tu viens de commencer. Vert clair : tu sais depuis peu. Vert foncé : tu sais depuis longtemps.' },
     { go: nav('home'), sel: '.goal', title: 'L’objectif du jour',
@@ -5603,12 +5643,12 @@ const CHAPTERS = [
   ] },
   { id: 'revi', name: 'Lire', icon: 'play', steps: [
     { go: nav('deck', 'dmo1'), sel: '.mixwrap', title: 'Le détail du livre',
-      text: 'Les mêmes couleurs, fiche par fiche. « Coriaces » : celles que tu rates à chaque fois.' },
+      text: 'Les mêmes couleurs, page par page. « Coriaces » : celles que tu rates à chaque fois.' },
     { go: nav('deck', 'dmo1'), sel: '.duo .prim', pass: 1, tap: 'Touche Lire', wait: 500,
       done: () => view.name === 'study', title: 'On y va',
-      text: 'Les fiches arrivent une par une.' },
+      text: 'Les pages arrivent une par une.' },
     { go: () => { if (view.name !== 'study' || !study) startStudy('dmo1'); study.flip = false; },
-      sel: '#top', pass: 1, tap: 'Touche la fiche', wait: 1100,
+      sel: '#top', pass: 1, tap: 'Touche la page', wait: 1100,
       done: () => study && study.flip, title: 'Retourne-la',
       text: 'Tu lis, tu cherches dans ta tête, puis tu touches pour voir le verso.' },
     { go: () => { if (view.name !== 'study' || !study) startStudy('dmo1'); prefs.simple = true; },
@@ -5617,9 +5657,9 @@ const CHAPTERS = [
       text: 'À gauche quand c’est à revoir. Les deux pastilles apparaissent sous ton doigt.' },
     { go: () => { prefs.simple = false; if (view.name !== 'study' || !study) startStudy('dmo1'); study.flip = true; },
       sel: '.grades', title: 'Ou tu dis si c’était dur',
-      text: 'Plus c’était facile, plus la fiche mettra de temps à revenir. La date est sous chaque bouton.' },
+      text: 'Plus c’était facile, plus la page mettra de temps à revenir. La date est sous chaque bouton.' },
     { go: nav('home'), sel: '.marathon', title: 'Tout revoir d’un coup',
-      text: 'Les fiches dues de toute ta bibliothèque, dans une seule séance.' }
+      text: 'Les pages dues de tous tes livres, dans une seule séance.' }
   ] },
   { id: 'creer', name: 'Écrire un livre', icon: 'plus', steps: [
     { go: nav('home'), sel: '.fab', pass: 1, tap: 'Touche le +', wait: 450,
@@ -5627,10 +5667,10 @@ const CHAPTERS = [
       text: 'Le bouton rond en bas à droite.' },
     { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
       sel: '#tx', title: 'Colle une liste',
-      text: 'Une ligne par fiche : le mot, une tabulation ou un tiret, la réponse. Le découpage se fait tout seul.' },
+      text: 'Une ligne par page : le mot, une tabulation ou un tiret, la réponse. Le découpage se fait tout seul.' },
     { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
       sel: '.airow', title: 'Ou pars de ton cours',
-      text: 'Photo d’une page, PDF, ou texte collé : les fiches sont écrites pour toi.' }
+      text: 'Photo d’une page, PDF, ou texte collé : les pages sont écrites pour toi.' }
   ] },
   { id: 'jeux', name: 'Réciter', icon: 'pen', steps: [
     { go: nav('deck', 'dmo1'), sel: '[data-act="quizdeck"]', pass: 1, tap: 'Touche Récitation', wait: 500,
@@ -5643,33 +5683,33 @@ const CHAPTERS = [
       text: 'QCM, association, vrai ou faux : tout est dans ce menu.' }
   ] },
   { id: 'ranger', name: 'Ranger', icon: 'search', steps: [
-    { go: nav('deck', 'dmo2'), sel: '[data-act="selmode"]', title: 'Plusieurs fiches à la fois',
-      text: 'Coche des fiches pour les déplacer dans un autre livre, les mettre de côté ou les supprimer ensemble.' },
+    { go: nav('deck', 'dmo2'), sel: '[data-act="selmode"]', title: 'Plusieurs pages à la fois',
+      text: 'Coche des pages pour les déplacer dans un autre livre, les mettre de côté ou les supprimer ensemble.' },
     { go: nav('home'), sel: '[data-act="find"]', title: 'Retrouver un mot',
-      text: 'Cherché dans les titres et dans les deux faces de toutes tes fiches.' },
+      text: 'Cherché dans les titres et dans les deux faces de toutes tes pages.' },
     { go: nav('settings'), sel: '[data-act="trash"]', title: 'Rien ne se perd',
       text: 'Un livre supprimé attend trente jours ici. Et la dernière action reste annulable.' }
   ] },
-  { id: 'commu', name: 'Le cercle', icon: 'user', steps: [
+  { id: 'commu', name: 'Le cercle des lecteurs', icon: 'user', steps: [
     { go: nav('home'), sel: '.tabs button:last-child', pass: 1, tap: 'Touche le deuxième onglet', wait: 450,
       done: () => view.name === 'commu', title: 'Le deuxième onglet',
       text: 'Tout ce qui te relie aux autres est rangé là. Tu peux aussi glisser l’écran vers la gauche.' },
     { go: nav('commu'), sel: '.mecard', title: 'Ton pseudo',
       text: 'C’est ce que tes amis taperont pour t’ajouter. Personne ne voit ton adresse e-mail.' },
     { go: nav('commu'), sel: '.ctiles .ctile:nth-child(1)', title: 'Les lecteurs',
-      text: 'Tu entres son pseudo, il accepte, et vous partagez étagère, défis et classement.' },
+      text: 'Tu entres son pseudo, il accepte, et vous partagez bibliothèque, défis et classement.' },
     { go: nav('commu'), sel: '.ctiles .ctile:nth-child(2)', title: 'Les clubs',
-      text: 'Une classe, un binôme. Tu crées, tu donnes le code, et tout le club voit la même étagère.' },
+      text: 'Une classe, un binôme. Tu crées, tu donnes le code, et tout le club voit la même bibliothèque.' },
     { go: nav('commu'), sel: '.ctiles .ctile:nth-child(3)', title: 'Les défis',
       text: 'Dix questions tirées d’un livre, les mêmes pour tout le monde, un seul essai chacun.' },
-    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(4)', title: 'L’étagère',
+    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(4)', title: 'La bibliothèque',
       text: 'Les livres que tes lecteurs ont prêtés. Tu en copies un chez toi d’un geste.' },
     { go: nav('commu'), sel: '.rows', title: 'Le classement',
-      text: 'Le nombre de fiches lues par chacun, et rien d’autre : ni tes livres, ni tes erreurs.' }
+      text: 'Le nombre de pages lues par chacun, et rien d’autre : ni tes livres, ni tes erreurs.' }
   ] },
   { id: 'fin', name: 'Pour finir', icon: 'chart', steps: [
     { go: nav('settings'), sel: '[data-act="stats"]', title: 'Ton journal',
-      text: 'Fiches lues, réussite, régularité : de quoi voir si le rythme tient.' },
+      text: 'Pages lues, réussite, régularité : de quoi voir si le rythme tient.' },
     { go: nav('settings'), sel: '[data-act="help"]', title: 'Revoir tout ça',
       text: 'Réglages, puis Aide. Chaque chapitre se rejoue seul, toujours sur le compte d’essai.' }
   ] }
