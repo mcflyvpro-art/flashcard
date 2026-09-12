@@ -34,7 +34,7 @@ const SEED = [
   ['droit', 'Droit', 'pink'], ['management', 'Management', 'yellow'],
   ['lettres', 'Lettres', 'sand']
 ];
-const NONE = { id: '', name: 'Sans matière', color: 'graphite',
+const NONE = { id: '', name: 'Sans rayon', color: 'graphite',
                c: '#E8E3E9', ci: '#2A2530', d: '#8E8794' };
 const subj = id => {
   const t = db.subjects.find(x => x.id === id);
@@ -963,8 +963,10 @@ const cstate = c => {
   if (!c.i || c.i < 1) return 'learn';
   return c.i < 21 ? 'young' : 'mature';
 };
-const STATE = { new: 'Nouvelle', learn: 'En apprentissage', young: 'Jeune',
-                mature: 'Mûre', susp: 'Suspendue' };
+/* Les quatre âges d'une fiche, dans le vocabulaire du livre : on l'ouvre,
+   on la travaille, on la relit, puis on la sait. */
+const STATE = { new: 'À lire', learn: 'En cours', young: 'Relue',
+                mature: 'Sue', susp: 'De côté' };
 const isLeech = c => (c.l || 0) >= 4;
 const isDue = c => !c.x && (!c.d || c.d <= Date.now());
 
@@ -1247,7 +1249,7 @@ function fnrSwap(txt, q, r) {
   return txt.split(q).join(r);
 }
 const fnrNote = s => !fnr.q ? 'Tape ce que tu cherches. La recherche est littérale : aucun caractère n’a de sens particulier.'
-  : !s.hits ? 'Aucune occurrence dans ce paquet.'
+  : !s.hits ? 'Aucune occurrence dans ce livre.'
   : `<b>${s.hits} occurrence${s.hits > 1 ? 's' : ''}</b> dans ${s.cards} carte${s.cards > 1 ? 's' : ''}`
     + (fnr.r ? ` → « ${esc(fnr.r)} »` : ', qui seront simplement retirées');
 
@@ -1388,16 +1390,16 @@ function paintRail() {
   if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
   r.dataset.sig = sig;
   r.innerHTML = `
-    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Cartes</span></div>
+    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
     <nav>
-      <button class="${on === 'home' ? 'on' : ''}" data-r="home">${svg(I.layers)}<span>Paquets</span></button>
+      <button class="${on === 'home' ? 'on' : ''}" data-r="home">${svg(I.layers)}<span>Livres</span></button>
     </nav>
     <div class="sp"></div>
     <nav>
-      <button class="${on === 'stats' ? 'on' : ''}" data-r="stats">${svg(I.chart)}<span>Stats</span></button>
-      <button class="${on === 'commu' ? 'on' : ''}" data-r="commu">${svg(I.user)}<span>Communauté</span>${
+      <button class="${on === 'stats' ? 'on' : ''}" data-r="stats">${svg(I.chart)}<span>Journal</span></button>
+      <button class="${on === 'commu' ? 'on' : ''}" data-r="commu">${svg(I.user)}<span>Le cercle</span>${
         (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
-      <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Boîte</span>${
+      <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Courrier</span>${
         mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
       <button class="${on === 'settings' ? 'on' : ''}" data-r="settings">${svg(I.gear)}<span>Réglages</span></button>
     </nav>
@@ -1417,9 +1419,9 @@ function paintRail() {
    ailleurs on entre et on ressort par la flèche. */
 const tabs = on => `<div class="tabs">
   <div class="sl" style="transform:translateX(${on === 'commu' ? 74 : 0}px)"></div>
-  <button class="${on === 'home' ? 'on' : ''}" data-act="tab-home" aria-label="Mes paquets"
+  <button class="${on === 'home' ? 'on' : ''}" data-act="tab-home" aria-label="Ma bibliothèque"
     aria-current="${on === 'home' ? 'page' : 'false'}">${svg(I.layers)}</button>
-  <button class="${on === 'commu' ? 'on' : ''}" data-act="tab-commu" aria-label="Communauté"
+  <button class="${on === 'commu' ? 'on' : ''}" data-act="tab-commu" aria-label="Le cercle"
     aria-current="${on === 'commu' ? 'page' : 'false'}">${svg(I.user)}${
       (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
 </div>`;
@@ -1484,6 +1486,7 @@ const tile = (d, i) => {
   const p = simpleMode() ? 0 : maturePct(d);
   return `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="${d.id}" data-peek="${d.id}"
   style="${sty(subj(d.subject))};--i:${i}">
+  <i class="spine" aria-hidden="true"></i>
   ${due ? `<i class="due">${due}</i>` : ''}
   ${d.pinned ? `<i class="pind">${svg(I.pin)}</i>` : ''}
   <span class="n">${esc(d.name)}</span>
@@ -1503,7 +1506,7 @@ const listRow = (d, i) => {
       : `<i class="ldot"></i>`}
     <button class="lmain" data-go="${d.id}" data-peek="${d.id}">
       <span class="n">${esc(d.name)}${d.pinned ? svg(I.pin) : ''}</span>
-      <span class="s">${plur(d.cards.length, 'carte')}${p ? ' · ' + p + ' % mûres' : ''}</span>
+      <span class="s">${plur(d.cards.length, 'fiche')}${p ? ' · ' + p + ' % mûres' : ''}</span>
     </button>
     ${due ? `<i class="ldue">${due}</i>` : ''}
   </div>`;
@@ -1556,7 +1559,7 @@ function home() {
   $.innerHTML = `
     <div class="page" id="page">
       <div class="top">
-        <div class="hero">Mes paquets</div>
+        <div class="hero">Mes livres</div>
         ${queueChip()}
         ${goalRing()}
         <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
@@ -1573,14 +1576,14 @@ function home() {
         ${reorder ? `<button class="lnk on" data-act="reorder">${svg(I.check)}Terminer</button>`
           : `<button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>`}
       </div>` : ''}
-      ${!list.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucun paquet</b>Appuie sur + pour en créer un.</p></div>`
+      ${!list.length ? `<div class="empty">${svg(I.layers)}<p><b>Ta bibliothèque est vide</b>Appuie sur + pour écrire ton premier livre.</p></div>`
         : prefs.list || reorder
           ? `<div class="rows lst ${reorder ? 'dragging0' : ''}">${sortDecks(list).map(listRow).join('')}</div>`
           : `<div class="grid">${sortDecks(list).map(tile).join('')}</div>`}
       ${!simpleMode() && allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
-        <span>Marathon</span><i>${allDue()} cartes dues, toutes matières</i></button>` : ''}
+        <span>La tournée</span><i>${allDue()} fiches dues, tous rayons</i></button>` : ''}
     </div>
-    ${reorder ? '' : `<button class="fab" data-act="new" aria-label="Nouveau paquet">${svg(I.plus)}<span>Nouveau paquet</span></button>`}
+    ${reorder ? '' : `<button class="fab" data-act="new" aria-label="Nouveau livre">${svg(I.plus)}<span>Nouveau livre</span></button>`}
     ${tabs('home')}`;
   bindPager();
   if (reorder) bindDeckOrder();
@@ -1653,7 +1656,7 @@ function bindDeckOrder() {
     g = null;
     if (from === to) return;
     ids.splice(to, 0, ids.splice(from, 1)[0]);
-    pushUndo('Ordre des paquets', ids);
+    pushUndo('Ordre des livres', ids);
     ids.forEach((id, i) => { const d = deck(id); if (d) { d.pos = i; dirty[id] = 1; } });
     if (prefs.sort !== 'manual') { prefs.sort = 'manual'; savePrefs(); }
     save(); flush(); animate = false; render();
@@ -1725,7 +1728,7 @@ function selBar(d) {
     <span class="sbn">${n ? n + ' carte' + (n > 1 ? 's' : '') : 'Aucune carte'}</span>
     <div class="sba">
       <button class="x" data-act="selmove" ${n && db.decks.length > 1 ? '' : 'disabled'}
-        title="Déplacer vers un autre paquet">${svg(I.out)}</button>
+        title="Déplacer vers un autre livre">${svg(I.out)}</button>
       <button class="x" data-act="selsus" ${n ? '' : 'disabled'}
         title="${anyOn ? 'Suspendre' : 'Réactiver'}">${svg(anyOn ? I.eyeoff : I.eye)}</button>
       <button class="x warn" data-act="seldel" ${n ? '' : 'disabled'}
@@ -1753,31 +1756,31 @@ function deckView() {
     <div class="bar">
       <button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
       <div style="flex:1"></div>
-      <button class="ic" data-act="menu" aria-label="Menu du paquet">${svg(I.more)}</button>
+      <button class="ic" data-act="menu" aria-label="Menu du livre">${svg(I.more)}</button>
     </div>
     <div class="head" style="${sty(s)}">
       <div class="t" id="dn" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(d.name)}</div>
       <div class="s">
         <span>${svg(I.tag)}${esc(s.name)}</span><b></b>
-        <span>${svg(I.card)}${plur(d.cards.length, 'carte')}</span>
+        <span>${svg(I.card)}${plur(d.cards.length, 'fiche')}</span>
         ${!simpleMode() && dueCount(d) ? `<b></b><span>${svg(I.play)}${dueCount(d)} à revoir</span>` : ''}
         ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
       </div>
     </div>
     <div class="duo">
-      <button class="prim" data-act="study">${svg(I.play)}Réviser</button>
-      <button data-act="quizdeck">${svg(I.pen)}Quiz</button>
+      <button class="prim" data-act="study">${svg(I.play)}Lire</button>
+      <button data-act="quizdeck">${svg(I.pen)}Récitation</button>
     </div>
     ${simpleMode() ? '' : mixBar(d)}
-    <div class="lbl"><span>Cartes</span>
+    <div class="lbl"><span>Fiches</span>
       ${d.cards.length > 5 ? `<button class="pick ${deckQ ? 'on' : ''}" data-act="deckfind"
-        aria-label="Chercher dans ce paquet">${svg(I.search)}</button>` : ''}
+        aria-label="Chercher dans ce livre">${svg(I.search)}</button>` : ''}
       ${d.cards.length ? `<button class="pick ${sel ? 'on' : ''}" data-act="selmode">${
         svg(sel ? I.check : I.pick)}${sel ? 'Terminer' : 'Sélectionner'}</button>` : ''}
       <span>${shown.length === d.cards.length ? d.cards.length : shown.length + ' / ' + d.cards.length}</span></div>
     ${deckOpen ? `<div class="fld deckfld"><input id="dq" type="search"
-      placeholder="Chercher dans ce paquet" autocomplete="off" autocapitalize="none"
-      spellcheck="false" value="${esc(deckQ)}" aria-label="Chercher dans ce paquet"></div>` : ''}
+      placeholder="Chercher dans ce livre" autocomplete="off" autocapitalize="none"
+      spellcheck="false" value="${esc(deckQ)}" aria-label="Chercher dans ce livre"></div>` : ''}
     <div class="rows ${sel ? 'picking' : ''}">
       ${!shown.length ? `<div class="note" style="padding:14px 4px">Aucune carte ne contient « ${esc(deckQ)} ».</div>` : ''}
       ${part.map((c, i) => `
@@ -1795,9 +1798,9 @@ function deckView() {
             title="${c.x ? 'Réactiver' : 'Suspendre'}">${svg(c.x ? I.eyeoff : I.eye)}</button>
           <button class="x" data-rm="${c.id}">${svg(I.x)}</button>`}
         </div>`).join('')}
-      ${rest ? `<div class="more" id="more">${plur(rest, 'carte')} de plus…</div>` : ''}
+      ${rest ? `<div class="more" id="more">${plur(rest, 'fiche')} de plus…</div>` : ''}
       ${sel ? '' : `<div class="duo ghost">
-        <button data-act="add">${svg(I.plus)}Carte</button>
+        <button data-act="add">${svg(I.plus)}Fiche</button>
         <button data-act="paste">${svg(I.down)}Coller</button>
       </div>`}
     </div>
@@ -1905,7 +1908,8 @@ function loginView() {
   const up = loginMode === 'up';
   $.innerHTML = `<div class="login">
     <img class="logo" src="icons/icon-192.png" alt="">
-    <div class="lt">Cartes</div>
+    <div class="lt">Folio</div>
+    <div class="lsub">Tes cours, reliés en livres.</div>
     <div class="seg lseg" id="lmode">
       <button data-lm="in" class="${up ? '' : 'on'}">Connexion</button>
       <button data-lm="up" class="${up ? 'on' : ''}">Créer un compte</button>
@@ -1991,7 +1995,7 @@ const HELP = {
     'dans l’ordre choisi, tu balaies à gauche si tu sais, à droite sinon. Ta progression reste ' +
     'enregistrée et repart où elle en était dès que tu le rallumes.'],
   order: ['Ordre des cartes',
-    'Aléatoire : mélangées à chaque séance.\nDu paquet : l’ordre dans lequel tu les as écrites.\n' +
+    'Aléatoire : mélangées à chaque séance.\nDu livre : l’ordre dans lequel tu les as écrites.\n' +
     'Ratées : celles que tu manques le plus souvent d’abord.\nUrgentes : les plus en retard d’abord.'],
   fast: ['Mode rapide',
     'Une bonne réponse enchaîne toute seule sur la suivante, au quiz comme en QCM et en vrai/faux. ' +
@@ -2028,24 +2032,24 @@ function settingsView() {
           <span class="tgl ${prefs.simple ? 'on' : ''}"></span></button>${hlp('simple')}</div>
         <div class="sr flat col">
           <div class="srh">${svg(I.target)}<span class="n">Objectif du jour</span>
-            <span class="c">${prefs.goal} cartes</span></div>
+            <span class="c">${prefs.goal} fiches</span></div>
           <input class="rng" id="pGoal" type="range" min="5" max="200" step="5" value="${prefs.goal}"
             aria-label="Objectif du jour"></div>
         ${prefs.simple ? '' : `<div class="sr flat col">
-          <div class="srh">${svg(I.plus)}<span class="n">Nouvelles cartes par séance</span>
+          <div class="srh">${svg(I.plus)}<span class="n">Nouvelles fiches par séance</span>
             <span class="c">${prefs.cap || 'sans limite'}</span></div>
           <input class="rng" id="pCap" type="range" min="0" max="100" step="5" value="${prefs.cap}"
-            aria-label="Nouvelles cartes par séance"></div>`}
+            aria-label="Nouvelles fiches par séance"></div>`}
         <div class="sr flat col">
-          <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des cartes</span>${hlp('order')}</div>
+          <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des fiches</span>${hlp('order')}</div>
           <div class="seg" id="pOrder">
-            ${[['random', 'Aléatoire'], ['deck', 'Du paquet'], ['worst', 'Ratées'], ['due', 'Urgentes']]
+            ${[['random', 'Aléatoire'], ['deck', 'Du livre'], ['worst', 'Ratées'], ['due', 'Urgentes']]
               .filter(([v]) => !(prefs.simple && v === 'due'))
               .map(([v, l]) => `<button data-ord="${v}" class="${prefs.order === v ? 'on' : ''}">${l}</button>`).join('')}
           </div>
         </div>
         <button class="sr flat" data-act="tglfresh">${svg(I.card)}
-          <span class="n">Nouvelles cartes d’abord</span>
+          <span class="n">Nouvelles fiches d’abord</span>
           <span class="tgl ${prefs.fresh ? 'on' : ''}"></span></button>
         <button class="sr flat" data-act="tglboth">${svg(I.swap)}
           <span class="n">Mélanger les deux sens</span>
@@ -2058,10 +2062,10 @@ function settingsView() {
       <div class="lbl"><span>Affichage</span></div>
       <div class="slist">
         <div class="sr flat col">
-          <div class="srh">${svg(I.card)}<span class="n">Taille du texte des cartes</span>
+          <div class="srh">${svg(I.card)}<span class="n">Taille du texte</span>
             <span class="c">${Math.round((prefs.font || 1) * 100)} %</span></div>
           <input class="rng" id="pFont" type="range" min="80" max="140" step="5"
-            value="${Math.round((prefs.font || 1) * 100)}" aria-label="Taille du texte des cartes">
+            value="${Math.round((prefs.font || 1) * 100)}" aria-label="Taille du texte">
           <div class="fprev" style="font-size:calc(17px * var(--fs,1))">Aperçu : la casa</div>
         </div>
         <button class="sr flat" data-act="tglsound">${svg(I.sound)}
@@ -2069,7 +2073,7 @@ function settingsView() {
           <span class="tgl ${prefs.sound ? 'on' : ''}"></span></button>
       </div>
 
-      <div class="lbl"><span>Matières</span><span>${db.subjects.length}</span></div>
+      <div class="lbl"><span>Rayons</span><span>${db.subjects.length}</span></div>
       <div class="slist">
         ${db.subjects.map(t => {
           const pal = PALETTE[t.color] || PALETTE.graphite;
@@ -2078,15 +2082,15 @@ function settingsView() {
             <i></i><span class="n">${esc(t.name)}</span>
             <span class="c">${n || ''}</span>${svg(I.arrow)}</button>`;
         }).join('')}
-        <button class="sr add" data-sub="">${svg(I.plus)}<span class="n">Nouvelle matière</span></button>
+        <button class="sr add" data-sub="">${svg(I.plus)}<span class="n">Nouveau rayon</span></button>
       </div>
 
       <div class="lbl"><span>Mon compte</span></div>
       <div class="slist">
         <button class="sr flat" data-act="rename">${svg(I.user)}
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Statistiques</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="commu">${svg(I.user)}<span class="n">Communauté</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="commu">${svg(I.user)}<span class="n">Le cercle</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
       </div>
 
@@ -2114,7 +2118,7 @@ function settingsView() {
   const g = document.getElementById('pGoal'), c = document.getElementById('pCap');
   g.addEventListener('input', () => {
     prefs.goal = +g.value; savePrefs();
-    g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' cartes';
+    g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' fiches';
   });
   if (c) c.addEventListener('input', () => {
     prefs.cap = +c.value; savePrefs();
@@ -2160,7 +2164,7 @@ function trashView() {
     <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Corbeille</div></div>
-      <div class="note">Gardés ${KEEP} jours, cartes et progression comprises.</div>
+      <div class="note">Gardés ${KEEP} jours, fiches et progression comprises.</div>
       ${!l ? `<div class="empty">${svg(I.clock)}<p>${trash.err ? 'Corbeille indisponible' : 'Chargement…'}</p></div>`
         : !l.length ? `<div class="empty">${svg(I.trash)}<p><b>Corbeille vide</b></p></div>`
         : `<div class="slist">${l.map(t => {
@@ -2240,7 +2244,7 @@ async function answerFriend(id, yes) {
       { status: 'ok' }, { Prefer: 'return=minimal' });
     else await api(`/rest/v1/friends?user_id=eq.${id}&friend_id=eq.${auth.uid}`, 'DELETE',
       null, { Prefer: 'return=minimal' });
-    toast(yes ? I.check : I.x, yes ? 'Ami ajouté' : 'Demande refusée');
+    toast(yes ? I.check : I.x, yes ? 'Lecteur ajouté' : 'Demande refusée');
   } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
   friendsPull();
 }
@@ -2329,7 +2333,7 @@ function mailView() {
               <span class="n">${esc(shortWho(it.from_name) || 'Un ami')} → ${esc(it.deck_name)}</span>
               <span class="sub">${it.message
                 ? `« ${esc(it.message)} »`
-                : plur((it.cards || []).length, 'carte')}</span>
+                : plur((it.cards || []).length, 'fiche')}</span>
             </span>
             <span class="c">${timeAgo(it.created_at)}</span>${svg(I.arrow)}
           </button>`).join('')}</div>`}
@@ -2353,7 +2357,7 @@ async function addMail(it) {
   it.added_at = new Date().toISOString();
   closeMenu();
   if (d) go('deck', d.id);
-  toast(I.check, plur(n, 'carte') + ' ajoutée' + (n > 1 ? 's' : ''));
+  toast(I.check, plur(n, 'fiche') + ' ajoutée' + (n > 1 ? 's' : ''));
   try { await api(`/rest/v1/mail?id=eq.${it.id}`, 'PATCH', { added_at: it.added_at }, { Prefer: 'return=minimal' }); }
   catch (e) {}
 }
@@ -2414,7 +2418,7 @@ function versRestore(vid) {
     return old ? { ...old, f, b } : { id: id || uid(), f, b };
   });
   saveDeck(d); closeMenu(); render();
-  toast(I.redo, plur(d.cards.length, 'carte') + ' restaurée' + (d.cards.length > 1 ? 's' : ''), true);
+  toast(I.redo, plur(d.cards.length, 'fiche') + ' restaurée' + (d.cards.length > 1 ? 's' : ''), true);
 }
 
 /* ══════════ partage : lien, bibliothèque, défis, classement ══════════
@@ -2466,14 +2470,13 @@ function sharedView() {
   const s = shared || {}, d = s.d, cards = d ? (d.cards || []) : [];
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
-      <h1>Paquet partagé</h1></div>
+      <h1>Livre partagé</h1></div>
     <div class="page">
       ${s.st === 'load' ? `<div class="empty">${svg(I.link)}<p>Ouverture du lien…</p></div>`
       : s.st !== 'ok' ? `<div class="empty">${svg(I.warn)}<p><b>${s.st === 'gone' ? 'Lien révoqué' : 'Lien illisible'}</b>${
-          s.st === 'gone' ? 'Le paquet n’est plus partagé.' : 'Réessaie une fois en ligne.'}</p></div>`
+          s.st === 'gone' ? 'Ce livre n’est plus prêté.' : 'Réessaie une fois en ligne.'}</p></div>`
       : `<div class="top"><div class="hero">${esc(d.name)}</div></div>
-        <div class="note">${plur(cards.length, 'carte')} en consultation, rien n’est ajouté chez toi.</div>
-        <button class="cta" data-act="addshared">${svg(I.plus)}Ajouter à mes paquets</button>
+        <button class="cta" data-act="addshared">${svg(I.plus)}Ajouter à ma bibliothèque</button>
         <div class="rows">${cards.slice(0, 300).map(c => `<div class="pr">
           <span class="a">${esc(plain(cf(c)))}</span>${svg(I.arrow)}<span class="b">${esc(plain(cb(c)))}</span>
           </div>`).join('')}</div>`}
@@ -2522,7 +2525,7 @@ function libAdd(it) {
   const d = importPayload({ name: it.name, subject: s ? s.id : '', cards: it.cards }, true);
   closeMenu();
   if (d) go('deck', d.id);
-  toast(I.check, plur(n, 'carte') + ' ajoutée' + (n > 1 ? 's' : ''));
+  toast(I.check, plur(n, 'fiche') + ' ajoutée' + (n > 1 ? 's' : ''));
 }
 
 /* ---------- défis ----------
@@ -2656,19 +2659,19 @@ async function makeGroup(name) {
     b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
   try {
     const [g] = await api('/rest/v1/groups', 'POST',
-      [{ name: (name || '').trim() || 'Mon groupe', code, owner: auth.uid }],
+      [{ name: (name || '').trim() || 'Mon club', code, owner: auth.uid }],
       { Prefer: 'return=representation' }) || [];
     if (g) await api('/rest/v1/group_members', 'POST', [{ group_id: g.id, user_id: auth.uid }],
       { Prefer: 'return=minimal' });
     closeMenu(); groups = null; groupsPull();
-    toast(I.check, 'Groupe créé · code ' + code);
+    toast(I.check, 'Club créé · code ' + code);
   } catch (e) { toast(I.x, 'Création impossible'); }
 }
 async function joinGroup(code) {
   try {
     const [g] = await api('/rest/v1/rpc/join_group', 'POST', { join_code: code }) || [];
     closeMenu(); groups = null; groupsPull();
-    toast(I.check, g ? 'Bienvenue dans ' + g.name : 'Groupe rejoint');
+    toast(I.check, g ? 'Bienvenue dans ' + g.name : 'Club rejoint');
   } catch (e) { toast(I.x, 'Code inconnu'); }
 }
 async function leaveGroup(id) {
@@ -2704,24 +2707,24 @@ function commuView() {
     <span class="cn">${lab}</span><span class="cv">${val}</span></button>`;
   $.innerHTML = `
     <div class="page" id="page">
-      <div class="top"><div class="hero">Communauté</div></div>
+      <div class="top"><div class="hero">Le cercle</div></div>
       <button class="mecard" data-act="handle">
         <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
         <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : 'Choisis ton pseudo'}</b>
-          <i>${me && me.handle ? (mine >= 0 ? `${MED[mine] || (mine + 1) + 'ᵉ'} cette semaine · ${plur(+rows[mine].n, 'carte')}`
+          <i>${me && me.handle ? (mine >= 0 ? `${MED[mine] || (mine + 1) + 'ᵉ'} cette semaine · ${plur(+rows[mine].n, 'fiche')}`
             : 'Pas encore révisé cette semaine')
             : 'C’est ce que tes amis taperont pour t’ajouter'}</i></span>
         ${svg(I.arrow)}</button>
       <div class="ctiles">
-        ${tile('friends', I.user, 'Amis', nMates || '—', nAsk)}
-        ${tile('groups', I.layers, 'Groupes', nGroup || '—', 0)}
+        ${tile('friends', I.user, 'Lecteurs', nMates || '—', nAsk)}
+        ${tile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
         ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
-        ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}
+        ${tile('library', I.book, 'L’étagère', nLib || '—', 0)}
       </div>
       <div class="lbl"><span>Classement de la semaine</span>
         ${rows.length > 3 ? '<button class="lnk" data-act="board">Tout voir</button>' : ''}</div>
       ${!board.rows ? `<div class="card2"><div class="note">${board.err ? 'Indisponible' : 'Chargement…'}</div></div>`
-        : !rows.length ? `<div class="card2"><div class="note">Ajoute un ami et vos révisions se comparent ici.</div></div>`
+        : !rows.length ? `<div class="card2"><div class="note">Ajoute un lecteur.</div></div>`
         : `<div class="rows">${rows.slice(0, 3).map((x, i) => bdRow(x, i)).join('')}</div>`}
     </div>
     ${tabs('commu')}`;
@@ -2733,7 +2736,7 @@ const bdRow = (x, i) => {
   return `<div class="bdr ${x.uid === auth.uid ? 'me' : ''}">
     <span class="bdp">${MED[i] || (i + 1)}</span>
     <span class="bdn"><b>${esc(x.who)}</b>
-      <i>${plur(+x.n, 'carte')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
+      <i>${plur(+x.n, 'fiche')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
       <em style="width:${Math.max(4, Math.round(x.n / top * 100))}%"></em></span></div>`;
 };
 
@@ -2741,18 +2744,18 @@ function friendsView() {
   const l = mates || [], a = asks || [];
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
-      <h1>Amis</h1></div>
+      <h1>Lecteurs</h1></div>
     <div class="page">
-      <div class="fld addf"><input id="addq" type="search" placeholder="Pseudo d’un ami"
+      <div class="fld addf"><input id="addq" type="search" placeholder="Pseudo d’un lecteur"
         autocomplete="off" autocapitalize="none" spellcheck="false" value="${esc(addQ)}"
-        aria-label="Pseudo d’un ami"><button class="lnk" data-act="doadd">Ajouter</button></div>
+        aria-label="Pseudo d’un lecteur"><button class="lnk" data-act="doadd">Ajouter</button></div>
       ${a.length ? `<div class="lbl"><span>Demandes reçues</span><span>${a.length}</span></div>
         <div class="slist">${a.map(f => `<div class="sr flat">
           <i class="av sm">${esc(initial(f.handle || f.name))}</i>
           <span class="n">@${esc(f.handle || '')}</span>
           <button class="fyes" data-yes="${f.id}">${svg(I.check)}</button>
           <button class="fno" data-no="${f.id}">${svg(I.x)}</button></div>`).join('')}</div>` : ''}
-      <div class="lbl"><span>Mes amis</span><span>${l.length || ''}</span></div>
+      <div class="lbl"><span>Mes lecteurs</span><span>${l.length || ''}</span></div>
       ${!friends ? `<div class="card2"><div class="note">Chargement…</div></div>`
         : !l.length ? `<div class="empty">${svg(I.user)}<p><b>Personne pour l’instant</b>Ajoute quelqu’un par son pseudo.</p></div>`
         : `<div class="slist">${l.map(f => `<button class="sr flat" data-mate="${f.id}">
@@ -2775,14 +2778,14 @@ function groupsView() {
   const l = groups || [];
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
-      <h1>Groupes</h1></div>
+      <h1>Clubs</h1></div>
     <div class="page">
       <div class="duo ghost">
         <button data-act="newgroup">${svg(I.plus)}Créer</button>
         <button data-act="joingroup">${svg(I.link)}Rejoindre</button>
       </div>
       ${!groups ? `<div class="card2"><div class="note">Chargement…</div></div>`
-        : !l.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucun groupe</b>Une classe, un binôme : tout le monde y voit les mêmes paquets et les mêmes défis.</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucun club</b>Une classe, un binôme : la même étagère et les mêmes défis pour tous.</p></div>`
         : `<div class="slist">${l.map(g => `<button class="sr flat" data-group="${g.id}">
             ${svg(I.layers)}<span class="ml2"><span class="n">${esc(g.name)}</span>
               <span class="sub">code ${esc(g.code)}</span></span>${svg(I.arrow)}</button>`).join('')}</div>`}
@@ -2796,7 +2799,7 @@ function duelsView() {
     <div class="page">
       <button class="cta ghost" data-act="duelnew">${svg(I.flame)}Lancer un défi</button>
       ${!l ? `<div class="card2"><div class="note">${duels.err ? 'Indisponible' : 'Chargement…'}</div></div>`
-        : !l.length ? `<div class="empty">${svg(I.flame)}<p><b>Aucun défi</b>Dix questions d’un de tes paquets, les mêmes pour tous.</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.flame)}<p><b>Aucun défi</b>Dix questions d’un de tes livres, les mêmes pour tous.</p></div>`
         : `<div class="slist">${l.map(du => {
             const m = myScore(du.id), r = rankOf(du.id);
             const pos = m ? r.findIndex(x => x.user_id === auth.uid) + 1 : 0;
@@ -2813,13 +2816,13 @@ function libraryView() {
   const l = lib.list;
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
-      <h1>Bibliothèque</h1></div>
+      <h1>L’étagère</h1></div>
     <div class="page">
       ${!l ? `<div class="card2"><div class="note">${lib.err ? 'Indisponible' : 'Chargement…'}</div></div>`
-        : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>Publie un paquet depuis son menu Partager.</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>Prête un livre depuis son menu Partager.</p></div>`
         : `<div class="slist">${l.map(it => `<button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
             <span class="ml2"><span class="n">${esc(it.name)}</span>
-              <span class="sub">${esc(shortWho(it.who) || 'Un ami')}${it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'carte')}</span></span>
+              <span class="sub">${esc(shortWho(it.who) || 'Un ami')}${it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'fiche')}</span></span>
             <span class="c">${timeAgo(it.updated_at)}</span>${svg(I.arrow)}</button>`).join('')}</div>`}
     </div>`;
 }
@@ -2834,7 +2837,7 @@ function boardView() {
       ${!board.rows ? `<div class="card2"><div class="note">${board.err ? 'Indisponible' : 'Chargement…'}</div></div>`
         : !r.length ? `<div class="empty">${svg(I.trophy)}<p><b>Rien sur cette période</b></p></div>`
         : `<div class="rows">${r.map((x, i) => bdRow(x, i)).join('')}</div>
-          <div class="note">Seul le nombre de cartes révisées circule entre les comptes.</div>`}
+`}
     </div>`;
 }
 
@@ -2855,12 +2858,12 @@ function groupView() {
 function libPane() {
   const l = lib.list;
   return !l ? `<div class="empty">${svg(I.book)}<p>${lib.err ? 'Bibliothèque indisponible' : 'Chargement…'}</p></div>`
-    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>Un paquet s’y publie depuis Partager.</p></div>`
+    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>Prête un livre depuis son menu Partager.</p></div>`
     : `<div class="slist">${l.map(it => `
         <button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
           <span class="ml2"><span class="n">${esc(it.name)}</span>
             <span class="sub">${esc(shortWho(it.who) || 'Un compte')}${
-              it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'carte')}</span></span>
+              it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'fiche')}</span></span>
           <span class="c">${timeAgo(it.updated_at)}</span>${svg(I.arrow)}</button>`).join('')}</div>`;
 }
 function duelPane() {
@@ -2891,10 +2894,10 @@ function boardPane() {
     <div class="bdr ${x.uid === auth.uid ? 'me' : ''}">
       <span class="bdp">${MED[i] || (i + 1)}</span>
       <span class="bdn"><b>${esc(shortWho(x.who) || 'Compte')}</b>
-        <i>${plur(+x.n, 'carte')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
+        <i>${plur(+x.n, 'fiche')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
         <em style="width:${Math.max(4, Math.round(x.n / top * 100))}%"></em></span>
     </div>`).join('')}</div>
-    <div class="note">Seul le nombre de cartes révisées circule entre les comptes.</div>`;
+`;
 }
 function groupPull() {
   if (groupTab === 'lib' && !lib.list) libPull();
@@ -3008,16 +3011,16 @@ function statsCSV() {
   for (const [k, v] of [...S.byDay.entries()].sort((a, b) => a[0] - b[0]))
     lines.push(['jour', new Date(k).toISOString().slice(0, 10), v.n + ' cartes, ' + v.ok + ' justes'].map(q).join(';'));
   for (const s of S.subjects)
-    lines.push(['temps par matière', s.k, Math.round(s.v / 60000) + ' min'].map(q).join(';'));
+    lines.push(['temps par rayon', s.k, Math.round(s.v / 60000) + ' min'].map(q).join(';'));
   for (const [b, [o, t]] of Object.entries(S.ret))
     if (t) lines.push(['rétention', b + ' jour(s)', Math.round(o / t * 100) + ' % sur ' + t].map(q).join(';'));
   const idx = cardIndex();
   for (const [id, fails] of S.worst) {
     const e = idx.get(id);
-    lines.push(['carte ratée', e ? e.c.f : id, fails + ' échecs'].map(q).join(';'));
+    lines.push(['fiche ratée', e ? e.c.f : id, fails + ' échecs'].map(q).join(';'));
   }
   for (const p of deckProgress())
-    lines.push(['paquet', p.d.name, p.pct + ' % mûres sur ' + p.n].map(q).join(';'));
+    lines.push(['livre', p.d.name, p.pct + ' % mûres sur ' + p.n].map(q).join(';'));
   return '﻿' + lines.join('\n');       // BOM : Excel ouvre l'UTF-8 correctement
 }
 
@@ -3029,7 +3032,7 @@ async function exportStats() {
      installée : la feuille de partage est le seul chemin qui aboutit. */
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: 'Statistiques Cartes' });
+      await navigator.share({ files: [file], title: 'Journal de lecture Folio' });
       return;
     }
   } catch (e) { if (e && e.name === 'AbortError') return; }
@@ -3068,18 +3071,18 @@ function findView() {
   const r = findResults(findQ);
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
-      <div class="fld"><input id="fq" type="search" placeholder="Chercher un mot, un paquet…"
+      <div class="fld"><input id="fq" type="search" placeholder="Chercher un mot, un livre…"
         autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search"
         value="${esc(findQ)}" aria-label="Recherche"></div></div>
     <div class="page">
       ${!findQ.trim() ? `<div class="empty">${svg(I.search)}</div>`
         : (!r.decks.length && !r.cards.length) ? `<div class="empty">${svg(I.search)}<p><b>Rien trouvé</b>pour « ${esc(findQ)} »</p></div>`
-        : `${r.decks.length ? `<div class="lbl"><span>Paquets</span><span>${r.decks.length}</span></div>
+        : `${r.decks.length ? `<div class="lbl"><span>Livres</span><span>${r.decks.length}</span></div>
           <div class="slist">${r.decks.map(d => `<button class="sr flat" data-go="${d.id}">
             <i class="ldot" style="${sty(subj(d.subject))}"></i>
             <span class="n">${esc(d.name)}</span>
             <span class="c">${d.cards.length}</span>${svg(I.arrow)}</button>`).join('')}</div>` : ''}
-        ${r.cards.length ? `<div class="lbl"><span>Cartes</span><span>${r.cards.length}</span></div>
+        ${r.cards.length ? `<div class="lbl"><span>Fiches</span><span>${r.cards.length}</span></div>
           <div class="slist">${r.cards.map(({ c, d }) => `<button class="sr flat" data-go="${d.id}">
             <span class="ml2"><span class="n">${hl(plain(c.f), findQ)}</span>
               <span class="sub">${hl(plain(c.b), findQ)} · ${esc(d.name)}</span></span>
@@ -3111,7 +3114,7 @@ function lostOnLeave() {
 function statsView() {
   if (!stats.rows) {
     $.innerHTML = `<div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
-      <div class="page"><div class="top"><div class="hero">Statistiques</div></div>
+      <div class="page"><div class="top"><div class="hero">Journal de lecture</div></div>
       <div class="empty">${svg(I.chart)}<p>${stats.err ? 'Statistiques indisponibles' : 'Chargement…'}</p></div></div>`;
     return;
   }
@@ -3132,17 +3135,17 @@ function statsView() {
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
-      <div class="top"><div class="hero">Statistiques</div></div>
+      <div class="top"><div class="hero">Journal de lecture</div></div>
       <div class="seg" id="stRange">
         ${[[7, '7 jours'], [30, '30 jours'], [0, 'Tout']].map(([v, l]) =>
           `<button data-strange="${v}" class="${stats.range === v ? 'on' : ''}">${l}</button>`).join('')}
       </div>
 
       <div class="tiles st4">
-        <div class="st"><b>${S.n}</b><span>cartes revues</span></div>
+        <div class="st"><b>${S.n}</b><span>fiches lues</span></div>
         <div class="st"><b>${pct}%</b><span>de réussite</span></div>
         <div class="st"><b>${Math.round(S.ms / 60000)}</b><span>minutes</span></div>
-        <div class="st"><b>${(S.per / 1000).toFixed(1).replace('.', ',')}s</b><span>par carte</span></div>
+        <div class="st"><b>${(S.per / 1000).toFixed(1).replace('.', ',')}s</b><span>par fiche</span></div>
       </div>
 
       <div class="lbl"><span>Assiduité</span><span>${S.streak ? S.streak + ' jour' + (S.streak > 1 ? 's' : '') + ' d’affilée' : ''}</span></div>
@@ -3150,7 +3153,7 @@ function statsView() {
         <div class="heat">${cols.map(col => `<div class="hc">${col.map(k => {
           const v = S.byDay.get(k);
           const lvl = !v ? 0 : v.n >= maxDay * .66 ? 4 : v.n >= maxDay * .33 ? 3 : v.n >= 2 ? 2 : 1;
-          return `<i class="l${lvl}" title="${dayLabel(k)}${v ? ' · ' + v.n + ' cartes' : ''}"></i>`;
+          return `<i class="l${lvl}" title="${dayLabel(k)}${v ? ' · ' + v.n + ' fiches' : ''}"></i>`;
         }).join('')}</div>`).join('')}</div>
         <div class="heatk"><span>${dayLabel(days[0])}</span><span>aujourd’hui</span></div>
       </div>
@@ -3166,22 +3169,22 @@ function statsView() {
         }).join('')}
       </div>
 
-      <div class="lbl"><span>Progression</span>${hlp('mature')}<span>${prog.length} paquet${prog.length > 1 ? 's' : ''}</span></div>
+      <div class="lbl"><span>Progression</span>${hlp('mature')}<span>${prog.length} livre${prog.length > 1 ? 's' : ''}</span></div>
       <div class="card2">
         ${prog.length ? prog.map(p => `<div class="brow"><span class="bl">${esc(p.d.name)}</span>
           <span class="bt"><i style="width:${p.pct}%;background:${subj(p.d.subject).d}"></i></span>
           <span class="bv">${p.pct}%</span></div>`).join('')
-          : '<div class="note">Aucun paquet pour l’instant.</div>'}
+          : '<div class="note">Aucun livre pour l’instant.</div>'}
       </div>
 
-      ${S.subjects.length ? `<div class="lbl"><span>Temps par matière</span></div>
+      ${S.subjects.length ? `<div class="lbl"><span>Temps par rayon</span></div>
       <div class="card2">
         ${S.subjects.map(x => `<div class="brow"><span class="bl">${esc(x.k)}</span>
           <span class="bt"><i style="width:${Math.round(x.p * 100)}%"></i></span>
           <span class="bv">${x.v >= 60000 ? Math.round(x.v / 60000) + ' min' : Math.round(x.v / 1000) + ' s'}</span></div>`).join('')}
       </div>` : ''}
 
-      ${S.worst.length ? `<div class="lbl"><span>Cartes les plus ratées</span><span>${S.worst.length}</span></div>
+      ${S.worst.length ? `<div class="lbl"><span>Fiches les plus ratées</span><span>${S.worst.length}</span></div>
       <div class="slist">
         ${S.worst.map(([id, fails]) => {
           const e = idx.get(id);
@@ -3305,7 +3308,7 @@ function paintMenu() {
     const t = db.subjects.find(x => x.id === subjEdit) || { id: '', name: '', color: 'graphite' };
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <input class="tok" id="sn" placeholder="Nom de la matière" spellcheck="false"
+        <input class="tok" id="sn" placeholder="Nom du rayon" spellcheck="false"
           enterkeyhint="done" value="${esc(subjName)}">
         <div class="swatch">${COLORS.map(k => `<button class="sw2 ${k === subjColor ? 'on' : ''}"
           data-color="${k}" style="background:${PALETTE[k].c};--dd:${PALETTE[k].d}"></button>`).join('')}</div>
@@ -3371,7 +3374,7 @@ function paintMenu() {
     const m = metaOf(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mi" style="font-weight:750">${svg(I.gear)}Réglages du paquet</div>
+        <div class="mi" style="font-weight:750">${svg(I.gear)}Réglages du livre</div>
         <div class="mrow col"><span class="ml">${svg(I.target)}Tolérance du quiz</span>
           <div class="seg mseg">
             ${[['strict', 'Stricte'], ['normal', 'Normale'], ['soft', 'Souple']].map(([v, l]) =>
@@ -3416,7 +3419,7 @@ function paintMenu() {
          restent écrits dans chaque carte et t’attendent.`,
         `Le quiz, l’objectif du jour, le résumé de fin de session, les courbes, les matières,
          les cartes suspendues et les sauvegardes fonctionnent à l’identique.`,
-        `Les cartes ratées continuent d’être comptées : le tri « Ratées » et les cartes
+        `Les fiches ratées continuent d’être comptées : le tri « Ratées » et les fiches
          coriaces restent justes.`
       ]),
       bloc('Quand tu rallumeras le moteur', [
@@ -3442,7 +3445,7 @@ function paintMenu() {
       bloc('Où en est ta progression', [
         `Le moteur reprend au point exact où il s’était arrêté${since ? ` il y a ${since} jour${since > 1 ? 's' : ''}` : ''}.
          Aucune donnée n’a été perdue pendant le mode simple.`,
-        n ? `<b>${n > 1 ? `${n} cartes ont dépassé leur échéance.` : `Une carte a dépassé son échéance.`}</b> ${n > per
+        n ? `<b>${n > 1 ? `${n} fiches ont dépassé leur échéance.` : `Une fiche a dépassé son échéance.`}</b> ${n > per
               ? `Elles seront réparties sur ${j} jour${j > 1 ? 's' : ''}, environ ${per} par jour,
                  les plus anciennes d’abord.`
               : n > 1 ? `Elles seront à revoir dès la prochaine session.`
@@ -3468,7 +3471,6 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.link)}Fusionner « ${esc(d.name)} » avec</div>
-        <div class="note">Le paquet choisi part à la corbeille. Les doublons ne sont pas recopiés.</div>
         <div class="mscroll">${others.map(x => `<button class="mi" data-merge="${x.id}">
           <i class="tri" style="--c:${subj(x.subject).c}"></i>${esc(x.name)}
           <span class="tail">${x.cards.length}</span></button>`).join('')}</div>
@@ -3528,7 +3530,7 @@ function paintMenu() {
   if (menu === 'sortpick') {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mi" style="font-weight:750">${svg(I.sort)}Trier les paquets</div>
+        <div class="mi" style="font-weight:750">${svg(I.sort)}Trier les livres</div>
         ${Object.entries(SORTS).map(([k, l]) => `<button class="mi ${prefs.sort === k ? 'on' : ''}"
           data-sortby="${k}">${l}${prefs.sort === k ? svg(I.check) : ''}</button>`).join('')}
         <div class="msep"></div>
@@ -3544,12 +3546,12 @@ function paintMenu() {
       <div class="menu">
         <div class="mhd">${svg(I.card)}
           <span class="mhx"><b>${esc(d.name)}</b>
-            <i>${esc(subj(d.subject).name)} · ${plur(d.cards.length, 'carte')}${due ? ' · ' + due + ' à revoir' : ''}</i>
+            <i>${esc(subj(d.subject).name)} · ${plur(d.cards.length, 'fiche')}${due ? ' · ' + due + ' à revoir' : ''}</i>
           </span>
         </div>
         <div class="mscroll">${d.cards.slice(0, 12).map(c => `<div class="pr">
           <span class="a">${esc(plain(c.f))}</span>${svg(I.arrow)}<span class="b">${esc(plain(c.b))}</span></div>`).join('')
-          || '<div class="note">Ce paquet est vide.</div>'}</div>
+          || '<div class="note">Ce livre est vide.</div>'}</div>
         ${d.cards.length > 12 ? `<div class="note">…et ${d.cards.length - 12} autres.</div>` : ''}
         <button class="mi" data-mact="pindeck">${svg(I.pin)}${d.pinned ? 'Détacher' : 'Épingler en haut'}</button>
         <button class="mi" data-mact="openpeek" style="justify-content:center;font-weight:700">
@@ -3567,14 +3569,13 @@ function paintMenu() {
         <button class="mi" data-mact="sendfriend">${svg(I.mail)}Envoyer à un ami<span class="tail">${friends ? friends.length : ''}</span></button>
         <button class="mi" data-mact="rolink">${svg(I.link)}${m.tok ? 'Copier le lien de consultation' : 'Créer un lien de consultation'}</button>
         ${m.tok ? `<button class="mi warn" data-mact="roff">${svg(I.eyeoff)}Révoquer le lien</button>` : ''}
-        <div class="note">Se consulte sans rien installer, suit tes modifications, se révoque.</div>
         <div class="msep"></div>
         ${m.pub ? `<button class="mi" data-mact="publish">${svg(I.book)}Mettre à jour dans la bibliothèque</button>
                    <button class="mi warn" data-mact="unpublish">${svg(I.x)}Retirer de la bibliothèque</button>`
           : `<button class="mi" data-mact="publish">${svg(I.book)}Publier dans la bibliothèque</button>`}
         <button class="mi" data-mact="duelnew2">${svg(I.flame)}Lancer un défi<span class="tail">${Math.min(DUELQ, d.cards.length)}</span></button>
         <div class="msep"></div>
-        <button class="mi" data-mact="copylink">${svg(I.down)}Lien hors ligne (tout le paquet)</button>
+        <button class="mi" data-mact="copylink">${svg(I.down)}Lien hors ligne (tout le livre)</button>
       </div>`;
     mountMenu(w);
     return;
@@ -3587,7 +3588,6 @@ function paintMenu() {
         <div class="fld addf"><span class="at">@</span><input id="hq" type="text"
           placeholder="pseudo" autocapitalize="none" autocomplete="off" spellcheck="false"
           value="${esc((me && me.handle) || '')}" aria-label="Ton pseudo"></div>
-        <div class="note">Lettres, chiffres, point, tiret. Trois caractères au moins.</div>
         <button class="mi" data-mact="savehandle" style="justify-content:center;font-weight:700">
           ${svg(I.check)}Enregistrer</button>
       </div>`;
@@ -3599,12 +3599,12 @@ function paintMenu() {
     const join = menu === 'joingroup';
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${join ? 'Rejoindre un groupe' : 'Créer un groupe'}</b>
+        <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${join ? 'Rejoindre un club' : 'Créer un club'}</b>
           <i>${join ? 'entre le code qu’on t’a donné' : 'tu recevras un code à partager'}</i></span></div>
         <div class="fld addf"><input id="gq" type="text"
-          placeholder="${join ? 'Code du groupe' : 'Nom du groupe'}" autocomplete="off"
+          placeholder="${join ? 'Code du club' : 'Nom du club'}" autocomplete="off"
           spellcheck="false" ${join ? 'autocapitalize="characters"' : ''}
-          aria-label="${join ? 'Code du groupe' : 'Nom du groupe'}"></div>
+          aria-label="${join ? 'Code du club' : 'Nom du club'}"></div>
         <button class="mi" data-mact="${join ? 'dojoin' : 'domake'}" style="justify-content:center;font-weight:700">
           ${svg(join ? I.link : I.plus)}${join ? 'Rejoindre' : 'Créer'}</button>
       </div>`;
@@ -3619,8 +3619,8 @@ function paintMenu() {
       <div class="menu">
         <div class="mhd"><i class="av">${esc(initial(f.handle || f.name))}</i>
           <span class="mhx"><b>${esc(f.name || '')}</b><i>@${esc(f.handle || '')}</i></span></div>
-        <button class="mi" data-mact="matesend">${svg(I.share)}Lui envoyer un paquet</button>
-        <button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes amis</span></button>
+        <button class="mi" data-mact="matesend">${svg(I.share)}Lui prêter un livre</button>
+        <button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes lecteurs</span></button>
       </div>`;
     mountMenu(w);
     return;
@@ -3635,7 +3635,7 @@ function paintMenu() {
         <button class="mi" data-mact="gcode">${svg(I.copy)}Code d’invitation
           <span class="tail">${esc(g.code)}</span></button>
         <button class="mi warn" data-mact="gleave">${svg(I.exit)}<span>${
-          g.owner === auth.uid ? 'Supprimer le groupe' : 'Quitter le groupe'}</span></button>
+          g.owner === auth.uid ? 'Supprimer le club' : 'Quitter le club'}</span></button>
       </div>`;
     mountMenu(w);
     return;
@@ -3665,7 +3665,7 @@ function paintMenu() {
               remplacement, fusion, découpe ou réimport.</div>`
           : `<div class="mscroll">${l.map(v => `<button class="mi" data-vers="${v.id}">
               ${svg(I.redo)}<span class="ml2"><span class="n">${esc(v.why || 'version')}</span>
-                <span class="sub">${plur((v.cards || []).length, 'carte')} · ${timeAgo(v.created_at)}</span></span>
+                <span class="sub">${plur((v.cards || []).length, 'fiche')} · ${timeAgo(v.created_at)}</span></span>
               </button>`).join('')}</div>`}
       </div>`;
     mountMenu(w);
@@ -3675,7 +3675,7 @@ function paintMenu() {
     const c = conflicts[0];
     if (!c) { menu = null; return; }
     const side = (v, lab, when) => `<div class="cside">
-      <b>${lab}</b><i>${plur(v.cards.length, 'carte')}${when ? ' · ' + when : ''}</i>
+      <b>${lab}</b><i>${plur(v.cards.length, 'fiche')}${when ? ' · ' + when : ''}</i>
       <span>${esc(v.name)}</span></div>`;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -3704,12 +3704,12 @@ function paintMenu() {
         <div class="mhd">${svg(I.book)}
           <span class="mhx"><b>${esc(it.name)}</b>
             <i>${esc(noDetect(shortWho(it.who) || 'Un compte'))}${it.subject ? ' · ' + esc(it.subject) : ''}
-              · ${plur(it.n, 'carte')} · ${timeAgo(it.updated_at)}</i></span>
+              · ${plur(it.n, 'fiche')} · ${timeAgo(it.updated_at)}</i></span>
         </div>
         <div class="mscroll">${(it.cards || []).slice(0, 60).map(c => `<div class="pr">
           <span class="a">${esc(cf(c))}</span>${svg(I.arrow)}<span class="b">${esc(cb(c))}</span></div>`).join('')}</div>
         <button class="mi" data-mact="libadd" style="justify-content:center;font-weight:700">
-          ${svg(I.plus)}Ajouter à mes paquets</button>
+          ${svg(I.plus)}Ajouter à ma bibliothèque</button>
         ${mine ? `<button class="mi warn" data-mact="libdrop">${svg(I.trash)}<span>Retirer de la bibliothèque</span></button>` : ''}
       </div>`;
     mountMenu(w);
@@ -3732,7 +3732,7 @@ function paintMenu() {
             <span class="bdn"><b>${esc(shortWho(sc.who) || 'Compte')}</b>
               <i>${sc.score}/${du.total} · ${Math.round(sc.ms / 1000)} s</i></span></div>`).join('')
           : '<div class="note">Personne n’a encore joué.</div>'}</div>
-        ${me ? `<div class="note">Un seul essai par personne.</div>`
+        ${me ? ``
           : `<button class="mi" data-mact="duelgo" style="justify-content:center;font-weight:700">
               ${svg(I.play)}Jouer les ${du.total} questions</button>`}
         ${mine ? `<button class="mi warn" data-mact="dueldrop">${svg(I.trash)}<span>Supprimer le défi</span></button>` : ''}
@@ -3745,11 +3745,10 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.flame)}Défier le groupe</div>
-        <div class="note">${DUELQ} questions figées : tout le monde répond aux mêmes.</div>
         <div class="mscroll">${list.length ? list.map(x => `
           <button class="mi" data-dnew="${esc(x.id)}"><i class="tri" style="--c:${subj(x.subject).d}"></i>
             ${esc(x.name)}<span class="tail">${x.cards.length}</span></button>`).join('')
-          : '<div class="note">Il faut un paquet d’au moins 4 cartes.</div>'}</div>
+          : '<div class="note">Il faut un livre d’au moins 4 fiches.</div>'}</div>
       </div>`;
     mountMenu(w);
     return;
@@ -3761,7 +3760,6 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.mail)}Envoyer « ${esc(d.name)} » à</div>
-        <div class="note">${plur(d.cards.length, 'carte')} copiée${d.cards.length > 1 ? 's' : ''}, sans ta progression.</div>
         <div class="mscroll">${friends === null
           ? `<div class="mi" style="color:var(--soft)">Chargement…</div>`
           : !list.length ? `<div class="mi" style="color:var(--soft)">Aucun autre compte pour l’instant.</div>`
@@ -3787,14 +3785,14 @@ function paintMenu() {
       <div class="menu">
         <div class="mhd">${svg(I.mail)}
           <span class="mhx"><b>${esc(it.deck_name)}</b>
-            <i>${esc(noDetect(it.from_name || 'Un ami'))} · ${plur(n, 'carte')} · ${timeAgo(it.created_at)}</i>
+            <i>${esc(noDetect(it.from_name || 'Un ami'))} · ${plur(n, 'fiche')} · ${timeAgo(it.created_at)}</i>
           </span>
         </div>
         ${it.message ? `<div class="mmsg">${svg(I.quote)}<p>${esc(it.message)}</p></div>` : ''}
         <div class="mscroll">${(it.cards || []).slice(0, 60).map(c => `<div class="pr">
           <span class="a">${esc(c[0])}</span>${svg(I.arrow)}<span class="b">${esc(c[1])}</span></div>`).join('')}</div>
         <button class="mi" data-mact="addmail" style="justify-content:center;font-weight:700">
-          ${svg(it.added_at ? I.check : I.plus)}${it.added_at ? 'Déjà dans mes paquets · Ajouter à nouveau' : 'Ajouter à mes paquets'}</button>
+          ${svg(it.added_at ? I.check : I.plus)}${it.added_at ? 'Déjà dans ma bibliothèque · Ajouter à nouveau' : 'Ajouter à ma bibliothèque'}</button>
         <button class="mi warn" data-mact="delmail">${svg(I.trash)}<span>Supprimer</span></button>
       </div>`;
     mountMenu(w);
@@ -3807,7 +3805,6 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.out)}Déplacer ${n} carte${n > 1 ? 's' : ''} vers</div>
-        <div class="note">Les cartes quittent « ${esc(d.name)} » avec leur progression intacte.</div>
         <div class="mscroll">${others.map(x => `<button class="mi" data-move="${x.id}">
           <i class="tri" style="--c:${subj(x.subject).c}"></i>${esc(x.name)}
           <span class="tail">${x.cards.length}</span></button>`).join('')}</div>
@@ -3823,11 +3820,11 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.split)}Scinder « ${esc(d.name)} »</div>
-        <div class="mrow col"><span class="ml">${svg(I.card)}Cartes par paquet
+        <div class="mrow col"><span class="ml">${svg(I.card)}Fiches par livre
           <b class="tail">${size}</b></span>
           <input class="rng" id="spSize" type="range" min="2" max="${n - 1}" step="1" value="${size}">
         </div>
-        <div class="note">${n} cartes → <b>${parts} paquets</b> de ${size}${
+        <div class="note">${n} fiches → <b>${parts} livres</b> de ${size}${
           last !== size ? `, le dernier de ${last}` : ''}. Elles gardent leur ordre
           et leur progression. L’original part à la corbeille, récupérable.</div>
         <button class="mi" data-mact="dosplit" style="justify-content:center;font-weight:700">
@@ -3844,7 +3841,7 @@ function paintMenu() {
       splitSize = +r.value;
       const p = Math.ceil(n / splitSize), lastN = n - splitSize * (p - 1);
       lab.textContent = splitSize;
-      note.innerHTML = `${n} cartes → <b>${p} paquets</b> de ${splitSize}${
+      note.innerHTML = `${n} fiches → <b>${p} livres</b> de ${splitSize}${
         lastN !== splitSize ? `, le dernier de ${lastN}` : ''}. Elles gardent leur ordre
         et leur progression. L’original part à la corbeille, récupérable.`;
       btn.lastChild.textContent = 'Scinder en ' + p;
@@ -3863,7 +3860,7 @@ function paintMenu() {
         ${conf[2] ? `<input class="tok" id="fld" type="${conf[2]}" placeholder="${esc(conf[3])}"
             value="${esc(conf[4])}" autocapitalize="none" autocorrect="off" spellcheck="false">`
           : `<div class="mi" style="font-size:13.5px;color:var(--soft);height:auto;padding:0 16px 12px;
-               line-height:1.45">Tes paquets, tes matières et ton historique seront effacés définitivement.</div>`}
+               line-height:1.45">Tes livres, tes rayons et ton journal seront effacés définitivement.</div>`}
         <div class="mrr" id="mrr"></div>
         <button class="mi ${menu === 'delacc' ? 'warn' : ''}" data-mact="do-${menu}"
           style="justify-content:center;font-weight:700">${svg(I.check)}<span>${conf[5]}</span></button>
@@ -3885,12 +3882,12 @@ function paintMenu() {
       <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
       <button class="mi" data-mact="mcq">${svg(I.grid)}QCM</button>
       <button class="mi" data-mact="match">${svg(I.link)}Association</button>
-      <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du paquet</button>
+      <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du livre</button>
       ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
       <div class="msep"></div>
       ${canUndo() ? `<button class="mi" data-mact="undo">${svg(I.redo)}Annuler<span class="tail">${esc(undoLabel())}</span></button>` : ''}
       ${d.cards.length ? `<button class="mi" data-mact="fnropen">${svg(I.search)}Chercher et remplacer</button>` : ''}
-      <button class="mi" data-mact="versopen">${svg(I.clock)}Historique du paquet</button>
+      <button class="mi" data-mact="versopen">${svg(I.clock)}Éditions précédentes</button>
       <button class="mi" data-mact="clone">${svg(I.copy)}Dupliquer</button>
       ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
       ${d.cards.length > 3 ? `<button class="mi" data-mact="splitopen">${svg(I.split)}Scinder<span class="tail">${d.cards.length}</span></button>` : ''}
@@ -4087,7 +4084,7 @@ document.addEventListener('click', async e => {
     closeMenu();
     if (!made) return toast(I.split, 'Rien à scinder');
     go('home');
-    return toast(I.split, made.length + ' paquets créés', true);
+    return toast(I.split, made.length + ' livres créés', true);
   }
   if (a === 'leavestay') { leaving = null; return closeMenu(); }
   if (a === 'leavego') {
@@ -4134,13 +4131,13 @@ document.addEventListener('click', async e => {
   if (a === 'gcode') {
     const g = (groups || []).find(x => x.id === groupOf); if (!g) return;
     const txt = g.code;
-    if (navigator.share) navigator.share({ text: `Rejoins « ${g.name} » sur Cartes avec le code ${txt}` }).catch(() => {});
+    if (navigator.share) navigator.share({ text: `Rejoins « ${g.name} » sur Folio avec le code ${txt}` }).catch(() => {});
     else navigator.clipboard.writeText(txt).then(() => toast(I.check, 'Code copié'), () => {});
     return;
   }
   if (a === 'gleave') { return leaveGroup(groupOf); }
   if (a === 'matedrop') { return dropFriend(mateOpen); }
-  if (a === 'matesend') { closeMenu(); sendTo = mateOpen; sendMsg = ''; return toast(I.share, 'Ouvre un paquet, puis Partager'); }
+  if (a === 'matesend') { closeMenu(); sendTo = mateOpen; sendMsg = ''; return toast(I.share, 'Ouvre un livre, puis Partager'); }
   if (a === 'cfmine') return solveConflict('mine');
   if (a === 'cftheirs') return solveConflict('theirs');
   if (a === 'cfboth') return solveConflict('both');
@@ -4418,6 +4415,7 @@ const faceSize = txt => {
 function faceHtml(bk, txt, img, aud, lang) {
   const snd = aud || (lang && TTS && plain(txt));
   return `<div class="face${bk ? ' bk' : ''}${faceSize(txt)}">
+    <i class="seam" aria-hidden="true"></i>
     ${img ? `<img class="fim" src="${esc(img)}" alt="">` : ''}
     ${plain(txt) ? `<div class="tx">${rt(txt)}</div>` : ''}
     ${snd ? `<button class="snd" data-snd="${bk ? 'b' : 'f'}">${svg(I.sound)}</button>` : ''}
@@ -4993,11 +4991,11 @@ function importView() {
   $.innerHTML = `
     <div class="bar">
       <button class="ic" data-act="${t ? 'deck' : 'home'}" aria-label="Retour">${svg(I.back)}</button>
-      <h1>${t ? esc(t.name) : 'Nouveau paquet'}</h1>
+      <h1>${t ? esc(t.name) : 'Nouveau livre'}</h1>
       <button class="ic ${comp.bulk ? 'solid' : ''}" data-act="bulk">${svg(I.down)}</button>
     </div>
     <div class="sheet ${comp.bulk ? 'sh-bulk' : 'sh-comp'}">
-      ${t ? '' : `<div class="field"><input id="nm" placeholder="Nom du paquet" spellcheck="false"
+      ${t ? '' : `<div class="field"><input id="nm" placeholder="Titre du livre" spellcheck="false"
         enterkeyhint="next" value="${esc(comp.name || '')}"></div>
         ${pills(comp.subject, db.subjects.map(x => subj(x.id)), 'nsubj')}`}
       ${comp.bulk ? `
@@ -5006,7 +5004,7 @@ function importView() {
         <div class="airow">
           <button class="ai" id="aishot" title="Photo d'une page de cours">${svg(I.image)}</button>
           <button class="ai" id="aipdf" title="Fichier : PDF, texte, CSV, export Anki ou Quizlet">${svg(I.file)}</button>
-          <button class="ai" id="aigen" title="Fabriquer les cartes">${svg(I.spark)}</button>
+          <button class="ai" id="aigen" title="Fabriquer les fiches">${svg(I.spark)}</button>
           <button class="cta" id="bulkadd" disabled>Ajouter${svg(I.plus)}</button>
         </div>
         <input type="file" id="fshot" accept="image/*" capture="environment" hidden>
@@ -5019,7 +5017,7 @@ function importView() {
           <input id="cb" class="cb" placeholder="Verso" enterkeyhint="done" spellcheck="false">
           <button class="cadd" id="cadd">${svg(comp.edit >= 0 ? I.check : I.plus)}</button>
         </div>
-        <div class="lbl"><span>Cartes</span><span id="cn">${comp.cards.length}</span></div>
+        <div class="lbl"><span>Fiches</span><span id="cn">${comp.cards.length}</span></div>
         <div class="dlist" id="dlist"></div>`}
       ${comp.bulk ? '' : `<button class="cta" id="ok" ${comp.cards.length ? '' : 'disabled'}>
         ${t ? 'Ajouter' : 'Créer'}${svg(I.check)}</button>`}
@@ -5055,7 +5053,7 @@ function importView() {
         + cards.slice(0, 40).map(c => `<div class="pr ${(c.dup && !comp.dups) || c.big ? 'dup' : ''}">
           <span class="a">${esc(c.f.slice(0, 120))}</span>${svg(I.arrow)}<span class="b">${esc(c.b.slice(0, 120))}</span>
           ${c.big ? `<i class="dpi" title="${c.big === 'f' ? 'Recto' : 'Verso'} trop long">${svg(I.warn)}</i>`
-            : c.dup ? `<i class="dpi" title="${c.dup === 'deck' ? 'Déjà dans le paquet' : 'En double dans le texte'}">${svg(I.copy)}</i>` : ''}
+            : c.dup ? `<i class="dpi" title="${c.dup === 'deck' ? 'Déjà dans le livre' : 'En double dans le texte'}">${svg(I.copy)}</i>` : ''}
         </div>`).join('');
       const dt = document.getElementById('dupt');
       if (dt) dt.onclick = () => { comp.dups = !comp.dups; up(); };
@@ -5072,7 +5070,7 @@ function importView() {
         const cards = await aiCards(tx.value, t ? t.name : comp.name);
         if (!cards.length) throw new Error('empty');
         tx.value = cards.map(c => c.f + '\t' + c.b).join('\n');
-        fit(); up(); toast(I.spark, plur(cards.length, 'carte'));
+        fit(); up(); toast(I.spark, plur(cards.length, 'fiche'));
       } catch (x) {
         toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
       }
@@ -5091,7 +5089,7 @@ function importView() {
         if (!cards.length) throw new Error('empty');
         const had = tx.value.trim();
         tx.value = (had ? had + '\n' : '') + cards.map(c => c.f + '\t' + c.b).join('\n');
-        fit(); up(); toast(I.spark, plur(cards.length, 'carte'));
+        fit(); up(); toast(I.spark, plur(cards.length, 'fiche'));
       } catch (x) {
         toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
       }
@@ -5118,7 +5116,7 @@ function importView() {
       if (!found.length) return toast(I.x, 'Aucune carte reconnue');
       const had = tx.value.trim();
       tx.value = (had ? had + '\n' : '') + found.map(c => c.f + '\t' + c.b).join('\n');
-      fit(); up(); toast(I.check, plur(found.length, 'carte'));
+      fit(); up(); toast(I.check, plur(found.length, 'fiche'));
     };
     add.onclick = () => {
       let cards = parseText(tx.value); if (!cards.length) return;
@@ -5130,7 +5128,7 @@ function importView() {
       if (!cards.length) return;
       comp.cards.push(...cards); comp.text = ''; comp.bulk = false;
       render();
-      toast(I.check, plur(cards.length, 'carte')
+      toast(I.check, plur(cards.length, 'fiche')
         + (!comp.dups && dup.total ? ` · ${dup.total} doublon${dup.total > 1 ? 's' : ''} écarté${dup.total > 1 ? 's' : ''}` : '')
         + (big ? ` · ${big} trop longue${big > 1 ? 's' : ''}` : ''));
     };
@@ -5160,7 +5158,7 @@ function importView() {
     const cards = comp.cards.slice();
     if (t) { t.cards.push(...cards.map(c => ({ id: uid(), f: c.f, b: c.b }))); saveDeck(t); resetComp(); go('deck', t.id); }
     else { const d = addDeck(comp.name, cards, comp.subject); resetComp(); go('deck', d.id); }
-    toast(I.check, plur(cards.length, 'carte'));
+    toast(I.check, plur(cards.length, 'fiche'));
   };
 }
 
@@ -5289,7 +5287,7 @@ $.addEventListener('click', e => {
     const nd = importPayload({ name: sd.name, subject: '', cards }, true);
     shared = null;
     if (nd) go('deck', nd.id); else go('home');
-    return toast(I.check, plur(cards.length, 'carte') + ' ajoutée' + (cards.length > 1 ? 's' : ''));
+    return toast(I.check, plur(cards.length, 'fiche') + ' ajoutée' + (cards.length > 1 ? 's' : ''));
   }
   if (a === 'expstats') return exportStats();
   if (a === 'find') { findQ = ''; return go('find'); }
@@ -5495,7 +5493,7 @@ function consumeHash() {
   try {
     const d = importPayload(dec(location.hash.slice(3)));
     history.replaceState(null, '', location.pathname);
-    if (d) { go('deck', d.id); toast(I.check, plur(d.cards.length, 'carte')); return true; }
+    if (d) { go('deck', d.id); toast(I.check, plur(d.cards.length, 'fiche')); return true; }
   } catch (e) { history.replaceState(null, '', location.pathname); }
   return false;
 }
@@ -5590,53 +5588,53 @@ let demo = false;                       // pendant la visite : plus rien ne sort
    éventuellement le geste qui la fait avancer toute seule (done). */
 const nav = (name, id) => () => { closeMenu(); view = { name, id }; };
 const CHAPTERS = [
-  { id: 'bases', name: 'Le tour du propriétaire', icon: 'layers', steps: [
+  { id: 'bases', name: 'Ta bibliothèque', icon: 'layers', steps: [
     { go: nav('home'), title: 'Bienvenue',
-      text: 'Tout ce que tu vas voir appartient à Léa, un compte d’essai. Tes paquets à toi ne bougent pas.' },
-    { go: nav('home'), sel: '.grid .tile', title: 'Un paquet',
-      text: 'Un jeu de cartes sur un sujet. La pastille rouge dit combien de cartes sont à revoir aujourd’hui.' },
+      text: 'Tout ce que tu vas voir appartient à Léa, un compte d’essai. Tes livres à toi ne bougent pas.' },
+    { go: nav('home'), sel: '.grid .tile', title: 'Un livre',
+      text: 'Chaque livre porte ses fiches. Le signet dit combien sont à lire aujourd’hui.' },
     { go: nav('home'), sel: '.sbar', title: 'Les couleurs',
       text: 'Orange : tu viens de commencer. Vert clair : tu sais depuis peu. Vert foncé : tu sais depuis longtemps.' },
     { go: nav('home'), sel: '.goal', title: 'L’objectif du jour',
       text: 'L’anneau se remplit à chaque carte revue. Tu choisis le nombre dans les réglages.' },
-    { go: nav('home'), sel: '.grid .tile', pass: 1, tap: 'Touche le paquet', wait: 400,
+    { go: nav('home'), sel: '.grid .tile', pass: 1, tap: 'Touche le livre', wait: 400,
       done: () => view.name === 'deck', title: 'Entrons dedans',
       text: 'Touche « Italien — les bases ».' }
   ] },
-  { id: 'revi', name: 'Réviser', icon: 'play', steps: [
-    { go: nav('deck', 'dmo1'), sel: '.mixwrap', title: 'Le détail du paquet',
-      text: 'Les mêmes couleurs, carte par carte. « Coriaces » : celles que tu rates à chaque fois.' },
-    { go: nav('deck', 'dmo1'), sel: '.duo .prim', pass: 1, tap: 'Touche Réviser', wait: 500,
+  { id: 'revi', name: 'Lire', icon: 'play', steps: [
+    { go: nav('deck', 'dmo1'), sel: '.mixwrap', title: 'Le détail du livre',
+      text: 'Les mêmes couleurs, fiche par fiche. « Coriaces » : celles que tu rates à chaque fois.' },
+    { go: nav('deck', 'dmo1'), sel: '.duo .prim', pass: 1, tap: 'Touche Lire', wait: 500,
       done: () => view.name === 'study', title: 'On y va',
-      text: 'Les cartes arrivent une par une.' },
+      text: 'Les fiches arrivent une par une.' },
     { go: () => { if (view.name !== 'study' || !study) startStudy('dmo1'); study.flip = false; },
-      sel: '#top', pass: 1, tap: 'Touche la carte', wait: 1100,
+      sel: '#top', pass: 1, tap: 'Touche la fiche', wait: 1100,
       done: () => study && study.flip, title: 'Retourne-la',
-      text: 'Tu lis, tu cherches dans ta tête, puis tu touches pour voir la réponse.' },
+      text: 'Tu lis, tu cherches dans ta tête, puis tu touches pour voir le verso.' },
     { go: () => { if (view.name !== 'study' || !study) startStudy('dmo1'); prefs.simple = true; },
       sel: '#top', swipe: 1, pass: 1, lock: 1, tap: 'Balaie vers la droite', wait: 450,
       done: () => study && study.i > 0, title: 'À droite : je sais',
-      text: 'À gauche quand c’est à revoir. Les deux pastilles apparaissent sous ton doigt pendant le geste.' },
+      text: 'À gauche quand c’est à revoir. Les deux pastilles apparaissent sous ton doigt.' },
     { go: () => { prefs.simple = false; if (view.name !== 'study' || !study) startStudy('dmo1'); study.flip = true; },
       sel: '.grades', title: 'Ou tu dis si c’était dur',
-      text: 'Plus c’était facile, plus la carte mettra de temps à revenir. La date est écrite sous chaque bouton.' },
+      text: 'Plus c’était facile, plus la fiche mettra de temps à revenir. La date est sous chaque bouton.' },
     { go: nav('home'), sel: '.marathon', title: 'Tout revoir d’un coup',
-      text: 'Les cartes dues de tous les paquets, dans une seule séance.' }
+      text: 'Les fiches dues de toute ta bibliothèque, dans une seule séance.' }
   ] },
-  { id: 'creer', name: 'Fabriquer des cartes', icon: 'plus', steps: [
+  { id: 'creer', name: 'Écrire un livre', icon: 'plus', steps: [
     { go: nav('home'), sel: '.fab', pass: 1, tap: 'Touche le +', wait: 450,
-      done: () => view.name === 'import', title: 'Un nouveau paquet',
+      done: () => view.name === 'import', title: 'Un nouveau livre',
       text: 'Le bouton rond en bas à droite.' },
     { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
       sel: '#tx', title: 'Colle une liste',
-      text: 'Une ligne par carte : le mot, une tabulation ou un tiret, la réponse. Le découpage se fait tout seul.' },
+      text: 'Une ligne par fiche : le mot, une tabulation ou un tiret, la réponse. Le découpage se fait tout seul.' },
     { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
       sel: '.airow', title: 'Ou pars de ton cours',
-      text: 'Photo d’une page, PDF, ou texte collé : les cartes sont écrites pour toi.' }
+      text: 'Photo d’une page, PDF, ou texte collé : les fiches sont écrites pour toi.' }
   ] },
-  { id: 'jeux', name: 'S’entraîner autrement', icon: 'pen', steps: [
-    { go: nav('deck', 'dmo1'), sel: '[data-act="quizdeck"]', pass: 1, tap: 'Touche Quiz', wait: 500,
-      done: () => view.name === 'run', title: 'Le quiz',
+  { id: 'jeux', name: 'Réciter', icon: 'pen', steps: [
+    { go: nav('deck', 'dmo1'), sel: '[data-act="quizdeck"]', pass: 1, tap: 'Touche Récitation', wait: 500,
+      done: () => view.name === 'run', title: 'La récitation',
       text: 'Tu écris la réponse au lieu de la reconnaître. C’est plus dur, et ça retient mieux.' },
     { go: () => { if (view.name !== 'run' || !quiz) startQuiz('dmo1'); }, sel: '.arow, .qcard',
       title: 'Tape ta réponse',
@@ -5644,34 +5642,34 @@ const CHAPTERS = [
     { go: nav('deck', 'dmo1'), sel: '[data-act="menu"]', title: 'Et aussi',
       text: 'QCM, association, vrai ou faux : tout est dans ce menu.' }
   ] },
-  { id: 'ranger', name: 'Ranger et retrouver', icon: 'search', steps: [
-    { go: nav('deck', 'dmo2'), sel: '[data-act="selmode"]', title: 'Plusieurs cartes à la fois',
-      text: 'Coche des cartes pour les déplacer dans un autre paquet, les mettre de côté ou les supprimer ensemble.' },
+  { id: 'ranger', name: 'Ranger', icon: 'search', steps: [
+    { go: nav('deck', 'dmo2'), sel: '[data-act="selmode"]', title: 'Plusieurs fiches à la fois',
+      text: 'Coche des fiches pour les déplacer dans un autre livre, les mettre de côté ou les supprimer ensemble.' },
     { go: nav('home'), sel: '[data-act="find"]', title: 'Retrouver un mot',
-      text: 'Cherché dans les noms de paquets et dans les deux faces de toutes tes cartes.' },
+      text: 'Cherché dans les titres et dans les deux faces de toutes tes fiches.' },
     { go: nav('settings'), sel: '[data-act="trash"]', title: 'Rien ne se perd',
-      text: 'Un paquet supprimé attend trente jours ici. Et la dernière action reste annulable.' }
+      text: 'Un livre supprimé attend trente jours ici. Et la dernière action reste annulable.' }
   ] },
-  { id: 'commu', name: 'La communauté', icon: 'user', steps: [
+  { id: 'commu', name: 'Le cercle', icon: 'user', steps: [
     { go: nav('home'), sel: '.tabs button:last-child', pass: 1, tap: 'Touche le deuxième onglet', wait: 450,
       done: () => view.name === 'commu', title: 'Le deuxième onglet',
       text: 'Tout ce qui te relie aux autres est rangé là. Tu peux aussi glisser l’écran vers la gauche.' },
     { go: nav('commu'), sel: '.mecard', title: 'Ton pseudo',
       text: 'C’est ce que tes amis taperont pour t’ajouter. Personne ne voit ton adresse e-mail.' },
-    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(1)', title: 'Les amis',
-      text: 'Tu entres le pseudo de quelqu’un, il accepte, et vous partagez paquets, défis et classement.' },
-    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(2)', title: 'Les groupes',
-      text: 'Une classe, un binôme. Tu crées, tu donnes le code, et tout le groupe voit les mêmes paquets.' },
+    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(1)', title: 'Les lecteurs',
+      text: 'Tu entres son pseudo, il accepte, et vous partagez étagère, défis et classement.' },
+    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(2)', title: 'Les clubs',
+      text: 'Une classe, un binôme. Tu crées, tu donnes le code, et tout le club voit la même étagère.' },
     { go: nav('commu'), sel: '.ctiles .ctile:nth-child(3)', title: 'Les défis',
-      text: 'Dix questions tirées d’un paquet, les mêmes pour tout le monde, un seul essai chacun.' },
-    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(4)', title: 'La bibliothèque',
-      text: 'Les paquets que tes amis ont publiés. Tu en copies un chez toi d’un geste.' },
+      text: 'Dix questions tirées d’un livre, les mêmes pour tout le monde, un seul essai chacun.' },
+    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(4)', title: 'L’étagère',
+      text: 'Les livres que tes lecteurs ont prêtés. Tu en copies un chez toi d’un geste.' },
     { go: nav('commu'), sel: '.rows', title: 'Le classement',
-      text: 'Le nombre de cartes révisées par chacun, et rien d’autre : ni tes paquets, ni tes erreurs.' }
+      text: 'Le nombre de fiches lues par chacun, et rien d’autre : ni tes livres, ni tes erreurs.' }
   ] },
   { id: 'fin', name: 'Pour finir', icon: 'chart', steps: [
-    { go: nav('settings'), sel: '[data-act="stats"]', title: 'Tes statistiques',
-      text: 'Cartes revues, réussite, régularité : de quoi voir si le rythme tient.' },
+    { go: nav('settings'), sel: '[data-act="stats"]', title: 'Ton journal',
+      text: 'Fiches lues, réussite, régularité : de quoi voir si le rythme tient.' },
     { go: nav('settings'), sel: '[data-act="help"]', title: 'Revoir tout ça',
       text: 'Réglages, puis Aide. Chaque chapitre se rejoue seul, toujours sur le compte d’essai.' }
   ] }

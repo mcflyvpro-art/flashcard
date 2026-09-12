@@ -1,13 +1,22 @@
+/* ══════════ Folio ══════════
+   Papier, encre, toile de reliure. Le fond n'est pas blanc mais crème,
+   l'encre n'est pas noire mais brun très sombre : c'est ce qui fait la
+   différence entre un écran et une page. Les titres sont en romain à
+   empattements, le reste de l'interface en linéale — comme un livre dont
+   la couverture et les notes de bas de page ne parlent pas de la même
+   voix. */
 :root{
   color-scheme:light;
-  --bg:#FAF7F2; --bg2:#F3EEE6;
-  --ink:#1B181D; --ink2:#4A444F; --soft:#8E8794;
-  --card:#FFFFFF; --hair:rgba(27,24,29,.07);
-  --surf:rgba(27,24,29,.045); --surf2:rgba(27,24,29,.085);
-  --ok:#3E8F62; --ko:#C4566B;
-  --s1:0 1px 2px rgba(60,45,35,.05), 0 4px 12px rgba(60,45,35,.05);
-  --s2:0 2px 6px rgba(60,45,35,.06), 0 14px 32px rgba(60,45,35,.09);
-  --s3:0 6px 16px rgba(60,45,35,.08), 0 28px 60px rgba(60,45,35,.14);
+  --bg:#FAF6EC; --bg2:#F1E9DA;
+  --ink:#221C15; --ink2:#4C4238; --soft:#8C8072;
+  --card:#FFFDF8; --hair:rgba(34,28,21,.08);
+  --surf:rgba(34,28,21,.05); --surf2:rgba(34,28,21,.09);
+  --ok:#3F7D55; --ko:#B34A3C;
+  --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",
+    Georgia,"Times New Roman",serif;
+  --s1:0 1px 2px rgba(74,52,32,.06), 0 4px 12px rgba(74,52,32,.06);
+  --s2:0 2px 6px rgba(74,52,32,.07), 0 14px 32px rgba(74,52,32,.10);
+  --s3:0 6px 16px rgba(74,52,32,.09), 0 28px 60px rgba(74,52,32,.16);
   --e:cubic-bezier(.22,1,.36,1);
   --sp:cubic-bezier(.34,1.32,.5,1);
   --pad:20px;
@@ -39,7 +48,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar .num{font-size:14px;font-weight:700;color:var(--soft);
   font-variant-numeric:tabular-nums;letter-spacing:0;padding-right:2px}
-.hero{margin:12px 1px 20px;font-weight:800;font-size:36px;line-height:1.04;letter-spacing:-1.5px}
+.hero{font-family:var(--serif);margin:12px 1px 20px;font-weight:700;font-size:38px;
+  line-height:1.02;letter-spacing:-.9px}
 /* pages balayables */
 .page{flex:1;min-height:0;display:flex;flex-direction:column;will-change:transform;
   transition:transform .4s var(--e)}
@@ -51,7 +61,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 #page{touch-action:pan-y}
 
 .top{display:flex;align-items:flex-end;gap:10px;margin:14px 1px 20px}
-.top .hero{flex:1;margin:0}
+/* le titre cède la place aux boutons plutôt que de les pousser dehors ;
+   il rétrécit, il ne se coupe jamais au milieu d'un mot */
+.top .hero{flex:1;min-width:0;margin:0;font-size:clamp(27px,8vw,38px)}
 .top .ic{margin-bottom:3px}
 .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;flex:none;
   background:var(--surf);color:var(--ink2);
@@ -75,20 +87,35 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 
 /* ---------- grille de paquets ---------- */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start}
-.tile{position:relative;border-radius:24px;padding:16px 15px 13px;min-height:124px;
+/* Une couverture reliée : dos carré à gauche, tranche arrondie à droite,
+   toile teintée de son rayon, titre en romain. Le signet qui dépasse en
+   haut porte le nombre de fiches à lire aujourd'hui. */
+.tile{position:relative;border-radius:5px 22px 22px 5px;padding:17px 15px 14px 24px;
+  min-height:142px;
   display:flex;flex-direction:column;justify-content:space-between;text-align:left;
   background:var(--c);color:var(--ci);box-shadow:var(--s1);overflow:hidden;
   transition:transform .34s var(--sp),box-shadow .34s var(--e),opacity .3s}
+/* le dos du livre, avec ses deux nerfs */
+.tile .spine{position:absolute;left:0;top:0;bottom:0;width:14px;z-index:2;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.17),rgba(0,0,0,.05) 55%,rgba(255,255,255,.14));
+  box-shadow:inset -1px 0 0 rgba(0,0,0,.06)}
+.tile .spine::before,.tile .spine::after{content:'';position:absolute;left:0;right:0;height:1px;
+  background:rgba(0,0,0,.12)}
+.tile .spine::before{top:24%} .tile .spine::after{bottom:24%}
 .fade .tile{animation:pop .55s var(--e) both;animation-delay:calc(var(--i) * 40ms)}
-.tile::before{content:'';position:absolute;inset:0;border-radius:24px;pointer-events:none;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),inset 0 1px 0 rgba(255,255,255,.6)}
-.tile::after{content:'';position:absolute;inset:0;border-radius:24px;pointer-events:none;
-  background:linear-gradient(155deg,rgba(255,255,255,.5),rgba(255,255,255,0) 58%)}
+.tile::before{content:'';position:absolute;inset:0;border-radius:5px 22px 22px 5px;
+  pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),inset 0 1px 0 rgba(255,255,255,.5)}
+/* le grain du papier teinté, très en dessous du seuil de perception */
+.tile::after{content:'';position:absolute;inset:0;border-radius:5px 22px 22px 5px;
+  pointer-events:none;opacity:.5;
+  background:linear-gradient(152deg,rgba(255,255,255,.42),rgba(255,255,255,0) 62%),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.022) 0 1px,transparent 1px 3px)}
 .tile:active{transform:scale(.955);box-shadow:var(--s2)}
 /* épingle et barre de maturité posées sur la tuile, sans rien pousser */
-.tile .pind{position:absolute;top:13px;left:13px;z-index:2;opacity:.55;display:grid;place-items:center}
+.tile .pind{position:absolute;top:13px;left:24px;z-index:2;opacity:.55;display:grid;place-items:center}
 .tile .pind svg{width:13px;height:13px;stroke-width:2.4}
-.tile .tbar{position:absolute;left:15px;right:15px;bottom:9px;height:3px;border-radius:3px;
+.tile .tbar{position:absolute;left:24px;right:15px;bottom:9px;height:3px;border-radius:3px;
   background:rgba(255,255,255,.45);overflow:hidden;z-index:1}
 .tile .tbar b{display:block;height:100%;border-radius:3px;background:var(--ci);opacity:.5}
 
@@ -108,7 +135,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 /* vue liste des paquets */
 .rows.lst{padding-bottom:34px}
 .lrow{display:flex;align-items:center;gap:10px;background:var(--card);box-shadow:var(--s1);
-  border-radius:18px;padding:11px 14px;margin-bottom:8px;
+  border-radius:4px 16px 16px 4px;border-left:5px solid var(--d);padding:11px 14px;margin-bottom:8px;
   transition:box-shadow .3s,transform .3s var(--sp)}
 .fade .lrow{animation:pop .5s var(--e) both;animation-delay:calc(var(--i) * 14ms)}
 .lrow.mute{opacity:.5}
@@ -123,8 +150,12 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
 .lrow.drag{position:relative;z-index:3;box-shadow:var(--s3)}
 .rows.dragging .lrow:not(.drag){transition:transform .2s var(--e)}
-.tile .n{position:relative;z-index:1;font-weight:700;font-size:16.5px;line-height:1.26;letter-spacing:-.35px;
+.tile .n{position:relative;z-index:1;font-family:var(--serif);font-weight:700;font-size:18px;
+  line-height:1.22;letter-spacing:-.2px;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* le filet sous le titre, comme sur une couverture de collection */
+.tile .n::after{content:'';display:block;width:26px;height:1.5px;margin-top:9px;
+  background:currentColor;opacity:.3}
 .tile .m{position:relative;z-index:1;display:flex;align-items:center;gap:6px;margin-top:12px;
   font-size:12.5px;font-weight:700;opacity:.55;font-variant-numeric:tabular-nums}
 .tile .m svg{width:13px;height:13px;stroke-width:2.2}
@@ -174,7 +205,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .fade .head{animation:pop .5s var(--e) both}
 .head::after{content:'';position:absolute;inset:0;border-radius:28px;pointer-events:none;
   background:linear-gradient(150deg,rgba(255,255,255,.52),rgba(255,255,255,0) 62%)}
-.head .t{position:relative;z-index:1;font-weight:800;font-size:27px;line-height:1.14;letter-spacing:-.9px;
+.head .t{position:relative;z-index:1;font-family:var(--serif);font-weight:700;font-size:28px;
+  line-height:1.14;letter-spacing:-.4px;
   min-height:31px;outline:none}
 .head .t:focus{opacity:.5}
 .head .s{position:relative;z-index:1;display:flex;align-items:center;gap:8px;margin-top:11px;
@@ -270,21 +302,31 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .stage{flex:1;display:flex;align-items:center;justify-content:center;
   padding:16px 0;perspective:1700px;min-height:0}
 .stack{position:relative;width:100%;height:min(58svh,460px)}
-.card{position:absolute;inset:0;border-radius:30px;will-change:transform;
+.card{position:absolute;inset:0;border-radius:6px 24px 24px 6px;will-change:transform;
   touch-action:none;-webkit-user-select:none;user-select:none;
   transition:transform .52s var(--sp),opacity .34s var(--e)}
 .card.in{transform:translateY(14px) scale(.94);opacity:0}
 .flipper{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;
   transition:transform .42s cubic-bezier(.2,.65,.8,.35)}
 .card.flip .flipper{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;border-radius:30px;display:grid;place-items:center;
-  padding:34px;text-align:center;gap:10px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+/* Une page, pas un rectangle : reliée à gauche (coins carrés, filet de
+   couture), tranche libre à droite, et le texte en romain. */
+.face{position:absolute;inset:0;border-radius:6px 24px 24px 6px;display:grid;place-items:center;
+  padding:34px 34px 34px 40px;text-align:center;gap:10px;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
   background:var(--c);color:var(--ci);box-shadow:var(--s3);overflow:hidden;
   opacity:1;transform:translateZ(0);transition:opacity 0s linear .2s}
-.face::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),inset 0 1.5px 0 rgba(255,255,255,.5)}
-.face::after{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
-  background:linear-gradient(158deg,rgba(255,255,255,.42),rgba(255,255,255,0) 60%)}
+/* la couture, à la même place que la marge d'un cahier */
+.face .seam{position:absolute;left:19px;top:22px;bottom:22px;width:1px;z-index:1;
+  background:currentColor;opacity:.16;pointer-events:none}
+.face::before{content:'';position:absolute;inset:0;border-radius:6px 24px 24px 6px;
+  pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1.5px 0 rgba(255,255,255,.45),
+             inset 14px 0 22px -18px rgba(0,0,0,.3)}
+.face::after{content:'';position:absolute;inset:0;border-radius:6px 24px 24px 6px;
+  pointer-events:none;opacity:.55;
+  background:linear-gradient(158deg,rgba(255,255,255,.38),rgba(255,255,255,0) 62%),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.02) 0 1px,transparent 1px 3px)}
 /* .tx porte le texte : une vraie boîte de bloc (le retournement se fait sur
    .face, pas sur un <span> en ligne) qui peut se limiter en hauteur et,
    passé cette limite, défiler plutôt que déborder du cadre. La taille se
@@ -294,9 +336,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
    toucher à la façon dont ils sont choisis (c'est la longueur du texte
    qui décide du palier, la préférence ne fait que l'échelle). */
 .face .tx{position:relative;z-index:1;max-width:100%;max-height:100%;overflow:auto;
-  font-weight:800;font-size:calc(clamp(28px,8.4vw,48px) * var(--fs,1));
-  line-height:1.16;letter-spacing:-1.1px}
-.face.l .tx{font-size:calc(clamp(21px,6.6vw,34px) * var(--fs,1));line-height:1.22;letter-spacing:-.7px}
+  font-family:var(--serif);font-weight:700;font-size:calc(clamp(27px,8vw,46px) * var(--fs,1));
+  line-height:1.18;letter-spacing:-.5px}
+.face.l .tx{font-size:calc(clamp(21px,6.6vw,34px) * var(--fs,1));line-height:1.26;letter-spacing:-.3px}
 .face.xl .tx{font-size:calc(clamp(17px,5.2vw,26px) * var(--fs,1));line-height:1.3;letter-spacing:-.4px;font-weight:750}
 .face.xxl .tx{font-size:calc(clamp(15px,4.2vw,20px) * var(--fs,1));line-height:1.36;letter-spacing:-.2px;font-weight:700}
 .face.bk{transform:rotateY(180deg) translateZ(0);background:var(--ci);color:var(--c);opacity:0}
@@ -902,9 +944,13 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .gr.g2{color:var(--ok)} .gr.g3{color:#3E8FA8}
 
 /* échéance sur une tuile, anneau d'objectif, reprise, marathon */
-.tile .due{position:absolute;top:13px;right:13px;min-width:21px;height:21px;padding:0 6px;
-  border-radius:8px;background:var(--ci);color:var(--c);display:grid;place-items:center;
-  font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;font-style:normal;z-index:2}
+/* Le signet : il dépasse du haut de la couverture et porte le nombre de
+   fiches à lire aujourd'hui. Sa pointe est découpée en V, comme un vrai. */
+.tile .due{position:absolute;top:-1px;right:16px;width:26px;padding:7px 0 11px;
+  background:var(--ci);color:var(--c);display:grid;place-items:center;
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%);
+  font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;font-style:normal;z-index:3;
+  box-shadow:-1px 0 0 rgba(0,0,0,.08)}
 .goal{position:relative;width:44px;height:44px;flex:none;margin-bottom:2px}
 .goal svg{position:absolute;inset:0;width:44px;height:44px;transform:rotate(-90deg)}
 .goal circle{fill:none;stroke-width:4;stroke-linecap:round}
@@ -1079,7 +1125,8 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   border-radius:26px;background:var(--c);color:var(--ci);box-shadow:var(--s2);
   display:grid;place-items:center;align-content:center;gap:12px;text-align:center}
 .fade .qcard{animation:pop .45s var(--e) both}
-.qcard span{font-weight:800;font-size:clamp(20px,5.4vw,30px);line-height:1.2;letter-spacing:-.6px}
+.qcard span{font-family:var(--serif);font-weight:700;font-size:clamp(20px,5.4vw,30px);
+  line-height:1.24;letter-spacing:-.2px}
 .qcard .snd{right:11px;bottom:11px;width:36px;height:36px;border-radius:12px}
 .qcard .snd svg{width:17px;height:17px}
 .study.mcq > .prog{margin-bottom:auto}
@@ -1377,3 +1424,8 @@ body.touring .toast{display:none}
 .tdemo{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:8px;
   background:var(--surf2);color:var(--ink2);font-size:10.5px;font-weight:800;
   letter-spacing:.3px;text-transform:none;vertical-align:1px}
+/* la signature sous le titre, à l'ouverture */
+.lsub{font-family:var(--serif);font-size:15px;font-style:italic;color:var(--soft);
+  margin:-10px 0 22px;text-align:center}
+.lt{font-family:var(--serif);letter-spacing:-.5px}
+.brand span{font-family:var(--serif);font-weight:700;letter-spacing:-.2px}

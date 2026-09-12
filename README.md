@@ -1,7 +1,12 @@
-# Cartes
+# Folio
 
-PWA de flashcards. 100 % statique, aucune dépendance, aucun backend, thème clair unique.
-Données en `localStorage`.
+Tes cours, reliés en livres.
+
+Application web de révision : chaque matière est un **rayon**, chaque jeu de
+fiches un **livre**, et ce qu'on prête au cercle se pose sur **l'étagère**
+commune. Sans dépendance, servie en statique, comptes et synchronisation
+par Supabase.
+Cache local en `localStorage`.
 
 ```
 index.html · app.css · app.js · sw.js · manifest.webmanifest

@@ -1,6 +1,6 @@
 {
-  "name": "Cartes",
-  "short_name": "Cartes",
+  "name": "Folio",
+  "short_name": "Folio",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
@@ -26,7 +26,7 @@
       "purpose": "maskable"
     }
   ],
-  "description": "Révision par cartes et quiz, avec comptes séparés.",
+  "description": "Tes cours, reliés en livres. Fiches de révision, récitation et étagère partagée.",
   "screenshots": [
     {
       "src": "shots/wide.png",
@@ -43,9 +43,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Réviser maintenant",
-      "short_name": "Réviser",
-      "description": "Ouvre directement les cartes du jour, tous paquets confondus.",
+      "name": "Lire maintenant",
+      "short_name": "Lire",
+      "description": "Ouvre les fiches du jour, toute la bibliothèque confondue.",
       "url": "./?go=study",
       "icons": [
         {
@@ -55,9 +55,9 @@
       ]
     },
     {
-      "name": "Nouveau paquet",
-      "short_name": "Nouveau",
-      "description": "Crée un paquet et ouvre sa première carte.",
+      "name": "Nouveau livre",
+      "short_name": "Écrire",
+      "description": "Crée un livre et ouvre sa première fiche.",
       "url": "./?go=new",
       "icons": [
         {
@@ -67,9 +67,9 @@
       ]
     },
     {
-      "name": "Boîte de réception",
-      "short_name": "Boîte",
-      "description": "Les paquets reçus des autres comptes.",
+      "name": "Courrier",
+      "short_name": "Courrier",
+      "description": "Les livres qu’on t’a prêtés.",
       "url": "./?go=mail",
       "icons": [
         {
