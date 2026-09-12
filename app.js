@@ -168,6 +168,9 @@ function pushHist(id, mode, pct) {
   if (db.hist[k].length > 24) db.hist[k].shift();
   save();
   api('/rest/v1/sessions', 'POST', [{ user_id: auth.uid, deck_id: String(id), mode, pct }]).catch(() => {});
+  /* Une séance vient de se terminer : c'est le seul moment où proposer
+     l'écran d'accueil a du sens, l'app vient de servir à quelque chose. */
+  maybeAskInstall();
   return db.hist[k];
 }
 const histOf = (id, mode) => db.hist[id + ':' + mode] || [];
@@ -2274,6 +2277,8 @@ function settingsView() {
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="help">${svg(I.bulb)}<span class="n">Aide</span>
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
+        ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
+          <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
       </div>
 
       <div class="lbl"><span>Quitter</span></div>
@@ -3568,6 +3573,7 @@ function paintMenu() {
     setTimeout(() => { if (!subjName) sn.focus(); }, 60);
     return;
   }
+  if (menu === 'install') return installSheet(w);
   if (menu === 'backup') {
     const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -4292,6 +4298,9 @@ document.addEventListener('click', async e => {
   }
   const a = b.dataset.mact;
   if (a === 'close') return closeMenu();
+  if (a === 'instcopy') return copyLink();
+  if (a === 'instgo') return doPrompt();
+  if (a === 'instlater') return closeMenu();
   if (a === 'card-ok') {
     const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
     const t = document.getElementById('ctags');
@@ -5682,6 +5691,7 @@ $.addEventListener('click', e => {
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (a === 'group') { groupPull(); return go('group'); }
   if (a === 'help') return openMenu('tuto');
+  if (a === 'install') return openInstall();
   if (a === 'duelnew') return openMenu('duelnew');
   if (a === 'duelquit') { duelRun = null; return go('group'); }
   if (a === 'addshared') {
@@ -6275,6 +6285,185 @@ function helpSheet(w) {
 function maybeTour() {
   if (prefs.tuto || tour || location.hash || location.search.includes('go=')) return;
   setTimeout(() => { if (!tour && !prefs.tuto) startTour(); }, 600);
+}
+
+/* ══════════ l'écran d'accueil ══════════
+   Une app web n'est vraiment installée que le jour où elle a son icône.
+   Avant ça elle n'a ni rappels, ni stockage durable, ni place dans les
+   habitudes — et sur iPhone, le geste qui l'installe n'est proposé par
+   personne. Ce module s'occupe de ce seul moment, et il compte plus que
+   n'importe quelle fonctionnalité de révision : une app pas installée
+   n'est pas rouverte.
+
+   Le vrai piège n'est pas iOS. C'est le navigateur intégré d'Instagram,
+   de Snapchat, d'un client mail ou d'une appli d'ENT : « Sur l'écran
+   d'accueil » n'y figure pas du tout. L'élève cherche, ne trouve pas, et
+   abandonne sans savoir pourquoi. C'est le seul cas où l'on parle avant
+   d'attendre qu'on nous le demande. */
+const INSTKEY = 'folio.install';
+const instLoad = () => { try { return JSON.parse(localStorage.getItem(INSTKEY)) || {}; } catch (e) { return {}; } };
+const instSave = o => { try { localStorage.setItem(INSTKEY, JSON.stringify(o)); } catch (e) {} };
+
+const UA = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+/* déjà posée sur l'écran d'accueil : plus jamais un mot à ce sujet */
+const installed = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches)
+  || navigator.standalone === true;
+/* iPad récent se présente comme un Mac : le test tactile le rattrape */
+const isIOS = () => /iPad|iPhone|iPod/.test(UA)
+  || (/Macintosh/.test(UA) && typeof document !== 'undefined' && 'ontouchend' in document);
+const isAndroid = () => /Android/.test(UA);
+/* Navigateur enfermé dans une autre application. La liste est faite de
+   ce qu'on croise réellement dans une classe, pas de l'exhaustivité. */
+const inApp = () => /FBAN|FBAV|Instagram|Snapchat|TikTok|Line\/|LinkedInApp|Twitter|Pinterest|GSA\//.test(UA)
+  || (isAndroid() && /\bwv\b/.test(UA))
+  || (isIOS() && !/Safari/.test(UA) && !/CriOS|FxiOS|EdgiOS/.test(UA));
+/* Sur iOS, seul Safari sait ajouter à l'écran d'accueil. Chrome et
+   Firefox y sont le même moteur mais sans ce menu. */
+const iosOther = () => isIOS() && /CriOS|FxiOS|EdgiOS|OPiOS/.test(UA);
+
+/* L'invite native d'Android n'est donnée qu'une fois, très tôt : on la
+   met de côté au lieu de la laisser passer, pour la rejouer au moment
+   où elle a du sens pour l'élève. */
+let bip = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); bip = e; });
+window.addEventListener('appinstalled', () => {
+  bip = null;
+  instSave({ ...instLoad(), done: 1 });
+  closeMenu();
+  toast(I.check, 'Folio est sur ton écran d’accueil');
+});
+
+function instCtx() {
+  if (installed()) return 'done';
+  if (inApp()) return 'webview';
+  if (iosOther()) return 'iosother';
+  if (bip) return 'prompt';
+  if (isIOS()) return 'ios';
+  if (isAndroid()) return 'android';
+  return 'desktop';
+}
+
+/* Quand se permettre de demander. Trois règles, et aucune n'est
+   négociable : jamais par-dessus autre chose, jamais plus de trois fois,
+   jamais deux fois la même semaine. Une invite qu'on subit se referme
+   sans être lue, et brûle le geste pour de bon. */
+const WEEK = 7 * DAY;
+function canAsk() {
+  if (installed() || demo || tour) return false;
+  if (menu || study || quiz || view.name === 'login') return false;
+  const s = instLoad();
+  if (s.done) return false;
+  if ((s.n || 0) >= 3) return false;
+  return !s.at || Date.now() - s.at > WEEK;
+}
+/* La demande spontanée n'arrive jamais au premier écran : on ne sait pas
+   encore ce qu'on installerait. Elle arrive après une séance finie,
+   quand l'app vient de servir à quelque chose. */
+function maybeAskInstall() {
+  if (!canAsk()) return;
+  const s = instLoad();
+  s.n = (s.n || 0) + 1; s.at = Date.now(); instSave(s);
+  setTimeout(() => { if (!menu && !study && !quiz) openMenu('install'); }, 900);
+}
+/* Ouverture explicite, depuis les Réglages : ni compteur, ni délai —
+   c'est demandé, donc c'est montré. */
+function openInstall() { openMenu('install'); }
+
+async function copyLink() {
+  const url = location.origin + location.pathname;
+  try {
+    await navigator.clipboard.writeText(url);
+    toast(I.check, 'Lien copié');
+  } catch (e) {
+    toast(I.link, url);
+  }
+}
+async function doPrompt() {
+  if (!bip) return;
+  const e = bip; bip = null;
+  closeMenu();
+  try {
+    e.prompt();
+    const r = await e.userChoice;
+    if (r && r.outcome === 'accepted') instSave({ ...instLoad(), done: 1 });
+  } catch (x) {}
+}
+
+const instep = (n, txt) => `<div class="instep"><i>${n}</i><span>${txt}</span></div>`;
+/* Pourquoi on le demande, dit une seule fois et honnêtement : les
+   rappels et le hors-ligne complet n'existent qu'une fois installée.
+   Une raison vraie convainc mieux qu'une insistance. */
+const INSTWHY = 'Une fois posée sur l’écran d’accueil, Folio s’ouvre en un tap, '
+  + 'fonctionne entièrement hors ligne et peut te rappeler tes révisions.';
+
+/* Le vrai glyphe de partage d'iOS, dessiné plutôt que décrit : « touche
+   le carré avec la flèche » se cherche, l'icône se reconnaît. */
+const SVGSHARE = `<svg viewBox="0 0 24 24" class="shg">${I.share}</svg>`;
+
+function installSheet(w) {
+  const ctx = instCtx();
+  const head = (icon, t, s) => `<div class="mhd">${svg(icon)}<span class="mhx">
+    <b>${t}</b><span class="msub">${s}</span></span></div>`;
+  let inner = '';
+
+  if (ctx === 'webview') {
+    /* Le cas le plus fréquent et le seul vraiment bloquant : on ne
+       demande pas d'installer, on explique comment sortir d'ici. */
+    inner = head(I.warn, 'Ouvre Folio dans ton navigateur',
+        'Tu es dans le navigateur d’une autre application. L’ajout à l’écran d’accueil n’y existe pas.')
+      + `<div class="insteps">
+          ${instep(1, `Touche le menu ${isIOS() ? '<b>•••</b> en haut à droite' : '<b>⋮</b> en haut à droite'}`)}
+          ${instep(2, `Choisis <b>${isIOS() ? 'Ouvrir dans Safari' : 'Ouvrir dans Chrome'}</b>`)}
+          ${instep(3, 'Reviens ici : Folio te montrera la suite')}
+        </div>
+        <button class="mi" data-mact="instcopy" style="justify-content:center;font-weight:700">
+          ${svg(I.copy)}Copier le lien</button>`;
+  } else if (ctx === 'iosother') {
+    inner = head(I.warn, 'Ouvre cette page dans Safari',
+        'Sur iPhone et iPad, seul Safari sait ajouter une app à l’écran d’accueil.')
+      + `<div class="insteps">
+          ${instep(1, 'Copie le lien ci-dessous')}
+          ${instep(2, 'Ouvre <b>Safari</b> et colle-le')}
+          ${instep(3, 'Folio te montrera la suite')}
+        </div>
+        <button class="mi" data-mact="instcopy" style="justify-content:center;font-weight:700">
+          ${svg(I.copy)}Copier le lien</button>`;
+  } else if (ctx === 'prompt') {
+    inner = head(I.plus, 'Installer Folio', INSTWHY)
+      + `<button class="cta" data-mact="instgo" style="margin:6px 7px 8px;width:calc(100% - 14px)">
+          ${svg(I.down)}Installer</button>`;
+  } else if (ctx === 'ios') {
+    /* Le bouton Partager n'est pas au même endroit selon l'appareil :
+       le dire évite la minute passée à chercher en haut sur un iPhone. */
+    const where = /iPad/.test(UA) ? 'en haut de l’écran' : 'en bas de l’écran';
+    inner = head(I.plus, 'Ajoute Folio à ton écran d’accueil', INSTWHY)
+      + `<div class="insteps">
+          ${instep(1, `Touche <b class="inshare">${SVGSHARE}</b> Partager, ${where}`)}
+          ${instep(2, 'Fais défiler et choisis <b>Sur l’écran d’accueil</b>')}
+          ${instep(3, 'Touche <b>Ajouter</b>, puis ouvre Folio par son icône')}
+        </div>
+        <div class="note">Ferme ensuite cet onglet : c’est par l’icône que Folio gardera tes rappels.</div>`;
+  } else if (ctx === 'android') {
+    inner = head(I.plus, 'Ajoute Folio à ton écran d’accueil', INSTWHY)
+      + `<div class="insteps">
+          ${instep(1, 'Touche le menu <b>⋮</b> en haut à droite')}
+          ${instep(2, 'Choisis <b>Ajouter à l’écran d’accueil</b>')}
+          ${instep(3, 'Confirme, puis ouvre Folio par son icône')}
+        </div>`;
+  } else {
+    inner = head(I.plus, 'Installer Folio', INSTWHY)
+      + `<div class="insteps">
+          ${instep(1, 'Cherche l’icône d’installation dans la barre d’adresse')}
+          ${instep(2, 'Ou, dans le menu du navigateur, <b>Installer Folio</b>')}
+        </div>`;
+  }
+
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">${inner}
+      <div class="msep"></div>
+      <button class="mi" data-mact="instlater">${svg(I.x)}Plus tard</button>
+    </div>`;
+  mountMenu(w);
 }
 
 /* ---------- démarrage ---------- */
