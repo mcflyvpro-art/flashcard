@@ -299,100 +299,29 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .prog{height:4px;border-radius:4px;background:var(--surf2);overflow:hidden;margin:4px 1px 2px;flex:none}
 .prog i{display:block;height:100%;border-radius:4px;background:var(--ink);
   transition:width .6s var(--e)}
+/* La fiche : un rectangle qu'on pousse à gauche ou à droite et qu'on
+   retourne sur son axe. Rien d'autre — la reliure, la gouttière et la
+   page qui se soulève rendaient le geste lourd et illisible. */
 .stage{flex:1;display:flex;align-items:center;justify-content:center;
-  padding:16px 0;min-height:0}
-/* ---------- le livre ouvert ----------
-   La perspective est portée par le conteneur : sans elle, la rotation est
-   plate et ressemble à une carte qu'on bascule. Le point de fuite est
-   posé un peu au-dessus et sur la reliure, c'est-à-dire là où se tient
-   celui qui lit. */
-.stack{position:relative;width:100%;height:min(58svh,460px);
-  perspective:1250px;perspective-origin:22% 42%;
-  --turn:cubic-bezier(.36,.05,.16,1)}
-/* La tranche : deux feuillets dépassent sous la page en cours. C'est eux
-   qui donnent l'épaisseur — sans eux, une page seule flotte dans le vide.
-   Ils prennent la couleur de la matière, comme la page. */
-.leaf{position:absolute;inset:0;border-radius:6px 24px 24px 6px;background:var(--c);
-  pointer-events:none;z-index:0;
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.05),0 8px 22px -14px rgba(34,28,21,.5)}
-.leaf.l1{transform:translate(4px,6px) scale(.995);filter:brightness(.962)}
-.leaf.l2{transform:translate(8px,12px) scale(.988);filter:brightness(.918)}
-/* La reliure, à gauche, et l'ombre que le livre pose sur la table. */
-.stack::before{content:'';position:absolute;left:-7px;top:5px;bottom:1px;width:15px;
-  border-radius:9px 2px 2px 9px;z-index:1;pointer-events:none;
-  background:linear-gradient(90deg,#8B5B40,#5E3726 62%,rgba(58,34,22,.55));
-  box-shadow:inset -3px 0 7px -2px rgba(0,0,0,.45),-3px 5px 16px -6px rgba(34,28,21,.45)}
-.stack::after{content:'';position:absolute;left:7%;right:1%;bottom:-16px;height:22px;
-  z-index:0;pointer-events:none;
-  background:radial-gradient(50% 50% at 50% 50%,rgba(34,28,21,.26),rgba(34,28,21,0) 72%)}
-.card{position:absolute;inset:0;border-radius:6px 24px 24px 6px;will-change:transform;
-  touch-action:none;-webkit-user-select:none;user-select:none;z-index:2;--lift:0;
-  transform-origin:left center;
-  transition:transform .5s var(--sp),opacity .34s var(--e)}
-/* la page suivante se dégage de la tranche plutôt que de tomber du ciel */
-.card.in{transform:rotateY(11deg) scale(.97);opacity:0}
-/* L'ombre qui court sur la feuille pendant qu'elle se relève : elle naît
-   du bord qui décolle, et c'est elle plus que la rotation qui fait sentir
-   qu'il s'agit de papier et non d'un carton plat. */
-/* .gl vit dans la feuille elle-même : elle est donc découpée comme elle,
-   et elle tourne avec elle. Posée à côté, elle laissait un rectangle
-   sombre en l'air au moment où la page est sur la tranche. */
-.face .gl{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2;
-  opacity:var(--lift,0);transition:opacity .16s linear;
-  background:linear-gradient(90deg,rgba(24,16,9,.5),rgba(24,16,9,.1) 38%,
-    rgba(255,255,255,0) 72%,rgba(255,255,255,.22))}
-.face.bk .gl{background:linear-gradient(270deg,rgba(24,16,9,.46),rgba(24,16,9,.1) 38%,
-  rgba(255,255,255,0) 72%,rgba(255,255,255,.16))}
-@keyframes turnshade{0%{opacity:0}44%{opacity:.72}100%{opacity:0}}
-.card.turning .face .gl{animation:turnshade .6s var(--turn) both}
-/* L'axe est le bord relié, à gauche ; la translation qui l'accompagne
-   ramène la page à sa place une fois tournée. Entre les deux elle pivote
-   autour de sa couture, en se rapprochant un peu de l'œil au milieu du
-   mouvement : le geste d'un livre, pas d'un jeu de cartes. */
+  padding:16px 0;perspective:1700px;min-height:0}
+.stack{position:relative;width:100%;height:min(58svh,460px)}
+.card{position:absolute;inset:0;border-radius:30px;will-change:transform;
+  touch-action:none;-webkit-user-select:none;user-select:none;
+  transition:transform .52s var(--sp),opacity .34s var(--e)}
+.card.in{transform:translateY(14px) scale(.94);opacity:0}
 .flipper{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;
-  transform-origin:left center;
-  transition:transform .6s var(--turn)}
-.card.flip .flipper{transform:translateX(100%) rotateY(-180deg)}
-@keyframes turnfwd{
-  0%{transform:translateX(0) rotateY(0deg) scale(1)}
-  38%{transform:translateX(40%) rotateY(-68deg) scale(1.022)}
-  70%{transform:translateX(79%) rotateY(-128deg) scale(1.014)}
-  100%{transform:translateX(100%) rotateY(-180deg) scale(1)}
-}
-@keyframes turnback{
-  0%{transform:translateX(100%) rotateY(-180deg) scale(1)}
-  38%{transform:translateX(79%) rotateY(-128deg) scale(1.022)}
-  70%{transform:translateX(40%) rotateY(-68deg) scale(1.014)}
-  100%{transform:translateX(0) rotateY(0deg) scale(1)}
-}
-.card.turning.flip .flipper{animation:turnfwd .6s var(--turn) both}
-.card.turning:not(.flip) .flipper{animation:turnback .6s var(--turn) both}
-/* Une page, pas un rectangle : reliée à gauche (coins carrés, filet de
-   couture), tranche libre à droite, et le texte en romain. */
-.face{position:absolute;inset:0;border-radius:6px 24px 24px 6px;display:grid;place-items:center;
-  padding:34px 34px 34px 40px;text-align:center;gap:10px;
-  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  transition:transform .42s cubic-bezier(.2,.65,.8,.35)}
+.card.flip .flipper{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:30px;display:grid;place-items:center;
+  padding:34px;text-align:center;gap:10px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
   background:var(--c);color:var(--ci);box-shadow:var(--s3);overflow:hidden;
-  opacity:1;transform:translateZ(0);
-  /* l'échange des deux faces se fait quand la page est sur la tranche,
-     à la moitié exacte du mouvement : plus tôt, on voit le verso à
-     l'envers ; plus tard, on voit le recto revenir */
-  transition:opacity 0s linear .275s}
-/* la couture, à la même place que la marge d'un cahier */
-.face .seam{position:absolute;left:19px;top:22px;bottom:22px;width:1px;z-index:1;
-  background:currentColor;opacity:.16;pointer-events:none}
-/* la gouttière : l'ombre du pli, plus dense près de la reliure, et le
-   liseré clair de la tranche libre à droite */
-.face::before{content:'';position:absolute;inset:0;border-radius:6px 24px 24px 6px;
-  pointer-events:none;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1.5px 0 rgba(255,255,255,.45),
-             inset 26px 0 30px -26px rgba(0,0,0,.55),
-             inset -2px 0 0 rgba(255,255,255,.34),
-             inset -7px 0 12px -9px rgba(0,0,0,.14)}
-.face::after{content:'';position:absolute;inset:0;border-radius:6px 24px 24px 6px;
-  pointer-events:none;opacity:.55;
-  background:linear-gradient(158deg,rgba(255,255,255,.38),rgba(255,255,255,0) 62%),
-    repeating-linear-gradient(90deg,rgba(0,0,0,.02) 0 1px,transparent 1px 3px)}
+  /* l'échange des deux faces se fait quand la fiche est sur la tranche :
+     plus tôt on voit le verso à l'envers, plus tard le recto revient */
+  opacity:1;transform:translateZ(0);transition:opacity 0s linear .2s}
+.face::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),inset 0 1.5px 0 rgba(255,255,255,.5)}
+.face::after{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+  background:linear-gradient(158deg,rgba(255,255,255,.42),rgba(255,255,255,0) 60%)}
 /* .tx porte le texte : une vraie boîte de bloc (le retournement se fait sur
    .face, pas sur un <span> en ligne) qui peut se limiter en hauteur et,
    passé cette limite, défiler plutôt que déborder du cadre. La taille se
@@ -417,15 +346,11 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .face.bk.xl .tx{font-size:clamp(15.5px,4.4vw,21px);line-height:1.32;letter-spacing:-.2px;font-weight:600}
 .face.bk.xxl .tx{font-size:clamp(14px,3.6vw,17px);line-height:1.38;letter-spacing:-.1px;font-weight:600}
 .ov{position:absolute;top:24px;width:54px;height:54px;border-radius:18px;display:grid;
-  place-items:center;opacity:0;transform:scale(.55);pointer-events:none;color:#fff;z-index:6;
+  place-items:center;opacity:0;transform:scale(.55);pointer-events:none;color:#fff;z-index:3;
   transition:opacity .18s,transform .3s var(--sp);box-shadow:var(--s2)}
 .ov.y{right:22px;background:var(--ok)} .ov.n{left:22px;background:var(--ko)}
 .ov svg{width:26px;height:26px;stroke-width:2.8}
-.gone{transition:transform .44s cubic-bezier(.32,0,.5,1),opacity .38s .06s !important}
-@media (prefers-reduced-motion:reduce){
-  .card.turning .flipper,.card.turning .face .gl{animation:none}
-  .flipper{transition:transform .01s}
-}
+.gone{transition:transform .36s cubic-bezier(.4,0,.55,1),opacity .32s !important}
 .acts{display:flex;gap:11px;padding:2px 0 2px;flex:none}
 .act{flex:1;height:60px;border-radius:21px;display:grid;place-items:center;
   background:var(--card);box-shadow:var(--s1);transition:transform .3s var(--sp),box-shadow .3s}
@@ -1546,16 +1471,27 @@ body.touring .toast{display:none}
    Le voile de démarrage : l'icône se pose, le nom arrive, puis tout
    s'efface sur la première vue. Sans lui, l'app s'ouvrait sur du noir le
    temps que le script se charge. */
+/* Les mêmes règles que dans l'en-tête de la page, en plus fini. Elles y
+   sont écrites deux fois volontairement : celles de la page peignent la
+   première image, celles-ci prennent le relais avec les vraies couleurs
+   du thème. */
 #boot{position:fixed;inset:0;z-index:80;background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  transition:opacity .45s var(--e)}
-#boot img{width:76px;height:76px;border-radius:24px;box-shadow:var(--s2);
-  animation:bookin .7s var(--sp) both}
-#boot b{font-family:var(--serif);font-size:27px;font-weight:700;letter-spacing:-.4px;
-  color:var(--ink);animation:bootname .6s var(--e) .18s both}
-@keyframes bookin{from{opacity:0;transform:translateY(16px) scale(.9) rotate(-4deg)}}
-@keyframes bootname{from{opacity:0;transform:translateY(8px)}}
-#boot.off{opacity:0;pointer-events:none}
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;
+  transition:opacity .5s var(--e),transform .5s var(--e)}
+#boot img{width:84px;height:84px;border-radius:26px;box-shadow:var(--s2);
+  animation:bookin .85s cubic-bezier(.2,1.1,.3,1) both}
+#boot b{font-family:var(--serif);font-size:30px;font-weight:700;letter-spacing:-.5px;
+  color:var(--ink);animation:bootname .7s var(--e) .3s both}
+/* le trait se remplit pendant que le compte et les livres arrivent :
+   trois secondes qui se regardent, au lieu d'une attente muette */
+#boot i{position:relative;display:block;width:104px;height:2px;border-radius:2px;
+  overflow:hidden;background:var(--surf2);animation:bootname .5s var(--e) .62s both}
+#boot i::after{content:'';position:absolute;inset:0;border-radius:2px;background:var(--ink);
+  transform-origin:left center;animation:bootbar 2.3s cubic-bezier(.35,.5,.2,1) .66s both}
+@keyframes bookin{from{opacity:0;transform:translateY(22px) scale(.84) rotate(-6deg)}}
+@keyframes bootname{from{opacity:0;transform:translateY(10px)}}
+@keyframes bootbar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+#boot.off{opacity:0;transform:scale(1.04);pointer-events:none}
 /* le bouton d'ajout, aligné sur le champ plutôt que flottant au-dessus */
 .addgo{flex:none;align-self:stretch;display:flex;align-items:center;padding:0 14px;
   margin:-1px -12px -1px 0;border-radius:0 14px 14px 0;background:var(--ink);color:var(--bg);

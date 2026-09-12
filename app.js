@@ -1349,13 +1349,23 @@ function applyFont() {
 
 /* Le voile de démarrage s'efface à la première vue dessinée, mais pas
    avant que son animation ait eu le temps d'exister. */
+/* L'ouverture tient trois secondes, quoi qu'il arrive. Si le compte et
+   les livres sont là en 200 ms tant mieux : le reste du temps sert à
+   finir de charger en silence, et l'animation se regarde en entier au
+   lieu d'être coupée au milieu. */
+const BOOTMS = 3000;
 let booted = 0;
 function dropBoot() {
   const n = document.getElementById('boot');
   if (!n || booted) return;
   booted = 1;
-  setTimeout(() => { n.classList.add('off'); setTimeout(() => n.remove(), 500); }, 320);
+  const rest = Math.max(0, BOOTMS - performance.now());
+  setTimeout(() => { n.classList.add('off'); setTimeout(() => n.remove(), 520); }, rest);
 }
+/* filet de sécurité : si le premier écran ne vient jamais (script en
+   erreur, réseau coupé au mauvais moment), l'ouverture s'efface quand
+   même au lieu de rester plantée là. */
+setTimeout(dropBoot, 6000);
 
 /* ---------- synchronisation vivante ----------
    Le classement et le Journal ne doivent jamais attendre un rechargement.
@@ -4580,8 +4590,6 @@ const faceSize = txt => {
 function faceHtml(bk, txt, img, aud, lang) {
   const snd = aud || (lang && TTS && plain(txt));
   return `<div class="face${bk ? ' bk' : ''}${faceSize(txt)}">
-    <i class="seam" aria-hidden="true"></i>
-    <i class="gl" aria-hidden="true"></i>
     ${img ? `<img class="fim" src="${esc(img)}" alt="">` : ''}
     ${plain(txt) ? `<div class="tx">${rt(txt)}</div>` : ''}
     ${snd ? `<button class="snd" data-snd="${bk ? 'b' : 'f'}">${svg(I.sound)}</button>` : ''}
@@ -4605,12 +4613,7 @@ function paintStack() {
   const frontLang = rv ? org.langb : org.langf, backLang = rv ? org.langf : org.langb;
   /* la pile prend la couleur de la matière de la carte, carte après carte */
   if (org.subj) st.setAttribute('style', sty(org.subj));
-  /* Le livre, pas une carte posée sur rien : deux feuillets dépassent
-     sous la page en cours et donnent l'épaisseur, et les deux pastilles
-     de verdict vivent en dehors de la page — elles doivent rester lisibles
-     et bien à plat pendant que la page, elle, pivote. */
-  st.innerHTML = `<i class="leaf l2" aria-hidden="true"></i><i class="leaf l1" aria-hidden="true"></i>
-    <div class="card in${tf ? ' tf' : ''}" id="top">
+  st.innerHTML = `<div class="card in${tf ? ' tf' : ''}" id="top">
       <div class="flipper">
         ${faceHtml(false, front, fimg, faud, frontLang)}
         ${faceHtml(true, back, bimg, baud, backLang)}
@@ -4618,9 +4621,9 @@ function paintStack() {
       ${org.subj ? `<div class="sbj"><i></i>${esc(org.subj.name)}</div>` : ''}
       ${(c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
         `<i>${esc(t)}</i>`).join('')}</div>` : ''}
-    </div>
-    <div class="ov y">${svg(I.check)}</div>
-    <div class="ov n">${svg(I.x)}</div>`;
+      <div class="ov y">${svg(I.check)}</div>
+      <div class="ov n">${svg(I.x)}</div>
+    </div>`;
   const top = document.getElementById('top');
   requestAnimationFrame(() => top.classList.remove('in'));
   if (!tf) bindDrag(top);
@@ -4773,51 +4776,21 @@ function toggleFlip() {
   turnPage(top, study.flip);
   paintFoot();
 }
-/* Le retournement lui-même. La classe « turning » est reposée à neuf à
-   chaque fois : c'est elle qui relance l'animation de la page et l'ombre
-   qui balaie la feuille, dans un sens comme dans l'autre. */
-let turnT = 0;
-function turnPage(top, on) {
-  if (!top) return;
-  top.classList.remove('turning');
-  void top.offsetWidth;
-  top.classList.toggle('flip', !!on);
-  top.classList.add('turning');
-  clearTimeout(turnT);
-  turnT = setTimeout(() => { if (top.isConnected) top.classList.remove('turning'); }, 640);
-}
-/* ---------- le geste ----------
-   La page n'est pas une carte qu'on pousse sur une table : elle est tenue
-   par sa reliure et se soulève par son bord libre. Le doigt qui va de
-   droite à gauche fait pivoter la page autour de son bord gauche — le
-   geste exact de celui qui passe à la page suivante ; le doigt qui va vers
-   la droite la fait pivoter de l'autre côté, comme on revient en arrière.
-   Le bord relevé s'assombrit au fur et à mesure, ce qui donne l'épaisseur. */
+const turnPage = (top, on) => { if (top) top.classList.toggle('flip', !!on); };
+/* Le geste : on pousse la fiche à gauche ou à droite, elle suit le doigt
+   et bascule un peu. Rien de plus — c'est ce qui se lit le mieux. */
 function bindDrag(el) {
-  let x0 = 0, dx = 0, on = false, moved = false, t0 = 0, w = 1;
-  const ovs = el.parentNode;
-  const ov = (k, v) => {
-    const n = ovs && ovs.querySelector('.ov.' + k);
-    if (n) { n.style.opacity = v; n.style.transform = `scale(${.55 + v * .45})`; }
-  };
-  const lift = (deg, dir) => {
-    el.style.transformOrigin = dir < 0 ? 'left center' : 'right center';
-    el.style.transform = `rotateY(${deg}deg)`;
-    el.style.setProperty('--lift', Math.min(1, Math.abs(deg) / 72).toFixed(3));
-  };
+  let x0 = 0, dx = 0, on = false, moved = false, t0 = 0;
+  const ov = (k, v) => { const n = el.querySelector('.ov.' + k); if (n) { n.style.opacity = v; n.style.transform = `scale(${.55 + v * .45})`; } };
   el.addEventListener('pointerdown', e => {
-    if (e.target.closest('[data-snd]')) return;      // le son ne retourne pas la page
+    if (e.target.closest('[data-snd]')) return;      // le son ne retourne pas la fiche
     on = true; moved = false; dx = 0; x0 = e.clientX; t0 = Date.now();
-    w = Math.max(120, el.offsetWidth);
     el.setPointerCapture(e.pointerId); el.style.transition = 'none';
   });
   el.addEventListener('pointermove', e => {
     if (!on) return;
     dx = e.clientX - x0; if (Math.abs(dx) > 5) moved = true;
-    /* au-delà du bord la rotation ralentit : la page résiste, elle ne
-       part pas dans le décor tant que le doigt n'a pas lâché */
-    const p = Math.max(-1.25, Math.min(1.25, dx / w));
-    lift(-Math.sign(p) * Math.min(88, Math.abs(p) * 104), dx < 0 ? -1 : 1);
+    el.style.transform = `translateX(${dx}px) rotate(${dx / 26}deg)`;
     ov('y', dx > 20 ? Math.min(1, (dx - 20) / 70) : 0);
     ov('n', dx < -20 ? Math.min(1, (-dx - 20) / 70) : 0);
   });
@@ -4825,9 +4798,7 @@ function bindDrag(el) {
     if (!on) return; on = false; el.style.transition = '';
     const v = Math.abs(dx) / Math.max(1, Date.now() - t0);
     if (Math.abs(dx) > 92 || (v > .6 && Math.abs(dx) > 34)) return fling(dx < 0 ? -1 : 1);
-    el.style.transform = ''; el.style.transformOrigin = '';
-    el.style.setProperty('--lift', '0');
-    ov('y', 0); ov('n', 0);
+    el.style.transform = ''; ov('y', 0); ov('n', 0);
     if (!moved) toggleFlip();
   };
   el.addEventListener('pointerup', end);
@@ -4843,14 +4814,8 @@ function fling(dir) {
     return;
   }
   el.dataset.gone = 1; el.classList.add('gone');
-  /* elle finit de tourner autour de sa reliure et disparaît de l'autre
-     côté, au lieu de glisser à plat hors de l'écran */
-  el.style.transformOrigin = dir < 0 ? 'left center' : 'right center';
-  el.style.transform = `rotateY(${dir * -164}deg)`;
-  el.style.setProperty('--lift', '1');
+  el.style.transform = `translateX(${dir * 130}vw) rotate(${dir * 20}deg)`;
   el.style.opacity = 0;
-  const ovs = el.parentNode;
-  if (ovs) ovs.querySelectorAll('.ov').forEach(n => { n.style.opacity = 0; });
   const g = pendingGrade; pendingGrade = null;
   /* À droite je sais, à gauche à revoir : le sens des applications de
      cartes, et celui des deux pastilles qui apparaissent sous le doigt. */
