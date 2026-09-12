@@ -456,6 +456,7 @@ async function pull() {
   if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
   if (study && prefs.simple !== wasSimple) prefs.simple = wasSimple;   // pas de bascule à chaud
   upsertProfile();
+  blocksPull();                 // le compte des coupures, pour le repère des Réglages
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   /* Ce qui attend d'être envoyé ne se fait pas écraser par la relecture :
@@ -2601,6 +2602,9 @@ function settingsView() {
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
           <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
+        <button class="sr flat" data-act="blocked">${svg(I.lock)}
+          <span class="n">Comptes bloqués</span>
+          <span class="c">${blocks && blocks.length ? blocks.length : ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-legal="cgu">${svg(I.file)}
           <span class="n">Conditions et confidentialité</span>${svg(I.arrow)}</button>
       </div>
@@ -2802,7 +2806,7 @@ async function sendDeck(d, p) {
    pour que le petit repère au-dessus du gear reste à jour sans attendre. */
 async function mailPull() {
   try {
-    const rows = await api('/rest/v1/mail?select=id,from_name,deck_name,message,cards,created_at,read_at,added_at&order=created_at.desc');
+    const rows = await api('/rest/v1/mail?select=id,from_user,from_name,deck_name,message,cards,created_at,read_at,added_at&order=created_at.desc');
     mailbox.list = rows || [];
     mailbox.n = mailbox.list.filter(r => !r.read_at).length;
     mailbox.err = 0;
@@ -3144,6 +3148,119 @@ async function boardPull(bg) {
   board.sig = sig;
   if (same) return;
   if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { animate = false; render(); }
+}
+
+/* ══════════ signaler, bloquer ══════════
+   Des mineurs, du contenu écrit librement, et jusqu'ici aucun moyen de
+   dire « ça ne va pas » ni de couper le contact. C'était le dernier vrai
+   trou du volet protection : le reste du cloisonnement tenait déjà, celui-ci
+   n'existait pas du tout.
+
+   Deux gestes distincts, volontairement. Bloquer est immédiat, personnel
+   et réversible : je ne veux plus rien recevoir de cette personne, et la
+   coupure vaut dans les deux sens — un blocage à sens unique laisserait
+   celui qu'on fuit continuer de vous lire. Signaler ne coupe rien mais
+   laisse une trace instruite ailleurs, avec une copie du contenu :
+   sans elle, il suffirait d'effacer pour rendre la plainte incompréhensible. */
+let blocks = null;                 // liste des comptes que j'ai bloqués
+const isBlocked = id => !!(blocks || []).some(b => b.blocked_id === id);
+
+async function blocksPull() {
+  try { blocks = await api('/rest/v1/blocks?select=blocked_id,who,created_at&order=created_at.desc') || []; }
+  catch (e) { blocks = blocks || []; }
+}
+async function blockUser(id, who) {
+  closeMenu();
+  try {
+    await api('/rest/v1/rpc/block_user', 'POST', { other: id, who: shortWho(who || '') });
+    blocks = null; await blocksPull();
+    /* Ce que la personne avait posé doit disparaître tout de suite : la
+       base ne le rend déjà plus, mais l'écran garde sa dernière copie. */
+    lib.list = null; duels.list = null; mailbox.list = null; board.rows = null;
+    friends = null; mates = null; asks = null;
+    friendsPull(); libPull(); duelsPull(); mailPull(); boardPull();
+    toast(I.lock, (who ? shortWho(who) : 'Ce compte') + ' est bloqué');
+  } catch (e) { toast(I.x, 'Blocage impossible'); }
+  render();
+}
+async function unblockUser(id) {
+  try {
+    await api('/rest/v1/blocks?blocked_id=eq.' + encodeURIComponent(id), 'DELETE',
+      null, { Prefer: 'return=minimal' });
+    blocks = null; await blocksPull();
+    lib.list = null; duels.list = null; board.rows = null;
+    toast(I.check, 'Compte débloqué');
+  } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
+  paintMenu(); render();
+}
+
+/* Les motifs sont courts et nommés du point de vue de l'élève : « ça me
+   harcèle » se trouve plus vite que « atteinte aux personnes ». */
+const RAISONS = [
+  ['harass', 'Harcèlement, menaces'],
+  ['hate', 'Contenu haineux ou illégal'],
+  ['sexual', 'Contenu sexuel'],
+  ['private', 'Données personnelles de quelqu’un'],
+  ['spam', 'Spam ou publicité'],
+  ['copy', 'Copié sans autorisation'],
+  ['other', 'Autre']
+];
+let reportOn = null;               // { kind, id, user, label, snapshot }
+let reportWhy = '';
+
+function openReport(kind, id, user, label, snapshot) {
+  reportOn = { kind, id: String(id || ''), user: user || null, label: label || '', snapshot: snapshot || {} };
+  reportWhy = '';
+  openMenu('report');
+}
+async function sendReport() {
+  const r = reportOn, note = (document.getElementById('rnote') || {}).value || '';
+  if (!r || !reportWhy) return;
+  closeMenu();
+  try {
+    await api('/rest/v1/reports', 'POST', [{
+      reporter: auth.uid, kind: r.kind, target_id: r.id, target_user: r.user,
+      reason: reportWhy, note: note.slice(0, 500), snapshot: r.snapshot
+    }], { Prefer: 'return=minimal' });
+    toast(I.check, 'Signalement envoyé');
+  } catch (e) { toast(I.x, 'Envoi impossible'); }
+  reportOn = null; reportWhy = '';
+}
+
+function reportSheet(w) {
+  const r = reportOn;
+  if (!r) { menu = null; return; }
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">
+      <div class="mhd">${svg(I.warn)}<span class="mhx"><b>Signaler</b>
+        <span class="msub">${esc(r.label || 'Ce contenu')} — le contenu est joint au signalement,
+          même s’il est effacé ensuite. Rien n’est envoyé à la personne visée.</span></span></div>
+      <div class="rlist">${RAISONS.map(([k, t]) =>
+        `<button class="mi${reportWhy === k ? ' on' : ''}" data-why="${k}">
+          ${svg(reportWhy === k ? I.check : I.arrow)}${t}</button>`).join('')}</div>
+      <input class="tok" id="rnote" placeholder="Précision (facultatif)" maxlength="500">
+      <button class="mi" data-mact="rsend" ${reportWhy ? '' : 'disabled'}
+        style="justify-content:center;font-weight:700">${svg(I.share)}Envoyer le signalement</button>
+      ${r.user ? `<div class="msep"></div>
+        <button class="mi warn" data-mact="rblock">${svg(I.lock)}<span>Bloquer aussi ce compte</span></button>` : ''}
+    </div>`;
+  mountMenu(w);
+}
+
+/* La liste des comptes coupés, pour pouvoir revenir en arrière : un
+   blocage qu'on ne peut pas défaire est une punition, pas un réglage. */
+function blockedSheet(w) {
+  const l = blocks || [];
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">
+      <div class="mhd">${svg(I.lock)}<span class="mhx"><b>Comptes bloqués</b>
+        <span class="msub">Ils ne voient plus rien de toi, et toi non plus.</span></span></div>
+      ${!l.length ? `<div class="note" style="padding:4px 18px 14px">Aucun compte bloqué.</div>`
+        : `<div class="mscroll">${l.map(b => `<button class="mi" data-unblock="${esc(b.blocked_id)}">
+             ${svg(I.redo)}<span>${esc(b.who || 'Un compte')}</span>
+             <span class="tail">Débloquer</span></button>`).join('')}</div>`}
+    </div>`;
+  mountMenu(w);
 }
 
 /* ══════════ communauté ══════════
@@ -3915,6 +4032,8 @@ function paintMenu() {
     return;
   }
   if (menu === 'install') return installSheet(w);
+  if (menu === 'report') return reportSheet(w);
+  if (menu === 'blocked') return blockedSheet(w);
   if (menu === 'backup') {
     const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -4218,6 +4337,9 @@ function paintMenu() {
         <button class="mi" data-mact="mateprof">${svg(I.chart)}Son journal de lecture</button>
         <button class="mi" data-mact="matesend">${svg(I.share)}Lui prêter un livre</button>
         <button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes lecteurs</span></button>
+        <div class="msep"></div>
+        <button class="mi" data-mact="matereport">${svg(I.warn)}<span>Signaler ce compte</span></button>
+        <button class="mi warn" data-mact="mateblock">${svg(I.lock)}<span>Bloquer</span></button>
       </div>`;
     mountMenu(w);
     return;
@@ -4307,7 +4429,10 @@ function paintMenu() {
           <span class="a">${esc(cf(c))}</span>${svg(I.arrow)}<span class="b">${esc(cb(c))}</span></div>`).join('')}</div>
         <button class="mi" data-mact="libadd" style="justify-content:center;font-weight:700">
           ${svg(I.plus)}Ajouter à ma bibliothèque</button>
-        ${mine ? `<button class="mi warn" data-mact="libdrop">${svg(I.trash)}<span>Retirer de la bibliothèque</span></button>` : ''}
+        ${mine ? `<button class="mi warn" data-mact="libdrop">${svg(I.trash)}<span>Retirer de l’étagère</span></button>`
+          : `<div class="msep"></div>
+             <button class="mi" data-mact="libreport">${svg(I.warn)}<span>Signaler ce livre</span></button>
+             <button class="mi warn" data-mact="libblock">${svg(I.lock)}<span>Bloquer ce compte</span></button>`}
       </div>`;
     mountMenu(w);
     return;
@@ -4445,6 +4570,9 @@ function paintMenu() {
         <button class="mi" data-mact="addmail" style="justify-content:center;font-weight:700">
           ${svg(it.added_at ? I.check : I.plus)}${it.added_at ? 'Déjà dans ma bibliothèque · Ajouter à nouveau' : 'Ajouter à ma bibliothèque'}</button>
         <button class="mi warn" data-mact="delmail">${svg(I.trash)}<span>Supprimer</span></button>
+        ${it.from_user && it.from_user !== auth.uid ? `<div class="msep"></div>
+          <button class="mi" data-mact="mailreport">${svg(I.warn)}<span>Signaler cet envoi</span></button>
+          <button class="mi warn" data-mact="mailblock">${svg(I.lock)}<span>Bloquer l’expéditeur</span></button>` : ''}
       </div>`;
     mountMenu(w);
     return;
@@ -4579,7 +4707,7 @@ async function mateProfPull(id) {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
@@ -4641,6 +4769,31 @@ document.addEventListener('click', async e => {
   }
   const a = b.dataset.mact;
   if (a === 'close') return closeMenu();
+  if (b.dataset.why !== undefined) { reportWhy = b.dataset.why; return paintMenu(); }
+  if (b.dataset.unblock !== undefined) return unblockUser(b.dataset.unblock);
+  if (a === 'rsend') return sendReport();
+  if (a === 'rblock') { const r = reportOn; if (r && r.user) return blockUser(r.user, r.label); return; }
+  /* Le signalement emporte une copie : ce qu'on voit à l'écran est ce qui
+     part, et effacer ensuite ne l'efface pas. */
+  if (a === 'libreport' || a === 'libblock') {
+    const it = (lib.list || []).find(x => x.deck_id === lib.open); if (!it) return;
+    if (a === 'libblock') return blockUser(it.user_id, it.who);
+    return openReport('library', it.deck_id, it.user_id, it.name,
+      { nom: it.name, qui: it.who, matiere: it.subject, cartes: (it.cards || []).slice(0, 40) });
+  }
+  if (a === 'mailreport' || a === 'mailblock') {
+    const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen); if (!it) return;
+    if (a === 'mailblock') return blockUser(it.from_user, it.from_name);
+    return openReport('mail', it.id, it.from_user, it.deck_name,
+      { nom: it.deck_name, qui: it.from_name, message: it.message, cartes: (it.cards || []).slice(0, 40) });
+  }
+  if (a === 'matereport' || a === 'mateblock') {
+    const f = (mates || []).find(x => x.id === mateOpen); if (!f) return;
+    if (a === 'mateblock') return blockUser(f.id, f.name || f.handle);
+    return openReport('profile', f.id, f.id, f.name || ('@' + (f.handle || '')),
+      { pseudo: f.handle, nom: f.name });
+  }
+  if (a === 'blocked') { blocksPull().then(() => paintMenu()); return openMenu('blocked'); }
   if (a === 'instcopy') return copyLink();
   if (a === 'instgo') return doPrompt();
   if (a === 'instlater') return closeMenu();

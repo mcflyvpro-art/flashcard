@@ -1644,3 +1644,12 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 .lleg button{font-size:12.5px;color:var(--soft);text-decoration:underline;
   text-underline-offset:2px;padding:4px 2px}
 .lleg i{font-style:normal;opacity:.5}
+
+/* ---------- signaler ----------
+   Les motifs sont des choix, pas des liens : celui qui est retenu doit se
+   voir d'un coup d'œil, sinon on ne sait plus ce qu'on s'apprête à envoyer. */
+.rlist{display:grid;gap:1px}
+.rlist .mi{height:48px;font-size:15px;font-weight:600}
+.rlist .mi.on{background:var(--surf2)}
+.rlist .mi.on svg{color:var(--ok)}
+.mi[disabled]{opacity:.35}
