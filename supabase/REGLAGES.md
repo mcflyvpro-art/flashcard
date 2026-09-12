@@ -53,3 +53,29 @@ en pause après sept jours sans requête — c'est la seule raison d'être du
 workflow `.github/workflows/keep-supabase-awake.yml`. Passer à l'offre
 payante avant le premier établissement, et vérifier une restauration réelle
 au moins une fois.
+
+## Comptes créés à la main
+
+`supabase/comptes_test.sql` crée les trois comptes d'essai (admin, prof, élève)
+avec une classe et un devoir.
+
+⚠ **Le piège à connaître.** Insérer un compte directement dans `auth.users`
+laisse les colonnes de jetons à `NULL`, là où l'inscription normale y met une
+chaîne vide. Le serveur d'authentification, écrit en Go, les lit dans un type
+`string` qui n'accepte pas `NULL` : il répond **500 avant de regarder le mot de
+passe**, et l'app affiche « connexion impossible » sans indiquer la cause. On le
+lit dans les journaux `auth_logs` :
+
+```
+error finding user: sql: Scan error on column index 3,
+name "confirmation_token": converting NULL to string is unsupported
+```
+
+Les huit colonnes concernées : `confirmation_token`, `recovery_token`,
+`email_change_token_new`, `email_change_token_current`, `email_change`,
+`phone_change`, `phone_change_token`, `reauthentication_token`. Toutes à `''`.
+
+Poser une valeur par défaut sur ces colonnes demanderait d'être propriétaire de
+`auth.users`, ce que le rôle de migration n'est pas : le fichier de création
+les renseigne donc explicitement, et se termine par un filet de sécurité qui
+répare tout compte existant.
