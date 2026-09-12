@@ -683,7 +683,46 @@ const plain = s => String(s == null ? '' : s)
 
 /* ---------- médias ----------
    Les fichiers partent dans le seau « media » du projet, sous un dossier au
-   nom du compte : les règles d'accès n'autorisent l'écriture que là. */
+   nom du compte : les règles d'accès n'autorisent ni l'écriture ni la
+   lecture ailleurs.
+
+   Le seau n'est plus public. Il l'était, et c'était le trou le plus net
+   du projet : la photo d'un cours ou l'enregistrement de la voix d'un
+   élève se lisait sans compte, par simple URL, indéfiniment — un
+   identifiant illisible n'a jamais été un contrôle d'accès.
+
+   Ce qu'on range dans la carte est donc un chemin, plus une adresse.
+   L'adresse est signée au moment de l'affichage et ne vaut que quelques
+   heures. Une valeur absolue (http…) est laissée telle quelle : une
+   carte écrite avant ce changement continue de s'afficher. */
+const SIGNTTL = 6 * 3600;                  // durée de vie d'une adresse signée
+const signedUrls = new Map();              // chemin -> { url, till }
+const isPath = r => !!r && !/^(https?:|data:|blob:)/i.test(r);
+
+async function signMedia(path) {
+  const hit = signedUrls.get(path);
+  if (hit && hit.till > Date.now()) return hit.url;
+  const j = await api(`/storage/v1/object/sign/media/${path}`, 'POST', { expiresIn: SIGNTTL });
+  if (!j || !j.signedURL) throw new Error('sign');
+  const url = SB.url + '/storage/v1' + j.signedURL;
+  /* on réutilise l'adresse jusqu'à cinq minutes avant sa fin : de quoi
+     finir une séance commencée sans la resigner à chaque carte */
+  signedUrls.set(path, { url, till: Date.now() + (SIGNTTL - 300) * 1000 });
+  return url;
+}
+/* L'écran se peint d'un coup, la signature prend un aller-retour :
+   l'image part donc sans adresse et la reçoit dès qu'elle arrive. */
+const mimg = (cls, r) => !r ? ''
+  : isPath(r) ? `<img class="${cls}" data-m="${esc(r)}" alt="">`
+              : `<img class="${cls}" src="${esc(r)}" alt="">`;
+function paintMedia(root) {
+  (root || document).querySelectorAll('img[data-m]').forEach(el => {
+    const p = el.dataset.m;
+    delete el.dataset.m;                   // une seule tentative par image
+    signMedia(p).then(u => { el.src = u; }, () => {});
+  });
+}
+
 async function upload(file) {
   if (!auth) throw new Error('auth');
   if (file.size > 7.5e6) throw new Error('big');
@@ -697,7 +736,7 @@ async function upload(file) {
     body: file
   });
   if (!r.ok) throw new Error('up');
-  return `${SB.url}/storage/v1/object/public/media/${path}`;
+  return path;                             // le chemin, pas l'adresse : elle se signe à l'affichage
 }
 /* Choisit un fichier sans laisser d'input traîner dans le DOM. */
 function pickFile(accept) {
@@ -756,8 +795,13 @@ const TTS = typeof speechSynthesis !== 'undefined';
 const LANGS = [['', 'Aucune'], ['fr-FR', 'Français'], ['it-IT', 'Italien'],
                ['en-GB', 'Anglais'], ['es-ES', 'Espagnol'], ['de-DE', 'Allemand']];
 let player = null;
-function play(url) {
+/* Le son porte un chemin comme l'image : on le signe avant de le jouer.
+   L'appui est déjà passé quand l'adresse arrive, mais c'est un
+   aller-retour, pas une attente — et le navigateur garde l'autorisation
+   de jouer accordée par le geste. */
+async function play(ref) {
   try {
+    const url = isPath(ref) ? await signMedia(ref) : ref;
     if (player) player.pause();
     player = new Audio(url);
     player.play().catch(() => {});
@@ -1416,6 +1460,7 @@ function render() {
   $.dataset.view = view.name;
   applyFont();
   paintRail();
+  paintMedia($);                               // les images posées sans adresse la reçoivent ici
   if (animate) $.classList.add('fade');
   if (pageDir) {
     const pg = document.getElementById('page');
@@ -3490,6 +3535,7 @@ function mountMenu(w) {
     bindSheetDrag(box, body);
   }
   document.body.append(...w.childNodes);
+  paintMedia();               // l'aperçu d'image de la feuille d'édition
 }
 /* Tirer la feuille vers le bas la ferme, comme partout ailleurs sur un
    téléphone. Sans ça, une feuille courte — une explication, un code —
@@ -3591,7 +3637,7 @@ function paintMenu() {
       const k = side + (kind === 'img' ? 'i' : 'a');
       const has = c[k];
       return `<button class="mb ${has ? 'on' : ''}" data-mact="med-${k}">
-        ${kind === 'img' && has ? `<img src="${esc(has)}" alt="">` : svg(kind === 'img' ? I.image : I.mic)}
+        ${kind === 'img' && has ? mimg('', has) : svg(kind === 'img' ? I.image : I.mic)}
         ${has ? `<i class="rmv" data-mact="del-${k}">${svg(I.x)}</i>` : ''}</button>`;
     };
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -4789,7 +4835,7 @@ function faceHtml(bk, txt, img, aud, lang, tag) {
   const snd = aud || (lang && TTS && plain(txt));
   return `<div class="face${bk ? ' bk' : ''}${faceSize(txt)}">
     ${tag || ''}
-    ${img ? `<img class="fim" src="${esc(img)}" alt="">` : ''}
+    ${mimg('fim', img)}
     ${plain(txt) ? `<div class="tx">${rt(txt)}</div>` : ''}
     ${snd ? `<button class="snd" data-snd="${bk ? 'b' : 'f'}">${svg(I.sound)}</button>` : ''}
   </div>`;
@@ -4827,6 +4873,7 @@ function paintStack() {
       <div class="ov y">${svg(I.check)}</div>
       <div class="ov n">${svg(I.x)}</div>
     </div>`;
+  paintMedia(st);
   const top = document.getElementById('top');
   requestAnimationFrame(() => top.classList.remove('in'));
   if (!tf) bindDrag(top);
@@ -4845,9 +4892,10 @@ function paintMCQ() {
     study.optsFor = c.id;
     study.pick = null;
   }
-  st.innerHTML = `${c.fi ? `<img class="fim" src="${esc(c.fi)}" alt="">` : ''}
+  st.innerHTML = `${mimg('fim', c.fi)}
     <span>${rt(c.f)}</span>
     ${(c.fa || (cardOrigin(c).langf && TTS)) ? `<button class="snd" data-snd="f">${svg(I.sound)}</button>` : ''}`;
+  paintMedia(st);
   const good = norm(plain(c.b));
   f.innerHTML = `<div class="opts">${study.opts.map((o, k) => {
     const right = norm(plain(o)) === good;
