@@ -5661,13 +5661,34 @@ const faceSize = txt => {
   const n = plain(txt).length;
   return n > 260 ? ' xxl' : n > 160 ? ' xl' : n > 90 ? ' l' : '';
 };
+/* Une face peut ne porter qu'un son, qu'une image, qu'un texte, ou les
+   trois. Les commandes de son étaient collées dans un coin : sur une fiche
+   qui n'a qu'un enregistrement, tout le cadre paraissait vide et le seul
+   contenu se cachait en bas à droite. Elles entrent donc dans le flux —
+   image, puis texte, puis sons — et l'ensemble se centre d'un bloc, quelle
+   que soit la combinaison.
+
+   Deux sons ne se disputent plus le même bouton. L'enregistrement d'une
+   vraie voix et la lecture par la machine sont deux choses différentes :
+   le micro pour l'un, le haut-parleur pour l'autre, et on peut écouter
+   les deux. Avant, dès qu'un enregistrement existait, la voix de synthèse
+   devenait inatteignable. */
 function faceHtml(bk, txt, img, aud, lang, tag) {
-  const snd = aud || (lang && TTS && plain(txt));
+  const side = bk ? 'b' : 'f';
+  const hasTxt = !!plain(txt);
+  const canSay = !!(lang && TTS && hasTxt);
+  const seul = !hasTxt && !img && (aud || canSay);   // le son est tout le contenu
+  const btns = (aud ? `<button class="snd" data-snd="${side}"
+        aria-label="Écouter l’enregistrement">${svg(I.mic)}</button>` : '')
+    + (canSay ? `<button class="snd" data-say="${side}"
+        aria-label="Lire le texte à voix haute">${svg(I.sound)}</button>` : '');
   return `<div class="face${bk ? ' bk' : ''}${faceSize(txt)}">
     ${tag || ''}
-    ${mimg('fim', img)}
-    ${plain(txt) ? `<div class="tx">${rt(txt)}</div>` : ''}
-    ${snd ? `<button class="snd" data-snd="${bk ? 'b' : 'f'}">${svg(I.sound)}</button>` : ''}
+    <div class="fbody">
+      ${mimg('fim', img)}
+      ${hasTxt ? `<div class="tx">${rt(txt)}</div>` : ''}
+      ${btns ? `<div class="snds${seul ? ' seul' : ''}">${btns}</div>` : ''}
+    </div>
   </div>`;
 }
 const isTF = c => c && c.t === 'tf';
@@ -5700,6 +5721,7 @@ function paintStack() {
         ${faceHtml(false, front, fimg, faud, frontLang, tag)}
         ${faceHtml(true, back, bimg, baud, backLang, tag)}
       </div>
+      <i class="swr" aria-hidden="true"></i>
       <div class="ov y">${svg(I.check)}</div>
       <div class="ov n">${svg(I.x)}</div>
     </div>`;
@@ -5724,7 +5746,12 @@ function paintMCQ() {
   }
   st.innerHTML = `${mimg('fim', c.fi)}
     <span>${rt(c.f)}</span>
-    ${(c.fa || (cardOrigin(c).langf && TTS)) ? `<button class="snd" data-snd="f">${svg(I.sound)}</button>` : ''}`;
+    ${(() => {
+      const o = cardOrigin(c), sayable = o.langf && TTS && plain(c.f);
+      const b = (c.fa ? `<button class="snd" data-snd="f" aria-label="Écouter l’enregistrement">${svg(I.mic)}</button>` : '')
+        + (sayable ? `<button class="snd" data-say="f" aria-label="Lire à voix haute">${svg(I.sound)}</button>` : '');
+      return b ? `<div class="snds">${b}</div>` : '';
+    })()}`;
   paintMedia(st);
   const good = norm(plain(c.b));
   f.innerHTML = `<div class="opts">${study.opts.map((o, k) => {
@@ -5860,6 +5887,15 @@ function toggleFlip() {
 const turnPage = (top, on) => { if (top) top.classList.toggle('flip', !!on); };
 /* Le geste : on pousse la fiche à gauche ou à droite, elle suit le doigt
    et bascule un peu. Rien de plus — c'est ce qui se lit le mieux. */
+/* De six à soixante-six pixels, de rien à plein. Le seuil de lâcher est à
+   quatre-vingt-douze : le contour est donc franchement vert ou rouge avant
+   qu'on ait décidé, et c'est tout l'intérêt. */
+const tint = dx => Math.min(1, Math.max(0, (Math.abs(dx) - 6) / 60));
+function swipeTint(el, dx) {
+  const t = tint(dx);
+  el.style.setProperty('--sw', t.toFixed(3));
+  if (t) el.style.setProperty('--swc', dx > 0 ? 'var(--ok)' : 'var(--ko)');
+}
 function bindDrag(el) {
   let x0 = 0, dx = 0, on = false, moved = false, t0 = 0;
   const ov = (k, v) => { const n = el.querySelector('.ov.' + k); if (n) { n.style.opacity = v; n.style.transform = `scale(${.55 + v * .45})`; } };
@@ -5872,14 +5908,21 @@ function bindDrag(el) {
     if (!on) return;
     dx = e.clientX - x0; if (Math.abs(dx) > 5) moved = true;
     el.style.transform = `translateX(${dx}px) rotate(${dx / 26}deg)`;
-    ov('y', dx > 20 ? Math.min(1, (dx - 20) / 70) : 0);
-    ov('n', dx < -20 ? Math.min(1, (-dx - 20) / 70) : 0);
+    /* Le contour dit la réponse avant la pastille. Il commence à six
+       pixels — donc dès l'intention, pas une fois le geste fini — et il
+       est plein bien avant le seuil de lâcher, pour qu'on sache où on va
+       pendant qu'on peut encore changer d'avis. */
+    swipeTint(el, dx);
+    const t = tint(dx);
+    ov('y', dx > 0 ? t : 0);
+    ov('n', dx < 0 ? t : 0);
   });
   const end = () => {
     if (!on) return; on = false; el.style.transition = '';
     const v = Math.abs(dx) / Math.max(1, Date.now() - t0);
     if (Math.abs(dx) > 92 || (v > .6 && Math.abs(dx) > 34)) return fling(dx < 0 ? -1 : 1);
     el.style.transform = ''; ov('y', 0); ov('n', 0);
+    el.style.setProperty('--sw', 0);           // la fiche revient au centre, la couleur s'efface
     if (!moved) toggleFlip();
   };
   el.addEventListener('pointerup', end);
@@ -5895,6 +5938,10 @@ function fling(dir) {
     return;
   }
   el.dataset.gone = 1; el.classList.add('gone');
+  /* Partie au bouton plutôt qu'au doigt, la fiche n'a jamais été teintée :
+     on l'allume au départ, sinon les deux façons de répondre ne donnent
+     pas le même retour. */
+  swipeTint(el, dir * 100);
   el.style.transform = `translateX(${dir * 130}vw) rotate(${dir * 20}deg)`;
   el.style.opacity = 0;
   const g = pendingGrade; pendingGrade = null;
@@ -6459,7 +6506,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact],[data-classe],[data-work],[data-member]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact],[data-classe],[data-work],[data-member]');
   if (!b) return;
   const ds = b.dataset;
   const a0 = ds.act;
@@ -6549,15 +6596,20 @@ $.addEventListener('click', e => {
   if (b.dataset.tf !== undefined) return answerTF(b.dataset.tf === '1');
   if (b.dataset.pick !== undefined) return pickMCQ(+b.dataset.pick);
   if (b.dataset.mt) { const [sd, mid] = b.dataset.mt.split(':'); return pickMatch(sd, mid); }
-  if (b.dataset.snd !== undefined) {
+  /* Deux boutons distincts, donc deux chemins : l'un joue ce qui a été
+     enregistré, l'autre fait lire le texte. Chacun sait ce qu'il déclenche
+     au lieu de dépendre de ce que la carte contient. */
+  if (b.dataset.snd !== undefined || b.dataset.say !== undefined) {
+    const dire = b.dataset.say !== undefined;
     const c = cardOf(0); if (!c) return;
-    const bk = b.dataset.snd === 'b';
+    const bk = (dire ? b.dataset.say : b.dataset.snd) === 'b';
     const tf = isTF(c);
     const rv = !tf && (study.dirs ? study.dirs[c.id] : study.rev);
     const useBack = bk !== !!rv;
     const aud = useBack ? c.ba : c.fa, txt = useBack ? c.b : c.f;
     const org = cardOrigin(c);                 // en marathon, la langue du paquet d'origine
-    if (aud) play(aud); else say(txt, useBack ? org.langb : org.langf);
+    if (dire || !aud) say(txt, useBack ? org.langb : org.langf);
+    else play(aud);
     return;
   }
   if (a === 'home' || a === 'tab-home') return go('home');

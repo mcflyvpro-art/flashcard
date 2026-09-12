@@ -351,7 +351,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 /* --fs est le réglage de confort ; il multiplie les quatre paliers sans
    toucher à la façon dont ils sont choisis (c'est la longueur du texte
    qui décide du palier, la préférence ne fait que l'échelle). */
-.face .tx{position:relative;z-index:1;max-width:100%;max-height:100%;overflow:auto;
+.face .tx{position:relative;z-index:1;max-width:100%;max-height:100%;min-height:0;overflow:auto;
   font-family:var(--serif);font-weight:700;font-size:calc(clamp(27px,8vw,46px) * var(--fs,1));
   line-height:1.18;letter-spacing:-.5px}
 .face.l .tx{font-size:calc(clamp(21px,6.6vw,34px) * var(--fs,1));line-height:1.26;letter-spacing:-.3px}
@@ -1097,10 +1097,22 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .mth .tx{font-weight:inherit}
 
 /* ══════════ son sur la carte ══════════ */
-.snd{position:absolute;right:16px;bottom:16px;z-index:2;width:44px;height:44px;
+/* Les commandes de son vivent dans le flux de la face, sous le texte et
+   l'image : tout se centre alors d'un bloc, qu'il y ait les trois, deux,
+   ou seulement le son. Collées dans un coin, elles laissaient une fiche
+   sans texte ni image paraître vide. */
+.fbody{position:relative;z-index:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:13px;
+  width:100%;max-width:100%;max-height:100%;min-height:0}
+.snds{display:flex;gap:10px;flex:none}
+.snd{width:44px;height:44px;flex:none;
   border-radius:15px;display:grid;place-items:center;color:inherit;
   background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.32);
   transition:transform .2s var(--sp)}
+/* Quand le son est tout ce que porte la fiche, il en est le sujet : il
+   prend la place qui va avec, au lieu d'un bouton perdu au milieu du vide. */
+.snds.seul .snd{width:84px;height:84px;border-radius:29px}
+.snds.seul .snd svg{width:36px;height:36px;stroke-width:1.9}
 .snd:active{transform:scale(.9)}
 .snd svg{width:20px;height:20px;stroke-width:2}
 .face.bk .snd{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
@@ -1150,7 +1162,8 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .fade .qcard{animation:pop .45s var(--e) both}
 .qcard span{font-family:var(--serif);font-weight:700;font-size:clamp(20px,5.4vw,30px);
   line-height:1.24;letter-spacing:-.2px}
-.qcard .snd{right:11px;bottom:11px;width:36px;height:36px;border-radius:12px}
+.qcard .snds{position:absolute;right:11px;bottom:11px;gap:7px}
+.qcard .snd{width:36px;height:36px;border-radius:12px}
 .qcard .snd svg{width:17px;height:17px}
 .study.mcq > .prog{margin-bottom:auto}
 .study.mcq > div:last-child{margin-bottom:auto}
@@ -1693,3 +1706,18 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
   font-size:24px;font-weight:800;letter-spacing:3px;color:var(--ink)}
 .av{flex:none;width:34px;height:34px;border-radius:12px;background:var(--surf);
   display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:800;color:var(--ink2)}
+
+/* ---------- le contour qui répond au doigt ----------
+   La pastille arrivait trop tard : elle ne commençait qu'à vingt pixels et
+   n'était pleine qu'à quatre-vingt-dix, soit à peu près au moment du
+   lâcher. Le contour, lui, s'allume dès six pixels et sature à
+   soixante-six — on sait donc où l'on va pendant qu'on peut encore
+   changer d'avis. */
+.card{--sw:0;--swc:transparent}
+.swr{position:absolute;inset:0;border-radius:30px;pointer-events:none;z-index:2;
+  opacity:var(--sw);
+  box-shadow:inset 0 0 0 calc(3px + var(--sw) * 4px) var(--swc),
+             0 0 calc(var(--sw) * 28px) -6px var(--swc);
+  transition:opacity .09s linear}
+.card.gone .swr{transition:opacity .3s linear}
+@media (prefers-reduced-motion:reduce){.swr{transition:none}}
