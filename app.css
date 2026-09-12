@@ -1721,3 +1721,12 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
   transition:opacity .09s linear}
 .card.gone .swr{transition:opacity .3s linear}
 @media (prefers-reduced-motion:reduce){.swr{transition:none}}
+
+/* ---------- la fiche va où on la met ----------
+   Déplacée librement, elle peut sortir du cadre prévu pour elle. Sans
+   cette ligne, le navigateur considère qu'il y a quelque chose à voir
+   plus loin et rend la page défilable : l'écran se met à glisser sous le
+   doigt pendant qu'on promène la fiche. On coupe à la fenêtre — la fiche
+   va donc partout où l'on voit, et nulle part au-delà.
+   « clip » plutôt que « hidden » : il ne crée pas de zone défilable. */
+#app[data-view="study"]{overflow:hidden;overflow:clip}

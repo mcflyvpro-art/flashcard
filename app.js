@@ -5885,11 +5885,27 @@ function toggleFlip() {
   paintFoot();
 }
 const turnPage = (top, on) => { if (top) top.classList.toggle('flip', !!on); };
-/* Le geste : on pousse la fiche à gauche ou à droite, elle suit le doigt
-   et bascule un peu. Rien de plus — c'est ce qui se lit le mieux. */
-/* De six à soixante-six pixels, de rien à plein. Le seuil de lâcher est à
-   quatre-vingt-douze : le contour est donc franchement vert ou rouge avant
-   qu'on ait décidé, et c'est tout l'intérêt. */
+/* ---------- le geste ----------
+   La fiche ne suivait que l'axe horizontal : on la poussait à gauche ou à
+   droite et elle revenait sur un rail. C'était lisible, mais ça n'était
+   pas une carte — un objet posé sur une table se prend, se promène, se
+   repose, et part dans la direction où on l'a lancé.
+
+   Elle se déplace donc librement, dans les deux axes, aussi loin qu'on
+   veut. Trois choses font la fluidité :
+
+   — l'écran ne se repeint qu'une fois par image. Un doigt produit plus
+     d'événements que l'écran n'a de trames ; écrire la transformation à
+     chaque événement fait travailler le navigateur pour rien et saccade.
+   — la rotation dépend de l'endroit où l'on a saisi. Prise par le haut la
+     fiche penche dans un sens, prise par le bas dans l'autre, comme un
+     carton qu'on fait pivoter autour du point qu'on tient.
+   — le lancer garde sa direction. On relâche en diagonale, elle sort en
+     diagonale, à la vitesse qu'on lui a donnée, au lieu de rejoindre une
+     trajectoire décidée d'avance.
+
+   Ce qui ne change pas : la décision reste à gauche ou à droite. Un
+   déplacement vertical promène la fiche, il ne répond pas à sa place. */
 const tint = dx => Math.min(1, Math.max(0, (Math.abs(dx) - 6) / 60));
 function swipeTint(el, dx) {
   const t = tint(dx);
@@ -5897,30 +5913,69 @@ function swipeTint(el, dx) {
   if (t) el.style.setProperty('--swc', dx > 0 ? 'var(--ok)' : 'var(--ko)');
 }
 function bindDrag(el) {
-  let x0 = 0, dx = 0, on = false, moved = false, t0 = 0;
+  let x0 = 0, y0 = 0, dx = 0, dy = 0, on = false, moved = false;
+  let haut = true;                    // saisie au-dessus du milieu de la fiche
+  let raf = 0, pid = -1;
+  /* Les derniers instants du geste, pour connaître la vitesse au lâcher.
+     La moyenne depuis le départ mentirait : on ralentit souvent avant de
+     relâcher, et un long déplacement lent finirait par compter comme un
+     lancer. */
+  let trace = [];
+  const SUIVI = 90;                   // millisecondes retenues
+
   const ov = (k, v) => { const n = el.querySelector('.ov.' + k); if (n) { n.style.opacity = v; n.style.transform = `scale(${.55 + v * .45})`; } };
-  el.addEventListener('pointerdown', e => {
-    if (e.target.closest('[data-snd]')) return;      // le son ne retourne pas la fiche
-    on = true; moved = false; dx = 0; x0 = e.clientX; t0 = Date.now();
-    el.setPointerCapture(e.pointerId); el.style.transition = 'none';
-  });
-  el.addEventListener('pointermove', e => {
-    if (!on) return;
-    dx = e.clientX - x0; if (Math.abs(dx) > 5) moved = true;
-    el.style.transform = `translateX(${dx}px) rotate(${dx / 26}deg)`;
-    /* Le contour dit la réponse avant la pastille. Il commence à six
-       pixels — donc dès l'intention, pas une fois le geste fini — et il
-       est plein bien avant le seuil de lâcher, pour qu'on sache où on va
-       pendant qu'on peut encore changer d'avis. */
+
+  const peindre = () => {
+    raf = 0;
+    /* La rotation suit l'écart horizontal, signée par le point de saisie,
+       et se plafonne : au-delà d'une vingtaine de degrés la fiche devient
+       illisible pendant qu'on la déplace. */
+    const rot = Math.max(-20, Math.min(20, dx * .07)) * (haut ? 1 : -1);
+    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) rotate(${rot}deg)`;
     swipeTint(el, dx);
     const t = tint(dx);
     ov('y', dx > 0 ? t : 0);
     ov('n', dx < 0 ? t : 0);
+  };
+  const demander = () => { if (!raf) raf = requestAnimationFrame(peindre); };
+
+  const vitesse = () => {
+    const t = Date.now();
+    const p = trace.filter(s => t - s.t < SUIVI);
+    if (p.length < 2) return { vx: 0, vy: 0 };
+    const a = p[0], b = p[p.length - 1];
+    const dt = Math.max(8, b.t - a.t);
+    return { vx: (b.x - a.x) / dt, vy: (b.y - a.y) / dt };   // pixels par milliseconde
+  };
+
+  el.addEventListener('pointerdown', e => {
+    if (e.target.closest('[data-snd],[data-say]')) return;   // le son ne retourne pas la fiche
+    on = true; moved = false; dx = 0; dy = 0;
+    x0 = e.clientX; y0 = e.clientY; pid = e.pointerId;
+    const r = el.getBoundingClientRect();
+    haut = e.clientY < r.top + r.height / 2;
+    trace = [{ x: 0, y: 0, t: Date.now() }];
+    try { el.setPointerCapture(pid); } catch (x) {}
+    el.style.transition = 'none';
+  });
+  el.addEventListener('pointermove', e => {
+    if (!on || e.pointerId !== pid) return;
+    dx = e.clientX - x0; dy = e.clientY - y0;
+    if (!moved && Math.hypot(dx, dy) > 5) moved = true;
+    const t = Date.now();
+    trace.push({ x: dx, y: dy, t });
+    while (trace.length > 2 && t - trace[0].t > SUIVI) trace.shift();
+    demander();
   });
   const end = () => {
-    if (!on) return; on = false; el.style.transition = '';
-    const v = Math.abs(dx) / Math.max(1, Date.now() - t0);
-    if (Math.abs(dx) > 92 || (v > .6 && Math.abs(dx) > 34)) return fling(dx < 0 ? -1 : 1);
+    if (!on) return; on = false;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    el.style.transition = '';
+    const v = vitesse();
+    /* Deux façons de valider : aller assez loin, ou lancer assez vite. La
+       seconde permet un geste court et sec, qui est celui qu'on fait quand
+       on enchaîne. */
+    if (Math.abs(dx) > 92 || (Math.abs(v.vx) > .45 && Math.abs(dx) > 26)) return fling(dx < 0 ? -1 : 1, v, dx, dy);
     el.style.transform = ''; ov('y', 0); ov('n', 0);
     el.style.setProperty('--sw', 0);           // la fiche revient au centre, la couleur s'efface
     if (!moved) toggleFlip();
@@ -5928,13 +5983,18 @@ function bindDrag(el) {
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);
 }
-function fling(dir) {
+/* La fiche sort dans la direction où on l'a lancée, et non sur une
+   trajectoire décidée d'avance : c'est ce qui donne l'impression de
+   l'avoir jetée soi-même. Appelée sans lancer — depuis un bouton — elle
+   part à l'horizontale, comme avant. */
+function fling(dir, v, fx, fy) {
   const el = document.getElementById('top'); if (!el || el.dataset.gone) return;
   /* Pendant l'étape qui apprend le geste, seul le bon sens passe : partir
      du mauvais côté pendant qu'on lit « balaie à droite » embrouille plus
      qu'autre chose. */
   if (tour && tour.lock && dir !== tour.lock) {
     el.style.transition = ''; el.style.transform = '';
+    el.style.setProperty('--sw', 0);
     return;
   }
   el.dataset.gone = 1; el.classList.add('gone');
@@ -5942,7 +6002,17 @@ function fling(dir) {
      on l'allume au départ, sinon les deux façons de répondre ne donnent
      pas le même retour. */
   swipeTint(el, dir * 100);
-  el.style.transform = `translateX(${dir * 130}vw) rotate(${dir * 20}deg)`;
+  const vx = v ? v.vx : 0, vy = v ? v.vy : 0;
+  const sp = Math.max(.5, Math.hypot(vx, vy));
+  /* On garde la pente du lancer, mais on impose le côté : une fiche qui
+     sortirait du mauvais bord contredirait la réponse qu'on vient de
+     donner. Et un minimum d'horizontale l'empêche de partir tout droit
+     vers le haut sur un geste presque vertical. */
+  const ux = dir * Math.max(.6, Math.abs(vx) / sp);
+  const uy = Math.max(-1.1, Math.min(1.1, vy / sp));
+  const loin = 1500;
+  el.style.transform = `translate3d(${(fx || 0) + ux * loin}px, ${(fy || 0) + uy * loin}px, 0)`
+    + ` rotate(${dir * (18 + Math.min(16, sp * 9))}deg)`;
   el.style.opacity = 0;
   const g = pendingGrade; pendingGrade = null;
   /* À droite je sais, à gauche à revoir : le sens des applications de
