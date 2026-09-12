@@ -458,6 +458,7 @@ async function pull() {
   upsertProfile();
   blocksPull();                 // le compte des coupures, pour le repère des Réglages
   modCheck();                   // suis-je modérateur ? la console n'apparaît que si oui
+  rolePull().then(() => { classesPull(); render(); });   // le rôle décide de l'écran
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   /* Ce qui attend d'être envoyé ne se fait pas écraser par la relecture :
@@ -1534,6 +1535,7 @@ function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
               group: groupView, shared: sharedView, duel: duelView, legal: legalView, mod: modView,
+              classes: classesView, classe: classeView,
               commu: commuView, friends: friendsView, groups: groupsView,
               duels: duelsView, library: libraryView, board: boardView };
   $.classList.remove('fade');
@@ -1570,8 +1572,9 @@ function paintRail() {
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
   const on = view.name === 'settings' ? 'settings'
     : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats'
+    : /^(classes|classe)$/.test(view.name) ? 'classes'
     : /commu|friends|groups|duels|library|board|shared/.test(view.name) ? 'commu' : 'home';
-  const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n;
+  const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n + '\u0000' + myRole;
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
   if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
   r.dataset.sig = sig;
@@ -1583,6 +1586,8 @@ function paintRail() {
     <div class="sp"></div>
     <nav>
       <button class="${on === 'stats' ? 'on' : ''}" data-r="stats">${svg(I.chart)}<span>Journal</span></button>
+      ${isProf() || (classes || []).length ? `<button class="${on === 'classes' ? 'on' : ''}"
+        data-r="classes">${svg(I.layers)}<span>${isProf() ? 'Mes classes' : 'Ma classe'}</span></button>` : ''}
       <button class="${on === 'commu' ? 'on' : ''}" data-r="commu">${svg(I.user)}<span>Le cercle</span>${
         (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
       <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Courrier</span>${
@@ -1595,6 +1600,7 @@ function paintRail() {
     if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
     if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
     if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
+    if (b.dataset.r === 'classes') { if (!classes) classesPull(); return go('classes'); }
     go(b.dataset.r === 'settings' ? 'settings' : 'home');
   };
 }
@@ -3352,6 +3358,195 @@ function modView() {
     </div>`;
 }
 
+/* ══════════ rôles, classes, devoirs ══════════
+   Trois métiers dans la même app, et trois écrans différents. L'élève
+   reçoit et travaille ; le professeur distribue et suit ; l'administrateur
+   instruit les signalements. Personne ne voit les outils des autres — non
+   par discrétion, mais parce qu'une interface qui montre ce qu'on ne peut
+   pas faire n'apprend rien à personne.
+
+   Le rôle vient de la base, jamais du client : une valeur gardée ici ne
+   ferait qu'afficher des boutons, et la base refuserait de toute façon.
+   C'est bien elle qui décide. */
+let myRole = 'eleve';
+let classes = null;                 // mes classes (tenues ou rejointes)
+let classOf = null;                 // celle qu'on regarde
+let roster = null;                  // la liste d'une classe, côté professeur
+let workOpen = null, memberOpen = null;
+let asgs = null;                    // les devoirs de la classe regardée
+const isProf = () => myRole === 'prof' || myRole === 'admin';
+const isAdmin = () => myRole === 'admin';
+
+async function rolePull() {
+  try { myRole = (await api('/rest/v1/rpc/my_role', 'POST', {})) || 'eleve'; }
+  catch (e) { myRole = 'eleve'; }
+}
+async function classesPull() {
+  try {
+    /* Deux origines pour une même liste : celles qu'on tient et celles
+       qu'on a rejointes. Les règles de lecture rendent déjà les deux. */
+    classes = await api('/rest/v1/classes?select=id,name,level,year,code,owner&order=created_at.desc') || [];
+  } catch (e) { classes = classes || []; }
+  if (/^(classes|classe)$/.test(view.name)) { animate = false; render(); }
+}
+async function classPull(id) {
+  try {
+    const [m, a] = await Promise.all([
+      api(`/rest/v1/class_members?select=user_id,who,joined_at&class_id=eq.${id}&order=who.asc`),
+      api(`/rest/v1/assignments?select=id,name,n,due,created_at&class_id=eq.${id}&order=created_at.desc`)
+    ]);
+    roster = m || []; asgs = a || [];
+  } catch (e) { roster = roster || []; asgs = asgs || []; }
+  if (view.name === 'classe') { animate = false; render(); }
+}
+const classCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)),
+  b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
+
+async function makeClass(name, level) {
+  try {
+    const [c] = await api('/rest/v1/classes', 'POST',
+      [{ name: (name || '').trim() || 'Ma classe', level: (level || '').trim(),
+         year: scolaire(), code: classCode(), owner: auth.uid }],
+      { Prefer: 'return=representation' }) || [];
+    closeMenu(); classes = null; await classesPull();
+    if (c) { classOf = c.id; roster = null; asgs = null; classPull(c.id); go('classe'); }
+    toast(I.check, 'Classe créée · code ' + (c ? c.code : ''));
+  } catch (e) { toast(I.x, 'Création impossible'); }
+}
+/* L'année scolaire bascule en août, pas en janvier. */
+function scolaire() {
+  const d = new Date(), y = d.getFullYear();
+  return d.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+}
+async function joinClass(code) {
+  try {
+    await api('/rest/v1/rpc/join_class', 'POST',
+      { join_code: code, who: prefs.name || auth.email });
+    closeMenu(); classes = null; await classesPull();
+    toast(I.check, 'Classe rejointe');
+  } catch (e) { toast(I.x, 'Code inconnu'); }
+}
+async function dropMember(cid, uid2) {
+  try {
+    await api(`/rest/v1/class_members?class_id=eq.${cid}&user_id=eq.${uid2}`, 'DELETE',
+      null, { Prefer: 'return=minimal' });
+    roster = (roster || []).filter(m => m.user_id !== uid2);
+  } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
+  closeMenu(); render();
+}
+/* Donner un devoir, c'est envoyer une copie du livre : la bibliothèque du
+   professeur reste la sienne, et l'élève repart de zéro sur ces cartes —
+   la progression de quelqu'un d'autre ne veut rien dire chez lui. */
+async function giveWork(d, cid, days) {
+  const cards = d.cards.map(c => [plain(c.f), plain(c.b)]);
+  const due = new Date(Date.now() + (days || 7) * DAY).toISOString().slice(0, 10);
+  try {
+    await api('/rest/v1/assignments', 'POST',
+      [{ class_id: cid, name: d.name, cards, n: cards.length, due, created_by: auth.uid }],
+      { Prefer: 'return=minimal' });
+    closeMenu(); asgs = null; classPull(cid);
+    toast(I.check, plur(cards.length, 'page') + ' à rendre avant le ' + due.split('-').reverse().slice(0, 2).join('/'));
+  } catch (e) { toast(I.x, 'Envoi impossible'); }
+}
+/* L'élève ajoute le devoir à sa bibliothèque et son avancement remonte —
+   fait ou pas fait, et le pourcentage. Jamais le détail carte par carte. */
+async function takeWork(a) {
+  const d = importPayload({ name: a.name, subject: '', cards: a.cards }, true);
+  try {
+    await api('/rest/v1/assignment_progress', 'POST',
+      [{ assignment_id: a.id, user_id: auth.uid, who: prefs.name || auth.email, pct: 0 }],
+      { Prefer: 'resolution=merge-duplicates,return=minimal' });
+  } catch (e) {}
+  closeMenu();
+  if (d) go('deck', d.id);
+  toast(I.check, 'Devoir ajouté à ta bibliothèque');
+}
+
+/* Ce que le professeur a le droit de voir : combien ont rendu, et le taux
+   de réussite moyen. Pas le détail carte par carte, pas les horaires — la
+   différence entre suivre une classe et surveiller quelqu'un. */
+async function workProgress(id) {
+  const box = document.getElementById('wprog'); if (!box) return;
+  try {
+    const rows = await api('/rest/v1/assignment_progress?select=user_id,who,pct,done_at'
+      + '&assignment_id=eq.' + encodeURIComponent(id)) || [];
+    const total = (roster || []).length;
+    const faits = rows.filter(r => r.done_at || r.pct > 0);
+    const moy = faits.length
+      ? Math.round(faits.reduce((a, r) => a + (r.pct || 0), 0) / faits.length) : 0;
+    box.innerHTML = !total ? 'Aucun élève inscrit pour l’instant.'
+      : `<b>${faits.length} / ${total}</b> ${faits.length > 1 ? 'ont commencé' : 'a commencé'}`
+        + (faits.length ? ` · ${moy} % de réussite moyenne` : '')
+        + (total - faits.length ? `<br>${plur(total - faits.length, 'élève')} n’${
+            total - faits.length > 1 ? 'ont' : 'a'} pas encore ouvert.` : '');
+  } catch (e) { box.textContent = 'Suivi indisponible.'; }
+}
+
+const dueLabel = s => {
+  if (!s) return '';
+  const j = Math.round((Date.parse(s + 'T12:00:00') - Date.now()) / DAY);
+  return j < 0 ? 'en retard' : j === 0 ? 'pour aujourd’hui'
+       : j === 1 ? 'pour demain' : `dans ${j} jours`;
+};
+
+/* ---------- l'écran des classes ---------- */
+function classesView() {
+  const l = classes;
+  const mine = (l || []).filter(c => c.owner === auth.uid);
+  const in_ = (l || []).filter(c => c.owner !== auth.uid);
+  const carte = c => `<button class="sr flat" data-classe="${esc(c.id)}">${svg(I.layers)}
+    <span class="ml2"><span class="n">${esc(c.name)}</span>
+      <span class="sub">${esc(c.level || 'Classe')}${c.year ? ' · ' + esc(c.year) : ''}${
+        c.owner === auth.uid ? ' · code ' + esc(c.code) : ''}</span></span>${svg(I.arrow)}</button>`;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${isProf() ? 'Mes classes' : 'Ma classe'}</h1></div>
+    <div class="page">
+      ${isProf() ? `<button class="cta ghost" data-act="newclass">${svg(I.plus)}Créer une classe</button>` : ''}
+      <button class="cta ghost" data-act="joinclass">${svg(I.key)}Rejoindre avec un code</button>
+      ${!l ? `<div class="empty">${svg(I.layers)}<p>Chargement…</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucune classe</b>${
+            isProf() ? 'Crée-en une, puis distribue son code à tes élèves.'
+                     : 'Demande son code à ton professeur.'}</p></div>`
+        : `${mine.length ? `<div class="lbl"><span>Je les tiens</span><span>${mine.length}</span></div>
+             <div class="slist">${mine.map(carte).join('')}</div>` : ''}
+           ${in_.length ? `<div class="lbl"><span>J’y suis inscrit</span><span>${in_.length}</span></div>
+             <div class="slist">${in_.map(carte).join('')}</div>` : ''}`}
+    </div>`;
+}
+
+function classeView() {
+  const c = (classes || []).find(x => x.id === classOf);
+  if (!c) return go('classes');
+  const owner = c.owner === auth.uid;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="classes" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${esc(c.name)}</h1>
+      ${owner ? `<button class="ic" data-act="classmenu" aria-label="Menu">${svg(I.more)}</button>` : ''}</div>
+    <div class="page">
+      ${owner ? `<div class="ccode">${svg(I.key)}<span>Code de la classe</span><b>${esc(c.code)}</b></div>` : ''}
+
+      <div class="lbl"><span>Devoirs</span><span>${asgs ? asgs.length : ''}</span></div>
+      ${owner ? `<button class="cta ghost" data-act="newwork">${svg(I.share)}Donner un devoir</button>` : ''}
+      ${!asgs ? `<div class="empty">${svg(I.card)}<p>Chargement…</p></div>`
+        : !asgs.length ? `<div class="empty">${svg(I.card)}<p><b>Aucun devoir</b>${
+            owner ? 'Choisis un livre et donne-le à la classe.' : 'Rien à faire pour l’instant.'}</p></div>`
+        : `<div class="slist">${asgs.map(a => `<button class="sr flat" data-work="${esc(a.id)}">
+             ${svg(I.card)}<span class="ml2"><span class="n">${esc(a.name)}</span>
+               <span class="sub">${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</span></span>
+             ${svg(I.arrow)}</button>`).join('')}</div>`}
+
+      ${owner ? `<div class="lbl"><span>Élèves</span><span>${roster ? roster.length : ''}</span></div>
+        ${!roster ? `<div class="empty">${svg(I.user)}<p>Chargement…</p></div>`
+          : !roster.length ? `<div class="empty">${svg(I.user)}<p><b>Personne encore</b>
+              Projette le code <b>${esc(c.code)}</b> : trois minutes en début de cours suffisent.</p></div>`
+          : `<div class="slist">${roster.map(m => `<button class="sr flat" data-member="${esc(m.user_id)}">
+               <i class="av">${esc(initial(m.who))}</i>
+               <span class="ml2"><span class="n">${esc(m.who || 'Élève')}</span>
+                 <span class="sub">inscrit ${timeAgo(m.joined_at)}</span></span>${svg(I.arrow)}</button>`).join('')}</div>`}` : ''}
+    </div>`;
+}
+
 /* ══════════ communauté ══════════
    Un centre unique : qui tu es, qui tu connais, les groupes, les défis,
    l'étagère commune et le classement. Le reste de l'app n'a plus à parler
@@ -4121,6 +4316,73 @@ function paintMenu() {
     return;
   }
   if (menu === 'install') return installSheet(w);
+  if (menu === 'newclass' || menu === 'joinclass') {
+    const mk = menu === 'newclass';
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(mk ? I.plus : I.key)}<span class="mhx">
+          <b>${mk ? 'Créer une classe' : 'Rejoindre une classe'}</b>
+          <span class="msub">${mk ? 'Un code sera généré : c’est toi qui le distribues, et toi seul.'
+            : 'Le code t’est donné par ton professeur.'}</span></span></div>
+        <input class="tok" id="cn" placeholder="${mk ? 'Nom de la classe — 2nde B' : 'Code de la classe'}"
+          autocapitalize="${mk ? 'sentences' : 'characters'}" autocorrect="off" spellcheck="false"
+          enterkeyhint="done" maxlength="${mk ? 40 : 8}">
+        ${mk ? `<input class="tok" id="cl" placeholder="Niveau — Seconde (facultatif)"
+          autocorrect="off" spellcheck="false" maxlength="20">` : ''}
+        <button class="mi" data-mact="${mk ? 'doclass' : 'dojoin'}"
+          style="justify-content:center;font-weight:700">${svg(I.check)}${mk ? 'Créer' : 'Rejoindre'}</button>
+      </div>`;
+    mountMenu(w);
+    setTimeout(() => { const f = document.getElementById('cn'); if (f) f.focus(); }, 60);
+    return;
+  }
+  if (menu === 'newwork') {
+    const l = live();
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.share)}<span class="mhx"><b>Donner un devoir</b>
+          <span class="msub">Le livre part en copie : ta bibliothèque reste la tienne,
+            et l’élève repart de zéro sur ces cartes.</span></span></div>
+        ${!l.length ? `<div class="note" style="padding:4px 18px 14px">Aucun livre à donner.</div>`
+          : `<div class="mscroll">${l.map(d => `<button class="mi" data-give="${esc(d.id)}">
+               ${svg(I.book)}<span>${esc(d.name)}</span>
+               <span class="tail">${plur(d.cards.length, 'page')}</span></button>`).join('')}</div>`}
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'workone') {
+    const a = (asgs || []).find(x => x.id === workOpen);
+    const c = (classes || []).find(x => x.id === classOf);
+    if (!a || !c) { menu = null; return; }
+    const owner = c.owner === auth.uid;
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(a.name)}</b>
+          <i>${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</i></span></div>
+        ${owner ? `<div class="note" style="padding:0 18px 10px" id="wprog">Chargement du suivi…</div>
+          <button class="mi warn" data-mact="delwork">${svg(I.trash)}<span>Retirer ce devoir</span></button>`
+        : `<button class="mi" data-mact="takework" style="justify-content:center;font-weight:700">
+             ${svg(I.plus)}Ajouter à ma bibliothèque</button>`}
+      </div>`;
+    mountMenu(w);
+    if (owner) workProgress(a.id);
+    return;
+  }
+  if (menu === 'member') {
+    const m = (roster || []).find(x => x.user_id === memberOpen);
+    if (!m) { menu = null; return; }
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd"><i class="av">${esc(initial(m.who))}</i>
+          <span class="mhx"><b>${esc(m.who || 'Élève')}</b>
+            <span class="msub">Tu vois ce qu’il a rendu et son taux de réussite.
+              Jamais ses réponses, ni ses horaires, ni ses livres personnels.</span></span></div>
+        <button class="mi warn" data-mact="dropmember">${svg(I.x)}<span>Retirer de la classe</span></button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
   if (menu === 'report') return reportSheet(w);
   if (menu === 'blocked') return blockedSheet(w);
   if (menu === 'backup') {
@@ -4796,7 +5058,7 @@ async function mateProfPull(id) {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-give]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
@@ -4883,6 +5145,35 @@ document.addEventListener('click', async e => {
       { pseudo: f.handle, nom: f.name });
   }
   if (a === 'blocked') { blocksPull().then(() => paintMenu()); return openMenu('blocked'); }
+  if (a === 'doclass') {
+    const n = (document.getElementById('cn') || {}).value || '';
+    const l = (document.getElementById('cl') || {}).value || '';
+    return makeClass(n, l);
+  }
+  if (a === 'dojoin') {
+    const v = ((document.getElementById('cn') || {}).value || '').trim();
+    if (v) return joinClass(v);
+    return;
+  }
+  if (b.dataset.give !== undefined) {
+    const d = deck(b.dataset.give);
+    if (d && classOf) return giveWork(d, classOf, 7);
+    return;
+  }
+  if (a === 'takework') {
+    const x = (asgs || []).find(y => y.id === workOpen);
+    if (x) return takeWork(x);
+    return;
+  }
+  if (a === 'delwork') {
+    const id = workOpen; closeMenu();
+    api('/rest/v1/assignments?id=eq.' + encodeURIComponent(id), 'DELETE', null,
+      { Prefer: 'return=minimal' })
+      .then(() => { asgs = (asgs || []).filter(x => x.id !== id); render(); toast(I.check, 'Devoir retiré'); },
+            () => toast(I.x, 'Impossible pour l’instant'));
+    return;
+  }
+  if (a === 'dropmember') { if (classOf && memberOpen) return dropMember(classOf, memberOpen); return; }
   if (a === 'instcopy') return copyLink();
   if (a === 'instgo') return doPrompt();
   if (a === 'instlater') return closeMenu();
@@ -6168,7 +6459,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact],[data-classe],[data-work],[data-member]');
   if (!b) return;
   const ds = b.dataset;
   const a0 = ds.act;
@@ -6181,6 +6472,11 @@ $.addEventListener('click', e => {
   }
   if (ds.help !== undefined) { helpKey = ds.help; return openMenu('help'); }
   if (ds.modact !== undefined) return modAct(+ds.rid, ds.modact);
+  if (ds.classe !== undefined) {
+    classOf = ds.classe; roster = null; asgs = null; classPull(classOf); return go('classe');
+  }
+  if (ds.work !== undefined) { workOpen = ds.work; return openMenu('workone'); }
+  if (ds.member !== undefined) { memberOpen = ds.member; return openMenu('member'); }
   /* On doit pouvoir lire ces textes sans compte : le retour ramène donc
      là d'où l'on venait, y compris l'écran de connexion. */
   if (ds.legal !== undefined) {
@@ -6326,6 +6622,10 @@ $.addEventListener('click', e => {
   if (a === 'settings') return go('settings');
   if (a === 'tolog') return go('login');
   if (a === 'mod') { if (!mods.list) modPull(); return go('mod'); }
+  if (a === 'classes') { if (!classes) classesPull(); return go('classes'); }
+  if (a === 'newclass') return openMenu('newclass');
+  if (a === 'joinclass') return openMenu('joinclass');
+  if (a === 'newwork') return openMenu('newwork');
   if (a === 'backup2') return openMenu('backup');
   if (a === 'undo2') { doUndo(); return; }
   if (a === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }

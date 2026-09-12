@@ -1681,3 +1681,15 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 .rb button.warn{background:var(--ko);color:#fff}
 .rb button svg{width:17px;height:17px}
 .rb button.warn svg{color:#fff}
+
+/* ---------- classes ----------
+   Le code de la classe est la seule chose que le professeur doit pouvoir
+   lire de loin, projeté au tableau : il est donc gros et détaché. */
+.ccode{display:flex;align-items:center;gap:12px;padding:16px 18px;margin-bottom:16px;
+  background:var(--card);border-radius:20px;box-shadow:var(--s1)}
+.ccode svg{width:19px;height:19px;color:var(--soft);flex:none}
+.ccode span{font-size:14px;font-weight:600;color:var(--ink2)}
+.ccode b{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:24px;font-weight:800;letter-spacing:3px;color:var(--ink)}
+.av{flex:none;width:34px;height:34px;border-radius:12px;background:var(--surf);
+  display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:800;color:var(--ink2)}
