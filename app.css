@@ -1621,3 +1621,26 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
   vertical-align:-6px;margin:0 1px;box-shadow:var(--s1)}
 .shg{width:13px;height:13px;stroke-width:2.1;fill:none;stroke:currentColor;
   stroke-linecap:round;stroke-linejoin:round;color:#2B7BE4}
+
+/* ---------- le cadre légal ----------
+   Un texte de loi se lit en colonne étroite, avec de l'air entre les
+   paragraphes : c'est un document, pas une interface. */
+.legal{max-width:62ch;padding:0 0 28px;font-size:15px;line-height:1.62;color:var(--ink2)}
+.legal p{margin:0 0 15px}
+.legal b{font-weight:750;color:var(--ink)}
+.legal i{font-style:italic}
+.legal ul{margin:0 0 15px;padding-left:1.1em;display:grid;gap:8px}
+.legal li{margin:0}
+.legal p:last-child{color:var(--soft);font-size:13px;margin-top:22px}
+
+/* la case d'âge : une vraie case, assez grande pour le pouce */
+.lage{display:flex;align-items:flex-start;gap:11px;padding:2px 2px 4px;
+  font-size:13.5px;line-height:1.45;color:var(--ink2);text-align:left}
+.lage input{flex:none;width:21px;height:21px;margin:0;accent-color:var(--ink)}
+
+/* les trois liens sous le formulaire de connexion */
+.lleg{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;
+  gap:8px;margin-top:22px;font-size:12.5px;color:var(--soft)}
+.lleg button{font-size:12.5px;color:var(--soft);text-decoration:underline;
+  text-underline-offset:2px;padding:4px 2px}
+.lleg i{font-style:normal;opacity:.5}
