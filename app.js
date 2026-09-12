@@ -216,6 +216,12 @@ async function api(path, method = 'GET', body, extra = {}) {
   return r.status === 204 ? null : r.json().catch(() => null);
 }
 function keepSession(j) {
+  /* Le seul endroit par lequel passe TOUT changement de compte : connexion,
+     inscription, renouvellement de jeton. Si l'identifiant change, c'est
+     quelqu'un d'autre — on efface donc ce que l'écran gardait du précédent.
+     Mettre ce nettoyage dans le formulaire de connexion aurait laissé
+     passer les autres chemins ; ici, aucun ne l'évite. */
+  if (auth && auth.uid && j.user && auth.uid !== j.user.id) resetSession();
   saveAuth({
     token: j.access_token, refresh: j.refresh_token,
     exp: Date.now() + (j.expires_in || 3600) * 1000,
@@ -285,7 +291,7 @@ function sessionLost() {
   if (!auth) return;
   flushSave();
   saveAuth(null);
-  view = { name: 'login' }; menu = null; study = null; quiz = null;
+  resetSession();
   animate = true; render();
   toast(I.lock, 'Session expirée, reconnecte-toi');
 }
@@ -456,9 +462,7 @@ async function pull() {
   if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
   if (study && prefs.simple !== wasSimple) prefs.simple = wasSimple;   // pas de bascule à chaud
   upsertProfile();
-  blocksPull();                 // le compte des coupures, pour le repère des Réglages
-  modCheck();                   // suis-je modérateur ? la console n'apparaît que si oui
-  rolePull().then(() => { classesPull(); render(); });   // le rôle décide de l'écran
+  cerclePull();                 // rôle, coupures, classes : tout arrive ensemble
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   /* Ce qui attend d'être envoyé ne se fait pas écraser par la relecture :
@@ -1536,6 +1540,7 @@ function render() {
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
               group: groupView, shared: sharedView, duel: duelView, legal: legalView, mod: modView,
               classes: classesView, classe: classeView,
+              admin: adminView,
               commu: commuView, friends: friendsView, groups: groupsView,
               duels: duelsView, library: libraryView, board: boardView };
   $.classList.remove('fade');
@@ -2609,6 +2614,9 @@ function settingsView() {
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
           <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
+        ${isAdmin() ? `<button class="sr flat" data-act="admin">${svg(I.key)}
+          <span class="n">Administration</span>
+          <span class="c">${accounts ? accounts.length : ''}</span>${svg(I.arrow)}</button>` : ''}
         ${iAmMod ? `<button class="sr flat" data-act="mod">${svg(I.warn)}
           <span class="n">Signalements</span>
           <span class="c">${mods.list ? (mods.list.length || '') : ''}</span>${svg(I.arrow)}</button>` : ''}
@@ -3291,7 +3299,6 @@ let mods = { list: null, err: 0, seen: 0 };
 async function modCheck() {
   try { iAmMod = !!(await api('/rest/v1/rpc/is_mod', 'POST', {})); }
   catch (e) { iAmMod = false; }
-  if (iAmMod && !mods.list) modPull();
 }
 async function modPull() {
   try {
@@ -3358,6 +3365,85 @@ function modView() {
     </div>`;
 }
 
+/* ══════════ la console d'administration ══════════
+   Un administrateur gère des accès, il ne lit pas les fiches des élèves.
+   Cet écran ne montre donc que ce qu'il faut pour reconnaître quelqu'un et
+   décider de son rôle : pseudo, adresse, date d'arrivée, nombre de livres.
+   Aucun contenu, aucune progression, aucun courrier.
+
+   Le rôle ne se change pas en écrivant dans une table — elle n'a aucune
+   politique d'écriture, exprès. Il passe par une fonction qui vérifie
+   elle-même qui appelle, et qui refuse qu'on se retire son propre rôle :
+   sans cette garde, le dernier administrateur se verrouille dehors et
+   plus personne ne peut rendre la main. */
+let accounts = null, accOpen = null;
+const ROLES = { eleve: 'Élève', prof: 'Professeur', admin: 'Administrateur' };
+
+async function accountsPull() {
+  try { accounts = await api('/rest/v1/rpc/admin_accounts', 'POST', {}) || []; }
+  catch (e) { accounts = []; }
+  if (view.name === 'admin') { animate = false; render(); }
+}
+async function setRole(id, role) {
+  closeMenu();
+  try {
+    await api('/rest/v1/rpc/set_role', 'POST', { cible: id, nouveau: role });
+    accounts = null; await accountsPull();
+    toast(I.check, ROLES[role] + ' · rôle enregistré');
+  } catch (e) {
+    const m = String((e && e.message) || '');
+    toast(I.x, /propre rôle/.test(m) ? 'On ne retire pas son propre rôle'
+      : /autoris/.test(m) ? 'Réservé aux administrateurs' : 'Changement impossible');
+  }
+  render();
+}
+
+function adminView() {
+  const l = accounts;
+  const par = r => (l || []).filter(x => x.role === r);
+  const ligne = a => `<button class="sr flat" data-account="${esc(a.id)}">
+    <i class="av">${esc(initial(a.handle || a.name || a.email))}</i>
+    <span class="ml2"><span class="n">${esc(a.name || a.handle || a.email)}</span>
+      <span class="sub">${a.handle ? '@' + esc(a.handle) + ' · ' : ''}${
+        plur(+a.livres, 'livre')}${a.bloque ? ' · modère' : ''}</span></span>
+    ${svg(I.arrow)}</button>`;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Administration</h1></div>
+    <div class="page">
+      ${!l ? `<div class="empty">${svg(I.user)}<p>Chargement…</p></div>`
+      : !l.length ? `<div class="empty">${svg(I.lock)}<p><b>Réservé aux administrateurs</b>
+          Ce compte n’a pas ce rôle.</p></div>`
+      : `<div class="note" style="padding:0 0 14px">Un administrateur gère les accès.
+           Il ne voit ni les fiches, ni la progression, ni le courrier de personne.</div>
+         ${['admin', 'prof', 'eleve'].map(r => par(r).length ? `
+           <div class="lbl"><span>${esc(ROLES[r])}${par(r).length > 1 ? 's' : ''}</span>
+             <span>${par(r).length}</span></div>
+           <div class="slist">${par(r).map(ligne).join('')}</div>` : '').join('')}`}
+    </div>`;
+}
+
+function accountSheet(w) {
+  const a = (accounts || []).find(x => x.id === accOpen);
+  if (!a) { menu = null; return; }
+  const moi = a.id === auth.uid;
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">
+      <div class="mhd"><i class="av">${esc(initial(a.handle || a.name || a.email))}</i>
+        <span class="mhx"><b>${esc(a.name || a.handle || a.email)}</b>
+          <i>${esc(a.email)}${a.handle ? ' · @' + esc(a.handle) : ''}</i></span></div>
+      <div class="msep"></div>
+      ${Object.entries(ROLES).map(([k, n]) => `
+        <button class="mi${a.role === k ? ' on' : ''}" data-setrole="${k}" data-who="${esc(a.id)}"
+          ${moi && k !== 'admin' ? 'disabled' : ''}>
+          ${svg(a.role === k ? I.check : I.arrow)}${n}
+          ${k === 'admin' ? '<span class="tail">instruit les signalements</span>' : ''}</button>`).join('')}
+      ${moi ? `<div class="note" style="padding:6px 18px 12px">C’est ton compte : tu ne peux pas
+        te retirer ton propre rôle, sinon plus personne ne pourrait rendre la main.</div>` : ''}
+    </div>`;
+  mountMenu(w);
+}
+
 /* ══════════ rôles, classes, devoirs ══════════
    Trois métiers dans la même app, et trois écrans différents. L'élève
    reçoit et travaille ; le professeur distribue et suit ; l'administrateur
@@ -3377,6 +3463,17 @@ let asgs = null;                    // les devoirs de la classe regardée
 const isProf = () => myRole === 'prof' || myRole === 'admin';
 const isAdmin = () => myRole === 'admin';
 
+/* Le rôle, les coupures, les classes et les signalements arrivent
+   ensemble, et l'écran ne se repeint qu'une fois tout su. Lancés
+   séparément, chacun repeignait de son côté : les Réglages pouvaient
+   s'afficher avant qu'on sache si le compte est administrateur, et
+   l'entrée manquait alors sans aucune raison visible. C'est exactement ce
+   qui faisait dire que le compte admin n'avait rien d'admin. */
+async function cerclePull() {
+  await Promise.all([rolePull(), modCheck(), blocksPull()]);
+  await Promise.all([classesPull(), iAmMod ? modPull() : null]);
+  animate = false; render();
+}
 async function rolePull() {
   try { myRole = (await api('/rest/v1/rpc/my_role', 'POST', {})) || 'eleve'; }
   catch (e) { myRole = 'eleve'; }
@@ -4383,6 +4480,7 @@ function paintMenu() {
     mountMenu(w);
     return;
   }
+  if (menu === 'account') return accountSheet(w);
   if (menu === 'report') return reportSheet(w);
   if (menu === 'blocked') return blockedSheet(w);
   if (menu === 'backup') {
@@ -5058,7 +5156,7 @@ async function mateProfPull(id) {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-give]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-give],[data-setrole]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
@@ -5122,6 +5220,7 @@ document.addEventListener('click', async e => {
   if (a === 'close') return closeMenu();
   if (b.dataset.why !== undefined) { reportWhy = b.dataset.why; return paintMenu(); }
   if (b.dataset.unblock !== undefined) return unblockUser(b.dataset.unblock);
+  if (b.dataset.setrole !== undefined) return setRole(b.dataset.who, b.dataset.setrole);
   if (a === 'rsend') return sendReport();
   if (a === 'rblock') { const r = reportOn; if (r && r.user) return blockUser(r.user, r.label); return; }
   /* Le signalement emporte une copie : ce qu'on voit à l'écran est ce qui
@@ -5144,7 +5243,6 @@ document.addEventListener('click', async e => {
     return openReport('profile', f.id, f.id, f.name || ('@' + (f.handle || '')),
       { pseudo: f.handle, nom: f.name });
   }
-  if (a === 'blocked') { blocksPull().then(() => paintMenu()); return openMenu('blocked'); }
   if (a === 'doclass') {
     const n = (document.getElementById('cn') || {}).value || '';
     const l = (document.getElementById('cl') || {}).value || '';
@@ -6576,7 +6674,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact],[data-classe],[data-work],[data-member]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact],[data-classe],[data-work],[data-member],[data-account]');
   if (!b) return;
   const ds = b.dataset;
   const a0 = ds.act;
@@ -6589,6 +6687,7 @@ $.addEventListener('click', e => {
   }
   if (ds.help !== undefined) { helpKey = ds.help; return openMenu('help'); }
   if (ds.modact !== undefined) return modAct(+ds.rid, ds.modact);
+  if (ds.account !== undefined) { accOpen = ds.account; return openMenu('account'); }
   if (ds.classe !== undefined) {
     classOf = ds.classe; roster = null; asgs = null; classPull(classOf); return go('classe');
   }
@@ -6744,6 +6843,11 @@ $.addEventListener('click', e => {
   if (a === 'settings') return go('settings');
   if (a === 'tolog') return go('login');
   if (a === 'mod') { if (!mods.list) modPull(); return go('mod'); }
+  if (a === 'admin') { if (!accounts) accountsPull(); return go('admin'); }
+  /* Le bouton vit dans les Réglages, donc il porte data-act : le
+     gestionnaire était rangé avec ceux des feuilles, qui lisent data-mact.
+     Il n'a jamais été atteint une seule fois. */
+  if (a === 'blocked') { blocksPull().then(() => paintMenu()); return openMenu('blocked'); }
   if (a === 'classes') { if (!classes) classesPull(); return go('classes'); }
   if (a === 'newclass') return openMenu('newclass');
   if (a === 'joinclass') return openMenu('joinclass');
@@ -6937,15 +7041,67 @@ function consumeHash() {
   return false;
 }
 
+/* ══════════ ce qui appartient à un compte ══════════
+   Changer de compte laissait tout en place : les amis de l'un
+   apparaissaient chez l'autre, ses clubs, ses défis, son rôle. Les données
+   n'avaient pourtant jamais traversé — la base refusait déjà de les rendre
+   — mais l'écran, lui, gardait la dernière réponse reçue et la montrait au
+   suivant. Une fuite d'affichage, pas de données, et tout aussi
+   inacceptable : on ne peut pas demander à quelqu'un de croire un
+   cloisonnement qu'il voit se faire contredire.
+
+   Tout ce qui dépend du compte connecté est donc listé ICI, à un seul
+   endroit, et remis à zéro à chaque changement. Une variable ajoutée
+   ailleurs et oubliée ici recrée le bug : quand on en déclare une nouvelle
+   qui parle du compte, elle vient dans cette liste. */
+function resetSession() {
+  /* la bibliothèque et ce qui attend d'être envoyé */
+  db = { subjects: [], decks: [], hist: {} };
+  prefs = { ...DEFPREFS };
+  dirty = {}; gone = []; conflicts = []; undos = [];
+  trash = { n: 0, list: null, err: 0 };
+  vers = { list: null, err: 0, of: null };
+
+  /* le cercle : qui l'on est, qui l'on connaît, ce qu'on partage */
+  me = null; friends = null; mates = null; asks = null;
+  groups = null; groupOf = null; scope = null; groupTab = 'lib';
+  lib = { list: null, err: 0, open: null };
+  duels = { list: null, scores: null, err: 0, open: null };
+  board = { rows: null, err: 0, range: 7 };
+  blocks = null;
+  mailbox = { n: 0, list: null, err: 0 };
+  mateOpen = null; mateProf = { id: null, range: 7, row: null, lib: null, load: 0 };
+  sendTo = null; sendMsg = ''; mailOpen = null; addQ = '';
+
+  /* le rôle et ce qu'il ouvre */
+  myRole = 'eleve'; iAmMod = false;
+  mods = { list: null, err: 0, seen: 0 };
+  accounts = null; accOpen = null;
+  classes = null; classOf = null; roster = null; asgs = null;
+  workOpen = null; memberOpen = null;
+  reportOn = null; reportWhy = '';
+
+  /* les écrans en cours */
+  view = { name: 'login' }; menu = null; study = null; quiz = null;
+  stats = { rows: null, err: 0, range: 30 };
+  shared = null; duelRun = null; previewOf = null; leaving = null;
+  filter = ''; peek = false; sel = null; reorder = false;
+  findQ = ''; deckQ = ''; deckOpen = false; deckShow = DECKPAGE;
+  subjEdit = null; cardEdit = null; comp = { subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false };
+
+  /* les images et sons déjà rapatriés : ils appartenaient à l'autre compte,
+     et les laisser en mémoire serait garder ouvert ce qu'on vient de fermer */
+  for (const u of mediaCache.values()) { try { URL.revokeObjectURL(u); } catch (e) {} }
+  mediaCache.clear();
+}
+
 function logout() {
   flush();
   const key = cacheKey();
   saveAuth(null);
   if (key) { try { localStorage.removeItem(key); } catch (e) {} }
-  db = { subjects: [], decks: [], hist: {} };
-  prefs = { ...DEFPREFS };
-  view = { name: 'login' }; filter = ''; peek = false; loginMode = 'in';
-  study = null; quiz = null; menu = null;
+  resetSession();
+  loginMode = 'in';
   animate = true; render();
 }
 
