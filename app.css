@@ -1653,3 +1653,31 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 .rlist .mi.on{background:var(--surf2)}
 .rlist .mi.on svg{color:var(--ok)}
 .mi[disabled]{opacity:.35}
+
+/* ---------- console de modération ----------
+   Chaque signalement est une fiche de dossier : le motif, ce qu'on a
+   écrit, la copie du contenu telle qu'elle a été prise, et deux réponses. */
+.rep{background:var(--card);border-radius:20px;box-shadow:var(--s1);
+  padding:15px 16px;margin-bottom:12px;display:grid;gap:11px}
+.rh{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.rh b{font-weight:780;font-size:15.5px;letter-spacing:-.2px}
+.rh i{font-style:normal;font-size:12px;font-weight:700;letter-spacing:.2px;
+  padding:3px 9px;border-radius:9px;background:var(--surf);color:var(--ko)}
+.rh span{margin-left:auto;font-size:12.5px;color:var(--soft);font-variant-numeric:tabular-nums}
+.rn{display:flex;gap:9px;padding:10px 12px;border-radius:14px;background:var(--surf)}
+.rn svg{width:15px;height:15px;color:var(--soft);flex:none;margin-top:3px}
+.rn p{margin:0;font-size:14px;line-height:1.45;color:var(--ink2)}
+.rs{display:grid;gap:7px}
+.sl{display:flex;gap:10px;font-size:13.5px;line-height:1.45}
+.sl i{font-style:normal;color:var(--soft);min-width:62px;flex:none;text-transform:capitalize}
+.sl span{color:var(--ink2);overflow-wrap:anywhere}
+.scards{display:grid;gap:4px;max-height:190px;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;padding:2px 0}
+.rb{display:flex;gap:8px}
+.rb button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+  height:46px;border-radius:15px;background:var(--surf);font-size:14.5px;font-weight:680;
+  color:var(--ink);transition:transform .2s var(--sp)}
+.rb button:active{transform:scale(.96)}
+.rb button.warn{background:var(--ko);color:#fff}
+.rb button svg{width:17px;height:17px}
+.rb button.warn svg{color:#fff}

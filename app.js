@@ -457,6 +457,7 @@ async function pull() {
   if (study && prefs.simple !== wasSimple) prefs.simple = wasSimple;   // pas de bascule à chaud
   upsertProfile();
   blocksPull();                 // le compte des coupures, pour le repère des Réglages
+  modCheck();                   // suis-je modérateur ? la console n'apparaît que si oui
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   /* Ce qui attend d'être envoyé ne se fait pas écraser par la relecture :
@@ -1532,7 +1533,7 @@ window.addEventListener('focus', () => livePull(true));
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
-              group: groupView, shared: sharedView, duel: duelView, legal: legalView,
+              group: groupView, shared: sharedView, duel: duelView, legal: legalView, mod: modView,
               commu: commuView, friends: friendsView, groups: groupsView,
               duels: duelsView, library: libraryView, board: boardView };
   $.classList.remove('fade');
@@ -2602,6 +2603,9 @@ function settingsView() {
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
           <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
+        ${iAmMod ? `<button class="sr flat" data-act="mod">${svg(I.warn)}
+          <span class="n">Signalements</span>
+          <span class="c">${mods.list ? (mods.list.length || '') : ''}</span>${svg(I.arrow)}</button>` : ''}
         <button class="sr flat" data-act="blocked">${svg(I.lock)}
           <span class="n">Comptes bloqués</span>
           <span class="c">${blocks && blocks.length ? blocks.length : ''}</span>${svg(I.arrow)}</button>
@@ -3261,6 +3265,91 @@ function blockedSheet(w) {
              <span class="tail">Débloquer</span></button>`).join('')}</div>`}
     </div>`;
   mountMenu(w);
+}
+
+/* ══════════ la console de modération ══════════
+   Elle n'apparaît que pour les comptes inscrits dans la table des
+   modérateurs. Ce qu'elle montre, ce sont les signalements — qui portent
+   chacun leur copie du contenu — et rien d'autre : un modérateur n'obtient
+   aucun accès aux bibliothèques ni au courrier. C'est précisément à ça que
+   sert la copie jointe, et c'est ce qui permet de juger sans ouvrir la vie
+   privée de tout le monde à quelqu'un.
+
+   Deux réponses seulement. Masquer, quand le contenu n'a pas sa place ;
+   rien à signaler, qui rend visible ce que le compteur avait retiré. Une
+   suspension de compte ne se décide pas depuis un téléphone à minuit :
+   elle reste un geste manuel, tracé ailleurs. */
+let iAmMod = false;
+let mods = { list: null, err: 0, seen: 0 };
+
+async function modCheck() {
+  try { iAmMod = !!(await api('/rest/v1/rpc/is_mod', 'POST', {})); }
+  catch (e) { iAmMod = false; }
+  if (iAmMod && !mods.list) modPull();
+}
+async function modPull() {
+  try {
+    mods.list = await api('/rest/v1/reports?select=id,kind,target_id,target_user,reason,note,'
+      + 'snapshot,status,created_at&status=eq.open&order=created_at.desc&limit=60') || [];
+    mods.err = 0;
+  } catch (e) { mods.err = 1; }
+  if (view.name === 'mod') { animate = false; render(); }
+  if (view.name === 'settings') { animate = false; render(); }
+}
+async function modAct(id, act) {
+  closeMenu();
+  try {
+    await api('/rest/v1/rpc/mod_act', 'POST', { rid: id, act });
+    mods.list = (mods.list || []).filter(r => r.id !== id);
+    toast(I.check, act === 'hide' ? 'Contenu masqué' : 'Signalement classé');
+  } catch (e) { toast(I.x, 'Action impossible'); }
+  render();
+}
+
+const RNAME = Object.fromEntries(RAISONS);
+const KNAME = { mail: 'Courrier', library: 'Étagère', duel: 'Défi', profile: 'Compte' };
+
+/* La copie jointe s'affiche telle qu'elle a été prise : c'est la pièce du
+   dossier, pas un aperçu à rafraîchir. */
+function snapHtml(s) {
+  if (!s || typeof s !== 'object') return '';
+  const line = (k, v) => `<div class="sl"><i>${esc(k)}</i><span>${esc(v)}</span></div>`;
+  let out = '';
+  for (const [k, v] of Object.entries(s)) {
+    if (k === 'cartes') continue;
+    if (v) out += line(k, String(v).slice(0, 300));
+  }
+  const c = s.cartes;
+  if (Array.isArray(c) && c.length) {
+    out += `<div class="scards">${c.slice(0, 12).map(x => `<div class="pr">
+      <span class="a">${esc(cf(x))}</span>${svg(I.arrow)}<span class="b">${esc(cb(x))}</span></div>`).join('')}
+      ${c.length > 12 ? `<div class="note">…et ${c.length - 12} autres</div>` : ''}</div>`;
+  }
+  return out;
+}
+
+function modView() {
+  const l = mods.list;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Signalements</h1></div>
+    <div class="page">
+      ${!l ? `<div class="empty">${svg(I.warn)}<p>${mods.err ? 'Liste indisponible' : 'Chargement…'}</p></div>`
+      : !l.length ? `<div class="empty">${svg(I.check)}<p><b>Rien à traiter</b>Tous les signalements sont classés.</p></div>`
+      : `<div class="note" style="padding:0 0 14px">Un contenu signalé par deux comptes différents est déjà
+           masqué automatiquement. Ce qui suit attend une décision.</div>
+         ${l.map(r => `<div class="rep">
+           <div class="rh"><b>${esc(KNAME[r.kind] || r.kind)}</b>
+             <i>${esc(RNAME[r.reason] || r.reason)}</i>
+             <span>${timeAgo(r.created_at)}</span></div>
+           ${r.note ? `<div class="rn">${svg(I.quote)}<p>${esc(r.note)}</p></div>` : ''}
+           <div class="rs">${snapHtml(r.snapshot)}</div>
+           <div class="rb">
+             <button data-modact="clear" data-rid="${r.id}">${svg(I.check)}Rien à signaler</button>
+             <button class="warn" data-modact="hide" data-rid="${r.id}">${svg(I.eyeoff)}Masquer</button>
+           </div>
+         </div>`).join('')}`}
+    </div>`;
 }
 
 /* ══════════ communauté ══════════
@@ -6079,7 +6168,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact]');
   if (!b) return;
   const ds = b.dataset;
   const a0 = ds.act;
@@ -6091,6 +6180,7 @@ $.addEventListener('click', e => {
     leaving = a0; return openMenu('leave');
   }
   if (ds.help !== undefined) { helpKey = ds.help; return openMenu('help'); }
+  if (ds.modact !== undefined) return modAct(+ds.rid, ds.modact);
   /* On doit pouvoir lire ces textes sans compte : le retour ramène donc
      là d'où l'on venait, y compris l'écran de connexion. */
   if (ds.legal !== undefined) {
@@ -6235,6 +6325,7 @@ $.addEventListener('click', e => {
   }
   if (a === 'settings') return go('settings');
   if (a === 'tolog') return go('login');
+  if (a === 'mod') { if (!mods.list) modPull(); return go('mod'); }
   if (a === 'backup2') return openMenu('backup');
   if (a === 'undo2') { doUndo(); return; }
   if (a === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
