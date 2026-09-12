@@ -74,6 +74,17 @@ let board = { rows: null, err: 0, range: 7 };
 let shared = null;            // paquet ouvert par un lien de consultation
 let duelRun = null;           // défi en cours de partie
 let groupTab = 'lib';         // onglet courant de la bibliothèque du groupe
+/* Où l'on regarde, et donc où l'on publie. null = mes lecteurs (les amis
+   acceptés), sinon l'identifiant d'un club. La base sait déjà cloisonner
+   — library.group_id et duels.group_id existent, et leurs règles de
+   lecture s'appuient dessus — mais rien ne les renseignait : tout partait
+   donc avec group_id nul, c'est-à-dire à tous les amis, sans qu'on ait
+   jamais eu le choix. */
+let scope = null;
+const scopeName = () => {
+  const g = (groups || []).find(x => x.id === scope);
+  return g ? g.name : 'Mes lecteurs';
+};
 let mates = null, asks = null;   // amis acceptés, demandes reçues
 let me = null;                   // mon profil public : pseudo
 let groups = null, groupOf = null;  // mes groupes, et celui qu'on regarde
@@ -2128,6 +2139,7 @@ function bindReorder(d) {
 
 
 /* ---------- connexion ---------- */
+const PWMIN = 10;
 let loginBusy = false, loginMode = 'in';
 function loginView() {
   const up = loginMode === 'up';
@@ -2175,7 +2187,13 @@ function loginView() {
     e.preventDefault();
     if (loginBusy) return;
     if (!em.value.trim() || !pw.value) { err.textContent = 'Renseigne les deux champs'; return; }
-    if (up && pw.value.length < 6) { err.textContent = 'Mot de passe : 6 caractères minimum'; return; }
+    /* Six caractères se cassent hors ligne en quelques secondes. Dix est
+       le plancher, et il ne vaut que parce que le même est réglé côté
+       Supabase : ce contrôle-ci ne protège que la personne qui se sert du
+       formulaire, pas celle qui appelle l'API directement. */
+    if (up && pw.value.length < PWMIN) {
+      err.textContent = `Mot de passe : ${PWMIN} caractères minimum`; return;
+    }
     loginBusy = true; btn.disabled = true; err.textContent = '';
     btn.firstChild.textContent = up ? 'Création…' : 'Connexion…';
     try {
@@ -2709,7 +2727,7 @@ function sharedView() {
    par la version du jour. Chacun ne peut retirer que ses propres paquets. */
 async function libPull() {
   try {
-    lib.list = await api('/rest/v1/library?select=deck_id,user_id,who,name,subject,cards,n,updated_at'
+    lib.list = await api('/rest/v1/library?select=deck_id,user_id,who,name,subject,cards,n,group_id,updated_at'
       + '&order=updated_at.desc&limit=100') || [];
     lib.err = 0;
   } catch (e) { lib.err = 1; }
@@ -2717,15 +2735,16 @@ async function libPull() {
 }
 async function libPublish(d) {
   closeMenu();
+  const where = scopeName();
   const row = { deck_id: d.id, user_id: auth.uid, who: prefs.name || auth.email,
                 name: d.name, subject: d.subject ? subj(d.subject).name : '',
                 n: d.cards.length, cards: d.cards.map(c => [plain(c.f), plain(c.b)]),
-                updated_at: new Date().toISOString() };
+                group_id: scope, updated_at: new Date().toISOString() };
   try {
     await api('/rest/v1/library', 'POST', [row], { Prefer: 'resolution=merge-duplicates,return=minimal' });
     setMeta(d, { pub: 1 });
     lib.list = null; libPull();
-    toast(I.book, 'Dans la bibliothèque du cercle');
+    toast(I.book, 'Sur l’étagère · ' + where);
   } catch (e) { toast(I.x, 'Publication impossible'); }
 }
 async function libRemove(d) {
@@ -2757,7 +2776,7 @@ const DUELQ = 10;
 async function duelsPull() {
   try {
     const [ds, sc] = await Promise.all([
-      api('/rest/v1/duels?select=id,owner,who,name,total,cards,created_at&order=created_at.desc&limit=40'),
+      api('/rest/v1/duels?select=id,owner,who,name,total,cards,group_id,created_at&order=created_at.desc&limit=40'),
       api('/rest/v1/duel_scores?select=duel_id,user_id,who,score,ms')
     ]);
     duels.list = ds || []; duels.scores = sc || []; duels.err = 0;
@@ -2780,9 +2799,9 @@ async function duelMake(d) {
   try {
     await api('/rest/v1/duels', 'POST',
       [{ deck_id: d.id, owner: auth.uid, who: prefs.name || auth.email,
-         name: d.name, total: cards.length, cards }], { Prefer: 'return=minimal' });
+         name: d.name, total: cards.length, cards, group_id: scope }], { Prefer: 'return=minimal' });
     duels.list = null; groupTab = 'duel'; go('group'); duelsPull();
-    toast(I.flame, 'Défi lancé — ' + plur(cards.length, 'question'));
+    toast(I.flame, 'Défi lancé chez ' + scopeName() + ' — ' + plur(cards.length, 'question'));
   } catch (e) { toast(I.x, 'Défi impossible'); }
 }
 async function duelDrop(id) {
@@ -2856,7 +2875,7 @@ function duelView() {
    erreurs. On compare un volume de travail, pas un contenu. */
 async function boardPull(bg) {
   try {
-    board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range }) || [];
+    board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range, gid: scope }) || [];
     board.err = 0;
   } catch (e) { board.err = 1; }
   const sig = JSON.stringify(board.rows) + ':' + board.err;
@@ -3069,20 +3088,34 @@ function boardView() {
 const GTABS = { lib: 'Bibliothèque', duel: 'Défis', board: 'Classement' };
 const BRANGE = { 7: '7 jours', 30: '30 jours', 365: 'Toujours' };
 
+/* Une seule barre gouverne les trois onglets : ce qu'on lit et ce qu'on
+   publie vont au même endroit. Sans club, elle n'a rien à demander et
+   ne s'affiche pas. */
+function scopeBar() {
+  if (!groups || !groups.length) return '';
+  return `<div class="pills" id="gScope">
+    <button class="p${scope === null ? ' on' : ''}" data-scope="">Mes lecteurs</button>
+    ${groups.map(g => `<button class="p${scope === g.id ? ' on' : ''}"
+      data-scope="${esc(g.id)}">${esc(g.name)}</button>`).join('')}</div>`;
+}
+const inScope = x => (x.group_id || null) === scope;
+
 function groupView() {
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
-      <h1>Le groupe</h1></div>
+      <h1>${esc(scopeName())}</h1></div>
     <div class="page">
+      ${scopeBar()}
       <div class="seg" id="gTabs">${Object.entries(GTABS).map(([k, n]) =>
         `<button class="${groupTab === k ? 'on' : ''}" data-gtab="${k}">${n}</button>`).join('')}</div>
       ${groupTab === 'lib' ? libPane() : groupTab === 'duel' ? duelPane() : boardPane()}
     </div>`;
 }
 function libPane() {
-  const l = lib.list;
+  const l = lib.list && lib.list.filter(inScope);
   return !l ? `<div class="empty">${svg(I.book)}<p>${lib.err ? 'Bibliothèque indisponible' : 'Chargement…'}</p></div>`
-    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Bibliothèque vide</b>Prête un livre depuis son menu Partager.</p></div>`
+    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>${
+        scope ? 'Personne n’a encore posé de livre dans ce club.' : 'Prête un livre depuis son menu Partager.'}</p></div>`
     : `<div class="slist">${l.map(it => `
         <button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
           <span class="ml2"><span class="n">${esc(it.name)}</span>
@@ -3091,7 +3124,7 @@ function libPane() {
           <span class="c">${timeAgo(it.updated_at)}</span>${svg(I.arrow)}</button>`).join('')}</div>`;
 }
 function duelPane() {
-  const l = duels.list;
+  const l = duels.list && duels.list.filter(inScope);
   const mk = `<button class="cta ghost" data-act="duelnew">${svg(I.flame)}Lancer un défi</button>`;
   if (!l) return `${mk}<div class="empty">${svg(I.flame)}<p>${duels.err ? 'Défis indisponibles' : 'Chargement…'}</p></div>`;
   if (!l.length) return `${mk}<div class="empty">${svg(I.flame)}<p><b>Aucun défi</b>Dix questions, les mêmes pour tous.</p></div>`;
@@ -3124,6 +3157,7 @@ function boardPane() {
 `;
 }
 function groupPull() {
+  if (!groups) groupsPull();                  // sans eux, la barre de portée n'a rien à proposer
   if (groupTab === 'lib' && !lib.list) libPull();
   if (groupTab === 'duel' && !duels.list) duelsPull();
   if (groupTab === 'board' && !board.rows) boardPull();
@@ -3870,9 +3904,11 @@ function paintMenu() {
         <button class="mi" data-mact="rolink">${svg(I.link)}${m.tok ? 'Copier le lien de consultation' : 'Créer un lien de consultation'}</button>
         ${m.tok ? `<button class="mi warn" data-mact="roff">${svg(I.eyeoff)}Révoquer le lien</button>` : ''}
         <div class="msep"></div>
-        ${m.pub ? `<button class="mi" data-mact="publish">${svg(I.book)}Mettre à jour dans la bibliothèque</button>
-                   <button class="mi warn" data-mact="unpublish">${svg(I.x)}Retirer de la bibliothèque</button>`
-          : `<button class="mi" data-mact="publish">${svg(I.book)}Publier dans la bibliothèque</button>`}
+        ${m.pub ? `<button class="mi" data-mact="publish">${svg(I.book)}Mettre à jour sur l’étagère
+                     <span class="tail">${esc(scopeName())}</span></button>
+                   <button class="mi warn" data-mact="unpublish">${svg(I.x)}Retirer de l’étagère</button>`
+          : `<button class="mi" data-mact="publish">${svg(I.book)}Poser sur l’étagère
+               <span class="tail">${esc(scopeName())}</span></button>`}
         <button class="mi" data-mact="duelnew2">${svg(I.flame)}Lancer un défi<span class="tail">${Math.min(DUELQ, d.cards.length)}</span></button>
         <div class="msep"></div>
         <button class="mi" data-mact="copylink">${svg(I.down)}Lien hors ligne (tout le livre)</button>
@@ -4205,7 +4241,7 @@ function paintMenu() {
   if (menu === 'rename' || menu === 'pwd' || menu === 'delacc') {
     const conf = {
       rename: ['Nom affiché', I.user, 'text', 'Comment on t’appelle', prefs.name || '', 'Enregistrer'],
-      pwd: ['Nouveau mot de passe', I.lock, 'password', 'Au moins 6 caractères', '', 'Changer'],
+      pwd: ['Nouveau mot de passe', I.lock, 'password', `Au moins ${PWMIN} caractères`, '', 'Changer'],
       delacc: ['Supprimer le compte', I.trash, null, '', '', 'Tout supprimer']
     }[menu];
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -4399,7 +4435,7 @@ document.addEventListener('click', async e => {
   }
   if (a === 'do-pwd') {
     const v = document.getElementById('fld').value, err = document.getElementById('mrr');
-    if (v.length < 6) { err.textContent = 'Au moins 6 caractères'; return; }
+    if (v.length < PWMIN) { err.textContent = `Au moins ${PWMIN} caractères`; return; }
     err.textContent = 'Envoi…';
     api('/auth/v1/user', 'PUT', { password: v })
       .then(() => { closeMenu(); toast(I.check, 'Mot de passe changé'); })
@@ -5629,7 +5665,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group]');
   if (!b) return;
   const ds = b.dataset;
   const a0 = ds.act;
@@ -5650,6 +5686,13 @@ $.addEventListener('click', e => {
   if (ds.lib !== undefined) { lib.open = ds.lib; return openMenu('libitem'); }
   if (ds.duel !== undefined) { duels.open = ds.duel; return openMenu('duelitem'); }
   if (ds.gtab !== undefined) { groupTab = ds.gtab; groupPull(); animate = false; return render(); }
+  /* changer de portée, c'est changer de public : le classement se
+     recalcule côté base, la bibliothèque et les défis se refiltrent ici */
+  if (ds.scope !== undefined) {
+    scope = ds.scope || null;
+    board.rows = null; animate = false; render();
+    return boardPull();
+  }
   if (ds.brange !== undefined) { board.range = +ds.brange; board.rows = null; animate = false; render(); return boardPull(); }
   if (ds.pkc !== undefined && sel) {
     /* on ne repeint que la ligne touchée et le décompte : reconstruire la
@@ -6145,7 +6188,7 @@ function startTour(chapId) {
   if (tour) return;
   const steps = tourSteps(chapId);
   if (!steps.length) return;
-  tourSave = { db, prefs, view, study, quiz, filter, peek, groupTab,
+  tourSave = { db, prefs, view, study, quiz, filter, peek, groupTab, scope,
                me, mates, asks, friends, groups, duels, lib, board };
   demo = true;
   closeMenu(); selOff();
@@ -6220,7 +6263,7 @@ function endTour(done) {
   demo = false;
   if (sv) {
     db = sv.db; prefs = sv.prefs; view = sv.view; study = sv.study; quiz = sv.quiz;
-    filter = sv.filter; peek = sv.peek; groupTab = sv.groupTab;
+    filter = sv.filter; peek = sv.peek; groupTab = sv.groupTab; scope = sv.scope;
     me = sv.me; mates = sv.mates; asks = sv.asks; friends = sv.friends;
     groups = sv.groups; duels = sv.duels; lib = sv.lib; board = sv.board;
   }
