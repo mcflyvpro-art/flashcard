@@ -301,21 +301,32 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   transition:width .6s var(--e)}
 .stage{flex:1;display:flex;align-items:center;justify-content:center;
   padding:16px 0;perspective:1700px;min-height:0}
-.stack{position:relative;width:100%;height:min(58svh,460px)}
+/* La perspective est portée par le conteneur : sans elle, la rotation
+   est plate et ressemble à une carte qu'on bascule. Avec, la page
+   s'éloigne en tournant, comme un feuillet qu'on soulève. */
+.stack{position:relative;width:100%;height:min(58svh,460px);perspective:1500px}
 .card{position:absolute;inset:0;border-radius:6px 24px 24px 6px;will-change:transform;
   touch-action:none;-webkit-user-select:none;user-select:none;
   transition:transform .52s var(--sp),opacity .34s var(--e)}
 .card.in{transform:translateY(14px) scale(.94);opacity:0}
+/* L'axe est le bord relié, à gauche ; la translation qui l'accompagne
+   ramène la page à sa place une fois tournée. Entre les deux, elle pivote
+   autour de sa couture — le geste d'un livre, pas d'un jeu de cartes. */
 .flipper{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;
-  transition:transform .42s cubic-bezier(.2,.65,.8,.35)}
-.card.flip .flipper{transform:rotateY(180deg)}
+  transform-origin:left center;
+  transition:transform .55s cubic-bezier(.42,0,.18,1)}
+.card.flip .flipper{transform:translateX(100%) rotateY(-180deg)}
 /* Une page, pas un rectangle : reliée à gauche (coins carrés, filet de
    couture), tranche libre à droite, et le texte en romain. */
 .face{position:absolute;inset:0;border-radius:6px 24px 24px 6px;display:grid;place-items:center;
   padding:34px 34px 34px 40px;text-align:center;gap:10px;
   backface-visibility:hidden;-webkit-backface-visibility:hidden;
   background:var(--c);color:var(--ci);box-shadow:var(--s3);overflow:hidden;
-  opacity:1;transform:translateZ(0);transition:opacity 0s linear .2s}
+  opacity:1;transform:translateZ(0);
+  /* l'échange des deux faces se fait quand la page est sur la tranche,
+     à la moitié exacte du mouvement : plus tôt, on voit le verso à
+     l'envers ; plus tard, on voit le recto revenir */
+  transition:opacity 0s linear .275s}
 /* la couture, à la même place que la marge d'un cahier */
 .face .seam{position:absolute;left:19px;top:22px;bottom:22px;width:1px;z-index:1;
   background:currentColor;opacity:.16;pointer-events:none}
@@ -1431,13 +1442,6 @@ body.touring .toast{display:none}
 .brand span{font-family:var(--serif);font-weight:700;letter-spacing:-.2px}
 
 /* ══════════ le livre ouvert ══════════ */
-.bstats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:0 0 12px}
-.bs{background:var(--card);box-shadow:var(--s1);border-radius:16px;padding:11px 6px 9px;
-  text-align:center;min-width:0}
-.bs b{display:block;font-family:var(--serif);font-size:20px;font-weight:700;letter-spacing:-.4px;
-  font-variant-numeric:tabular-nums}
-.bs span{display:block;font-size:11px;font-weight:700;color:var(--soft);margin-top:2px;
-  letter-spacing:.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cta.read{margin:0 0 8px}
 .cta.read b{font-variant-numeric:tabular-nums;background:rgba(255,255,255,.18);
   border-radius:9px;padding:1px 8px;margin-left:2px}
@@ -1460,3 +1464,17 @@ body.touring .toast{display:none}
 .mg svg{width:19px;height:19px;color:var(--ink)}
 .mg span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .mg.off{opacity:.35;pointer-events:none}
+
+/* ══════════ réglages d'affichage signalés ══════════ */
+/* L'appui long sur une couverture sélectionnait le texte en bleu : iOS
+   propose Copier/Traduire par-dessus la feuille qui s'ouvre. */
+.tile,.lrow,.grid,.rows.lst{-webkit-user-select:none;user-select:none;
+  -webkit-touch-callout:none}
+/* la période, au-dessus des chiffres, avait l'air posée dessus */
+#app[data-view="stats"] .seg{margin-bottom:14px}
+/* le champ d'ajout d'un lecteur touchait la flèche de retour */
+#app[data-view="friends"] .addf{margin-top:10px}
+/* la feuille défile verticalement et rien d'autre : pas de pincement,
+   pas de déplacement latéral */
+.menu{touch-action:pan-y}
+.mgrid,.mtop{touch-action:none}

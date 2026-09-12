@@ -1691,23 +1691,6 @@ function resumeBanner() {
   return `<button class="resume" data-act="resume">${svg(I.play)}
     <span>Reprendre ${esc(r.name || '')}</span><i>${left} carte${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}</i></button>`;
 }
-/* Où en est ce livre, en quatre chiffres : ce qu'il pèse, ce qu'il
-   réclame aujourd'hui, ce qui est acquis, et la dernière récitation. */
-function bookStats(d) {
-  const n = d.cards.length;
-  const due = dueCount(d);
-  const mat = n ? Math.round(d.cards.filter(c => cstate(c) === 'mature').length / n * 100) : 0;
-  const h = histOf(d.id, 'quiz');
-  const last = h.length ? Math.round(h[h.length - 1].p * 100) : null;
-  const one = (v, l) => `<div class="bs"><b>${v}</b><span>${l}</span></div>`;
-  return `<div class="bstats">
-    ${one(n, n > 1 ? 'pages' : 'page')}
-    ${one(due, 'à lire')}
-    ${one(mat + ' %', 'acquis')}
-    ${one(last == null ? '—' : last + ' %', 'récitation')}
-  </div>`;
-}
-
 /* Répartition nouvelle / apprentissage / jeune / mûre, en une barre */
 function mixBar(d) {
   const n = d.cards.length; if (!n) return '';
@@ -1784,7 +1767,6 @@ function deckView() {
         ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
       </div>
     </div>
-    ${simpleMode() ? '' : bookStats(d)}
     <button class="cta read" data-act="study">${svg(I.play)}Lire${
       !simpleMode() && dueCount(d) ? ` <b>${dueCount(d)}</b>` : ''}</button>
     <div class="acts">
@@ -2112,7 +2094,7 @@ function settingsView() {
         <button class="sr flat" data-act="rename">${svg(I.user)}
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="commu">${svg(I.user)}<span class="n">Le cercle</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="commu">${svg(I.user)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
       </div>
 
@@ -3284,16 +3266,26 @@ function mountMenu(w) {
    c'est le texte qui doit défiler. */
 function bindSheetDrag(box, body) {
   const head = box.querySelector('.mtop');
-  let y0 = 0, dy = 0, on = false, lock = 0, t0 = 0;
+  let y0 = 0, dy = 0, on = false, lock = 0, t0 = 0, pid = -1, pts = 0;
+  /* Un seul doigt, et seulement vers le bas. Sans ces deux gardes, la
+     feuille suivait n'importe quel geste — deux doigts la déplaçaient et
+     la pinçaient comme une image. */
+  const cancel = () => {
+    on = false; pid = -1;
+    box.style.transition = ''; box.style.transform = '';
+    const sc = document.querySelector('.scrim'); if (sc) sc.style.opacity = '';
+  };
   const start = e => {
+    pts++;
+    if (pts > 1) return cancel();
     if (e.pointerType === 'mouse' && e.button) return;
-    if (e.target.closest('input,textarea,button,.seg,.rng')) return;
+    if (e.target.closest('input,textarea,button,.seg,.rng,.mgrid')) return;
     if (body.scrollTop > 2 && !head.contains(e.target)) return;
-    on = true; lock = 0; dy = 0; y0 = e.clientY; t0 = Date.now();
+    on = true; lock = 0; dy = 0; y0 = e.clientY; t0 = Date.now(); pid = e.pointerId;
     box.style.transition = 'none';
   };
   const move = e => {
-    if (!on) return;
+    if (!on || e.pointerId !== pid || pts > 1) return;
     dy = e.clientY - y0;
     if (!lock) {
       if (Math.abs(dy) < 7) return;
@@ -3306,7 +3298,8 @@ function bindSheetDrag(box, body) {
     if (sc) sc.style.opacity = Math.max(0, 1 - dy / 320);
   };
   const end = () => {
-    if (!on) return; on = false;
+    pts = Math.max(0, pts - 1);
+    if (!on) return; on = false; pid = -1;
     box.style.transition = '';
     const v = dy / Math.max(1, Date.now() - t0);
     if (dy > 110 || (v > .55 && dy > 40)) {
@@ -3321,7 +3314,8 @@ function bindSheetDrag(box, body) {
   box.addEventListener('pointerdown', start);
   box.addEventListener('pointermove', move);
   box.addEventListener('pointerup', end);
-  box.addEventListener('pointercancel', end);
+  box.addEventListener('pointercancel', () => { pts = Math.max(0, pts - 1); cancel(); });
+  box.addEventListener('gesturestart', e => { e.preventDefault(); cancel(); });
 }
 function paintMenu() {
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
@@ -3608,8 +3602,7 @@ function paintMenu() {
   if (menu === 'handle') {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mhd">${svg(I.user)}<span class="mhx"><b>Ton pseudo</b>
-          <i>c’est ce que tes amis tapent pour t’ajouter</i></span></div>
+        <div class="mhd">${svg(I.user)}<span class="mhx"><b>Ton pseudo</b></span></div>
         <div class="fld addf"><span class="at">@</span><input id="hq" type="text"
           placeholder="pseudo" autocapitalize="none" autocomplete="off" spellcheck="false"
           value="${esc((me && me.handle) || '')}" aria-label="Ton pseudo"></div>
@@ -3625,7 +3618,7 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${join ? 'Rejoindre un club' : 'Créer un club'}</b>
-          <i>${join ? 'entre le code qu’on t’a donné' : 'tu recevras un code à partager'}</i></span></div>
+          </span></div>
         <div class="fld addf"><input id="gq" type="text"
           placeholder="${join ? 'Code du club' : 'Nom du club'}" autocomplete="off"
           spellcheck="false" ${join ? 'autocapitalize="characters"' : ''}
@@ -4619,8 +4612,15 @@ function paintFoot() {
     : `<div class="hint">${SWIPE}<span class="keys">
         <kbd>←</kbd>${svg(I.x)}<kbd>→</kbd>${svg(I.check)}<kbd>espace</kbd>${svg(I.swap)}</span></div>`;
 }
+/* Le temps que met la page à tourner. Sans ce verrou, une série de
+   touches rapides relançait l'animation à chaque fois et la page
+   tournoyait sans fin sans jamais se poser. */
+let flipAt = 0;
 function toggleFlip() {
   const top = document.getElementById('top'); if (!top) return;
+  const now = Date.now();
+  if (now - flipAt < 480) return;
+  flipAt = now;
   study.flip = !study.flip; top.classList.toggle('flip', study.flip); paintFoot();
 }
 function bindDrag(el) {
@@ -5316,6 +5316,9 @@ $.addEventListener('click', e => {
     return;
   }
   if (a === 'mcq' || a === 'match') return startStudy(view.id, false, null, { mode: a });
+  /* Partager est posé sur l'écran du livre : sans cette ligne, seul le
+     menu « … » le connaissait et le bouton ne faisait rien. */
+  if (a === 'sharepick') { if (!friends) friendsPull(); return openMenu('sharepick'); }
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (a === 'group') { groupPull(); return go('group'); }
   if (a === 'help') return openMenu('tuto');
@@ -5896,8 +5899,7 @@ function paintTour() {
 function helpSheet(w) {
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
-      <div class="mhd">${svg(I.bulb)}<span class="mhx"><b>Aide</b>
-        <i>rejouée sur un compte de démonstration, jamais sur tes paquets</i></span></div>
+      <div class="mhd">${svg(I.bulb)}<span class="mhx"><b>Aide</b></span></div>
       <button class="mi" data-chap="" style="font-weight:700">${svg(I.play)}Revoir toute la visite
         <span class="tail">${CHAPTERS.reduce((a, c) => a + c.steps.length, 0)} étapes</span></button>
       <div class="msep"></div>
