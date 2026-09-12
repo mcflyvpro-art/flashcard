@@ -73,7 +73,12 @@ let duels = { list: null, scores: null, err: 0, open: null };
 let board = { rows: null, err: 0, range: 7 };
 let shared = null;            // paquet ouvert par un lien de consultation
 let duelRun = null;           // défi en cours de partie
-let groupTab = 'lib';         // onglet courant de l'écran du groupe
+let groupTab = 'lib';         // onglet courant de la bibliothèque du groupe
+let mates = null, asks = null;   // amis acceptés, demandes reçues
+let me = null;                   // mon profil public : pseudo
+let groups = null, groupOf = null;  // mes groupes, et celui qu'on regarde
+let addQ = '';                   // pseudo en cours de frappe
+let mateOpen = null;             // ami dont on regarde la fiche
 
 /* ---------- annuler ----------
    Avant toute action qui écrase ou efface, on photographie les paquets
@@ -1321,6 +1326,7 @@ function toast(icon, text, undo) {
     n.style.top = 'calc(12px + env(safe-area-inset-top))';
     n.style.bottom = 'auto';
   } else if (document.querySelector('.selb')) n.style.bottom = 'calc(84px + env(safe-area-inset-bottom))';
+  else if (document.querySelector('.tabs')) n.style.bottom = 'calc(80px + env(safe-area-inset-bottom))';
   else n.style.bottom = 'calc(22px + env(safe-area-inset-bottom))';
   document.body.appendChild(n); tt = setTimeout(() => n.remove(), undo ? 5200 : 1600);
 }
@@ -1342,7 +1348,9 @@ function applyFont() {
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
-              group: groupView, shared: sharedView, duel: duelView };
+              group: groupView, shared: sharedView, duel: duelView,
+              commu: commuView, friends: friendsView, groups: groupsView,
+              duels: duelsView, library: libraryView, board: boardView };
   $.classList.remove('fade');
   if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
   (v[view.name] || home)();
@@ -1374,7 +1382,7 @@ function paintRail() {
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
   const on = view.name === 'settings' ? 'settings'
     : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats'
-    : /group|duel|shared/.test(view.name) ? 'group' : 'home';
+    : /commu|friends|groups|duels|library|board|shared/.test(view.name) ? 'commu' : 'home';
   const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n;
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
   if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
@@ -1387,7 +1395,8 @@ function paintRail() {
     <div class="sp"></div>
     <nav>
       <button class="${on === 'stats' ? 'on' : ''}" data-r="stats">${svg(I.chart)}<span>Stats</span></button>
-      <button class="${on === 'group' ? 'on' : ''}" data-r="group">${svg(I.trophy)}<span>Groupe</span></button>
+      <button class="${on === 'commu' ? 'on' : ''}" data-r="commu">${svg(I.user)}<span>Communauté</span>${
+        (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
       <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Boîte</span>${
         mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
       <button class="${on === 'settings' ? 'on' : ''}" data-r="settings">${svg(I.gear)}<span>Réglages</span></button>
@@ -1397,11 +1406,69 @@ function paintRail() {
     const b = e.target.closest('[data-r]'); if (!b) return;
     if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
     if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
-    if (b.dataset.r === 'group') { groupPull(); return go('group'); }
+    if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
     go(b.dataset.r === 'settings' ? 'settings' : 'home');
   };
 }
 
+
+/* Deux écrans de premier niveau, donc deux onglets et un balayage entre
+   les deux. C'est la seule navigation horizontale de l'app : partout
+   ailleurs on entre et on ressort par la flèche. */
+const tabs = on => `<div class="tabs">
+  <div class="sl" style="transform:translateX(${on === 'commu' ? 74 : 0}px)"></div>
+  <button class="${on === 'home' ? 'on' : ''}" data-act="tab-home" aria-label="Mes paquets"
+    aria-current="${on === 'home' ? 'page' : 'false'}">${svg(I.layers)}</button>
+  <button class="${on === 'commu' ? 'on' : ''}" data-act="tab-commu" aria-label="Communauté"
+    aria-current="${on === 'commu' ? 'page' : 'false'}">${svg(I.user)}${
+      (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
+</div>`;
+
+/* balayage horizontal entre « Mes paquets » et « Communauté » */
+function bindPager() {
+  const pg = document.getElementById('page'); if (!pg) return;
+  const home = view.name === 'home';
+  let x0 = 0, y0 = 0, dx = 0, on = false, lock = 0, t0 = 0, raf = 0, pid = -1;
+  const draw = () => {
+    raf = 0;
+    if (!on) return;
+    const edge = home ? dx > 0 : dx < 0;
+    pg.style.transform = `translate3d(${(edge ? dx * .26 : dx).toFixed(1)}px,0,0)`;
+  };
+  const reset = () => {
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    pg.style.transition = ''; pg.style.transform = '';
+  };
+  pg.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button) return;
+    if (e.target.closest('.pills,.ctiles,.rng,.seg')) return;
+    on = true; lock = 0; dx = 0; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); pid = e.pointerId;
+    pg.style.transition = 'none';
+  });
+  pg.addEventListener('pointermove', e => {
+    if (!on || e.pointerId !== pid) return;
+    const ax = e.clientX - x0, ay = e.clientY - y0;
+    if (!lock) {
+      if (Math.abs(ax) < 9 && Math.abs(ay) < 9) return;
+      lock = Math.abs(ax) > Math.abs(ay) * 1.3 ? 1 : -1;
+      if (lock < 0) { on = false; reset(); return; }
+    }
+    dx = ax;
+    if (!raf) raf = requestAnimationFrame(draw);
+  });
+  const end = () => {
+    if (!on) return; on = false;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    pg.style.transition = '';
+    const v = Math.abs(dx) / Math.max(1, Date.now() - t0);
+    const far = Math.abs(dx) > innerWidth * .28 || (v > .55 && Math.abs(dx) > 40);
+    const go2 = far && (home ? dx < 0 : dx > 0);
+    pg.style.transform = '';
+    if (go2) { if (home) { commuPull(); go('commu', null, 1); } else go('home', null, -1); }
+  };
+  pg.addEventListener('pointerup', end);
+  pg.addEventListener('pointercancel', end);
+}
 
 const pills = (active, list, act) => `<div class="pills">
   <button class="p ${active === '' ? 'on' : ''}" data-${act}="">Tout</button>
@@ -1513,7 +1580,9 @@ function home() {
       ${!simpleMode() && allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
         <span>Marathon</span><i>${allDue()} cartes dues, toutes matières</i></button>` : ''}
     </div>
-    ${reorder ? '' : `<button class="fab" data-act="new" aria-label="Nouveau paquet">${svg(I.plus)}<span>Nouveau paquet</span></button>`}`;
+    ${reorder ? '' : `<button class="fab" data-act="new" aria-label="Nouveau paquet">${svg(I.plus)}<span>Nouveau paquet</span></button>`}
+    ${tabs('home')}`;
+  bindPager();
   if (reorder) bindDeckOrder();
   bindPeek();
 }
@@ -2017,7 +2086,7 @@ function settingsView() {
         <button class="sr flat" data-act="rename">${svg(I.user)}
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Statistiques</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="group">${svg(I.trophy)}<span class="n">Le groupe</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="commu">${svg(I.user)}<span class="n">Communauté</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
       </div>
 
@@ -2029,7 +2098,6 @@ function settingsView() {
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
           <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="shortcuts">${svg(I.spark)}<span class="n">Raccourcis et Siri</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="help">${svg(I.bulb)}<span class="n">Aide</span>
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
       </div>
@@ -2144,14 +2212,69 @@ async function upsertProfile() {
       { Prefer: 'resolution=merge-duplicates,return=minimal' });
   } catch (e) {}
 }
+/* On n'envoie un paquet qu'à quelqu'un qu'on a ajouté, et l'annuaire
+   complet n'est plus lisible : chacun ne voit que ses propres liens. */
 async function friendsPull() {
-  friends = friends || null;
   try {
-    const rows = await api('/rest/v1/profiles?select=id,name,email');
-    friends = (rows || []).filter(p => p.id !== auth.uid)
-      .sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
-  } catch (e) { friends = []; }
-  if (menu === 'sendfriend' || menu === 'sharepick') paintMenu();
+    const rows = await api('/rest/v1/rpc/my_friends', 'POST', {});
+    friends = (rows || []);
+    mates = friends.filter(f => f.status === 'ok');
+    asks = friends.filter(f => f.status === 'pending' && f.sens === 'recue');
+  } catch (e) { friends = friends || []; mates = mates || []; asks = asks || []; }
+  if (view.name === 'commu' || view.name === 'friends') { animate = false; render(); }
+  if (menu) paintMenu();
+}
+async function askFriend(q) {
+  const one = (await api('/rest/v1/rpc/find_user', 'POST', { q }) || [])[0];
+  if (!one) { toast(I.x, 'Aucun compte sous ce pseudo'); return false; }
+  if (friends && friends.some(f => f.id === one.id)) { toast(I.check, 'Déjà dans ta liste'); return true; }
+  await api('/rest/v1/friends', 'POST', [{ user_id: auth.uid, friend_id: one.id, status: 'pending' }],
+    { Prefer: 'return=minimal' });
+  toast(I.check, 'Demande envoyée à ' + (one.handle || one.name));
+  friendsPull();
+  return true;
+}
+async function answerFriend(id, yes) {
+  try {
+    if (yes) await api(`/rest/v1/friends?user_id=eq.${id}&friend_id=eq.${auth.uid}`, 'PATCH',
+      { status: 'ok' }, { Prefer: 'return=minimal' });
+    else await api(`/rest/v1/friends?user_id=eq.${id}&friend_id=eq.${auth.uid}`, 'DELETE',
+      null, { Prefer: 'return=minimal' });
+    toast(yes ? I.check : I.x, yes ? 'Ami ajouté' : 'Demande refusée');
+  } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
+  friendsPull();
+}
+async function dropFriend(id) {
+  try {
+    await api(`/rest/v1/friends?or=(and(user_id.eq.${auth.uid},friend_id.eq.${id}),`
+      + `and(user_id.eq.${id},friend_id.eq.${auth.uid}))`, 'DELETE', null, { Prefer: 'return=minimal' });
+  } catch (e) {}
+  closeMenu(); friendsPull();
+}
+
+/* ---------- pseudo ----------
+   On s'ajoute par pseudo, pas par adresse : c'est ce qu'on se dit de vive
+   voix, et ça évite de faire circuler les e-mails de tout le monde. */
+const cleanHandle = v => String(v || '').toLowerCase().replace(/[^a-z0-9_.-]/g, '').slice(0, 20);
+async function saveHandle(v) {
+  const h = cleanHandle(v);
+  if (h.length < 3) { toast(I.x, 'Au moins 3 caractères'); return false; }
+  try {
+    await api('/rest/v1/profiles', 'POST', [{ id: auth.uid, email: auth.email, handle: h, name: prefs.name || null }],
+      { Prefer: 'resolution=merge-duplicates,return=minimal' });
+    me.handle = h; save();
+    toast(I.check, '@' + h);
+    return true;
+  } catch (e) {
+    toast(I.x, /duplicate|unique/i.test(String(e.message || '')) ? 'Ce pseudo est déjà pris' : 'Impossible pour l’instant');
+    return false;
+  }
+}
+async function mePull() {
+  try {
+    const r = (await api('/rest/v1/profiles?select=id,handle,name&id=eq.' + auth.uid) || [])[0];
+    me = r || { id: auth.uid, handle: '' };
+  } catch (e) { me = me || { id: auth.uid, handle: '' }; }
 }
 
 /* ---------- envoyer un paquet à un ami ----------
@@ -2367,7 +2490,7 @@ async function libPull() {
       + '&order=updated_at.desc&limit=100') || [];
     lib.err = 0;
   } catch (e) { lib.err = 1; }
-  if (view.name === 'group') render();
+  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { animate = false; render(); }
 }
 async function libPublish(d) {
   closeMenu();
@@ -2416,7 +2539,7 @@ async function duelsPull() {
     ]);
     duels.list = ds || []; duels.scores = sc || []; duels.err = 0;
   } catch (e) { duels.err = 1; }
-  if (view.name === 'group') render();
+  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { animate = false; render(); }
 }
 const myScore = id => (duels.scores || []).find(s => s.duel_id === id && s.user_id === auth.uid);
 const rankOf = id => (duels.scores || []).filter(s => s.duel_id === id)
@@ -2513,7 +2636,206 @@ async function boardPull() {
     board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range }) || [];
     board.err = 0;
   } catch (e) { board.err = 1; }
-  if (view.name === 'group') render();
+  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { animate = false; render(); }
+}
+
+/* ══════════ communauté ══════════
+   Un centre unique : qui tu es, qui tu connais, les groupes, les défis,
+   l'étagère commune et le classement. Le reste de l'app n'a plus à parler
+   de « groupe » ici et là — tout ce qui concerne les autres vit ici. */
+async function groupsPull() {
+  try {
+    const rows = await api('/rest/v1/group_members?select=group_id,groups(id,name,code,owner)');
+    groups = (rows || []).map(r => r.groups).filter(Boolean);
+  } catch (e) { groups = groups || []; }
+  if (view.name === 'commu' || view.name === 'groups') { animate = false; render(); }
+  if (menu) paintMenu();
+}
+async function makeGroup(name) {
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(5)),
+    b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
+  try {
+    const [g] = await api('/rest/v1/groups', 'POST',
+      [{ name: (name || '').trim() || 'Mon groupe', code, owner: auth.uid }],
+      { Prefer: 'return=representation' }) || [];
+    if (g) await api('/rest/v1/group_members', 'POST', [{ group_id: g.id, user_id: auth.uid }],
+      { Prefer: 'return=minimal' });
+    closeMenu(); groups = null; groupsPull();
+    toast(I.check, 'Groupe créé · code ' + code);
+  } catch (e) { toast(I.x, 'Création impossible'); }
+}
+async function joinGroup(code) {
+  try {
+    const [g] = await api('/rest/v1/rpc/join_group', 'POST', { join_code: code }) || [];
+    closeMenu(); groups = null; groupsPull();
+    toast(I.check, g ? 'Bienvenue dans ' + g.name : 'Groupe rejoint');
+  } catch (e) { toast(I.x, 'Code inconnu'); }
+}
+async function leaveGroup(id) {
+  try {
+    await api(`/rest/v1/group_members?group_id=eq.${id}&user_id=eq.${auth.uid}`, 'DELETE',
+      null, { Prefer: 'return=minimal' });
+  } catch (e) {}
+  closeMenu(); groups = null; groupsPull();
+}
+
+/* tout ce que l'écran a besoin de savoir, en un seul aller-retour groupé */
+function commuPull() {
+  if (!me) mePull().then(() => { if (view.name === 'commu') { animate = false; render(); } });
+  if (!friends) friendsPull();
+  if (!groups) groupsPull();
+  if (!duels.list) duelsPull();
+  if (!lib.list) libPull();
+  if (!board.rows) boardPull();
+}
+
+const initial = s => (String(s || '?').trim()[0] || '?').toUpperCase();
+
+function commuView() {
+  const nMates = (mates || []).length, nAsk = (asks || []).length;
+  const nGroup = (groups || []).length;
+  const toPlay = (duels.list || []).filter(d => !myScore(d.id)).length;
+  const nLib = (lib.list || []).length;
+  const rows = board.rows || [];
+  const mine = rows.findIndex(r => r.uid === auth.uid);
+  const MED = ['🥇', '🥈', '🥉'];
+  const tile = (act, ic, lab, val, warn) => `<button class="ctile" data-act="${act}">
+    <i class="ci">${svg(ic)}${warn ? `<b class="cb">${warn}</b>` : ''}</i>
+    <span class="cn">${lab}</span><span class="cv">${val}</span></button>`;
+  $.innerHTML = `
+    <div class="page" id="page">
+      <div class="top"><div class="hero">Communauté</div></div>
+      <button class="mecard" data-act="handle">
+        <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
+        <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : 'Choisis ton pseudo'}</b>
+          <i>${me && me.handle ? (mine >= 0 ? `${MED[mine] || (mine + 1) + 'ᵉ'} cette semaine · ${plur(+rows[mine].n, 'carte')}`
+            : 'Pas encore révisé cette semaine')
+            : 'C’est ce que tes amis taperont pour t’ajouter'}</i></span>
+        ${svg(I.arrow)}</button>
+      <div class="ctiles">
+        ${tile('friends', I.user, 'Amis', nMates || '—', nAsk)}
+        ${tile('groups', I.layers, 'Groupes', nGroup || '—', 0)}
+        ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
+        ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}
+      </div>
+      <div class="lbl"><span>Classement de la semaine</span>
+        ${rows.length > 3 ? '<button class="lnk" data-act="board">Tout voir</button>' : ''}</div>
+      ${!board.rows ? `<div class="card2"><div class="note">${board.err ? 'Indisponible' : 'Chargement…'}</div></div>`
+        : !rows.length ? `<div class="card2"><div class="note">Ajoute un ami et vos révisions se comparent ici.</div></div>`
+        : `<div class="rows">${rows.slice(0, 3).map((x, i) => bdRow(x, i)).join('')}</div>`}
+    </div>
+    ${tabs('commu')}`;
+  bindPager();
+}
+const bdRow = (x, i) => {
+  const MED = ['🥇', '🥈', '🥉'];
+  const top = Math.max(1, +((board.rows || [])[0] || {}).n || 1);
+  return `<div class="bdr ${x.uid === auth.uid ? 'me' : ''}">
+    <span class="bdp">${MED[i] || (i + 1)}</span>
+    <span class="bdn"><b>${esc(x.who)}</b>
+      <i>${plur(+x.n, 'carte')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
+      <em style="width:${Math.max(4, Math.round(x.n / top * 100))}%"></em></span></div>`;
+};
+
+function friendsView() {
+  const l = mates || [], a = asks || [];
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Amis</h1></div>
+    <div class="page">
+      <div class="fld addf"><input id="addq" type="search" placeholder="Pseudo d’un ami"
+        autocomplete="off" autocapitalize="none" spellcheck="false" value="${esc(addQ)}"
+        aria-label="Pseudo d’un ami"><button class="lnk" data-act="doadd">Ajouter</button></div>
+      ${a.length ? `<div class="lbl"><span>Demandes reçues</span><span>${a.length}</span></div>
+        <div class="slist">${a.map(f => `<div class="sr flat">
+          <i class="av sm">${esc(initial(f.handle || f.name))}</i>
+          <span class="n">@${esc(f.handle || '')}</span>
+          <button class="fyes" data-yes="${f.id}">${svg(I.check)}</button>
+          <button class="fno" data-no="${f.id}">${svg(I.x)}</button></div>`).join('')}</div>` : ''}
+      <div class="lbl"><span>Mes amis</span><span>${l.length || ''}</span></div>
+      ${!friends ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !l.length ? `<div class="empty">${svg(I.user)}<p><b>Personne pour l’instant</b>Ajoute quelqu’un par son pseudo.</p></div>`
+        : `<div class="slist">${l.map(f => `<button class="sr flat" data-mate="${f.id}">
+            <i class="av sm">${esc(initial(f.handle || f.name))}</i>
+            <span class="ml2"><span class="n">${esc(f.name || '')}</span>
+              <span class="sub">@${esc(f.handle || '')}</span></span>${svg(I.arrow)}</button>`).join('')}</div>`}
+    </div>`;
+  const q = document.getElementById('addq');
+  if (q) {
+    q.addEventListener('input', () => addQ = q.value);
+    q.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
+  }
+}
+async function doAdd() {
+  const v = addQ.trim(); if (!v) return;
+  if (await askFriend(v)) { addQ = ''; animate = false; render(); }
+}
+
+function groupsView() {
+  const l = groups || [];
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Groupes</h1></div>
+    <div class="page">
+      <div class="duo ghost">
+        <button data-act="newgroup">${svg(I.plus)}Créer</button>
+        <button data-act="joingroup">${svg(I.link)}Rejoindre</button>
+      </div>
+      ${!groups ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !l.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucun groupe</b>Une classe, un binôme : tout le monde y voit les mêmes paquets et les mêmes défis.</p></div>`
+        : `<div class="slist">${l.map(g => `<button class="sr flat" data-group="${g.id}">
+            ${svg(I.layers)}<span class="ml2"><span class="n">${esc(g.name)}</span>
+              <span class="sub">code ${esc(g.code)}</span></span>${svg(I.arrow)}</button>`).join('')}</div>`}
+    </div>`;
+}
+function duelsView() {
+  const l = duels.list;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Défis</h1></div>
+    <div class="page">
+      <button class="cta ghost" data-act="duelnew">${svg(I.flame)}Lancer un défi</button>
+      ${!l ? `<div class="card2"><div class="note">${duels.err ? 'Indisponible' : 'Chargement…'}</div></div>`
+        : !l.length ? `<div class="empty">${svg(I.flame)}<p><b>Aucun défi</b>Dix questions d’un de tes paquets, les mêmes pour tous.</p></div>`
+        : `<div class="slist">${l.map(du => {
+            const m = myScore(du.id), r = rankOf(du.id);
+            const pos = m ? r.findIndex(x => x.user_id === auth.uid) + 1 : 0;
+            return `<button class="sr flat" data-duel="${esc(du.id)}">${svg(I.flame)}
+              <span class="ml2"><span class="n">${esc(du.name)}</span>
+                <span class="sub">${esc(shortWho(du.who) || 'Un ami')} · ${plur(du.total, 'question')}${
+                  r.length ? ' · ' + plur(r.length, 'joueur') : ''}</span></span>
+              <span class="c">${m ? `<b class="dsc">${m.score}/${du.total}</b> ${pos === 1 ? '🥇' : pos + 'ᵉ'}`
+                : '<span class="dnew">à jouer</span>'}</span>${svg(I.arrow)}</button>`;
+          }).join('')}</div>`}
+    </div>`;
+}
+function libraryView() {
+  const l = lib.list;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Bibliothèque</h1></div>
+    <div class="page">
+      ${!l ? `<div class="card2"><div class="note">${lib.err ? 'Indisponible' : 'Chargement…'}</div></div>`
+        : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>Publie un paquet depuis son menu Partager.</p></div>`
+        : `<div class="slist">${l.map(it => `<button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
+            <span class="ml2"><span class="n">${esc(it.name)}</span>
+              <span class="sub">${esc(shortWho(it.who) || 'Un ami')}${it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'carte')}</span></span>
+            <span class="c">${timeAgo(it.updated_at)}</span>${svg(I.arrow)}</button>`).join('')}</div>`}
+    </div>`;
+}
+function boardView() {
+  const r = board.rows || [];
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Classement</h1></div>
+    <div class="page">
+      <div class="seg" id="bRange">${Object.entries(BRANGE).map(([k, n]) =>
+        `<button class="${board.range === +k ? 'on' : ''}" data-brange="${k}">${n}</button>`).join('')}</div>
+      ${!board.rows ? `<div class="card2"><div class="note">${board.err ? 'Indisponible' : 'Chargement…'}</div></div>`
+        : !r.length ? `<div class="empty">${svg(I.trophy)}<p><b>Rien sur cette période</b></p></div>`
+        : `<div class="rows">${r.map((x, i) => bdRow(x, i)).join('')}</div>
+          <div class="note">Seul le nombre de cartes révisées circule entre les comptes.</div>`}
+    </div>`;
 }
 
 /* ---------- l'écran du groupe ---------- */
@@ -2926,8 +3248,55 @@ function mountMenu(w) {
     box.setAttribute('role', 'dialog');
     box.setAttribute('aria-modal', 'true');
     box.appendChild(body);
+    bindSheetDrag(box, body);
   }
   document.body.append(...w.childNodes);
+}
+/* Tirer la feuille vers le bas la ferme, comme partout ailleurs sur un
+   téléphone. Sans ça, une feuille courte — une explication, un code —
+   n'avait aucune réponse au geste : on tirait et il ne se passait rien.
+   Le geste ne prend la main que si le contenu est déjà en haut, sinon
+   c'est le texte qui doit défiler. */
+function bindSheetDrag(box, body) {
+  const head = box.querySelector('.mtop');
+  let y0 = 0, dy = 0, on = false, lock = 0, t0 = 0;
+  const start = e => {
+    if (e.pointerType === 'mouse' && e.button) return;
+    if (e.target.closest('input,textarea,button,.seg,.rng')) return;
+    if (body.scrollTop > 2 && !head.contains(e.target)) return;
+    on = true; lock = 0; dy = 0; y0 = e.clientY; t0 = Date.now();
+    box.style.transition = 'none';
+  };
+  const move = e => {
+    if (!on) return;
+    dy = e.clientY - y0;
+    if (!lock) {
+      if (Math.abs(dy) < 7) return;
+      /* vers le haut : ce n'est pas une fermeture, on rend la main */
+      if (dy < 0) { on = false; box.style.transition = ''; box.style.transform = ''; return; }
+      lock = 1;
+    }
+    box.style.transform = `translateY(${dy.toFixed(1)}px)`;
+    const sc = document.querySelector('.scrim');
+    if (sc) sc.style.opacity = Math.max(0, 1 - dy / 320);
+  };
+  const end = () => {
+    if (!on) return; on = false;
+    box.style.transition = '';
+    const v = dy / Math.max(1, Date.now() - t0);
+    if (dy > 110 || (v > .55 && dy > 40)) {
+      box.style.transform = 'translateY(110%)';
+      const sc = document.querySelector('.scrim'); if (sc) sc.style.opacity = 0;
+      setTimeout(() => { closeMenu(); render(); }, 220);
+      return;
+    }
+    box.style.transform = '';
+    const sc = document.querySelector('.scrim'); if (sc) sc.style.opacity = '';
+  };
+  box.addEventListener('pointerdown', start);
+  box.addEventListener('pointermove', move);
+  box.addEventListener('pointerup', end);
+  box.addEventListener('pointercancel', end);
 }
 function paintMenu() {
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
@@ -3210,6 +3579,67 @@ function paintMenu() {
     mountMenu(w);
     return;
   }
+  if (menu === 'handle') {
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.user)}<span class="mhx"><b>Ton pseudo</b>
+          <i>c’est ce que tes amis tapent pour t’ajouter</i></span></div>
+        <div class="fld addf"><span class="at">@</span><input id="hq" type="text"
+          placeholder="pseudo" autocapitalize="none" autocomplete="off" spellcheck="false"
+          value="${esc((me && me.handle) || '')}" aria-label="Ton pseudo"></div>
+        <div class="note">Lettres, chiffres, point, tiret. Trois caractères au moins.</div>
+        <button class="mi" data-mact="savehandle" style="justify-content:center;font-weight:700">
+          ${svg(I.check)}Enregistrer</button>
+      </div>`;
+    mountMenu(w);
+    setTimeout(() => { const i = document.getElementById('hq'); if (i) i.focus(); }, 80);
+    return;
+  }
+  if (menu === 'newgroup' || menu === 'joingroup') {
+    const join = menu === 'joingroup';
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${join ? 'Rejoindre un groupe' : 'Créer un groupe'}</b>
+          <i>${join ? 'entre le code qu’on t’a donné' : 'tu recevras un code à partager'}</i></span></div>
+        <div class="fld addf"><input id="gq" type="text"
+          placeholder="${join ? 'Code du groupe' : 'Nom du groupe'}" autocomplete="off"
+          spellcheck="false" ${join ? 'autocapitalize="characters"' : ''}
+          aria-label="${join ? 'Code du groupe' : 'Nom du groupe'}"></div>
+        <button class="mi" data-mact="${join ? 'dojoin' : 'domake'}" style="justify-content:center;font-weight:700">
+          ${svg(join ? I.link : I.plus)}${join ? 'Rejoindre' : 'Créer'}</button>
+      </div>`;
+    mountMenu(w);
+    setTimeout(() => { const i = document.getElementById('gq'); if (i) i.focus(); }, 80);
+    return;
+  }
+  if (menu === 'mate') {
+    const f = (mates || []).find(x => x.id === mateOpen);
+    if (!f) { menu = null; return; }
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd"><i class="av">${esc(initial(f.handle || f.name))}</i>
+          <span class="mhx"><b>${esc(f.name || '')}</b><i>@${esc(f.handle || '')}</i></span></div>
+        <button class="mi" data-mact="matesend">${svg(I.share)}Lui envoyer un paquet</button>
+        <button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes amis</span></button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'groupitem') {
+    const g = (groups || []).find(x => x.id === groupOf);
+    if (!g) { menu = null; return; }
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${esc(g.name)}</b>
+          <i>${g.owner === auth.uid ? 'tu l’as créé' : 'tu en fais partie'}</i></span></div>
+        <button class="mi" data-mact="gcode">${svg(I.copy)}Code d’invitation
+          <span class="tail">${esc(g.code)}</span></button>
+        <button class="mi warn" data-mact="gleave">${svg(I.exit)}<span>${
+          g.owner === auth.uid ? 'Supprimer le groupe' : 'Quitter le groupe'}</span></button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
   if (menu === 'tuto') return helpSheet(w);
   if (menu === 'help') {
     const h = HELP[helpKey];
@@ -3218,28 +3648,6 @@ function paintMenu() {
       <div class="menu">
         <div class="mhd">${svg(I.bulb)}<span class="mhx"><b>${esc(h[0])}</b></span></div>
         <div class="note htxt">${esc(h[1]).replace(/\n/g, '<br>')}</div>
-      </div>`;
-    mountMenu(w);
-    return;
-  }
-  if (menu === 'shortcuts') {
-    const base = location.origin + location.pathname;
-    const L = [['study', 'Réviser maintenant', 'les cartes du jour, tous paquets confondus'],
-               ['new', 'Nouveau paquet', 'la création d’un paquet'],
-               ['mail', 'Boîte de réception', 'les paquets reçus'],
-               ['group', 'Le groupe', 'bibliothèque, défis, classement']];
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.spark)}
-          <span class="mhx"><b>Raccourcis et Siri</b>
-            <i>ouvrir l’app à un endroit précis</i></span></div>
-        <div class="note">Sur Android, un appui long sur l’icône affiche déjà ces raccourcis.
-          Sur iPhone, ils passent par l’app <b>Raccourcis</b> : Nouveau raccourci →
-          <b>Ouvrir l’URL</b> → colle l’adresse → <b>Ajouter à Siri</b>, et choisis la phrase.</div>
-        <div class="mscroll">${L.map(([k, n, d]) => `
-          <button class="mi" data-copy="${base}?go=${k}">${svg(I.link)}
-            <span class="ml2"><span class="n">${n}</span><span class="sub">ouvre ${d}</span></span>
-            ${svg(I.copy)}</button>`).join('')}</div>
       </div>`;
     mountMenu(w);
     return;
@@ -3716,6 +4124,23 @@ document.addEventListener('click', async e => {
   if (a === 'unpublish') { if (d) libRemove(d); return; }
   if (a === 'duelnew2') { if (d) duelMake(d); return; }
   if (a === 'versopen') { if (!d) return; openMenu('vers'); return versPull(d.id); }
+  if (a === 'savehandle') {
+    const i = document.getElementById('hq');
+    if (await saveHandle(i ? i.value : '')) { closeMenu(); animate = false; render(); }
+    return;
+  }
+  if (a === 'domake') { const i = document.getElementById('gq'); return makeGroup(i ? i.value : ''); }
+  if (a === 'dojoin') { const i = document.getElementById('gq'); return joinGroup(i ? i.value : ''); }
+  if (a === 'gcode') {
+    const g = (groups || []).find(x => x.id === groupOf); if (!g) return;
+    const txt = g.code;
+    if (navigator.share) navigator.share({ text: `Rejoins « ${g.name} » sur Cartes avec le code ${txt}` }).catch(() => {});
+    else navigator.clipboard.writeText(txt).then(() => toast(I.check, 'Code copié'), () => {});
+    return;
+  }
+  if (a === 'gleave') { return leaveGroup(groupOf); }
+  if (a === 'matedrop') { return dropFriend(mateOpen); }
+  if (a === 'matesend') { closeMenu(); sendTo = mateOpen; sendMsg = ''; return toast(I.share, 'Ouvre un paquet, puis Partager'); }
   if (a === 'cfmine') return solveConflict('mine');
   if (a === 'cftheirs') return solveConflict('theirs');
   if (a === 'cfboth') return solveConflict('both');
@@ -3828,6 +4253,10 @@ function startStudy(id, rev, subset, opt) {
 }
 /* Reprise : l'état de la session survit à la fermeture de l'app */
 function saveResume() {
+  /* La séance de démonstration ne laisse pas de trace : sans ça, le
+     bandeau « Reprendre Italien — les bases » s'affichait sur le vrai
+     compte, qui n'a jamais eu ce paquet. */
+  if (demo) return;
   try {
     /* QCM et association sont des exercices courts, et leur état porte des
        références de cartes : on ne les met pas en reprise. */
@@ -3836,6 +4265,7 @@ function saveResume() {
   } catch (e) {}
 }
 function loadResume() {
+  if (demo) return null;
   try {
     const r = JSON.parse(localStorage.getItem('cartes.resume.' + auth.uid));
     if (r && Date.now() - r.t < 3 * DAY && r.i < r.queue.length
@@ -4183,6 +4613,13 @@ function bindDrag(el) {
 }
 function fling(dir) {
   const el = document.getElementById('top'); if (!el || el.dataset.gone) return;
+  /* Pendant l'étape qui apprend le geste, seul le bon sens passe : partir
+     du mauvais côté pendant qu'on lit « balaie à droite » embrouille plus
+     qu'autre chose. */
+  if (tour && tour.lock && dir !== tour.lock) {
+    el.style.transition = ''; el.style.transform = '';
+    return;
+  }
   el.dataset.gone = 1; el.classList.add('gone');
   el.style.transform = `translateX(${dir * 130}vw) rotate(${dir * 20}deg)`;
   el.style.opacity = 0;
@@ -4739,7 +5176,7 @@ function paintDraft() {
 
 /* ---------- interactions ---------- */
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-brange],[data-dpick],[data-help]');
+  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group]');
   if (!b) return;
   const ds = b.dataset;
   const a0 = ds.act;
@@ -4751,6 +5188,10 @@ $.addEventListener('click', e => {
     leaving = a0; return openMenu('leave');
   }
   if (ds.help !== undefined) { helpKey = ds.help; return openMenu('help'); }
+  if (ds.yes !== undefined) return answerFriend(ds.yes, true);
+  if (ds.no !== undefined) return answerFriend(ds.no, false);
+  if (ds.mate !== undefined) { mateOpen = ds.mate; return openMenu('mate'); }
+  if (ds.group !== undefined) { groupOf = ds.group; return openMenu('groupitem'); }
   if (ds.mail !== undefined) return openMail(+ds.mail);
   if (ds.dpick !== undefined) return duelPick(+ds.dpick);
   if (ds.lib !== undefined) { lib.open = ds.lib; return openMenu('libitem'); }
@@ -4815,7 +5256,17 @@ $.addEventListener('click', e => {
     if (aud) play(aud); else say(txt, useBack ? org.langb : org.langf);
     return;
   }
-  if (a === 'home') return go('home');
+  if (a === 'home' || a === 'tab-home') return go('home');
+  if (a === 'tab-commu' || a === 'commu') { commuPull(); return go('commu'); }
+  if (a === 'friends') { if (!friends) friendsPull(); return go('friends'); }
+  if (a === 'groups') { if (!groups) groupsPull(); return go('groups'); }
+  if (a === 'duels') { if (!duels.list) duelsPull(); return go('duels'); }
+  if (a === 'library') { if (!lib.list) libPull(); return go('library'); }
+  if (a === 'board') { if (!board.rows) boardPull(); return go('board'); }
+  if (a === 'doadd') return doAdd();
+  if (a === 'handle') return openMenu('handle');
+  if (a === 'newgroup') { addQ = ''; return openMenu('newgroup'); }
+  if (a === 'joingroup') { addQ = ''; return openMenu('joingroup'); }
   /* un quiz se lance depuis un paquet : en sortir, c'est y revenir */
   if (a === 'quitquiz') { const id = quiz && quiz.id; quiz = null;
     return deck(id) ? go('deck', id) : go('home'); }
@@ -4829,7 +5280,6 @@ $.addEventListener('click', e => {
   }
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (a === 'group') { groupPull(); return go('group'); }
-  if (a === 'shortcuts') return openMenu('shortcuts');
   if (a === 'help') return openMenu('tuto');
   if (a === 'duelnew') return openMenu('duelnew');
   if (a === 'duelquit') { duelRun = null; return go('group'); }
@@ -5014,18 +5464,15 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- raccourcis d'ouverture ----------
-   « ?go=… » ouvre l'app à un endroit précis. Android et les navigateurs de
-   bureau s'en servent pour le menu long appui sur l'icône, déclaré dans le
-   manifeste. iOS ne lit pas ces raccourcis-là, mais l'app Raccourcis sait
-   ouvrir une adresse : c'est le même chemin, et c'est ce qui permet de
-   dire « Dis Siri, révision ». Le paramètre est retiré aussitôt pour que
-   recharger la page ne rejoue pas l'action. */
+   « ?go=… » ouvre l'app à un endroit précis : c'est ce que le manifeste
+   déclare pour le menu d'appui long sur l'icône. Le paramètre est retiré
+   aussitôt, pour que recharger la page ne rejoue pas l'action. */
 const GOTO = {
   study: () => { if (!allDue()) { go('home'); return toast(I.check, 'Rien à revoir pour l’instant'); }
                  startStudy('all', false, null, { only: 'due', both: prefs.both }); },
   new: () => { resetComp(); go('import'); },
   mail: () => { mailbox.list = null; mailPull(); go('mail'); },
-  group: () => { groupPull(); go('group'); },
+  commu: () => { commuPull(); go('commu'); },
   stats: () => { stats.rows = null; statsPull(); go('stats'); }
 };
 function consumeGoto() {
@@ -5143,91 +5590,90 @@ let demo = false;                       // pendant la visite : plus rien ne sort
    éventuellement le geste qui la fait avancer toute seule (done). */
 const nav = (name, id) => () => { closeMenu(); view = { name, id }; };
 const CHAPTERS = [
-  { id: 'bases', name: 'Tes paquets', icon: 'layers', steps: [
+  { id: 'bases', name: 'Le tour du propriétaire', icon: 'layers', steps: [
     { go: nav('home'), title: 'Bienvenue',
-      text: 'Deux minutes pour faire le tour. Tu es sur un compte de démonstration : ' +
-            'rien de ce qui se passe ici ne touche tes paquets.' },
+      text: 'Tout ce que tu vas voir appartient à Léa, un compte d’essai. Tes paquets à toi ne bougent pas.' },
     { go: nav('home'), sel: '.grid .tile', title: 'Un paquet',
-      text: 'Un jeu de cartes sur un sujet. Le chiffre en haut à droite compte les cartes à revoir aujourd’hui.' },
-    { go: nav('home'), sel: '.grid .tile .tbar', pad: 6, title: 'La barre du paquet',
-      text: 'La part de cartes installées pour de bon — celles qui ne reviendront plus avant trois semaines.' },
-    { go: nav('home'), sel: '.sbar', title: 'L’état de toutes tes cartes',
-      text: 'Orange : en apprentissage. Vert clair : jeunes. Vert foncé : mûres. Elle se remplit à mesure que tu révises.' },
-    { go: nav('home'), sel: '.goal', title: 'Ton objectif du jour',
-      text: 'L’anneau se remplit à chaque carte revue. Tu fixes la cible dans les réglages.' },
-    { go: nav('home'), sel: '.marathon', title: 'Le marathon',
-      text: 'Toutes les cartes dues, tous paquets confondus, dans une seule séance.' },
-    { go: nav('home'), sel: '.grid .tile', pass: 1, tap: 'Touche le paquet',
-      done: () => view.name === 'deck', title: 'Ouvre-le',
-      text: 'Touche « Italien — les bases » pour entrer dedans.' }
+      text: 'Un jeu de cartes sur un sujet. La pastille rouge dit combien de cartes sont à revoir aujourd’hui.' },
+    { go: nav('home'), sel: '.sbar', title: 'Les couleurs',
+      text: 'Orange : tu viens de commencer. Vert clair : tu sais depuis peu. Vert foncé : tu sais depuis longtemps.' },
+    { go: nav('home'), sel: '.goal', title: 'L’objectif du jour',
+      text: 'L’anneau se remplit à chaque carte revue. Tu choisis le nombre dans les réglages.' },
+    { go: nav('home'), sel: '.grid .tile', pass: 1, tap: 'Touche le paquet', wait: 400,
+      done: () => view.name === 'deck', title: 'Entrons dedans',
+      text: 'Touche « Italien — les bases ».' }
   ] },
   { id: 'revi', name: 'Réviser', icon: 'play', steps: [
-    { go: nav('deck', 'dmo1'), sel: '.head', title: 'La fiche du paquet',
-      text: 'Matière, nombre de cartes, et combien sont à revoir maintenant.' },
-    { go: nav('deck', 'dmo1'), sel: '.mixwrap', title: 'Le détail',
-      text: 'La même barre, en grand, avec le compte de chaque état et les cartes coriaces — celles que tu rates sans arrêt.' },
-    { go: nav('deck', 'dmo1'), sel: '.duo .prim', pass: 1, tap: 'Touche Réviser',
-      done: () => view.name === 'study', title: 'Lance la séance',
-      text: 'Les cartes arrivent une par une, dans l’ordre choisi.' },
-    { go: () => { if (view.name !== 'study') startStudy('dmo1'); study.flip = false; },
-      sel: '#top', pass: 1, tap: 'Touche la carte',
-      done: () => study && study.flip, title: 'Retourne la carte',
-      text: 'Tu lis le recto, tu cherches, puis tu touches pour voir la réponse.' },
-    { go: () => { if (view.name !== 'study') startStudy('dmo1'); study.flip = false; prefs.simple = true; },
-      sel: '#top', swipe: 1, pass: 1, tap: 'Balaie à droite',
-      done: () => study && study.i > 0, title: 'À droite je sais',
-      text: 'Balaie la carte à droite quand tu sais, à gauche quand c’est à revoir. Les deux pastilles te le rappellent sous le doigt.' },
-    { go: () => { prefs.simple = false; if (view.name !== 'study') startStudy('dmo1'); study.flip = true; },
-      sel: '.grades', title: 'Ou les quatre boutons',
-      text: 'Encore, Difficile, Correct, Facile. Sous chacun, la date du prochain passage : c’est toi qui décides du rythme.' },
-    { go: () => { if (view.name !== 'study') startStudy('dmo1'); }, sel: '.bar', title: 'Pendant la séance',
-      text: 'Inverser le sens de la carte, mélanger, ou passer en mode zen où il ne reste que la carte.' }
+    { go: nav('deck', 'dmo1'), sel: '.mixwrap', title: 'Le détail du paquet',
+      text: 'Les mêmes couleurs, carte par carte. « Coriaces » : celles que tu rates à chaque fois.' },
+    { go: nav('deck', 'dmo1'), sel: '.duo .prim', pass: 1, tap: 'Touche Réviser', wait: 500,
+      done: () => view.name === 'study', title: 'On y va',
+      text: 'Les cartes arrivent une par une.' },
+    { go: () => { if (view.name !== 'study' || !study) startStudy('dmo1'); study.flip = false; },
+      sel: '#top', pass: 1, tap: 'Touche la carte', wait: 1100,
+      done: () => study && study.flip, title: 'Retourne-la',
+      text: 'Tu lis, tu cherches dans ta tête, puis tu touches pour voir la réponse.' },
+    { go: () => { if (view.name !== 'study' || !study) startStudy('dmo1'); prefs.simple = true; },
+      sel: '#top', swipe: 1, pass: 1, lock: 1, tap: 'Balaie vers la droite', wait: 450,
+      done: () => study && study.i > 0, title: 'À droite : je sais',
+      text: 'À gauche quand c’est à revoir. Les deux pastilles apparaissent sous ton doigt pendant le geste.' },
+    { go: () => { prefs.simple = false; if (view.name !== 'study' || !study) startStudy('dmo1'); study.flip = true; },
+      sel: '.grades', title: 'Ou tu dis si c’était dur',
+      text: 'Plus c’était facile, plus la carte mettra de temps à revenir. La date est écrite sous chaque bouton.' },
+    { go: nav('home'), sel: '.marathon', title: 'Tout revoir d’un coup',
+      text: 'Les cartes dues de tous les paquets, dans une seule séance.' }
   ] },
-  { id: 'jeux', name: 'Les jeux', icon: 'pen', steps: [
-    { go: nav('deck', 'dmo1'), sel: '[data-act="quizdeck"]', pass: 1, tap: 'Touche Quiz',
-      done: () => view.name === 'run', title: 'Le quiz',
-      text: 'Tu écris la réponse au lieu de la reconnaître. Bien plus exigeant qu’une carte qu’on retourne.' },
-    { go: () => { if (view.name !== 'run' || !quiz) startQuiz('dmo1'); }, sel: '.qcard, .ans, .arow',
-      title: 'Une question',
-      text: 'Tape ta réponse. Les accents et la casse sont tolérés, tu règles la sévérité paquet par paquet.' },
-    { go: nav('deck', 'dmo1'), sel: '[data-act="menu"]', title: 'Les autres jeux',
-      text: 'Dans le menu du paquet : QCM, association, vrai/faux, et les cartes coriaces à part.' }
-  ] },
-  { id: 'creer', name: 'Créer des cartes', icon: 'plus', steps: [
-    { go: nav('home'), sel: '.fab', pass: 1, tap: 'Touche +',
+  { id: 'creer', name: 'Fabriquer des cartes', icon: 'plus', steps: [
+    { go: nav('home'), sel: '.fab', pass: 1, tap: 'Touche le +', wait: 450,
       done: () => view.name === 'import', title: 'Un nouveau paquet',
-      text: 'Le bouton rond, en bas à droite : nom, matière, puis les cartes.' },
+      text: 'Le bouton rond en bas à droite.' },
     { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
-      sel: '#tx', title: 'Coller une liste',
-      text: 'Colle un tableau de vocabulaire ou une liste : les cartes se découpent toutes seules, tabulation, virgule ou tiret.' },
+      sel: '#tx', title: 'Colle une liste',
+      text: 'Une ligne par carte : le mot, une tabulation ou un tiret, la réponse. Le découpage se fait tout seul.' },
     { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
-      sel: '.airow', title: 'À partir d’un cours',
-      text: 'Colle ton cours et l’IA en tire des cartes. Une photo de page ou un PDF marchent aussi.' }
+      sel: '.airow', title: 'Ou pars de ton cours',
+      text: 'Photo d’une page, PDF, ou texte collé : les cartes sont écrites pour toi.' }
+  ] },
+  { id: 'jeux', name: 'S’entraîner autrement', icon: 'pen', steps: [
+    { go: nav('deck', 'dmo1'), sel: '[data-act="quizdeck"]', pass: 1, tap: 'Touche Quiz', wait: 500,
+      done: () => view.name === 'run', title: 'Le quiz',
+      text: 'Tu écris la réponse au lieu de la reconnaître. C’est plus dur, et ça retient mieux.' },
+    { go: () => { if (view.name !== 'run' || !quiz) startQuiz('dmo1'); }, sel: '.arow, .qcard',
+      title: 'Tape ta réponse',
+      text: 'Les accents et les majuscules sont pardonnés. Tu règles la sévérité paquet par paquet.' },
+    { go: nav('deck', 'dmo1'), sel: '[data-act="menu"]', title: 'Et aussi',
+      text: 'QCM, association, vrai ou faux : tout est dans ce menu.' }
   ] },
   { id: 'ranger', name: 'Ranger et retrouver', icon: 'search', steps: [
-    { go: nav('deck', 'dmo2'), sel: '.lbl .pick', title: 'Sélectionner',
-      text: 'Coche plusieurs cartes d’un coup pour les déplacer, les suspendre ou les supprimer ensemble.' },
-    { go: nav('deck', 'dmo2'), sel: '.row .grip', pad: 4, title: 'Réordonner',
-      text: 'Attrape la poignée et déplace la carte. Même chose pour les paquets, sur l’accueil.' },
-    { go: nav('home'), sel: '[data-act="find"]', title: 'Chercher partout',
-      text: 'Un mot, et il est cherché dans les noms de paquets comme dans les deux faces de toutes les cartes.' },
+    { go: nav('deck', 'dmo2'), sel: '[data-act="selmode"]', title: 'Plusieurs cartes à la fois',
+      text: 'Coche des cartes pour les déplacer dans un autre paquet, les mettre de côté ou les supprimer ensemble.' },
+    { go: nav('home'), sel: '[data-act="find"]', title: 'Retrouver un mot',
+      text: 'Cherché dans les noms de paquets et dans les deux faces de toutes tes cartes.' },
     { go: nav('settings'), sel: '[data-act="trash"]', title: 'Rien ne se perd',
-      text: 'Un paquet supprimé attend trente jours dans la corbeille. Et la dernière action reste annulable.' }
+      text: 'Un paquet supprimé attend trente jours ici. Et la dernière action reste annulable.' }
   ] },
-  { id: 'partage', name: 'Partager et suivre', icon: 'share', steps: [
-    { go: () => { view = { name: 'deck', id: 'dmo1' }; menu = null; }, sel: '[data-act="menu"]',
-      title: 'Partager un paquet',
-      text: 'Depuis le menu du paquet : l’envoyer à un ami, en faire un lien de consultation, ou le publier dans la bibliothèque du groupe.' },
-    { go: () => { groupTab = 'lib'; lib.list = []; view = { name: 'group' }; menu = null; },
-      sel: '#gTabs', title: 'Le groupe',
-      text: 'L’étagère commune, les défis — dix questions, les mêmes pour tout le monde — et le classement de la semaine.' },
-    { go: () => { view = { name: 'mail' }; menu = null; }, sel: '.bar', title: 'Ta boîte',
-      text: 'Les paquets qu’on t’envoie arrivent là, avec un mot. Un geste pour les ajouter aux tiens.' },
-    { go: () => { stats.rows = []; stats.err = 0; view = { name: 'stats' }; menu = null; },
-      sel: '.tiles, .card2', title: 'Tes statistiques',
-      text: 'Cartes revues, taux de réussite, assiduité, rétention. De quoi voir si le rythme tient.' },
-    { go: nav('settings'), sel: '[data-act="help"]', title: 'Et pour revoir tout ça',
-      text: 'Réglages, puis Aide. Chaque chapitre se rejoue tout seul, sans toucher à tes paquets.' }
+  { id: 'commu', name: 'La communauté', icon: 'user', steps: [
+    { go: nav('home'), sel: '.tabs button:last-child', pass: 1, tap: 'Touche le deuxième onglet', wait: 450,
+      done: () => view.name === 'commu', title: 'Le deuxième onglet',
+      text: 'Tout ce qui te relie aux autres est rangé là. Tu peux aussi glisser l’écran vers la gauche.' },
+    { go: nav('commu'), sel: '.mecard', title: 'Ton pseudo',
+      text: 'C’est ce que tes amis taperont pour t’ajouter. Personne ne voit ton adresse e-mail.' },
+    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(1)', title: 'Les amis',
+      text: 'Tu entres le pseudo de quelqu’un, il accepte, et vous partagez paquets, défis et classement.' },
+    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(2)', title: 'Les groupes',
+      text: 'Une classe, un binôme. Tu crées, tu donnes le code, et tout le groupe voit les mêmes paquets.' },
+    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(3)', title: 'Les défis',
+      text: 'Dix questions tirées d’un paquet, les mêmes pour tout le monde, un seul essai chacun.' },
+    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(4)', title: 'La bibliothèque',
+      text: 'Les paquets que tes amis ont publiés. Tu en copies un chez toi d’un geste.' },
+    { go: nav('commu'), sel: '.rows', title: 'Le classement',
+      text: 'Le nombre de cartes révisées par chacun, et rien d’autre : ni tes paquets, ni tes erreurs.' }
+  ] },
+  { id: 'fin', name: 'Pour finir', icon: 'chart', steps: [
+    { go: nav('settings'), sel: '[data-act="stats"]', title: 'Tes statistiques',
+      text: 'Cartes revues, réussite, régularité : de quoi voir si le rythme tient.' },
+    { go: nav('settings'), sel: '[data-act="help"]', title: 'Revoir tout ça',
+      text: 'Réglages, puis Aide. Chaque chapitre se rejoue seul, toujours sur le compte d’essai.' }
   ] }
 ];
 
@@ -5240,11 +5686,27 @@ function startTour(chapId) {
   if (tour) return;
   const steps = tourSteps(chapId);
   if (!steps.length) return;
-  tourSave = { db, prefs, view, study, quiz, filter, peek, groupTab };
+  tourSave = { db, prefs, view, study, quiz, filter, peek, groupTab,
+               me, mates, asks, friends, groups, duels, lib, board };
   demo = true;
   closeMenu(); selOff();
   db = demoDB();
-  prefs = { ...DEFPREFS, name: 'Léa', goal: 40, sound: true };
+  prefs = { ...DEFPREFS, name: 'Léa', goal: 40, sound: true, tuto: 1 };
+  me = { id: 'demo', handle: 'lea' };
+  mates = [{ id: 'f1', handle: 'thibault', name: 'Thibault', status: 'ok', sens: 'envoyee' },
+           { id: 'f2', handle: 'ibti', name: 'Ibti', status: 'ok', sens: 'recue' }];
+  asks = []; friends = mates.slice();
+  groups = [{ id: 'g1', name: 'Prépa D1', code: 'K7PQR', owner: 'demo' }];
+  duels = { list: [{ id: 'du1', owner: 'f1', who: 'thibault', name: 'Droit civil',
+                     total: 10, cards: [], created_at: new Date(Date.now() - 3600e3).toISOString() }],
+            scores: [], err: 0, open: null };
+  lib = { list: [{ deck_id: 'lx', user_id: 'f1', who: 'thibault', name: 'Droit civil — définitions',
+                   subject: 'Droit', n: 64, cards: [], updated_at: new Date(Date.now() - 2 * DAY).toISOString() }],
+          err: 0, open: null };
+  board = { rows: [{ uid: 'f1', who: 'Thibault', handle: 'thibault', n: 185, ok: 127, jours: 5 },
+                   { uid: auth.uid, who: 'Léa', handle: 'lea', n: 92, ok: 70, jours: 4 },
+                   { uid: 'f2', who: 'Ibti', handle: 'ibti', n: 31, ok: 28, jours: 2 }],
+            err: 0, range: 7 };
   study = null; quiz = null; filter = ''; peek = false; deckQ = ''; reorder = false;
   tour = { i: 0, steps };
   document.body.classList.add('touring');
@@ -5254,6 +5716,7 @@ function runStep() {
   if (!tour) return;
   const s = tour.steps[tour.i];
   if (!s) return endTour(true);
+  tour.lock = s.lock || 0;
   try { if (s.go) s.go(); } catch (e) {}
   animate = false; render();
   /* La cible peut être plus bas que l'écran — l'entrée « Aide » est en
@@ -5271,11 +5734,20 @@ function runStep() {
   tourPoll = setInterval(() => {
     if (!tour) return clearInterval(tourPoll);
     paintTour();
-    if (s.done) { try { if (s.done()) nextStep(); } catch (e) {} }
+    if (s.done && !tour.hold) {
+      try {
+        if (s.done()) {
+          /* on laisse voir le résultat du geste avant d'enchaîner */
+          tour.hold = 1;
+          setTimeout(() => { if (tour) { tour.hold = 0; nextStep(); } }, s.wait || 250);
+        }
+      } catch (e) {}
+    }
   }, 140);
 }
 function nextStep() {
   if (!tour) return;
+  tour.hold = 0;
   beep(true, true);
   tour.i++;
   runStep();
@@ -5290,6 +5762,8 @@ function endTour(done) {
   if (sv) {
     db = sv.db; prefs = sv.prefs; view = sv.view; study = sv.study; quiz = sv.quiz;
     filter = sv.filter; peek = sv.peek; groupTab = sv.groupTab;
+    me = sv.me; mates = sv.mates; asks = sv.asks; friends = sv.friends;
+    groups = sv.groups; duels = sv.duels; lib = sv.lib; board = sv.board;
   }
   closeMenu();
   if (!prefs.tuto) { prefs.tuto = 1; savePrefs(); }
@@ -5356,7 +5830,8 @@ function paintTour() {
   const last = tour.i === tour.steps.length - 1;
   const pct = Math.round((tour.i + 1) / tour.steps.length * 100);
   const html = `<i class="tprog"><b style="width:${pct}%"></b></i>
-    <i class="tchap">${esc(s.chap)} · ${tour.i + 1}/${tour.steps.length}</i>
+    <i class="tchap">${esc(s.chap)} · ${tour.i + 1}/${tour.steps.length}
+      <b class="tdemo">compte d’essai</b></i>
     <b>${esc(s.title)}</b><p>${esc(s.text)}</p>
     ${s.swipe ? '<i class="tswipe">' + SWIPE + '</i>' : ''}
     <div class="tnav">
