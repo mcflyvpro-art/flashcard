@@ -1722,11 +1722,23 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 .card.gone .swr{transition:opacity .3s linear}
 @media (prefers-reduced-motion:reduce){.swr{transition:none}}
 
-/* ---------- la fiche va où on la met ----------
-   Déplacée librement, elle peut sortir du cadre prévu pour elle. Sans
-   cette ligne, le navigateur considère qu'il y a quelque chose à voir
-   plus loin et rend la page défilable : l'écran se met à glisser sous le
-   doigt pendant qu'on promène la fiche. On coupe à la fenêtre — la fiche
-   va donc partout où l'on voit, et nulle part au-delà.
-   « clip » plutôt que « hidden » : il ne crée pas de zone défilable. */
-#app[data-view="study"]{overflow:hidden;overflow:clip}
+
+/* ══════════ l'écran ne rebondit plus ══════════
+   C'était le document lui-même qui glissait : sur iPhone une page tirée
+   vers le bas rebondit même quand il n'y a rien de plus à voir, et pendant
+   qu'on déplaçait une fiche c'est tout l'écran qui partait avec elle.
+
+   La racine ne défile plus du tout — elle n'a donc plus rien contre quoi
+   rebondir — et le défilement passe au corps de page, qui garde la main
+   jusqu'au bout au lieu de la repasser au document.
+
+   On ne touche pas à #app : en faire un conteneur de hauteur fixe aurait
+   comprimé les enfants des écrans qui n'ont pas de .page — le détail d'un
+   livre, par exemple, dont la liste de fiches se serait tassée au lieu de
+   déborder. Il garde sa hauteur libre, et c'est le corps qui défile.
+
+   La fiche qu'on déplace, elle, est déjà protégée par son touch-action :
+   un doigt qui part d'elle ne fait rien défiler. */
+html{height:100%;overflow:hidden;overscroll-behavior:none}
+body{height:100%;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
