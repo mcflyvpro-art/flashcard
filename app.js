@@ -1347,6 +1347,50 @@ function applyFont() {
   document.documentElement.style.setProperty('--fs', prefs.font || 1);
 }
 
+/* Le voile de démarrage s'efface à la première vue dessinée, mais pas
+   avant que son animation ait eu le temps d'exister. */
+let booted = 0;
+function dropBoot() {
+  const n = document.getElementById('boot');
+  if (!n || booted) return;
+  booted = 1;
+  setTimeout(() => { n.classList.add('off'); setTimeout(() => n.remove(), 500); }, 320);
+}
+
+/* ---------- synchronisation vivante ----------
+   Le classement et le Journal ne doivent jamais attendre un rechargement.
+   Tant qu'un de ces écrans est ouvert et que l'app est au premier plan,
+   on redemande les chiffres à intervalle régulier ; on redemande aussi
+   dès qu'on revient sur l'app, et une page jouée déclenche une mise à
+   jour rapprochée pour que son effet se voie tout de suite. */
+const LIVEMS = 15000;
+let liveT = 0, liveAt = 0, liveSoon = 0;
+const LIVEV = /^(stats|commu|board|duels|library|friends|groups|group)$/;
+function livePull(force) {
+  if (!auth || demo || document.hidden || !LIVEV.test(view.name)) return;
+  if (!force && Date.now() - liveAt < 4000) return;
+  liveAt = Date.now();
+  if (view.name === 'stats') statsPull(1);
+  else {
+    boardPull(1);
+    if (view.name === 'duels') duelsPull();
+    if (view.name === 'library') libPull();
+  }
+}
+function liveSync() {
+  const want = auth && !demo && LIVEV.test(view.name);
+  if (want && !liveT) { liveT = setInterval(livePull, LIVEMS); livePull(); }
+  if (!want && liveT) { clearInterval(liveT); liveT = 0; }
+}
+/* Après une page jouée : le serveur vient d'encaisser la ligne, on lui
+   laisse un souffle puis on redemande le décompte partagé. */
+function liveBump() {
+  clearTimeout(liveSoon);
+  liveSoon = setTimeout(() => livePull(true), 1200);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) livePull(true); });
+window.addEventListener('focus', () => livePull(true));
+
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
@@ -1369,6 +1413,8 @@ function render() {
   const on = $.querySelector('.pills .p.on');
   if (on && on.previousElementSibling) on.scrollIntoView({ block: 'nearest', inline: 'center' });
   if (menu) paintMenu();
+  liveSync();
+  dropBoot();
 }
 let pageDir = 0;
 function go(name, id, dir) {
@@ -1845,7 +1891,19 @@ function deckView() {
   if (!nq) bindReorder(d);
   const dq = document.getElementById('dq');
   if (dq) {
-    dq.addEventListener('input', () => { deckQ = dq.value; animate = false; render(); });
+    let dt = 0;
+    dq.addEventListener('input', () => {
+      deckQ = dq.value;
+      clearTimeout(dt);
+      dt = setTimeout(() => {
+        /* on garde le champ vivant et on ne refait que la liste : sinon
+           le clavier se referme entre deux lettres */
+        const keep = document.activeElement === dq && dq.selectionStart;
+        animate = false; render();
+        const again = document.getElementById('dq');
+        if (again && keep != null) { again.focus(); again.setSelectionRange(keep, keep); }
+      }, 160);
+    });
     if (!deckQ) setTimeout(() => dq.focus(), 50);
   }
 }
@@ -2003,13 +2061,7 @@ const HELP = {
     'Ratées : celles que tu manques le plus souvent d’abord.\nUrgentes : les plus en retard d’abord.'],
   fast: ['Mode rapide',
     'Une bonne réponse enchaîne toute seule sur la suivante, au quiz comme en QCM et en vrai/faux. ' +
-    'Sans lui, la correction reste à l’écran jusqu’à ce que tu appuies sur Suivant.'],
-  retention: ['Rétention',
-    'La part de bonnes réponses selon le temps écoulé depuis la fois précédente. ' +
-    'C’est la mesure qui dit si les échéances choisies par le moteur tiennent.'],
-  mature: ['Progression',
-    'La part de cartes mûres : celles dont la prochaine échéance dépasse trois semaines. ' +
-    'C’est ce qui est réellement installé, par opposition à ce qui vient d’être vu.']
+    'Sans lui, la correction reste à l’écran jusqu’à ce que tu appuies sur Suivant.']
 };
 let helpKey = null;
 const hlp = k => `<button class="hq" data-help="${k}" aria-label="${esc(HELP[k][0])}, explication">?</button>`;
@@ -2047,7 +2099,8 @@ function settingsView() {
         <div class="sr flat col">
           <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des pages</span>${hlp('order')}</div>
           <div class="seg" id="pOrder">
-            ${[['random', 'Aléatoire'], ['deck', 'Du livre'], ['worst', 'Ratées'], ['due', 'Urgentes']]
+            ${[['random', 'Aléatoire'], 
+['deck', 'Du livre'], ['worst', 'Ratées'], ['due', 'Urgentes']]
               .filter(([v]) => !(prefs.simple && v === 'due'))
               .map(([v, l]) => `<button data-ord="${v}" class="${prefs.order === v ? 'on' : ''}">${l}</button>`).join('')}
           </div>
@@ -2104,8 +2157,6 @@ function settingsView() {
           <span class="n">Annuler ${esc(undoLabel().toLowerCase())}</span></button>` : ''}
         <button class="sr flat" data-act="trash">${svg(I.trash)}<span class="n">Corbeille</span>
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarder</span>
-          <span class="c">${db.decks.length}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="help">${svg(I.bulb)}<span class="n">Aide</span>
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
       </div>
@@ -2638,11 +2689,15 @@ function duelView() {
    Les révisions de chacun restent privées : la fonction côté serveur ne
    rend qu'un décompte par compte, jamais le détail des cartes ni des
    erreurs. On compare un volume de travail, pas un contenu. */
-async function boardPull() {
+async function boardPull(bg) {
   try {
     board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range }) || [];
     board.err = 0;
   } catch (e) { board.err = 1; }
+  const sig = JSON.stringify(board.rows) + ':' + board.err;
+  const same = bg && sig === board.sig;        // rien de neuf : on ne fait pas clignoter l'écran
+  board.sig = sig;
+  if (same) return;
   if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { animate = false; render(); }
 }
 
@@ -2752,7 +2807,7 @@ function friendsView() {
     <div class="page">
       <div class="fld addf"><input id="addq" type="search" placeholder="Pseudo d’un lecteur"
         autocomplete="off" autocapitalize="none" spellcheck="false" value="${esc(addQ)}"
-        aria-label="Pseudo d’un lecteur"><button class="lnk" data-act="doadd">Ajouter</button></div>
+        aria-label="Pseudo d’un lecteur"><button class="addgo" data-act="doadd">Ajouter</button></div>
       ${a.length ? `<div class="lbl"><span>Demandes reçues</span><span>${a.length}</span></div>
         <div class="slist">${a.map(f => `<div class="sr flat">
           <i class="av sm">${esc(initial(f.handle || f.name))}</i>
@@ -2918,7 +2973,7 @@ function groupPull() {
 const dayKey = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return +d; };
 const dayLabel = t => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 
-async function statsPull() {
+async function statsPull(bg) {
   try {
     const since = new Date(Date.now() - 365 * DAY).toISOString();
     const rows = await api('/rest/v1/reviews?select=deck_id,card_id,mode,rating,correct,ms,created_at'
@@ -2926,7 +2981,12 @@ async function statsPull() {
     stats.rows = rows || [];
     stats.err = 0;
   } catch (e) { stats.err = 1; }
-  if (view.name === 'stats') render();
+  /* Le rafraîchissement de fond ne redessine que si les chiffres ont
+     bougé : sinon l'écran sautait toutes les quinze secondes pour rien. */
+  const sig = (stats.rows || []).length + ':' + stats.err;
+  const same = bg && sig === stats.sig;       // rafraîchissement de fond sans rien de neuf
+  stats.sig = sig;
+  if (view.name === 'stats' && !same) { animate = false; render(); }
 }
 
 /* index texte des cartes, pour nommer celles qui reviennent dans le top */
@@ -3072,13 +3132,18 @@ function findResults(q) {
 }
 
 function findView() {
-  const r = findResults(findQ);
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
       <div class="fld"><input id="fq" type="search" placeholder="Chercher un mot, un livre…"
         autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search"
         value="${esc(findQ)}" aria-label="Recherche"></div></div>
-    <div class="page">
+    <div class="page" id="fres"></div>`;
+  paintFind();
+  bindFind();
+function paintFind() {
+  const box = document.getElementById('fres'); if (!box) return;
+  const r = findResults(findQ);
+  box.innerHTML = `
       ${!findQ.trim() ? `<div class="empty">${svg(I.search)}</div>`
         : (!r.decks.length && !r.cards.length) ? `<div class="empty">${svg(I.search)}<p><b>Rien trouvé</b>pour « ${esc(findQ)} »</p></div>`
         : `${r.decks.length ? `<div class="lbl"><span>Livres</span><span>${r.decks.length}</span></div>
@@ -3090,11 +3155,23 @@ function findView() {
           <div class="slist">${r.cards.map(({ c, d }) => `<button class="sr flat" data-go="${d.id}">
             <span class="ml2"><span class="n">${hl(plain(c.f), findQ)}</span>
               <span class="sub">${hl(plain(c.b), findQ)} · ${esc(d.name)}</span></span>
-            ${svg(I.arrow)}</button>`).join('')}</div>` : ''}`}
-    </div>`;
+            ${svg(I.arrow)}</button>`).join('')}</div>` : ''}`}`;
+}
+function bindFind() {
   const f = document.getElementById('fq');
-  f.addEventListener('input', () => { findQ = f.value; animate = false; render(); });
-  setTimeout(() => { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }, 50);
+  /* On ne redessine que les résultats. Redessiner l'écran entier
+     recréait le champ à chaque lettre : il perdait le curseur et le
+     clavier se refermait au milieu du mot. */
+  let t = 0;
+  f.addEventListener('input', () => {
+    findQ = f.value;
+    clearTimeout(t);
+    t = setTimeout(paintFind, 90);
+  });
+  if (document.activeElement !== f) setTimeout(() => {
+    f.focus(); f.setSelectionRange(f.value.length, f.value.length);
+  }, 50);
+}
 }
 
 /* surligne ce qui a été cherché, sans jamais laisser passer de balise */
@@ -3162,29 +3239,24 @@ function statsView() {
         <div class="heatk"><span>${dayLabel(days[0])}</span><span>aujourd’hui</span></div>
       </div>
 
-      <div class="lbl"><span>Rétention</span>${hlp('retention')}<span>sur un an</span></div>
-      <div class="card2">
-        ${[[1, 'Le lendemain'], [7, 'Après une semaine'], [30, 'Après un mois']].map(([b, l]) => {
-          const [o, t] = S.ret[b];
-          const p = t ? Math.round(o / t * 100) : 0;
-          return `<div class="brow"><span class="bl">${l}</span>
-            <span class="bt"><i style="width:${t ? p : 0}%;background:${ringCol(t ? o / t : 0)}"></i></span>
-            <span class="bv">${t ? p + '%' : '—'}</span></div>`;
-        }).join('')}
-      </div>
+      <div class="lbl"><span>Ces sept jours</span></div>
+      <div class="card2">${weekBars(S)}</div>
 
-      <div class="lbl"><span>Progression</span>${hlp('mature')}<span>${prog.length} livre${prog.length > 1 ? 's' : ''}</span></div>
+      <div class="lbl"><span>Où en sont tes livres</span><span>${prog.length || ''}</span></div>
       <div class="card2">
-        ${prog.length ? prog.map(p => `<div class="brow"><span class="bl">${esc(p.d.name)}</span>
-          <span class="bt"><i style="width:${p.pct}%;background:${subj(p.d.subject).d}"></i></span>
-          <span class="bv">${p.pct}%</span></div>`).join('')
+        ${prog.length ? prog.map(p => `<div class="bkline">
+          <span class="bkn">${esc(p.d.name)}<i>${p.k.mature} sue${p.k.mature > 1 ? 's' : ''} sur ${p.n}</i></span>
+          <span class="mix sm">${['new', 'learn', 'young', 'mature'].filter(x => p.k[x])
+            .map(x => `<i class="${x}" style="flex:${p.k[x]}"></i>`).join('')}</span>
+        </div>`).join('')
           : '<div class="note">Aucun livre pour l’instant.</div>'}
       </div>
 
       ${S.subjects.length ? `<div class="lbl"><span>Temps par matière</span></div>
       <div class="card2">
         ${S.subjects.map(x => `<div class="brow"><span class="bl">${esc(x.k)}</span>
-          <span class="bt"><i style="width:${Math.round(x.p * 100)}%"></i></span>
+          <span class="bt"><i style="width:${Math.round(x.p * 100)}%;background:${
+            subjColorByName(x.k)}"></i></span>
           <span class="bv">${x.v >= 60000 ? Math.round(x.v / 60000) + ' min' : Math.round(x.v / 1000) + ' s'}</span></div>`).join('')}
       </div>` : ''}
 
@@ -3208,6 +3280,30 @@ function statsView() {
     stats.range = +b.dataset.strange; animate = false; render();
   });
 }
+
+/* Les sept derniers jours, en colonnes : on voit d'un coup les jours
+   travaillés et les jours sautés, sans avoir à lire un pourcentage. */
+function weekBars(S) {
+  const out = [];
+  const top = Math.max(1, ...[...Array(7)].map((_, i) => {
+    const v = S.byDay.get(dayKey(Date.now() - i * DAY)); return v ? v.n : 0;
+  }));
+  for (let i = 6; i >= 0; i--) {
+    const t = Date.now() - i * DAY;
+    const v = S.byDay.get(dayKey(t));
+    const n = v ? v.n : 0;
+    out.push(`<div class="wd"><i style="height:${Math.max(3, Math.round(n / top * 100))}%"
+      class="${n ? '' : 'nil'}"></i><b>${n || ''}</b>
+      <span>${['D', 'L', 'M', 'M', 'J', 'V', 'S'][new Date(t).getDay()]}</span></div>`);
+  }
+  return `<div class="week">${out.join('')}</div>`;
+}
+/* la couleur d'une matière depuis son nom : les statistiques agrègent par
+   nom, pas par identifiant */
+const subjColorByName = name => {
+  const t = db.subjects.find(x => x.name === name);
+  return t ? (PALETTE[t.color] || PALETTE.graphite).d : 'var(--soft)';
+};
 
 /* ---------- pages d'un PDF ----------
    Une feuille légère, hors du système de menus : elle se referme d'
@@ -3572,6 +3668,7 @@ function paintMenu() {
           <button class="mg" data-mact="pkhide">${svg(d.hidden ? I.eye : I.eyeoff)}<span>${d.hidden ? 'Réafficher' : 'Masquer'}</span></button>
           <button class="mg ${d.cards.length > 3 ? '' : 'off'}" data-mact="pksplit">${svg(I.split)}<span>Scinder</span></button>
           <button class="mg" data-mact="pkset">${svg(I.gear)}<span>Réglages</span></button>
+          <button class="mg warn" data-mact="pkdel">${svg(I.trash)}<span>Supprimer</span></button>
         </div>
         <button class="mi" data-mact="openpeek" style="justify-content:center;font-weight:700">
           ${svg(I.play)}Ouvrir le livre</button>
@@ -3585,7 +3682,7 @@ function paintMenu() {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.share)}Partager « ${esc(d.name)} »</div>
-        <button class="mi" data-mact="sendfriend">${svg(I.mail)}Envoyer à un ami<span class="tail">${friends ? friends.length : ''}</span></button>
+        <button class="mi" data-mact="sendfriend">${svg(I.mail)}Prêter à un lecteur<span class="tail">${mates ? mates.length : ''}</span></button>
         <button class="mi" data-mact="rolink">${svg(I.link)}${m.tok ? 'Copier le lien de consultation' : 'Créer un lien de consultation'}</button>
         ${m.tok ? `<button class="mi warn" data-mact="roff">${svg(I.eyeoff)}Révoquer le lien</button>` : ''}
         <div class="msep"></div>
@@ -3773,14 +3870,16 @@ function paintMenu() {
   }
   if (menu === 'sendfriend') {
     const d = deck(view.id); if (!d) { menu = null; return; }
-    const list = friends || [];
+    /* seuls les lecteurs qui ont accepté : envoyer un livre à quelqu'un
+       qui n'a pas encore répondu ne mène nulle part */
+    const list = mates || [];
     const chosen = list.find(p => p.id === sendTo);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.mail)}Envoyer « ${esc(d.name)} » à</div>
         <div class="mscroll">${friends === null
           ? `<div class="mi" style="color:var(--soft)">Chargement…</div>`
-          : !list.length ? `<div class="mi" style="color:var(--soft)">Aucun autre compte pour l’instant.</div>`
+          : !list.length ? `<div class="mi" style="color:var(--soft)">Aucun lecteur dans ton cercle pour l’instant.</div>`
           : list.map(p => `<button class="mi ${sendTo === p.id ? 'on' : ''}" data-friend="${p.id}">
               <i class="tri" style="--c:var(--soft)"></i>${esc(p.name || p.email)}
               ${sendTo === p.id ? svg(I.check) : ''}</button>`).join('')}</div>
@@ -3793,6 +3892,27 @@ function paintMenu() {
     mountMenu(w);
     const ta = document.getElementById('mmsg');
     if (ta) { ta.addEventListener('input', () => sendMsg = ta.value); setTimeout(() => ta.focus(), 60); }
+    return;
+  }
+  /* Prêter un livre : on part de l'ami, pas du livre. La feuille montre
+     toute la bibliothèque personnelle ; le livre choisi part aussitôt
+     dans sa boîte aux lettres. */
+  if (menu === 'lend') {
+    const f = (mates || []).find(x => x.id === mateOpen);
+    if (!f) { menu = null; return; }
+    const mine = db.decks.filter(x => x.cards.length);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd"><i class="av">${esc(initial(f.handle || f.name))}</i>
+          <span class="mhx"><b>Prêter à ${esc(shortWho(f.name || f.handle))}</b>
+            <i>choisis un livre</i></span></div>
+        <div class="mscroll">${mine.length
+          ? mine.map(x => `<button class="mi" data-lend="${esc(x.id)}">
+              <i class="tri" style="--c:${subj(x.subject).d}"></i>${esc(x.name)}
+              <span class="tail">${plur(x.cards.length, 'page')}</span></button>`).join('')
+          : `<div class="mi" style="color:var(--soft)">Ta bibliothèque est vide.</div>`}</div>
+      </div>`;
+    mountMenu(w);
     return;
   }
   if (menu === 'mailitem') {
@@ -3916,7 +4036,7 @@ function paintMenu() {
 }
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
@@ -3932,6 +4052,12 @@ document.addEventListener('click', async e => {
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
   if (b.dataset.friend !== undefined) { sendTo = b.dataset.friend; return paintMenu(); }
+  if (b.dataset.lend !== undefined) {
+    const bk = deck(b.dataset.lend), f = (mates || []).find(x => x.id === mateOpen);
+    if (!bk || !f) return;
+    closeMenu();
+    return sendDeck(bk, { id: f.id, name: f.name || ('@' + (f.handle || '')) });
+  }
   if (b.dataset.sortby !== undefined) {
     prefs.sort = b.dataset.sortby; savePrefs();
     closeMenu(); animate = false; return render();
@@ -4127,6 +4253,13 @@ document.addEventListener('click', async e => {
     closeMenu();
     if (a === 'pkhide') { t.hidden = !t.hidden; saveDeck(t); animate = false; render();
       return toast(t.hidden ? I.eyeoff : I.eye, t.hidden ? 'Masqué' : 'Réaffiché'); }
+    if (a === 'pkdel') {
+      pushUndo(t.name, [t.id]);
+      db.decks = db.decks.filter(x => x.id !== t.id);
+      delete dirty[t.id]; gone.push(t.id); save(); flush();
+      animate = false; render();
+      return toast(I.trash, 'Livre dans la corbeille', true);
+    }
     go('deck', id);
     if (a === 'pkshare') { if (!friends) friendsPull(); return openMenu('sharepick'); }
     if (a === 'pkfind') { deckOpen = true; deckQ = ''; animate = false; render();
@@ -4169,7 +4302,7 @@ document.addEventListener('click', async e => {
   }
   if (a === 'gleave') { return leaveGroup(groupOf); }
   if (a === 'matedrop') { return dropFriend(mateOpen); }
-  if (a === 'matesend') { closeMenu(); sendTo = mateOpen; sendMsg = ''; return toast(I.share, 'Ouvre un livre, puis Partager'); }
+  if (a === 'matesend') { sendMsg = ''; return openMenu('lend'); }
   if (a === 'cfmine') return solveConflict('mine');
   if (a === 'cftheirs') return solveConflict('theirs');
   if (a === 'cfboth') return solveConflict('both');
@@ -4191,7 +4324,7 @@ document.addEventListener('click', async e => {
     return openMenu('sendfriend');
   }
   if (a === 'sendmail') {
-    const p = (friends || []).find(x => x.id === sendTo); if (!p || !d) return;
+    const p = (mates || []).find(x => x.id === sendTo); if (!p || !d) return;
     closeMenu();
     return sendDeck(d, p);
   }
@@ -4208,7 +4341,7 @@ document.addEventListener('click', async e => {
       delete dirty[d.id]; gone.push(d.id); save(); flush();
       closeMenu();
       go('home');
-      return toast(I.trash, 'Paquet dans la corbeille', true);
+      return toast(I.trash, 'Livre dans la corbeille', true);
     }
     b.dataset.arm = 1; b.style.background = 'rgba(196,86,107,.12)'; lab.textContent = 'Confirmer la suppression';
     setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.style.background = ''; lab.textContent = 'Supprimer'; } }, 3000);
@@ -4448,6 +4581,7 @@ function faceHtml(bk, txt, img, aud, lang) {
   const snd = aud || (lang && TTS && plain(txt));
   return `<div class="face${bk ? ' bk' : ''}${faceSize(txt)}">
     <i class="seam" aria-hidden="true"></i>
+    <i class="gl" aria-hidden="true"></i>
     ${img ? `<img class="fim" src="${esc(img)}" alt="">` : ''}
     ${plain(txt) ? `<div class="tx">${rt(txt)}</div>` : ''}
     ${snd ? `<button class="snd" data-snd="${bk ? 'b' : 'f'}">${svg(I.sound)}</button>` : ''}
@@ -4471,7 +4605,12 @@ function paintStack() {
   const frontLang = rv ? org.langb : org.langf, backLang = rv ? org.langf : org.langb;
   /* la pile prend la couleur de la matière de la carte, carte après carte */
   if (org.subj) st.setAttribute('style', sty(org.subj));
-  st.innerHTML = `<div class="card in${tf ? ' tf' : ''}" id="top">
+  /* Le livre, pas une carte posée sur rien : deux feuillets dépassent
+     sous la page en cours et donnent l'épaisseur, et les deux pastilles
+     de verdict vivent en dehors de la page — elles doivent rester lisibles
+     et bien à plat pendant que la page, elle, pivote. */
+  st.innerHTML = `<i class="leaf l2" aria-hidden="true"></i><i class="leaf l1" aria-hidden="true"></i>
+    <div class="card in${tf ? ' tf' : ''}" id="top">
       <div class="flipper">
         ${faceHtml(false, front, fimg, faud, frontLang)}
         ${faceHtml(true, back, bimg, baud, backLang)}
@@ -4479,9 +4618,9 @@ function paintStack() {
       ${org.subj ? `<div class="sbj"><i></i>${esc(org.subj.name)}</div>` : ''}
       ${(c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
         `<i>${esc(t)}</i>`).join('')}</div>` : ''}
-      <div class="ov y">${svg(I.check)}</div>
-      <div class="ov n">${svg(I.x)}</div>
-    </div>`;
+    </div>
+    <div class="ov y">${svg(I.check)}</div>
+    <div class="ov n">${svg(I.x)}</div>`;
   const top = document.getElementById('top');
   requestAnimationFrame(() => top.classList.remove('in'));
   if (!tf) bindDrag(top);
@@ -4524,24 +4663,27 @@ function pickMCQ(k) {
 }
 
 /* ---------- association ----------
-   Six paires par lot : on choisit à gauche, on relie à droite. Une paire
-   trouvée du premier coup compte juste, sinon elle est comptée ratée — sans
-   ça le format serait un jeu de devinettes gratuit. */
+   Six pages par lot, douze étiquettes jetées en vrac dans une seule
+   grille : les deux faces d'une même page peuvent tomber n'importe où, et
+   on relie deux étiquettes dans l'ordre qu'on veut. Une paire trouvée du
+   premier coup compte juste, sinon elle est comptée ratée — sans ça le
+   format serait un jeu de devinettes gratuit. */
 function nextBatch() {
   const cards = study.queue.slice(study.i, study.i + 6).map(id => findCard(id)[0]).filter(Boolean);
   study.batch = cards;
-  study.right = shuffle(cards.map(c => c.id));
+  study.tiles = shuffle(cards.reduce((a, c) => a.concat([{ id: c.id, s: 'L' }, { id: c.id, s: 'R' }]), []));
   study.sel = null; study.done = {}; study.wrong = {};
 }
 function matchBody() {
-  const cards = study.batch || [];
-  const byId = Object.fromEntries(cards.map(c => [c.id, c]));
-  const cell = (side, c, on, done) => `<button class="mc${on ? ' on' : ''}${done ? ' done' : ''}"
-      data-mt="${side}:${c.id}">${rt(side === 'L' ? c.f : c.b)}</button>`;
-  return `<div class="match">
-    <div class="mcol">${cards.map(c => cell('L', c, study.sel === c.id, !!study.done[c.id])).join('')}</div>
-    <div class="mcol">${study.right.map(id => cell('R', byId[id], false, !!study.done[id])).join('')}</div>
-  </div>`;
+  const byId = Object.fromEntries((study.batch || []).map(c => [c.id, c]));
+  const sel = study.sel;
+  return `<div class="match">${(study.tiles || []).map(t => {
+    const c = byId[t.id];
+    if (!c) return '';
+    const on = sel && sel.id === t.id && sel.s === t.s;
+    return `<button class="mc${on ? ' on' : ''}${study.done[t.id] ? ' done' : ''}"
+      data-mt="${t.s}:${t.id}">${rt(t.s === 'L' ? c.f : c.b)}</button>`;
+  }).join('')}</div>`;
 }
 function paintMatch() {
   const w = document.getElementById('mwrap');
@@ -4549,9 +4691,10 @@ function paintMatch() {
 }
 function pickMatch(side, id) {
   if (study.done[id]) return;
-  if (side === 'L') { study.sel = study.sel === id ? null : id; return paintMatch(); }
-  if (!study.sel) return;
-  if (study.sel === id) {
+  const sel = study.sel;
+  if (!sel) { study.sel = { id, s: side }; return paintMatch(); }
+  if (sel.id === id && sel.s === side) { study.sel = null; return paintMatch(); }
+  if (sel.id === id) {
     study.done[id] = 1;
     scoreCard(id, !study.wrong[id], study.wrong[id] ? 0 : 2);
     study.sel = null;
@@ -4569,9 +4712,15 @@ function pickMatch(side, id) {
     }
     return;
   }
-  study.wrong[study.sel] = 1;
-  const el = document.querySelector(`[data-mt="R:${id}"]`);
-  if (el) { el.classList.add('shk'); setTimeout(() => el.classList.remove('shk'), 380); }
+  /* raté : les deux étiquettes tremblent, et les deux pages concernées
+     perdent leur bonus « du premier coup ». */
+  study.wrong[sel.id] = 1; study.wrong[id] = 1;
+  study.sel = null;
+  [`${sel.s}:${sel.id}`, `${side}:${id}`].forEach(k => {
+    const el = document.querySelector(`[data-mt="${k}"]`);
+    if (el) { el.classList.add('shk'); setTimeout(() => el.classList.remove('shk'), 380); }
+  });
+  setTimeout(() => { if (study && study.mode === 'match') paintMatch(); }, 400);
 }
 
 /* Vrai / faux : pas de note à choisir, la réponse est binaire. On révèle,
@@ -4581,8 +4730,7 @@ function answerTF(said) {
   if (!c || !isTF(c) || study.tf != null) return;
   study.tf = (said === tfTruth(c));
   study.flip = true;
-  const top = document.getElementById('top');
-  if (top) top.classList.add('flip');
+  turnPage(document.getElementById('top'), true);
   paintFoot();
   if (prefs.fast) {
     pendingGrade = study.tf ? 2 : 0;
@@ -4621,20 +4769,55 @@ function toggleFlip() {
   const now = Date.now();
   if (now - flipAt < 480) return;
   flipAt = now;
-  study.flip = !study.flip; top.classList.toggle('flip', study.flip); paintFoot();
+  study.flip = !study.flip;
+  turnPage(top, study.flip);
+  paintFoot();
 }
+/* Le retournement lui-même. La classe « turning » est reposée à neuf à
+   chaque fois : c'est elle qui relance l'animation de la page et l'ombre
+   qui balaie la feuille, dans un sens comme dans l'autre. */
+let turnT = 0;
+function turnPage(top, on) {
+  if (!top) return;
+  top.classList.remove('turning');
+  void top.offsetWidth;
+  top.classList.toggle('flip', !!on);
+  top.classList.add('turning');
+  clearTimeout(turnT);
+  turnT = setTimeout(() => { if (top.isConnected) top.classList.remove('turning'); }, 640);
+}
+/* ---------- le geste ----------
+   La page n'est pas une carte qu'on pousse sur une table : elle est tenue
+   par sa reliure et se soulève par son bord libre. Le doigt qui va de
+   droite à gauche fait pivoter la page autour de son bord gauche — le
+   geste exact de celui qui passe à la page suivante ; le doigt qui va vers
+   la droite la fait pivoter de l'autre côté, comme on revient en arrière.
+   Le bord relevé s'assombrit au fur et à mesure, ce qui donne l'épaisseur. */
 function bindDrag(el) {
-  let x0 = 0, dx = 0, on = false, moved = false, t0 = 0;
-  const ov = (k, v) => { const n = el.querySelector('.ov.' + k); if (n) { n.style.opacity = v; n.style.transform = `scale(${.55 + v * .45})`; } };
+  let x0 = 0, dx = 0, on = false, moved = false, t0 = 0, w = 1;
+  const ovs = el.parentNode;
+  const ov = (k, v) => {
+    const n = ovs && ovs.querySelector('.ov.' + k);
+    if (n) { n.style.opacity = v; n.style.transform = `scale(${.55 + v * .45})`; }
+  };
+  const lift = (deg, dir) => {
+    el.style.transformOrigin = dir < 0 ? 'left center' : 'right center';
+    el.style.transform = `rotateY(${deg}deg)`;
+    el.style.setProperty('--lift', Math.min(1, Math.abs(deg) / 72).toFixed(3));
+  };
   el.addEventListener('pointerdown', e => {
-    if (e.target.closest('[data-snd]')) return;      // le son ne retourne pas la carte
+    if (e.target.closest('[data-snd]')) return;      // le son ne retourne pas la page
     on = true; moved = false; dx = 0; x0 = e.clientX; t0 = Date.now();
+    w = Math.max(120, el.offsetWidth);
     el.setPointerCapture(e.pointerId); el.style.transition = 'none';
   });
   el.addEventListener('pointermove', e => {
     if (!on) return;
     dx = e.clientX - x0; if (Math.abs(dx) > 5) moved = true;
-    el.style.transform = `translateX(${dx}px) rotate(${dx / 26}deg)`;
+    /* au-delà du bord la rotation ralentit : la page résiste, elle ne
+       part pas dans le décor tant que le doigt n'a pas lâché */
+    const p = Math.max(-1.25, Math.min(1.25, dx / w));
+    lift(-Math.sign(p) * Math.min(88, Math.abs(p) * 104), dx < 0 ? -1 : 1);
     ov('y', dx > 20 ? Math.min(1, (dx - 20) / 70) : 0);
     ov('n', dx < -20 ? Math.min(1, (-dx - 20) / 70) : 0);
   });
@@ -4642,7 +4825,9 @@ function bindDrag(el) {
     if (!on) return; on = false; el.style.transition = '';
     const v = Math.abs(dx) / Math.max(1, Date.now() - t0);
     if (Math.abs(dx) > 92 || (v > .6 && Math.abs(dx) > 34)) return fling(dx < 0 ? -1 : 1);
-    el.style.transform = ''; ov('y', 0); ov('n', 0);
+    el.style.transform = ''; el.style.transformOrigin = '';
+    el.style.setProperty('--lift', '0');
+    ov('y', 0); ov('n', 0);
     if (!moved) toggleFlip();
   };
   el.addEventListener('pointerup', end);
@@ -4658,8 +4843,14 @@ function fling(dir) {
     return;
   }
   el.dataset.gone = 1; el.classList.add('gone');
-  el.style.transform = `translateX(${dir * 130}vw) rotate(${dir * 20}deg)`;
+  /* elle finit de tourner autour de sa reliure et disparaît de l'autre
+     côté, au lieu de glisser à plat hors de l'écran */
+  el.style.transformOrigin = dir < 0 ? 'left center' : 'right center';
+  el.style.transform = `rotateY(${dir * -164}deg)`;
+  el.style.setProperty('--lift', '1');
   el.style.opacity = 0;
+  const ovs = el.parentNode;
+  if (ovs) ovs.querySelectorAll('.ov').forEach(n => { n.style.opacity = 0; });
   const g = pendingGrade; pendingGrade = null;
   /* À droite je sais, à gauche à revoir : le sens des applications de
      cartes, et celui des deux pastilles qui apparaissent sous le doigt. */
@@ -4680,11 +4871,17 @@ function scoreCard(id, ok, rating) {
   if (study.simple) { if (!ok) c.l = (c.l || 0) + 1; }
   else grade(c, r);
   if (d) { dirty[d.id] = 1; save(); scheduleFlush(); }
-  api('/rest/v1/reviews', 'POST', [{
+  const row = {
     user_id: auth.uid, deck_id: d ? d.id : study.id, card_id: id,
     mode: study.simple ? 'simple' : (study.mode || 'study'),
     rating: study.simple ? null : r, correct: !!ok, ms: Math.min(ms, 600000), reversed: !!rv
-  }]).catch(() => {});
+  };
+  api('/rest/v1/reviews', 'POST', [row]).catch(() => {});
+  /* La ligne rejoint aussi le journal local : le Journal et le classement
+     comptent la page à la seconde où elle est jouée, sans attendre le
+     prochain aller-retour avec le serveur. */
+  if (stats.rows) stats.rows.push(Object.assign({ created_at: new Date().toISOString() }, row));
+  liveBump();
   bumpToday();
   beep(ok);
   if (!study.tried[id]) { study.tried[id] = 1; if (ok) study.ok++; study.log.push(ok ? 1 : 0); }

@@ -11,7 +11,7 @@
   --ink:#221C15; --ink2:#4C4238; --soft:#8C8072;
   --card:#FFFDF8; --hair:rgba(34,28,21,.08);
   --surf:rgba(34,28,21,.05); --surf2:rgba(34,28,21,.09);
-  --ok:#3F7D55; --ko:#B34A3C;
+  --ok:#3F7D55; --ko:#B34A3C; --leather:#7A4B34;
   --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",
     Georgia,"Times New Roman",serif;
   --s1:0 1px 2px rgba(74,52,32,.06), 0 4px 12px rgba(74,52,32,.06);
@@ -300,22 +300,73 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .prog i{display:block;height:100%;border-radius:4px;background:var(--ink);
   transition:width .6s var(--e)}
 .stage{flex:1;display:flex;align-items:center;justify-content:center;
-  padding:16px 0;perspective:1700px;min-height:0}
-/* La perspective est portée par le conteneur : sans elle, la rotation
-   est plate et ressemble à une carte qu'on bascule. Avec, la page
-   s'éloigne en tournant, comme un feuillet qu'on soulève. */
-.stack{position:relative;width:100%;height:min(58svh,460px);perspective:1500px}
+  padding:16px 0;min-height:0}
+/* ---------- le livre ouvert ----------
+   La perspective est portée par le conteneur : sans elle, la rotation est
+   plate et ressemble à une carte qu'on bascule. Le point de fuite est
+   posé un peu au-dessus et sur la reliure, c'est-à-dire là où se tient
+   celui qui lit. */
+.stack{position:relative;width:100%;height:min(58svh,460px);
+  perspective:1250px;perspective-origin:22% 42%;
+  --turn:cubic-bezier(.36,.05,.16,1)}
+/* La tranche : deux feuillets dépassent sous la page en cours. C'est eux
+   qui donnent l'épaisseur — sans eux, une page seule flotte dans le vide.
+   Ils prennent la couleur de la matière, comme la page. */
+.leaf{position:absolute;inset:0;border-radius:6px 24px 24px 6px;background:var(--c);
+  pointer-events:none;z-index:0;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.05),0 8px 22px -14px rgba(34,28,21,.5)}
+.leaf.l1{transform:translate(4px,6px) scale(.995);filter:brightness(.962)}
+.leaf.l2{transform:translate(8px,12px) scale(.988);filter:brightness(.918)}
+/* La reliure, à gauche, et l'ombre que le livre pose sur la table. */
+.stack::before{content:'';position:absolute;left:-7px;top:5px;bottom:1px;width:15px;
+  border-radius:9px 2px 2px 9px;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,#8B5B40,#5E3726 62%,rgba(58,34,22,.55));
+  box-shadow:inset -3px 0 7px -2px rgba(0,0,0,.45),-3px 5px 16px -6px rgba(34,28,21,.45)}
+.stack::after{content:'';position:absolute;left:7%;right:1%;bottom:-16px;height:22px;
+  z-index:0;pointer-events:none;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(34,28,21,.26),rgba(34,28,21,0) 72%)}
 .card{position:absolute;inset:0;border-radius:6px 24px 24px 6px;will-change:transform;
-  touch-action:none;-webkit-user-select:none;user-select:none;
-  transition:transform .52s var(--sp),opacity .34s var(--e)}
-.card.in{transform:translateY(14px) scale(.94);opacity:0}
+  touch-action:none;-webkit-user-select:none;user-select:none;z-index:2;--lift:0;
+  transform-origin:left center;
+  transition:transform .5s var(--sp),opacity .34s var(--e)}
+/* la page suivante se dégage de la tranche plutôt que de tomber du ciel */
+.card.in{transform:rotateY(11deg) scale(.97);opacity:0}
+/* L'ombre qui court sur la feuille pendant qu'elle se relève : elle naît
+   du bord qui décolle, et c'est elle plus que la rotation qui fait sentir
+   qu'il s'agit de papier et non d'un carton plat. */
+/* .gl vit dans la feuille elle-même : elle est donc découpée comme elle,
+   et elle tourne avec elle. Posée à côté, elle laissait un rectangle
+   sombre en l'air au moment où la page est sur la tranche. */
+.face .gl{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2;
+  opacity:var(--lift,0);transition:opacity .16s linear;
+  background:linear-gradient(90deg,rgba(24,16,9,.5),rgba(24,16,9,.1) 38%,
+    rgba(255,255,255,0) 72%,rgba(255,255,255,.22))}
+.face.bk .gl{background:linear-gradient(270deg,rgba(24,16,9,.46),rgba(24,16,9,.1) 38%,
+  rgba(255,255,255,0) 72%,rgba(255,255,255,.16))}
+@keyframes turnshade{0%{opacity:0}44%{opacity:.72}100%{opacity:0}}
+.card.turning .face .gl{animation:turnshade .6s var(--turn) both}
 /* L'axe est le bord relié, à gauche ; la translation qui l'accompagne
-   ramène la page à sa place une fois tournée. Entre les deux, elle pivote
-   autour de sa couture — le geste d'un livre, pas d'un jeu de cartes. */
+   ramène la page à sa place une fois tournée. Entre les deux elle pivote
+   autour de sa couture, en se rapprochant un peu de l'œil au milieu du
+   mouvement : le geste d'un livre, pas d'un jeu de cartes. */
 .flipper{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform;
   transform-origin:left center;
-  transition:transform .55s cubic-bezier(.42,0,.18,1)}
+  transition:transform .6s var(--turn)}
 .card.flip .flipper{transform:translateX(100%) rotateY(-180deg)}
+@keyframes turnfwd{
+  0%{transform:translateX(0) rotateY(0deg) scale(1)}
+  38%{transform:translateX(40%) rotateY(-68deg) scale(1.022)}
+  70%{transform:translateX(79%) rotateY(-128deg) scale(1.014)}
+  100%{transform:translateX(100%) rotateY(-180deg) scale(1)}
+}
+@keyframes turnback{
+  0%{transform:translateX(100%) rotateY(-180deg) scale(1)}
+  38%{transform:translateX(79%) rotateY(-128deg) scale(1.022)}
+  70%{transform:translateX(40%) rotateY(-68deg) scale(1.014)}
+  100%{transform:translateX(0) rotateY(0deg) scale(1)}
+}
+.card.turning.flip .flipper{animation:turnfwd .6s var(--turn) both}
+.card.turning:not(.flip) .flipper{animation:turnback .6s var(--turn) both}
 /* Une page, pas un rectangle : reliée à gauche (coins carrés, filet de
    couture), tranche libre à droite, et le texte en romain. */
 .face{position:absolute;inset:0;border-radius:6px 24px 24px 6px;display:grid;place-items:center;
@@ -330,10 +381,14 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 /* la couture, à la même place que la marge d'un cahier */
 .face .seam{position:absolute;left:19px;top:22px;bottom:22px;width:1px;z-index:1;
   background:currentColor;opacity:.16;pointer-events:none}
+/* la gouttière : l'ombre du pli, plus dense près de la reliure, et le
+   liseré clair de la tranche libre à droite */
 .face::before{content:'';position:absolute;inset:0;border-radius:6px 24px 24px 6px;
   pointer-events:none;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1.5px 0 rgba(255,255,255,.45),
-             inset 14px 0 22px -18px rgba(0,0,0,.3)}
+             inset 26px 0 30px -26px rgba(0,0,0,.55),
+             inset -2px 0 0 rgba(255,255,255,.34),
+             inset -7px 0 12px -9px rgba(0,0,0,.14)}
 .face::after{content:'';position:absolute;inset:0;border-radius:6px 24px 24px 6px;
   pointer-events:none;opacity:.55;
   background:linear-gradient(158deg,rgba(255,255,255,.38),rgba(255,255,255,0) 62%),
@@ -362,11 +417,15 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .face.bk.xl .tx{font-size:clamp(15.5px,4.4vw,21px);line-height:1.32;letter-spacing:-.2px;font-weight:600}
 .face.bk.xxl .tx{font-size:clamp(14px,3.6vw,17px);line-height:1.38;letter-spacing:-.1px;font-weight:600}
 .ov{position:absolute;top:24px;width:54px;height:54px;border-radius:18px;display:grid;
-  place-items:center;opacity:0;transform:scale(.55);pointer-events:none;color:#fff;z-index:3;
+  place-items:center;opacity:0;transform:scale(.55);pointer-events:none;color:#fff;z-index:6;
   transition:opacity .18s,transform .3s var(--sp);box-shadow:var(--s2)}
 .ov.y{right:22px;background:var(--ok)} .ov.n{left:22px;background:var(--ko)}
 .ov svg{width:26px;height:26px;stroke-width:2.8}
-.gone{transition:transform .36s cubic-bezier(.4,0,.55,1),opacity .32s !important}
+.gone{transition:transform .44s cubic-bezier(.32,0,.5,1),opacity .38s .06s !important}
+@media (prefers-reduced-motion:reduce){
+  .card.turning .flipper,.card.turning .face .gl{animation:none}
+  .flipper{transition:transform .01s}
+}
 .acts{display:flex;gap:11px;padding:2px 0 2px;flex:none}
 .act{flex:1;height:60px;border-radius:21px;display:grid;place-items:center;
   background:var(--card);box-shadow:var(--s1);transition:transform .3s var(--sp),box-shadow .3s}
@@ -972,13 +1031,16 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   border-radius:19px;background:var(--card);box-shadow:var(--s1);margin-bottom:14px;text-align:left;
   transition:transform .26s var(--sp),box-shadow .26s}
 .fade .resume,.fade .marathon{animation:pop .5s var(--e) both}
-.marathon{margin:6px 0 20px;background:var(--ink);color:var(--bg)}
+/* Il se retrouvait souvent juste au-dessus du bouton rond, du même noir :
+   deux taches identiques qu'on confond. Reliure fauve, encre claire. */
+.marathon{margin:6px 0 20px;background:var(--leather);color:#FDF6EC;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),var(--s1)}
 .resume:active,.marathon:active{transform:scale(.98)}
 .resume svg,.marathon svg{width:19px;height:19px;flex:none}
 .resume span,.marathon span{font-weight:750;font-size:15px;letter-spacing:-.25px}
 .resume i,.marathon i{font-style:normal;font-size:13px;color:var(--soft);margin-left:auto;
   font-variant-numeric:tabular-nums}
-.marathon i{color:var(--bg);opacity:.55}
+.marathon i{color:#FDF6EC;opacity:.62}
 
 /* ══════════ réglages ══════════ */
 .sr.col{flex-direction:column;align-items:stretch;gap:11px;cursor:default}
@@ -1155,8 +1217,9 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 /* ══════════ association ══════════ */
 .mwrap{flex:1;min-height:0;overflow:auto;scrollbar-width:none;padding:8px 0 18px}
 .mwrap::-webkit-scrollbar{display:none}
-.match{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.mcol{display:flex;flex-direction:column;gap:9px}
+/* une seule grille : les douze étiquettes d'un lot sont mélangées entre
+   elles, il n'y a plus de colonne « recto » et de colonne « verso ». */
+.match{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:stretch}
 .mc{min-height:64px;padding:12px 13px;border-radius:17px;background:var(--card);
   box-shadow:var(--s1);font-weight:700;font-size:14.5px;line-height:1.25;letter-spacing:-.2px;
   transition:transform .2s var(--sp),background .25s,color .25s,opacity .3s}
@@ -1223,7 +1286,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .df.gap{display:inline-block;width:5px;background:none}
 
 @media (min-width:900px){
-  .match{grid-template-columns:1fr 1fr;gap:12px;max-width:760px;margin:0 auto}
+  .match{grid-template-columns:repeat(3,1fr);gap:12px;max-width:820px;margin:0 auto}
   .mc{min-height:70px;font-size:15.5px}
   .opts{max-width:760px;margin-left:auto;margin-right:auto}
   .qcard{max-width:760px;margin-left:auto;margin-right:auto}
@@ -1478,3 +1541,43 @@ body.touring .toast{display:none}
    pas de déplacement latéral */
 .menu{touch-action:pan-y}
 .mgrid,.mtop{touch-action:none}
+
+/* ══════════ ouverture ══════════
+   Le voile de démarrage : l'icône se pose, le nom arrive, puis tout
+   s'efface sur la première vue. Sans lui, l'app s'ouvrait sur du noir le
+   temps que le script se charge. */
+#boot{position:fixed;inset:0;z-index:80;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  transition:opacity .45s var(--e)}
+#boot img{width:76px;height:76px;border-radius:24px;box-shadow:var(--s2);
+  animation:bookin .7s var(--sp) both}
+#boot b{font-family:var(--serif);font-size:27px;font-weight:700;letter-spacing:-.4px;
+  color:var(--ink);animation:bootname .6s var(--e) .18s both}
+@keyframes bookin{from{opacity:0;transform:translateY(16px) scale(.9) rotate(-4deg)}}
+@keyframes bootname{from{opacity:0;transform:translateY(8px)}}
+#boot.off{opacity:0;pointer-events:none}
+/* le bouton d'ajout, aligné sur le champ plutôt que flottant au-dessus */
+.addgo{flex:none;align-self:stretch;display:flex;align-items:center;padding:0 14px;
+  margin:-1px -12px -1px 0;border-radius:0 14px 14px 0;background:var(--ink);color:var(--bg);
+  font-weight:750;font-size:14.5px;letter-spacing:-.2px}
+.addgo:active{opacity:.85}
+.mg.warn{color:var(--ko)}
+.mg.warn svg{color:var(--ko)}
+
+/* ══════════ journal : sept jours, et l'état de chaque livre ══════════ */
+.week{display:flex;align-items:flex-end;gap:7px;height:112px}
+.wd{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  gap:5px;height:100%}
+.wd i{width:100%;border-radius:7px 7px 3px 3px;background:var(--ok);min-height:3px;
+  animation:grow .55s var(--e) both}
+.wd i.nil{background:var(--surf2)}
+@keyframes grow{from{height:3px !important;opacity:.4}}
+.wd b{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink2);
+  min-height:14px}
+.wd span{font-size:11px;font-weight:750;color:var(--soft)}
+.bkline{display:flex;align-items:center;gap:12px;padding:7px 0}
+.bkn{flex:1;min-width:0;font-size:14.5px;font-weight:700;letter-spacing:-.2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bkn i{display:block;font-style:normal;font-size:12px;font-weight:650;color:var(--soft);
+  margin-top:2px}
+.mix.sm{flex:none;width:104px;height:7px}

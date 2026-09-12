@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
 <title>Folio</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#FAF7F2">
+<meta name="theme-color" content="#FAF6EC">
 <meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -17,6 +17,10 @@
 </head>
 <body>
 <i class="statusmask" aria-hidden="true"></i>
+<!-- Le temps que le script démarre, l'écran restait noir. Ce voile est
+     peint par le navigateur avant tout le reste, et s'efface dès que la
+     première vue est là. -->
+<div id="boot"><img src="icons/icon-192.png" alt=""><b>Folio</b></div>
 <main id="app"></main>
 <script src="app.js"></script>
 </body>
