@@ -731,10 +731,26 @@ async function mediaUrl(path) {
   if (hit) return hit;
   if (!auth) throw new Error('auth');
   if (auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
-  const r = await fetch(`${SB.url}/storage/v1/object/authenticated/media/${path}`, {
-    headers: { apikey: SB.key, Authorization: 'Bearer ' + auth.token }
-  });
-  if (!r.ok) throw new Error('media:' + r.status);
+  const h = { apikey: SB.key, Authorization: 'Bearer ' + auth.token };
+  /* Deux chemins vers le même octet. Le direct d'abord ; si le serveur ne
+     le sert pas, on demande une adresse signée et on la suit. Garder les
+     deux coûte six lignes et évite de faire dépendre l'affichage d'une
+     seule route — celle-là, je ne peux pas l'essayer avant de livrer. */
+  let r = await fetch(`${SB.url}/storage/v1/object/authenticated/media/${path}`, { headers: h });
+  if (!r.ok) {
+    const s = await fetch(`${SB.url}/storage/v1/object/sign/media/${path}`, {
+      method: 'POST', headers: { ...h, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expiresIn: 3600 })
+    });
+    if (!s.ok) throw new Error('media:' + r.status + '/' + s.status);
+    const j = await s.json().catch(() => null);
+    /* la casse du champ a changé entre les versions de l'API : on accepte
+       les deux plutôt que de parier sur celle d'aujourd'hui */
+    const rel = j && (j.signedURL || j.signedUrl);
+    if (!rel) throw new Error('media:sign');
+    r = await fetch(SB.url + '/storage/v1' + (rel[0] === '/' ? rel : '/' + rel), { headers: h });
+    if (!r.ok) throw new Error('media:' + r.status);
+  }
   const url = URL.createObjectURL(await r.blob());
   mediaCache.set(path, url);
   return url;
@@ -751,7 +767,11 @@ function paintMedia(root) {
   (root || document).querySelectorAll('img[data-m]').forEach(el => {
     const p = el.dataset.m;
     delete el.dataset.m;                   // une seule tentative par image
-    mediaUrl(p).then(u => { el.src = u; }, () => {});
+    /* Une image qu'on n'a pas pu chercher s'efface au lieu de laisser le
+       carré cassé du navigateur : la fiche se lit encore, et le texte
+       reprend la place. La cause part dans la console, pas à l'écran. */
+    mediaUrl(p).then(u => { el.src = u; },
+                     e => { console.warn('média', p, String(e && e.message)); el.remove(); });
   });
 }
 
