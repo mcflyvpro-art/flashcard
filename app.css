@@ -266,6 +266,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   color:var(--ink);font-size:12.5px;font-weight:750;letter-spacing:-.1px;text-transform:none;
   transition:background .2s,color .2s,transform .2s var(--sp)}
 .pick svg{width:15px;height:15px;stroke-width:2.1}
+/* sans texte, le remplissage prévu pour « icône + mot » décalait la loupe
+   vers la gauche : un carré, et elle tombe au milieu */
+.pick.ico{width:32px;height:32px;padding:0;gap:0;justify-content:center;margin-right:8px}
 .pick:active{transform:scale(.94)}
 .pick.on{background:var(--ink);color:var(--bg);box-shadow:none}
 .rows.picking input{pointer-events:none;user-select:none}
@@ -585,7 +588,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   transition:background .2s,transform .2s var(--sp)}
 .mx svg{width:15px;height:15px;stroke-width:2.4}
 .mx:active{transform:scale(.88);background:var(--surf2)}
-.mbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+.mbody{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;padding:2px 7px 7px}
 .mi{display:flex;align-items:center;gap:14px;width:100%;height:54px;padding:0 16px;
   border-radius:19px;font-weight:650;font-size:16px;letter-spacing:-.25px;
@@ -596,16 +599,20 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .mi .tail{margin-left:auto;font-size:14px;font-weight:700;color:var(--soft)}
 .msep{height:1px;background:var(--hair);margin:5px 16px}
 /* liste de paquets dans une feuille : au-delà de six elle défile toute seule */
-.mscroll{max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.mscroll{max-height:46vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .mscroll .tri{margin-right:-2px}
 .tok{width:calc(100% - 14px);margin:2px 7px 4px;padding:15px 16px;border-radius:17px;
   background:var(--surf);font-size:15px;font-weight:600;letter-spacing:.2px}
 .tok::placeholder{color:var(--soft);opacity:.5}
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:7px 7px 3px}
-.ms{display:flex;align-items:center;gap:9px;height:46px;padding:0 14px;border-radius:16px;
+.ms{display:flex;align-items:center;gap:9px;min-width:0;height:46px;padding:0 14px;
+  border-radius:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   background:var(--surf);font-size:14.5px;font-weight:700;transition:background .22s,color .22s}
 .ms.on{background:var(--ink);color:var(--bg)}
 .ms i{width:9px;height:9px;border-radius:50%;background:var(--d);flex:none}
+/* un nom de matière trop long se coupe proprement au lieu de pousser la
+   feuille entière vers la droite */
+.ms span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- connexion ---------- */
 .login{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -1009,7 +1016,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .menu.pv{max-height:min(78vh,720px);display:flex;flex-direction:column}
 .menu.pv > .mi:last-child{border-top:1px solid var(--hair);border-radius:0 0 19px 19px;
   flex:none;margin-top:4px}
-.pvb{flex:1;min-height:0;overflow:auto;padding:2px 18px 10px;
+.pvb{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:2px 18px 10px;
   -webkit-overflow-scrolling:touch}
 .pvb::-webkit-scrollbar{display:none}
 .pvh{margin:14px 0 7px;font-size:12px;font-weight:800;letter-spacing:.9px;
@@ -1400,7 +1407,9 @@ body.touring .toast{display:none}
 .ci{position:relative;display:grid;place-items:center;width:38px;height:38px;border-radius:13px;
   background:var(--surf);font-style:normal}
 .ci svg{width:19px;height:19px;color:var(--ink2)}
-.cb{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;
+/* Renommée : « .cb » était aussi le champ Verso du composeur, qui se
+   retrouvait peint en pastille rouge centrée. */
+.cbdg{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;
   border-radius:9px;background:var(--ko);color:#fff;font-size:11px;font-weight:800;
   line-height:18px;text-align:center}
 .cn{font-size:15.5px;font-weight:750;letter-spacing:-.25px}
@@ -1444,7 +1453,17 @@ body.touring .toast{display:none}
 .acts span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
 /* ══════════ appui long sur un livre ══════════ */
-.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 12px 10px}
+/* l'appui long s'annonce : le livre s'enfonce et se détache du fond */
+.tile.hold,.lrow.hold{animation:holdin .5s var(--e) forwards}
+@keyframes holdin{to{transform:scale(.955);box-shadow:var(--s2)}}
+/* ranger sa bibliothèque : le livre pris sous le doigt, et les autres
+   qui s'écartent pour lui faire place */
+.grid.reord .tile,.rows.lst.reord .lrow{cursor:grab}
+.reord .tile.drag,.reord .lrow.drag{position:relative;z-index:5;animation:none;
+  box-shadow:var(--s3);opacity:.95;transition:none}
+.reord.dragging .tile:not(.drag),.reord.dragging .lrow:not(.drag){transition:transform .22s var(--e)}
+.reord .grip{opacity:.55}
+.mpick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 12px 10px}
 .mg{display:flex;flex-direction:column;align-items:center;gap:7px;background:var(--surf);
   border-radius:17px;padding:14px 6px 11px;font-size:11.5px;font-weight:700;color:var(--ink2);
   transition:transform .28s var(--sp)}
@@ -1452,20 +1471,28 @@ body.touring .toast{display:none}
 .mg svg{width:19px;height:19px;color:var(--ink)}
 .mg span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .mg.off{opacity:.35;pointer-events:none}
+/* la suppression restait seule dans un coin de la dernière rangée :
+   elle prend la ligne entière, comme un vrai bouton */
+.mg.warn{grid-column:1/-1;flex-direction:row;justify-content:center;gap:9px;
+  padding:13px 10px;font-size:14px}
 
 /* ══════════ réglages d'affichage signalés ══════════ */
-/* L'appui long sur une couverture sélectionnait le texte en bleu : iOS
-   propose Copier/Traduire par-dessus la feuille qui s'ouvre. */
-.tile,.lrow,.grid,.rows.lst{-webkit-user-select:none;user-select:none;
-  -webkit-touch-callout:none}
+/* L'appui long sélectionnait le fond de la page en bleu, comme si on
+   copiait du texte, et iOS proposait Copier/Traduire par-dessus la
+   feuille. Rien n'est sélectionnable, sauf ce qu'on écrit. */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
+  -webkit-touch-callout:default}
 /* la période, au-dessus des chiffres, avait l'air posée dessus */
 #app[data-view="stats"] .seg{margin-bottom:14px}
 /* le champ d'ajout d'un lecteur touchait la flèche de retour */
 #app[data-view="friends"] .addf{margin-top:10px}
 /* la feuille défile verticalement et rien d'autre : pas de pincement,
-   pas de déplacement latéral */
-.menu{touch-action:pan-y}
-.mgrid,.mtop{touch-action:none}
+   pas de déplacement latéral. « overflow-y » seul rend l'axe horizontal
+   défilable lui aussi : c'est ce qui laissait pousser la feuille de côté
+   dès qu'un nom de matière dépassait. */
+.menu{touch-action:pan-y;overflow:hidden}
+.mgrid,.mpick,.mtop{touch-action:none}
 
 /* ══════════ ouverture ══════════
    Le voile de démarrage : l'icône se pose, le nom arrive, puis tout
@@ -1501,16 +1528,27 @@ body.touring .toast{display:none}
 .mg.warn svg{color:var(--ko)}
 
 /* ══════════ journal : sept jours, et l'état de chaque livre ══════════ */
-.week{display:flex;align-items:flex-end;gap:7px;height:112px}
-.wd{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-  gap:5px;height:100%}
-.wd i{width:100%;border-radius:7px 7px 3px 3px;background:var(--ok);min-height:3px;
-  animation:grow .55s var(--e) both}
-.wd i.nil{background:var(--surf2)}
-@keyframes grow{from{height:3px !important;opacity:.4}}
-.wd b{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink2);
-  min-height:14px}
-.wd span{font-size:11px;font-weight:750;color:var(--soft)}
+/* Trois lignes empilées : le chiffre, la piste, le jour. La barre se
+   mesure dans la piste — avant, elle partageait sa hauteur avec le
+   chiffre et le jour, et le calcul de proportion se faisait écraser par
+   le reste : deux journées très différentes finissaient de même taille. */
+.week{display:flex;align-items:stretch;gap:7px;height:132px}
+.wd{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%}
+.wd b{flex:none;min-height:14px;font-size:12px;font-weight:800;color:var(--ink2);
+  font-variant-numeric:tabular-nums}
+.wd u{flex:1;min-height:0;position:relative;width:100%;text-decoration:none}
+.wd i{position:absolute;left:0;right:0;bottom:0;border-radius:7px 7px 3px 3px;
+  background:var(--ok);animation:grow .55s var(--e) both}
+.wd i.nil{height:3px !important;background:var(--surf2)}
+@keyframes grow{from{height:3px;opacity:.4}}
+.wd span{flex:none;font-size:11px;font-weight:750;color:var(--soft)}
+/* légende des couleurs, sous l'état des livres */
+.bkkey{display:flex;flex-wrap:wrap;gap:6px 14px;padding-top:10px;margin-top:4px;
+  border-top:1px solid var(--hair);font-size:12px;font-weight:650;color:var(--soft)}
+.bkkey span{display:flex;align-items:center;gap:6px}
+.bkkey i{width:8px;height:8px;border-radius:50%;flex:none}
+.bkkey i.new{background:#4A7FBE} .bkkey i.learn{background:#D4842E}
+.bkkey i.young{background:#4C9862} .bkkey i.mature{background:var(--ink)}
 .bkline{display:flex;align-items:center;gap:12px;padding:7px 0}
 .bkn{flex:1;min-width:0;font-size:14.5px;font-weight:700;letter-spacing:-.2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

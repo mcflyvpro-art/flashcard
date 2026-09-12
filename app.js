@@ -1497,9 +1497,15 @@ function bindPager() {
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
     pg.style.transition = ''; pg.style.transform = '';
   };
+  /* Une bande de pastilles défile toute seule : tant qu'elle a de quoi
+     défiler du côté où va le doigt, c'est elle qui prend le geste. Une
+     fois au bout, le geste redevient un changement d'écran — avant, poser
+     le doigt dessus annulait le balayage pour de bon. */
+  let strip = null;
   pg.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button) return;
-    if (e.target.closest('.pills,.ctiles,.rng,.seg')) return;
+    if (e.target.closest('.rng,.seg')) return;
+    strip = e.target.closest('.pills,.heat,.mixwrap');
     on = true; lock = 0; dx = 0; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); pid = e.pointerId;
     pg.style.transition = 'none';
   });
@@ -1510,6 +1516,11 @@ function bindPager() {
       if (Math.abs(ax) < 9 && Math.abs(ay) < 9) return;
       lock = Math.abs(ax) > Math.abs(ay) * 1.3 ? 1 : -1;
       if (lock < 0) { on = false; reset(); return; }
+      if (strip) {
+        const room = ax > 0 ? strip.scrollLeft
+                            : strip.scrollWidth - strip.clientWidth - strip.scrollLeft;
+        if (room > 1) { on = false; reset(); return; }
+      }
     }
     dx = ax;
     if (!raf) raf = requestAnimationFrame(draw);
@@ -1524,9 +1535,18 @@ function bindPager() {
     pg.style.transform = '';
     if (go2) { if (home) { commuPull(); go('commu', null, 1); } else go('home', null, -1); }
   };
+  /* le doigt finit souvent sa course hors de la page : sans écouter la
+     fenêtre, le balayage restait suspendu à mi-chemin. La page est
+     redessinée à chaque écran, la fenêtre non : on retire l'écoute
+     précédente avant d'en poser une nouvelle. */
   pg.addEventListener('pointerup', end);
   pg.addEventListener('pointercancel', end);
+  if (pagerEnd) { removeEventListener('pointerup', pagerEnd); removeEventListener('pointercancel', pagerEnd); }
+  pagerEnd = end;
+  addEventListener('pointerup', pagerEnd);
+  addEventListener('pointercancel', pagerEnd);
 }
+let pagerEnd = null;
 
 const pills = (active, list, act) => `<div class="pills">
   <button class="p ${active === '' ? 'on' : ''}" data-${act}="">Tout</button>
@@ -1541,6 +1561,7 @@ const tile = (d, i) => {
   const due = simpleMode() ? 0 : dueCount(d);
   const p = simpleMode() ? 0 : maturePct(d);
   return `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="${d.id}" data-peek="${d.id}"
+  data-id="${d.id}" data-pin="${d.pinned ? 1 : 0}"
   style="${sty(subj(d.subject))};--i:${i}">
   <i class="spine" aria-hidden="true"></i>
   ${due ? `<i class="due">${due}</i>` : ''}
@@ -1558,8 +1579,7 @@ const listRow = (d, i) => {
   const p = simpleMode() ? 0 : maturePct(d);
   return `<div class="lrow ${d.hidden ? 'mute' : ''}" style="${sty(subj(d.subject))};--i:${i}"
     data-id="${d.id}" data-pin="${d.pinned ? 1 : 0}">
-    ${reorder ? `<button class="grip" aria-label="Déplacer">${svg(I.grip)}</button>`
-      : `<i class="ldot"></i>`}
+    ${reorder ? `<i class="grip">${svg(I.grip)}</i>` : `<i class="ldot"></i>`}
     <button class="lmain" data-go="${d.id}" data-peek="${d.id}">
       <span class="n">${esc(d.name)}${d.pinned ? svg(I.pin) : ''}</span>
       <span class="s">${plur(d.cards.length, 'page')}${p ? ' · ' + p + ' % mûres' : ''}</span>
@@ -1633,9 +1653,9 @@ function home() {
           : `<button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>`}
       </div>` : ''}
       ${!list.length ? `<div class="empty">${svg(I.layers)}<p><b>Ta bibliothèque est vide</b>Appuie sur + pour écrire ton premier livre.</p></div>`
-        : prefs.list || reorder
-          ? `<div class="rows lst ${reorder ? 'dragging0' : ''}">${sortDecks(list).map(listRow).join('')}</div>`
-          : `<div class="grid">${sortDecks(list).map(tile).join('')}</div>`}
+        : prefs.list
+          ? `<div class="rows lst ${reorder ? 'reord' : ''}">${sortDecks(list).map(listRow).join('')}</div>`
+          : `<div class="grid ${reorder ? 'reord' : ''}">${sortDecks(list).map(tile).join('')}</div>`}
       ${!simpleMode() && allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
         <span>Lecture du jour</span><i>${allDue()} pages dues, toutes matières</i></button>` : ''}
     </div>
@@ -1660,58 +1680,94 @@ function subBar(list) {
   </div>`;
 }
 
-/* Réorganisation des paquets : même mécanique que pour les cartes, sur
-   la vue liste. L'ordre n'est écrit qu'au lâcher, et il devient l'ordre
-   « Manuel » — le tri bascule dessus tout seul, sinon on réorganiserait
-   une liste que le tri remettrait aussitôt dans un autre ordre. */
+/* ---------- ranger sa bibliothèque ----------
+   On appuie sur un livre, on le garde sous le doigt, on le pose ailleurs.
+   Le même geste marche sur les couvertures et sur la liste : la vue ne
+   change pas quand on entre en rangement, c'est le rangement qui s'adapte
+   à la vue. Et il n'existe que dans ce mode — ailleurs, l'appui long
+   ouvre les actions du livre.
+   Les épinglés gardent leur tête de file : on ne peut déplacer un livre
+   qu'au sein de son propre groupe, sinon le tri le remonterait aussitôt
+   et le geste passerait pour cassé. */
 function bindDeckOrder() {
-  const wrap = $.querySelector('.rows.lst'); if (!wrap) return;
-  let g = null;
-  const draw = () => {
-    g.raf = 0;
-    const { row, rows, from, step, lo, hi } = g;
-    row.style.transform = `translate3d(0,${g.dy}px,0)`;
-    g.to = Math.max(lo, Math.min(hi, from + Math.round(g.dy / step)));
-    rows.forEach((r, i) => {
-      if (r === row) return;
-      const shift = g.to > from && i > from && i <= g.to ? -step
-                  : g.to < from && i >= g.to && i < from ? step : 0;
-      r.style.transform = shift ? `translate3d(0,${shift}px,0)` : '';
-    });
+  const wrap = $.querySelector('.grid.reord, .rows.lst.reord'); if (!wrap) return;
+  const grid = wrap.classList.contains('grid');
+  const SEL = grid ? '.tile' : '.lrow';
+  let g = null, hold = 0;
+
+  const items = () => [...wrap.querySelectorAll(SEL)];
+  const place = () => {
+    const r = g.el.getBoundingClientRect();
+    g.el.style.transform = `translate(${g.bx + g.px - g.x0 - r.left + g.tx}px,${
+      g.by + g.py - g.y0 - r.top + g.ty}px) scale(1.04)`;
+  };
+  /* on replace la couverture dans le flux, puis on remet les autres à
+     leur place d'avant le temps d'une animation : elles glissent au lieu
+     de sauter d'un coup. */
+  const slot = () => {
+    const others = items().filter(n => n !== g.el && n.dataset.pin === g.pin);
+    const before = n => {
+      const r = n.getBoundingClientRect();
+      if (!grid) return g.py < r.top + r.height / 2;
+      if (g.py < r.top) return true;
+      if (g.py > r.bottom) return false;
+      return g.px < r.left + r.width / 2;
+    };
+    const k = others.findIndex(before);
+    const ref = k < 0 ? (others.length ? others[others.length - 1].nextSibling : null) : others[k];
+    if (ref === g.el || (k < 0 && g.el.nextSibling === ref)) return;
+    const was = new Map(items().map(n => [n, n.getBoundingClientRect()]));
+    wrap.insertBefore(g.el, ref);
+    for (const n of items()) {
+      if (n === g.el) continue;
+      const o = was.get(n); if (!o) continue;
+      const r = n.getBoundingClientRect();
+      const dx = o.left - r.left, dy = o.top - r.top;
+      if (!dx && !dy) continue;
+      n.style.transition = 'none';
+      n.style.transform = `translate(${dx}px,${dy}px)`;
+      requestAnimationFrame(() => { n.style.transition = ''; n.style.transform = ''; });
+    }
+  };
+  const lift = () => {
+    const r = g.el.getBoundingClientRect();
+    g.bx = r.left; g.by = r.top; g.tx = 0; g.ty = 0;
+    g.el.classList.add('drag');
+    wrap.classList.add('dragging');
+    if (navigator.vibrate) try { navigator.vibrate(12); } catch (e) {}
+    place();
   };
   wrap.addEventListener('pointerdown', e => {
-    const h = e.target.closest('.grip'); if (!h || g) return;
-    const rows = [...wrap.querySelectorAll('.lrow')];
-    const row = h.closest('.lrow'), from = rows.indexOf(row);
-    if (from < 0 || rows.length < 2) return;
-    /* Les épinglés restent devant, quel que soit l'ordre : on borne donc
-       le déplacement à son propre groupe. Sans ça, tirer un paquet
-       épinglé vers le bas n'aurait aucun effet visible — le tri le
-       remonterait aussitôt, et le geste passerait pour cassé. */
-    const grp = row.dataset.pin;
-    const same = rows.map((r, i) => r.dataset.pin === grp ? i : -1).filter(i => i >= 0);
-    g = { row, rows, from, to: from, dy: 0, raf: 0, y0: e.clientY,
-          lo: same[0], hi: same[same.length - 1],
-          step: rows[1].offsetTop - rows[0].offsetTop, pid: e.pointerId };
-    try { h.setPointerCapture(e.pointerId); } catch (x) {}
-    row.classList.add('drag'); wrap.classList.add('dragging');
-    e.preventDefault();
+    const el = e.target.closest(SEL); if (!el || g) return;
+    g = { el, px: e.clientX, py: e.clientY, x0: e.clientX, y0: e.clientY,
+          pid: e.pointerId, pin: el.dataset.pin || '0', up: 0, bx: 0, by: 0, tx: 0, ty: 0 };
+    el.classList.add('hold');
+    clearTimeout(hold);
+    hold = setTimeout(() => { if (g) { g.up = 1; lift(); } }, 260);
   });
   wrap.addEventListener('pointermove', e => {
     if (!g || e.pointerId !== g.pid) return;
-    g.dy = e.clientY - g.y0;
-    if (!g.raf) g.raf = requestAnimationFrame(draw);
+    g.px = e.clientX; g.py = e.clientY;
+    if (!g.up) {
+      if (Math.abs(g.px - g.x0) > 8 || Math.abs(g.py - g.y0) > 8) {
+        clearTimeout(hold); g.el.classList.remove('hold'); g = null;
+      }
+      return;
+    }
+    e.preventDefault();
+    place(); slot();
   });
   const drop = e => {
     if (!g || (e && e.pointerId !== g.pid)) return;
-    cancelAnimationFrame(g.raf);
-    const { from, to, rows, row } = g;
-    rows.forEach(r => r.style.transform = '');
-    row.classList.remove('drag'); wrap.classList.remove('dragging');
-    const ids = rows.map(r => r.dataset.id);
+    clearTimeout(hold);
+    const { el, up } = g;
+    el.classList.remove('hold');
     g = null;
-    if (from === to) return;
-    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    if (!up) return;
+    el.style.transition = ''; el.style.transform = '';
+    el.classList.remove('drag'); wrap.classList.remove('dragging');
+    const ids = items().map(n => n.dataset.id);
+    if (ids.some(x => !x)) return;
     pushUndo('Ordre des livres', ids);
     ids.forEach((id, i) => { const d = deck(id); if (d) { d.pos = i; dirty[id] = 1; } });
     if (prefs.sort !== 'manual') { prefs.sort = 'manual'; savePrefs(); }
@@ -1724,14 +1780,27 @@ function bindDeckOrder() {
 /* Aperçu : un appui long sur un paquet (ou le survol sur un écran qui en
    a un) montre ses premières cartes sans quitter l'accueil. */
 function bindPeek() {
+  /* #app ne change pas d'un écran à l'autre : une seule écoute suffit,
+     sinon chaque rendu en empilait une de plus. */
+  if ($.dataset.peekbound) return;
+  $.dataset.peekbound = 1;
   let t = 0, moved = false;
+  let held = null;
   const start = e => {
+    if (reorder) return;                     // en rangement, l'appui long déplace
     const b = e.target.closest('[data-peek]'); if (!b) return;
     moved = false;
     clearTimeout(t);
+    /* le livre s'enfonce doucement sous le doigt : on voit que quelque
+       chose se prépare, au lieu d'une feuille qui surgit sans prévenir */
+    held = b.closest('.tile, .lrow') || b;
+    held.classList.add('hold');
     t = setTimeout(() => { if (!moved) { previewOf = b.dataset.peek; openMenu('preview'); } }, 480);
   };
-  const stop = () => { moved = true; clearTimeout(t); };
+  const stop = () => {
+    moved = true; clearTimeout(t);
+    if (held) { held.classList.remove('hold'); held = null; }
+  };
   $.addEventListener('pointerdown', start);
   $.addEventListener('pointermove', stop);
   $.addEventListener('pointerup', stop);
@@ -1833,7 +1902,7 @@ function deckView() {
     </div>
     ${simpleMode() ? '' : mixBar(d)}
     <div class="lbl"><span>Pages</span>
-      ${d.cards.length > 5 ? `<button class="pick ${deckQ ? 'on' : ''}" data-act="deckfind"
+      ${d.cards.length > 5 ? `<button class="pick ico ${deckQ ? 'on' : ''}" data-act="deckfind"
         aria-label="Chercher dans ce livre">${svg(I.search)}</button>` : ''}
       ${d.cards.length ? `<button class="pick ${sel ? 'on' : ''}" data-act="selmode">${
         svg(sel ? I.check : I.pick)}${sel ? 'Terminer' : 'Sélectionner'}</button>` : ''}
@@ -2772,7 +2841,7 @@ function commuView() {
   const mine = rows.findIndex(r => r.uid === auth.uid);
   const MED = ['🥇', '🥈', '🥉'];
   const tile = (act, ic, lab, val, warn) => `<button class="ctile" data-act="${act}">
-    <i class="ci">${svg(ic)}${warn ? `<b class="cb">${warn}</b>` : ''}</i>
+    <i class="ci">${svg(ic)}${warn ? `<b class="cbdg">${warn}</b>` : ''}</i>
     <span class="cn">${lab}</span><span class="cv">${val}</span></button>`;
   $.innerHTML = `
     <div class="page" id="page">
@@ -3258,7 +3327,8 @@ function statsView() {
           <span class="bkn">${esc(p.d.name)}<i>${p.k.mature} sue${p.k.mature > 1 ? 's' : ''} sur ${p.n}</i></span>
           <span class="mix sm">${['new', 'learn', 'young', 'mature'].filter(x => p.k[x])
             .map(x => `<i class="${x}" style="flex:${p.k[x]}"></i>`).join('')}</span>
-        </div>`).join('')
+        </div>`).join('') + `<div class="bkkey">${['new', 'learn', 'young', 'mature']
+            .map(x => `<span><i class="${x}"></i>${STATE[x]}</span>`).join('')}</div>`
           : '<div class="note">Aucun livre pour l’instant.</div>'}
       </div>
 
@@ -3293,17 +3363,22 @@ function statsView() {
 
 /* Les sept derniers jours, en colonnes : on voit d'un coup les jours
    travaillés et les jours sautés, sans avoir à lire un pourcentage. */
+/* Les sept derniers jours. Le chiffre vit au-dessus de la barre, dans sa
+   propre ligne : il a toujours sa place, même quand la barre est minuscule.
+   La barre, elle, occupe le reste de la hauteur, en proportion du meilleur
+   jour de la semaine — 96 et 125 ne doivent pas se ressembler. */
 function weekBars(S) {
   const out = [];
-  const top = Math.max(1, ...[...Array(7)].map((_, i) => {
-    const v = S.byDay.get(dayKey(Date.now() - i * DAY)); return v ? v.n : 0;
-  }));
-  for (let i = 6; i >= 0; i--) {
-    const t = Date.now() - i * DAY;
+  const days = [...Array(7)].map((_, i) => {
+    const t = Date.now() - (6 - i) * DAY;
     const v = S.byDay.get(dayKey(t));
-    const n = v ? v.n : 0;
-    out.push(`<div class="wd"><i style="height:${Math.max(3, Math.round(n / top * 100))}%"
-      class="${n ? '' : 'nil'}"></i><b>${n || ''}</b>
+    return { t, n: v ? v.n : 0 };
+  });
+  const top = Math.max(1, ...days.map(d => d.n));
+  for (const { t, n } of days) {
+    const h = n ? Math.max(8, Math.round(n / top * 100)) : 0;
+    out.push(`<div class="wd"><b>${n || ''}</b>
+      <u><i style="height:${h}%" class="${n ? '' : 'nil'}"></i></u>
       <span>${['D', 'L', 'M', 'M', 'J', 'V', 'S'][new Date(t).getDay()]}</span></div>`);
   }
   return `<div class="week">${out.join('')}</div>`;
@@ -3671,7 +3746,7 @@ function paintMenu() {
             <i>${esc(subj(d.subject).name)} · ${plur(d.cards.length, 'page')}${due ? ' · ' + due + ' à revoir' : ''}</i>
           </span>
         </div>
-        <div class="mgrid">
+        <div class="mpick">
           <button class="mg" data-mact="pkshare">${svg(I.share)}<span>Partager</span></button>
           <button class="mg" data-mact="pkfind">${svg(I.search)}<span>Chercher</span></button>
           <button class="mg" data-mact="pindeck">${svg(I.pin)}<span>${d.pinned ? 'Détacher' : 'Épingler'}</span></button>
@@ -3744,6 +3819,7 @@ function paintMenu() {
       <div class="menu">
         <div class="mhd"><i class="av">${esc(initial(f.handle || f.name))}</i>
           <span class="mhx"><b>${esc(f.name || '')}</b><i>@${esc(f.handle || '')}</i></span></div>
+        <button class="mi" data-mact="mateprof">${svg(I.chart)}Son journal de lecture</button>
         <button class="mi" data-mact="matesend">${svg(I.share)}Lui prêter un livre</button>
         <button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes lecteurs</span></button>
       </div>`;
@@ -3925,6 +4001,37 @@ function paintMenu() {
     mountMenu(w);
     return;
   }
+  if (menu === 'mateprof') {
+    const f = (mates || []).find(x => x.id === mateOpen);
+    if (!f) { menu = null; return; }
+    const r = mateProf.row, l = mateProf.lib;
+    const pctok = r && +r.n ? Math.round(r.ok / r.n * 100) : 0;
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd"><i class="av">${esc(initial(f.handle || f.name))}</i>
+          <span class="mhx"><b>${esc(f.name || '')}</b><i>@${esc(f.handle || '')}</i></span></div>
+        <div class="seg" style="margin:0 12px 10px">
+          ${[[7, '7 jours'], [30, '30 jours'], [0, 'Tout']].map(([v, lab]) =>
+            `<button data-mrange="${v}" class="${mateProf.range === v ? 'on' : ''}">${lab}</button>`).join('')}
+        </div>
+        ${mateProf.load && !r ? `<div class="note">Chargement…</div>` : `
+          <div class="tiles st4" style="margin:0 12px 12px">
+            <div class="st"><b>${r ? +r.n : 0}</b><span>pages lues</span></div>
+            <div class="st"><b>${pctok}%</b><span>de réussite</span></div>
+            <div class="st"><b>${r ? +r.jours : 0}</b><span>jours de lecture</span></div>
+            <div class="st"><b>${l ? l.length : 0}</b><span>livres partagés</span></div>
+          </div>`}
+        <div class="msep"></div>
+        <div class="mi" style="font-weight:750">${svg(I.book)}Ses livres dans la bibliothèque</div>
+        <div class="mscroll">${l === null ? `<div class="note">Chargement…</div>`
+          : l.length ? l.map(x => `<div class="mi">
+              <i class="tri" style="--c:var(--soft)"></i>${esc(x.name)}
+              <span class="tail">${plur(+x.n, 'page')}</span></div>`).join('')
+          : `<div class="note">Il n’a rien partagé pour l’instant.</div>`}</div>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
   if (menu === 'mailitem') {
     const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen);
     if (!it) { menu = null; return; }
@@ -4022,7 +4129,7 @@ function paintMenu() {
     <div class="menu">
       <div class="mgrid">
         ${db.subjects.map(x => subj(x.id)).map(s => `<button class="ms ${d.subject === s.id ? 'on' : ''}"
-          data-msubj="${s.id}" style="--d:${s.d}"><i></i>${esc(s.name)}</button>`).join('')}
+          data-msubj="${s.id}" style="--d:${s.d}"><i></i><span>${esc(s.name)}</span></button>`).join('')}
       </div>
       <div class="msep"></div>
       <button class="mi" data-mact="pindeck">${svg(I.pin)}${d.pinned ? 'Détacher' : 'Épingler en haut'}</button>
@@ -4044,9 +4151,28 @@ function paintMenu() {
     </div>`;
   mountMenu(w);
 }
+/* Le profil d'un lecteur : ce que le classement sait déjà de lui, sur
+   trois périodes, plus les livres qu'il a posés dans la bibliothèque.
+   Rien de plus n'est demandé au serveur — le détail de ses révisions ne
+   sort pas de son compte. */
+let mateProf = { id: null, range: 7, row: null, lib: null, load: 0 };
+async function mateProfPull(id) {
+  mateProf.load = 1;
+  if (mateProf.id !== id) mateProf = { id, range: mateProf.range, row: null, lib: null, load: 1 };
+  try {
+    const rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: mateProf.range }) || [];
+    mateProf.row = rows.find(x => x.uid === id) || { n: 0, ok: 0, jours: 0 };
+  } catch (e) { mateProf.row = mateProf.row || null; }
+  try {
+    mateProf.lib = await api('/rest/v1/library?select=deck_id,name,subject,n,updated_at'
+      + `&user_id=eq.${id}&order=updated_at.desc&limit=20`) || [];
+  } catch (e) { mateProf.lib = mateProf.lib || []; }
+  mateProf.load = 0;
+  if (menu === 'mateprof') paintMenu();
+}
 let recKey = null;
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend]');
+  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange]');
   if (!b) return;
   const d = deck(view.id);
   if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
@@ -4062,6 +4188,10 @@ document.addEventListener('click', async e => {
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
   if (b.dataset.friend !== undefined) { sendTo = b.dataset.friend; return paintMenu(); }
+  if (b.dataset.mrange !== undefined) {
+    mateProf.range = +b.dataset.mrange; mateProf.row = null;
+    paintMenu(); return mateProfPull(mateOpen);
+  }
   if (b.dataset.lend !== undefined) {
     const bk = deck(b.dataset.lend), f = (mates || []).find(x => x.id === mateOpen);
     if (!bk || !f) return;
@@ -4313,6 +4443,7 @@ document.addEventListener('click', async e => {
   if (a === 'gleave') { return leaveGroup(groupOf); }
   if (a === 'matedrop') { return dropFriend(mateOpen); }
   if (a === 'matesend') { sendMsg = ''; return openMenu('lend'); }
+  if (a === 'mateprof') { mateProfPull(mateOpen); return openMenu('mateprof'); }
   if (a === 'cfmine') return solveConflict('mine');
   if (a === 'cftheirs') return solveConflict('theirs');
   if (a === 'cfboth') return solveConflict('both');
@@ -4587,9 +4718,10 @@ const faceSize = txt => {
   const n = plain(txt).length;
   return n > 260 ? ' xxl' : n > 160 ? ' xl' : n > 90 ? ' l' : '';
 };
-function faceHtml(bk, txt, img, aud, lang) {
+function faceHtml(bk, txt, img, aud, lang, tag) {
   const snd = aud || (lang && TTS && plain(txt));
   return `<div class="face${bk ? ' bk' : ''}${faceSize(txt)}">
+    ${tag || ''}
     ${img ? `<img class="fim" src="${esc(img)}" alt="">` : ''}
     ${plain(txt) ? `<div class="tx">${rt(txt)}</div>` : ''}
     ${snd ? `<button class="snd" data-snd="${bk ? 'b' : 'f'}">${svg(I.sound)}</button>` : ''}
@@ -4613,14 +4745,18 @@ function paintStack() {
   const frontLang = rv ? org.langb : org.langf, backLang = rv ? org.langf : org.langb;
   /* la pile prend la couleur de la matière de la carte, carte après carte */
   if (org.subj) st.setAttribute('style', sty(org.subj));
+  /* Posées sur la fiche et non dedans, la matière et les étiquettes
+     restaient en place pendant que la fiche se retournait : elles avaient
+     l'air collées par-dessus. Elles appartiennent maintenant à chaque
+     face, donc elles tournent avec. */
+  const tag = `${org.subj ? `<div class="sbj"><i></i>${esc(org.subj.name)}</div>` : ''}${
+    (c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
+      `<i>${esc(t)}</i>`).join('')}</div>` : ''}`;
   st.innerHTML = `<div class="card in${tf ? ' tf' : ''}" id="top">
       <div class="flipper">
-        ${faceHtml(false, front, fimg, faud, frontLang)}
-        ${faceHtml(true, back, bimg, baud, backLang)}
+        ${faceHtml(false, front, fimg, faud, frontLang, tag)}
+        ${faceHtml(true, back, bimg, baud, backLang, tag)}
       </div>
-      ${org.subj ? `<div class="sbj"><i></i>${esc(org.subj.name)}</div>` : ''}
-      ${(c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
-        `<i>${esc(t)}</i>`).join('')}</div>` : ''}
       <div class="ov y">${svg(I.check)}</div>
       <div class="ov n">${svg(I.x)}</div>
     </div>`;
@@ -4848,7 +4984,10 @@ function scoreCard(id, ok, rating) {
   if (stats.rows) stats.rows.push(Object.assign({ created_at: new Date().toISOString() }, row));
   liveBump();
   bumpToday();
-  beep(ok);
+  /* Le son dit la note, pas le verdict : « Difficile » compte comme su
+     pour le moteur, mais à l'oreille c'est une fiche qui a résisté. Les
+     deux notes de gauche sonnent bas, les deux de droite sonnent haut. */
+  beep(r >= 2);
   if (!study.tried[id]) { study.tried[id] = 1; if (ok) study.ok++; study.log.push(ok ? 1 : 0); }
   if (!ok && !study.missSet[id]) {
     study.missSet[id] = 1;
@@ -5431,7 +5570,8 @@ $.addEventListener('click', e => {
     return;
   }
   if (ds.sub !== undefined) return openSubject(ds.sub || null);
-  if (ds.go) return go('deck', ds.go);
+  /* pendant le rangement, un livre se prend et se pose : il ne s'ouvre pas */
+  if (ds.go) { if (reorder) return; return go('deck', ds.go); }
   if (ds.a) return fling(ds.a === 'yes' ? 1 : -1);
   if (ds.g !== undefined) { pendingGrade = +ds.g; return fling(+ds.g > 0 ? 1 : -1); }
   if (ds.rm) { const d = deck(view.id); d.cards = d.cards.filter(c => c.id !== ds.rm); saveDeck(d); return render(); }
