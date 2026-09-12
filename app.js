@@ -1700,12 +1700,35 @@ function bindDeckOrder() {
   const items = () => [...wrap.querySelectorAll(SEL)];
   /* translate/scale sont posées à part de « transform » : le tremblement
      des livres non tenus tourne sur `rotate`, et les deux ne se marchent
-     jamais dessus. */
+     jamais dessus.
+     Le livre tenu doit rester sous le doigt même quand `slot()` le
+     réinsère ailleurs dans la liste — sa position « au repos » change
+     alors sans prévenir. `getBoundingClientRect()` ne renvoie que la
+     position peinte, translation déjà comprise : il faut en retrancher
+     la translation qu'on a posée la fois d'avant pour retrouver le repos
+     réel, sinon chaque image recalculait sa cible à partir d'un point de
+     départ faux, et le livre partait à la dérive au lieu de suivre le
+     doigt. g.tx/g.ty gardent donc la translation actuellement posée. */
+  const LIFT_SCALE = 1.06;
   const place = () => {
     const r = g.el.getBoundingClientRect();
-    g.el.style.translate = `${(g.bx + g.px - g.x0 - r.left + g.tx).toFixed(1)}px ${
-      (g.by + g.py - g.y0 - r.top + g.ty).toFixed(1)}px`;
-    g.el.style.scale = '1.06';
+    /* Le grossissement du livre tenu (scale 1.06, centré) élargit sa
+       boîte de façon symétrique et déplace donc son bord gauche/haut
+       vers l'intérieur : une fois posé, `getBoundingClientRect()` ne
+       renvoie plus le repos + la translation, mais repos + translation
+       - ce décalage de mise à l'échelle (calculé sur sa taille d'origine,
+       fixée une fois pour toutes à la prise — la taille mesurée après
+       coup est déjà grossie). Sans le retrancher, chaque image partait
+       d'un repos faux d'une dizaine de pixels — c'est ce qui faisait
+       dériver le livre loin du doigt. */
+    const dsx = g.scaled ? g.ow * (LIFT_SCALE - 1) / 2 : 0;
+    const dsy = g.scaled ? g.oh * (LIFT_SCALE - 1) / 2 : 0;
+    const restX = r.left + dsx - g.tx, restY = r.top + dsy - g.ty;
+    g.tx = (g.bx + g.px - g.x0) - restX;
+    g.ty = (g.by + g.py - g.y0) - restY;
+    g.el.style.translate = `${g.tx.toFixed(1)}px ${g.ty.toFixed(1)}px`;
+    g.el.style.scale = String(LIFT_SCALE);
+    g.scaled = true;
   };
   /* on replace la couverture dans le flux, puis on remet les autres à
      leur place d'avant le temps d'une animation : elles glissent au lieu
@@ -1737,9 +1760,10 @@ function bindDeckOrder() {
   };
   const lift = () => {
     const r = g.el.getBoundingClientRect();
-    g.bx = r.left; g.by = r.top; g.tx = 0; g.ty = 0;
+    g.bx = r.left; g.by = r.top; g.tx = 0; g.ty = 0; g.ow = r.width; g.oh = r.height;
     g.el.classList.add('drag');
     wrap.classList.add('dragging');
+    try { g.el.setPointerCapture(g.pid); } catch (e) {}
     if (navigator.vibrate) try { navigator.vibrate(12); } catch (e) {}
     place();
   };
@@ -1761,7 +1785,13 @@ function bindDeckOrder() {
       return;
     }
     e.preventDefault();
-    place(); slot();
+    /* slot() d'abord : elle peut réinsérer le livre ailleurs dans la
+       grille (nouvelle rangée, nouvelle colonne) selon où en est le
+       doigt. Appeler place() après lui laisse toujours mesurer la
+       position de repos définitive de cette image — dans l'autre sens,
+       place() se basait sur le repos d'avant le réarrangement et le
+       livre sautait d'un coup avant de se corriger à l'image suivante. */
+    slot(); place();
   });
   const drop = e => {
     if (!g || (e && e.pointerId !== g.pid)) return;

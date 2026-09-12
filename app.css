@@ -1479,6 +1479,13 @@ body.touring .toast{display:none}
    « translate » (et « scale » pour la couverture tenue), jamais sur
    « transform » : c'est cette dernière que le tremblement ci-dessous
    utilise pour tourner, et les deux propriétés ne se gênent pas. */
+/* #page autorise le défilement vertical natif (touch-action:pan-y) pour
+   que la page défile normalement — sauf ici : pendant le rangement, un
+   doigt qui glisse sur un livre ne doit jamais faire défiler la page en
+   dessous, seulement déplacer le livre. Sans ce blocage, le geste
+   partait au hasard entre « faire glisser le livre » et « scroller » ;
+   posé au repos AVANT même le premier mouvement, il tranche d'emblée. */
+.grid.reord,.rows.lst.reord{touch-action:none}
 .grid.reord .tile,.rows.lst.reord .lrow{cursor:grab}
 .reord .tile.drag,.reord .lrow.drag{position:relative;z-index:5;animation:none;
   box-shadow:var(--s3);opacity:.95;transition:none}
