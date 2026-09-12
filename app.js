@@ -1484,6 +1484,7 @@ const tabs = on => `<div class="tabs">
 
 /* balayage horizontal entre « Mes paquets » et « Communauté » */
 function bindPager() {
+  if (reorder) return;   // le rangement fige la page : plus rien d'autre ne bouge
   const pg = document.getElementById('page'); if (!pg) return;
   const home = view.name === 'home';
   let x0 = 0, y0 = 0, dx = 0, on = false, lock = 0, t0 = 0, raf = 0, pid = -1;
@@ -1633,7 +1634,7 @@ function home() {
   const hidden = db.decks.some(d => d.hidden);
   const list = db.decks.filter(d => (peek || !d.hidden) && (!filter || d.subject === filter));
   $.innerHTML = `
-    <div class="page" id="page">
+    <div class="page ${reorder ? 'frozen' : ''}" id="page">
       <div class="top">
         <div class="hero">Mes livres</div>
         ${queueChip()}
@@ -1646,11 +1647,10 @@ function home() {
       ${resumeBanner()}
       ${used.length > 1 ? pills(filter, used, 'filt') : ''}
       ${list.length ? subBar(list) : ''}
-      ${list.length > 2 ? `<div class="hbar">
+      ${list.length > 2 && !reorder ? `<div class="hbar">
         <button class="lnk" data-act="sortpick">${svg(I.sort)}${SORTS[prefs.sort] || 'Manuel'}</button>
         <div style="flex:1"></div>
-        ${reorder ? `<button class="lnk on" data-act="reorder">${svg(I.check)}Terminer</button>`
-          : `<button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>`}
+        <button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>
       </div>` : ''}
       ${!list.length ? `<div class="empty">${svg(I.layers)}<p><b>Ta bibliothèque est vide</b>Appuie sur + pour écrire ton premier livre.</p></div>`
         : prefs.list
@@ -1659,8 +1659,10 @@ function home() {
       ${!simpleMode() && allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
         <span>Lecture du jour</span><i>${allDue()} pages dues, toutes matières</i></button>` : ''}
     </div>
-    ${reorder ? '' : `<button class="fab" data-act="new" aria-label="Nouveau livre">${svg(I.plus)}<span>Nouveau livre</span></button>`}
+    ${reorder ? `<button class="fab fabok" data-act="reorder" aria-label="Valider l’ordre">${svg(I.check)}</button>`
+      : `<button class="fab" data-act="new" aria-label="Nouveau livre">${svg(I.plus)}<span>Nouveau livre</span></button>`}
     ${tabs('home')}`;
+  $.classList.toggle('reordering', reorder);
   bindPager();
   if (reorder) bindDeckOrder();
   bindPeek();
@@ -1696,10 +1698,14 @@ function bindDeckOrder() {
   let g = null, hold = 0;
 
   const items = () => [...wrap.querySelectorAll(SEL)];
+  /* translate/scale sont posées à part de « transform » : le tremblement
+     des livres non tenus tourne sur `rotate`, et les deux ne se marchent
+     jamais dessus. */
   const place = () => {
     const r = g.el.getBoundingClientRect();
-    g.el.style.transform = `translate(${g.bx + g.px - g.x0 - r.left + g.tx}px,${
-      g.by + g.py - g.y0 - r.top + g.ty}px) scale(1.04)`;
+    g.el.style.translate = `${(g.bx + g.px - g.x0 - r.left + g.tx).toFixed(1)}px ${
+      (g.by + g.py - g.y0 - r.top + g.ty).toFixed(1)}px`;
+    g.el.style.scale = '1.06';
   };
   /* on replace la couverture dans le flux, puis on remet les autres à
      leur place d'avant le temps d'une animation : elles glissent au lieu
@@ -1725,8 +1731,8 @@ function bindDeckOrder() {
       const dx = o.left - r.left, dy = o.top - r.top;
       if (!dx && !dy) continue;
       n.style.transition = 'none';
-      n.style.transform = `translate(${dx}px,${dy}px)`;
-      requestAnimationFrame(() => { n.style.transition = ''; n.style.transform = ''; });
+      n.style.translate = `${dx}px ${dy}px`;
+      requestAnimationFrame(() => { n.style.transition = ''; n.style.translate = ''; });
     }
   };
   const lift = () => {
@@ -1764,7 +1770,7 @@ function bindDeckOrder() {
     el.classList.remove('hold');
     g = null;
     if (!up) return;
-    el.style.transition = ''; el.style.transform = '';
+    el.style.transition = ''; el.style.translate = ''; el.style.scale = '';
     el.classList.remove('drag'); wrap.classList.remove('dragging');
     const ids = items().map(n => n.dataset.id);
     if (ids.some(x => !x)) return;
@@ -3419,7 +3425,11 @@ function askPages(done) {
 
 /* ---------- menu contextuel ---------- */
 function openMenu(kind) { menu = kind; paintMenu(); }
-function closeMenu() { menu = null; document.querySelectorAll('.scrim,.menu').forEach(n => n.remove()); }
+function closeMenu() {
+  menu = null;
+  document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
+  document.documentElement.classList.remove('sheet-open');
+}
 /* Une feuille peut porter beaucoup de contenu (les matières, la liste
    des paquets à fusionner…) : plus que l'écran n'en montre d'un coup.
    Elle défile donc sur elle-même — poignée et croix restent fixes en
@@ -3428,6 +3438,12 @@ function closeMenu() { menu = null; document.querySelectorAll('.scrim,.menu').fo
 function mountMenu(w) {
   const box = w.querySelector('.menu');
   if (box) {
+    /* Une feuille flotte au-dessus de la page, mais la page en dessous
+       reste le vrai document qui défile : sans le geler, un doigt posé
+       sur la feuille — ou sur le voile autour d'elle, dès qu'il n'y a
+       rien à faire défiler à cet endroit précis — continuait de faire
+       glisser tout l'écran derrière. */
+    document.documentElement.classList.add('sheet-open');
     const body = document.createElement('div');
     body.className = 'mbody';
     while (box.firstChild) body.appendChild(box.firstChild);
@@ -3500,6 +3516,7 @@ function bindSheetDrag(box, body) {
 }
 function paintMenu() {
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
+  document.documentElement.classList.remove('sheet-open');
   const w = document.createElement('div');
   if (menu === 'subject') {
     const t = db.subjects.find(x => x.id === subjEdit) || { id: '', name: '', color: 'graphite' };
@@ -4156,17 +4173,28 @@ function paintMenu() {
    Rien de plus n'est demandé au serveur — le détail de ses révisions ne
    sort pas de son compte. */
 let mateProf = { id: null, range: 7, row: null, lib: null, load: 0 };
+/* Changer de période relance une requête sans attendre la précédente :
+   « Tout » (plus de lignes à agréger côté serveur) peut très bien revenir
+   après un « 30 jours » lancé juste ensuite, et écraser l'affichage avec
+   des chiffres d'une autre période que celle sélectionnée à l'écran. Un
+   jeton par appel règle ça — seule la dernière réponse compte. */
+let mateProfSeq = 0;
 async function mateProfPull(id) {
+  const seq = ++mateProfSeq, range = mateProf.range;
   mateProf.load = 1;
-  if (mateProf.id !== id) mateProf = { id, range: mateProf.range, row: null, lib: null, load: 1 };
+  if (mateProf.id !== id) mateProf = { id, range, row: null, lib: null, load: 1 };
+  let row = null, lib = null;
   try {
-    const rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: mateProf.range }) || [];
-    mateProf.row = rows.find(x => x.uid === id) || { n: 0, ok: 0, jours: 0 };
-  } catch (e) { mateProf.row = mateProf.row || null; }
+    const rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: range }) || [];
+    row = rows.find(x => x.uid === id) || { n: 0, ok: 0, jours: 0 };
+  } catch (e) {}
   try {
-    mateProf.lib = await api('/rest/v1/library?select=deck_id,name,subject,n,updated_at'
+    lib = await api('/rest/v1/library?select=deck_id,name,subject,n,updated_at'
       + `&user_id=eq.${id}&order=updated_at.desc&limit=20`) || [];
-  } catch (e) { mateProf.lib = mateProf.lib || []; }
+  } catch (e) {}
+  if (seq !== mateProfSeq) return;        // une demande plus récente est déjà en vol
+  if (row) mateProf.row = row;
+  if (lib) mateProf.lib = lib;
   mateProf.load = 0;
   if (menu === 'mateprof') paintMenu();
 }

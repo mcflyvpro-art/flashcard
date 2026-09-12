@@ -23,6 +23,10 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{height:100%;background:var(--bg)}
+/* Une feuille ouverte gèle le document derrière elle. Sans ça, un doigt
+   posé sur le voile ou sur une feuille trop courte pour défiler elle-même
+   faisait défiler la page en dessous — invisible, mais bien réelle. */
+html.sheet-open,html.sheet-open body{overflow:hidden}
 body{
   margin:0;min-height:100%;background:var(--bg);color:var(--ink);
   font:500 17px/1.42 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,system-ui,sans-serif;
@@ -198,6 +202,11 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .fade .fab{animation:pop .55s var(--e) .12s both}
 .fab:active{transform:scale(.85)}
 .fab svg{width:23px;height:23px;stroke-width:2.3}
+/* le rond vert qui valide le rangement : même place que le bouton
+   d'ajout qu'il remplace, rond plutôt que pilule puisqu'il ne porte
+   qu'une icône, et vert pour se distinguer de tout le reste, éteint */
+.fab.fabok{border-radius:50%;background:var(--ok);animation:fabin .3s var(--sp) both}
+@keyframes fabin{from{opacity:0;transform:scale(.5) rotate(-30deg)}}
 
 /* ---------- fiche paquet ---------- */
 .head{position:relative;border-radius:28px;padding:22px 20px 18px;margin-bottom:14px;
@@ -261,14 +270,23 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 /* « Sélectionner » posé dans le bandeau CARTES : il doit se lire comme un
    bouton, pas comme un intitulé. Gris sur gris, à la même graisse que le
    mot CARTES, personne n'avait l'idée d'appuyer dessus. */
-.pick{margin-left:auto;margin-right:10px;display:flex;align-items:center;gap:6px;
+/* Le premier bouton d'une ligne se pousse vers la droite (marge gauche
+   automatique) ; s'il y en a un second — la loupe puis Sélectionner —
+   celui-là suit juste après, au « gap » de la ligne, sans réclamer sa
+   propre marge automatique : sinon les deux se partageaient l'espace
+   libre et s'écartaient l'un de l'autre au lieu de rester groupés. */
+.pick{margin-right:10px;display:flex;align-items:center;gap:6px;
   padding:6px 12px 6px 10px;border-radius:12px;background:var(--card);box-shadow:var(--s1);
   color:var(--ink);font-size:12.5px;font-weight:750;letter-spacing:-.1px;text-transform:none;
   transition:background .2s,color .2s,transform .2s var(--sp)}
+.lbl > .pick:first-of-type{margin-left:auto}
 .pick svg{width:15px;height:15px;stroke-width:2.1}
 /* sans texte, le remplissage prévu pour « icône + mot » décalait la loupe
    vers la gauche : un carré, et elle tombe au milieu */
-.pick.ico{width:32px;height:32px;padding:0;gap:0;justify-content:center;margin-right:8px}
+/* la ligne « Pages » qui la porte a déjà 8px de « gap » entre ses
+   enfants : cette marge s'ajoutait par-dessus et doublait l'écart avec
+   le bouton Sélectionner juste à côté */
+.pick.ico{width:32px;height:32px;padding:0;gap:0;justify-content:center;margin-right:0}
 .pick:active{transform:scale(.94)}
 .pick.on{background:var(--ink);color:var(--bg);box-shadow:none}
 .rows.picking input{pointer-events:none;user-select:none}
@@ -1457,12 +1475,34 @@ body.touring .toast{display:none}
 .tile.hold,.lrow.hold{animation:holdin .5s var(--e) forwards}
 @keyframes holdin{to{transform:scale(.955);box-shadow:var(--s2)}}
 /* ranger sa bibliothèque : le livre pris sous le doigt, et les autres
-   qui s'écartent pour lui faire place */
+   qui s'écartent pour lui faire place. Le déplacement se fait sur
+   « translate » (et « scale » pour la couverture tenue), jamais sur
+   « transform » : c'est cette dernière que le tremblement ci-dessous
+   utilise pour tourner, et les deux propriétés ne se gênent pas. */
 .grid.reord .tile,.rows.lst.reord .lrow{cursor:grab}
 .reord .tile.drag,.reord .lrow.drag{position:relative;z-index:5;animation:none;
   box-shadow:var(--s3);opacity:.95;transition:none}
-.reord.dragging .tile:not(.drag),.reord.dragging .lrow:not(.drag){transition:transform .22s var(--e)}
+/* le livre tenu ne doit pas aussi se tasser au doigt : ce rétrécissement
+   (hérité de l'état pressé) annulerait le grossissement qu'on lui donne
+   en le soulevant */
+.reord .tile.drag:active{transform:none}
+.reord.dragging .tile:not(.drag),.reord.dragging .lrow:not(.drag){transition:translate .22s var(--e)}
 .reord .grip{opacity:.55}
+/* le tremblement, comme sur un écran d'accueil de téléphone : chaque
+   livre penche à son propre rythme, décalé par --i pour ne pas trembler
+   à l'unisson. Celui qu'on tient s'arrête d'osciller et flotte, net. */
+@keyframes wiggle{0%,100%{rotate:-1.4deg}50%{rotate:1.4deg}}
+.reord .tile:not(.drag),.reord .lrow:not(.drag){
+  animation:wiggle .24s ease-in-out infinite;animation-delay:calc(var(--i,0) * -47ms)}
+@media (prefers-reduced-motion:reduce){
+  .reord .tile:not(.drag),.reord .lrow:not(.drag){animation:none}
+}
+/* Le rangement fige tout le reste : plus de recherche, de filtres, de
+   balayage ni d'ouverture d'un livre — seuls les livres eux-mêmes
+   répondent, jusqu'à ce qu'on valide avec le rond vert. */
+.page.frozen > *:not(.grid):not(.rows){
+  pointer-events:none;opacity:.4;filter:saturate(.7);transition:opacity .25s var(--e)}
+#app.reordering .tabs{pointer-events:none;opacity:.4;transition:opacity .25s var(--e)}
 .mpick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 12px 10px}
 .mg{display:flex;flex-direction:column;align-items:center;gap:7px;background:var(--surf);
   border-radius:17px;padding:14px 6px 11px;font-size:11.5px;font-weight:700;color:var(--ink2);
