@@ -706,48 +706,96 @@ const plain = s => String(s == null ? '' : s)
    L'adresse est signée au moment de l'affichage et ne vaut que quelques
    heures. Une valeur absolue (http…) est laissée telle quelle : une
    carte écrite avant ce changement continue de s'afficher. */
-const SIGNTTL = 6 * 3600;                  // durée de vie d'une adresse signée
-const signedUrls = new Map();              // chemin -> { url, till }
-const isPath = r => !!r && !/^(https?:|data:|blob:)/i.test(r);
-
-async function signMedia(path) {
-  const hit = signedUrls.get(path);
-  if (hit && hit.till > Date.now()) return hit.url;
-  const j = await api(`/storage/v1/object/sign/media/${path}`, 'POST', { expiresIn: SIGNTTL });
-  if (!j || !j.signedURL) throw new Error('sign');
-  const url = SB.url + '/storage/v1' + j.signedURL;
-  /* on réutilise l'adresse jusqu'à cinq minutes avant sa fin : de quoi
-     finir une séance commencée sans la resigner à chaque carte */
-  signedUrls.set(path, { url, till: Date.now() + (SIGNTTL - 300) * 1000 });
+/* Une adresse du seau, quelle que soit sa forme, redonne son chemin. On
+   reconnaît aussi les anciennes adresses publiques : les cartes écrites
+   avant la fermeture du seau pointaient vers /object/public/…, qui ne
+   répond plus rien — plutôt que de les laisser cassées, on en extrait le
+   chemin et on les relit comme les autres. Une adresse étrangère au seau
+   (data:, blob:, un autre site) rend une chaîne vide : elle s'affiche
+   telle quelle, sans passer par ici. */
+const MOBJ = /\/storage\/v1\/object\/(?:public|authenticated|sign)\/media\/(.+?)(?:\?|$)/;
+const mediaPath = r => {
+  if (!r) return '';
+  const m = String(r).match(MOBJ);
+  if (m) return decodeURIComponent(m[1]);
+  return /^(https?:|data:|blob:)/i.test(r) ? '' : String(r);
+};
+/* Le seau est privé : un <img src> ne sait pas porter d'en-tête
+   d'autorisation. On récupère donc l'octet avec le jeton du compte, et on
+   donne à la balise une adresse locale. Un seul mécanisme, sans durée de
+   validité à surveiller — et le navigateur garde l'objet tant que
+   l'onglet vit. */
+const mediaCache = new Map();              // chemin -> adresse locale
+async function mediaUrl(path) {
+  const hit = mediaCache.get(path);
+  if (hit) return hit;
+  if (!auth) throw new Error('auth');
+  if (auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
+  const r = await fetch(`${SB.url}/storage/v1/object/authenticated/media/${path}`, {
+    headers: { apikey: SB.key, Authorization: 'Bearer ' + auth.token }
+  });
+  if (!r.ok) throw new Error('media:' + r.status);
+  const url = URL.createObjectURL(await r.blob());
+  mediaCache.set(path, url);
   return url;
 }
-/* L'écran se peint d'un coup, la signature prend un aller-retour :
+/* L'écran se peint d'un coup, la récupération prend un aller-retour :
    l'image part donc sans adresse et la reçoit dès qu'elle arrive. */
-const mimg = (cls, r) => !r ? ''
-  : isPath(r) ? `<img class="${cls}" data-m="${esc(r)}" alt="">`
-              : `<img class="${cls}" src="${esc(r)}" alt="">`;
+const mimg = (cls, r) => {
+  if (!r) return '';
+  const p = mediaPath(r);
+  return p ? `<img class="${cls}" data-m="${esc(p)}" alt="">`
+           : `<img class="${cls}" src="${esc(r)}" alt="">`;
+};
 function paintMedia(root) {
   (root || document).querySelectorAll('img[data-m]').forEach(el => {
     const p = el.dataset.m;
     delete el.dataset.m;                   // une seule tentative par image
-    signMedia(p).then(u => { el.src = u; }, () => {});
+    mediaUrl(p).then(u => { el.src = u; }, () => {});
   });
 }
 
+/* Le seau n'accepte qu'une liste de types. Safari ne rend pas « audio/mp4 »
+   mais « audio/mp4;codecs=… » : le seau comparait la chaîne entière, ne
+   reconnaissait rien, et refusait tous les enregistrements du micro sur
+   iPhone. On ne garde donc que le type, sans ses paramètres.
+   L'extension se déduit du type et non du nom : un enregistrement n'a pas
+   de nom de fichier, et celui qu'on lui inventait annonçait « .webm »
+   pour un contenu qui n'en était pas un. */
+const MEXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
+               'audio/webm': 'webm', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/ogg': 'ogg' };
 async function upload(file) {
   if (!auth) throw new Error('auth');
   if (file.size > 7.5e6) throw new Error('big');
-  const ext = ((file.name || '').split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
+  const mime = String(file.type || '').split(';')[0].trim().toLowerCase();
+  const named = ((file.name || '').split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const ext = MEXT[mime] || named || 'bin';
   const path = `${auth.uid}/${uid()}.${ext}`;
   if (auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
   const r = await fetch(`${SB.url}/storage/v1/object/media/${path}`, {
     method: 'POST',
     headers: { apikey: SB.key, Authorization: 'Bearer ' + auth.token,
-               'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
+               'Content-Type': mime || 'application/octet-stream', 'x-upsert': 'true' },
     body: file
   });
-  if (!r.ok) throw new Error('up');
-  return path;                             // le chemin, pas l'adresse : elle se signe à l'affichage
+  /* Le code de refus est repris dans le message : « impossible » sans
+     rien d'autre ne se diagnostique pas, et c'est toujours le même mot
+     pour un type refusé, un jeton périmé ou un seau plein. */
+  if (!r.ok) throw new Error('up:' + r.status);
+  return path;                             // le chemin, pas l'adresse : elle se résout à l'affichage
+}
+/* Dire ce qui a été refusé, et par qui. Un même « envoi impossible »
+   couvrait le type rejeté, le jeton périmé et la coupure réseau : trois
+   causes, trois gestes différents pour s'en sortir. */
+function upErr(x) {
+  const m = String((x && x.message) || '');
+  if (m === 'big') return 'Fichier trop lourd';
+  if (m === 'auth') return 'Reconnecte-toi pour envoyer';
+  const code = (m.match(/^up:(\d+)$/) || [])[1];
+  if (code === '415') return 'Ce format de fichier n’est pas accepté';
+  if (code === '413') return 'Fichier trop lourd pour le serveur';
+  if (code === '401' || code === '403') return 'Session expirée, reconnecte-toi';
+  return code ? `Envoi refusé (${code})` : 'Envoi impossible — réseau ?';
 }
 /* Choisit un fichier sans laisser d'input traîner dans le DOM. */
 function pickFile(accept) {
@@ -812,7 +860,8 @@ let player = null;
    de jouer accordée par le geste. */
 async function play(ref) {
   try {
-    const url = isPath(ref) ? await signMedia(ref) : ref;
+    const p = mediaPath(ref);
+    const url = p ? await mediaUrl(p) : ref;
     if (player) player.pause();
     player = new Audio(url);
     player.play().catch(() => {});
@@ -4408,7 +4457,7 @@ document.addEventListener('click', async e => {
       const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
       if (c) { c[key] = url; saveDeck(d); }
       toast(I.check, 'Son enregistré');
-    } catch (x) { toast(I.x, x.message === 'big' ? 'Fichier trop lourd' : 'Envoi impossible'); }
+    } catch (x) { toast(I.x, upErr(x)); }
     return paintMenu();
   }
   if (a && a.startsWith('med-')) {
@@ -4423,7 +4472,7 @@ document.addEventListener('click', async e => {
     if (!f) return;
     toast(I.share, 'Envoi…');
     try { c[key] = await upload(f); saveDeck(d); toast(I.check); }
-    catch (x) { toast(I.x, x.message === 'big' ? 'Fichier trop lourd' : 'Envoi impossible'); }
+    catch (x) { toast(I.x, upErr(x)); }
     return paintMenu();
   }
   if (a === 'deckset') { closeMenu(); return openMenu('deckset'); }
