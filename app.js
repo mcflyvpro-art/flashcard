@@ -3400,7 +3400,8 @@ function modView() {
    sans cette garde, le dernier administrateur se verrouille dehors et
    plus personne ne peut rendre la main. */
 let accounts = null, accOpen = null;
-const ROLES = { eleve: 'Élève', prof: 'Professeur', admin: 'Administrateur' };
+const ROLES = { eleve: 'Élève', prof: 'Professeur',
+                ref: 'Référent d’établissement', admin: 'Éditeur' };
 
 async function accountsPull() {
   try { accounts = await api('/rest/v1/rpc/admin_accounts', 'POST', {}) || []; }
@@ -3421,28 +3422,91 @@ async function setRole(id, role) {
   render();
 }
 
+/* L'éditeur ne gère pas un établissement : il les vend et les tient. Ce
+   qu'il regarde n'est donc ni une classe ni un élève, c'est une ligne par
+   établissement — combien de comptes ouverts, combien s'en servent
+   vraiment, et ce que l'IA coûte. L'écart entre « ouverts » et « venus »
+   est la seule chose qui dise si un déploiement a pris ou non, et c'est ce
+   qu'il faut lire en premier.
+
+   Pas de coloration, pas d'animation, deux tableaux : c'est un écran qu'on
+   ouvre pour décider, pas pour s'y attarder. */
+let adm = { orgs: null, etat: null, tab: 'orgs' };
+
+async function admPull() {
+  try {
+    const [o, e] = await Promise.all([
+      api('/rest/v1/rpc/admin_orgs', 'POST', {}),
+      api('/rest/v1/rpc/admin_etat', 'POST', {})
+    ]);
+    adm.orgs = o || []; adm.etat = (e || [])[0] || null;
+  } catch (x) { adm.orgs = adm.orgs || []; }
+  if (view.name === 'admin') { animate = false; render(); }
+}
+const euros = c => (Math.round(+c || 0) / 100).toFixed(2).replace('.', ',') + ' €';
+
 function adminView() {
-  const l = accounts;
+  const l = accounts, o = adm.orgs, e = adm.etat;
   const par = r => (l || []).filter(x => x.role === r);
-  const ligne = a => `<button class="sr flat" data-account="${esc(a.id)}">
-    <i class="av">${esc(initial(a.handle || a.name || a.email))}</i>
-    <span class="ml2"><span class="n">${esc(a.name || a.handle || a.email)}</span>
-      <span class="sub">${a.handle ? '@' + esc(a.handle) + ' · ' : ''}${
-        plur(+a.livres, 'livre')}${a.bloque ? ' · modère' : ''}</span></span>
-    ${svg(I.arrow)}</button>`;
+  const onglet = (k, n) => `<button class="rt ${adm.tab === k ? 'on' : ''}" data-atab="${k}">${n}</button>`;
+  const kc = (v, lab, cls) => `<div class="kc ${cls || ''}"><b>${v}</b><span>${lab}</span></div>`;
+
+  const ligneOrg = x => {
+    const ouverts = (x.eleves || 0) + (x.profs || 0) + (x.refs || 0);
+    const venus = Math.max(0, ouverts - (x.jamais_venus || 0));
+    const pris = ouverts ? Math.round(venus / ouverts * 100) : 0;
+    return `<div class="rrow">
+      <span class="c1"><b>${esc(x.name)}</b><i>${esc(x.ville || '')}${
+        x.uai ? ' · ' + esc(x.uai) : ''}</i></span>
+      <span class="c2">${x.classes} classes · ${x.eleves} él. · ${x.profs} prof.</span>
+      <span class="c3">${venus} / ${ouverts} <em class="rl ${
+        pris < 25 ? 'jamais' : pris < 60 ? 'vide' : ''}">${pris} % venus</em></span>
+      <span class="c4">${x.actifs7} actifs 7 j · ${x.actifs30} sur 30 j</span>
+      <span class="c5">${euros(x.cents_mois)} ce mois${
+        +x.cents_total > +x.cents_mois ? ' · ' + euros(x.cents_total) + ' au total' : ''}</span>
+    </div>`;
+  };
+  const ligneCpt = a => `<button class="rrow" data-account="${esc(a.id)}">
+    <span class="c1"><b>${esc(a.name || a.handle || a.email)}</b><i>@${esc(a.handle || '')}</i></span>
+    <span class="c2">${esc(a.email)}</span>
+    <span class="c3"><em class="rl ${esc(a.role)}">${esc(ROLES[a.role] || a.role)}</em></span>
+    <span class="c4">${plur(+a.livres, 'livre')}</span>
+    <span class="c5">${a.bloque ? 'modère les signalements' : ''}</span></button>`;
+
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button>
       <h1>Administration</h1></div>
-    <div class="page">
-      ${!l ? `<div class="empty">${svg(I.user)}<p>Chargement…</p></div>`
-      : !l.length ? `<div class="empty">${svg(I.lock)}<p><b>Réservé aux administrateurs</b>
+    <div class="page dense">
+      ${!l ? `<div class="empty">${svg(I.build)}<p>Chargement…</p></div>`
+      : !l.length ? `<div class="empty">${svg(I.lock)}<p><b>Réservé à l’éditeur</b>
           Ce compte n’a pas ce rôle.</p></div>`
-      : `<div class="note" style="padding:0 0 14px">Un administrateur gère les accès.
-           Il ne voit ni les fiches, ni la progression, ni le courrier de personne.</div>
-         ${['admin', 'prof', 'eleve'].map(r => par(r).length ? `
-           <div class="lbl"><span>${esc(ROLES[r])}${par(r).length > 1 ? 's' : ''}</span>
-             <span>${par(r).length}</span></div>
-           <div class="slist">${par(r).map(ligne).join('')}</div>` : '').join('')}`}
+      : `${e ? `<div class="kpi six">
+           ${kc(e.orgs, 'établissements')}${kc(e.comptes, 'comptes')}
+           ${kc(e.hors_etab, 'hors établissement')}${kc(e.actifs7, 'actifs cette semaine')}
+           ${kc(euros(e.cents_mois), 'd’IA ce mois')}
+           ${kc(e.signalements, 'signalements', e.signalements ? 'ko' : '')}
+         </div>` : ''}
+         <div class="rtabs">${onglet('orgs', 'Établissements')}${onglet('cpt', 'Comptes')}</div>
+         ${adm.tab === 'orgs' ? `
+           <div class="note" style="padding:0 0 12px">L’écart entre comptes ouverts et comptes
+             venus dit si le déploiement a pris. En dessous de 25 %, l’établissement n’a pas
+             distribué le lien — c’est un problème de terrain, pas de produit.</div>
+           ${!o ? `<div class="card2"><div class="note">Chargement…</div></div>`
+             : !o.length ? `<div class="empty">${svg(I.build)}<p><b>Aucun établissement</b></p></div>`
+             : `<div class="rtable">
+                 <div class="rrow tete"><span class="c1">Établissement</span>
+                   <span class="c2">Effectifs</span><span class="c3">Comptes venus</span>
+                   <span class="c4">Usage réel</span><span class="c5">Coût IA</span></div>
+                 ${o.map(ligneOrg).join('')}</div>`}
+           <div class="note" style="padding:6px 0 0">⚠ Le plafond d’IA est encore global à tous
+             les comptes (AI_BUDGET_USD), et non par établissement : un seul lycée actif l’épuise
+             et la fonctionnalité s’éteint pour tout le monde. À remplacer avant la première vente.</div>`
+         : `<div class="note" style="padding:0 0 12px">L’éditeur gère des accès. Il ne voit ni les
+             fiches, ni la progression, ni le courrier de personne.</div>
+           ${['admin', 'ref', 'prof', 'eleve'].map(r => par(r).length ? `
+             <div class="lbl"><span>${esc(ROLES[r] || r)}${par(r).length > 1 ? 's' : ''}</span>
+               <span>${par(r).length}</span></div>
+             <div class="rtable">${par(r).map(ligneCpt).join('')}</div>` : '').join('')}`}`}
     </div>`;
 }
 
@@ -7780,6 +7844,7 @@ $.addEventListener('click', e => {
   /* Ajouter un camarade depuis la liste de sa classe : pas de pseudo à
      taper, on appuie sur le plus en face du nom. */
   /* ---- la console du référent ---- */
+  if (ds.atab) { adm.tab = ds.atab; animate = false; return render(); }
   if (ds.rtab) { ref.tab = ds.rtab; if (ref.tab === 'gens' && !ref.gens) refPeople(true);
     animate = false; return render(); }
   if (ds.rrole !== undefined) { ref.role = ds.rrole; refPeople(true); animate = false; return render(); }
@@ -7923,7 +7988,7 @@ $.addEventListener('click', e => {
   if (a === 'settings') return go('settings');
   if (a === 'tolog') return go('login');
   if (a === 'mod') { if (!mods.list) modPull(); return go('mod'); }
-  if (a === 'admin') { if (!accounts) accountsPull(); return go('admin'); }
+  if (a === 'admin') { if (!accounts) accountsPull(); if (!adm.orgs) admPull(); return go('admin'); }
   /* Le bouton vit dans les Réglages, donc il porte data-act : le
      gestionnaire était rangé avec ceux des feuilles, qui lisent data-mact.
      Il n'a jamais été atteint une seule fois. */
@@ -8178,6 +8243,7 @@ function resetSession() {
   school = null; team = null; mates2 = null;
   prof = { classes: null, err: 0, alertes: null, open: null,
            roster: null, asgs: null, tri: 'nom', q: '', give: null };
+  adm = { orgs: null, etat: null, tab: 'orgs' };
   ref = { tab: 'etab', board: null, err: 0,
           gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
           classes: null, open: null, team: null,
