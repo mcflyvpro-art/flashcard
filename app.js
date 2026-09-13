@@ -1546,6 +1546,7 @@ function render() {
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
               group: groupView, shared: sharedView, duel: duelView, legal: legalView, mod: modView,
               classes: classesView, classe: classeView, maclasse: maClasseView,
+              prof: profView, profclasse: profClasseView, profalert: profAlertView,
               admin: adminView,
               commu: commuView, friends: friendsView, groups: groupsView,
               duels: duelsView, library: libraryView, board: boardView };
@@ -1583,7 +1584,7 @@ function paintRail() {
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
   const on = view.name === 'settings' ? 'settings'
     : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats'
-    : /^(classes|classe|maclasse)$/.test(view.name) ? 'classes'
+    : /^(classes|classe|maclasse|prof)/.test(view.name) ? 'classes'
     : /commu|friends|groups|duels|library|board|shared/.test(view.name) ? 'commu' : 'home';
   const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n + '\u0000' + myRole;
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
@@ -1597,8 +1598,8 @@ function paintRail() {
     <div class="sp"></div>
     <nav>
       <button class="${on === 'stats' ? 'on' : ''}" data-r="stats">${svg(I.chart)}<span>Journal</span></button>
-      ${isProf() || (classes || []).length ? `<button class="${on === 'classes' ? 'on' : ''}"
-        data-r="classes">${svg(I.layers)}<span>${isProf() ? 'Mes classes' : 'Ma classe'}</span></button>` : ''}
+      ${isProf() || atSchool() || (classes || []).length ? `<button class="${on === 'classes' ? 'on' : ''}"
+        data-r="classes">${svg(I.school)}<span>${isProf() ? 'Mes classes' : 'Ma classe'}</span></button>` : ''}
       <button class="${on === 'commu' ? 'on' : ''}" data-r="commu">${svg(I.user)}<span>Le cercle</span>${
         (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
       <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Courrier</span>${
@@ -1611,7 +1612,11 @@ function paintRail() {
     if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
     if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
     if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
-    if (b.dataset.r === 'classes') { if (!classes) classesPull(); return go('classes'); }
+    if (b.dataset.r === 'classes') {
+      if (isPupil()) { maClassePull(); return go('maclasse'); }
+      if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
+      if (!classes) classesPull(); return go('classes');
+    }
     go(b.dataset.r === 'settings' ? 'settings' : 'home');
   };
 }
@@ -2488,7 +2493,7 @@ function loginView() {
       /* Un lien de partage ouvert alors qu'on n'était pas connecté attend
          dans l'adresse : c'est maintenant qu'il faut le suivre, sinon on
          atterrit sur l'accueil sans savoir ce qu'on venait voir. */
-      if (!consumeHash() && !consumeGoto()) go('home');
+      if (!consumeHash() && !consumeGoto()) { go('home'); accueil(); }
       maybeTour();
     } catch (x) {
       const m = String(x.message || '');
@@ -3509,6 +3514,17 @@ const isAdmin = () => myRole === 'admin';
    s'afficher avant qu'on sache si le compte est administrateur, et
    l'entrée manquait alors sans aucune raison visible. C'est exactement ce
    qui faisait dire que le compte admin n'avait rien d'admin. */
+/* Chaque métier a son point d'arrivée. Un professeur qui ouvre l'app veut
+   savoir où en sont ses classes, pas relire sa bibliothèque ; un élève veut
+   ses devoirs. On ne le sait qu'après le rôle, donc on attend : rediriger
+   après coup ferait clignoter un écran qu'on n'a pas demandé. */
+async function accueil() {
+  await Promise.all([rolePull(), schoolPull()]);
+  if (view.name !== 'home') return;              // l'utilisateur est déjà parti ailleurs
+  if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
+  if (isPupil()) { maClassePull(); return go('maclasse'); }
+}
+
 async function cerclePull() {
   await Promise.all([rolePull(), schoolPull(), modCheck(), blocksPull()]);
   await Promise.all([classesPull(), iAmMod ? modPull() : null]);
@@ -3619,6 +3635,53 @@ async function workProgress(id) {
   } catch (e) { box.textContent = 'Suivi indisponible.'; }
 }
 
+/* Le même suivi, mais pour la console : elle lit son effectif dans
+   `prof.classes`, pas dans le `roster` de l'ancien écran. */
+async function workProgress2(id) {
+  const box = document.getElementById('wprog'); if (!box) return;
+  try {
+    const rows = await api('/rest/v1/assignment_progress?select=user_id,pct,done_at'
+      + '&assignment_id=eq.' + encodeURIComponent(id)) || [];
+    const c = (prof.classes || []).find(x => x.id === prof.open) || {};
+    const total = c.effectif || (prof.roster || []).length;
+    const rendus = rows.filter(r => r.done_at).length;
+    const ouverts = rows.length;
+    const moy = ouverts ? Math.round(rows.reduce((a, r) => a + (r.pct || 0), 0) / ouverts) : 0;
+    box.innerHTML = !total ? 'Aucun élève inscrit pour l’instant.'
+      : `<b>${rendus} / ${total}</b> ont rendu · <b>${ouverts}</b> ont ouvert`
+        + (ouverts ? ` · ${moy} % de réussite moyenne` : '')
+        + (total - ouverts ? `<br><b>${plur(total - ouverts, 'élève')}</b> n’${
+            total - ouverts > 1 ? 'ont' : 'a'} pas encore ouvert ce devoir.` : '');
+  } catch (e) { box.textContent = 'Suivi indisponible.'; }
+}
+
+/* Donner le même devoir à plusieurs classes d'un coup. Une requête par
+   classe, mais un seul geste : c'est le geste qui coûte au professeur, pas
+   la requête. */
+async function giveMany() {
+  const ch = prof.give; if (!ch || !ch.set.size) return;
+  const d = deck(ch.id); if (!d) { closeMenu(); return toast(I.x, 'Livre introuvable'); }
+  const cards = d.cards.map(c => [plain(c.f), plain(c.b)]);
+  const due = new Date(Date.now() + (ch.j || 7) * DAY).toISOString().slice(0, 10);
+  const cibles = [...ch.set];
+  let ok = 0;
+  for (const cid of cibles) {
+    try {
+      await api('/rest/v1/assignments', 'POST',
+        [{ class_id: cid, name: d.name, cards, n: cards.length, due, created_by: auth.uid }],
+        { Prefer: 'return=minimal' });
+      ok++;
+    } catch (e) {}
+  }
+  prof.give = null; closeMenu();
+  prof.classes = null; profPull();
+  prof.alertes = null;
+  if (prof.open) profClassePull(prof.open);
+  toast(ok ? I.check : I.x, !ok ? 'Envoi impossible'
+    : `${plur(cards.length, 'page')} à ${plur(ok, 'classe')}, à rendre avant le `
+      + due.split('-').reverse().slice(0, 2).join('/'));
+}
+
 const dueLabel = s => {
   if (!s) return '';
   const j = Math.round((Date.parse(s + 'T12:00:00') - Date.now()) / DAY);
@@ -3705,6 +3768,230 @@ function maClasseView() {
                    aria-label="Ajouter ${esc(m.name)}">${svg(I.plus)}</button>`}
             </div>`).join('')}</div>`}
     </div>`;
+}
+
+/* ══════════ la console du professeur ══════════
+   Le professeur n'est pas un élève avec des droits en plus. Il ne révise
+   pas, il ne joue pas, il ne fabrique pas de cartes pour lui : il donne du
+   travail et il regarde qui suit. Son écran ne montre donc rien de la
+   bibliothèque personnelle, et tout de ses classes.
+
+   Deux contraintes commandent la mise en page, et elles tirent dans le même
+   sens. La première : il a dix classes et trois cents élèves, donc une
+   liste ne marche pas — il lui faut une grille où chaque classe tient en
+   une tuile et où le rouge saute aux yeux sans qu'il ait à lire. La
+   seconde : il n'est pas à l'aise avec un ordinateur, donc pas de menu
+   caché, pas de geste à découvrir, pas de réglage : ce qu'on peut faire est
+   écrit en toutes lettres sur un bouton.
+
+   Sur téléphone la grille devient une colonne et rien d'autre ne change —
+   c'est le même écran, pas une version réduite. */
+let prof = { classes: null, err: 0, alertes: null, open: null,
+             roster: null, asgs: null, tri: 'nom', q: '', give: null };
+
+async function profPull() {
+  try { prof.classes = await api('/rest/v1/rpc/prof_classes', 'POST', {}) || []; prof.err = 0; }
+  catch (e) { prof.classes = prof.classes || []; prof.err = 1; }
+  if (/^prof/.test(view.name)) { animate = false; render(); }
+}
+async function alertesPull() {
+  try { prof.alertes = await api('/rest/v1/rpc/prof_alertes', 'POST', {}) || []; }
+  catch (e) { prof.alertes = []; }
+  if (/^prof/.test(view.name)) { animate = false; render(); }
+}
+async function profClassePull(cid) {
+  try {
+    const [r, a] = await Promise.all([
+      api('/rest/v1/rpc/prof_roster', 'POST', { cid }),
+      api(`/rest/v1/assignments?select=id,name,n,due,created_at,created_by,subject`
+        + `&class_id=eq.${cid}&order=created_at.desc`)
+    ]);
+    prof.roster = r || []; prof.asgs = a || [];
+  } catch (e) { prof.roster = prof.roster || []; prof.asgs = prof.asgs || []; }
+  if (view.name === 'profclasse') { animate = false; render(); }
+}
+
+const CYCLES = { college: 'Collège', lycee_gt: 'Lycée général', lycee_techno: 'Lycée technologique',
+                 lycee_pro: 'Lycée professionnel', cpge: 'CPGE' };
+
+/* ---------- « Mes classes » ---------- */
+function profView() {
+  const l = prof.classes;
+  const retard = (l || []).reduce((a, c) => a + (c.retard || 0), 0);
+  const muets = (l || []).reduce((a, c) => a + (c.pas_ouvert || 0), 0);
+  const eleves = (l || []).reduce((a, c) => a + (c.effectif || 0), 0);
+  const encours = (l || []).reduce((a, c) => a + (c.encours || 0), 0);
+
+  /* Une tuile de classe. Le nom d'abord, en gros : c'est ce qu'il cherche.
+     Puis les deux seuls chiffres sur lesquels il peut agir. */
+  const tuile = c => `<button class="kls${c.retard ? ' chaud' : ''}" data-pclasse="${esc(c.id)}">
+    <span class="kn">${esc(c.name)}${c.principal ? '<i class="pp" title="Professeur principal">PP</i>' : ''}</span>
+    <span class="ks">${esc(c.matiere || c.niveau || '')}${
+      c.filiere ? ' · ' + esc(c.filiere) : ''}</span>
+    <span class="kf">
+      <span class="kb"><b>${c.effectif}</b> élèves</span>
+      ${c.encours ? `<span class="kb">${plur(c.encours, 'devoir')} en cours</span>` : ''}
+    </span>
+    <span class="kw">
+      ${c.retard ? `<em class="ko">${c.retard} en retard</em>` : ''}
+      ${c.pas_ouvert ? `<em class="am">${c.pas_ouvert} n’ont rien ouvert</em>` : ''}
+      ${!c.retard && !c.pas_ouvert && c.devoirs ? `<em class="ok">à jour</em>` : ''}
+      ${!c.devoirs ? `<em>aucun devoir donné</em>` : ''}
+    </span>
+    ${c.devoirs ? `<span class="kbar"><i style="width:${Math.max(2, c.pct)}%"></i></span>
+      <span class="kp">${c.pct} % de réussite au dernier devoir</span>` : ''}
+  </button>`;
+
+  /* Groupées par cycle puis par niveau : c'est l'ordre de son emploi du
+     temps, pas l'ordre alphabétique. Le serveur a déjà trié. */
+  const groupes = [];
+  for (const c of l || []) {
+    const k = c.cycle || 'autre';
+    const g = groupes.find(x => x.k === k);
+    (g || (groupes.push({ k, l: [] }), groupes[groupes.length - 1])).l.push(c);
+  }
+
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Mes classes</h1>
+      <button class="ic" data-act="profalert" aria-label="Ce qui bloque">${svg(I.warn)}${
+        retard ? `<i class="icb">${retard > 99 ? '99+' : retard}</i>` : ''}</button></div>
+    <div class="page console">
+      ${school && school.org ? `<div class="ecole">${svg(I.school)}<span>
+        <b>${esc(school.org)}</b><i>${esc(prefs.name || auth.email)} · professeur</i></span></div>` : ''}
+
+      ${!l ? '' : `<div class="kpi">
+        <div class="kc"><b>${(l || []).length}</b><span>classes</span></div>
+        <div class="kc"><b>${eleves}</b><span>élèves</span></div>
+        <div class="kc"><b>${encours}</b><span>devoirs en cours</span></div>
+        <button class="kc ${retard ? 'ko' : ''}" data-act="profalert">
+          <b>${retard}</b><span>élèves en retard</span></button>
+        <div class="kc ${muets ? 'am' : ''}"><b>${muets}</b><span>n’ont rien ouvert</span></div>
+      </div>`}
+
+      <div class="duo ghost gros">
+        <button data-act="newwork">${svg(I.share)}Donner un devoir</button>
+        <button data-act="newclass">${svg(I.plus)}Créer une classe</button>
+      </div>
+
+      ${!l ? `<div class="empty">${svg(I.school)}<p>${prof.err ? 'Liste indisponible' : 'Chargement…'}</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.school)}<p><b>Aucune classe</b>
+            Ton établissement ne t’a pas encore attribué de service. Préviens ton référent
+            — ou crée une classe toi-même et distribue son code.</p></div>`
+        : groupes.map(g => `
+            <div class="lbl"><span>${esc(CYCLES[g.k] || 'Autres classes')}</span><span>${g.l.length}</span></div>
+            <div class="grille">${g.l.map(tuile).join('')}</div>`).join('')}
+    </div>`;
+}
+
+/* ---------- « Ce qui bloque » ---------- */
+function profAlertView() {
+  const l = prof.alertes;
+  const urgent = (l || []).filter(a => a.due && Date.parse(a.due + 'T12:00:00') < Date.now() + 3 * DAY);
+  const reste = (l || []).filter(a => !urgent.includes(a));
+  const ligne = a => {
+    const pas = Math.max(0, (a.effectif || 0) - (a.ouvert || 0));
+    const tard = a.due && Date.parse(a.due + 'T12:00:00') < Date.now();
+    return `<button class="alr${tard ? ' tard' : ''}" data-pclasse="${esc(a.class_id)}">
+      <span class="ac">${esc(a.classe)}</span>
+      <span class="ad"><b>${esc(a.devoir)}</b><i>${a.due ? dueLabel(a.due) : 'sans échéance'}</i></span>
+      <span class="an"><b>${a.rendu}</b> / ${a.effectif} rendu${a.rendu > 1 ? 's' : ''}</span>
+      <span class="an ${pas ? 'ko' : ''}"><b>${pas}</b> sans ouvrir</span>
+      <span class="an"><b>${a.pct}</b> % juste</span>
+      ${svg(I.arrow)}</button>`;
+  };
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="prof" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Ce qui bloque</h1></div>
+    <div class="page console">
+      <div class="note" style="padding:0 0 14px">Les devoirs que tu as donnés ces deux dernières
+        semaines, du plus urgent au plus lointain. Un devoir que la moitié de la classe n’a pas
+        ouvert se rattrape en cours ; découvert huit jours plus tard, non.</div>
+      ${!l ? `<div class="empty">${svg(I.warn)}<p>Chargement…</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.check)}<p><b>Rien à rattraper</b>
+            Aucun devoir en cours ou récemment échu.</p></div>`
+        : `${urgent.length ? `<div class="lbl"><span>À rattraper maintenant</span><span>${urgent.length}</span></div>
+             <div class="alrs">${urgent.map(ligne).join('')}</div>` : ''}
+           ${reste.length ? `<div class="lbl"><span>Plus tard</span><span>${reste.length}</span></div>
+             <div class="alrs">${reste.map(ligne).join('')}</div>` : ''}`}
+    </div>`;
+}
+
+/* ---------- une classe, côté professeur ---------- */
+function profClasseView() {
+  const c = (prof.classes || []).find(x => x.id === prof.open);
+  if (!c) return go('prof');
+  const r = prof.roster, a = prof.asgs;
+  const q = prof.q.trim().toLowerCase();
+  /* Trois tris, et le premier est celui qui sert : qui décroche. */
+  const TRI = { retard: 'Qui décroche', nom: 'Ordre alphabétique', note: 'Meilleurs résultats' };
+  let vus = (r || []).filter(m => !q || (m.who || '').toLowerCase().includes(q)
+    || (m.handle || '').toLowerCase().includes(q));
+  vus = vus.slice().sort((x, y) =>
+    prof.tri === 'nom' ? String(x.who).localeCompare(y.who, 'fr')
+    : prof.tri === 'note' ? (y.pct - x.pct) || String(x.who).localeCompare(y.who, 'fr')
+    : (x.rendus - y.rendus) || (x.pct - y.pct) || String(x.who).localeCompare(y.who, 'fr'));
+
+  const eleve = m => {
+    const jamais = !m.rendus && !m.pct;
+    return `<button class="elv${jamais ? ' muet' : ''}" data-pmember="${esc(m.user_id)}">
+      <i class="av sm">${esc(initial(m.who))}</i>
+      <span class="en"><b>${esc(m.who)}</b><i>@${esc(m.handle || '')}</i></span>
+      <span class="ev"><b>${m.rendus}</b><i>/ ${m.donnes} rendus</i></span>
+      <span class="ev"><b>${m.pct || '—'}${m.pct ? ' %' : ''}</b><i>de réussite</i></span>
+      <span class="ev vu"><b>${m.vu ? timeAgo(m.vu) : 'jamais'}</b><i>dernier envoi</i></span>
+      <span class="ebar"><i style="width:${Math.max(2, Math.round((m.rendus / (m.donnes || 1)) * 100))}%"></i></span>
+    </button>`;
+  };
+  const mien = x => x.created_by === auth.uid;
+  const devoir = x => `<button class="sr flat${x.due && Date.parse(x.due + 'T12:00:00') < Date.now() ? ' tard' : ''}"
+      data-pwork="${esc(x.id)}">${svg(I.card)}
+    <span class="ml2"><span class="n">${esc(x.name)}</span>
+      <span class="sub">${plur(x.n, 'page')}${x.due ? ' · ' + dueLabel(x.due) : ''}${
+        mien(x) ? '' : ' · donné par un collègue'}</span></span>${svg(I.arrow)}</button>`;
+
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="prof" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${esc(c.name)}</h1></div>
+    <div class="page console">
+      <div class="ecole">${svg(I.school)}<span><b>${esc(c.name)}${
+        c.principal ? ' · professeur principal' : ''}</b>
+        <i>${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''}${
+          c.matiere ? ' · ' + esc(c.matiere) : ''} · ${plur(c.effectif, 'élève')}</i></span></div>
+
+      <div class="duo ghost gros">
+        <button data-act="newwork">${svg(I.share)}Donner un devoir à cette classe</button>
+        <button data-act="classcode">${svg(I.key)}Montrer le code</button>
+      </div>
+
+      <div class="lbl"><span>Devoirs</span><span>${a ? a.length : ''}</span></div>
+      ${!a ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !a.length ? `<div class="empty">${svg(I.card)}<p><b>Aucun devoir</b>
+            Choisis un livre de ta bibliothèque et donne-le à la classe.</p></div>`
+        : `<div class="slist">${a.map(devoir).join('')}</div>`}
+
+      <div class="lbl"><span>Élèves</span><span>${r ? r.length : ''}</span></div>
+      <div class="triq">
+        <div class="fld addf"><input id="pq" type="search" placeholder="Chercher un élève"
+          autocomplete="off" spellcheck="false" value="${esc(prof.q)}" aria-label="Chercher un élève"></div>
+        <div class="pills">${Object.entries(TRI).map(([k, n]) =>
+          `<button class="p ${prof.tri === k ? 'on' : ''}" data-ptri="${k}">${n}</button>`).join('')}</div>
+      </div>
+      ${!r ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !vus.length ? `<div class="empty">${svg(I.user)}<p><b>${q ? 'Personne sous ce nom' : 'Personne encore'}</b>
+            ${q ? '' : 'Projette le code de la classe : trois minutes en début de cours suffisent.'}</p></div>`
+        : `<div class="elvs">${vus.map(eleve).join('')}</div>`}
+    </div>`;
+  const pq = document.getElementById('pq');
+  if (pq) pq.addEventListener('input', () => {
+    prof.q = pq.value;
+    const box = $.querySelector('.elvs'); if (!box) { animate = false; return render(); }
+    const v = prof.q.trim().toLowerCase();
+    box.querySelectorAll('.elv').forEach(n => {
+      const t = n.textContent.toLowerCase();
+      n.hidden = !!v && !t.includes(v);
+    });
+  });
 }
 
 /* ---------- l'écran des classes ---------- */
@@ -4572,17 +4859,94 @@ function paintMenu() {
   }
   if (menu === 'newwork') {
     const l = live();
+    /* Un professeur donne rarement un devoir à une seule classe : il a
+       trois sixièmes et le même chapitre pour les trois. Choisir le livre,
+       puis cocher les classes, puis envoyer — trois gestes une fois au lieu
+       de trois gestes trois fois. Hors établissement, la question ne se
+       pose pas : on reste sur l'envoi direct d'un seul geste. */
+    const multi = isProf() && (prof.classes || []).length > 1;
+    const ch = prof.give;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.share)}<span class="mhx"><b>Donner un devoir</b>
           <span class="msub">Le livre part en copie : ta bibliothèque reste la tienne,
             et l’élève repart de zéro sur ces cartes.</span></span></div>
         ${!l.length ? `<div class="note" style="padding:4px 18px 14px">Aucun livre à donner.</div>`
-          : `<div class="mscroll">${l.map(d => `<button class="mi" data-give="${esc(d.id)}">
+          : !multi ? `<div class="mscroll">${l.map(d => `<button class="mi" data-give="${esc(d.id)}">
                ${svg(I.book)}<span>${esc(d.name)}</span>
-               <span class="tail">${plur(d.cards.length, 'page')}</span></button>`).join('')}</div>`}
+               <span class="tail">${plur(d.cards.length, 'page')}</span></button>`).join('')}</div>`
+          : !ch ? `<div class="note" style="padding:0 18px 8px">1 · Quel livre ?</div>
+             <div class="mscroll">${l.map(d => `<button class="mi" data-pick2="${esc(d.id)}">
+               ${svg(I.book)}<span>${esc(d.name)}</span>
+               <span class="tail">${plur(d.cards.length, 'page')}</span></button>`).join('')}</div>`
+          : `<div class="note" style="padding:0 18px 8px">2 · À quelles classes ?
+               <b>${esc((deck(ch.id) || {}).name || '')}</b></div>
+             <div class="mscroll">${(prof.classes || []).map(c => `
+               <button class="mi${ch.set.has(c.id) ? ' on' : ''}" data-pcheck="${esc(c.id)}">
+                 ${svg(ch.set.has(c.id) ? I.check : I.plus)}<span>${esc(c.name)}</span>
+                 <span class="tail">${plur(c.effectif, 'élève')}</span></button>`).join('')}</div>
+             <div class="msep"></div>
+             <div class="dly">${[7, 14, 21].map(j => `<button class="p ${ch.j === j ? 'on' : ''}"
+               data-pdelai="${j}">${j} jours</button>`).join('')}</div>
+             <button class="mi" data-mact="pgive" style="justify-content:center;font-weight:700"
+               ${ch.set.size ? '' : 'disabled'}>${svg(I.share)}Envoyer à ${
+                 ch.set.size ? plur(ch.set.size, 'classe') : '…'}</button>`}
       </div>`;
     mountMenu(w);
+    return;
+  }
+  if (menu === 'classcode') {
+    /* Le code se projette au tableau : il doit être lisible du fond de la
+       salle, pas niché dans un coin d'écran. */
+    const c = (classes || []).find(x => x.id === prof.open);
+    const k = (prof.classes || []).find(x => x.id === prof.open) || {};
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.key)}<span class="mhx"><b>${esc(k.name || 'Cette classe')}</b>
+          <span class="msub">Les élèves saisissent ce code une fois, dans « Rejoindre une classe ».
+            Il ne change pas d’une séance à l’autre.</span></span></div>
+        <div class="bigcode">${c ? esc(c.code) : '…'}</div>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'pmember') {
+    const m = (prof.roster || []).find(x => x.user_id === memberOpen);
+    if (!m) { menu = null; return; }
+    const fait = Math.round((m.rendus / (m.donnes || 1)) * 100);
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd"><i class="av">${esc(initial(m.who))}</i>
+          <span class="mhx"><b>${esc(m.who)}</b><i>@${esc(m.handle || '')}</i></span></div>
+        <div class="fiche">
+          <div><b>${m.rendus} / ${m.donnes}</b><span>devoirs rendus</span></div>
+          <div><b>${fait} %</b><span>du travail donné</span></div>
+          <div><b>${m.pct || '—'}${m.pct ? ' %' : ''}</b><span>de réussite</span></div>
+          <div><b>${m.vu ? timeAgo(m.vu) : 'jamais'}</b><span>dernier envoi</span></div>
+        </div>
+        <div class="note" style="padding:6px 18px 12px">Tu vois ce qu’il a rendu et son taux de
+          réussite. Jamais ses réponses, ni ses horaires, ni ses livres personnels — et c’est le
+          référent de l’établissement qui change quelqu’un de classe, pas toi.</div>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'pwork') {
+    const x = (prof.asgs || []).find(y => y.id === workOpen);
+    if (!x) { menu = null; return; }
+    const mien = x.created_by === auth.uid;
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(x.name)}</b>
+          <i>${plur(x.n, 'page')}${x.due ? ' · ' + dueLabel(x.due) : ''}</i></span></div>
+        <div class="note" style="padding:0 18px 10px" id="wprog">Chargement du suivi…</div>
+        ${mien ? `<button class="mi warn" data-mact="pdelwork">${svg(I.trash)}
+            <span>Retirer ce devoir</span></button>`
+          : `<div class="note" style="padding:0 18px 12px">Donné par un collègue : tu le vois
+              parce que tu enseignes dans cette classe, mais c’est lui qui le retire.</div>`}
+      </div>`;
+    mountMenu(w);
+    workProgress2(x.id);
     return;
   }
   if (menu === 'workone') {
@@ -5393,6 +5757,35 @@ document.addEventListener('click', async e => {
   if (b.dataset.give !== undefined) {
     const d = deck(b.dataset.give);
     if (d && classOf) return giveWork(d, classOf, 7);
+    return;
+  }
+  /* ---- donner un devoir à plusieurs classes ---- */
+  if (b.dataset.pick2 !== undefined) {
+    /* La classe ouverte est pré-cochée : dans neuf cas sur dix c'est celle
+       qu'il vise, et il lui reste à en ajouter deux. */
+    prof.give = { id: b.dataset.pick2, set: new Set(prof.open ? [prof.open] : []), j: 7 };
+    return paintMenu();
+  }
+  if (b.dataset.pcheck !== undefined) {
+    if (!prof.give) return;
+    const k = b.dataset.pcheck;
+    prof.give.set.has(k) ? prof.give.set.delete(k) : prof.give.set.add(k);
+    return paintMenu();
+  }
+  if (b.dataset.pdelai !== undefined) {
+    if (prof.give) prof.give.j = +b.dataset.pdelai;
+    return paintMenu();
+  }
+  if (a === 'pgive') return giveMany();
+  if (a === 'pdelwork') {
+    const id = workOpen; closeMenu();
+    api('/rest/v1/assignments?id=eq.' + encodeURIComponent(id), 'DELETE', null,
+      { Prefer: 'return=minimal' })
+      .then(() => {
+        prof.asgs = (prof.asgs || []).filter(x => x.id !== id);
+        prof.classes = null; profPull(); prof.alertes = null;
+        animate = false; render(); toast(I.check, 'Devoir retiré');
+      }, () => toast(I.x, 'Impossible pour l’instant'));
     return;
   }
   if (a === 'takework') {
@@ -6901,6 +7294,14 @@ $.addEventListener('click', e => {
   if (ds.card) { cardEdit = ds.card; return openMenu('card'); }
   /* Ajouter un camarade depuis la liste de sa classe : pas de pseudo à
      taper, on appuie sur le plus en face du nom. */
+  if (ds.pclasse) {
+    prof.open = classOf = ds.pclasse; prof.roster = null; prof.asgs = null; prof.q = '';
+    if (!classes) classesPull();          // pour le code de la classe
+    profClassePull(prof.open); return go('profclasse');
+  }
+  if (ds.ptri) { prof.tri = ds.ptri; animate = false; return render(); }
+  if (ds.pmember) { memberOpen = ds.pmember; return openMenu('pmember'); }
+  if (ds.pwork) { workOpen = ds.pwork; return openMenu('pwork'); }
   if (ds.camadd) {
     const n = ds.camn;
     askFriend(n).then(ok => { if (ok) { mates2 = null; matesPull(); } })
@@ -6996,11 +7397,22 @@ $.addEventListener('click', e => {
      gestionnaire était rangé avec ceux des feuilles, qui lisent data-mact.
      Il n'a jamais été atteint une seule fois. */
   if (a === 'blocked') { blocksPull().then(() => paintMenu()); return openMenu('blocked'); }
-  /* L'élève n'a qu'une classe : lui faire traverser une liste d'un seul
-     élément pour y arriver n'apporte rien. */
+  /* Trois publics, trois écrans derrière le même bouton : l'élève n'a
+     qu'une classe et n'a pas à traverser une liste d'un seul élément ; le
+     professeur en a dix et lui faut une grille ; un compte personnel qui
+     s'est fait une classe garde l'écran d'origine. */
   if (a === 'classes') {
     if (isPupil()) { maClassePull(); return go('maclasse'); }
+    if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
     if (!classes) classesPull(); return go('classes');
+  }
+  if (a === 'prof') { if (!prof.classes) profPull(); return go('prof'); }
+  if (a === 'profalert') { if (!prof.alertes) alertesPull(); return go('profalert'); }
+  if (a === 'classcode') {
+    const c = (classes || []).find(x => x.id === prof.open);
+    if (c) return openMenu('classcode');
+    classesPull().then(() => { if (menu === 'classcode') paintMenu(); });
+    return openMenu('classcode');
   }
   if (a === 'newclass') return openMenu('newclass');
   if (a === 'joinclass') return openMenu('joinclass');
@@ -7229,6 +7641,8 @@ function resetSession() {
   /* le rôle et ce qu'il ouvre */
   myRole = 'eleve'; iAmMod = false;
   school = null; team = null; mates2 = null;
+  prof = { classes: null, err: 0, alertes: null, open: null,
+           roster: null, asgs: null, tri: 'nom', q: '', give: null };
   mods = { list: null, err: 0, seen: 0 };
   accounts = null; accOpen = null;
   classes = null; classOf = null; roster = null; asgs = null;
@@ -7814,7 +8228,7 @@ async function boot() {
     if (auth.exp && Date.now() > auth.exp - 60000 && !(await refreshToken())) throw new Error('session');
     await pull();
     setOnline(true);
-    if (!(shortcut && consumeGoto())) render();
+    if (!(shortcut && consumeGoto())) { render(); accueil(); }
     flush();
     maybeTour();
   } catch (e) {

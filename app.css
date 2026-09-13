@@ -1780,3 +1780,122 @@ body{height:100%;overflow-y:auto;overflow-x:hidden;
 .camadd svg,.camo svg{width:16px;height:16px;color:var(--ink2)}
 .camadd:active,.camo:active{transform:scale(.9)}
 .camw{flex:none;font-size:12px;color:var(--soft)}
+
+/* ══════════ la console du professeur ══════════
+   Dix classes, trois cents élèves, et quelqu'un qui n'aime pas les
+   ordinateurs. Deux principes : rien de caché — pas de menu à découvrir,
+   pas de geste à deviner, ce qu'on peut faire est écrit sur un bouton — et
+   le rouge d'abord : il doit voir qui décroche sans lire une seule ligne.
+
+   Écrit pour l'écran large, parce que c'est là qu'un professeur prépare
+   ses cours. Sur téléphone la grille devient une colonne et rien d'autre ne
+   change : c'est le même écran, pas une version amoindrie. */
+.console{padding-bottom:40px}
+
+/* la barre de chiffres : l'état de toutes ses classes en une ligne */
+.kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.kc{background:var(--card);box-shadow:var(--s1);border-radius:16px;padding:12px 14px;
+  display:flex;flex-direction:column;gap:1px;text-align:left}
+.kc b{font-size:24px;font-weight:800;letter-spacing:-1px;line-height:1.1}
+.kc span{font-size:12px;color:var(--soft)}
+.kc.ko b{color:var(--ko)}
+.kc.am b{color:var(--leather)}
+button.kc{transition:transform .2s var(--sp)}
+button.kc:active{transform:scale(.97)}
+
+/* une classe = une tuile. Le nom en gros, puis ce sur quoi il peut agir. */
+.grille{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:20px}
+.kls{position:relative;display:flex;flex-direction:column;gap:3px;text-align:left;
+  background:var(--card);box-shadow:var(--s1);border-radius:20px;padding:14px 16px 15px;
+  transition:transform .2s var(--sp),box-shadow .2s}
+.kls:active{transform:scale(.985)}
+.kls.chaud{box-shadow:inset 3px 0 0 var(--ko),var(--s1)}
+.kn{font-size:19px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:7px}
+.kn .pp{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.4px;
+  background:var(--ink);color:var(--bg);border-radius:6px;padding:2px 5px}
+.ks{font-size:13px;color:var(--soft);margin-bottom:5px}
+.kf{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--soft)}
+.kf b{color:var(--ink2);font-weight:700}
+.kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.kw em{font-style:normal;font-size:11.5px;font-weight:700;border-radius:8px;padding:3px 8px;
+  background:var(--surf);color:var(--soft)}
+.kw em.ko{background:color-mix(in srgb,var(--ko) 13%,transparent);color:var(--ko)}
+.kw em.am{background:color-mix(in srgb,var(--leather) 15%,transparent);color:var(--leather)}
+.kw em.ok{background:color-mix(in srgb,var(--ok) 13%,transparent);color:var(--ok)}
+.kbar{display:block;height:5px;border-radius:3px;background:var(--surf);margin-top:11px;overflow:hidden}
+.kbar i{display:block;height:100%;border-radius:3px;background:var(--ink2)}
+.kp{font-size:11.5px;color:var(--soft);margin-top:4px}
+
+/* deux gros boutons, toujours au même endroit, toujours écrits en clair */
+.duo.gros button{height:58px;font-size:15px;font-weight:700}
+
+/* « Ce qui bloque » : une ligne par devoir, les chiffres alignés en
+   colonnes pour qu'on les compare d'un coup d'œil au lieu de les lire */
+.alrs{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+.alr{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;text-align:left;
+  background:var(--card);box-shadow:var(--s1);border-radius:16px;padding:12px 14px;
+  transition:transform .2s var(--sp)}
+.alr:active{transform:scale(.99)}
+.alr.tard{box-shadow:inset 3px 0 0 var(--ko),var(--s1)}
+.alr > svg{display:none}
+.ac{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.ad{grid-column:1 / -1;min-width:0}
+.ad b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.ad i{font-style:normal;font-size:11.5px;color:var(--soft)}
+.an{font-size:11.5px;color:var(--soft);white-space:nowrap}
+.an b{font-size:14px;font-weight:800;color:var(--ink2)}
+.an.ko b{color:var(--ko)}
+.alr .an{grid-column:auto}
+
+/* la liste d'une classe. Une ligne par élève, et la barre dit tout de
+   loin : pleine il suit, vide il a décroché. */
+.triq{display:flex;flex-direction:column;gap:9px;margin-bottom:11px}
+.elvs{display:flex;flex-direction:column;gap:6px}
+.elv{position:relative;display:grid;grid-template-columns:auto 1fr;gap:3px 12px;align-items:center;
+  text-align:left;background:var(--card);box-shadow:var(--s1);border-radius:16px;
+  padding:11px 14px 13px;transition:transform .2s var(--sp)}
+.elv:active{transform:scale(.99)}
+.elv.muet{box-shadow:inset 3px 0 0 var(--ko),var(--s1)}
+.elv > .av{grid-row:span 2}
+.en{min-width:0}
+.en b{display:block;font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.en i{font-style:normal;font-size:11.5px;color:var(--soft)}
+.ev{grid-column:2;font-size:11px;color:var(--soft);display:flex;align-items:baseline;gap:5px}
+.ev b{font-size:13.5px;font-weight:800;color:var(--ink2)}
+.ev i{font-style:normal}
+.ev.vu{display:none}
+.ebar{grid-column:2;display:block;height:4px;border-radius:2px;background:var(--surf);
+  margin-top:5px;overflow:hidden}
+.ebar i{display:block;height:100%;border-radius:2px;background:var(--ink2)}
+
+/* le code projeté au tableau : lisible du fond de la salle */
+.bigcode{font-size:44px;font-weight:800;letter-spacing:6px;text-align:center;
+  padding:14px 18px 26px;font-variant-numeric:tabular-nums}
+/* la fiche d'un élève, dans sa feuille */
+.fiche{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 18px 6px}
+.fiche > div{background:var(--surf);border-radius:14px;padding:10px 12px}
+.fiche b{display:block;font-size:18px;font-weight:800;letter-spacing:-.5px}
+.fiche span{font-size:11.5px;color:var(--soft)}
+/* le choix du délai, dans la feuille « donner un devoir » */
+.dly{display:flex;gap:7px;padding:10px 18px 12px}
+.dly .p{flex:1;justify-content:center}
+
+@media (min-width:760px){
+  .kpi{grid-template-columns:repeat(5,1fr)}
+  .grille{grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:11px}
+  /* en large, chaque chiffre prend sa colonne : on lit la classe
+     verticalement au lieu de suivre une ligne */
+  .alr{grid-template-columns:150px 1fr repeat(3,108px) 18px}
+  .ad{grid-column:auto}
+  .alr > svg{display:block;width:16px;height:16px;color:var(--soft);opacity:.5}
+  .an{text-align:right}
+  .elv{grid-template-columns:auto minmax(180px,1fr) 104px 104px 132px;
+    align-items:center;padding:12px 16px}
+  .elv > .av{grid-row:auto}
+  .ev{grid-column:auto;flex-direction:column;gap:0;align-items:flex-start}
+  .ev.vu{display:flex}
+  .ebar{grid-column:1 / -1;margin-top:9px}
+  .fiche{grid-template-columns:repeat(4,1fr)}
+}
