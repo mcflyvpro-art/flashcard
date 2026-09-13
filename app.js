@@ -1587,7 +1587,7 @@ function paintRail() {
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
   const on = view.name === 'settings' ? 'settings'
     : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats'
-    : /^(classes|classe|maclasse|prof)/.test(view.name) ? 'classes'
+    : /^(classes|classe|maclasse|prof|ref$)/.test(view.name) ? 'classes'
     : /commu|friends|groups|duels|library|board|shared/.test(view.name) ? 'commu' : 'home';
   const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n + '\u0000' + myRole;
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas

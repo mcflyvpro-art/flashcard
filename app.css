@@ -1841,9 +1841,8 @@ body{height:100%;overflow-y:auto;overflow-x:hidden;
   font-size:13px;font-weight:700;color:var(--ink2)}
 .rpage button:disabled{opacity:.4}
 
-/* les formulaires des feuilles : un champ par ligne, le libellé au-dessus */
-  font-size:15px;color:var(--ink);border:0;width:100%}
-/* une ligne d'information dans une feuille : elle ne se presse pas */
+/* Les formulaires de feuille, les onglets et les listes déroulantes sont
+   définis une seule fois, plus bas, avec la console du professeur. */
 
 @media (min-width:760px){
   .kpi.six{grid-template-columns:repeat(6,1fr)}
