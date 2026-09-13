@@ -4472,14 +4472,14 @@ function commuView() {
             : 'Pas encore révisé cette semaine')
             : 'C’est ce que tes amis taperont pour t’ajouter'}</i></span>
         ${svg(I.arrow)}</button>`}
-      <div class="ctiles${eleve ? ' trois' : ''}">
+      <div class="ctiles${eleve || atSchool() ? ' trois' : ''}">
         ${eleve ? `
           ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
           ${tile('classes', I.school, 'Ma classe', school.effectif ? school.effectif + ' élèves' : '—', nAsk)}
           ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`
         : `
           ${tile('friends', I.user, 'Lecteurs', nMates || '—', nAsk)}
-          ${tile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
+          ${atSchool() ? '' : tile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
           ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
           ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`}
       </div>
@@ -5391,6 +5391,23 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     setTimeout(() => { const i = document.getElementById(cpt ? 'nmel' : 'knom'); if (i) i.focus(); }, 60);
+    return;
+  }
+  if (menu === 'devoir') {
+    const a = (asgs || []).find(x => x.id === workOpen);
+    if (!a) { menu = null; return; }
+    const tard = a.due && Date.parse(a.due + 'T12:00:00') < Date.now();
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(a.name)}</b>
+          <i>${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</i></span></div>
+        <div class="note" style="padding:0 18px 12px">${tard
+          ? 'L’échéance est passée. Tu peux toujours le faire — ton professeur verra que tu l’as rendu.'
+          : 'Le paquet part dans ta bibliothèque. Tu repars de zéro sur ces cartes, et ton avancement remonte à ton professeur — jamais tes réponses.'}</div>
+        <button class="mi" data-mact="takework" style="justify-content:center;font-weight:700">
+          ${svg(I.plus)}Ajouter à ma bibliothèque</button>
+      </div>`;
+    mountMenu(w);
     return;
   }
   if (menu === 'classcode') {
@@ -7770,7 +7787,14 @@ $.addEventListener('click', e => {
   if (ds.classe !== undefined) {
     classOf = ds.classe; roster = null; asgs = null; classPull(classOf); return go('classe');
   }
-  if (ds.work !== undefined) { workOpen = ds.work; return openMenu('workone'); }
+  /* Le même devoir, deux feuilles : celle de l'élève l'ajoute à sa
+     bibliothèque, celle du professeur montre le suivi. L'ancienne feuille
+     cherchait la classe dans `classes`, que l'élève ne charge plus depuis
+     qu'il a son propre écran — elle se refermait sans rien dire. */
+  if (ds.work !== undefined) {
+    workOpen = ds.work;
+    return openMenu(isPupil() ? 'devoir' : 'workone');
+  }
   if (ds.member !== undefined) { memberOpen = ds.member; return openMenu('member'); }
   /* On doit pouvoir lire ces textes sans compte : le retour ramène donc
      là d'où l'on venait, y compris l'écran de connexion. */
