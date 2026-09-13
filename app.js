@@ -1547,6 +1547,7 @@ function render() {
               group: groupView, shared: sharedView, duel: duelView, legal: legalView, mod: modView,
               classes: classesView, classe: classeView, maclasse: maClasseView,
               prof: profView, profclasse: profClasseView, profalert: profAlertView,
+              ref: refView,
               admin: adminView,
               commu: commuView, friends: friendsView, groups: groupsView,
               duels: duelsView, library: libraryView, board: boardView };
@@ -1599,7 +1600,8 @@ function paintRail() {
     <nav>
       <button class="${on === 'stats' ? 'on' : ''}" data-r="stats">${svg(I.chart)}<span>Journal</span></button>
       ${isProf() || atSchool() || (classes || []).length ? `<button class="${on === 'classes' ? 'on' : ''}"
-        data-r="classes">${svg(I.school)}<span>${isProf() ? 'Mes classes' : 'Ma classe'}</span></button>` : ''}
+        data-r="classes">${svg(I.school)}<span>${myRole === 'ref' ? 'Mon établissement'
+          : isProf() ? 'Mes classes' : 'Ma classe'}</span></button>` : ''}
       <button class="${on === 'commu' ? 'on' : ''}" data-r="commu">${svg(I.user)}<span>Le cercle</span>${
         (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
       <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Courrier</span>${
@@ -1614,6 +1616,7 @@ function paintRail() {
     if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
     if (b.dataset.r === 'classes') {
       if (isPupil()) { maClassePull(); return go('maclasse'); }
+      if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
       if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
       if (!classes) classesPull(); return go('classes');
     }
@@ -2631,6 +2634,9 @@ function settingsView() {
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
           <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
+        ${myRole === 'ref' && atSchool() ? `<button class="sr flat" data-act="ref">${svg(I.build)}
+          <span class="n">Mon établissement</span>
+          <span class="c">${ref.board ? esc(ref.board.org) : ''}</span>${svg(I.arrow)}</button>` : ''}
         ${isAdmin() ? `<button class="sr flat" data-act="admin">${svg(I.key)}
           <span class="n">Administration</span>
           <span class="c">${accounts ? accounts.length : ''}</span>${svg(I.arrow)}</button>` : ''}
@@ -3521,6 +3527,7 @@ const isAdmin = () => myRole === 'admin';
 async function accueil() {
   await Promise.all([rolePull(), schoolPull()]);
   if (view.name !== 'home') return;              // l'utilisateur est déjà parti ailleurs
+  if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
   if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
   if (isPupil()) { maClassePull(); return go('maclasse'); }
 }
@@ -3768,6 +3775,271 @@ function maClasseView() {
                    aria-label="Ajouter ${esc(m.name)}">${svg(I.plus)}</button>`}
             </div>`).join('')}</div>`}
     </div>`;
+}
+
+/* ══════════ la console du référent d'établissement ══════════
+   Le référent n'est pas un professeur avec plus de classes. C'est la
+   personne qui, dans le lycée, ouvre les comptes, refait les mots de passe
+   oubliés et déplace un élève de la 2nde 3 à la 2nde 1 en octobre. Il
+   travaille sur un ordinateur, il connaît son métier, et ce qu'il veut
+   c'est voir et corriger vite — pas être accompagné.
+
+   Cet écran est donc écrit comme un outil de gestion, pas comme une app :
+   des tableaux denses, des colonnes alignées, la recherche toujours au même
+   endroit, aucune animation. On y tient six cents lignes à l'écran et on en
+   change une en trois clics. Rien n'y est joli, et ce n'est pas un oubli :
+   ce qu'on lui demande, c'est que ça marche.
+
+   Trois onglets, parce qu'il n'y a que trois questions : l'établissement
+   (où en est-on ?), les comptes (qui, et comment le corriger ?), les
+   classes (qui est où, et qui y enseigne ?). */
+let ref = { tab: 'etab', board: null, err: 0,
+            gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
+            classes: null, open: null, team: null,
+            who: null, service: null, form: null, trace: null };
+const PAGE_REF = 60;
+const ROLENOM = { eleve: 'Élève', prof: 'Professeur', ref: 'Référent', admin: 'Éditeur' };
+
+async function refBoard() {
+  try { const [r] = await api('/rest/v1/rpc/ref_dashboard', 'POST', {}) || []; ref.board = r || false; }
+  catch (e) { ref.board = false; ref.err = 1; }
+  if (view.name === 'ref') { animate = false; render(); }
+}
+async function refClasses() {
+  try { ref.classes = await api('/rest/v1/rpc/ref_classes', 'POST', {}) || []; }
+  catch (e) { ref.classes = []; }
+  if (view.name === 'ref') { animate = false; render(); }
+}
+/* La recherche repart toujours de la première page : garder la page 4 en
+   changeant le filtre donne un écran vide qu'on ne sait pas expliquer. */
+async function refPeople(reset) {
+  if (reset) ref.page = 0;
+  const n = ++ref.cherche;
+  try {
+    const rows = await api('/rest/v1/rpc/ref_people', 'POST',
+      { q: ref.q.trim(), qrole: ref.role, qclass: ref.cls,
+        lim: PAGE_REF, off: ref.page * PAGE_REF }) || [];
+    if (n !== ref.cherche) return;                 // une frappe plus récente a gagné
+    ref.gens = rows; ref.total = rows.length ? +rows[0].total : 0;
+  } catch (e) { if (n === ref.cherche) { ref.gens = []; ref.total = 0; } }
+  if (view.name === 'ref') { animate = false; render(); }
+}
+async function refTeam(cid) {
+  try { ref.team = await api('/rest/v1/rpc/ref_class_team', 'POST', { cid }) || []; }
+  catch (e) { ref.team = []; }
+  if (menu) paintMenu();
+}
+async function refService(uid) {
+  try { ref.service = await api('/rest/v1/rpc/ref_service', 'POST', { uid }) || []; }
+  catch (e) { ref.service = []; }
+  if (menu) paintMenu();
+}
+/* Le journal, affiché après coup : il n'a jamais à retarder l'écran, et
+   son absence n'empêche rien. On le lit directement — la table est déjà
+   fermée par sa politique, et personne ne peut y écrire depuis l'app. */
+async function refTrace() {
+  const box = document.getElementById('rtrace'); if (!box) return;
+  try {
+    const rows = await api('/rest/v1/ref_audit?select=acte,cible,created_at,detail'
+      + '&order=created_at.desc&limit=12') || [];
+    box.innerHTML = !rows.length
+      ? 'Aucune modification pour l’instant. Tout ce que tu changeras ici sera inscrit.'
+      : `<div class="rjour">${rows.map(r => `<div class="rj">
+          <b>${esc(r.acte)}</b>
+          <i>${esc(quoiTrace(r.detail))}</i>
+          <span>${timeAgo(r.created_at)}</span></div>`).join('')}</div>`;
+  } catch (e) { box.textContent = 'Journal indisponible.'; }
+}
+/* Le détail est du JSON, et le référent n'a pas à lire du JSON. */
+function quoiTrace(d) {
+  if (!d || typeof d !== 'object') return '';
+  if (d.avant && d.apres && typeof d.avant === 'object')
+    return `${d.avant.nom || ''} → ${d.apres.nom || d.avant.nom || ''}`;
+  if (d.avant || d.apres) return `${d.avant || '—'} → ${d.apres || '—'}`;
+  return [d.nom, d.classe, d.matiere, d.adresse, d.role && ROLENOM[d.role]]
+    .filter(Boolean).join(' · ');
+}
+
+function refPull() {
+  if (!ref.board) refBoard();
+  if (!ref.classes) refClasses();
+  if (!ref.gens) refPeople(true);
+}
+/* Une seule fonction pour tous les appels d'écriture : chacun renvoie le
+   message de la base, qui est déjà écrit pour être lu — « Cette classe
+   compte encore 28 élèves. Déplace-les d'abord. » vaut mieux que tout ce
+   que le client pourrait inventer. */
+async function refDo(rpc, args, bon) {
+  try {
+    const r = await api('/rest/v1/rpc/' + rpc, 'POST', args);
+    ref.board = null; ref.classes = null;
+    refBoard(); refClasses(); refPeople(false);
+    if (ref.open) refTeam(ref.open);
+    if (ref.who) refService(ref.who.id);
+    toast(I.check, bon);
+    return r;
+  } catch (e) {
+    const m = String((e && e.message) || '');
+    toast(I.x, m.slice(0, 90) || 'Impossible pour l’instant');
+    return null;
+  }
+}
+
+/* Un bouton de la feuille la repeint, et repeindre efface ce qui est tapé.
+   On relit donc les champs avant chaque repeinture : sans cela, choisir le
+   rôle en dernier effaçait l'adresse, et choisir l'adresse en dernier
+   effaçait le rôle — l'un ou l'autre, jamais les deux. */
+const lireChamps = map => {
+  const o = {};
+  for (const [k, id] of Object.entries(map)) {
+    const n = document.getElementById(id);
+    if (n) o[k] = n.value;            // absent = on garde ce qu'on avait
+  }
+  return o;
+};
+const lireNew = () => lireChamps({ mel: 'nmel', nom: 'nnom', pse: 'npse', pw: 'npw' });
+const lireClass = () => lireChamps({ nom: 'knom', niv: 'kniv', fil: 'kfil', pre: 'kpre' });
+
+function refView() {
+  const b = ref.board;
+  const onglet = (k, n) => `<button class="rt ${ref.tab === k ? 'on' : ''}" data-rtab="${k}">${n}</button>`;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${b ? esc(b.org) : 'Mon établissement'}</h1></div>
+    <div class="page dense">
+      <div class="rtabs">${onglet('etab', 'Établissement')}${onglet('gens', 'Comptes')}${onglet('cls', 'Classes')}</div>
+      ${ref.tab === 'etab' ? refEtab() : ref.tab === 'gens' ? refGens() : refCls()}
+    </div>`;
+  if (ref.tab === 'etab') refTrace();
+  const q = document.getElementById('rq');
+  if (q) {
+    q.addEventListener('input', () => { ref.q = q.value; clearTimeout(refView.t);
+      refView.t = setTimeout(() => refPeople(true), 220); });
+    if (ref.tab === 'gens' && document.activeElement !== q && ref.q) {
+      q.focus(); q.setSelectionRange(q.value.length, q.value.length);
+    }
+  }
+}
+
+/* ---------- onglet « Établissement » ---------- */
+function refEtab() {
+  const b = ref.board;
+  if (b === null) return `<div class="empty">${svg(I.build)}<p>Chargement…</p></div>`;
+  if (!b) return `<div class="empty">${svg(I.lock)}<p><b>Réservé au référent</b>
+    Ce compte n’est référent d’aucun établissement.</p></div>`;
+  const kc = (n, lab, cls) => `<div class="kc ${cls || ''}"><b>${n}</b><span>${lab}</span></div>`;
+  /* Les trois chiffres du bas sont les seuls qui appellent une action. On
+     les met à part, et on dit quoi faire — pas seulement combien. */
+  const souci = (n, lab, quoi) => !n ? '' : `<div class="rsou">
+    <b>${n}</b><span>${lab}</span><i>${quoi}</i></div>`;
+  return `
+    <div class="rhead">
+      <div><b>${esc(b.org)}</b>
+        <i>${esc(b.ville || '')}${b.uai ? ' · UAI ' + esc(b.uai) : ''}${
+          b.kind ? ' · ' + esc(b.kind) : ''}</i></div>
+    </div>
+    <div class="kpi six">
+      ${kc(b.classes, 'classes')}${kc(b.eleves, 'élèves')}${kc(b.profs, 'professeurs')}
+      ${kc(b.services, 'services')}${kc(b.devoirs, 'devoirs donnés')}
+      ${kc(b.actifs7, 'ont révisé cette semaine', b.actifs7 ? '' : 'am')}
+    </div>
+    <div class="lbl"><span>Ce qui demande une décision</span></div>
+    ${!b.jamais_venus && !b.sans_classe && !b.classes_vides && !b.sans_pp
+      ? `<div class="card2"><div class="note">Rien à reprendre : tous les comptes sont
+          rattachés, toutes les classes ont des élèves et un professeur principal.</div></div>`
+      : `<div class="rsous">
+          ${souci(b.jamais_venus, 'comptes jamais utilisés',
+            'Ouverts, mais personne ne s’est connecté. C’est là que le déploiement se joue.')}
+          ${souci(b.sans_classe, 'élèves sans classe',
+            'Ils ne recevront aucun devoir tant qu’ils ne sont pas rattachés.')}
+          ${souci(b.classes_vides, 'classes vides',
+            'Créées mais sans aucun élève inscrit.')}
+          ${souci(b.sans_pp, 'classes sans professeur principal',
+            'Personne n’y est désigné référent pédagogique.')}
+        </div>`}
+    <div class="lbl"><span>Ouvrir un compte</span></div>
+    <div class="duo ghost gros">
+      <button data-act="refnew">${svg(I.plus)}Nouveau compte</button>
+      <button data-act="refnewclass">${svg(I.plus)}Nouvelle classe</button>
+    </div>
+    <div class="lbl"><span>Dernières modifications</span></div>
+    <div id="rtrace" class="note">Chargement du journal…</div>`;
+}
+
+/* ---------- onglet « Comptes » ---------- */
+function refGens() {
+  const l = ref.gens;
+  const pages = Math.ceil(ref.total / PAGE_REF) || 1;
+  const filtre = (k, n) => `<button class="p ${ref.role === k ? 'on' : ''}" data-rrole="${k}">${n}</button>`;
+  const ligne = g => `<button class="rrow" data-rwho="${esc(g.id)}">
+    <span class="c1"><b>${esc(g.name)}</b><i>@${esc(g.handle || '')}</i></span>
+    <span class="c2">${esc(g.email)}</span>
+    <span class="c3"><em class="rl ${esc(g.role)}">${esc(ROLENOM[g.role] || g.role)}</em></span>
+    <span class="c4">${g.classe ? esc(g.classe) : g.matiere ? esc(g.matiere)
+      : `<em class="rl vide">sans classe</em>`}</span>
+    <span class="c5">${g.jamais ? '<em class="rl jamais">jamais venu</em>'
+      : timeAgo(g.derniere)}</span></button>`;
+  return `
+    <div class="rbar">
+      <div class="fld addf"><input id="rq" type="search" placeholder="Nom, pseudo ou adresse"
+        autocomplete="off" spellcheck="false" value="${esc(ref.q)}" aria-label="Chercher un compte"></div>
+      <div class="pills">${filtre('', 'Tous')}${filtre('eleve', 'Élèves')}${filtre('prof', 'Professeurs')}${
+        filtre('ref', 'Référents')}</div>
+    </div>
+    <div class="rcount">${ref.total ? `<b>${ref.total}</b> compte${ref.total > 1 ? 's' : ''}${
+        ref.cls ? ' dans cette classe' : ''}${ref.q ? ' pour « ' + esc(ref.q.trim()) + ' »' : ''}`
+      : l ? 'Aucun résultat' : 'Recherche…'}
+      ${ref.cls ? `<button class="lnk" data-rclsoff="1">retirer le filtre de classe</button>` : ''}</div>
+    ${!l ? `<div class="empty">${svg(I.users)}<p>Chargement…</p></div>`
+      : !l.length ? `<div class="empty">${svg(I.search)}<p><b>Aucun résultat</b>
+          Essaie une partie du nom, ou change de filtre.</p></div>`
+      : `<div class="rtable">
+          <div class="rrow tete"><span class="c1">Nom</span><span class="c2">Adresse</span>
+            <span class="c3">Rôle</span><span class="c4">Classe ou matière</span>
+            <span class="c5">Dernière venue</span></div>
+          ${l.map(ligne).join('')}
+        </div>
+        ${pages > 1 ? `<div class="rpage">
+          <button ${ref.page ? '' : 'disabled'} data-rpage="${ref.page - 1}">Précédent</button>
+          <span>page ${ref.page + 1} sur ${pages}</span>
+          <button ${ref.page + 1 < pages ? '' : 'disabled'} data-rpage="${ref.page + 1}">Suivant</button>
+        </div>` : ''}`}`;
+}
+
+/* ---------- onglet « Classes » ---------- */
+function refCls() {
+  const l = ref.classes;
+  const ligne = c => {
+    const plein = c.prevu ? Math.round(c.effectif / c.prevu * 100) : 0;
+    return `<button class="rrow" data-rcls="${esc(c.id)}">
+      <span class="c1"><b>${esc(c.name)}</b><i>${esc(c.niveau || '')}${
+        c.filiere ? ' · ' + esc(c.filiere) : ''}</i></span>
+      <span class="c2">${c.effectif}${c.prevu ? ' / ' + c.prevu : ''}${
+        plein > 105 ? ' <em class="rl jamais">surchargée</em>' : ''}</span>
+      <span class="c3">${c.pp ? esc(c.pp) : '<em class="rl vide">pas de PP</em>'}</span>
+      <span class="c4">${plur(c.profs, 'professeur')}</span>
+      <span class="c5">${c.actifs7} actif${c.actifs7 > 1 ? 's' : ''} · code ${esc(c.code || '—')}</span>
+    </button>`;
+  };
+  const groupes = [];
+  for (const c of l || []) {
+    const k = c.cycle || 'autre';
+    const g = groupes.find(x => x.k === k);
+    (g || (groupes.push({ k, l: [] }), groupes[groupes.length - 1])).l.push(c);
+  }
+  return `
+    <div class="duo ghost"><button data-act="refnewclass">${svg(I.plus)}Créer une classe</button></div>
+    ${!l ? `<div class="empty">${svg(I.school)}<p>Chargement…</p></div>`
+      : !l.length ? `<div class="empty">${svg(I.school)}<p><b>Aucune classe</b>
+          Crée la première, puis attribue-lui des professeurs.</p></div>`
+      : groupes.map(g => `
+          <div class="lbl"><span>${esc(CYCLES[g.k] || 'Autres')}</span><span>${g.l.length}</span></div>
+          <div class="rtable">
+            <div class="rrow tete"><span class="c1">Classe</span><span class="c2">Effectif</span>
+              <span class="c3">Professeur principal</span><span class="c4">Équipe</span>
+              <span class="c5">Activité</span></div>
+            ${g.l.map(ligne).join('')}
+          </div>`).join('')}`;
 }
 
 /* ══════════ la console du professeur ══════════
@@ -4895,6 +5167,168 @@ function paintMenu() {
     mountMenu(w);
     return;
   }
+  /* ---------- les feuilles du référent ---------- */
+  if (menu === 'refwho') {
+    const g = ref.who;
+    if (!g) { menu = null; return; }
+    const f = ref.form || {};
+    const eleve = g.role === 'eleve';
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu pv">
+        <div class="mhd"><i class="av">${esc(initial(g.name))}</i>
+          <span class="mhx"><b>${esc(g.name)}</b>
+            <i>@${esc(g.handle || '')} · ${esc(ROLENOM[g.role] || g.role)}${
+              g.jamais ? ' · jamais venu' : ' · vu ' + timeAgo(g.derniere)}</i></span></div>
+        <div class="mscroll">
+          <div class="rform">
+            <label>Nom<input id="fnom" value="${esc(g.name)}" spellcheck="false"></label>
+            <label>Pseudo<input id="fpse" value="${esc(g.handle || '')}" spellcheck="false"
+              autocapitalize="none"></label>
+            <label>Adresse<input id="fmel" value="${esc(g.email)}" spellcheck="false"
+              autocapitalize="none" type="email"></label>
+          </div>
+          <button class="mi" data-mact="refsave">${svg(I.check)}<span>Enregistrer l’identité</span></button>
+          <div class="msep"></div>
+
+          <div class="rform">
+            <label>Nouveau mot de passe
+              <input id="fpw" value="${esc(f.pw || '')}" spellcheck="false" autocapitalize="none"
+                placeholder="dix caractères au moins"></label>
+          </div>
+          <button class="mi" data-mact="refpw">${svg(I.key)}<span>Refaire le mot de passe</span>
+            <span class="tail">à lire à l’intéressé</span></button>
+          <div class="note" style="padding:2px 18px 10px">Chaque changement est inscrit au journal
+            de l’établissement, avec ton nom et l’heure.</div>
+          <div class="msep"></div>
+
+          ${eleve ? `<div class="note" style="padding:0 18px 6px">Classe</div>
+            <div class="mscroll courte">${(ref.classes || []).map(c => `
+              <button class="mi${g.class_id === c.id ? ' on' : ''}" data-rmove="${esc(c.id)}">
+                ${svg(g.class_id === c.id ? I.check : I.arrow)}<span>${esc(c.name)}</span>
+                <span class="tail">${c.effectif} él.</span></button>`).join('')}</div>
+            ${g.class_id ? `<button class="mi warn" data-rmove="">${svg(I.x)}
+              <span>Retirer de sa classe</span></button>` : ''}`
+          : `<div class="note" style="padding:0 18px 6px">Service d’enseignement</div>
+            ${!ref.service ? `<div class="note" style="padding:0 18px 10px">Chargement…</div>`
+              : !ref.service.length ? `<div class="note" style="padding:0 18px 10px">
+                  Aucune classe attribuée. Va dans l’onglet Classes et ajoute-le à une équipe.</div>`
+              : `<div class="mscroll courte">${ref.service.map(s => `<div class="mi lect">
+                  ${svg(I.school)}<span>${esc(s.classe)} · ${esc(s.matiere)}${
+                    s.principal ? ' (PP)' : ''}</span>
+                  <button class="tail warn" data-rdropt="${esc(s.teaching_id)}">retirer</button>
+                  </div>`).join('')}</div>`}`}
+          <div class="msep"></div>
+          <div class="note" style="padding:0 18px 6px">Rôle</div>
+          ${['eleve', 'prof'].map(k => `<button class="mi${g.role === k ? ' on' : ''}"
+            data-rrolechg="${k}">${svg(g.role === k ? I.check : I.arrow)}${ROLENOM[k]}</button>`).join('')}
+        </div>
+      </div>`;
+    mountMenu(w);
+    if (g.role !== 'eleve' && !ref.service) refService(g.id);
+    return;
+  }
+  if (menu === 'refcls') {
+    const c = (ref.classes || []).find(x => x.id === ref.open);
+    if (!c) { menu = null; return; }
+    const f = ref.form || {};
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu pv">
+        <div class="mhd">${svg(I.school)}<span class="mhx"><b>${esc(c.name)}</b>
+          <i>${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''} · ${
+            plur(c.effectif, 'élève')} · code ${esc(c.code || '—')}</i></span></div>
+        <div class="mscroll">
+          <div class="rform">
+            <label>Nom<input id="knom" value="${esc(c.name)}" spellcheck="false"></label>
+            <label>Niveau<input id="kniv" value="${esc(c.niveau || '')}" spellcheck="false"></label>
+            <label>Filière<input id="kfil" value="${esc(c.filiere || '')}" spellcheck="false"></label>
+            <label>Effectif prévu<input id="kpre" value="${c.prevu || ''}" inputmode="numeric"></label>
+          </div>
+          <button class="mi" data-mact="refclssave">${svg(I.check)}<span>Enregistrer</span></button>
+          <button class="mi" data-mact="refclsgens">${svg(I.users)}
+            <span>Voir ses ${plur(c.effectif, 'élève')}</span></button>
+          <div class="msep"></div>
+
+          <div class="note" style="padding:0 18px 6px">Équipe pédagogique</div>
+          ${!ref.team ? `<div class="note" style="padding:0 18px 10px">Chargement…</div>`
+            : !ref.team.length ? `<div class="note" style="padding:0 18px 10px">
+                Aucun professeur. Ajoutes-en un ci-dessous.</div>`
+            : `<div class="mscroll courte">${ref.team.map(t => `<div class="mi lect">
+                ${svg(t.principal ? I.check : I.user)}
+                <span>${esc(t.nom)} · ${esc(t.matiere)}${t.principal ? ' (PP)' : ''}</span>
+                <button class="tail" data-rpp="${esc(t.teacher)}|${esc(t.matiere)}">PP</button>
+                <button class="tail warn" data-rdropt="${esc(t.teaching_id)}">retirer</button>
+                </div>`).join('')}</div>`}
+          <div class="rform">
+            <label>Ajouter un professeur — matière
+              <input id="tmat" value="${esc(f.mat || '')}" spellcheck="false"
+                placeholder="Mathématiques"></label>
+          </div>
+          <div class="mscroll courte">${(ref.gens || []).filter(x => x.role === 'prof').map(p => `
+            <button class="mi" data-raddt="${esc(p.id)}">${svg(I.plus)}<span>${esc(p.name)}</span>
+              <span class="tail">${esc(p.matiere || '')}</span></button>`).join('')
+            || `<div class="note" style="padding:0 18px 10px">Cherche un professeur dans
+                 l’onglet Comptes : la liste des professeurs trouvés s’affiche ici.</div>`}</div>
+          <div class="msep"></div>
+          <button class="mi warn" data-mact="refclsdel">${svg(I.trash)}
+            <span>Supprimer la classe</span>
+            <span class="tail">${c.effectif ? 'videz-la d’abord' : ''}</span></button>
+        </div>
+      </div>`;
+    mountMenu(w);
+    if (!ref.team) refTeam(c.id);
+    return;
+  }
+  if (menu === 'refnew' || menu === 'refnewclass') {
+    const cpt = menu === 'refnew';
+    const f = ref.form || {};
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu pv">
+        <div class="mhd">${svg(I.plus)}<span class="mhx">
+          <b>${cpt ? 'Ouvrir un compte' : 'Créer une classe'}</b>
+          <span class="msub">${cpt
+            ? 'Le compte est utilisable tout de suite : il n’y a pas d’e-mail de confirmation à attendre.'
+            : 'Un code est généré : les élèves le saisissent une fois pour rejoindre.'}</span></span></div>
+        <div class="mscroll">
+          ${cpt ? `<div class="rform">
+              <label>Adresse<input id="nmel" value="${esc(f.mel || '')}" type="email"
+                autocapitalize="none" spellcheck="false" placeholder="prenom.nom@lycee.fr"></label>
+              <label>Nom<input id="nnom" value="${esc(f.nom || '')}" spellcheck="false"></label>
+              <label>Pseudo (facultatif)<input id="npse" value="${esc(f.pse || '')}"
+                autocapitalize="none" spellcheck="false"></label>
+              <label>Mot de passe<input id="npw" value="${esc(f.pw || '')}"
+                autocapitalize="none" spellcheck="false" placeholder="dix caractères au moins"></label>
+            </div>
+            <div class="note" style="padding:0 18px 6px">Rôle</div>
+            ${['eleve', 'prof'].map(k => `<button class="mi${(f.role || 'eleve') === k ? ' on' : ''}"
+              data-rnrole="${k}">${svg((f.role || 'eleve') === k ? I.check : I.arrow)}${ROLENOM[k]}</button>`).join('')}
+            ${(f.role || 'eleve') === 'eleve' ? `
+              <div class="note" style="padding:8px 18px 6px">Classe</div>
+              <div class="mscroll courte">${(ref.classes || []).map(c => `
+                <button class="mi${f.cls === c.id ? ' on' : ''}" data-rncls="${esc(c.id)}">
+                  ${svg(f.cls === c.id ? I.check : I.arrow)}<span>${esc(c.name)}</span>
+                  <span class="tail">${c.effectif} él.</span></button>`).join('')}</div>` : ''}`
+          : `<div class="rform">
+              <label>Nom de la classe<input id="knom" value="${esc(f.nom || '')}"
+                spellcheck="false" placeholder="2nde 4"></label>
+              <label>Niveau<input id="kniv" value="${esc(f.niv || '')}" spellcheck="false"
+                placeholder="Seconde"></label>
+              <label>Filière (facultatif)<input id="kfil" value="${esc(f.fil || '')}"
+                spellcheck="false"></label>
+              <label>Effectif prévu<input id="kpre" value="${esc(f.pre || '')}" inputmode="numeric"></label>
+            </div>
+            <div class="note" style="padding:0 18px 6px">Cycle</div>
+            ${Object.entries(CYCLES).map(([k, n]) => `<button class="mi${f.cyc === k ? ' on' : ''}"
+              data-rncyc="${k}">${svg(f.cyc === k ? I.check : I.arrow)}${n}</button>`).join('')}`}
+          <div class="msep"></div>
+          <button class="mi" data-mact="${cpt ? 'refdonew' : 'refdonewclass'}"
+            style="justify-content:center;font-weight:700">${svg(I.check)}${
+              cpt ? 'Ouvrir le compte' : 'Créer la classe'}</button>
+        </div>
+      </div>`;
+    mountMenu(w);
+    setTimeout(() => { const i = document.getElementById(cpt ? 'nmel' : 'knom'); if (i) i.focus(); }, 60);
+    return;
+  }
   if (menu === 'classcode') {
     /* Le code se projette au tableau : il doit être lisible du fond de la
        salle, pas niché dans un coin d'écran. */
@@ -5777,6 +6211,57 @@ document.addEventListener('click', async e => {
     return paintMenu();
   }
   if (a === 'pgive') return giveMany();
+  /* ---- écritures du référent ---- */
+  if (a === 'refsave') {
+    if (!ref.who) return;
+    const v = id => ((document.getElementById(id) || {}).value || '').trim();
+    return refDo('ref_update_account',
+      { cible: ref.who.id, nom: v('fnom'), pseudo: v('fpse'), adresse: v('fmel') },
+      'Identité enregistrée').then(() => { closeMenu(); render(); });
+  }
+  if (a === 'refpw') {
+    if (!ref.who) return;
+    const pw = ((document.getElementById('fpw') || {}).value || '').trim();
+    if (pw.length < 10) return toast(I.x, 'Au moins dix caractères');
+    return refDo('ref_set_password', { cible: ref.who.id, pw },
+      'Mot de passe refait · ' + pw).then(() => { ref.form = {}; paintMenu(); });
+  }
+  if (a === 'refclssave') {
+    const f = lireClass();
+    /* Le cycle ne se modifie pas ici — il n'y a pas de champ pour lui — mais
+       `ref_save_class` réécrit toute la ligne : le lui taire l'effacerait. */
+    const c = (ref.classes || []).find(x => x.id === ref.open) || {};
+    return refDo('ref_save_class',
+      { cid: ref.open, nom: f.nom, niveau: f.niv, cycle: c.cycle || '', filiere: f.fil,
+        prevu: f.pre ? +f.pre : null }, 'Classe enregistrée')
+      .then(() => { closeMenu(); render(); });
+  }
+  if (a === 'refclsdel') {
+    return refDo('ref_delete_class', { cid: ref.open }, 'Classe supprimée')
+      .then(r => { if (r !== null) { closeMenu(); render(); } });
+  }
+  if (a === 'refclsgens') {
+    ref.cls = ref.open; ref.tab = 'gens'; ref.role = ''; ref.q = '';
+    refPeople(true); closeMenu(); animate = false; return render();
+  }
+  if (a === 'refdonew') {
+    const f = { ...(ref.form || {}), ...lireNew() };
+    ref.form = f;
+    if ((f.pw || '').length < 10) return toast(I.x, 'Au moins dix caractères');
+    return refDo('ref_new_account',
+      { adresse: f.mel || '', nom: f.nom || '', pseudo: f.pse || '',
+        qrole: f.role || 'eleve', cid: (f.role || 'eleve') === 'eleve' ? (f.cls || null) : null,
+        pw: f.pw || '' }, 'Compte ouvert · ' + (f.mel || ''))
+      .then(r => { if (r) { ref.form = {}; closeMenu(); render(); } });
+  }
+  if (a === 'refdonewclass') {
+    const f = { ...(ref.form || {}), ...lireClass() };
+    ref.form = f;
+    return refDo('ref_save_class',
+      { cid: null, nom: f.nom || '', niveau: f.niv || '', cycle: f.cyc || '',
+        filiere: f.fil || '', prevu: f.pre ? +f.pre : null }, 'Classe créée')
+      .then(r => { if (r) { ref.form = {}; closeMenu(); render(); } });
+  }
   if (a === 'pdelwork') {
     const id = workOpen; closeMenu();
     api('/rest/v1/assignments?id=eq.' + encodeURIComponent(id), 'DELETE', null,
@@ -7294,6 +7779,52 @@ $.addEventListener('click', e => {
   if (ds.card) { cardEdit = ds.card; return openMenu('card'); }
   /* Ajouter un camarade depuis la liste de sa classe : pas de pseudo à
      taper, on appuie sur le plus en face du nom. */
+  /* ---- la console du référent ---- */
+  if (ds.rtab) { ref.tab = ds.rtab; if (ref.tab === 'gens' && !ref.gens) refPeople(true);
+    animate = false; return render(); }
+  if (ds.rrole !== undefined) { ref.role = ds.rrole; refPeople(true); animate = false; return render(); }
+  if (ds.rpage !== undefined) { ref.page = +ds.rpage; refPeople(false); animate = false; return render(); }
+  if (ds.rclsoff) { ref.cls = null; refPeople(true); animate = false; return render(); }
+  if (ds.rwho) {
+    ref.who = (ref.gens || []).find(x => x.id === ds.rwho) || null;
+    ref.service = null; ref.form = {};
+    return openMenu('refwho');
+  }
+  if (ds.rcls) { ref.open = ds.rcls; ref.team = null; ref.form = {}; return openMenu('refcls'); }
+  if (ds.rmove !== undefined) {
+    if (!ref.who) return;
+    const cid = ds.rmove || null;
+    refDo('ref_move_student', { cible: ref.who.id, vers: cid },
+      cid ? 'Changé de classe' : 'Retiré de sa classe').then(() => { closeMenu(); render(); });
+    return;
+  }
+  if (ds.rrolechg) {
+    if (!ref.who) return;
+    refDo('ref_set_role', { cible: ref.who.id, nouveau: ds.rrolechg }, 'Rôle enregistré')
+      .then(() => { closeMenu(); render(); });
+    return;
+  }
+  if (ds.rdropt) {
+    refDo('ref_drop_teaching', { tid: ds.rdropt }, 'Service retiré').then(() => paintMenu());
+    return;
+  }
+  if (ds.rpp) {
+    const [who, mat] = ds.rpp.split('|');
+    refDo('ref_set_teaching', { cid: ref.open, prof: who, matiere: mat, pp: true },
+      'Professeur principal enregistré').then(() => { ref.team = null; refTeam(ref.open); });
+    return;
+  }
+  if (ds.raddt) {
+    const mat = ((document.getElementById('tmat') || {}).value || '').trim();
+    if (!mat) return toast(I.x, 'Écris d’abord la matière');
+    ref.form = { ...(ref.form || {}), mat };
+    refDo('ref_set_teaching', { cid: ref.open, prof: ds.raddt, matiere: mat, pp: false },
+      'Professeur ajouté à l’équipe').then(() => { ref.team = null; refTeam(ref.open); });
+    return;
+  }
+  if (ds.rnrole) { ref.form = { ...(ref.form || {}), role: ds.rnrole, ...lireNew() }; return paintMenu(); }
+  if (ds.rncls) { ref.form = { ...(ref.form || {}), cls: ds.rncls, ...lireNew() }; return paintMenu(); }
+  if (ds.rncyc) { ref.form = { ...(ref.form || {}), cyc: ds.rncyc, ...lireClass() }; return paintMenu(); }
   if (ds.pclasse) {
     prof.open = classOf = ds.pclasse; prof.roster = null; prof.asgs = null; prof.q = '';
     if (!classes) classesPull();          // pour le code de la classe
@@ -7403,10 +7934,14 @@ $.addEventListener('click', e => {
      s'est fait une classe garde l'écran d'origine. */
   if (a === 'classes') {
     if (isPupil()) { maClassePull(); return go('maclasse'); }
+    if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
     if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
     if (!classes) classesPull(); return go('classes');
   }
   if (a === 'prof') { if (!prof.classes) profPull(); return go('prof'); }
+  if (a === 'ref') { refPull(); return go('ref'); }
+  if (a === 'refnew') { ref.form = { role: 'eleve' }; return openMenu('refnew'); }
+  if (a === 'refnewclass') { ref.form = {}; return openMenu('refnewclass'); }
   if (a === 'profalert') { if (!prof.alertes) alertesPull(); return go('profalert'); }
   if (a === 'classcode') {
     const c = (classes || []).find(x => x.id === prof.open);
@@ -7643,6 +8178,10 @@ function resetSession() {
   school = null; team = null; mates2 = null;
   prof = { classes: null, err: 0, alertes: null, open: null,
            roster: null, asgs: null, tri: 'nom', q: '', give: null };
+  ref = { tab: 'etab', board: null, err: 0,
+          gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
+          classes: null, open: null, team: null,
+          who: null, service: null, form: null, trace: null };
   mods = { list: null, err: 0, seen: 0 };
   accounts = null; accOpen = null;
   classes = null; classOf = null; roster = null; asgs = null;

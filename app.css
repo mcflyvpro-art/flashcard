@@ -1899,3 +1899,95 @@ button.kc:active{transform:scale(.97)}
   .ebar{grid-column:1 / -1;margin-top:9px}
   .fiche{grid-template-columns:repeat(4,1fr)}
 }
+
+/* ══════════ la console du référent d'établissement ══════════
+   Écrit comme un outil de gestion, pas comme une app. Des tableaux denses,
+   des colonnes alignées, la recherche toujours au même endroit, aucune
+   animation — le référent travaille sur un ordinateur, il connaît son
+   métier, et ce qu'il veut c'est voir six cents lignes et en changer une
+   en trois clics. Rien n'est joli ici, et ce n'est pas un oubli. */
+.dense{padding-bottom:44px}
+.dense .lbl{margin-top:18px}
+
+/* les trois onglets : l'établissement, les comptes, les classes */
+.rtabs{display:flex;gap:2px;background:var(--surf);border-radius:12px;padding:3px;margin-bottom:16px}
+.rt{flex:1;height:36px;border-radius:9px;font-size:13.5px;font-weight:700;color:var(--soft)}
+.rt.on{background:var(--card);color:var(--ink);box-shadow:var(--s1)}
+
+.rhead{margin-bottom:14px}
+.rhead b{display:block;font-size:21px;font-weight:800;letter-spacing:-.6px}
+.rhead i{font-style:normal;font-size:13px;color:var(--soft)}
+.kpi.six{grid-template-columns:repeat(2,1fr)}
+
+/* ce qui demande une décision : le chiffre, ce qu'il désigne, et quoi faire */
+.rsous{display:flex;flex-direction:column;gap:7px}
+.rsou{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:baseline;
+  background:var(--card);box-shadow:var(--s1);border-radius:14px;padding:11px 14px}
+.rsou b{font-size:21px;font-weight:800;letter-spacing:-.6px;color:var(--leather)}
+.rsou span{font-size:14px;font-weight:700}
+.rsou i{grid-column:2;font-style:normal;font-size:12px;color:var(--soft)}
+
+/* le journal : qui a changé quoi, et quand */
+.rjour{display:flex;flex-direction:column;gap:5px}
+.rj{display:grid;grid-template-columns:1fr auto;gap:0 12px;font-size:12.5px;
+  background:var(--card);box-shadow:var(--s1);border-radius:11px;padding:8px 12px}
+.rj b{font-weight:700;color:var(--ink)}
+.rj i{grid-column:1;font-style:normal;color:var(--soft);font-size:11.5px}
+.rj span{grid-row:span 2;align-self:center;color:var(--soft);font-size:11.5px;white-space:nowrap}
+
+/* la barre de recherche, toujours à la même place */
+.rbar{display:flex;flex-direction:column;gap:9px;margin-bottom:10px}
+.rcount{font-size:12.5px;color:var(--soft);margin-bottom:9px;display:flex;gap:10px;
+  align-items:baseline;flex-wrap:wrap}
+.rcount b{color:var(--ink);font-weight:800}
+
+/* le tableau. Sur téléphone chaque ligne se replie en fiche ; en large elle
+   redevient une vraie ligne, colonnes alignées, en-tête compris. */
+.rtable{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.rrow{display:grid;grid-template-columns:1fr;gap:2px;text-align:left;
+  background:var(--card);box-shadow:var(--s1);border-radius:12px;padding:10px 13px;font-size:13px}
+.rrow.tete{display:none}
+.rrow > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c1 b{font-weight:700;font-size:14px}
+.c1 i{font-style:normal;color:var(--soft);margin-left:6px;font-size:12px}
+.c2,.c4,.c5{color:var(--soft);font-size:12px}
+.rl{font-style:normal;font-size:11px;font-weight:700;border-radius:6px;padding:2px 6px;
+  background:var(--surf);color:var(--ink2)}
+.rl.prof{background:color-mix(in srgb,var(--leather) 15%,transparent);color:var(--leather)}
+.rl.ref,.rl.admin{background:var(--ink);color:var(--bg)}
+.rl.vide,.rl.jamais{background:color-mix(in srgb,var(--ko) 12%,transparent);color:var(--ko)}
+
+.rpage{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 18px;
+  font-size:12.5px;color:var(--soft)}
+.rpage button{height:34px;padding:0 14px;border-radius:10px;background:var(--surf);
+  font-size:13px;font-weight:700;color:var(--ink2)}
+.rpage button:disabled{opacity:.4}
+
+/* les formulaires des feuilles : un champ par ligne, le libellé au-dessus */
+.rform{display:grid;gap:9px;padding:4px 18px 12px}
+.rform label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--soft)}
+.rform input{height:42px;border-radius:12px;background:var(--surf);padding:0 13px;
+  font-size:15px;color:var(--ink);border:0;width:100%}
+.rform input:focus{outline:2px solid var(--ink2);outline-offset:-2px}
+.mscroll.courte{max-height:210px}
+/* une ligne d'information dans une feuille : elle ne se presse pas */
+.mi.lect{cursor:default}
+.mi .tail.warn{color:var(--ko);font-weight:700}
+
+@media (min-width:760px){
+  .kpi.six{grid-template-columns:repeat(6,1fr)}
+  .rsou{grid-template-columns:auto auto 1fr;align-items:baseline}
+  .rsou i{grid-column:auto}
+  .rbar{flex-direction:row;align-items:center;gap:14px}
+  .rbar .fld{flex:1;margin:0}
+  .rtable{gap:2px}
+  .rrow{grid-template-columns:minmax(180px,1.4fr) minmax(150px,1.4fr) 110px minmax(120px,1fr) 140px;
+    gap:12px;align-items:center;border-radius:9px;padding:9px 14px}
+  .rrow.tete{display:grid;background:none;box-shadow:none;font-size:11px;font-weight:700;
+    color:var(--soft);text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px}
+  .rform{grid-template-columns:1fr 1fr}
+}
+@media (hover:hover){
+  .rrow:not(.tete):hover{background:var(--surf)}
+  .rt:hover{color:var(--ink)}
+}
