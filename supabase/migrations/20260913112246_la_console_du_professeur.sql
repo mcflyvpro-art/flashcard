@@ -1,4 +1,9 @@
 -- ══════════ la console du professeur ══════════
+-- (Ce fichier réunit trois versions posées coup sur coup dans la base —
+--  20260913111918, 20260913112109 et 20260913112246 — et n'en garde que
+--  l'état final, celui décrit ici. Tout y est `create or replace` : le
+--  rejouer sur une base qui porte déjà les trois ne change rien.)
+--
 -- Un professeur de collège tient dix classes et voit trois cents élèves
 -- par semaine. Lui rendre des listes brutes, c'est lui demander de faire
 -- lui-même le comptage : il ne le fera pas, et l'outil ne servira pas.
