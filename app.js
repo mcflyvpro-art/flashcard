@@ -5400,12 +5400,17 @@ function importView() {
         <div class="ta"><textarea id="tx" placeholder="chat = gatto&#10;chien = cane&#10;maison = casa"
           autocapitalize="off" autocorrect="off" spellcheck="false">${esc(comp.text)}</textarea></div>
         <div class="airow">
-          <button class="ai" id="aishot" title="Photo d'une page de cours">${svg(I.image)}</button>
+          <button class="ai" id="aishot" title="Photo d'une ou plusieurs pages de cours, prises ou depuis la galerie">${svg(I.image)}</button>
           <button class="ai" id="aipdf" title="Fichier : PDF, texte, CSV, export Anki ou Quizlet">${svg(I.file)}</button>
           <button class="ai" id="aigen" title="Fabriquer les pages">${svg(I.spark)}</button>
           <button class="cta" id="bulkadd" disabled>Ajouter${svg(I.plus)}</button>
         </div>
-        <input type="file" id="fshot" accept="image/*" capture="environment" hidden>
+        <!-- Sans « capture », le sélecteur propose l'appareil photo ET la
+             galerie (Photos sur iPhone, Galerie/Fichiers sur Android),
+             et « multiple » permet d'en choisir plusieurs d'un coup. Avec
+             « capture », les deux systèmes sautaient tout droit à
+             l'appareil photo, sans jamais montrer la pellicule. -->
+        <input type="file" id="fshot" accept="image/*" multiple hidden>
         <input type="file" id="fpdf" accept=".pdf,.txt,.csv,.tsv,.apkg,application/pdf,text/plain,text/csv" hidden>
         <div class="prev" id="prev"></div>`
       : `
@@ -5494,9 +5499,33 @@ function importView() {
       aiBusy = false; btn.classList.remove('busy');
       [shot, pdf].forEach(x => x.disabled = false); up();
     };
+    /* La galerie peut rendre plusieurs photos d'un coup : chacune passe
+       par la passerelle l'une après l'autre, et leurs pages s'ajoutent
+       toutes au même texte — choisir dix photos revient à les prendre
+       une par une, en une seule fois. */
+    const grabShots = async files => {
+      if (aiBusy || !files.length) return;
+      aiBusy = true; shot.classList.add('busy'); [shot, pdf, gen].forEach(x => x.disabled = true);
+      let total = 0, fail = 0, lastMsg = '';
+      for (const file of files) {
+        try {
+          const cards = await aiFromFile(file, t ? t.name : comp.name);
+          if (!cards.length) throw new Error('empty');
+          const had = tx.value.trim();
+          tx.value = (had ? had + '\n' : '') + cards.map(c => c.f + '\t' + c.b).join('\n');
+          total += cards.length;
+        } catch (x) {
+          fail++; lastMsg = AIERR[String(x.message)] || 'IA indisponible';
+        }
+      }
+      fit(); up();
+      if (total) toast(I.spark, plur(total, 'page') + (fail ? ` · ${fail} photo${fail > 1 ? 's' : ''} en échec` : ''));
+      else toast(I.x, lastMsg);
+      aiBusy = false; shot.classList.remove('busy'); [shot, pdf].forEach(x => x.disabled = false);
+    };
     shot.onclick = () => { if (!aiBusy) fshot.click(); };
     pdf.onclick = () => { if (!aiBusy) fpdf.click(); };
-    fshot.onchange = () => { grab(shot, fshot.files[0]); fshot.value = ''; };
+    fshot.onchange = () => { const files = [...fshot.files]; fshot.value = ''; grabShots(files); };
     /* Un fichier texte (export « notes en texte brut » d'Anki, export
        Quizlet, CSV d'un tableur) se lit ici même : pas de réseau, pas
        d'IA, pas d'attente — l'analyseur reconnaît le séparateur seul.
