@@ -566,7 +566,13 @@ const I = {
   split: '<path d="M12 3.6v6.8"/><path d="M12 10.4 6.6 15v5.4M12 10.4 17.4 15v5.4"/><circle cx="12" cy="3.6" r="0"/>',
   type: '<path d="M4.5 7.5V5.5h15v2M12 5.5v13M8.8 18.5h6.4"/>',
   skip: '<path d="M6 5.6l9 6.4-9 6.4z"/><path d="M18 5.6v12.8"/>',
-  brain: '<path d="M12 5.6v12.8"/><path d="M12 6.6a2.5 2.5 0 1 0-3.5 2.3 2.5 2.5 0 0 0-.9 4.6 2.5 2.5 0 0 0 4.4 1.7"/><path d="M12 6.6a2.5 2.5 0 1 1 3.5 2.3 2.5 2.5 0 0 1 .9 4.6 2.5 2.5 0 0 1-4.4 1.7"/>'
+  brain: '<path d="M12 5.6v12.8"/><path d="M12 6.6a2.5 2.5 0 1 0-3.5 2.3 2.5 2.5 0 0 0-.9 4.6 2.5 2.5 0 0 0 4.4 1.7"/><path d="M12 6.6a2.5 2.5 0 1 1 3.5 2.3 2.5 2.5 0 0 1 .9 4.6 2.5 2.5 0 0 1-4.4 1.7"/>',
+  school: '<path d="M12 4 2.8 8.4 12 12.8l9.2-4.4z"/><path d="M6.6 10.6v5.2c0 1.6 2.4 3 5.4 3s5.4-1.4 5.4-3v-5.2"/><path d="M21.2 8.4v5.4"/>',
+  users: '<circle cx="9.4" cy="8.6" r="3.4"/><path d="M3.4 19.4a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.4 3.4 0 0 1 0 6.6M17.6 14.4a5.6 5.6 0 0 1 3.4 5"/>',
+  build: '<path d="M4 20.4V9.6l7-4.2 7 4.2v10.8"/><path d="M2.4 20.4h19.2"/><rect x="8.2" y="12.4" width="5.6" height="8"/>',
+  mail2: '<rect x="3" y="5.4" width="18" height="13.2" rx="2.6"/><path d="m3.8 7 8.2 5.6L20.2 7"/>',
+  refresh: '<path d="M20 11.2a8 8 0 0 0-13.8-4.8L3.6 9"/><path d="M4 12.8a8 8 0 0 0 13.8 4.8L20.4 15"/><path d="M3.6 4.4V9h4.6M20.4 19.6V15h-4.6"/>',
+  money: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7v10M14.6 9.4a2.8 2.8 0 0 0-2.6-1.4c-1.6 0-2.6.9-2.6 2s.9 1.8 2.6 2.1c1.7.3 2.6 1 2.6 2.1s-1 2-2.6 2a2.8 2.8 0 0 1-2.6-1.4"/>'
 };
 const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
 const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
@@ -1539,7 +1545,7 @@ function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
               group: groupView, shared: sharedView, duel: duelView, legal: legalView, mod: modView,
-              classes: classesView, classe: classeView,
+              classes: classesView, classe: classeView, maclasse: maClasseView,
               admin: adminView,
               commu: commuView, friends: friendsView, groups: groupsView,
               duels: duelsView, library: libraryView, board: boardView };
@@ -1577,7 +1583,7 @@ function paintRail() {
   if (!auth || view.name === 'login') { if (r) r.remove(); return; }
   const on = view.name === 'settings' ? 'settings'
     : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats'
-    : /^(classes|classe)$/.test(view.name) ? 'classes'
+    : /^(classes|classe|maclasse)$/.test(view.name) ? 'classes'
     : /commu|friends|groups|duels|library|board|shared/.test(view.name) ? 'commu' : 'home';
   const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n + '\u0000' + myRole;
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
@@ -2523,8 +2529,14 @@ const hlp = k => `<button class="hq" data-help="${k}" aria-label="${esc(HELP[k][
 let subjEdit = null, subjColor = 'graphite', subjName = '';
 let cardEdit = null;
 function openSubject(id) {
+  const t0 = db.subjects.find(x => x.id === id);
+  /* Une matière posée par le professeur ne s'édite pas : elle sert de lien
+     entre son cours et les livres de toute la classe. La base refuse déjà
+     la modification comme l'effacement — ouvrir le formulaire ne ferait
+     qu'annoncer un enregistrement qui n'aurait pas lieu. */
+  if (t0 && t0.locked) return toast(I.lock, 'Matière du cours · posée par ton professeur');
   subjEdit = id;
-  const t = db.subjects.find(x => x.id === id);
+  const t = t0;
   subjColor = t ? t.color : COLORS[db.subjects.length % COLORS.length];
   subjName = t ? t.name : '';
   openMenu('subject');
@@ -3457,6 +3469,34 @@ function accountSheet(w) {
 let myRole = 'eleve';
 let classes = null;                 // mes classes (tenues ou rejointes)
 let classOf = null;                 // celle qu'on regarde
+
+/* ══════════ scolaire ou personnel ══════════
+   Folio sert deux publics dans la même app : quelqu'un qui révise pour lui,
+   et un élève inscrit par son établissement. Le second n'est pas le premier
+   avec moins de boutons — c'est un autre produit. Il n'a ni club, ni
+   annuaire ouvert, ni pseudo à choisir : son identité, sa classe et ses
+   matières lui sont données, et il ne peut ni les changer ni en sortir.
+
+   `school` répond à la seule question qui commande tout le reste : ce
+   compte appartient-il à un établissement ? `null` tant qu'on ne sait pas,
+   `false` quand on sait que non — la nuance compte, sinon l'écran s'affiche
+   en version personnelle une fraction de seconde avant de se corriger. */
+let school = null;                  // { org, classe, niveau, … } | false
+let team = null;                    // les professeurs de sa classe
+const atSchool = () => !!(school && school.org_id);
+const isPupil = () => atSchool() && myRole === 'eleve';
+
+async function schoolPull() {
+  try {
+    const [r] = await api('/rest/v1/rpc/my_school', 'POST', {}) || [];
+    school = r || false;
+  } catch (e) { school = false; }
+}
+async function teamPull() {
+  try { team = await api('/rest/v1/rpc/my_class_team', 'POST', {}) || []; }
+  catch (e) { team = []; }
+  if (view.name === 'classe' || view.name === 'classes') { animate = false; render(); }
+}
 let roster = null;                  // la liste d'une classe, côté professeur
 let workOpen = null, memberOpen = null;
 let asgs = null;                    // les devoirs de la classe regardée
@@ -3470,7 +3510,7 @@ const isAdmin = () => myRole === 'admin';
    l'entrée manquait alors sans aucune raison visible. C'est exactement ce
    qui faisait dire que le compte admin n'avait rien d'admin. */
 async function cerclePull() {
-  await Promise.all([rolePull(), modCheck(), blocksPull()]);
+  await Promise.all([rolePull(), schoolPull(), modCheck(), blocksPull()]);
   await Promise.all([classesPull(), iAmMod ? modPull() : null]);
   animate = false; render();
 }
@@ -3586,6 +3626,87 @@ const dueLabel = s => {
        : j === 1 ? 'pour demain' : `dans ${j} jours`;
 };
 
+/* ══════════ « Ma classe », côté élève ══════════
+   Un seul écran, et rien qui ressemble à de la gestion. Ce qu'il y a à
+   faire d'abord — un devoir se rend, il ne se cherche pas —, puis qui lui
+   fait cours, puis les camarades qu'il peut ajouter. Aucun code à saisir,
+   aucune classe à quitter, aucun bouton qui échouerait s'il le pressait :
+   la base refuse déjà tout cela, l'écran n'a pas à le proposer. */
+let mates2 = null;                  // ses camarades de classe
+
+async function matesPull() {
+  try { mates2 = await api('/rest/v1/rpc/my_classmates', 'POST', {}) || []; }
+  catch (e) { mates2 = []; }
+  if (view.name === 'classe') { animate = false; render(); }
+}
+function maClassePull() {
+  if (school === null) schoolPull().then(() => { maClassePull(); animate = false; render(); });
+  if (school && school.class_id && !asgs) classPull(school.class_id);
+  if (!team) teamPull();
+  if (!mates2) matesPull();
+}
+
+function maClasseView() {
+  if (!school || !school.class_id) {
+    $.innerHTML = `
+      <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
+        <h1>Ma classe</h1></div>
+      <div class="page"><div class="empty">${svg(I.school)}<p><b>Aucune classe</b>
+        ${school === null ? 'Chargement…'
+          : 'Ton établissement ne t’a pas encore inscrit dans une classe. Préviens ton professeur principal.'}</p></div></div>`;
+    return;
+  }
+  const c = school;
+  const l = asgs || [];
+  /* Les devoirs en retard d'abord : c'est la seule chose qui presse. */
+  const retard = l.filter(a => a.due && Date.parse(a.due + 'T12:00:00') < Date.now());
+  const avenir = l.filter(a => !retard.includes(a));
+  const ligne = a => `<button class="sr flat${a.due && Date.parse(a.due + 'T12:00:00') < Date.now() ? ' tard' : ''}"
+      data-work="${esc(a.id)}">${svg(I.card)}
+    <span class="ml2"><span class="n">${esc(a.name)}</span>
+      <span class="sub">${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</span></span>
+    ${svg(I.arrow)}</button>`;
+  const cam = mates2 || [];
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${esc(c.classe)}</h1></div>
+    <div class="page">
+      <div class="ecole">${svg(I.school)}<span><b>${esc(c.org)}</b>
+        <i>${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''}${
+          c.effectif ? ' · ' + plur(c.effectif, 'élève') : ''}</i></span></div>
+
+      <div class="lbl"><span>Devoirs</span><span>${l.length || ''}</span></div>
+      ${!asgs ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !l.length ? `<div class="empty">${svg(I.card)}<p><b>Rien à faire</b>
+            Tes professeurs n’ont pas encore donné de devoir.</p></div>`
+        : `${retard.length ? `<div class="slist">${retard.map(ligne).join('')}</div>` : ''}
+           ${avenir.length ? `<div class="slist">${avenir.map(ligne).join('')}</div>` : ''}`}
+
+      <div class="lbl"><span>Mes professeurs</span><span>${team ? team.length : ''}</span></div>
+      ${!team ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !team.length ? `<div class="card2"><div class="note">Aucun cours renseigné.</div></div>`
+        : `<div class="profs">${team.map(t => `<div class="pf">
+            <i class="av sm">${esc(initial(t.teacher))}</i>
+            <span class="ml2"><span class="n">${esc(t.subject)}</span>
+              <span class="sub">${esc(t.teacher)}${t.principal ? ' · professeur principal' : ''}</span></span>
+            </div>`).join('')}</div>`}
+
+      <div class="lbl"><span>Ma classe</span><span>${cam.length || ''}</span></div>
+      <div class="note" style="padding:0 0 10px">Tu ne peux ajouter que les élèves de ta classe.</div>
+      ${!mates2 ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !cam.length ? `<div class="card2"><div class="note">Tu es seul inscrit pour l’instant.</div></div>`
+        : `<div class="slist">${cam.map(m => `<div class="sr flat">
+            <i class="av sm">${esc(initial(m.name))}</i>
+            <span class="ml2"><span class="n">${esc(m.name)}</span>
+              <span class="sub">@${esc(m.handle || '')}</span></span>
+            ${m.lien === 'ok' ? `<button class="camo" data-mate="${esc(m.id)}">${svg(I.arrow)}</button>`
+              : m.lien ? `<span class="camw">demandé</span>`
+              : `<button class="camadd" data-camadd="${esc(m.id)}" data-camn="${esc(m.handle || '')}"
+                   aria-label="Ajouter ${esc(m.name)}">${svg(I.plus)}</button>`}
+            </div>`).join('')}</div>`}
+    </div>`;
+}
+
 /* ---------- l'écran des classes ---------- */
 function classesView() {
   const l = classes;
@@ -3688,10 +3809,11 @@ async function leaveGroup(id) {
 function commuPull() {
   if (!me) mePull().then(() => { if (view.name === 'commu') { animate = false; render(); } });
   if (!friends) friendsPull();
-  if (!groups) groupsPull();
+  if (!groups && !atSchool()) groupsPull();   // pas de club à l'école
   if (!duels.list) duelsPull();
   if (!lib.list) libPull();
   if (!board.rows) boardPull();
+  if (school === null) schoolPull().then(() => { if (view.name === 'commu') { animate = false; render(); } });
 }
 
 const initial = s => (String(s || '?').trim()[0] || '?').toUpperCase();
@@ -3707,21 +3829,36 @@ function commuView() {
   const tile = (act, ic, lab, val, warn) => `<button class="ctile" data-act="${act}">
     <i class="ci">${svg(ic)}${warn ? `<b class="cbdg">${warn}</b>` : ''}</i>
     <span class="cn">${lab}</span><span class="cv">${val}</span></button>`;
+  /* Un élève inscrit par son établissement n'a ni pseudo à choisir, ni
+     club, ni annuaire ouvert : sa carte affiche sa classe, et ses trois
+     tuiles sont Défis, Ma classe, Bibliothèque. Un compte personnel garde
+     les quatre d'origine. */
+  const eleve = isPupil();
   $.innerHTML = `
     <div class="page" id="page">
       <div class="top"><div class="hero">Le cercle des lecteurs</div></div>
-      <button class="mecard" data-act="handle">
+      ${eleve ? `<div class="mecard fixe">
+        <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
+        <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : esc((me && me.name) || 'Élève')}</b>
+          <i>${school.classe ? `<b class="maclasse">${esc(school.classe)}</b> · ${esc(school.org)}`
+            : esc(school.org)}</i></span></div>`
+      : `<button class="mecard" data-act="handle">
         <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
         <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : 'Choisis ton pseudo'}</b>
           <i>${me && me.handle ? (mine >= 0 ? `${MED[mine] || (mine + 1) + 'ᵉ'} cette semaine · ${plur(+rows[mine].n, 'page')}`
             : 'Pas encore révisé cette semaine')
             : 'C’est ce que tes amis taperont pour t’ajouter'}</i></span>
-        ${svg(I.arrow)}</button>
-      <div class="ctiles">
-        ${tile('friends', I.user, 'Lecteurs', nMates || '—', nAsk)}
-        ${tile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
-        ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
-        ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}
+        ${svg(I.arrow)}</button>`}
+      <div class="ctiles${eleve ? ' trois' : ''}">
+        ${eleve ? `
+          ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
+          ${tile('classes', I.school, 'Ma classe', school.effectif ? school.effectif + ' élèves' : '—', nAsk)}
+          ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`
+        : `
+          ${tile('friends', I.user, 'Lecteurs', nMates || '—', nAsk)}
+          ${tile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
+          ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
+          ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`}
       </div>
       <div class="lbl"><span>Classement de la semaine</span>
         ${rows.length > 3 ? '<button class="lnk" data-act="board">Tout voir</button>' : ''}</div>
@@ -6762,6 +6899,14 @@ $.addEventListener('click', e => {
   }
   const a = ds.act, d = view.id ? deck(view.id) : null;
   if (ds.card) { cardEdit = ds.card; return openMenu('card'); }
+  /* Ajouter un camarade depuis la liste de sa classe : pas de pseudo à
+     taper, on appuie sur le plus en face du nom. */
+  if (ds.camadd) {
+    const n = ds.camn;
+    askFriend(n).then(ok => { if (ok) { mates2 = null; matesPull(); } })
+      .catch(() => toast(I.x, 'Impossible pour l’instant'));
+    return;
+  }
   if (b.dataset.tf !== undefined) return answerTF(b.dataset.tf === '1');
   if (b.dataset.pick !== undefined) return pickMCQ(+b.dataset.pick);
   if (b.dataset.mt) { const [sd, mid] = b.dataset.mt.split(':'); return pickMatch(sd, mid); }
@@ -6789,7 +6934,10 @@ $.addEventListener('click', e => {
   if (a === 'library') { if (!lib.list) libPull(); return go('library'); }
   if (a === 'board') { if (!board.rows) boardPull(); return go('board'); }
   if (a === 'doadd') return doAdd();
-  if (a === 'handle') return openMenu('handle');
+  /* Le pseudo scolaire vient de l'établissement : la base renverse déjà
+     toute tentative de le changer, l'écran n'ouvre donc pas le formulaire. */
+  if (a === 'handle') return isPupil() ? toast(I.lock, 'Ton pseudo est celui de ton établissement')
+                                       : openMenu('handle');
   if (a === 'newgroup') { addQ = ''; return openMenu('newgroup'); }
   if (a === 'joingroup') { addQ = ''; return openMenu('joingroup'); }
   /* un quiz se lance depuis un paquet : en sortir, c'est y revenir */
@@ -6848,7 +6996,12 @@ $.addEventListener('click', e => {
      gestionnaire était rangé avec ceux des feuilles, qui lisent data-mact.
      Il n'a jamais été atteint une seule fois. */
   if (a === 'blocked') { blocksPull().then(() => paintMenu()); return openMenu('blocked'); }
-  if (a === 'classes') { if (!classes) classesPull(); return go('classes'); }
+  /* L'élève n'a qu'une classe : lui faire traverser une liste d'un seul
+     élément pour y arriver n'apporte rien. */
+  if (a === 'classes') {
+    if (isPupil()) { maClassePull(); return go('maclasse'); }
+    if (!classes) classesPull(); return go('classes');
+  }
   if (a === 'newclass') return openMenu('newclass');
   if (a === 'joinclass') return openMenu('joinclass');
   if (a === 'newwork') return openMenu('newwork');
@@ -7075,6 +7228,7 @@ function resetSession() {
 
   /* le rôle et ce qu'il ouvre */
   myRole = 'eleve'; iAmMod = false;
+  school = null; team = null; mates2 = null;
   mods = { list: null, err: 0, seen: 0 };
   accounts = null; accOpen = null;
   classes = null; classOf = null; roster = null; asgs = null;

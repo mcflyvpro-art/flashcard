@@ -1742,3 +1742,41 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 html{height:100%;overflow:hidden;overscroll-behavior:none}
 body{height:100%;overflow-y:auto;overflow-x:hidden;
   overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+
+/* ══════════ l'élève dans son établissement ══════════
+   Sa carte d'identité ne s'ouvre sur rien : le pseudo vient de
+   l'établissement, il n'y a donc pas de flèche ni de réaction au doigt qui
+   laisserait croire le contraire. La classe, elle, se lit d'un coup — c'est
+   la première chose qu'il doit reconnaître en arrivant. */
+.mecard.fixe{cursor:default}
+.mecard.fixe:active{transform:none}
+.maclasse{font-weight:800;color:var(--ink2)}
+/* trois portes au lieu de quatre : la troisième prend toute la largeur
+   plutôt que de laisser un trou */
+.ctiles.trois > .ctile:last-child{grid-column:1 / -1;flex-direction:row;align-items:center;gap:12px}
+.ctiles.trois > .ctile:last-child .cn{flex:1}
+.ctiles.trois > .ctile:last-child .cv{margin-left:auto}
+
+/* l'en-tête d'établissement, en haut de « Ma classe » */
+.ecole{display:flex;align-items:center;gap:12px;background:var(--card);box-shadow:var(--s1);
+  border-radius:20px;padding:13px 15px;margin-bottom:18px}
+.ecole > svg{width:21px;height:21px;color:var(--ink2);flex:none}
+.ecole span{flex:1;min-width:0}
+.ecole b{display:block;font-size:15px;font-weight:800;letter-spacing:-.3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ecole i{display:block;font-style:normal;font-size:12.5px;color:var(--soft);margin-top:2px}
+
+/* un devoir en retard se voit sans avoir à lire la date */
+.sr.flat.tard{box-shadow:inset 3px 0 0 var(--ko),var(--s1)}
+
+/* ses professeurs : une lecture, aucun geste */
+.profs{display:flex;flex-direction:column;gap:7px;margin-bottom:6px}
+.pf{display:flex;align-items:center;gap:11px;background:var(--card);box-shadow:var(--s1);
+  border-radius:16px;padding:9px 13px}
+
+/* ses camarades : le plus ajoute, et rien d'autre n'est cliquable */
+.camadd,.camo{flex:none;width:32px;height:32px;border-radius:11px;background:var(--surf);
+  display:grid;place-items:center;transition:transform .2s var(--sp)}
+.camadd svg,.camo svg{width:16px;height:16px;color:var(--ink2)}
+.camadd:active,.camo:active{transform:scale(.9)}
+.camw{flex:none;font-size:12px;color:var(--soft)}
