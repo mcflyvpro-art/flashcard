@@ -2099,3 +2099,97 @@ button.kc:active{transform:scale(.97)}
   .kls:hover,.elv:hover,.dvr:not(.lect):hover{background:var(--surf)}
   .otab:hover,.cet:hover{color:var(--ink)}
 }
+
+/* ══════════ la barre du haut, pour les comptes d'établissement ══════════
+   Un professeur, un référent et l'éditeur ne révisent pas : leur écran est
+   une page de gestion, et elle doit prendre toute la largeur. Le rail
+   latéral, qui convient à quelqu'un qui navigue entre ses livres, lui
+   mangeait un quart de l'écran en permanence. Mêmes entrées, même code —
+   il bascule simplement à l'horizontale, et la page respire. */
+html.nav-haut #rail{
+  position:fixed;left:0;right:0;top:0;bottom:auto;width:auto;height:56px;
+  flex-direction:row;align-items:center;gap:18px;padding:0 20px;
+  background:var(--bg2);border-right:0;border-bottom:1px solid var(--hair);
+  animation:none;z-index:40}
+html.nav-haut #rail .brand{padding:0;gap:9px;flex:none}
+html.nav-haut #rail .brand img{width:26px;height:26px;border-radius:8px}
+html.nav-haut #rail .brand span{font-size:15.5px}
+html.nav-haut #rail nav{flex-direction:row;gap:4px}
+html.nav-haut #rail nav button{width:auto;height:36px;padding:0 14px;border-radius:11px;
+  font-size:14px;white-space:nowrap}
+html.nav-haut #rail nav button svg{width:17px;height:17px}
+html.nav-haut #rail .sp{flex:1}
+html.nav-haut #rail .who{border-top:0;padding:0;margin:0;flex:none;max-width:240px}
+html.nav-haut .menu{left:0}
+
+@media (min-width:900px){
+  html.nav-haut #app{padding:78px var(--gut) 60px var(--gut)}
+  /* une page de gestion n'a pas de raison d'être bridée à 1180 px :
+     c'est justement la largeur qui rend les tableaux lisibles */
+  html.nav-haut #app > *{max-width:1560px}
+}
+/* sous 900 px le rail reste caché et les onglets du bas reprennent la main,
+   sauf pour un compte d'établissement, qui n'en a pas */
+@media (max-width:899px){
+  html.nav-haut #rail{display:flex;height:52px;gap:10px;padding:0 12px;overflow-x:auto;
+    scrollbar-width:none}
+  html.nav-haut #rail::-webkit-scrollbar{display:none}
+  html.nav-haut #rail .brand span,html.nav-haut #rail .who{display:none}
+  html.nav-haut #rail nav button span{display:none}
+  html.nav-haut #rail nav button{padding:0 12px}
+  html.nav-haut #app{padding-top:64px}
+  html.nav-haut .tabs{display:none}
+}
+
+/* ══════════ calendrier ══════════
+   Une date de rendu se choisit sur un mois, pas dans une liste de délais :
+   « dans 7 jours » demande de calculer de tête, et tombe un dimanche une
+   fois sur sept. La même grille sert à consulter le mois : un jour chargé
+   porte le nombre de devoirs qui y tombent. */
+.cal{background:var(--card);box-shadow:var(--s1);border-radius:18px;padding:12px 12px 10px;
+  margin-bottom:14px}
+.menu .cal{box-shadow:none;background:var(--surf);margin:0 18px 12px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px 10px}
+.cal-h b{font-size:15px;font-weight:800;letter-spacing:-.3px;text-transform:capitalize}
+.cal-f{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+  background:var(--surf);color:var(--ink2)}
+.menu .cal-f{background:var(--card)}
+.cal-f svg{width:16px;height:16px}
+.cal-t,.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-t span{text-align:center;font-size:10.5px;font-weight:700;color:var(--soft);padding-bottom:4px}
+.cal-v{aspect-ratio:1}
+.cal-j{position:relative;aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;font-variant-numeric:tabular-nums;
+  transition:background .15s}
+.cal-j b{font-size:13.5px;font-weight:650;color:var(--ink2)}
+.cal-j.passe b{color:var(--soft);opacity:.75}
+.cal-j.auj{box-shadow:inset 0 0 0 1.5px var(--soft)}
+.cal-j.plein b{font-weight:800;color:var(--ink)}
+.cal-j i{font-style:normal;min-width:15px;height:15px;line-height:15px;border-radius:8px;
+  background:var(--leather);color:#FDF6EC;font-size:10px;font-weight:800;padding:0 4px}
+.cal-j.on{background:var(--ink)}
+.cal-j.on b{color:var(--bg)}
+.cal-j.on i{background:var(--bg);color:var(--ink)}
+@media (hover:hover){.cal-j:hover{background:var(--surf)}.menu .cal-j:hover{background:var(--card)}}
+
+/* liste ou mois : la bascule, toujours au même endroit */
+.vbasc{display:inline-flex;gap:2px;background:var(--surf);border-radius:11px;padding:3px;
+  margin-bottom:14px}
+.vbasc button{display:flex;align-items:center;gap:7px;height:32px;padding:0 13px;border-radius:8px;
+  font-size:13px;font-weight:700;color:var(--soft)}
+.vbasc button svg{width:15px;height:15px}
+.vbasc button.on{background:var(--card);color:var(--ink);box-shadow:var(--s1)}
+
+/* un titre de section dans une feuille : un mot, pas une phrase */
+.mlbl{display:flex;align-items:center;gap:8px;padding:2px 18px 8px;font-size:11.5px;
+  font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--soft)}
+.mlbl em{font-style:normal;font-weight:800;color:var(--ink2);letter-spacing:0}
+
+/* le contenu d'un devoir, dans sa feuille */
+.cchif{display:flex;align-items:center;gap:10px;padding:2px 18px 12px;flex-wrap:wrap}
+.cchif > div{background:var(--surf);border-radius:13px;padding:9px 13px;min-width:92px}
+.cchif b{display:block;font-size:18px;font-weight:800;letter-spacing:-.5px}
+.cchif span{font-size:11.5px;color:var(--soft)}
+.cedit{margin-left:auto;display:flex;align-items:center;gap:8px;height:40px;padding:0 15px;
+  border-radius:13px;background:var(--surf);font-size:13.5px;font-weight:700;color:var(--ink2)}
+.cedit svg{width:16px;height:16px}
