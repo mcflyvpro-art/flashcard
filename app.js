@@ -74,6 +74,17 @@ let board = { rows: null, err: 0, range: 7 };
 let shared = null;            // paquet ouvert par un lien de consultation
 let duelRun = null;           // défi en cours de partie
 let groupTab = 'lib';         // onglet courant de la bibliothèque du groupe
+/* Où l'on regarde, et donc où l'on publie. null = mes lecteurs (les amis
+   acceptés), sinon l'identifiant d'un club. La base sait déjà cloisonner
+   — library.group_id et duels.group_id existent, et leurs règles de
+   lecture s'appuient dessus — mais rien ne les renseignait : tout partait
+   donc avec group_id nul, c'est-à-dire à tous les amis, sans qu'on ait
+   jamais eu le choix. */
+let scope = null;
+const scopeName = () => {
+  const g = (groups || []).find(x => x.id === scope);
+  return g ? g.name : 'Mes lecteurs';
+};
 let mates = null, asks = null;   // amis acceptés, demandes reçues
 let me = null;                   // mon profil public : pseudo
 let groups = null, groupOf = null;  // mes groupes, et celui qu'on regarde
@@ -168,6 +179,9 @@ function pushHist(id, mode, pct) {
   if (db.hist[k].length > 24) db.hist[k].shift();
   save();
   api('/rest/v1/sessions', 'POST', [{ user_id: auth.uid, deck_id: String(id), mode, pct }]).catch(() => {});
+  /* Une séance vient de se terminer : c'est le seul moment où proposer
+     l'écran d'accueil a du sens, l'app vient de servir à quelque chose. */
+  maybeAskInstall();
   return db.hist[k];
 }
 const histOf = (id, mode) => db.hist[id + ':' + mode] || [];
@@ -202,6 +216,12 @@ async function api(path, method = 'GET', body, extra = {}) {
   return r.status === 204 ? null : r.json().catch(() => null);
 }
 function keepSession(j) {
+  /* Le seul endroit par lequel passe TOUT changement de compte : connexion,
+     inscription, renouvellement de jeton. Si l'identifiant change, c'est
+     quelqu'un d'autre — on efface donc ce que l'écran gardait du précédent.
+     Mettre ce nettoyage dans le formulaire de connexion aurait laissé
+     passer les autres chemins ; ici, aucun ne l'évite. */
+  if (auth && auth.uid && j.user && auth.uid !== j.user.id) resetSession();
   saveAuth({
     token: j.access_token, refresh: j.refresh_token,
     exp: Date.now() + (j.expires_in || 3600) * 1000,
@@ -271,7 +291,7 @@ function sessionLost() {
   if (!auth) return;
   flushSave();
   saveAuth(null);
-  view = { name: 'login' }; menu = null; study = null; quiz = null;
+  resetSession();
   animate = true; render();
   toast(I.lock, 'Session expirée, reconnecte-toi');
 }
@@ -442,6 +462,7 @@ async function pull() {
   if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
   if (study && prefs.simple !== wasSimple) prefs.simple = wasSimple;   // pas de bascule à chaud
   upsertProfile();
+  cerclePull();                 // rôle, coupures, classes : tout arrive ensemble
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   /* Ce qui attend d'être envoyé ne se fait pas écraser par la relecture :
@@ -545,7 +566,14 @@ const I = {
   split: '<path d="M12 3.6v6.8"/><path d="M12 10.4 6.6 15v5.4M12 10.4 17.4 15v5.4"/><circle cx="12" cy="3.6" r="0"/>',
   type: '<path d="M4.5 7.5V5.5h15v2M12 5.5v13M8.8 18.5h6.4"/>',
   skip: '<path d="M6 5.6l9 6.4-9 6.4z"/><path d="M18 5.6v12.8"/>',
-  brain: '<path d="M12 5.6v12.8"/><path d="M12 6.6a2.5 2.5 0 1 0-3.5 2.3 2.5 2.5 0 0 0-.9 4.6 2.5 2.5 0 0 0 4.4 1.7"/><path d="M12 6.6a2.5 2.5 0 1 1 3.5 2.3 2.5 2.5 0 0 1 .9 4.6 2.5 2.5 0 0 1-4.4 1.7"/>'
+  brain: '<path d="M12 5.6v12.8"/><path d="M12 6.6a2.5 2.5 0 1 0-3.5 2.3 2.5 2.5 0 0 0-.9 4.6 2.5 2.5 0 0 0 4.4 1.7"/><path d="M12 6.6a2.5 2.5 0 1 1 3.5 2.3 2.5 2.5 0 0 1 .9 4.6 2.5 2.5 0 0 1-4.4 1.7"/>',
+  school: '<path d="M12 4 2.8 8.4 12 12.8l9.2-4.4z"/><path d="M6.6 10.6v5.2c0 1.6 2.4 3 5.4 3s5.4-1.4 5.4-3v-5.2"/><path d="M21.2 8.4v5.4"/>',
+  users: '<circle cx="9.4" cy="8.6" r="3.4"/><path d="M3.4 19.4a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.4 3.4 0 0 1 0 6.6M17.6 14.4a5.6 5.6 0 0 1 3.4 5"/>',
+  build: '<path d="M4 20.4V9.6l7-4.2 7 4.2v10.8"/><path d="M2.4 20.4h19.2"/><rect x="8.2" y="12.4" width="5.6" height="8"/>',
+  mail2: '<rect x="3" y="5.4" width="18" height="13.2" rx="2.6"/><path d="m3.8 7 8.2 5.6L20.2 7"/>',
+  refresh: '<path d="M20 11.2a8 8 0 0 0-13.8-4.8L3.6 9"/><path d="M4 12.8a8 8 0 0 0 13.8 4.8L20.4 15"/><path d="M3.6 4.4V9h4.6M20.4 19.6V15h-4.6"/>',
+  cal: '<rect x="3.4" y="5" width="17.2" height="15.4" rx="3"/><path d="M3.4 9.6h17.2M8.2 3.4v3.4M15.8 3.4v3.4"/>',
+  money: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7v10M14.6 9.4a2.8 2.8 0 0 0-2.6-1.4c-1.6 0-2.6.9-2.6 2s.9 1.8 2.6 2.1c1.7.3 2.6 1 2.6 2.1s-1 2-2.6 2a2.8 2.8 0 0 1-2.6-1.4"/>'
 };
 const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
 const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
@@ -680,21 +708,136 @@ const plain = s => String(s == null ? '' : s)
 
 /* ---------- médias ----------
    Les fichiers partent dans le seau « media » du projet, sous un dossier au
-   nom du compte : les règles d'accès n'autorisent l'écriture que là. */
+   nom du compte : les règles d'accès n'autorisent ni l'écriture ni la
+   lecture ailleurs.
+
+   Le seau n'est plus public. Il l'était, et c'était le trou le plus net
+   du projet : la photo d'un cours ou l'enregistrement de la voix d'un
+   élève se lisait sans compte, par simple URL, indéfiniment — un
+   identifiant illisible n'a jamais été un contrôle d'accès.
+
+   Ce qu'on range dans la carte est donc un chemin, plus une adresse.
+   L'adresse est signée au moment de l'affichage et ne vaut que quelques
+   heures. Une valeur absolue (http…) est laissée telle quelle : une
+   carte écrite avant ce changement continue de s'afficher. */
+/* Une adresse du seau, quelle que soit sa forme, redonne son chemin. On
+   reconnaît aussi les anciennes adresses publiques : les cartes écrites
+   avant la fermeture du seau pointaient vers /object/public/…, qui ne
+   répond plus rien — plutôt que de les laisser cassées, on en extrait le
+   chemin et on les relit comme les autres. Une adresse étrangère au seau
+   (data:, blob:, un autre site) rend une chaîne vide : elle s'affiche
+   telle quelle, sans passer par ici. */
+const MOBJ = /\/storage\/v1\/object\/(?:public|authenticated|sign)\/media\/(.+?)(?:\?|$)/;
+const mediaPath = r => {
+  if (!r) return '';
+  const m = String(r).match(MOBJ);
+  if (m) return decodeURIComponent(m[1]);
+  return /^(https?:|data:|blob:)/i.test(r) ? '' : String(r);
+};
+/* Le seau est privé : un <img src> ne sait pas porter d'en-tête
+   d'autorisation. On récupère donc l'octet avec le jeton du compte, et on
+   donne à la balise une adresse locale. Un seul mécanisme, sans durée de
+   validité à surveiller — et le navigateur garde l'objet tant que
+   l'onglet vit. */
+const mediaCache = new Map();              // chemin -> adresse locale
+async function mediaUrl(path) {
+  const hit = mediaCache.get(path);
+  if (hit) return hit;
+  if (!auth) throw new Error('auth');
+  if (auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
+  const h = { apikey: SB.key, Authorization: 'Bearer ' + auth.token };
+  /* Deux chemins vers le même octet. Le direct d'abord ; si le serveur ne
+     le sert pas, on demande une adresse signée et on la suit. Garder les
+     deux coûte six lignes et évite de faire dépendre l'affichage d'une
+     seule route — celle-là, je ne peux pas l'essayer avant de livrer. */
+  let r = await fetch(`${SB.url}/storage/v1/object/authenticated/media/${path}`, { headers: h });
+  if (!r.ok) {
+    const s = await fetch(`${SB.url}/storage/v1/object/sign/media/${path}`, {
+      method: 'POST', headers: { ...h, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expiresIn: 3600 })
+    });
+    if (!s.ok) throw new Error('media:' + r.status + '/' + s.status);
+    const j = await s.json().catch(() => null);
+    /* la casse du champ a changé entre les versions de l'API : on accepte
+       les deux plutôt que de parier sur celle d'aujourd'hui */
+    const rel = j && (j.signedURL || j.signedUrl);
+    if (!rel) throw new Error('media:sign');
+    r = await fetch(SB.url + '/storage/v1' + (rel[0] === '/' ? rel : '/' + rel), { headers: h });
+    if (!r.ok) throw new Error('media:' + r.status);
+  }
+  const url = URL.createObjectURL(await r.blob());
+  mediaCache.set(path, url);
+  return url;
+}
+/* L'écran se peint d'un coup, la récupération prend un aller-retour :
+   l'image part donc sans adresse et la reçoit dès qu'elle arrive. */
+const mimg = (cls, r) => {
+  if (!r) return '';
+  const p = mediaPath(r);
+  return p ? `<img class="${cls}" data-m="${esc(p)}" alt="">`
+           : `<img class="${cls}" src="${esc(r)}" alt="">`;
+};
+function paintMedia(root) {
+  (root || document).querySelectorAll('img[data-m]').forEach(el => {
+    const p = el.dataset.m;
+    delete el.dataset.m;                   // une seule tentative par image
+    /* Une image qu'on n'a pas pu chercher s'efface au lieu de laisser le
+       carré cassé du navigateur : la fiche se lit encore, et le texte
+       reprend la place. La cause part dans la console, pas à l'écran. */
+    mediaUrl(p).then(u => { el.src = u; },
+                     e => { console.warn('média', p, String(e && e.message)); el.remove(); });
+  });
+}
+
+/* Le seau n'accepte qu'une liste de types. Safari ne rend pas « audio/mp4 »
+   mais « audio/mp4;codecs=… » : le seau comparait la chaîne entière, ne
+   reconnaissait rien, et refusait tous les enregistrements du micro sur
+   iPhone. On ne garde donc que le type, sans ses paramètres.
+   L'extension se déduit du type et non du nom : un enregistrement n'a pas
+   de nom de fichier, et celui qu'on lui inventait annonçait « .webm »
+   pour un contenu qui n'en était pas un. */
+const MEXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
+               'audio/webm': 'webm', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/ogg': 'ogg' };
+/* Vrai quand on est en train de composer ou d'éditer un livre destiné à
+   une classe : ses médias doivent être lisibles par les élèves. */
+const coursOuvert = () => !!(comp && comp.cours)
+  || !!(view.id && (deck(view.id) || {}).cours);
+
 async function upload(file) {
   if (!auth) throw new Error('auth');
   if (file.size > 7.5e6) throw new Error('big');
-  const ext = ((file.name || '').split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
-  const path = `${auth.uid}/${uid()}.${ext}`;
+  const mime = String(file.type || '').split(';')[0].trim().toLowerCase();
+  const named = ((file.name || '').split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const ext = MEXT[mime] || named || 'bin';
+  /* Ce qui est déposé depuis un livre de cours part sous « cours/<uid>/ » :
+     c'est le seul préfixe que la classe peut lire. Le reste de la
+     bibliothèque du professeur lui reste privé. */
+  const path = `${coursOuvert() ? 'cours/' : ''}${auth.uid}/${uid()}.${ext}`;
   if (auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
   const r = await fetch(`${SB.url}/storage/v1/object/media/${path}`, {
     method: 'POST',
     headers: { apikey: SB.key, Authorization: 'Bearer ' + auth.token,
-               'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
+               'Content-Type': mime || 'application/octet-stream', 'x-upsert': 'true' },
     body: file
   });
-  if (!r.ok) throw new Error('up');
-  return `${SB.url}/storage/v1/object/public/media/${path}`;
+  /* Le code de refus est repris dans le message : « impossible » sans
+     rien d'autre ne se diagnostique pas, et c'est toujours le même mot
+     pour un type refusé, un jeton périmé ou un seau plein. */
+  if (!r.ok) throw new Error('up:' + r.status);
+  return path;                             // le chemin, pas l'adresse : elle se résout à l'affichage
+}
+/* Dire ce qui a été refusé, et par qui. Un même « envoi impossible »
+   couvrait le type rejeté, le jeton périmé et la coupure réseau : trois
+   causes, trois gestes différents pour s'en sortir. */
+function upErr(x) {
+  const m = String((x && x.message) || '');
+  if (m === 'big') return 'Fichier trop lourd';
+  if (m === 'auth') return 'Reconnecte-toi pour envoyer';
+  const code = (m.match(/^up:(\d+)$/) || [])[1];
+  if (code === '415') return 'Ce format de fichier n’est pas accepté';
+  if (code === '413') return 'Fichier trop lourd pour le serveur';
+  if (code === '401' || code === '403') return 'Session expirée, reconnecte-toi';
+  return code ? `Envoi refusé (${code})` : 'Envoi impossible — réseau ?';
 }
 /* Choisit un fichier sans laisser d'input traîner dans le DOM. */
 function pickFile(accept) {
@@ -753,8 +896,14 @@ const TTS = typeof speechSynthesis !== 'undefined';
 const LANGS = [['', 'Aucune'], ['fr-FR', 'Français'], ['it-IT', 'Italien'],
                ['en-GB', 'Anglais'], ['es-ES', 'Espagnol'], ['de-DE', 'Allemand']];
 let player = null;
-function play(url) {
+/* Le son porte un chemin comme l'image : on le signe avant de le jouer.
+   L'appui est déjà passé quand l'adresse arrive, mais c'est un
+   aller-retour, pas une attente — et le navigateur garde l'autorisation
+   de jouer accordée par le geste. */
+async function play(ref) {
   try {
+    const p = mediaPath(ref);
+    const url = p ? await mediaUrl(p) : ref;
     if (player) player.pause();
     player = new Audio(url);
     player.play().catch(() => {});
@@ -1154,7 +1303,9 @@ function bumpToday() {
 function addDeck(name, cards, subject) {
   const d = { id: uid(), name: (name || '').trim() || 'Paquet', subject: subject || '',
               hidden: false, pos: -Date.now() / 1000 | 0,
-              cards: cards.map(c => ({ id: uid(), f: c.f, b: c.b })) };
+              /* un identifiant fourni est gardé : c'est ainsi qu'un devoir
+                 reste reconnaissable une fois chez l'élève */
+              cards: cards.map(c => ({ id: c.id || uid(), f: c.f, b: c.b })) };
   db.decks.unshift(d); saveDeck(d); return d;
 }
 /* ---------- opérations sur les paquets ----------
@@ -1280,7 +1431,7 @@ function importPayload(p, fresh) {
     if (ex) {
       snapVersion(ex, 'avant réimport');
       ex.subject = k.subject || ex.subject;      // sans matière à l'import : on garde la sienne
-      ex.cards = cards.map(c => ({ id: uid(), f: c.f, b: c.b }));
+      ex.cards = cards.map(c => ({ id: c.id || uid(), f: c.f, b: c.b }));
       last = ex; dirty[ex.id] = 1;
     } else last = addDeck(fresh ? freeName((k.name || 'Paquet').trim() || 'Paquet') : k.name, cards, k.subject);
   }
@@ -1404,7 +1555,11 @@ window.addEventListener('focus', () => livePull(true));
 function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
-              group: groupView, shared: sharedView, duel: duelView,
+              group: groupView, shared: sharedView, duel: duelView, legal: legalView, mod: modView,
+              classes: classesView, classe: classeView, maclasse: maClasseView,
+              prof: profView, profclasse: profClasseView, profeleve: profEleveView,
+              ref: refView,
+              admin: adminView,
               commu: commuView, friends: friendsView, groups: groupsView,
               duels: duelsView, library: libraryView, board: boardView };
   $.classList.remove('fade');
@@ -1413,6 +1568,7 @@ function render() {
   $.dataset.view = view.name;
   applyFont();
   paintRail();
+  paintMedia($);                               // les images posées sans adresse la reçoivent ici
   if (animate) $.classList.add('fade');
   if (pageDir) {
     const pg = document.getElementById('page');
@@ -1437,27 +1593,54 @@ function go(name, id, dir) {
 
 function paintRail() {
   let r = document.getElementById('rail');
-  if (!auth || view.name === 'login') { if (r) r.remove(); return; }
+  if (!auth || view.name === 'login') {
+    if (r) r.remove();
+    document.documentElement.classList.remove('nav-haut');
+    return;
+  }
   const on = view.name === 'settings' ? 'settings'
     : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats'
+    : /^(classes|classe|maclasse|prof|ref$|admin$)/.test(view.name) ? 'classes'
     : /commu|friends|groups|duels|library|board|shared/.test(view.name) ? 'commu' : 'home';
-  const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n;
+  /* Un compte d'établissement travaille, il ne révise pas : ni journal de
+     lecture, ni cercle des lecteurs. Quatre entrées, et elles passent en
+     barre horizontale — la page de gestion prend alors toute la largeur au
+     lieu de vivre dans les trois quarts restants. */
+  const boulot = atSchool() && myRole !== 'eleve';
+  const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n
+            + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v');
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
   if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
   r.dataset.sig = sig;
-  r.innerHTML = `
+  r.className = boulot ? 'haut' : '';
+  document.documentElement.classList.toggle('nav-haut', boulot);
+  const ent = (k, ic, nom, badge) => `<button class="${on === k ? 'on' : ''}" data-r="${k}">${
+    svg(ic)}<span>${nom}</span>${badge ? `<i class="icb">${badge}</i>` : ''}</button>`;
+  const classeNom = myRole === 'ref' ? 'Mon établissement'
+    : myRole === 'admin' ? 'Administration'
+    : isProf() ? 'Mes classes' : 'Ma classe';
+  r.innerHTML = boulot ? `
     <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
     <nav>
-      <button class="${on === 'home' ? 'on' : ''}" data-r="home">${svg(I.layers)}<span>Livres</span></button>
+      ${ent('classes', I.school, classeNom)}
+      ${ent('home', I.layers, 'Livres')}
+      ${ent('mail', I.mail, 'Courrier', mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0)}
+      ${ent('settings', I.gear, 'Réglages')}
+    </nav>
+    <div class="sp"></div>
+    <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`
+  : `
+    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
+    <nav>
+      ${ent('home', I.layers, 'Livres')}
     </nav>
     <div class="sp"></div>
     <nav>
-      <button class="${on === 'stats' ? 'on' : ''}" data-r="stats">${svg(I.chart)}<span>Journal</span></button>
-      <button class="${on === 'commu' ? 'on' : ''}" data-r="commu">${svg(I.user)}<span>Le cercle</span>${
-        (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
-      <button class="${on === 'mail' ? 'on' : ''}" data-r="mail">${svg(I.mail)}<span>Courrier</span>${
-        mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
-      <button class="${on === 'settings' ? 'on' : ''}" data-r="settings">${svg(I.gear)}<span>Réglages</span></button>
+      ${ent('stats', I.chart, 'Journal')}
+      ${isProf() || atSchool() || (classes || []).length ? ent('classes', I.school, classeNom) : ''}
+      ${ent('commu', I.user, 'Le cercle', (asks || []).length)}
+      ${ent('mail', I.mail, 'Courrier', mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0)}
+      ${ent('settings', I.gear, 'Réglages')}
     </nav>
     <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
   r.onclick = e => {
@@ -1465,6 +1648,13 @@ function paintRail() {
     if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
     if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
     if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
+    if (b.dataset.r === 'classes') {
+      if (isPupil()) { maClassePull(); return go('maclasse'); }
+      if (myRole === 'admin') { if (!accounts) accountsPull(); if (!adm.orgs) admPull(); return go('admin'); }
+      if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
+      if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
+      if (!classes) classesPull(); return go('classes');
+    }
     go(b.dataset.r === 'settings' ? 'settings' : 'home');
   };
 }
@@ -1928,8 +2118,10 @@ function deckView() {
         ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
       </div>
     </div>
-    <button class="cta read" data-act="study">${svg(I.play)}Lire${
-      !simpleMode() && dueCount(d) ? ` <b>${dueCount(d)}</b>` : ''}</button>
+    ${prof.comp && prof.comp.livre === d.id ? `<button class="cta read" data-act="pretour">
+        ${svg(I.share)}Donner ce devoir</button>`
+      : `<button class="cta read" data-act="study">${svg(I.play)}Lire${
+          !simpleMode() && dueCount(d) ? ` <b>${dueCount(d)}</b>` : ''}</button>`}
     <div class="acts">
       <button data-act="quizdeck">${svg(I.pen)}Récitation</button>
       <button data-act="mcq">${svg(I.grid)}QCM</button>
@@ -2080,6 +2272,186 @@ function bindReorder(d) {
 
 
 /* ---------- connexion ---------- */
+const PWMIN = 10;
+
+/* ══════════ le cadre : mentions, confidentialité, conditions ══════════
+   Trois textes, lisibles sans compte et hors ligne. Ils vivent dans le
+   code plutôt que sur un site à part pour deux raisons : il faut pouvoir
+   les lire AVANT de créer un compte — un consentement donné sans avoir pu
+   lire n'en est pas un — et l'app doit rester entière hors réseau.
+
+   Les passages entre ⟦crochets⟧ demandent une information que seul
+   l'éditeur possède. Tant qu'ils sont là, ces textes ne sont pas
+   opposables : ils sont une ossature juste, pas un document signé. Faire
+   relire le contrat de sous-traitance par un juriste avant tout
+   établissement — pas ces trois pages-ci, qui tiennent debout seules. */
+const EDITEUR = '⟦nom ou raison sociale de l’éditeur⟧';
+const CONTACT = '⟦adresse de contact⟧';
+const LEGALV = '12 septembre 2026';
+
+const LEGAL = {
+  cgu: ['Conditions d’utilisation', `
+**Ce que Folio est.** Une application de révision : tu écris des fiches,
+l’app décide quand te les représenter, et tu peux en prêter à des lecteurs
+que tu as toi-même ajoutés. Le service est fourni tel quel, sans garantie
+de résultat scolaire.
+
+**Âge minimum : 15 ans.** En France, c’est l’âge à partir duquel on peut
+consentir seul au traitement de ses données par un service en ligne.
+En dessous, il faut l’accord d’un parent ou du responsable légal : écris à
+${CONTACT} avant de créer un compte.
+
+**Ton compte est à toi.** Une adresse e-mail, un mot de passe d’au moins
+${PWMIN} caractères, et tu en es responsable. Ne le prête pas : ce qui est
+fait depuis ton compte est réputé fait par toi.
+
+**Ce que tu écris t’appartient.** Tes fiches restent tienne. En publiant un
+livre sur une étagère ou en le prêtant à un lecteur, tu autorises
+seulement les personnes concernées à le lire et à le copier chez elles —
+rien de plus, et tu peux le retirer quand tu veux.
+
+**Ce qui n’a pas sa place ici.** Contenu illégal, haineux, sexuel,
+harcelant ou qui expose la vie privée d’autrui ; contenu protégé par un
+droit d’auteur que tu n’as pas ; usurpation d’identité. Un compte qui s’en
+sert ainsi peut être suspendu sans préavis.
+
+**Ce que nous ne faisons pas.** Aucune publicité, aucun traceur, aucune
+revente de données, aucun profilage publicitaire. Ce n’est pas une
+promesse commerciale : c’est la description du code.
+
+**Interruptions.** Le service peut s’arrêter pour maintenance, ou changer.
+Tes données restent exportables. Si Folio devait fermer, tu serais prévenu
+avec un délai raisonnable pour les récupérer.
+
+**Droit applicable.** Droit français. En cas de différend, on cherche
+d’abord une solution à l’amiable en écrivant à ${CONTACT}.
+
+*Version du ${LEGALV}.*`],
+
+  vie: ['Confidentialité', `
+**Qui traite tes données.** ${EDITEUR}, éditeur de Folio, joignable à
+${CONTACT}. Lorsque Folio est déployé par un établissement scolaire, c’est
+l’établissement qui décide du traitement et nous n’agissons que sur ses
+instructions.
+
+**Ce qui est collecté, et pourquoi.**
+
+- *Ton adresse e-mail et ton mot de passe* — pour ouvrir la session et te
+  permettre de la récupérer. Le mot de passe n’est jamais lisible, même
+  par nous.
+- *Ton pseudo et ton nom affiché*, si tu en mets — pour que les lecteurs
+  que tu ajoutes sachent qui tu es. Le pseudo sert à t’ajouter sans faire
+  circuler d’adresse e-mail.
+- *Tes livres et tes fiches*, y compris les images et les sons que tu y
+  attaches — c’est le contenu du service.
+- *Ton historique de révision* : ce que tu as répondu, quand, juste ou
+  faux, en combien de temps — c’est ce qui permet au moteur de choisir
+  quand une fiche revient, et de tracer tes courbes.
+- *Tes réglages.*
+- *Les envois entre lecteurs* : les livres prêtés et le message qui
+  accompagne.
+- *L’usage de l’IA* : le nombre d’appels et leur coût, pour tenir les
+  plafonds de dépense. Le texte de tes cours n’est pas conservé.
+
+Aucun traceur publicitaire, aucune mesure d’audience, aucun cookie autre
+que ce qui est strictement nécessaire à ta session.
+
+**Sur quelle base.** L’exécution du service que tu demandes en créant un
+compte. Les fonctions de partage — étagère, défis, classement — ne
+s’activent que par ton geste, et tu peux revenir en arrière. En
+établissement, la base est la mission d’intérêt public de l’établissement.
+
+**Où vivent ces données.** Dans une base Supabase hébergée en Irlande
+(Amazon Web Services, région eu-west-1), dans l’Union européenne. Supabase
+Inc. et Amazon sont des sociétés de droit américain : un accès par une
+autorité américaine ne peut donc pas être exclu, même si les serveurs sont
+européens. L’application elle-même est servie par ⟦hébergeur du site⟧.
+
+**L’intelligence artificielle.** Si tu utilises le bouton de génération de
+fiches, le texte ou la photo que tu fournis est envoyé à l’API d’Anthropic,
+aux États-Unis, le temps de fabriquer les fiches. Ce texte ne sert pas à
+entraîner de modèle. Cette fonction ne part jamais toute seule : elle
+n’existe que si tu appuies.
+
+**Combien de temps.** Tes livres restent tant que ton compte existe. Un
+livre supprimé part en corbeille et s’efface définitivement au bout de 30
+jours. Les dix dernières versions d’un livre sont conservées. Ton
+historique de révision est gardé tant que ton compte vit, puisque c’est
+lui qui fait fonctionner le moteur. Tout disparaît à la suppression du
+compte.
+
+**Qui d’autre peut voir.** Personne, par défaut. Un autre compte ne voit
+tes fiches que si tu les lui as prêtées, ou si tu les as posées sur une
+étagère dont il fait partie. Ce n’est pas qu’une règle d’affichage : la
+base elle-même refuse de rendre les lignes d’un autre compte. Les images
+et les sons ne quittent jamais ton compte, même quand tu prêtes un livre :
+seul le texte des fiches voyage.
+
+**Tes droits.** Tu peux consulter, corriger, exporter et effacer tes
+données. L’export du journal se fait depuis l’écran Journal de lecture ;
+la suppression définitive du compte depuis Réglages, et elle est
+immédiate. Pour tout le reste, écris à ${CONTACT} ; réponse sous un mois.
+Tu peux aussi saisir la CNIL.
+
+**En cas de fuite.** Si des données venaient à être exposées, les
+personnes concernées et, le cas échéant, la CNIL seraient prévenues dans
+les délais prévus par le règlement.
+
+*Version du ${LEGALV}.*`],
+
+  mentions: ['Mentions légales', `
+**Éditeur.** ${EDITEUR}
+⟦statut juridique, adresse postale, et numéro SIREN s’il existe⟧
+Contact : ${CONTACT}
+
+**Directeur de la publication.** ⟦nom⟧
+
+**Hébergement de l’application.** ⟦hébergeur du site : nom et adresse⟧
+
+**Hébergement des données.** Supabase Inc., infrastructure Amazon Web
+Services, région eu-west-1 (Irlande, Union européenne).
+
+**Génération de fiches par IA.** Anthropic PBC (États-Unis), appelée
+uniquement lorsque tu le demandes.
+
+**Propriété.** Le nom Folio, son identité visuelle et le code de
+l’application appartiennent à l’éditeur. Les fiches écrites par les
+utilisateurs restent la propriété de leurs auteurs.
+
+**Signaler un contenu ou un problème.** ${CONTACT}
+
+*Version du ${LEGALV}.*`]
+};
+
+/* Le rendu : gras, italique, listes et paragraphes. Cinq lignes plutôt
+   qu'une bibliothèque, pour la même raison que le reste de l'app. */
+function legalHtml(src) {
+  return src.trim().split(/\n\s*\n/).map(b => {
+    const t = b.trim();
+    const fmt = s => esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+                           .replace(/\*([^*]+)\*/g, '<i>$1</i>');
+    if (/^- /.test(t)) {
+      return `<ul>${t.split(/\n(?=- )/).map(li =>
+        `<li>${fmt(li.replace(/^- /, '').replace(/\n\s+/g, ' '))}</li>`).join('')}</ul>`;
+    }
+    return `<p>${fmt(t.replace(/\n/g, ' '))}</p>`;
+  }).join('');
+}
+
+let legalTab = 'cgu';
+let legalBack = 'settings';        // d'où l'on vient : connexion ou réglages
+function legalView() {
+  const [title, body] = LEGAL[legalTab];
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="${legalBack === 'login' ? 'tolog' : 'settings'}"
+        aria-label="Retour">${svg(I.back)}</button><h1>${esc(title)}</h1></div>
+    <div class="page">
+      <div class="pills" id="lgTabs">${Object.entries(LEGAL).map(([k, v]) =>
+        `<button class="p${legalTab === k ? ' on' : ''}" data-legal="${k}">${esc(v[0])}</button>`).join('')}</div>
+      <div class="legal">${legalHtml(body)}</div>
+    </div>`;
+}
+
 let loginBusy = false, loginMode = 'in';
 function loginView() {
   const up = loginMode === 'up';
@@ -2100,9 +2472,13 @@ function loginView() {
           autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go">
         <button type="button" class="peek" id="pk">${svg(I.eye)}</button></div>
       <div class="lerr" id="le"></div>
+      ${up ? `<label class="lage"><input type="checkbox" id="age">
+        <span>J’ai 15 ans ou plus, et j’accepte les conditions d’utilisation.</span></label>` : ''}
       <button class="cta" id="go" type="submit">${up ? 'Créer le compte' : 'Se connecter'}${svg(I.arrow)}</button>
       ${up ? '' : `<button class="lnk" id="forgot" type="button">Mot de passe oublié</button>`}
     </form>
+    <div class="lleg">${Object.entries(LEGAL).map(([k, v]) =>
+      `<button data-legal="${k}">${esc(v[0])}</button>`).join('<i>·</i>')}</div>
   </div>`;
   document.getElementById('lmode').onclick = e => {
     const b = e.target.closest('[data-lm]'); if (!b) return;
@@ -2127,7 +2503,20 @@ function loginView() {
     e.preventDefault();
     if (loginBusy) return;
     if (!em.value.trim() || !pw.value) { err.textContent = 'Renseigne les deux champs'; return; }
-    if (up && pw.value.length < 6) { err.textContent = 'Mot de passe : 6 caractères minimum'; return; }
+    /* Six caractères se cassent hors ligne en quelques secondes. Dix est
+       le plancher, et il ne vaut que parce que le même est réglé côté
+       Supabase : ce contrôle-ci ne protège que la personne qui se sert du
+       formulaire, pas celle qui appelle l'API directement. */
+    if (up && pw.value.length < PWMIN) {
+      err.textContent = `Mot de passe : ${PWMIN} caractères minimum`; return;
+    }
+    /* La case n'est pas une formalité : en dessous de 15 ans, le
+       consentement d'un parent est requis, et on ne peut pas le recueillir
+       ici. Mieux vaut ne pas ouvrir le compte que de faire semblant. */
+    const age = document.getElementById('age');
+    if (up && age && !age.checked) {
+      err.textContent = 'Confirme que tu as 15 ans ou plus'; return;
+    }
     loginBusy = true; btn.disabled = true; err.textContent = '';
     btn.firstChild.textContent = up ? 'Création…' : 'Connexion…';
     try {
@@ -2144,7 +2533,7 @@ function loginView() {
       /* Un lien de partage ouvert alors qu'on n'était pas connecté attend
          dans l'adresse : c'est maintenant qu'il faut le suivre, sinon on
          atterrit sur l'accueil sans savoir ce qu'on venait voir. */
-      if (!consumeHash() && !consumeGoto()) go('home');
+      if (!consumeHash() && !consumeGoto()) { go('home'); accueil(); }
       maybeTour();
     } catch (x) {
       const m = String(x.message || '');
@@ -2185,8 +2574,14 @@ const hlp = k => `<button class="hq" data-help="${k}" aria-label="${esc(HELP[k][
 let subjEdit = null, subjColor = 'graphite', subjName = '';
 let cardEdit = null;
 function openSubject(id) {
+  const t0 = db.subjects.find(x => x.id === id);
+  /* Une matière posée par le professeur ne s'édite pas : elle sert de lien
+     entre son cours et les livres de toute la classe. La base refuse déjà
+     la modification comme l'effacement — ouvrir le formulaire ne ferait
+     qu'annoncer un enregistrement qui n'aurait pas lieu. */
+  if (t0 && t0.locked) return toast(I.lock, 'Matière du cours · posée par ton professeur');
   subjEdit = id;
-  const t = db.subjects.find(x => x.id === id);
+  const t = t0;
   subjColor = t ? t.color : COLORS[db.subjects.length % COLORS.length];
   subjName = t ? t.name : '';
   openMenu('subject');
@@ -2274,6 +2669,22 @@ function settingsView() {
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="help">${svg(I.bulb)}<span class="n">Aide</span>
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
+        ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
+          <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
+        ${myRole === 'ref' && atSchool() ? `<button class="sr flat" data-act="ref">${svg(I.build)}
+          <span class="n">Mon établissement</span>
+          <span class="c">${ref.board ? esc(ref.board.org) : ''}</span>${svg(I.arrow)}</button>` : ''}
+        ${isAdmin() ? `<button class="sr flat" data-act="admin">${svg(I.key)}
+          <span class="n">Administration</span>
+          <span class="c">${accounts ? accounts.length : ''}</span>${svg(I.arrow)}</button>` : ''}
+        ${iAmMod ? `<button class="sr flat" data-act="mod">${svg(I.warn)}
+          <span class="n">Signalements</span>
+          <span class="c">${mods.list ? (mods.list.length || '') : ''}</span>${svg(I.arrow)}</button>` : ''}
+        <button class="sr flat" data-act="blocked">${svg(I.lock)}
+          <span class="n">Comptes bloqués</span>
+          <span class="c">${blocks && blocks.length ? blocks.length : ''}</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-legal="cgu">${svg(I.file)}
+          <span class="n">Conditions et confidentialité</span>${svg(I.arrow)}</button>
       </div>
 
       <div class="lbl"><span>Quitter</span></div>
@@ -2473,7 +2884,7 @@ async function sendDeck(d, p) {
    pour que le petit repère au-dessus du gear reste à jour sans attendre. */
 async function mailPull() {
   try {
-    const rows = await api('/rest/v1/mail?select=id,from_name,deck_name,message,cards,created_at,read_at,added_at&order=created_at.desc');
+    const rows = await api('/rest/v1/mail?select=id,from_user,from_name,deck_name,message,cards,created_at,read_at,added_at&order=created_at.desc');
     mailbox.list = rows || [];
     mailbox.n = mailbox.list.filter(r => !r.read_at).length;
     mailbox.err = 0;
@@ -2659,7 +3070,7 @@ function sharedView() {
    par la version du jour. Chacun ne peut retirer que ses propres paquets. */
 async function libPull() {
   try {
-    lib.list = await api('/rest/v1/library?select=deck_id,user_id,who,name,subject,cards,n,updated_at'
+    lib.list = await api('/rest/v1/library?select=deck_id,user_id,who,name,subject,cards,n,group_id,updated_at'
       + '&order=updated_at.desc&limit=100') || [];
     lib.err = 0;
   } catch (e) { lib.err = 1; }
@@ -2667,15 +3078,16 @@ async function libPull() {
 }
 async function libPublish(d) {
   closeMenu();
+  const where = scopeName();
   const row = { deck_id: d.id, user_id: auth.uid, who: prefs.name || auth.email,
                 name: d.name, subject: d.subject ? subj(d.subject).name : '',
                 n: d.cards.length, cards: d.cards.map(c => [plain(c.f), plain(c.b)]),
-                updated_at: new Date().toISOString() };
+                group_id: scope, updated_at: new Date().toISOString() };
   try {
     await api('/rest/v1/library', 'POST', [row], { Prefer: 'resolution=merge-duplicates,return=minimal' });
     setMeta(d, { pub: 1 });
     lib.list = null; libPull();
-    toast(I.book, 'Dans la bibliothèque du cercle');
+    toast(I.book, 'Sur l’étagère · ' + where);
   } catch (e) { toast(I.x, 'Publication impossible'); }
 }
 async function libRemove(d) {
@@ -2707,7 +3119,7 @@ const DUELQ = 10;
 async function duelsPull() {
   try {
     const [ds, sc] = await Promise.all([
-      api('/rest/v1/duels?select=id,owner,who,name,total,cards,created_at&order=created_at.desc&limit=40'),
+      api('/rest/v1/duels?select=id,owner,who,name,total,cards,group_id,created_at&order=created_at.desc&limit=40'),
       api('/rest/v1/duel_scores?select=duel_id,user_id,who,score,ms')
     ]);
     duels.list = ds || []; duels.scores = sc || []; duels.err = 0;
@@ -2730,11 +3142,37 @@ async function duelMake(d) {
   try {
     await api('/rest/v1/duels', 'POST',
       [{ deck_id: d.id, owner: auth.uid, who: prefs.name || auth.email,
-         name: d.name, total: cards.length, cards }], { Prefer: 'return=minimal' });
+         name: d.name, total: cards.length, cards, group_id: scope }], { Prefer: 'return=minimal' });
     duels.list = null; groupTab = 'duel'; go('group'); duelsPull();
-    toast(I.flame, 'Défi lancé — ' + plur(cards.length, 'question'));
+    toast(I.flame, 'Défi lancé chez ' + scopeName() + ' — ' + plur(cards.length, 'question'));
   } catch (e) { toast(I.x, 'Défi impossible'); }
 }
+/* Le même défi, mais pour une classe entière : l'élève scolaire n'a ni
+   ami ni club, il n'a que ses camarades. Les questions sont tirées du
+   devoir lui-même, pas d'un livre du professeur. */
+async function duelClasse(aid, nom) {
+  const cid = prof.open; if (!cid) return;
+  let cartes = [];
+  try {
+    const [a] = await api('/rest/v1/assignments?select=cards,name&id=eq.'
+      + encodeURIComponent(aid)) || [];
+    cartes = ((a && a.cards) || []).map(c => Array.isArray(c)
+      ? [String(c[0] || '').trim(), String(c[1] || '').trim()]
+      : [String(c.f || '').trim(), String(c.b || '').trim()]);
+  } catch (e) { return toast(I.x, 'Impossible pour l’instant'); }
+  const uniq = [];
+  for (const [f, b] of cartes) if (b && !uniq.some(x => x[1] === b)) uniq.push([f, b]);
+  if (uniq.length < 4) { closeMenu(); return toast(I.x, 'Il faut 4 réponses différentes'); }
+  const q = shuffle(uniq.slice()).slice(0, DUELQ);
+  try {
+    await api('/rest/v1/duels', 'POST',
+      [{ deck_id: null, owner: auth.uid, who: prefs.name || auth.email,
+         name: nom, total: q.length, cards: q, class_id: cid }], { Prefer: 'return=minimal' });
+    closeMenu(); render();
+    toast(I.flame, 'Défi lancé · ' + plur(q.length, 'question'));
+  } catch (e) { toast(I.x, 'Défi impossible'); }
+}
+
 async function duelDrop(id) {
   duels.list = (duels.list || []).filter(x => x.id !== id);
   closeMenu(); render();
@@ -2806,7 +3244,7 @@ function duelView() {
    erreurs. On compare un volume de travail, pas un contenu. */
 async function boardPull(bg) {
   try {
-    board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range }) || [];
+    board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range, gid: scope }) || [];
     board.err = 0;
   } catch (e) { board.err = 1; }
   const sig = JSON.stringify(board.rows) + ':' + board.err;
@@ -2814,6 +3252,1599 @@ async function boardPull(bg) {
   board.sig = sig;
   if (same) return;
   if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { animate = false; render(); }
+}
+
+/* ══════════ signaler, bloquer ══════════
+   Des mineurs, du contenu écrit librement, et jusqu'ici aucun moyen de
+   dire « ça ne va pas » ni de couper le contact. C'était le dernier vrai
+   trou du volet protection : le reste du cloisonnement tenait déjà, celui-ci
+   n'existait pas du tout.
+
+   Deux gestes distincts, volontairement. Bloquer est immédiat, personnel
+   et réversible : je ne veux plus rien recevoir de cette personne, et la
+   coupure vaut dans les deux sens — un blocage à sens unique laisserait
+   celui qu'on fuit continuer de vous lire. Signaler ne coupe rien mais
+   laisse une trace instruite ailleurs, avec une copie du contenu :
+   sans elle, il suffirait d'effacer pour rendre la plainte incompréhensible. */
+let blocks = null;                 // liste des comptes que j'ai bloqués
+const isBlocked = id => !!(blocks || []).some(b => b.blocked_id === id);
+
+async function blocksPull() {
+  try { blocks = await api('/rest/v1/blocks?select=blocked_id,who,created_at&order=created_at.desc') || []; }
+  catch (e) { blocks = blocks || []; }
+}
+async function blockUser(id, who) {
+  closeMenu();
+  try {
+    await api('/rest/v1/rpc/block_user', 'POST', { other: id, who: shortWho(who || '') });
+    blocks = null; await blocksPull();
+    /* Ce que la personne avait posé doit disparaître tout de suite : la
+       base ne le rend déjà plus, mais l'écran garde sa dernière copie. */
+    lib.list = null; duels.list = null; mailbox.list = null; board.rows = null;
+    friends = null; mates = null; asks = null;
+    friendsPull(); libPull(); duelsPull(); mailPull(); boardPull();
+    toast(I.lock, (who ? shortWho(who) : 'Ce compte') + ' est bloqué');
+  } catch (e) { toast(I.x, 'Blocage impossible'); }
+  render();
+}
+async function unblockUser(id) {
+  try {
+    await api('/rest/v1/blocks?blocked_id=eq.' + encodeURIComponent(id), 'DELETE',
+      null, { Prefer: 'return=minimal' });
+    blocks = null; await blocksPull();
+    lib.list = null; duels.list = null; board.rows = null;
+    toast(I.check, 'Compte débloqué');
+  } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
+  paintMenu(); render();
+}
+
+/* Les motifs sont courts et nommés du point de vue de l'élève : « ça me
+   harcèle » se trouve plus vite que « atteinte aux personnes ». */
+const RAISONS = [
+  ['harass', 'Harcèlement, menaces'],
+  ['hate', 'Contenu haineux ou illégal'],
+  ['sexual', 'Contenu sexuel'],
+  ['private', 'Données personnelles de quelqu’un'],
+  ['spam', 'Spam ou publicité'],
+  ['copy', 'Copié sans autorisation'],
+  ['other', 'Autre']
+];
+let reportOn = null;               // { kind, id, user, label, snapshot }
+let reportWhy = '';
+
+function openReport(kind, id, user, label, snapshot) {
+  reportOn = { kind, id: String(id || ''), user: user || null, label: label || '', snapshot: snapshot || {} };
+  reportWhy = '';
+  openMenu('report');
+}
+async function sendReport() {
+  const r = reportOn, note = (document.getElementById('rnote') || {}).value || '';
+  if (!r || !reportWhy) return;
+  closeMenu();
+  try {
+    await api('/rest/v1/reports', 'POST', [{
+      reporter: auth.uid, kind: r.kind, target_id: r.id, target_user: r.user,
+      reason: reportWhy, note: note.slice(0, 500), snapshot: r.snapshot
+    }], { Prefer: 'return=minimal' });
+    toast(I.check, 'Signalement envoyé');
+  } catch (e) { toast(I.x, 'Envoi impossible'); }
+  reportOn = null; reportWhy = '';
+}
+
+function reportSheet(w) {
+  const r = reportOn;
+  if (!r) { menu = null; return; }
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">
+      <div class="mhd">${svg(I.warn)}<span class="mhx"><b>Signaler</b>
+        <span class="msub">${esc(r.label || 'Ce contenu')} — le contenu est joint au signalement,
+          même s’il est effacé ensuite. Rien n’est envoyé à la personne visée.</span></span></div>
+      <div class="rlist">${RAISONS.map(([k, t]) =>
+        `<button class="mi${reportWhy === k ? ' on' : ''}" data-why="${k}">
+          ${svg(reportWhy === k ? I.check : I.arrow)}${t}</button>`).join('')}</div>
+      <input class="tok" id="rnote" placeholder="Précision (facultatif)" maxlength="500">
+      <button class="mi" data-mact="rsend" ${reportWhy ? '' : 'disabled'}
+        style="justify-content:center;font-weight:700">${svg(I.share)}Envoyer le signalement</button>
+      ${r.user ? `<div class="msep"></div>
+        <button class="mi warn" data-mact="rblock">${svg(I.lock)}<span>Bloquer aussi ce compte</span></button>` : ''}
+    </div>`;
+  mountMenu(w);
+}
+
+/* La liste des comptes coupés, pour pouvoir revenir en arrière : un
+   blocage qu'on ne peut pas défaire est une punition, pas un réglage. */
+function blockedSheet(w) {
+  const l = blocks || [];
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">
+      <div class="mhd">${svg(I.lock)}<span class="mhx"><b>Comptes bloqués</b>
+        <span class="msub">Ils ne voient plus rien de toi, et toi non plus.</span></span></div>
+      ${!l.length ? `<div class="note" style="padding:4px 18px 14px">Aucun compte bloqué.</div>`
+        : `<div class="mscroll">${l.map(b => `<button class="mi" data-unblock="${esc(b.blocked_id)}">
+             ${svg(I.redo)}<span>${esc(b.who || 'Un compte')}</span>
+             <span class="tail">Débloquer</span></button>`).join('')}</div>`}
+    </div>`;
+  mountMenu(w);
+}
+
+/* ══════════ la console de modération ══════════
+   Elle n'apparaît que pour les comptes inscrits dans la table des
+   modérateurs. Ce qu'elle montre, ce sont les signalements — qui portent
+   chacun leur copie du contenu — et rien d'autre : un modérateur n'obtient
+   aucun accès aux bibliothèques ni au courrier. C'est précisément à ça que
+   sert la copie jointe, et c'est ce qui permet de juger sans ouvrir la vie
+   privée de tout le monde à quelqu'un.
+
+   Deux réponses seulement. Masquer, quand le contenu n'a pas sa place ;
+   rien à signaler, qui rend visible ce que le compteur avait retiré. Une
+   suspension de compte ne se décide pas depuis un téléphone à minuit :
+   elle reste un geste manuel, tracé ailleurs. */
+let iAmMod = false;
+let mods = { list: null, err: 0, seen: 0 };
+
+async function modCheck() {
+  try { iAmMod = !!(await api('/rest/v1/rpc/is_mod', 'POST', {})); }
+  catch (e) { iAmMod = false; }
+}
+async function modPull() {
+  try {
+    mods.list = await api('/rest/v1/reports?select=id,kind,target_id,target_user,reason,note,'
+      + 'snapshot,status,created_at&status=eq.open&order=created_at.desc&limit=60') || [];
+    mods.err = 0;
+  } catch (e) { mods.err = 1; }
+  if (view.name === 'mod') { animate = false; render(); }
+  if (view.name === 'settings') { animate = false; render(); }
+}
+async function modAct(id, act) {
+  closeMenu();
+  try {
+    await api('/rest/v1/rpc/mod_act', 'POST', { rid: id, act });
+    mods.list = (mods.list || []).filter(r => r.id !== id);
+    toast(I.check, act === 'hide' ? 'Contenu masqué' : 'Signalement classé');
+  } catch (e) { toast(I.x, 'Action impossible'); }
+  render();
+}
+
+const RNAME = Object.fromEntries(RAISONS);
+const KNAME = { mail: 'Courrier', library: 'Étagère', duel: 'Défi', profile: 'Compte' };
+
+/* La copie jointe s'affiche telle qu'elle a été prise : c'est la pièce du
+   dossier, pas un aperçu à rafraîchir. */
+function snapHtml(s) {
+  if (!s || typeof s !== 'object') return '';
+  const line = (k, v) => `<div class="sl"><i>${esc(k)}</i><span>${esc(v)}</span></div>`;
+  let out = '';
+  for (const [k, v] of Object.entries(s)) {
+    if (k === 'cartes') continue;
+    if (v) out += line(k, String(v).slice(0, 300));
+  }
+  const c = s.cartes;
+  if (Array.isArray(c) && c.length) {
+    out += `<div class="scards">${c.slice(0, 12).map(x => `<div class="pr">
+      <span class="a">${esc(cf(x))}</span>${svg(I.arrow)}<span class="b">${esc(cb(x))}</span></div>`).join('')}
+      ${c.length > 12 ? `<div class="note">…et ${c.length - 12} autres</div>` : ''}</div>`;
+  }
+  return out;
+}
+
+function modView() {
+  const l = mods.list;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Signalements</h1></div>
+    <div class="page">
+      ${!l ? `<div class="empty">${svg(I.warn)}<p>${mods.err ? 'Liste indisponible' : 'Chargement…'}</p></div>`
+      : !l.length ? `<div class="empty">${svg(I.check)}<p><b>Rien à traiter</b>Tous les signalements sont classés.</p></div>`
+      : `<div class="note" style="padding:0 0 14px">Un contenu signalé par deux comptes différents est déjà
+           masqué automatiquement. Ce qui suit attend une décision.</div>
+         ${l.map(r => `<div class="rep">
+           <div class="rh"><b>${esc(KNAME[r.kind] || r.kind)}</b>
+             <i>${esc(RNAME[r.reason] || r.reason)}</i>
+             <span>${timeAgo(r.created_at)}</span></div>
+           ${r.note ? `<div class="rn">${svg(I.quote)}<p>${esc(r.note)}</p></div>` : ''}
+           <div class="rs">${snapHtml(r.snapshot)}</div>
+           <div class="rb">
+             <button data-modact="clear" data-rid="${r.id}">${svg(I.check)}Rien à signaler</button>
+             <button class="warn" data-modact="hide" data-rid="${r.id}">${svg(I.eyeoff)}Masquer</button>
+           </div>
+         </div>`).join('')}`}
+    </div>`;
+}
+
+/* ══════════ la console d'administration ══════════
+   Un administrateur gère des accès, il ne lit pas les fiches des élèves.
+   Cet écran ne montre donc que ce qu'il faut pour reconnaître quelqu'un et
+   décider de son rôle : pseudo, adresse, date d'arrivée, nombre de livres.
+   Aucun contenu, aucune progression, aucun courrier.
+
+   Le rôle ne se change pas en écrivant dans une table — elle n'a aucune
+   politique d'écriture, exprès. Il passe par une fonction qui vérifie
+   elle-même qui appelle, et qui refuse qu'on se retire son propre rôle :
+   sans cette garde, le dernier administrateur se verrouille dehors et
+   plus personne ne peut rendre la main. */
+let accounts = null, accOpen = null;
+const ROLES = { eleve: 'Élève', prof: 'Professeur',
+                ref: 'Référent d’établissement', admin: 'Éditeur' };
+
+async function accountsPull() {
+  try { accounts = await api('/rest/v1/rpc/admin_accounts', 'POST', {}) || []; }
+  catch (e) { accounts = []; }
+  if (view.name === 'admin') { animate = false; render(); }
+}
+async function setRole(id, role) {
+  closeMenu();
+  try {
+    await api('/rest/v1/rpc/set_role', 'POST', { cible: id, nouveau: role });
+    accounts = null; await accountsPull();
+    toast(I.check, ROLES[role] + ' · rôle enregistré');
+  } catch (e) {
+    const m = String((e && e.message) || '');
+    toast(I.x, /propre rôle/.test(m) ? 'On ne retire pas son propre rôle'
+      : /autoris/.test(m) ? 'Réservé aux administrateurs' : 'Changement impossible');
+  }
+  render();
+}
+
+/* L'éditeur ne gère pas un établissement : il les vend et les tient. Ce
+   qu'il regarde n'est donc ni une classe ni un élève, c'est une ligne par
+   établissement — combien de comptes ouverts, combien s'en servent
+   vraiment, et ce que l'IA coûte. L'écart entre « ouverts » et « venus »
+   est la seule chose qui dise si un déploiement a pris ou non, et c'est ce
+   qu'il faut lire en premier.
+
+   Pas de coloration, pas d'animation, deux tableaux : c'est un écran qu'on
+   ouvre pour décider, pas pour s'y attarder. */
+let adm = { orgs: null, etat: null, tab: 'orgs' };
+
+async function admPull() {
+  try {
+    const [o, e] = await Promise.all([
+      api('/rest/v1/rpc/admin_orgs', 'POST', {}),
+      api('/rest/v1/rpc/admin_etat', 'POST', {})
+    ]);
+    adm.orgs = o || []; adm.etat = (e || [])[0] || null;
+  } catch (x) { adm.orgs = adm.orgs || []; }
+  if (view.name === 'admin') { animate = false; render(); }
+}
+const euros = c => (Math.round(+c || 0) / 100).toFixed(2).replace('.', ',') + ' €';
+
+function adminView() {
+  const l = accounts, o = adm.orgs, e = adm.etat;
+  const par = r => (l || []).filter(x => x.role === r);
+  const onglet = (k, n) => `<button class="otab ${adm.tab === k ? 'on' : ''}" data-atab="${k}">${n}</button>`;
+  const kc = (v, lab, cls) => `<div class="kc ${cls || ''}"><b>${v}</b><span>${lab}</span></div>`;
+
+  const ligneOrg = x => {
+    const ouverts = (x.eleves || 0) + (x.profs || 0) + (x.refs || 0);
+    const venus = Math.max(0, ouverts - (x.jamais_venus || 0));
+    const pris = ouverts ? Math.round(venus / ouverts * 100) : 0;
+    return `<div class="rrow">
+      <span class="c1"><b>${esc(x.name)}</b><i>${esc(x.ville || '')}${
+        x.uai ? ' · ' + esc(x.uai) : ''}</i></span>
+      <span class="c2">${x.classes} classes · ${x.eleves} él. · ${x.profs} prof.</span>
+      <span class="c3">${venus} / ${ouverts} <em class="rl ${
+        pris < 25 ? 'jamais' : pris < 60 ? 'vide' : ''}">${pris} % venus</em></span>
+      <span class="c4">${x.actifs7} actifs 7 j · ${x.actifs30} sur 30 j</span>
+      <span class="c5">${euros(x.cents_mois)} ce mois${
+        +x.cents_total > +x.cents_mois ? ' · ' + euros(x.cents_total) + ' au total' : ''}</span>
+    </div>`;
+  };
+  const ligneCpt = a => `<button class="rrow" data-account="${esc(a.id)}">
+    <span class="c1"><b>${esc(a.name || a.handle || a.email)}</b><i>@${esc(a.handle || '')}</i></span>
+    <span class="c2">${esc(a.email)}</span>
+    <span class="c3"><em class="rl ${esc(a.role)}">${esc(ROLES[a.role] || a.role)}</em></span>
+    <span class="c4">${plur(+a.livres, 'livre')}</span>
+    <span class="c5">${a.bloque ? 'modère les signalements' : ''}</span></button>`;
+
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button>
+      <h1>Administration</h1></div>
+    <div class="page dense">
+      ${!l ? `<div class="empty">${svg(I.build)}<p>Chargement…</p></div>`
+      : !l.length ? `<div class="empty">${svg(I.lock)}<p><b>Réservé à l’éditeur</b>
+          Ce compte n’a pas ce rôle.</p></div>`
+      : `${e ? `<div class="kpi six">
+           ${kc(e.orgs, 'établissements')}${kc(e.comptes, 'comptes')}
+           ${kc(e.hors_etab, 'hors établissement')}${kc(e.actifs7, 'actifs cette semaine')}
+           ${kc(euros(e.cents_mois), 'd’IA ce mois')}
+           ${kc(e.signalements, 'signalements', e.signalements ? 'ko' : '')}
+         </div>` : ''}
+         <div class="rtabs">${onglet('orgs', 'Établissements')}${onglet('cpt', 'Comptes')}</div>
+         ${adm.tab === 'orgs' ? `
+           <div class="note" style="padding:0 0 12px">L’écart entre comptes ouverts et comptes
+             venus dit si le déploiement a pris. En dessous de 25 %, l’établissement n’a pas
+             distribué le lien — c’est un problème de terrain, pas de produit.</div>
+           ${!o ? `<div class="card2"><div class="note">Chargement…</div></div>`
+             : !o.length ? `<div class="empty">${svg(I.build)}<p><b>Aucun établissement</b></p></div>`
+             : `<div class="rtable">
+                 <div class="rrow tete"><span class="c1">Établissement</span>
+                   <span class="c2">Effectifs</span><span class="c3">Comptes venus</span>
+                   <span class="c4">Usage réel</span><span class="c5">Coût IA</span></div>
+                 ${o.map(ligneOrg).join('')}</div>`}
+           <div class="note" style="padding:6px 0 0">⚠ Le plafond d’IA est encore global à tous
+             les comptes (AI_BUDGET_USD), et non par établissement : un seul lycée actif l’épuise
+             et la fonctionnalité s’éteint pour tout le monde. À remplacer avant la première vente.</div>`
+         : `<div class="note" style="padding:0 0 12px">L’éditeur gère des accès. Il ne voit ni les
+             fiches, ni la progression, ni le courrier de personne.</div>
+           ${['admin', 'ref', 'prof', 'eleve'].map(r => par(r).length ? `
+             <div class="lbl"><span>${esc(ROLES[r] || r)}${par(r).length > 1 ? 's' : ''}</span>
+               <span>${par(r).length}</span></div>
+             <div class="rtable">${par(r).map(ligneCpt).join('')}</div>` : '').join('')}`}`}
+    </div>`;
+}
+
+function accountSheet(w) {
+  const a = (accounts || []).find(x => x.id === accOpen);
+  if (!a) { menu = null; return; }
+  const moi = a.id === auth.uid;
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">
+      <div class="mhd"><i class="av">${esc(initial(a.handle || a.name || a.email))}</i>
+        <span class="mhx"><b>${esc(a.name || a.handle || a.email)}</b>
+          <i>${esc(a.email)}${a.handle ? ' · @' + esc(a.handle) : ''}</i></span></div>
+      <div class="msep"></div>
+      ${Object.entries(ROLES).map(([k, n]) => `
+        <button class="mi${a.role === k ? ' on' : ''}" data-setrole="${k}" data-who="${esc(a.id)}"
+          ${moi && k !== 'admin' ? 'disabled' : ''}>
+          ${svg(a.role === k ? I.check : I.arrow)}${n}
+          ${k === 'admin' ? '<span class="tail">instruit les signalements</span>' : ''}</button>`).join('')}
+      ${moi ? `<div class="note" style="padding:6px 18px 12px">C’est ton compte : tu ne peux pas
+        te retirer ton propre rôle, sinon plus personne ne pourrait rendre la main.</div>` : ''}
+    </div>`;
+  mountMenu(w);
+}
+
+/* ══════════ rôles, classes, devoirs ══════════
+   Trois métiers dans la même app, et trois écrans différents. L'élève
+   reçoit et travaille ; le professeur distribue et suit ; l'administrateur
+   instruit les signalements. Personne ne voit les outils des autres — non
+   par discrétion, mais parce qu'une interface qui montre ce qu'on ne peut
+   pas faire n'apprend rien à personne.
+
+   Le rôle vient de la base, jamais du client : une valeur gardée ici ne
+   ferait qu'afficher des boutons, et la base refuserait de toute façon.
+   C'est bien elle qui décide. */
+let myRole = 'eleve';
+let classes = null;                 // mes classes (tenues ou rejointes)
+let classOf = null;                 // celle qu'on regarde
+
+/* ══════════ scolaire ou personnel ══════════
+   Folio sert deux publics dans la même app : quelqu'un qui révise pour lui,
+   et un élève inscrit par son établissement. Le second n'est pas le premier
+   avec moins de boutons — c'est un autre produit. Il n'a ni club, ni
+   annuaire ouvert, ni pseudo à choisir : son identité, sa classe et ses
+   matières lui sont données, et il ne peut ni les changer ni en sortir.
+
+   `school` répond à la seule question qui commande tout le reste : ce
+   compte appartient-il à un établissement ? `null` tant qu'on ne sait pas,
+   `false` quand on sait que non — la nuance compte, sinon l'écran s'affiche
+   en version personnelle une fraction de seconde avant de se corriger. */
+let school = null;                  // { org, classe, niveau, … } | false
+let team = null;                    // les professeurs de sa classe
+const atSchool = () => !!(school && school.org_id);
+const isPupil = () => atSchool() && myRole === 'eleve';
+
+async function schoolPull() {
+  try {
+    const [r] = await api('/rest/v1/rpc/my_school', 'POST', {}) || [];
+    school = r || false;
+  } catch (e) { school = false; }
+}
+async function teamPull() {
+  try { team = await api('/rest/v1/rpc/my_class_team', 'POST', {}) || []; }
+  catch (e) { team = []; }
+  if (view.name === 'classe' || view.name === 'classes') { animate = false; render(); }
+}
+let roster = null;                  // la liste d'une classe, côté professeur
+let workOpen = null, memberOpen = null;
+let asgs = null;                    // les devoirs de la classe regardée
+const isProf = () => myRole === 'prof' || myRole === 'admin';
+const isAdmin = () => myRole === 'admin';
+
+/* Le rôle, les coupures, les classes et les signalements arrivent
+   ensemble, et l'écran ne se repeint qu'une fois tout su. Lancés
+   séparément, chacun repeignait de son côté : les Réglages pouvaient
+   s'afficher avant qu'on sache si le compte est administrateur, et
+   l'entrée manquait alors sans aucune raison visible. C'est exactement ce
+   qui faisait dire que le compte admin n'avait rien d'admin. */
+/* Chaque métier a son point d'arrivée. Un professeur qui ouvre l'app veut
+   savoir où en sont ses classes, pas relire sa bibliothèque ; un élève veut
+   ses devoirs. On ne le sait qu'après le rôle, donc on attend : rediriger
+   après coup ferait clignoter un écran qu'on n'a pas demandé. */
+async function accueil() {
+  await Promise.all([rolePull(), schoolPull()]);
+  if (view.name !== 'home') return;              // l'utilisateur est déjà parti ailleurs
+  if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
+  if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
+  if (isPupil()) { maClassePull(); return go('maclasse'); }
+}
+
+async function cerclePull() {
+  await Promise.all([rolePull(), schoolPull(), modCheck(), blocksPull()]);
+  await Promise.all([classesPull(), iAmMod ? modPull() : null]);
+  animate = false; render();
+}
+async function rolePull() {
+  try { myRole = (await api('/rest/v1/rpc/my_role', 'POST', {})) || 'eleve'; }
+  catch (e) { myRole = 'eleve'; }
+}
+async function classesPull() {
+  try {
+    /* Deux origines pour une même liste : celles qu'on tient et celles
+       qu'on a rejointes. Les règles de lecture rendent déjà les deux. */
+    classes = await api('/rest/v1/classes?select=id,name,level,year,code,owner&order=created_at.desc') || [];
+  } catch (e) { classes = classes || []; }
+  if (/^(classes|classe)$/.test(view.name)) { animate = false; render(); }
+}
+async function classPull(id) {
+  try {
+    const [m, a] = await Promise.all([
+      api(`/rest/v1/class_members?select=user_id,who,joined_at&class_id=eq.${id}&order=who.asc`),
+      api(`/rest/v1/assignments?select=id,name,n,due,created_at&class_id=eq.${id}&order=created_at.desc`)
+    ]);
+    roster = m || []; asgs = a || [];
+  } catch (e) { roster = roster || []; asgs = asgs || []; }
+  if (view.name === 'classe') { animate = false; render(); }
+}
+const classCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)),
+  b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
+
+async function makeClass(name, level) {
+  try {
+    const [c] = await api('/rest/v1/classes', 'POST',
+      [{ name: (name || '').trim() || 'Ma classe', level: (level || '').trim(),
+         year: scolaire(), code: classCode(), owner: auth.uid }],
+      { Prefer: 'return=representation' }) || [];
+    closeMenu(); classes = null; await classesPull();
+    if (c) { classOf = c.id; roster = null; asgs = null; classPull(c.id); go('classe'); }
+    toast(I.check, 'Classe créée · code ' + (c ? c.code : ''));
+  } catch (e) { toast(I.x, 'Création impossible'); }
+}
+/* L'année scolaire bascule en août, pas en janvier. */
+function scolaire() {
+  const d = new Date(), y = d.getFullYear();
+  return d.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+}
+async function joinClass(code) {
+  try {
+    await api('/rest/v1/rpc/join_class', 'POST',
+      { join_code: code, who: prefs.name || auth.email });
+    closeMenu(); classes = null; await classesPull();
+    toast(I.check, 'Classe rejointe');
+  } catch (e) { toast(I.x, 'Code inconnu'); }
+}
+async function dropMember(cid, uid2) {
+  try {
+    await api(`/rest/v1/class_members?class_id=eq.${cid}&user_id=eq.${uid2}`, 'DELETE',
+      null, { Prefer: 'return=minimal' });
+    roster = (roster || []).filter(m => m.user_id !== uid2);
+  } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
+  closeMenu(); render();
+}
+/* Donner un devoir, c'est envoyer une copie du livre : la bibliothèque du
+   professeur reste la sienne, et l'élève repart de zéro sur ces cartes —
+   la progression de quelqu'un d'autre ne veut rien dire chez lui. */
+async function giveWork(d, cid, days) {
+  const cards = d.cards.map(c => [plain(c.f), plain(c.b)]);
+  const due = new Date(Date.now() + (days || 7) * DAY).toISOString().slice(0, 10);
+  try {
+    await api('/rest/v1/assignments', 'POST',
+      [{ class_id: cid, name: d.name, cards, n: cards.length, due, created_by: auth.uid }],
+      { Prefer: 'return=minimal' });
+    closeMenu(); asgs = null; classPull(cid);
+    toast(I.check, plur(cards.length, 'page') + ' à rendre avant le ' + due.split('-').reverse().slice(0, 2).join('/'));
+  } catch (e) { toast(I.x, 'Envoi impossible'); }
+}
+/* L'élève ajoute le devoir à sa bibliothèque et son avancement remonte —
+   fait ou pas fait, et le pourcentage. Jamais le détail carte par carte. */
+/* Les cartes d'un devoir gardent un identifiant qui dit d'où elles
+   viennent : « a:<devoir>:<rang> ». Sans lui, les révisions de l'élève
+   remontent sous un identifiant tiré au hasard chez lui, et plus rien ne
+   permet de dire à son professeur quelle carte sa classe rate. Avec lui,
+   `prof_cartes` recoud les deux — et ne rend jamais que des comptes,
+   jamais qui s'est trompé. */
+async function takeWork(a) {
+  const cartes = (a.cards || []).map((c, i) => {
+    const [f, b] = Array.isArray(c) ? c : [c.f, c.b];
+    return { id: `a:${a.id}:${i}`, f, b };
+  });
+  const d = importPayload({ name: a.name, subject: '', cards: cartes }, true);
+  try {
+    await api('/rest/v1/assignment_progress', 'POST',
+      [{ assignment_id: a.id, user_id: auth.uid, who: prefs.name || auth.email, pct: 0 }],
+      { Prefer: 'resolution=merge-duplicates,return=minimal' });
+  } catch (e) {}
+  closeMenu();
+  if (d) go('deck', d.id);
+  toast(I.check, 'Devoir ajouté à ta bibliothèque');
+}
+
+/* Ce que le professeur a le droit de voir : combien ont rendu, et le taux
+   de réussite moyen. Pas le détail carte par carte, pas les horaires — la
+   différence entre suivre une classe et surveiller quelqu'un. */
+async function workProgress(id) {
+  const box = document.getElementById('wprog'); if (!box) return;
+  try {
+    const rows = await api('/rest/v1/assignment_progress?select=user_id,who,pct,done_at'
+      + '&assignment_id=eq.' + encodeURIComponent(id)) || [];
+    const total = (roster || []).length;
+    const faits = rows.filter(r => r.done_at || r.pct > 0);
+    const moy = faits.length
+      ? Math.round(faits.reduce((a, r) => a + (r.pct || 0), 0) / faits.length) : 0;
+    box.innerHTML = !total ? 'Aucun élève inscrit pour l’instant.'
+      : `<b>${faits.length} / ${total}</b> ${faits.length > 1 ? 'ont commencé' : 'a commencé'}`
+        + (faits.length ? ` · ${moy} % de réussite moyenne` : '')
+        + (total - faits.length ? `<br>${plur(total - faits.length, 'élève')} n’${
+            total - faits.length > 1 ? 'ont' : 'a'} pas encore ouvert.` : '');
+  } catch (e) { box.textContent = 'Suivi indisponible.'; }
+}
+
+const dueLabel = s => {
+  if (!s) return '';
+  const j = joursDici(s);
+  return j < 0 ? (j === -1 ? 'hier' : `il y a ${-j} jours`)
+       : j === 0 ? 'aujourd’hui' : j === 1 ? 'demain' : `dans ${j} jours`;
+};
+
+/* ══════════ « Ma classe », côté élève ══════════
+   Un seul écran, et rien qui ressemble à de la gestion. Ce qu'il y a à
+   faire d'abord — un devoir se rend, il ne se cherche pas —, puis qui lui
+   fait cours, puis les camarades qu'il peut ajouter. Aucun code à saisir,
+   aucune classe à quitter, aucun bouton qui échouerait s'il le pressait :
+   la base refuse déjà tout cela, l'écran n'a pas à le proposer. */
+let mates2 = null;                  // ses camarades de classe
+
+async function matesPull() {
+  try { mates2 = await api('/rest/v1/rpc/my_classmates', 'POST', {}) || []; }
+  catch (e) { mates2 = []; }
+  if (view.name === 'classe') { animate = false; render(); }
+}
+function maClassePull() {
+  if (school === null) schoolPull().then(() => { maClassePull(); animate = false; render(); });
+  if (school && school.class_id && !asgs) classPull(school.class_id);
+  if (!team) teamPull();
+  if (!mates2) matesPull();
+}
+
+function maClasseView() {
+  if (!school || !school.class_id) {
+    $.innerHTML = `
+      <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
+        <h1>Ma classe</h1></div>
+      <div class="page"><div class="empty">${svg(I.school)}<p><b>Aucune classe</b>
+        ${school === null ? 'Chargement…'
+          : 'Ton établissement ne t’a pas encore inscrit dans une classe. Préviens ton professeur principal.'}</p></div></div>`;
+    return;
+  }
+  const c = school;
+  const l = asgs || [];
+  /* Les devoirs en retard d'abord : c'est la seule chose qui presse. */
+  const retard = l.filter(a => a.due && Date.parse(a.due + 'T12:00:00') < Date.now());
+  const avenir = l.filter(a => !retard.includes(a));
+  const ligne = a => `<button class="sr flat${a.due && Date.parse(a.due + 'T12:00:00') < Date.now() ? ' tard' : ''}"
+      data-work="${esc(a.id)}">${svg(I.card)}
+    <span class="ml2"><span class="n">${esc(a.name)}</span>
+      <span class="sub">${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</span></span>
+    ${svg(I.arrow)}</button>`;
+  const cam = mates2 || [];
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${esc(c.classe)}</h1></div>
+    <div class="page">
+      <div class="ecole">${svg(I.school)}<span><b>${esc(c.org)}</b>
+        <i>${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''}${
+          c.effectif ? ' · ' + plur(c.effectif, 'élève') : ''}</i></span></div>
+
+      <div class="lbl"><span>Devoirs</span><span>${l.length || ''}</span></div>
+      ${!asgs ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !l.length ? `<div class="empty">${svg(I.card)}<p><b>Rien à faire</b>
+            Tes professeurs n’ont pas encore donné de devoir.</p></div>`
+        : `${retard.length ? `<div class="slist">${retard.map(ligne).join('')}</div>` : ''}
+           ${avenir.length ? `<div class="slist">${avenir.map(ligne).join('')}</div>` : ''}`}
+
+      <div class="lbl"><span>Mes professeurs</span><span>${team ? team.length : ''}</span></div>
+      ${!team ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !team.length ? `<div class="card2"><div class="note">Aucun cours renseigné.</div></div>`
+        : `<div class="profs">${team.map(t => `<div class="pf">
+            <i class="av sm">${esc(initial(t.teacher))}</i>
+            <span class="ml2"><span class="n">${esc(t.subject)}</span>
+              <span class="sub">${esc(t.teacher)}${t.principal ? ' · professeur principal' : ''}</span></span>
+            </div>`).join('')}</div>`}
+
+      <div class="lbl"><span>Ma classe</span><span>${cam.length || ''}</span></div>
+      ${!mates2 ? `<div class="card2"><div class="note">Chargement…</div></div>`
+        : !cam.length ? `<div class="card2"><div class="note">Tu es seul inscrit pour l’instant.</div></div>`
+        : `<div class="slist">${cam.map(m => `<div class="sr flat">
+            <i class="av sm">${esc(initial(m.name))}</i>
+            <span class="ml2"><span class="n">${esc(m.name)}</span>
+              <span class="sub">@${esc(m.handle || '')}</span></span>
+            ${m.lien === 'ok' ? `<button class="camo" data-mate="${esc(m.id)}">${svg(I.arrow)}</button>`
+              : m.lien ? `<span class="camw">demandé</span>`
+              : `<button class="camadd" data-camadd="${esc(m.id)}" data-camn="${esc(m.handle || '')}"
+                   aria-label="Ajouter ${esc(m.name)}">${svg(I.plus)}</button>`}
+            </div>`).join('')}</div>`}
+    </div>`;
+}
+
+/* ══════════ la console du référent d'établissement ══════════
+   Le référent n'est pas un professeur avec plus de classes. C'est la
+   personne qui, dans le lycée, ouvre les comptes, refait les mots de passe
+   oubliés et déplace un élève de la 2nde 3 à la 2nde 1 en octobre. Il
+   travaille sur un ordinateur, il connaît son métier, et ce qu'il veut
+   c'est voir et corriger vite — pas être accompagné.
+
+   Cet écran est donc écrit comme un outil de gestion, pas comme une app :
+   des tableaux denses, des colonnes alignées, la recherche toujours au même
+   endroit, aucune animation. On y tient six cents lignes à l'écran et on en
+   change une en trois clics. Rien n'y est joli, et ce n'est pas un oubli :
+   ce qu'on lui demande, c'est que ça marche.
+
+   Trois onglets, parce qu'il n'y a que trois questions : l'établissement
+   (où en est-on ?), les comptes (qui, et comment le corriger ?), les
+   classes (qui est où, et qui y enseigne ?). */
+let ref = { tab: 'etab', board: null, err: 0,
+            gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
+            classes: null, open: null, team: null,
+            who: null, service: null, form: null, trace: null };
+const PAGE_REF = 60;
+const ROLENOM = { eleve: 'Élève', prof: 'Professeur', ref: 'Référent', admin: 'Éditeur' };
+
+async function refBoard() {
+  try { const [r] = await api('/rest/v1/rpc/ref_dashboard', 'POST', {}) || []; ref.board = r || false; }
+  catch (e) { ref.board = false; ref.err = 1; }
+  if (view.name === 'ref') { animate = false; render(); }
+}
+async function refClasses() {
+  try { ref.classes = await api('/rest/v1/rpc/ref_classes', 'POST', {}) || []; }
+  catch (e) { ref.classes = []; }
+  if (view.name === 'ref') { animate = false; render(); }
+}
+/* La recherche repart toujours de la première page : garder la page 4 en
+   changeant le filtre donne un écran vide qu'on ne sait pas expliquer. */
+async function refPeople(reset) {
+  if (reset) ref.page = 0;
+  const n = ++ref.cherche;
+  try {
+    const rows = await api('/rest/v1/rpc/ref_people', 'POST',
+      { q: ref.q.trim(), qrole: ref.role, qclass: ref.cls,
+        lim: PAGE_REF, off: ref.page * PAGE_REF }) || [];
+    if (n !== ref.cherche) return;                 // une frappe plus récente a gagné
+    ref.gens = rows; ref.total = rows.length ? +rows[0].total : 0;
+  } catch (e) { if (n === ref.cherche) { ref.gens = []; ref.total = 0; } }
+  if (view.name === 'ref') { animate = false; render(); }
+}
+async function refTeam(cid) {
+  try { ref.team = await api('/rest/v1/rpc/ref_class_team', 'POST', { cid }) || []; }
+  catch (e) { ref.team = []; }
+  if (menu) paintMenu();
+}
+async function refService(uid) {
+  try { ref.service = await api('/rest/v1/rpc/ref_service', 'POST', { uid }) || []; }
+  catch (e) { ref.service = []; }
+  if (menu) paintMenu();
+}
+/* Le journal, affiché après coup : il n'a jamais à retarder l'écran, et
+   son absence n'empêche rien. On le lit directement — la table est déjà
+   fermée par sa politique, et personne ne peut y écrire depuis l'app. */
+async function refTrace() {
+  const box = document.getElementById('rtrace'); if (!box) return;
+  try {
+    const rows = await api('/rest/v1/ref_audit?select=acte,cible,created_at,detail'
+      + '&order=created_at.desc&limit=12') || [];
+    box.innerHTML = !rows.length
+      ? 'Aucune modification pour l’instant. Tout ce que tu changeras ici sera inscrit.'
+      : `<div class="rjour">${rows.map(r => `<div class="rj">
+          <b>${esc(r.acte)}</b>
+          <i>${esc(quoiTrace(r.detail))}</i>
+          <span>${timeAgo(r.created_at)}</span></div>`).join('')}</div>`;
+  } catch (e) { box.textContent = 'Journal indisponible.'; }
+}
+/* Le détail est du JSON, et le référent n'a pas à lire du JSON. */
+function quoiTrace(d) {
+  if (!d || typeof d !== 'object') return '';
+  if (d.avant && d.apres && typeof d.avant === 'object')
+    return `${d.avant.nom || ''} → ${d.apres.nom || d.avant.nom || ''}`;
+  if (d.avant || d.apres) return `${d.avant || '—'} → ${d.apres || '—'}`;
+  return [d.nom, d.classe, d.matiere, d.adresse, d.role && ROLENOM[d.role]]
+    .filter(Boolean).join(' · ');
+}
+
+function refPull() {
+  if (!ref.board) refBoard();
+  if (!ref.classes) refClasses();
+  if (!ref.gens) refPeople(true);
+}
+/* Une seule fonction pour tous les appels d'écriture : chacun renvoie le
+   message de la base, qui est déjà écrit pour être lu — « Cette classe
+   compte encore 28 élèves. Déplace-les d'abord. » vaut mieux que tout ce
+   que le client pourrait inventer. */
+async function refDo(rpc, args, bon) {
+  try {
+    const r = await api('/rest/v1/rpc/' + rpc, 'POST', args);
+    ref.board = null; ref.classes = null;
+    refBoard(); refClasses(); refPeople(false);
+    if (ref.open) refTeam(ref.open);
+    if (ref.who) refService(ref.who.id);
+    toast(I.check, bon);
+    return r;
+  } catch (e) {
+    const m = String((e && e.message) || '');
+    toast(I.x, m.slice(0, 90) || 'Impossible pour l’instant');
+    return null;
+  }
+}
+
+/* Un bouton de la feuille la repeint, et repeindre efface ce qui est tapé.
+   On relit donc les champs avant chaque repeinture : sans cela, choisir le
+   rôle en dernier effaçait l'adresse, et choisir l'adresse en dernier
+   effaçait le rôle — l'un ou l'autre, jamais les deux. */
+const lireChamps = map => {
+  const o = {};
+  for (const [k, id] of Object.entries(map)) {
+    const n = document.getElementById(id);
+    if (n) o[k] = n.value;            // absent = on garde ce qu'on avait
+  }
+  return o;
+};
+const lireNew = () => lireChamps({ mel: 'nmel', nom: 'nnom', pse: 'npse', pw: 'npw' });
+const lireClass = () => lireChamps({ nom: 'knom', niv: 'kniv', fil: 'kfil', pre: 'kpre' });
+
+function refView() {
+  const b = ref.board;
+  const onglet = (k, n) => `<button class="otab ${ref.tab === k ? 'on' : ''}" data-rtab="${k}">${n}</button>`;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${b ? esc(b.org) : 'Mon établissement'}</h1></div>
+    <div class="page dense">
+      <div class="rtabs">${onglet('etab', 'Établissement')}${onglet('gens', 'Comptes')}${onglet('cls', 'Classes')}</div>
+      ${ref.tab === 'etab' ? refEtab() : ref.tab === 'gens' ? refGens() : refCls()}
+    </div>`;
+  if (ref.tab === 'etab') refTrace();
+  const q = document.getElementById('rq');
+  if (q) {
+    q.addEventListener('input', () => { ref.q = q.value; clearTimeout(refView.t);
+      refView.t = setTimeout(() => refPeople(true), 220); });
+    if (ref.tab === 'gens' && document.activeElement !== q && ref.q) {
+      q.focus(); q.setSelectionRange(q.value.length, q.value.length);
+    }
+  }
+}
+
+/* ---------- onglet « Établissement » ---------- */
+function refEtab() {
+  const b = ref.board;
+  if (b === null) return `<div class="empty">${svg(I.build)}<p>Chargement…</p></div>`;
+  if (!b) return `<div class="empty">${svg(I.lock)}<p><b>Réservé au référent</b>
+    </p></div>`;
+  const kc = (n, lab, cls) => `<div class="kc ${cls || ''}"><b>${n}</b><span>${lab}</span></div>`;
+  /* Les trois chiffres du bas sont les seuls qui appellent une action. On
+     les met à part, et on dit quoi faire — pas seulement combien. */
+  const souci = (n, lab, quoi) => !n ? '' : `<div class="rsou">
+    <b>${n}</b><span>${lab}</span><i>${quoi}</i></div>`;
+  return `
+    <div class="rhead">
+      <div><b>${esc(b.org)}</b>
+        <i>${esc(b.ville || '')}${b.uai ? ' · UAI ' + esc(b.uai) : ''}${
+          b.kind ? ' · ' + esc(b.kind) : ''}</i></div>
+    </div>
+    <div class="kpi six">
+      ${kc(b.classes, 'classes')}${kc(b.eleves, 'élèves')}${kc(b.profs, 'professeurs')}
+      ${kc(b.services, 'services')}${kc(b.devoirs, 'devoirs donnés')}
+      ${kc(b.actifs7, 'ont révisé cette semaine', b.actifs7 ? '' : 'am')}
+    </div>
+    <div class="lbl"><span>Ce qui demande une décision</span></div>
+    ${!b.jamais_venus && !b.sans_classe && !b.classes_vides && !b.sans_pp
+      ? `<div class="card2"><div class="note">Rien à reprendre : tous les comptes sont
+          rattachés, toutes les classes ont des élèves et un professeur principal.</div></div>`
+      : `<div class="rsous">
+          ${souci(b.jamais_venus, 'comptes jamais utilisés',
+            'Ouverts, mais personne ne s’est connecté. C’est là que le déploiement se joue.')}
+          ${souci(b.sans_classe, 'élèves sans classe',
+            'Ils ne recevront aucun devoir tant qu’ils ne sont pas rattachés.')}
+          ${souci(b.classes_vides, 'classes vides',
+            'Créées mais sans aucun élève inscrit.')}
+          ${souci(b.sans_pp, 'classes sans professeur principal',
+            'Personne n’y est désigné référent pédagogique.')}
+        </div>`}
+    <div class="lbl"><span>Ouvrir un compte</span></div>
+    <div class="duo ghost gros">
+      <button data-act="refnew">${svg(I.plus)}Nouveau compte</button>
+      <button data-act="refnewclass">${svg(I.plus)}Nouvelle classe</button>
+    </div>
+    <div class="lbl"><span>Dernières modifications</span></div>
+    <div id="rtrace" class="note">Chargement du journal…</div>`;
+}
+
+/* ---------- onglet « Comptes » ---------- */
+function refGens() {
+  const l = ref.gens;
+  const pages = Math.ceil(ref.total / PAGE_REF) || 1;
+  const filtre = (k, n) => `<button class="p ${ref.role === k ? 'on' : ''}" data-rrole="${k}">${n}</button>`;
+  const ligne = g => `<button class="rrow" data-rwho="${esc(g.id)}">
+    <span class="c1"><b>${esc(g.name)}</b><i>@${esc(g.handle || '')}</i></span>
+    <span class="c2">${esc(g.email)}</span>
+    <span class="c3"><em class="rl ${esc(g.role)}">${esc(ROLENOM[g.role] || g.role)}</em></span>
+    <span class="c4">${g.classe ? esc(g.classe) : g.matiere ? esc(g.matiere)
+      : `<em class="rl vide">sans classe</em>`}</span>
+    <span class="c5">${g.jamais ? '<em class="rl jamais">jamais venu</em>'
+      : timeAgo(g.derniere)}</span></button>`;
+  return `
+    <div class="rbar">
+      <div class="fld addf"><input id="rq" type="search" placeholder="Nom, pseudo ou adresse"
+        autocomplete="off" spellcheck="false" value="${esc(ref.q)}" aria-label="Chercher un compte"></div>
+      <div class="pills">${filtre('', 'Tous')}${filtre('eleve', 'Élèves')}${filtre('prof', 'Professeurs')}${
+        filtre('ref', 'Référents')}</div>
+    </div>
+    <div class="rcount">${ref.total ? `<b>${ref.total}</b> compte${ref.total > 1 ? 's' : ''}${
+        ref.cls ? ' dans cette classe' : ''}${ref.q ? ' pour « ' + esc(ref.q.trim()) + ' »' : ''}`
+      : l ? 'Aucun résultat' : 'Recherche…'}
+      ${ref.cls ? `<button class="lnk" data-rclsoff="1">retirer le filtre de classe</button>` : ''}</div>
+    ${!l ? `<div class="empty">${svg(I.users)}<p>Chargement…</p></div>`
+      : !l.length ? `<div class="empty">${svg(I.search)}<p><b>Aucun résultat</b></p></div>`
+      : `<div class="rtable">
+          <div class="rrow tete"><span class="c1">Nom</span><span class="c2">Adresse</span>
+            <span class="c3">Rôle</span><span class="c4">Classe ou matière</span>
+            <span class="c5">Dernière venue</span></div>
+          ${l.map(ligne).join('')}
+        </div>
+        ${pages > 1 ? `<div class="rpage">
+          <button ${ref.page ? '' : 'disabled'} data-rpage="${ref.page - 1}">Précédent</button>
+          <span>page ${ref.page + 1} sur ${pages}</span>
+          <button ${ref.page + 1 < pages ? '' : 'disabled'} data-rpage="${ref.page + 1}">Suivant</button>
+        </div>` : ''}`}`;
+}
+
+/* ---------- onglet « Classes » ---------- */
+function refCls() {
+  const l = ref.classes;
+  const ligne = c => {
+    const plein = c.prevu ? Math.round(c.effectif / c.prevu * 100) : 0;
+    return `<button class="rrow" data-rcls="${esc(c.id)}">
+      <span class="c1"><b>${esc(c.name)}</b><i>${esc(c.niveau || '')}${
+        c.filiere ? ' · ' + esc(c.filiere) : ''}</i></span>
+      <span class="c2">${c.effectif}${c.prevu ? ' / ' + c.prevu : ''}${
+        plein > 105 ? ' <em class="rl jamais">surchargée</em>' : ''}</span>
+      <span class="c3">${c.pp ? esc(c.pp) : '<em class="rl vide">pas de PP</em>'}</span>
+      <span class="c4">${plur(c.profs, 'professeur')}</span>
+      <span class="c5">${c.actifs7} actif${c.actifs7 > 1 ? 's' : ''} · code ${esc(c.code || '—')}</span>
+    </button>`;
+  };
+  const groupes = [];
+  for (const c of l || []) {
+    const k = c.cycle || 'autre';
+    const g = groupes.find(x => x.k === k);
+    (g || (groupes.push({ k, l: [] }), groupes[groupes.length - 1])).l.push(c);
+  }
+  return `
+    <div class="duo ghost"><button data-act="refnewclass">${svg(I.plus)}Créer une classe</button></div>
+    ${!l ? `<div class="empty">${svg(I.school)}<p>Chargement…</p></div>`
+      : !l.length ? `<div class="empty">${svg(I.school)}<p><b>Aucune classe</b></p></div>`
+      : groupes.map(g => `
+          <div class="lbl"><span>${esc(CYCLES[g.k] || 'Autres')}</span><span>${g.l.length}</span></div>
+          <div class="rtable">
+            <div class="rrow tete"><span class="c1">Classe</span><span class="c2">Effectif</span>
+              <span class="c3">Professeur principal</span><span class="c4">Équipe</span>
+              <span class="c5">Activité</span></div>
+            ${g.l.map(ligne).join('')}
+          </div>`).join('')}`;
+}
+
+/* ══════════ la console du professeur ══════════
+   Un professeur de collège tient dix classes, voit trois cents élèves par
+   semaine, et n'aime pas les ordinateurs. Tout ce qui suit découle de ces
+   trois faits.
+
+   Il ne révise pas, il ne joue pas, il ne fabrique pas de cartes pour
+   lui-même : sa bibliothèque personnelle n'a rien à faire ici. Il ne crée
+   pas non plus de classe — elles viennent de l'installation dans
+   l'établissement, puis du référent d'une année sur l'autre. Lui, il
+   enseigne dans celles qu'on lui a données.
+
+   Six gestes, et rien d'autre : regarder ses classes, ouvrir une classe,
+   lire la ligne d'un élève, donner du travail, repousser une échéance,
+   relancer ceux qui n'ont rien ouvert. Chacun est écrit sur un bouton, en
+   toutes lettres. Aucun menu caché, aucun geste à découvrir.
+
+   Écrit pour l'écran large, où un professeur prépare ses cours ; sur
+   téléphone les grilles deviennent des colonnes et les tableaux se replient
+   en fiches. C'est le même écran, pas une version amoindrie. */
+
+let prof = {
+  annee: null, annees: null,            // l'année scolaire regardée
+  classes: null, err: 0,
+  open: null, tab: 'eleves',            // la classe ouverte, et son onglet
+  roster: null, devoirs: null, bilan: null,
+  tri: 'retard', q: '',
+  eleve: null, fiche: null,             // la fiche d'un élève
+  work: null, cartes: null,             // le devoir ouvert, et ce qui bloque
+  comp: null,                           // le composeur de devoir
+  vue: 'liste', mois: null, agenda: null, jour: null   // le cahier de textes
+};
+
+const CYCLES = { college: 'Collège', lycee_gt: 'Lycée général', lycee_techno: 'Lycée technologique',
+                 lycee_pro: 'Lycée professionnel', cpge: 'CPGE' };
+
+/* ---------- ce qu'on va chercher ---------- */
+async function profPull() {
+  try {
+    if (!prof.annees) {
+      prof.annees = await api('/rest/v1/rpc/prof_annees', 'POST', {}) || [];
+      const c = prof.annees.find(a => a.courante) || prof.annees[0];
+      if (!prof.annee && c) prof.annee = c.annee;
+    }
+    prof.classes = await api('/rest/v1/rpc/prof_classes', 'POST',
+      { annee: prof.annee }) || [];
+    prof.err = 0;
+  } catch (e) { prof.classes = prof.classes || []; prof.err = 1; }
+  if (/^prof/.test(view.name)) { animate = false; render(); }
+}
+async function profClassePull(cid) {
+  try {
+    const [r, d] = await Promise.all([
+      api('/rest/v1/rpc/prof_roster', 'POST', { cid }),
+      api('/rest/v1/rpc/prof_devoirs', 'POST', { cid })
+    ]);
+    prof.roster = r || []; prof.devoirs = d || [];
+  } catch (e) { prof.roster = prof.roster || []; prof.devoirs = prof.devoirs || []; }
+  if (/^prof/.test(view.name)) { animate = false; render(); }
+}
+async function profFichePull(cid, qui) {
+  try { prof.fiche = await api('/rest/v1/rpc/prof_eleve', 'POST', { cid, qui }) || []; }
+  catch (e) { prof.fiche = []; }
+  if (view.name === 'profeleve') { animate = false; render(); }
+}
+async function profCartesPull(aid) {
+  try { prof.cartes = await api('/rest/v1/rpc/prof_cartes', 'POST', { aid }) || []; }
+  catch (e) { prof.cartes = []; }
+  if (menu) paintMenu();
+}
+
+/* ---------- écrire ---------- */
+async function profDo(rpc, args, bon) {
+  try {
+    const r = await api('/rest/v1/rpc/' + rpc, 'POST', args);
+    /* On rafraîchit sans vider : `profClasseView` cherche sa classe dans
+       `prof.classes` et repart au tableau de bord quand elle n'y est pas.
+       La vider une demi-seconde suffisait donc à éjecter le professeur de
+       la classe qu'il regardait, juste après avoir donné son devoir. */
+    profPull();
+    if (prof.open) profClassePull(prof.open);
+    if (bon) toast(I.check, typeof bon === 'function' ? bon(r) : bon);
+    return r === null || r === undefined ? true : r;
+  } catch (e) {
+    toast(I.x, String((e && e.message) || '').slice(0, 90) || 'Impossible pour l’instant');
+    return null;
+  }
+}
+
+/* ---------- petits calculs d'affichage ---------- */
+const pcClass = p => p >= 70 ? 'ok' : p >= 45 ? 'am' : 'ko';
+/* Les dates voyagent en AAAA-MM-JJ, se lisent en JJ/MM, et se choisissent
+   dans un calendrier. Aucun décalage de fuseau : on ne construit jamais de
+   Date à partir d'une chaîne courte sans heure. */
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${
+  String(d.getDate()).padStart(2, '0')}`;
+const dansJours = n => iso(new Date(Date.now() + n * DAY));
+const auJour = s => s ? new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) : null;
+const joursDici = s => Math.round((auJour(s) - auJour(iso(new Date()))) / DAY);
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet',
+              'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const JOURS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+const jourFr = s => s ? s.split('-').reverse().slice(0, 2).join('/') : '';
+/* Un élève n'a qu'un état à la fois, et c'est le plus grave qui compte. */
+function etatEleve(m) {
+  if (m.jamais) return { k: 'jamais', t: 'Jamais connecté' };
+  if (m.retard) return { k: 'ko', t: m.retard > 1 ? m.retard + ' devoirs en retard' : '1 devoir en retard' };
+  if (!m.donnes) return { k: '', t: 'Aucun devoir donné' };
+  if (m.rendus === m.donnes) return { k: 'ok', t: 'À jour' };
+  return { k: 'am', t: `${m.donnes - m.rendus} en cours` };
+}
+
+/* ══════════ le calendrier ══════════
+   Deux usages, une seule grille : choisir une date de rendu, et regarder le
+   mois pour voir ce qui tombe quand. Les semaines commencent le lundi, et
+   les jours passés d'un mois scolaire restent cliquables — on repousse une
+   échéance, on la recule aussi.
+
+   `marques` associe une date à ce qu'il y a dessus ; le jour porte alors une
+   pastille et son compte. */
+function moisGrille(ancre, choisi, marques, prefixe) {
+  const a = ancre.getFullYear(), m = ancre.getMonth();
+  const premier = new Date(a, m, 1);
+  const decal = (premier.getDay() + 6) % 7;           // lundi = 0
+  const jours = new Date(a, m + 1, 0).getDate();
+  const auj = iso(new Date());
+  let cases = '';
+  for (let i = 0; i < decal; i++) cases += '<span class="cal-v"></span>';
+  for (let d = 1; d <= jours; d++) {
+    const k = iso(new Date(a, m, d));
+    const mk = marques && marques[k];
+    cases += `<button class="cal-j${k === choisi ? ' on' : ''}${k === auj ? ' auj' : ''}${
+      k < auj ? ' passe' : ''}${mk ? ' plein' : ''}" data-${prefixe}="${k}">
+      <b>${d}</b>${mk ? `<i>${mk.length}</i>` : ''}</button>`;
+  }
+  return `<div class="cal-t">${JOURS.map(j => `<span>${j}</span>`).join('')}</div>
+    <div class="cal-g">${cases}</div>`;
+}
+function calendrier(ancre, choisi, marques, prefixe, saut) {
+  const a = ancre.getFullYear(), m = ancre.getMonth();
+  return `<div class="cal">
+    <div class="cal-h">
+      <button class="cal-f" data-${saut}="${iso(new Date(a, m - 1, 1))}"
+        aria-label="Mois précédent">${svg(I.back)}</button>
+      <b>${MOIS[m]} ${a}</b>
+      <button class="cal-f" data-${saut}="${iso(new Date(a, m + 1, 1))}"
+        aria-label="Mois suivant">${svg(I.arrow)}</button>
+    </div>
+    ${moisGrille(ancre, choisi, marques, prefixe)}
+  </div>`;
+}
+
+/* ══════════ 1. Mes classes — la page d'accueil du professeur ══════════ */
+function profView() {
+  const l = prof.classes;
+  const som = k => (l || []).reduce((a, c) => a + (c[k] || 0), 0);
+  const retard = som('retard'), jamais = som('jamais'), eleves = som('effectif');
+  const encours = som('encours'), actifs = som('actifs7');
+
+  const tuile = c => {
+    const chaud = c.retard > 0 || c.jamais > 0;
+    return `<button class="kls${chaud ? ' chaud' : ''}" data-pclasse="${esc(c.id)}">
+      <span class="kn">${esc(c.name)}
+        ${c.principal ? '<i class="pp">PP</i>' : ''}
+        <em class="keff">${c.effectif}</em></span>
+      <span class="ks">${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''}${
+        c.matiere ? ' · ' + esc(c.matiere) : ''}</span>
+      <span class="kw">
+        ${c.retard ? `<em class="ko">${c.retard} en retard</em>` : ''}
+        ${c.pas_ouvert ? `<em class="am">${c.pas_ouvert} sans ouvrir</em>` : ''}
+        ${c.jamais ? `<em class="gris">${c.jamais} jamais connectés</em>` : ''}
+        ${!c.retard && !c.pas_ouvert && !c.jamais && c.devoirs ? '<em class="ok">à jour</em>' : ''}
+        ${!c.devoirs ? '<em class="gris">aucun devoir donné</em>' : ''}
+      </span>
+      ${c.dernier ? `<span class="kd">${svg(I.card)}<b>${esc(c.dernier)}</b>
+        <i>${c.dernier_due ? dueLabel(c.dernier_due) : ''}</i></span>` : ''}
+      ${c.devoirs ? `<span class="kbar"><i class="${pcClass(c.pct)}"
+          style="width:${Math.max(2, c.pct)}%"></i></span>
+        <span class="kp">${c.pct} % de réussite au dernier devoir · ${
+          plur(c.encours, 'devoir')} en cours</span>` : ''}
+    </button>`;
+  };
+
+  const groupes = [];
+  for (const c of l || []) {
+    const k = c.cycle || 'autre';
+    const g = groupes.find(x => x.k === k);
+    (g || (groupes.push({ k, l: [] }), groupes[groupes.length - 1])).l.push(c);
+  }
+  const an = prof.annees || [];
+
+  $.innerHTML = `
+    <div class="bar">
+      <h1>Mes classes</h1>
+      ${an.length > 1 ? `<select class="anne" id="pan" aria-label="Année scolaire">
+        ${an.map(a => `<option value="${esc(a.annee)}"${a.annee === prof.annee ? ' selected' : ''}
+          >${esc(a.annee)}</option>`).join('')}</select>`
+        : `<span class="anne fixe">${esc(prof.annee || '')}</span>`}
+    </div>
+    <div class="page console">
+      ${school && school.org ? `<div class="ecole">${svg(I.school)}<span>
+        <b>${esc(prefs.name || auth.email)}</b>
+        <i>${esc(school.org)}${school.ville ? ' · ' + esc(school.ville) : ''}</i></span></div>` : ''}
+
+      ${!l ? '' : `<div class="kpi cinq">
+        <div class="kc"><b>${l.length}</b><span>classes</span></div>
+        <div class="kc"><b>${eleves}</b><span>élèves</span></div>
+        <div class="kc"><b>${encours}</b><span>devoirs en cours</span></div>
+        <div class="kc ${retard ? 'ko' : ''}"><b>${retard}</b><span>élèves en retard</span></div>
+        <div class="kc ${jamais ? 'am' : ''}"><b>${jamais}</b><span>jamais connectés</span></div>
+      </div>`}
+
+      <div class="duo ghost gros">
+        <button data-act="pnew">${svg(I.plus)}Créer et donner un devoir</button>
+        ${actifs ? `<button data-act="pbilan">${svg(I.chart)}${actifs} élèves actifs cette semaine</button>` : ''}
+      </div>
+
+      ${!l ? `<div class="empty">${svg(I.school)}<p>${prof.err ? 'Liste indisponible' : 'Chargement…'}</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.school)}<p><b>Aucune classe cette année</b></p></div>`
+        : groupes.map(g => `
+            <div class="lbl"><span>${esc(CYCLES[g.k] || 'Autres classes')}</span><span>${g.l.length}</span></div>
+            <div class="grille">${g.l.map(tuile).join('')}</div>`).join('')}
+    </div>`;
+  const sel = document.getElementById('pan');
+  if (sel) sel.addEventListener('change', () => {
+    prof.annee = sel.value; prof.classes = null; prof.open = null;
+    profPull(); animate = false; render();
+  });
+}
+
+/* ══════════ 2. Une classe ══════════ */
+function profClasseView() {
+  const c = (prof.classes || []).find(x => x.id === prof.open);
+  if (!c) return go('prof');
+  const onglet = (k, n, b) => `<button class="otab ${prof.tab === k ? 'on' : ''}" data-ptab="${k}">${n}${
+    b ? `<em>${b}</em>` : ''}</button>`;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="prof" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${esc(c.name)}</h1>
+      <span class="anne fixe">${esc(c.annee_scolaire || '')}</span></div>
+    <div class="page console">
+      <div class="ecole">${svg(I.school)}<span>
+        <b>${esc(c.name)}${c.principal ? ' · tu en es professeur principal' : ''}</b>
+        <i>${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''}${
+          c.matiere ? ' · ' + esc(c.matiere) : ''} · ${plur(c.effectif, 'élève')}</i></span>
+        <button class="cbtn" data-act="pcode">${svg(I.key)}Code</button></div>
+
+      <div class="duo ghost gros">
+        <button data-act="pnew">${svg(I.plus)}Créer et donner un devoir</button>
+        <button data-act="plib">${svg(I.book)}Donner un livre de ma bibliothèque</button>
+      </div>
+
+      <div class="rtabs">
+        ${onglet('eleves', 'Élèves', c.effectif)}
+        ${onglet('devoirs', 'Devoirs', prof.devoirs ? prof.devoirs.filter(d => d.mien).length : '')}
+        ${onglet('bilan', 'Bilan', '')}
+      </div>
+      ${prof.tab === 'devoirs' ? profDevoirs() : prof.tab === 'bilan' ? profBilan(c) : profEleves(c)}
+    </div>`;
+  const q = document.getElementById('pq');
+  if (q) q.addEventListener('input', () => {
+    prof.q = q.value;
+    const v = prof.q.trim().toLowerCase();
+    $.querySelectorAll('.elvs .elv').forEach(n => {
+      n.hidden = !!v && !n.textContent.toLowerCase().includes(v);
+    });
+    const cnt = document.getElementById('pcount');
+    if (cnt) cnt.textContent = $.querySelectorAll('.elvs .elv:not([hidden])').length;
+  });
+}
+
+/* ---------- onglet Élèves ---------- */
+function profEleves(c) {
+  const r = prof.roster;
+  const TRI = { retard: 'Qui décroche', nom: 'Ordre alphabétique',
+                note: 'Meilleurs résultats', vu: 'Activité récente' };
+  const vus = (r || []).slice().sort((x, y) =>
+      prof.tri === 'nom' ? String(x.who).localeCompare(y.who, 'fr')
+    : prof.tri === 'note' ? (y.pct - x.pct) || String(x.who).localeCompare(y.who, 'fr')
+    : prof.tri === 'vu' ? (y.pages7 - x.pages7) || String(x.who).localeCompare(y.who, 'fr')
+    : (y.retard - x.retard) || (y.jamais - x.jamais) || (x.pct - y.pct)
+      || String(x.who).localeCompare(y.who, 'fr'));
+
+  const ligne = m => {
+    const e = etatEleve(m);
+    return `<button class="elv ${e.k}" data-peleve="${esc(m.user_id)}">
+      <i class="av sm">${esc(initial(m.who))}</i>
+      <span class="en"><b>${esc(m.who)}</b><i>@${esc(m.handle || '')}</i></span>
+      <span class="ev"><b>${m.rendus}<em>/${m.donnes}</em></b><i>rendus</i></span>
+      <span class="ev"><b class="${m.pct ? pcClass(m.pct) : ''}">${m.pct || '—'}${
+        m.pct ? ' %' : ''}</b><i>réussite</i></span>
+      <span class="ev"><b>${m.pages7 || '—'}</b><i>pages sur 7 j</i></span>
+      <span class="ev"><b>${m.jamais ? '—' : m.vu ? timeAgo(m.vu) : 'jamais'}</b><i>dernier rendu</i></span>
+      <span class="etat ${e.k}">${e.t}</span>
+      <span class="ebar"><i class="${pcClass(Math.round(m.rendus / (m.donnes || 1) * 100))}"
+        style="width:${Math.max(2, Math.round(m.rendus / (m.donnes || 1) * 100))}%"></i></span>
+    </button>`;
+  };
+  return `
+    <div class="triq">
+      <div class="fld addf"><input id="pq" type="search" placeholder="Chercher un élève"
+        autocomplete="off" spellcheck="false" value="${esc(prof.q)}" aria-label="Chercher un élève"></div>
+      <div class="pills">${Object.entries(TRI).map(([k, n]) =>
+        `<button class="p ${prof.tri === k ? 'on' : ''}" data-ptri="${k}">${n}</button>`).join('')}</div>
+    </div>
+    <div class="rcount"><b id="pcount">${(r || []).length}</b> élèves ·
+      ${(r || []).filter(m => m.retard).length} en retard ·
+      ${(r || []).filter(m => m.jamais).length} jamais connectés</div>
+    ${!r ? `<div class="card2"></div>`
+      : !r.length ? `<div class="empty">${svg(I.users)}<p><b>Aucun élève inscrit</b></p></div>`
+      : `<div class="elvs">${vus.map(ligne).join('')}</div>`}`;
+}
+
+/* ---------- onglet Devoirs ----------
+   Deux façons de regarder la même chose : la liste, pour l'état de chacun,
+   et le mois, pour voir ce qui tombe quand — et surtout quel jour on a déjà
+   trois devoirs posés sur la même classe. */
+function profDevoirs() {
+  const l = prof.devoirs;
+  if (prof.vue === 'cal') return profMois(l);
+  const mien = (l || []).filter(d => d.mien);
+  const autres = (l || []).filter(d => !d.mien);
+  const ligne = d => {
+    const tard = d.due && joursDici(d.due) < 0;
+    const pas = Math.max(0, (d.effectif || 0) - (d.ouvert || 0));
+    return `<button class="dvr${tard ? ' tard' : ''}" data-pwork="${esc(d.id)}">
+      <span class="c1"><b>${esc(d.nom)}</b>
+        <i>${plur(d.n, 'page')}${d.matiere ? ' · ' + esc(d.matiere) : ''}${
+          d.mien ? '' : ' · ' + esc(d.auteur)}</i></span>
+      <span class="an"><b>${d.rendu}</b><i>/ ${d.effectif} rendus</i></span>
+      <span class="an ${pas ? 'ko' : ''}"><b>${pas}</b><i>sans ouvrir</i></span>
+      <span class="an"><b class="${d.pct ? pcClass(d.pct) : ''}">${d.pct || '—'}</b><i>% juste</i></span>
+      <span class="an"><b>${d.due ? jourFr(d.due) : '—'}</b><i>${
+        d.due ? dueLabel(d.due) : ''}</i></span>
+      ${svg(I.arrow)}</button>`;
+  };
+  return `${vueBascule()}
+    ${!l ? `<div class="card2"></div>`
+      : !l.length ? `<div class="empty">${svg(I.card)}<p><b>Aucun devoir</b></p></div>`
+      : `${mien.length ? `<div class="lbl"><span>Mes devoirs</span><span>${mien.length}</span></div>
+           <div class="dvrs">${mien.map(ligne).join('')}</div>` : ''}
+         ${autres.length ? `<div class="lbl"><span>Mes collègues</span><span>${autres.length}</span></div>
+           <div class="dvrs">${autres.map(ligne).join('')}</div>` : ''}`}`;
+}
+const vueBascule = () => `<div class="vbasc">
+  <button class="${prof.vue === 'liste' ? 'on' : ''}" data-pvue="liste">${svg(I.rows)}Liste</button>
+  <button class="${prof.vue === 'cal' ? 'on' : ''}" data-pvue="cal">${svg(I.cal)}Calendrier</button>
+</div>`;
+
+/* Le mois de la classe ouverte. Un jour chargé se voit à sa pastille ;
+   cliquer dessus déroule ce qui y tombe. */
+function profMois(l) {
+  const marques = {};
+  for (const d of l || []) if (d.due) (marques[d.due] = marques[d.due] || []).push(d);
+  const ancre = auJour(prof.mois || iso(new Date()));
+  const jour = prof.jour && marques[prof.jour] ? marques[prof.jour] : null;
+  return `${vueBascule()}
+    ${calendrier(ancre, prof.jour, marques, 'pjour', 'pmois')}
+    ${jour ? `<div class="lbl"><span>${jourLong(prof.jour)}</span><span>${jour.length}</span></div>
+      <div class="dvrs">${jour.map(d => `<button class="dvr" data-pwork="${esc(d.id)}">
+        <span class="c1"><b>${esc(d.nom)}</b><i>${plur(d.n, 'page')}${
+          d.mien ? '' : ' · ' + esc(d.auteur)}</i></span>
+        <span class="an"><b>${d.rendu}</b><i>/ ${d.effectif} rendus</i></span>
+        <span class="an"><b class="${d.pct ? pcClass(d.pct) : ''}">${d.pct || '—'}</b><i>% juste</i></span>
+        ${svg(I.arrow)}</button>`).join('')}</div>` : ''}`;
+}
+const jourLong = s => {
+  const d = auJour(s); if (!d) return '';
+  const J = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  return `${J[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]}`;
+};
+
+/* ---------- onglet Bilan ----------
+   La même classe, mais répartie : combien suivent, combien décrochent,
+   combien ne sont jamais venus. Un professeur n'a pas à compter lui-même
+   pour savoir s'il doit reprendre le chapitre ou trois élèves. */
+function profBilan(c) {
+  const r = prof.roster || [];
+  if (!prof.roster) return `<div class="card2"></div>`;
+  if (!r.length) return `<div class="empty">${svg(I.chart)}<p>Aucun élève inscrit.</p></div>`;
+  const n = r.length;
+  const paquets = [
+    { k: 'ok',     t: 'À jour',            l: r.filter(m => !m.jamais && !m.retard && m.donnes && m.rendus === m.donnes) },
+    { k: 'am',     t: 'En cours',          l: r.filter(m => !m.jamais && !m.retard && m.donnes && m.rendus < m.donnes) },
+    { k: 'ko',     t: 'En retard',         l: r.filter(m => !m.jamais && m.retard) },
+    { k: 'jamais', t: 'Jamais connectés',  l: r.filter(m => m.jamais) }
+  ].filter(p => p.l.length);
+  /* La réussite par tranches de vingt : une moyenne de classe cache
+     toujours deux groupes, et c'est aux deux qu'on enseigne. */
+  const notes = r.filter(m => m.pct > 0).map(m => m.pct);
+  /* Le « % » est dit une fois dans le titre de la section : répété sous
+     chaque colonne, il la faisait déborder et se faire couper. */
+  const tranches = [[0, 20], [20, 40], [40, 60], [60, 80], [80, 101]].map(([a, b]) => ({
+    t: `${a}–${b === 101 ? 100 : b}`,
+    n: notes.filter(x => x >= a && x < b).length, cls: pcClass(a + 10)
+  }));
+  const hi = Math.max(1, ...tranches.map(t => t.n));
+  const moy = notes.length ? Math.round(notes.reduce((a, b) => a + b, 0) / notes.length) : 0;
+  const actifs = r.filter(m => m.pages7 > 0);
+  const pages = r.reduce((a, m) => a + (m.pages7 || 0), 0);
+
+  return `
+    <div class="kpi quatre">
+      <div class="kc"><b class="${moy ? pcClass(moy) : ''}">${moy || '—'}${moy ? ' %' : ''}</b>
+        <span>réussite moyenne</span></div>
+      <div class="kc"><b>${actifs.length}<em>/${n}</em></b><span>ont travaillé cette semaine</span></div>
+      <div class="kc"><b>${pages}</b><span>pages révisées sur 7 jours</span></div>
+      <div class="kc"><b>${(prof.devoirs || []).filter(d => d.mien).length}</b><span>devoirs donnés</span></div>
+    </div>
+
+    <div class="lbl"><span>Où en est la classe</span></div>
+    <div class="rep">${paquets.map(p => `<div class="rr ${p.k}">
+      <span class="rt2"><b>${p.l.length}</b> ${p.t}</span>
+      <span class="rb2"><i style="width:${Math.round(p.l.length / n * 100)}%"></i></span>
+      <span class="rn2">${p.l.slice(0, 12).map(m => esc(m.who.split(' ')[0])).join(', ')}${
+        p.l.length > 12 ? ` et ${p.l.length - 12} autres` : ''}</span>
+    </div>`).join('')}</div>
+
+    <div class="lbl"><span>Répartition des résultats, en % de réussite</span>
+      <span>${notes.length} élèves notés</span></div>
+    ${!notes.length ? `<div class="card2"></div>`
+      : `<div class="histo">${tranches.map(t => `<div class="hb">
+          <span class="hv">${t.n || ''}</span>
+          <span class="hz"><i class="hc ${t.cls}"
+            style="height:${t.n ? Math.max(4, Math.round(t.n / hi * 100)) : 0}%"></i></span>
+          <span class="hl">${t.t}</span></div>`).join('')}</div>`}
+
+    <div class="lbl"><span>À reprendre avec eux</span></div>
+    ${(() => {
+      const urg = r.filter(m => m.jamais || m.retard || (m.pct && m.pct < 45));
+      if (!urg.length) return `<div class="card2"></div>`;
+      return `<div class="elvs serre">${urg.slice(0, 20).map(m => {
+        const e = etatEleve(m);
+        return `<button class="elv ${e.k}" data-peleve="${esc(m.user_id)}">
+          <i class="av sm">${esc(initial(m.who))}</i>
+          <span class="en"><b>${esc(m.who)}</b><i>@${esc(m.handle || '')}</i></span>
+          <span class="etat ${e.k}">${e.t}${m.pct && m.pct < 45 ? ` · ${m.pct} % juste` : ''}</span>
+        </button>`;
+      }).join('')}</div>`;
+    })()}
+    <div class="note" style="padding:10px 0 0">Le code de la classe est
+      <b>${esc(c.code || '—')}</b> : c’est lui que saisissent les élèves qui n’ont jamais ouvert
+      l’app.</div>`;
+}
+
+/* ══════════ 3. La fiche d'un élève ══════════
+   Tout ce que le professeur a le droit de savoir, et rien de plus : ce qui
+   a été rendu, quand, et avec quel taux de réussite. Jamais les réponses,
+   jamais les horaires de travail, jamais les paquets personnels. La
+   différence entre suivre une classe et surveiller quelqu'un. */
+function profEleveView() {
+  const c = (prof.classes || []).find(x => x.id === prof.open);
+  const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
+  if (!c || !m) return go('profclasse');
+  const f = prof.fiche;
+  const e = etatEleve(m);
+  const ETAT = { 'rendu': 'ok', 'commencé': 'am', 'non rendu': 'ko', 'pas ouvert': 'gris' };
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="pback" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${esc(m.who)}</h1></div>
+    <div class="page console">
+      <div class="ecole"><i class="av">${esc(initial(m.who))}</i><span>
+        <b>${esc(m.who)} <em class="etat ${e.k}">${e.t}</em></b>
+        <i>@${esc(m.handle || '')} · ${esc(c.name)}${c.niveau ? ' · ' + esc(c.niveau) : ''}${
+          c.matiere ? ' · ' + esc(c.matiere) : ''}</i></span></div>
+
+      <div class="kpi cinq">
+        <div class="kc"><b>${m.rendus}<em>/${m.donnes}</em></b><span>devoirs rendus</span></div>
+        <div class="kc"><b class="${m.pct ? pcClass(m.pct) : ''}">${m.pct || '—'}${
+          m.pct ? ' %' : ''}</b><span>de réussite</span></div>
+        <div class="kc ${m.retard ? 'ko' : ''}"><b>${m.retard}</b><span>en retard</span></div>
+        <div class="kc"><b>${m.pages7}</b><span>pages sur 7 jours</span></div>
+        <div class="kc"><b>${m.jours7}</b><span>jours travaillés sur 7</span></div>
+      </div>
+
+      ${m.jamais ? `<div class="alerte">${svg(I.warn)}<span><b>Ce compte n’a jamais été ouvert.</b>
+        Ni retard ni paresse : le lien n’est pas arrivé jusqu’à lui, ou le mot de passe est perdu.
+        Le référent de l’établissement peut le refaire en trois clics.</span></div>` : ''}
+
+      <div class="duo ghost">
+        <button data-act="pmot">${svg(I.mail2)}Lui envoyer un mot</button>
+      </div>
+
+      <div class="lbl"><span>Devoirs de la classe</span><span>${f ? f.length : ''}</span></div>
+      ${!f ? `<div class="card2"></div>`
+        : !f.length ? `<div class="card2"><div class="note">Aucun devoir dans cette classe.</div></div>`
+        : `<div class="dvrs">${f.map(x => `<div class="dvr lect">
+            <span class="c1"><b>${esc(x.devoir)}</b>
+              <i>${plur(x.n, 'page')}${x.matiere ? ' · ' + esc(x.matiere) : ''}${
+                x.mien ? '' : ' · d’un collègue'}</i></span>
+            <span class="an"><b class="${x.pct ? pcClass(x.pct) : ''}">${x.pct || '—'}</b>
+              <i>% juste</i></span>
+            <span class="an"><b>${x.due ? jourFr(x.due) : '—'}</b><i>à rendre</i></span>
+            <span class="an"><b>${x.rendu ? timeAgo(x.rendu) : '—'}</b><i>rendu</i></span>
+            <span class="etat ${ETAT[x.etat] || ''}">${esc(x.etat)}</span>
+          </div>`).join('')}</div>`}
+    </div>`;
+}
+
+/* ══════════ 4. Le composeur de devoir ══════════
+   Créer les cartes là où on s'en sert, sans passer par une bibliothèque
+   personnelle. Trois façons d'y arriver, parce que trois professeurs
+   différents ne s'y prennent pas pareil : coller une liste depuis un
+   traitement de texte, taper une paire à la fois, ou reprendre un livre
+   déjà fait.
+
+   Le collage accepte ce qu'on a sous la main — tabulation, point-virgule,
+   égal, flèche, tiret — parce qu'exiger un séparateur, c'est renvoyer
+   quelqu'un reformater son fichier. */
+/* Le devoir se compose dans l'éditeur de livres — le vrai, celui qui sait
+   lire une photo de page, un PDF, un export Quizlet, fabriquer les cartes
+   à partir d'un cours collé, et poser une image ou un enregistrement sur
+   chaque face. Il n'y a donc pas de second éditeur au rabais ici : cette
+   feuille ne pose que les deux questions qui restent — à qui, et pour
+   quand. Le livre, lui, reste dans la bibliothèque du professeur, prêt à
+   resservir l'année suivante. */
+function compNeuf(pre) {
+  const c = (prof.classes || []).find(x => x.id === prof.open);
+  return { nom: '', matiere: (c && c.matiere) || '', due: dansJours(7), mois: null,
+           livre: null, cibles: new Set(prof.open ? [prof.open] : []), ...(pre || {}) };
+}
+/* Les cartes partent entières : recto, verso, image et son. Les médias d'un
+   livre de cours sont lisibles par la classe (préfixe « cours/ »). */
+const carteNue = c => {
+  const o = { f: plain(c.f), b: plain(c.b) };
+  for (const k of ['fi', 'bi', 'fa', 'ba', 't', 'g']) if (c[k]) o[k] = c[k];
+  return o;
+};
+function compCartes() {
+  const k = prof.comp; if (!k || !k.livre) return [];
+  const d = deck(k.livre);
+  return d ? d.cards.map(carteNue).filter(c => c.f || c.fi || c.fa) : [];
+}
+/* Ouvrir la feuille « à qui, pour quand » sur un livre donné. */
+function donnerLivre(d) {
+  prof.comp = compNeuf({ livre: d.id, nom: d.name,
+    matiere: d.subject ? (subj(d.subject) || {}).name || '' : (prof.comp || {}).matiere || '' });
+  openMenu('compo');
+}
+
+function compSheet(w) {
+  const k = prof.comp;
+  if (!k) { menu = null; return; }
+  const d = k.livre ? deck(k.livre) : null;
+  const cartes = compCartes();
+  const cls = prof.classes || [];
+  const riches = cartes.filter(c => c.fi || c.bi || c.fa || c.ba).length;
+  const pret = k.nom.trim() && cartes.length && k.cibles.size;
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu pv">
+      <div class="mhd">${svg(I.share)}<span class="mhx"><b>Donner un devoir</b>
+        <i>${d ? esc(d.name) : ''}</i></span></div>
+      <div class="mscroll">
+        <div class="rform">
+          <label>Titre<input id="cnom" value="${esc(k.nom)}" spellcheck="false"></label>
+          <label>Matière<input id="cmat" value="${esc(k.matiere)}" spellcheck="false"></label>
+        </div>
+        <div class="mlbl">Contenu</div>
+        <div class="cchif">
+          <div><b>${cartes.length}</b><span>cartes</span></div>
+          ${riches ? `<div><b>${riches}</b><span>avec image ou son</span></div>` : ''}
+          <button class="cedit" data-cedit="1">${svg(I.type)}Modifier le livre</button>
+        </div>
+        <div class="msep"></div>
+        <div class="mlbl">À rendre le ${jourFr(k.due)}</div>
+        ${calendrier(auJour(k.mois || k.due), k.due, null, 'cdue2', 'cmois')}
+        <div class="msep"></div>
+        <div class="mlbl">Classes <em>${k.cibles.size || ''}</em></div>
+        <div class="mscroll courte">${cls.map(c => `
+          <button class="mi${k.cibles.has(c.id) ? ' on' : ''}" data-ccible="${esc(c.id)}">
+            ${svg(k.cibles.has(c.id) ? I.check : I.plus)}<span>${esc(c.name)}</span>
+            <span class="tail">${esc(c.niveau || '')} · ${c.effectif} él.</span></button>`).join('')}</div>
+      </div>
+      <div class="cbar">
+        <span>${plur(cartes.length, 'carte')} · ${
+          k.cibles.size ? plur(k.cibles.size, 'classe') : 'aucune classe'}</span>
+        <button class="cgo" data-mact="cgive" ${pret ? '' : 'disabled'}>Donner</button>
+      </div>
+    </div>`;
+  mountMenu(w);
+  const lie = (id, ch) => { const n = document.getElementById(id);
+    if (n) n.addEventListener('input', () => prof.comp[ch] = n.value); };
+  lie('cnom', 'nom'); lie('cmat', 'matiere');
+}
+
+/* Les champs de la feuille avant chaque repeinture : un titre tapé puis
+   perdu au premier clic est ce qui fait abandonner un outil. */
+function lireComp() {
+  const k = prof.comp; if (!k) return;
+  for (const [ch, id] of [['nom', 'cnom'], ['matiere', 'cmat']]) {
+    const n = document.getElementById(id);
+    if (n) k[ch] = n.value;
+  }
+}
+
+async function compDonner() {
+  const k = prof.comp; if (!k) return;
+  const cartes = compCartes();
+  if (!cartes.length) return toast(I.x, 'Ce livre n’a aucune carte');
+  const n = await profDo('prof_give',
+    { cids: [...k.cibles], nom: k.nom.trim(), matiere: k.matiere.trim(),
+      cartes, due: k.due },
+    r => `${plur(cartes.length, 'carte')} à ${plur(r, 'classe')}, à rendre avant le `
+      + jourFr(k.due));
+  if (n) {
+    prof.comp = null; closeMenu();
+    /* On revient là où le professeur travaillait : sa classe s'il en
+       regardait une, sinon ses classes. Rester sur l'éditeur du livre
+       après l'envoi laisse croire que rien n'est parti. */
+    go(prof.open ? 'profclasse' : 'prof');
+  }
+}
+
+/* ---------- la feuille d'un devoir ---------- */
+function workSheet(w) {
+  const d = (prof.devoirs || []).find(x => x.id === prof.work);
+  if (!d) { menu = null; return; }
+  const pas = Math.max(0, (d.effectif || 0) - (d.ouvert || 0));
+  const ca = prof.cartes;
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu pv">
+      <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(d.nom)}</b>
+        <i>${plur(d.n, 'page')}${d.matiere ? ' · ' + esc(d.matiere) : ''}${
+          d.due ? ' · ' + dueLabel(d.due) : ''}${d.mien ? '' : ' · donné par ' + esc(d.auteur)}</i></span></div>
+      <div class="mscroll">
+        <div class="fiche">
+          <div><b>${d.rendu} / ${d.effectif}</b><span>ont rendu</span></div>
+          <div><b>${d.ouvert}</b><span>ont ouvert</span></div>
+          <div><b class="${pas ? 'ko' : ''}">${pas}</b><span>n’ont pas ouvert</span></div>
+          <div><b class="${d.pct ? pcClass(d.pct) : ''}">${d.pct || '—'}${
+            d.pct ? ' %' : ''}</b><span>de réussite</span></div>
+        </div>
+        ${d.mien ? `
+          <div class="msep"></div>
+          <div class="mlbl">À rendre le ${jourFr(d.due)}</div>
+          ${calendrier(auJour(prof.mois || d.due || iso(new Date())), d.due, null, 'cdue', 'pmois2')}
+          ${pas ? `<button class="mi" data-mact="prelance">${svg(I.mail2)}
+            <span>Relancer les ${pas} qui n’ont pas ouvert</span>
+            <span class="tail">un mot dans leur courrier</span></button>` : ''}
+          <button class="mi" data-mact="pdefi">${svg(I.flame)}
+            <span>Lancer un défi à la classe</span></button>
+          <button class="mi" data-mact="predonner">${svg(I.copy)}
+            <span>Redonner à d’autres classes</span></button>
+          <div class="msep"></div>` : '<div class="msep"></div>'}
+
+        <div class="mlbl">Ce qui bloque dans ce devoir</div>
+        ${!ca ? ``
+          : !ca.length ? ``
+          : `<div class="mscroll courte">${ca.map(c => `<div class="mi lect">
+              <span class="carte"><b>${esc(c.recto)} → ${esc(c.verso)}</b>
+                <i>${c.ratees} erreurs sur ${c.vues} passages · ${plur(c.eleves, 'élève')}</i></span>
+              </div>`).join('')}</div>`}
+
+        ${d.mien ? `<div class="msep"></div>
+          <button class="mi warn" data-mact="pdel">${svg(I.trash)}<span>Retirer ce devoir</span>
+            <span class="tail">l’avancement est perdu</span></button>` : ''}
+      </div>
+    </div>`;
+  mountMenu(w);
+  if (!ca) profCartesPull(d.id);
+}
+/* ---------- l'écran des classes ---------- */
+function classesView() {
+  const l = classes;
+  const mine = (l || []).filter(c => c.owner === auth.uid);
+  const in_ = (l || []).filter(c => c.owner !== auth.uid);
+  const carte = c => `<button class="sr flat" data-classe="${esc(c.id)}">${svg(I.layers)}
+    <span class="ml2"><span class="n">${esc(c.name)}</span>
+      <span class="sub">${esc(c.level || 'Classe')}${c.year ? ' · ' + esc(c.year) : ''}${
+        c.owner === auth.uid ? ' · code ' + esc(c.code) : ''}</span></span>${svg(I.arrow)}</button>`;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${isProf() ? 'Mes classes' : 'Ma classe'}</h1></div>
+    <div class="page">
+      ${isProf() ? `<button class="cta ghost" data-act="newclass">${svg(I.plus)}Créer une classe</button>` : ''}
+      <button class="cta ghost" data-act="joinclass">${svg(I.key)}Rejoindre avec un code</button>
+      ${!l ? `<div class="empty">${svg(I.layers)}<p>Chargement…</p></div>`
+        : !l.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucune classe</b>${
+            isProf() ? 'Crée-en une, puis distribue son code à tes élèves.'
+                     : 'Demande son code à ton professeur.'}</p></div>`
+        : `${mine.length ? `<div class="lbl"><span>Je les tiens</span><span>${mine.length}</span></div>
+             <div class="slist">${mine.map(carte).join('')}</div>` : ''}
+           ${in_.length ? `<div class="lbl"><span>J’y suis inscrit</span><span>${in_.length}</span></div>
+             <div class="slist">${in_.map(carte).join('')}</div>` : ''}`}
+    </div>`;
+}
+
+function classeView() {
+  const c = (classes || []).find(x => x.id === classOf);
+  if (!c) return go('classes');
+  const owner = c.owner === auth.uid;
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="classes" aria-label="Retour">${svg(I.back)}</button>
+      <h1>${esc(c.name)}</h1>
+      </div>
+    <div class="page">
+      ${owner ? `<div class="ccode">${svg(I.key)}<span>Code de la classe</span><b>${esc(c.code)}</b></div>` : ''}
+
+      <div class="lbl"><span>Devoirs</span><span>${asgs ? asgs.length : ''}</span></div>
+      ${owner ? `<button class="cta ghost" data-act="newwork">${svg(I.share)}Donner un devoir</button>` : ''}
+      ${!asgs ? `<div class="empty">${svg(I.card)}<p>Chargement…</p></div>`
+        : !asgs.length ? `<div class="empty">${svg(I.card)}<p><b>Aucun devoir</b>${
+            owner ? 'Choisis un livre et donne-le à la classe.' : 'Rien à faire pour l’instant.'}</p></div>`
+        : `<div class="slist">${asgs.map(a => `<button class="sr flat" data-work="${esc(a.id)}">
+             ${svg(I.card)}<span class="ml2"><span class="n">${esc(a.name)}</span>
+               <span class="sub">${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</span></span>
+             ${svg(I.arrow)}</button>`).join('')}</div>`}
+
+      ${owner ? `<div class="lbl"><span>Élèves</span><span>${roster ? roster.length : ''}</span></div>
+        ${!roster ? `<div class="empty">${svg(I.user)}<p>Chargement…</p></div>`
+          : !roster.length ? `<div class="empty">${svg(I.user)}<p><b>Personne encore</b>
+              Projette le code <b>${esc(c.code)}</b> : trois minutes en début de cours suffisent.</p></div>`
+          : `<div class="slist">${roster.map(m => `<button class="sr flat" data-member="${esc(m.user_id)}">
+               <i class="av">${esc(initial(m.who))}</i>
+               <span class="ml2"><span class="n">${esc(m.who || 'Élève')}</span>
+                 <span class="sub">inscrit ${timeAgo(m.joined_at)}</span></span>${svg(I.arrow)}</button>`).join('')}</div>`}` : ''}
+    </div>`;
 }
 
 /* ══════════ communauté ══════════
@@ -2860,10 +4891,11 @@ async function leaveGroup(id) {
 function commuPull() {
   if (!me) mePull().then(() => { if (view.name === 'commu') { animate = false; render(); } });
   if (!friends) friendsPull();
-  if (!groups) groupsPull();
+  if (!groups && !atSchool()) groupsPull();   // pas de club à l'école
   if (!duels.list) duelsPull();
   if (!lib.list) libPull();
   if (!board.rows) boardPull();
+  if (school === null) schoolPull().then(() => { if (view.name === 'commu') { animate = false; render(); } });
 }
 
 const initial = s => (String(s || '?').trim()[0] || '?').toUpperCase();
@@ -2879,21 +4911,36 @@ function commuView() {
   const tile = (act, ic, lab, val, warn) => `<button class="ctile" data-act="${act}">
     <i class="ci">${svg(ic)}${warn ? `<b class="cbdg">${warn}</b>` : ''}</i>
     <span class="cn">${lab}</span><span class="cv">${val}</span></button>`;
+  /* Un élève inscrit par son établissement n'a ni pseudo à choisir, ni
+     club, ni annuaire ouvert : sa carte affiche sa classe, et ses trois
+     tuiles sont Défis, Ma classe, Bibliothèque. Un compte personnel garde
+     les quatre d'origine. */
+  const eleve = isPupil();
   $.innerHTML = `
     <div class="page" id="page">
       <div class="top"><div class="hero">Le cercle des lecteurs</div></div>
-      <button class="mecard" data-act="handle">
+      ${eleve ? `<div class="mecard fixe">
+        <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
+        <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : esc((me && me.name) || 'Élève')}</b>
+          <i>${school.classe ? `<b class="maclasse">${esc(school.classe)}</b> · ${esc(school.org)}`
+            : esc(school.org)}</i></span></div>`
+      : `<button class="mecard" data-act="handle">
         <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
         <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : 'Choisis ton pseudo'}</b>
           <i>${me && me.handle ? (mine >= 0 ? `${MED[mine] || (mine + 1) + 'ᵉ'} cette semaine · ${plur(+rows[mine].n, 'page')}`
             : 'Pas encore révisé cette semaine')
             : 'C’est ce que tes amis taperont pour t’ajouter'}</i></span>
-        ${svg(I.arrow)}</button>
-      <div class="ctiles">
-        ${tile('friends', I.user, 'Lecteurs', nMates || '—', nAsk)}
-        ${tile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
-        ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
-        ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}
+        ${svg(I.arrow)}</button>`}
+      <div class="ctiles${eleve || atSchool() ? ' trois' : ''}">
+        ${eleve ? `
+          ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
+          ${tile('classes', I.school, 'Ma classe', school.effectif ? school.effectif + ' élèves' : '—', nAsk)}
+          ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`
+        : `
+          ${tile('friends', I.user, 'Lecteurs', nMates || '—', nAsk)}
+          ${atSchool() ? '' : tile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
+          ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
+          ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`}
       </div>
       <div class="lbl"><span>Classement de la semaine</span>
         ${rows.length > 3 ? '<button class="lnk" data-act="board">Tout voir</button>' : ''}</div>
@@ -2930,7 +4977,7 @@ function friendsView() {
           <button class="fyes" data-yes="${f.id}">${svg(I.check)}</button>
           <button class="fno" data-no="${f.id}">${svg(I.x)}</button></div>`).join('')}</div>` : ''}
       <div class="lbl"><span>Mes lecteurs</span><span>${l.length || ''}</span></div>
-      ${!friends ? `<div class="card2"><div class="note">Chargement…</div></div>`
+      ${!friends ? `<div class="card2"></div>`
         : !l.length ? `<div class="empty">${svg(I.user)}<p><b>Personne pour l’instant</b>Ajoute quelqu’un par son pseudo.</p></div>`
         : `<div class="slist">${l.map(f => `<button class="sr flat" data-mate="${f.id}">
             <i class="av sm">${esc(initial(f.handle || f.name))}</i>
@@ -2958,7 +5005,7 @@ function groupsView() {
         <button data-act="newgroup">${svg(I.plus)}Créer</button>
         <button data-act="joingroup">${svg(I.link)}Rejoindre</button>
       </div>
-      ${!groups ? `<div class="card2"><div class="note">Chargement…</div></div>`
+      ${!groups ? `<div class="card2"></div>`
         : !l.length ? `<div class="empty">${svg(I.layers)}<p><b>Aucun club</b>Une classe, un binôme : la même bibliothèque et les mêmes défis pour tous.</p></div>`
         : `<div class="slist">${l.map(g => `<button class="sr flat" data-group="${g.id}">
             ${svg(I.layers)}<span class="ml2"><span class="n">${esc(g.name)}</span>
@@ -3019,20 +5066,34 @@ function boardView() {
 const GTABS = { lib: 'Bibliothèque', duel: 'Défis', board: 'Classement' };
 const BRANGE = { 7: '7 jours', 30: '30 jours', 365: 'Toujours' };
 
+/* Une seule barre gouverne les trois onglets : ce qu'on lit et ce qu'on
+   publie vont au même endroit. Sans club, elle n'a rien à demander et
+   ne s'affiche pas. */
+function scopeBar() {
+  if (!groups || !groups.length) return '';
+  return `<div class="pills" id="gScope">
+    <button class="p${scope === null ? ' on' : ''}" data-scope="">Mes lecteurs</button>
+    ${groups.map(g => `<button class="p${scope === g.id ? ' on' : ''}"
+      data-scope="${esc(g.id)}">${esc(g.name)}</button>`).join('')}</div>`;
+}
+const inScope = x => (x.group_id || null) === scope;
+
 function groupView() {
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
-      <h1>Le groupe</h1></div>
+      <h1>${esc(scopeName())}</h1></div>
     <div class="page">
+      ${scopeBar()}
       <div class="seg" id="gTabs">${Object.entries(GTABS).map(([k, n]) =>
         `<button class="${groupTab === k ? 'on' : ''}" data-gtab="${k}">${n}</button>`).join('')}</div>
       ${groupTab === 'lib' ? libPane() : groupTab === 'duel' ? duelPane() : boardPane()}
     </div>`;
 }
 function libPane() {
-  const l = lib.list;
+  const l = lib.list && lib.list.filter(inScope);
   return !l ? `<div class="empty">${svg(I.book)}<p>${lib.err ? 'Bibliothèque indisponible' : 'Chargement…'}</p></div>`
-    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Bibliothèque vide</b>Prête un livre depuis son menu Partager.</p></div>`
+    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>${
+        scope ? 'Personne n’a encore posé de livre dans ce club.' : 'Prête un livre depuis son menu Partager.'}</p></div>`
     : `<div class="slist">${l.map(it => `
         <button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
           <span class="ml2"><span class="n">${esc(it.name)}</span>
@@ -3041,7 +5102,7 @@ function libPane() {
           <span class="c">${timeAgo(it.updated_at)}</span>${svg(I.arrow)}</button>`).join('')}</div>`;
 }
 function duelPane() {
-  const l = duels.list;
+  const l = duels.list && duels.list.filter(inScope);
   const mk = `<button class="cta ghost" data-act="duelnew">${svg(I.flame)}Lancer un défi</button>`;
   if (!l) return `${mk}<div class="empty">${svg(I.flame)}<p>${duels.err ? 'Défis indisponibles' : 'Chargement…'}</p></div>`;
   if (!l.length) return `${mk}<div class="empty">${svg(I.flame)}<p><b>Aucun défi</b>Dix questions, les mêmes pour tous.</p></div>`;
@@ -3074,6 +5135,7 @@ function boardPane() {
 `;
 }
 function groupPull() {
+  if (!groups) groupsPull();                  // sans eux, la barre de portée n'a rien à proposer
   if (groupTab === 'lib' && !lib.list) libPull();
   if (groupTab === 'duel' && !duels.list) duelsPull();
   if (groupTab === 'board' && !board.rows) boardPull();
@@ -3485,6 +5547,7 @@ function mountMenu(w) {
     bindSheetDrag(box, body);
   }
   document.body.append(...w.childNodes);
+  paintMedia();               // l'aperçu d'image de la feuille d'édition
 }
 /* Tirer la feuille vers le bas la ferme, comme partout ailleurs sur un
    téléphone. Sans ça, une feuille courte — une explication, un code —
@@ -3568,6 +5631,293 @@ function paintMenu() {
     setTimeout(() => { if (!subjName) sn.focus(); }, 60);
     return;
   }
+  if (menu === 'install') return installSheet(w);
+  if (menu === 'newclass' || menu === 'joinclass') {
+    const mk = menu === 'newclass';
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(mk ? I.plus : I.key)}<span class="mhx">
+          <b>${mk ? 'Créer une classe' : 'Rejoindre une classe'}</b></span></div>
+        <input class="tok" id="cn" placeholder="${mk ? 'Nom de la classe — 2nde B' : 'Code de la classe'}"
+          autocapitalize="${mk ? 'sentences' : 'characters'}" autocorrect="off" spellcheck="false"
+          enterkeyhint="done" maxlength="${mk ? 40 : 8}">
+        ${mk ? `<input class="tok" id="cl" placeholder="Niveau — Seconde (facultatif)"
+          autocorrect="off" spellcheck="false" maxlength="20">` : ''}
+        <button class="mi" data-mact="${mk ? 'doclass' : 'dojoin'}"
+          style="justify-content:center;font-weight:700">${svg(I.check)}${mk ? 'Créer' : 'Rejoindre'}</button>
+      </div>`;
+    mountMenu(w);
+    setTimeout(() => { const f = document.getElementById('cn'); if (f) f.focus(); }, 60);
+    return;
+  }
+  /* Donner un devoir vit maintenant dans une seule feuille : `compSheet`,
+     qui sait aussi bien reprendre un livre de la bibliothèque que le
+     fabriquer sur place. Hors établissement, l'ancien envoi direct reste
+     la bonne réponse — il n'y a qu'une classe et rien à composer. */
+  if (menu === 'compo') return compSheet(w);
+  if (menu === 'plivre') {
+    const l = live();
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu pv">
+        <div class="mhd">${svg(I.book)}<span class="mhx"><b>Quel livre ?</b></span></div>
+        ${!l.length ? `<div class="mlbl">Ta bibliothèque est vide</div>`
+          : `<div class="mscroll">${l.map(d => `<button class="mi" data-plivre="${esc(d.id)}">
+              ${svg(I.book)}<span>${esc(d.name)}</span>
+              <span class="tail">${plur(d.cards.length, 'page')}</span></button>`).join('')}</div>`}
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'pwork') return workSheet(w);
+  if (menu === 'pmot') {
+    /* Un mot dans le courrier de l'élève, sans paquet joint. Le seul canal
+       que l'app possède : elle n'envoie ni notification ni e-mail, et
+       laisser croire le contraire serait pire que ne rien proposer. */
+    const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
+    if (!m) { menu = null; return; }
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd"><i class="av">${esc(initial(m.who))}</i>
+          <span class="mhx"><b>Un mot à ${esc(m.who.split(' ')[0])}</b></span></div>
+        <div class="rform"><label>Ton message
+          <textarea id="pmt" rows="4" spellcheck="true"
+            placeholder="Reprends la série 2, on la refait jeudi."></textarea></label></div>
+        <button class="mi" data-mact="pmotgo" style="justify-content:center;font-weight:700">
+          ${svg(I.mail2)}Envoyer</button>
+      </div>`;
+    mountMenu(w);
+    setTimeout(() => { const i = document.getElementById('pmt'); if (i) i.focus(); }, 60);
+    return;
+  }
+  if (menu === 'newwork') {
+    const l = live();
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.share)}<span class="mhx"><b>Donner un devoir</b></span></div>
+        ${!l.length ? `<div class="note" style="padding:4px 18px 14px">Aucun livre à donner.</div>`
+          : `<div class="mscroll">${l.map(d => `<button class="mi" data-give="${esc(d.id)}">
+               ${svg(I.book)}<span>${esc(d.name)}</span>
+               <span class="tail">${plur(d.cards.length, 'page')}</span></button>`).join('')}</div>`}
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  /* ---------- les feuilles du référent ---------- */
+  if (menu === 'refwho') {
+    const g = ref.who;
+    if (!g) { menu = null; return; }
+    const f = ref.form || {};
+    const eleve = g.role === 'eleve';
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu pv">
+        <div class="mhd"><i class="av">${esc(initial(g.name))}</i>
+          <span class="mhx"><b>${esc(g.name)}</b>
+            <i>@${esc(g.handle || '')} · ${esc(ROLENOM[g.role] || g.role)}${
+              g.jamais ? ' · jamais venu' : ' · vu ' + timeAgo(g.derniere)}</i></span></div>
+        <div class="mscroll">
+          <div class="rform">
+            <label>Nom<input id="fnom" value="${esc(g.name)}" spellcheck="false"></label>
+            <label>Pseudo<input id="fpse" value="${esc(g.handle || '')}" spellcheck="false"
+              autocapitalize="none"></label>
+            <label>Adresse<input id="fmel" value="${esc(g.email)}" spellcheck="false"
+              autocapitalize="none" type="email"></label>
+          </div>
+          <button class="mi" data-mact="refsave">${svg(I.check)}<span>Enregistrer l’identité</span></button>
+          <div class="msep"></div>
+
+          <div class="rform">
+            <label>Nouveau mot de passe
+              <input id="fpw" value="${esc(f.pw || '')}" spellcheck="false" autocapitalize="none"
+                placeholder="dix caractères au moins"></label>
+          </div>
+          <button class="mi" data-mact="refpw">${svg(I.key)}<span>Refaire le mot de passe</span>
+            <span class="tail">à lire à l’intéressé</span></button>
+          <div class="msep"></div>
+
+          ${eleve ? `<div class="mlbl">Classe</div>
+            <div class="mscroll courte">${(ref.classes || []).map(c => `
+              <button class="mi${g.class_id === c.id ? ' on' : ''}" data-rmove="${esc(c.id)}">
+                ${svg(g.class_id === c.id ? I.check : I.arrow)}<span>${esc(c.name)}</span>
+                <span class="tail">${c.effectif} él.</span></button>`).join('')}</div>
+            ${g.class_id ? `<button class="mi warn" data-rmove="">${svg(I.x)}
+              <span>Retirer de sa classe</span></button>` : ''}`
+          : `<div class="mlbl">Service d’enseignement</div>
+            ${!ref.service ? ``
+              : !ref.service.length ? ``
+              : `<div class="mscroll courte">${ref.service.map(s => `<div class="mi lect">
+                  ${svg(I.school)}<span>${esc(s.classe)} · ${esc(s.matiere)}${
+                    s.principal ? ' (PP)' : ''}</span>
+                  <button class="tail warn" data-rdropt="${esc(s.teaching_id)}">retirer</button>
+                  </div>`).join('')}</div>`}`}
+          <div class="msep"></div>
+          <div class="mlbl">Rôle</div>
+          ${['eleve', 'prof'].map(k => `<button class="mi${g.role === k ? ' on' : ''}"
+            data-rrolechg="${k}">${svg(g.role === k ? I.check : I.arrow)}${ROLENOM[k]}</button>`).join('')}
+        </div>
+      </div>`;
+    mountMenu(w);
+    if (g.role !== 'eleve' && !ref.service) refService(g.id);
+    return;
+  }
+  if (menu === 'refcls') {
+    const c = (ref.classes || []).find(x => x.id === ref.open);
+    if (!c) { menu = null; return; }
+    const f = ref.form || {};
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu pv">
+        <div class="mhd">${svg(I.school)}<span class="mhx"><b>${esc(c.name)}</b>
+          <i>${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''} · ${
+            plur(c.effectif, 'élève')} · code ${esc(c.code || '—')}</i></span></div>
+        <div class="mscroll">
+          <div class="rform">
+            <label>Nom<input id="knom" value="${esc(c.name)}" spellcheck="false"></label>
+            <label>Niveau<input id="kniv" value="${esc(c.niveau || '')}" spellcheck="false"></label>
+            <label>Filière<input id="kfil" value="${esc(c.filiere || '')}" spellcheck="false"></label>
+            <label>Effectif prévu<input id="kpre" value="${c.prevu || ''}" inputmode="numeric"></label>
+          </div>
+          <button class="mi" data-mact="refclssave">${svg(I.check)}<span>Enregistrer</span></button>
+          <button class="mi" data-mact="refclsgens">${svg(I.users)}
+            <span>Voir ses ${plur(c.effectif, 'élève')}</span></button>
+          <div class="msep"></div>
+
+          <div class="mlbl">Équipe pédagogique</div>
+          ${!ref.team ? ``
+            : !ref.team.length ? ``
+            : `<div class="mscroll courte">${ref.team.map(t => `<div class="mi lect">
+                ${svg(t.principal ? I.check : I.user)}
+                <span>${esc(t.nom)} · ${esc(t.matiere)}${t.principal ? ' (PP)' : ''}</span>
+                <button class="tail" data-rpp="${esc(t.teacher)}|${esc(t.matiere)}">PP</button>
+                <button class="tail warn" data-rdropt="${esc(t.teaching_id)}">retirer</button>
+                </div>`).join('')}</div>`}
+          <div class="rform">
+            <label>Ajouter un professeur — matière
+              <input id="tmat" value="${esc(f.mat || '')}" spellcheck="false"
+                placeholder="Mathématiques"></label>
+          </div>
+          <div class="mscroll courte">${(ref.gens || []).filter(x => x.role === 'prof').map(p => `
+            <button class="mi" data-raddt="${esc(p.id)}">${svg(I.plus)}<span>${esc(p.name)}</span>
+              <span class="tail">${esc(p.matiere || '')}</span></button>`).join('')
+            || ``}</div>
+          <div class="msep"></div>
+          <button class="mi warn" data-mact="refclsdel">${svg(I.trash)}
+            <span>Supprimer la classe</span>
+            <span class="tail">${c.effectif ? 'videz-la d’abord' : ''}</span></button>
+        </div>
+      </div>`;
+    mountMenu(w);
+    if (!ref.team) refTeam(c.id);
+    return;
+  }
+  if (menu === 'refnew' || menu === 'refnewclass') {
+    const cpt = menu === 'refnew';
+    const f = ref.form || {};
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu pv">
+        <div class="mhd">${svg(I.plus)}<span class="mhx">
+          <b>${cpt ? 'Ouvrir un compte' : 'Créer une classe'}</b></span></div>
+        <div class="mscroll">
+          ${cpt ? `<div class="rform">
+              <label>Adresse<input id="nmel" value="${esc(f.mel || '')}" type="email"
+                autocapitalize="none" spellcheck="false" placeholder="prenom.nom@lycee.fr"></label>
+              <label>Nom<input id="nnom" value="${esc(f.nom || '')}" spellcheck="false"></label>
+              <label>Pseudo (facultatif)<input id="npse" value="${esc(f.pse || '')}"
+                autocapitalize="none" spellcheck="false"></label>
+              <label>Mot de passe<input id="npw" value="${esc(f.pw || '')}"
+                autocapitalize="none" spellcheck="false" placeholder="dix caractères au moins"></label>
+            </div>
+            <div class="mlbl">Rôle</div>
+            ${['eleve', 'prof'].map(k => `<button class="mi${(f.role || 'eleve') === k ? ' on' : ''}"
+              data-rnrole="${k}">${svg((f.role || 'eleve') === k ? I.check : I.arrow)}${ROLENOM[k]}</button>`).join('')}
+            ${(f.role || 'eleve') === 'eleve' ? `
+              <div class="mlbl">Classe</div>
+              <div class="mscroll courte">${(ref.classes || []).map(c => `
+                <button class="mi${f.cls === c.id ? ' on' : ''}" data-rncls="${esc(c.id)}">
+                  ${svg(f.cls === c.id ? I.check : I.arrow)}<span>${esc(c.name)}</span>
+                  <span class="tail">${c.effectif} él.</span></button>`).join('')}</div>` : ''}`
+          : `<div class="rform">
+              <label>Nom de la classe<input id="knom" value="${esc(f.nom || '')}"
+                spellcheck="false" placeholder="2nde 4"></label>
+              <label>Niveau<input id="kniv" value="${esc(f.niv || '')}" spellcheck="false"
+                placeholder="Seconde"></label>
+              <label>Filière (facultatif)<input id="kfil" value="${esc(f.fil || '')}"
+                spellcheck="false"></label>
+              <label>Effectif prévu<input id="kpre" value="${esc(f.pre || '')}" inputmode="numeric"></label>
+            </div>
+            <div class="mlbl">Cycle</div>
+            ${Object.entries(CYCLES).map(([k, n]) => `<button class="mi${f.cyc === k ? ' on' : ''}"
+              data-rncyc="${k}">${svg(f.cyc === k ? I.check : I.arrow)}${n}</button>`).join('')}`}
+          <div class="msep"></div>
+          <button class="mi" data-mact="${cpt ? 'refdonew' : 'refdonewclass'}"
+            style="justify-content:center;font-weight:700">${svg(I.check)}${
+              cpt ? 'Ouvrir le compte' : 'Créer la classe'}</button>
+        </div>
+      </div>`;
+    mountMenu(w);
+    setTimeout(() => { const i = document.getElementById(cpt ? 'nmel' : 'knom'); if (i) i.focus(); }, 60);
+    return;
+  }
+  if (menu === 'devoir') {
+    const a = (asgs || []).find(x => x.id === workOpen);
+    if (!a) { menu = null; return; }
+    const tard = a.due && Date.parse(a.due + 'T12:00:00') < Date.now();
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(a.name)}</b>
+          <i>${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</i></span></div>
+        <button class="mi" data-mact="takework" style="justify-content:center;font-weight:700">
+          ${svg(I.plus)}Ajouter à ma bibliothèque</button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'classcode') {
+    /* Le code se projette au tableau : il doit être lisible du fond de la
+       salle, pas niché dans un coin d'écran. */
+    const k = (prof.classes || []).find(x => x.id === prof.open) || {};
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.key)}<span class="mhx"><b>${esc(k.name || 'Cette classe')}</b></span></div>
+        <div class="bigcode">${esc(k.code || '—')}</div>
+        <div class="note" style="padding:0 18px 16px;text-align:center">${
+          k.jamais ? `${plur(k.jamais, 'élève')} n’${k.jamais > 1 ? 'ont' : 'a'} jamais ouvert l’app.`
+                   : 'Tous tes élèves ont déjà ouvert l’app au moins une fois.'}</div>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'workone') {
+    const a = (asgs || []).find(x => x.id === workOpen);
+    const c = (classes || []).find(x => x.id === classOf);
+    if (!a || !c) { menu = null; return; }
+    const owner = c.owner === auth.uid;
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(a.name)}</b>
+          <i>${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</i></span></div>
+        ${owner ? `<div class="note" style="padding:0 18px 10px" id="wprog">Chargement du suivi…</div>
+          <button class="mi warn" data-mact="delwork">${svg(I.trash)}<span>Retirer ce devoir</span></button>`
+        : `<button class="mi" data-mact="takework" style="justify-content:center;font-weight:700">
+             ${svg(I.plus)}Ajouter à ma bibliothèque</button>`}
+      </div>`;
+    mountMenu(w);
+    if (owner) workProgress(a.id);
+    return;
+  }
+  if (menu === 'member') {
+    const m = (roster || []).find(x => x.user_id === memberOpen);
+    if (!m) { menu = null; return; }
+    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+      <div class="menu">
+        <div class="mhd"><i class="av">${esc(initial(m.who))}</i>
+          <span class="mhx"><b>${esc(m.who || 'Élève')}</b></span></div>
+        <button class="mi warn" data-mact="dropmember">${svg(I.x)}<span>Retirer de la classe</span></button>
+      </div>`;
+    mountMenu(w);
+    return;
+  }
+  if (menu === 'account') return accountSheet(w);
+  if (menu === 'report') return reportSheet(w);
+  if (menu === 'blocked') return blockedSheet(w);
   if (menu === 'backup') {
     const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -3585,7 +5935,7 @@ function paintMenu() {
       const k = side + (kind === 'img' ? 'i' : 'a');
       const has = c[k];
       return `<button class="mb ${has ? 'on' : ''}" data-mact="med-${k}">
-        ${kind === 'img' && has ? `<img src="${esc(has)}" alt="">` : svg(kind === 'img' ? I.image : I.mic)}
+        ${kind === 'img' && has ? mimg('', has) : svg(kind === 'img' ? I.image : I.mic)}
         ${has ? `<i class="rmv" data-mact="del-${k}">${svg(I.x)}</i>` : ''}</button>`;
     };
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -3818,9 +6168,11 @@ function paintMenu() {
         <button class="mi" data-mact="rolink">${svg(I.link)}${m.tok ? 'Copier le lien de consultation' : 'Créer un lien de consultation'}</button>
         ${m.tok ? `<button class="mi warn" data-mact="roff">${svg(I.eyeoff)}Révoquer le lien</button>` : ''}
         <div class="msep"></div>
-        ${m.pub ? `<button class="mi" data-mact="publish">${svg(I.book)}Mettre à jour dans la bibliothèque</button>
-                   <button class="mi warn" data-mact="unpublish">${svg(I.x)}Retirer de la bibliothèque</button>`
-          : `<button class="mi" data-mact="publish">${svg(I.book)}Publier dans la bibliothèque</button>`}
+        ${m.pub ? `<button class="mi" data-mact="publish">${svg(I.book)}Mettre à jour sur l’étagère
+                     <span class="tail">${esc(scopeName())}</span></button>
+                   <button class="mi warn" data-mact="unpublish">${svg(I.x)}Retirer de l’étagère</button>`
+          : `<button class="mi" data-mact="publish">${svg(I.book)}Poser sur l’étagère
+               <span class="tail">${esc(scopeName())}</span></button>`}
         <button class="mi" data-mact="duelnew2">${svg(I.flame)}Lancer un défi<span class="tail">${Math.min(DUELQ, d.cards.length)}</span></button>
         <div class="msep"></div>
         <button class="mi" data-mact="copylink">${svg(I.down)}Lien hors ligne (tout le livre)</button>
@@ -3869,6 +6221,9 @@ function paintMenu() {
         <button class="mi" data-mact="mateprof">${svg(I.chart)}Son journal de lecture</button>
         <button class="mi" data-mact="matesend">${svg(I.share)}Lui prêter un livre</button>
         <button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes lecteurs</span></button>
+        <div class="msep"></div>
+        <button class="mi" data-mact="matereport">${svg(I.warn)}<span>Signaler ce compte</span></button>
+        <button class="mi warn" data-mact="mateblock">${svg(I.lock)}<span>Bloquer</span></button>
       </div>`;
     mountMenu(w);
     return;
@@ -3958,7 +6313,10 @@ function paintMenu() {
           <span class="a">${esc(cf(c))}</span>${svg(I.arrow)}<span class="b">${esc(cb(c))}</span></div>`).join('')}</div>
         <button class="mi" data-mact="libadd" style="justify-content:center;font-weight:700">
           ${svg(I.plus)}Ajouter à ma bibliothèque</button>
-        ${mine ? `<button class="mi warn" data-mact="libdrop">${svg(I.trash)}<span>Retirer de la bibliothèque</span></button>` : ''}
+        ${mine ? `<button class="mi warn" data-mact="libdrop">${svg(I.trash)}<span>Retirer de l’étagère</span></button>`
+          : `<div class="msep"></div>
+             <button class="mi" data-mact="libreport">${svg(I.warn)}<span>Signaler ce livre</span></button>
+             <button class="mi warn" data-mact="libblock">${svg(I.lock)}<span>Bloquer ce compte</span></button>`}
       </div>`;
     mountMenu(w);
     return;
@@ -4061,7 +6419,7 @@ function paintMenu() {
           ${[[7, '7 jours'], [30, '30 jours'], [0, 'Tout']].map(([v, lab]) =>
             `<button data-mrange="${v}" class="${mateProf.range === v ? 'on' : ''}">${lab}</button>`).join('')}
         </div>
-        ${mateProf.load && !r ? `<div class="note">Chargement…</div>` : `
+        ${mateProf.load && !r ? `` : `
           <div class="tiles st4" style="margin:0 12px 12px">
             <div class="st"><b>${r ? +r.n : 0}</b><span>pages lues</span></div>
             <div class="st"><b>${pctok}%</b><span>de réussite</span></div>
@@ -4070,7 +6428,7 @@ function paintMenu() {
           </div>`}
         <div class="msep"></div>
         <div class="mi" style="font-weight:750">${svg(I.book)}Ses livres dans la bibliothèque</div>
-        <div class="mscroll">${l === null ? `<div class="note">Chargement…</div>`
+        <div class="mscroll">${l === null ? ``
           : l.length ? l.map(x => `<div class="mi">
               <i class="tri" style="--c:var(--soft)"></i>${esc(x.name)}
               <span class="tail">${plur(+x.n, 'page')}</span></div>`).join('')
@@ -4096,6 +6454,9 @@ function paintMenu() {
         <button class="mi" data-mact="addmail" style="justify-content:center;font-weight:700">
           ${svg(it.added_at ? I.check : I.plus)}${it.added_at ? 'Déjà dans ma bibliothèque · Ajouter à nouveau' : 'Ajouter à ma bibliothèque'}</button>
         <button class="mi warn" data-mact="delmail">${svg(I.trash)}<span>Supprimer</span></button>
+        ${it.from_user && it.from_user !== auth.uid ? `<div class="msep"></div>
+          <button class="mi" data-mact="mailreport">${svg(I.warn)}<span>Signaler cet envoi</span></button>
+          <button class="mi warn" data-mact="mailblock">${svg(I.lock)}<span>Bloquer l’expéditeur</span></button>` : ''}
       </div>`;
     mountMenu(w);
     return;
@@ -4153,7 +6514,7 @@ function paintMenu() {
   if (menu === 'rename' || menu === 'pwd' || menu === 'delacc') {
     const conf = {
       rename: ['Nom affiché', I.user, 'text', 'Comment on t’appelle', prefs.name || '', 'Enregistrer'],
-      pwd: ['Nouveau mot de passe', I.lock, 'password', 'Au moins 6 caractères', '', 'Changer'],
+      pwd: ['Nouveau mot de passe', I.lock, 'password', `Au moins ${PWMIN} caractères`, '', 'Changer'],
       delacc: ['Supprimer le compte', I.trash, null, '', '', 'Tout supprimer']
     }[menu];
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -4229,9 +6590,14 @@ async function mateProfPull(id) {
   if (menu === 'mateprof') paintMenu();
 }
 let recKey = null;
+/* Les feuilles vivent sur `document.body`, hors de `#app` : c'est ce
+   gestionnaire-ci qui les sert. Lui aussi n'énumérait que des attributs, et
+   tout bouton de feuille portant un `data-` absent de la liste restait
+   muet. Il attrape maintenant les boutons, comme celui de la page. */
 document.addEventListener('click', async e => {
-  const b = e.target.closest('[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange]');
+  const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-give],[data-setrole]');
   if (!b) return;
+  if (feuilleTap(b)) return;
   const d = deck(view.id);
   if (b.dataset.dnew !== undefined) { const t = deck(b.dataset.dnew); if (t) duelMake(t); return; }
   if (b.dataset.copy !== undefined) {
@@ -4292,6 +6658,163 @@ document.addEventListener('click', async e => {
   }
   const a = b.dataset.mact;
   if (a === 'close') return closeMenu();
+  if (b.dataset.why !== undefined) { reportWhy = b.dataset.why; return paintMenu(); }
+  if (b.dataset.unblock !== undefined) return unblockUser(b.dataset.unblock);
+  if (b.dataset.setrole !== undefined) return setRole(b.dataset.who, b.dataset.setrole);
+  if (a === 'rsend') return sendReport();
+  if (a === 'rblock') { const r = reportOn; if (r && r.user) return blockUser(r.user, r.label); return; }
+  /* Le signalement emporte une copie : ce qu'on voit à l'écran est ce qui
+     part, et effacer ensuite ne l'efface pas. */
+  if (a === 'libreport' || a === 'libblock') {
+    const it = (lib.list || []).find(x => x.deck_id === lib.open); if (!it) return;
+    if (a === 'libblock') return blockUser(it.user_id, it.who);
+    return openReport('library', it.deck_id, it.user_id, it.name,
+      { nom: it.name, qui: it.who, matiere: it.subject, cartes: (it.cards || []).slice(0, 40) });
+  }
+  if (a === 'mailreport' || a === 'mailblock') {
+    const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen); if (!it) return;
+    if (a === 'mailblock') return blockUser(it.from_user, it.from_name);
+    return openReport('mail', it.id, it.from_user, it.deck_name,
+      { nom: it.deck_name, qui: it.from_name, message: it.message, cartes: (it.cards || []).slice(0, 40) });
+  }
+  if (a === 'matereport' || a === 'mateblock') {
+    const f = (mates || []).find(x => x.id === mateOpen); if (!f) return;
+    if (a === 'mateblock') return blockUser(f.id, f.name || f.handle);
+    return openReport('profile', f.id, f.id, f.name || ('@' + (f.handle || '')),
+      { pseudo: f.handle, nom: f.name });
+  }
+  if (a === 'doclass') {
+    const n = (document.getElementById('cn') || {}).value || '';
+    const l = (document.getElementById('cl') || {}).value || '';
+    return makeClass(n, l);
+  }
+  if (a === 'dojoin') {
+    const v = ((document.getElementById('cn') || {}).value || '').trim();
+    if (v) return joinClass(v);
+    return;
+  }
+  if (b.dataset.give !== undefined) {
+    const d = deck(b.dataset.give);
+    if (d && classOf) return giveWork(d, classOf, 7);
+    return;
+  }
+  /* ---- le composeur et la feuille d'un devoir ---- */
+  if (a === 'cadd') {
+    if (!prof.comp) return;
+    lireComp();
+    const f = prof.comp.recto.trim(), b = prof.comp.verso.trim();
+    if (!f || !b) return toast(I.x, 'Il faut un recto et un verso');
+    prof.comp.cartes.push([f, b]);
+    prof.comp.recto = ''; prof.comp.verso = '';
+    paintMenu();
+    setTimeout(() => { const n = document.getElementById('crec'); if (n) n.focus(); }, 40);
+    return;
+  }
+  if (a === 'cgive') return compDonner();
+  if (a === 'pdefi') {
+    const d = (prof.devoirs || []).find(x => x.id === prof.work);
+    if (d) duelClasse(d.id, d.nom);
+    return;
+  }
+  if (a === 'pmotgo') {
+    const t = ((document.getElementById('pmt') || {}).value || '').trim();
+    if (!t) return toast(I.x, 'Écris ton message');
+    const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
+    api('/rest/v1/mail', 'POST', [{ from_user: auth.uid, to_user: prof.eleve,
+      from_name: prefs.name || auth.email, deck_name: '', message: t.slice(0, 600), cards: [] }],
+      { Prefer: 'return=minimal' })
+      .then(() => { closeMenu(); render();
+        toast(I.check, 'Mot envoyé à ' + (m ? m.who.split(' ')[0] : 'l’élève')); },
+            () => toast(I.x, 'Envoi impossible'));
+    return;
+  }
+  if (a === 'prelance') {
+    return profDo('prof_relance', { aid: prof.work, mot: '' },
+      r => r ? plur(r, 'élève') + ' relancé' + (r > 1 ? 's' : '') : 'Personne à relancer')
+      .then(() => { closeMenu(); render(); });
+  }
+  if (a === 'predonner') {
+    const d = (prof.devoirs || []).find(x => x.id === prof.work);
+    if (!d) return;
+    /* Redonner, c'est repartir du composeur avec tout de prérempli : le
+       professeur n'a plus qu'à cocher les classes. Les cartes viennent du
+       devoir lui-même, pas d'une bibliothèque où elles ne sont peut-être
+       plus. */
+    profCartesDeDevoir(d);
+    return;
+  }
+  if (a === 'pdel') {
+    return profDo('prof_del_work', { aid: prof.work }, 'Devoir retiré')
+      .then(() => { closeMenu(); render(); });
+  }
+  /* ---- écritures du référent ---- */
+  if (a === 'refsave') {
+    if (!ref.who) return;
+    const v = id => ((document.getElementById(id) || {}).value || '').trim();
+    return refDo('ref_update_account',
+      { cible: ref.who.id, nom: v('fnom'), pseudo: v('fpse'), adresse: v('fmel') },
+      'Identité enregistrée').then(() => { closeMenu(); render(); });
+  }
+  if (a === 'refpw') {
+    if (!ref.who) return;
+    const pw = ((document.getElementById('fpw') || {}).value || '').trim();
+    if (pw.length < 10) return toast(I.x, 'Au moins dix caractères');
+    return refDo('ref_set_password', { cible: ref.who.id, pw },
+      'Mot de passe refait · ' + pw).then(() => { ref.form = {}; paintMenu(); });
+  }
+  if (a === 'refclssave') {
+    const f = lireClass();
+    /* Le cycle ne se modifie pas ici — il n'y a pas de champ pour lui — mais
+       `ref_save_class` réécrit toute la ligne : le lui taire l'effacerait. */
+    const c = (ref.classes || []).find(x => x.id === ref.open) || {};
+    return refDo('ref_save_class',
+      { cid: ref.open, nom: f.nom, niveau: f.niv, cycle: c.cycle || '', filiere: f.fil,
+        prevu: f.pre ? +f.pre : null }, 'Classe enregistrée')
+      .then(() => { closeMenu(); render(); });
+  }
+  if (a === 'refclsdel') {
+    return refDo('ref_delete_class', { cid: ref.open }, 'Classe supprimée')
+      .then(r => { if (r !== null) { closeMenu(); render(); } });
+  }
+  if (a === 'refclsgens') {
+    ref.cls = ref.open; ref.tab = 'gens'; ref.role = ''; ref.q = '';
+    refPeople(true); closeMenu(); animate = false; return render();
+  }
+  if (a === 'refdonew') {
+    const f = { ...(ref.form || {}), ...lireNew() };
+    ref.form = f;
+    if ((f.pw || '').length < 10) return toast(I.x, 'Au moins dix caractères');
+    return refDo('ref_new_account',
+      { adresse: f.mel || '', nom: f.nom || '', pseudo: f.pse || '',
+        qrole: f.role || 'eleve', cid: (f.role || 'eleve') === 'eleve' ? (f.cls || null) : null,
+        pw: f.pw || '' }, 'Compte ouvert · ' + (f.mel || ''))
+      .then(r => { if (r) { ref.form = {}; closeMenu(); render(); } });
+  }
+  if (a === 'refdonewclass') {
+    const f = { ...(ref.form || {}), ...lireClass() };
+    ref.form = f;
+    return refDo('ref_save_class',
+      { cid: null, nom: f.nom || '', niveau: f.niv || '', cycle: f.cyc || '',
+        filiere: f.fil || '', prevu: f.pre ? +f.pre : null }, 'Classe créée')
+      .then(r => { if (r) { ref.form = {}; closeMenu(); render(); } });
+  }
+  if (a === 'takework') {
+    const x = (asgs || []).find(y => y.id === workOpen);
+    if (x) return takeWork(x);
+    return;
+  }
+  if (a === 'delwork') {
+    const id = workOpen; closeMenu();
+    api('/rest/v1/assignments?id=eq.' + encodeURIComponent(id), 'DELETE', null,
+      { Prefer: 'return=minimal' })
+      .then(() => { asgs = (asgs || []).filter(x => x.id !== id); render(); toast(I.check, 'Devoir retiré'); },
+            () => toast(I.x, 'Impossible pour l’instant'));
+    return;
+  }
+  if (a === 'dropmember') { if (classOf && memberOpen) return dropMember(classOf, memberOpen); return; }
+  if (a === 'instcopy') return copyLink();
+  if (a === 'instgo') return doPrompt();
+  if (a === 'instlater') return closeMenu();
   if (a === 'card-ok') {
     const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
     const t = document.getElementById('ctags');
@@ -4317,7 +6840,7 @@ document.addEventListener('click', async e => {
       const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
       if (c) { c[key] = url; saveDeck(d); }
       toast(I.check, 'Son enregistré');
-    } catch (x) { toast(I.x, x.message === 'big' ? 'Fichier trop lourd' : 'Envoi impossible'); }
+    } catch (x) { toast(I.x, upErr(x)); }
     return paintMenu();
   }
   if (a && a.startsWith('med-')) {
@@ -4332,7 +6855,7 @@ document.addEventListener('click', async e => {
     if (!f) return;
     toast(I.share, 'Envoi…');
     try { c[key] = await upload(f); saveDeck(d); toast(I.check); }
-    catch (x) { toast(I.x, x.message === 'big' ? 'Fichier trop lourd' : 'Envoi impossible'); }
+    catch (x) { toast(I.x, upErr(x)); }
     return paintMenu();
   }
   if (a === 'deckset') { closeMenu(); return openMenu('deckset'); }
@@ -4344,7 +6867,7 @@ document.addEventListener('click', async e => {
   }
   if (a === 'do-pwd') {
     const v = document.getElementById('fld').value, err = document.getElementById('mrr');
-    if (v.length < 6) { err.textContent = 'Au moins 6 caractères'; return; }
+    if (v.length < PWMIN) { err.textContent = `Au moins ${PWMIN} caractères`; return; }
     err.textContent = 'Envoi…';
     api('/auth/v1/user', 'PUT', { password: v })
       .then(() => { closeMenu(); toast(I.check, 'Mot de passe changé'); })
@@ -4776,13 +7299,34 @@ const faceSize = txt => {
   const n = plain(txt).length;
   return n > 260 ? ' xxl' : n > 160 ? ' xl' : n > 90 ? ' l' : '';
 };
+/* Une face peut ne porter qu'un son, qu'une image, qu'un texte, ou les
+   trois. Les commandes de son étaient collées dans un coin : sur une fiche
+   qui n'a qu'un enregistrement, tout le cadre paraissait vide et le seul
+   contenu se cachait en bas à droite. Elles entrent donc dans le flux —
+   image, puis texte, puis sons — et l'ensemble se centre d'un bloc, quelle
+   que soit la combinaison.
+
+   Deux sons ne se disputent plus le même bouton. L'enregistrement d'une
+   vraie voix et la lecture par la machine sont deux choses différentes :
+   le micro pour l'un, le haut-parleur pour l'autre, et on peut écouter
+   les deux. Avant, dès qu'un enregistrement existait, la voix de synthèse
+   devenait inatteignable. */
 function faceHtml(bk, txt, img, aud, lang, tag) {
-  const snd = aud || (lang && TTS && plain(txt));
+  const side = bk ? 'b' : 'f';
+  const hasTxt = !!plain(txt);
+  const canSay = !!(lang && TTS && hasTxt);
+  const seul = !hasTxt && !img && (aud || canSay);   // le son est tout le contenu
+  const btns = (aud ? `<button class="snd" data-snd="${side}"
+        aria-label="Écouter l’enregistrement">${svg(I.mic)}</button>` : '')
+    + (canSay ? `<button class="snd" data-say="${side}"
+        aria-label="Lire le texte à voix haute">${svg(I.sound)}</button>` : '');
   return `<div class="face${bk ? ' bk' : ''}${faceSize(txt)}">
     ${tag || ''}
-    ${img ? `<img class="fim" src="${esc(img)}" alt="">` : ''}
-    ${plain(txt) ? `<div class="tx">${rt(txt)}</div>` : ''}
-    ${snd ? `<button class="snd" data-snd="${bk ? 'b' : 'f'}">${svg(I.sound)}</button>` : ''}
+    <div class="fbody">
+      ${mimg('fim', img)}
+      ${hasTxt ? `<div class="tx">${rt(txt)}</div>` : ''}
+      ${btns ? `<div class="snds${seul ? ' seul' : ''}">${btns}</div>` : ''}
+    </div>
   </div>`;
 }
 const isTF = c => c && c.t === 'tf';
@@ -4815,9 +7359,11 @@ function paintStack() {
         ${faceHtml(false, front, fimg, faud, frontLang, tag)}
         ${faceHtml(true, back, bimg, baud, backLang, tag)}
       </div>
+      <i class="swr" aria-hidden="true"></i>
       <div class="ov y">${svg(I.check)}</div>
       <div class="ov n">${svg(I.x)}</div>
     </div>`;
+  paintMedia(st);
   const top = document.getElementById('top');
   requestAnimationFrame(() => top.classList.remove('in'));
   if (!tf) bindDrag(top);
@@ -4836,9 +7382,15 @@ function paintMCQ() {
     study.optsFor = c.id;
     study.pick = null;
   }
-  st.innerHTML = `${c.fi ? `<img class="fim" src="${esc(c.fi)}" alt="">` : ''}
+  st.innerHTML = `${mimg('fim', c.fi)}
     <span>${rt(c.f)}</span>
-    ${(c.fa || (cardOrigin(c).langf && TTS)) ? `<button class="snd" data-snd="f">${svg(I.sound)}</button>` : ''}`;
+    ${(() => {
+      const o = cardOrigin(c), sayable = o.langf && TTS && plain(c.f);
+      const b = (c.fa ? `<button class="snd" data-snd="f" aria-label="Écouter l’enregistrement">${svg(I.mic)}</button>` : '')
+        + (sayable ? `<button class="snd" data-say="f" aria-label="Lire à voix haute">${svg(I.sound)}</button>` : '');
+      return b ? `<div class="snds">${b}</div>` : '';
+    })()}`;
+  paintMedia(st);
   const good = norm(plain(c.b));
   f.innerHTML = `<div class="opts">${study.opts.map((o, k) => {
     const right = norm(plain(o)) === good;
@@ -4971,44 +7523,134 @@ function toggleFlip() {
   paintFoot();
 }
 const turnPage = (top, on) => { if (top) top.classList.toggle('flip', !!on); };
-/* Le geste : on pousse la fiche à gauche ou à droite, elle suit le doigt
-   et bascule un peu. Rien de plus — c'est ce qui se lit le mieux. */
+/* ---------- le geste ----------
+   La fiche ne suivait que l'axe horizontal : on la poussait à gauche ou à
+   droite et elle revenait sur un rail. C'était lisible, mais ça n'était
+   pas une carte — un objet posé sur une table se prend, se promène, se
+   repose, et part dans la direction où on l'a lancé.
+
+   Elle se déplace donc librement, dans les deux axes, aussi loin qu'on
+   veut. Trois choses font la fluidité :
+
+   — l'écran ne se repeint qu'une fois par image. Un doigt produit plus
+     d'événements que l'écran n'a de trames ; écrire la transformation à
+     chaque événement fait travailler le navigateur pour rien et saccade.
+   — la rotation dépend de l'endroit où l'on a saisi. Prise par le haut la
+     fiche penche dans un sens, prise par le bas dans l'autre, comme un
+     carton qu'on fait pivoter autour du point qu'on tient.
+   — le lancer garde sa direction. On relâche en diagonale, elle sort en
+     diagonale, à la vitesse qu'on lui a donnée, au lieu de rejoindre une
+     trajectoire décidée d'avance.
+
+   Ce qui ne change pas : la décision reste à gauche ou à droite. Un
+   déplacement vertical promène la fiche, il ne répond pas à sa place. */
+const tint = dx => Math.min(1, Math.max(0, (Math.abs(dx) - 6) / 60));
+function swipeTint(el, dx) {
+  const t = tint(dx);
+  el.style.setProperty('--sw', t.toFixed(3));
+  if (t) el.style.setProperty('--swc', dx > 0 ? 'var(--ok)' : 'var(--ko)');
+}
 function bindDrag(el) {
-  let x0 = 0, dx = 0, on = false, moved = false, t0 = 0;
+  let x0 = 0, y0 = 0, dx = 0, dy = 0, on = false, moved = false;
+  let haut = true;                    // saisie au-dessus du milieu de la fiche
+  let raf = 0, pid = -1;
+  /* Les derniers instants du geste, pour connaître la vitesse au lâcher.
+     La moyenne depuis le départ mentirait : on ralentit souvent avant de
+     relâcher, et un long déplacement lent finirait par compter comme un
+     lancer. */
+  let trace = [];
+  const SUIVI = 90;                   // millisecondes retenues
+
   const ov = (k, v) => { const n = el.querySelector('.ov.' + k); if (n) { n.style.opacity = v; n.style.transform = `scale(${.55 + v * .45})`; } };
+
+  const peindre = () => {
+    raf = 0;
+    /* La rotation suit l'écart horizontal, signée par le point de saisie,
+       et se plafonne : au-delà d'une vingtaine de degrés la fiche devient
+       illisible pendant qu'on la déplace. */
+    const rot = Math.max(-20, Math.min(20, dx * .07)) * (haut ? 1 : -1);
+    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) rotate(${rot}deg)`;
+    swipeTint(el, dx);
+    const t = tint(dx);
+    ov('y', dx > 0 ? t : 0);
+    ov('n', dx < 0 ? t : 0);
+  };
+  const demander = () => { if (!raf) raf = requestAnimationFrame(peindre); };
+
+  const vitesse = () => {
+    const t = Date.now();
+    const p = trace.filter(s => t - s.t < SUIVI);
+    if (p.length < 2) return { vx: 0, vy: 0 };
+    const a = p[0], b = p[p.length - 1];
+    const dt = Math.max(8, b.t - a.t);
+    return { vx: (b.x - a.x) / dt, vy: (b.y - a.y) / dt };   // pixels par milliseconde
+  };
+
   el.addEventListener('pointerdown', e => {
-    if (e.target.closest('[data-snd]')) return;      // le son ne retourne pas la fiche
-    on = true; moved = false; dx = 0; x0 = e.clientX; t0 = Date.now();
-    el.setPointerCapture(e.pointerId); el.style.transition = 'none';
+    if (e.target.closest('[data-snd],[data-say]')) return;   // le son ne retourne pas la fiche
+    on = true; moved = false; dx = 0; dy = 0;
+    x0 = e.clientX; y0 = e.clientY; pid = e.pointerId;
+    const r = el.getBoundingClientRect();
+    haut = e.clientY < r.top + r.height / 2;
+    trace = [{ x: 0, y: 0, t: Date.now() }];
+    try { el.setPointerCapture(pid); } catch (x) {}
+    el.style.transition = 'none';
   });
   el.addEventListener('pointermove', e => {
-    if (!on) return;
-    dx = e.clientX - x0; if (Math.abs(dx) > 5) moved = true;
-    el.style.transform = `translateX(${dx}px) rotate(${dx / 26}deg)`;
-    ov('y', dx > 20 ? Math.min(1, (dx - 20) / 70) : 0);
-    ov('n', dx < -20 ? Math.min(1, (-dx - 20) / 70) : 0);
+    if (!on || e.pointerId !== pid) return;
+    dx = e.clientX - x0; dy = e.clientY - y0;
+    if (!moved && Math.hypot(dx, dy) > 5) moved = true;
+    const t = Date.now();
+    trace.push({ x: dx, y: dy, t });
+    while (trace.length > 2 && t - trace[0].t > SUIVI) trace.shift();
+    demander();
   });
   const end = () => {
-    if (!on) return; on = false; el.style.transition = '';
-    const v = Math.abs(dx) / Math.max(1, Date.now() - t0);
-    if (Math.abs(dx) > 92 || (v > .6 && Math.abs(dx) > 34)) return fling(dx < 0 ? -1 : 1);
+    if (!on) return; on = false;
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    el.style.transition = '';
+    const v = vitesse();
+    /* Deux façons de valider : aller assez loin, ou lancer assez vite. La
+       seconde permet un geste court et sec, qui est celui qu'on fait quand
+       on enchaîne. */
+    if (Math.abs(dx) > 92 || (Math.abs(v.vx) > .45 && Math.abs(dx) > 26)) return fling(dx < 0 ? -1 : 1, v, dx, dy);
     el.style.transform = ''; ov('y', 0); ov('n', 0);
+    el.style.setProperty('--sw', 0);           // la fiche revient au centre, la couleur s'efface
     if (!moved) toggleFlip();
   };
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);
 }
-function fling(dir) {
+/* La fiche sort dans la direction où on l'a lancée, et non sur une
+   trajectoire décidée d'avance : c'est ce qui donne l'impression de
+   l'avoir jetée soi-même. Appelée sans lancer — depuis un bouton — elle
+   part à l'horizontale, comme avant. */
+function fling(dir, v, fx, fy) {
   const el = document.getElementById('top'); if (!el || el.dataset.gone) return;
   /* Pendant l'étape qui apprend le geste, seul le bon sens passe : partir
      du mauvais côté pendant qu'on lit « balaie à droite » embrouille plus
      qu'autre chose. */
   if (tour && tour.lock && dir !== tour.lock) {
     el.style.transition = ''; el.style.transform = '';
+    el.style.setProperty('--sw', 0);
     return;
   }
   el.dataset.gone = 1; el.classList.add('gone');
-  el.style.transform = `translateX(${dir * 130}vw) rotate(${dir * 20}deg)`;
+  /* Partie au bouton plutôt qu'au doigt, la fiche n'a jamais été teintée :
+     on l'allume au départ, sinon les deux façons de répondre ne donnent
+     pas le même retour. */
+  swipeTint(el, dir * 100);
+  const vx = v ? v.vx : 0, vy = v ? v.vy : 0;
+  const sp = Math.max(.5, Math.hypot(vx, vy));
+  /* On garde la pente du lancer, mais on impose le côté : une fiche qui
+     sortirait du mauvais bord contredirait la réponse qu'on vient de
+     donner. Et un minimum d'horizontale l'empêche de partir tout droit
+     vers le haut sur un geste presque vertical. */
+  const ux = dir * Math.max(.6, Math.abs(vx) / sp);
+  const uy = Math.max(-1.1, Math.min(1.1, vy / sp));
+  const loin = 1500;
+  el.style.transform = `translate3d(${(fx || 0) + ux * loin}px, ${(fy || 0) + uy * loin}px, 0)`
+    + ` rotate(${dir * (18 + Math.min(16, sp * 9))}deg)`;
   el.style.opacity = 0;
   const g = pendingGrade; pendingGrade = null;
   /* À droite je sais, à gauche à revoir : le sens des applications de
@@ -5381,19 +8023,22 @@ function nextQ() {
 /* ---------- création / import ---------- */
 let comp = { subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false };
 let aiBusy = false;
-const resetComp = () => { comp = { subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false }; };
+const resetComp = extra => { comp = { subject: '', cards: [], edit: -1, bulk: false,
+  text: '', dups: false, ...(extra || {}) }; };
 
 function importView() {
   const t = view.id ? deck(view.id) : null;
   const s = subj(t ? t.subject : comp.subject);
   $.innerHTML = `
     <div class="bar">
-      <button class="ic" data-act="${t ? 'deck' : 'home'}" aria-label="Retour">${svg(I.back)}</button>
-      <h1>${t ? esc(t.name) : 'Nouveau livre'}</h1>
+      <button class="ic" data-act="${t ? 'deck' : comp.pour === 'devoir' ? 'prof' : 'home'}"
+        aria-label="Retour">${svg(I.back)}</button>
+      <h1>${t ? esc(t.name) : comp.pour === 'devoir' ? 'Nouveau devoir' : 'Nouveau livre'}</h1>
       <button class="ic ${comp.bulk ? 'solid' : ''}" data-act="bulk">${svg(I.down)}</button>
     </div>
     <div class="sheet ${comp.bulk ? 'sh-bulk' : 'sh-comp'}">
-      ${t ? '' : `<div class="field"><input id="nm" placeholder="Titre du livre" spellcheck="false"
+      ${t ? '' : `<div class="field"><input id="nm" placeholder="${
+        comp.pour === 'devoir' ? 'Titre du devoir' : 'Titre du livre'}" spellcheck="false"
         enterkeyhint="next" value="${esc(comp.name || '')}"></div>
         ${pills(comp.subject, db.subjects.map(x => subj(x.id)), 'nsubj')}`}
       ${comp.bulk ? `
@@ -5423,7 +8068,7 @@ function importView() {
         <div class="lbl"><span>Pages</span><span id="cn">${comp.cards.length}</span></div>
         <div class="dlist" id="dlist"></div>`}
       ${comp.bulk ? '' : `<button class="cta" id="ok" ${comp.cards.length ? '' : 'disabled'}>
-        ${t ? 'Ajouter' : 'Créer'}${svg(I.check)}</button>`}
+        ${t ? 'Ajouter' : comp.pour === 'devoir' ? 'Continuer' : 'Créer'}${svg(I.check)}</button>`}
     </div>`;
 
   const nm = document.getElementById('nm');
@@ -5583,8 +8228,19 @@ function importView() {
   document.getElementById('ok').onclick = () => {
     if (!comp.cards.length) return;
     const cards = comp.cards.slice();
-    if (t) { t.cards.push(...cards.map(c => ({ id: uid(), f: c.f, b: c.b }))); saveDeck(t); resetComp(); go('deck', t.id); }
-    else { const d = addDeck(comp.name, cards, comp.subject); resetComp(); go('deck', d.id); }
+    const pour = comp.pour;
+    if (t) {
+      t.cards.push(...cards.map(c => ({ ...c, id: uid() })));
+      saveDeck(t); resetComp(); go('deck', t.id);
+    } else {
+      const d = addDeck(comp.name, cards, comp.subject);
+      if (comp.cours) { d.cours = true; saveDeck(d); }
+      resetComp();
+      /* Un livre composé pour une classe enchaîne directement sur « à qui,
+         et pour quand » : c'est le même geste, il n'a pas à le rouvrir. */
+      if (pour === 'devoir') { donnerLivre(d); return; }
+      go('deck', d.id);
+    }
     toast(I.check, plur(cards.length, 'page'));
   };
 }
@@ -5600,10 +8256,101 @@ function paintDraft() {
 }
 
 /* ---------- interactions ---------- */
+/* Le sélecteur commence par « button », et c'est la correction la plus
+   importante de ce fichier. Il n'énumérait que des attributs, un par un :
+   tout écran posant un `data-` qui n'était pas dans la liste avait des
+   boutons parfaitement muets — pas d'erreur, pas de trace, rien. Les trois
+   consoles ont été écrites comme ça, et aucune ne répondait.
+   Un bouton est fait pour être pressé : on l'attrape tous, et les branches
+   plus bas décident. Celles qui ne reconnaissent rien laissent filer, donc
+   les feuilles (qui lisent `data-mact` sur leur propre écouteur) passent
+   après sans être gênées. La liste d'attributs reste pour ce qui n'est pas
+   un bouton. */
+
+/* ══════════ ce qui se presse dans une feuille ══════════
+   Une feuille est montée sur `document.body`, pas dans `#app` : les
+   branches écrites pour l'écran ne la voient jamais. Plutôt que d'en tenir
+   deux copies — qui divergeront —, on les range ici, et les deux
+   gestionnaires appellent la même fonction. Elle rend `true` quand elle a
+   traité le clic, et le gestionnaire s'arrête là. */
+function feuilleTap(b) {
+  const ds = b.dataset;
+  const oui = x => (x, true);          // « traité », quoi que la branche rende
+
+  /* ---- le composeur de devoir ---- */
+  if (ds.cdue2) {
+    if (prof.comp) { lireComp(); prof.comp.due = ds.cdue2; prof.comp.mois = ds.cdue2; }
+    return oui(paintMenu());
+  }
+  if (ds.cmois) {
+    if (prof.comp) { lireComp(); prof.comp.mois = ds.cmois; }
+    return oui(paintMenu());
+  }
+  if (ds.ccible) {
+    if (!prof.comp) return true;
+    lireComp();
+    const k = ds.ccible;
+    prof.comp.cibles.has(k) ? prof.comp.cibles.delete(k) : prof.comp.cibles.add(k);
+    return oui(paintMenu());
+  }
+  if (ds.plivre) { const d = deck(ds.plivre); if (d) donnerLivre(d); return true; }
+  if (ds.cedit) {
+    /* On repart dans l'éditeur complet, et on revient ici ensuite : le
+       devoir en préparation attend dans `prof.comp`. */
+    if (!prof.comp || !prof.comp.livre) return true;
+    lireComp(); closeMenu();
+    return oui(go('deck', prof.comp.livre));
+  }
+  if (ds.cdue) {
+    profDo('prof_set_due', { aid: prof.work, due: ds.cdue },
+      r => 'À rendre le ' + jourFr(r)).then(() => { closeMenu(); render(); });
+    return true;
+  }
+  if (ds.pmois2) { prof.mois = ds.pmois2; return oui(paintMenu()); }
+
+  /* ---- les feuilles du référent ---- */
+  if (ds.rmove !== undefined) {
+    if (!ref.who) return true;
+    const cid = ds.rmove || null;
+    refDo('ref_move_student', { cible: ref.who.id, vers: cid },
+      cid ? 'Changé de classe' : 'Retiré de sa classe').then(() => { closeMenu(); render(); });
+    return true;
+  }
+  if (ds.rrolechg) {
+    if (!ref.who) return true;
+    refDo('ref_set_role', { cible: ref.who.id, nouveau: ds.rrolechg }, 'Rôle enregistré')
+      .then(() => { closeMenu(); render(); });
+    return true;
+  }
+  if (ds.rdropt) {
+    refDo('ref_drop_teaching', { tid: ds.rdropt }, 'Service retiré').then(() => paintMenu());
+    return true;
+  }
+  if (ds.rpp) {
+    const [qui, mat] = ds.rpp.split('|');
+    refDo('ref_set_teaching', { cid: ref.open, prof: qui, matiere: mat, pp: true },
+      'Professeur principal enregistré').then(() => { ref.team = null; refTeam(ref.open); });
+    return true;
+  }
+  if (ds.raddt) {
+    const mat = ((document.getElementById('tmat') || {}).value || '').trim();
+    if (!mat) return oui(toast(I.x, 'Écris d’abord la matière'));
+    ref.form = { ...(ref.form || {}), mat };
+    refDo('ref_set_teaching', { cid: ref.open, prof: ds.raddt, matiere: mat, pp: false },
+      'Professeur ajouté à l’équipe').then(() => { ref.team = null; refTeam(ref.open); });
+    return true;
+  }
+  if (ds.rnrole) { ref.form = { ...(ref.form || {}), role: ds.rnrole, ...lireNew() }; return oui(paintMenu()); }
+  if (ds.rncls) { ref.form = { ...(ref.form || {}), cls: ds.rncls, ...lireNew() }; return oui(paintMenu()); }
+  if (ds.rncyc) { ref.form = { ...(ref.form || {}), cyc: ds.rncyc, ...lireClass() }; return oui(paintMenu()); }
+  return false;
+}
+
 $.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group]');
+  const b = e.target.closest('button,[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact],[data-classe],[data-work],[data-member],[data-account]');
   if (!b) return;
   const ds = b.dataset;
+  if (feuilleTap(b)) return;
   const a0 = ds.act;
   /* Une révision simple se reprend là où elle s'est arrêtée : la quitter
      ne coûte rien. Un quiz, un QCM ou une association, non — vingt
@@ -5613,6 +8360,27 @@ $.addEventListener('click', e => {
     leaving = a0; return openMenu('leave');
   }
   if (ds.help !== undefined) { helpKey = ds.help; return openMenu('help'); }
+  if (ds.modact !== undefined) return modAct(+ds.rid, ds.modact);
+  if (ds.account !== undefined) { accOpen = ds.account; return openMenu('account'); }
+  if (ds.classe !== undefined) {
+    classOf = ds.classe; roster = null; asgs = null; classPull(classOf); return go('classe');
+  }
+  /* Le même devoir, deux feuilles : celle de l'élève l'ajoute à sa
+     bibliothèque, celle du professeur montre le suivi. L'ancienne feuille
+     cherchait la classe dans `classes`, que l'élève ne charge plus depuis
+     qu'il a son propre écran — elle se refermait sans rien dire. */
+  if (ds.work !== undefined) {
+    workOpen = ds.work;
+    return openMenu(isPupil() ? 'devoir' : 'workone');
+  }
+  if (ds.member !== undefined) { memberOpen = ds.member; return openMenu('member'); }
+  /* On doit pouvoir lire ces textes sans compte : le retour ramène donc
+     là d'où l'on venait, y compris l'écran de connexion. */
+  if (ds.legal !== undefined) {
+    legalTab = ds.legal;
+    if (view.name !== 'legal') legalBack = view.name === 'login' ? 'login' : 'settings';
+    return go('legal');
+  }
   if (ds.yes !== undefined) return answerFriend(ds.yes, true);
   if (ds.no !== undefined) return answerFriend(ds.no, false);
   if (ds.mate !== undefined) { mateOpen = ds.mate; return openMenu('mate'); }
@@ -5622,6 +8390,13 @@ $.addEventListener('click', e => {
   if (ds.lib !== undefined) { lib.open = ds.lib; return openMenu('libitem'); }
   if (ds.duel !== undefined) { duels.open = ds.duel; return openMenu('duelitem'); }
   if (ds.gtab !== undefined) { groupTab = ds.gtab; groupPull(); animate = false; return render(); }
+  /* changer de portée, c'est changer de public : le classement se
+     recalcule côté base, la bibliothèque et les défis se refiltrent ici */
+  if (ds.scope !== undefined) {
+    scope = ds.scope || null;
+    board.rows = null; animate = false; render();
+    return boardPull();
+  }
   if (ds.brange !== undefined) { board.range = +ds.brange; board.rows = null; animate = false; render(); return boardPull(); }
   if (ds.pkc !== undefined && sel) {
     /* on ne repeint que la ligne touchée et le décompte : reconstruire la
@@ -5668,18 +8443,60 @@ $.addEventListener('click', e => {
   }
   const a = ds.act, d = view.id ? deck(view.id) : null;
   if (ds.card) { cardEdit = ds.card; return openMenu('card'); }
+  /* Ajouter un camarade depuis la liste de sa classe : pas de pseudo à
+     taper, on appuie sur le plus en face du nom. */
+  /* ---- la console du référent ---- */
+  if (ds.atab) { adm.tab = ds.atab; animate = false; return render(); }
+  if (ds.rtab) { ref.tab = ds.rtab; if (ref.tab === 'gens' && !ref.gens) refPeople(true);
+    animate = false; return render(); }
+  if (ds.rrole !== undefined) { ref.role = ds.rrole; refPeople(true); animate = false; return render(); }
+  if (ds.rpage !== undefined) { ref.page = +ds.rpage; refPeople(false); animate = false; return render(); }
+  if (ds.rclsoff) { ref.cls = null; refPeople(true); animate = false; return render(); }
+  if (ds.rwho) {
+    ref.who = (ref.gens || []).find(x => x.id === ds.rwho) || null;
+    ref.service = null; ref.form = {};
+    return openMenu('refwho');
+  }
+  if (ds.rcls) { ref.open = ds.rcls; ref.team = null; ref.form = {}; return openMenu('refcls'); }
+  if (ds.pclasse) {
+    prof.open = ds.pclasse; prof.tab = 'eleves'; prof.q = '';
+    prof.roster = null; prof.devoirs = null;
+    profClassePull(prof.open); return go('profclasse');
+  }
+  if (ds.ptab) { prof.tab = ds.ptab; animate = false; return render(); }
+  if (ds.pvue) { prof.vue = ds.pvue; animate = false; return render(); }
+  if (ds.pmois) { prof.mois = ds.pmois; animate = false; return render(); }
+  if (ds.pjour) { prof.jour = prof.jour === ds.pjour ? null : ds.pjour;
+    prof.mois = ds.pjour; animate = false; return render(); }
+  if (ds.ptri) { prof.tri = ds.ptri; animate = false; return render(); }
+  if (ds.peleve) {
+    prof.eleve = ds.peleve; prof.fiche = null;
+    profFichePull(prof.open, prof.eleve); return go('profeleve');
+  }
+  if (ds.pwork) { prof.work = ds.pwork; prof.cartes = null; return openMenu('pwork'); }
+  if (ds.camadd) {
+    const n = ds.camn;
+    askFriend(n).then(ok => { if (ok) { mates2 = null; matesPull(); } })
+      .catch(() => toast(I.x, 'Impossible pour l’instant'));
+    return;
+  }
   if (b.dataset.tf !== undefined) return answerTF(b.dataset.tf === '1');
   if (b.dataset.pick !== undefined) return pickMCQ(+b.dataset.pick);
   if (b.dataset.mt) { const [sd, mid] = b.dataset.mt.split(':'); return pickMatch(sd, mid); }
-  if (b.dataset.snd !== undefined) {
+  /* Deux boutons distincts, donc deux chemins : l'un joue ce qui a été
+     enregistré, l'autre fait lire le texte. Chacun sait ce qu'il déclenche
+     au lieu de dépendre de ce que la carte contient. */
+  if (b.dataset.snd !== undefined || b.dataset.say !== undefined) {
+    const dire = b.dataset.say !== undefined;
     const c = cardOf(0); if (!c) return;
-    const bk = b.dataset.snd === 'b';
+    const bk = (dire ? b.dataset.say : b.dataset.snd) === 'b';
     const tf = isTF(c);
     const rv = !tf && (study.dirs ? study.dirs[c.id] : study.rev);
     const useBack = bk !== !!rv;
     const aud = useBack ? c.ba : c.fa, txt = useBack ? c.b : c.f;
     const org = cardOrigin(c);                 // en marathon, la langue du paquet d'origine
-    if (aud) play(aud); else say(txt, useBack ? org.langb : org.langf);
+    if (dire || !aud) say(txt, useBack ? org.langb : org.langf);
+    else play(aud);
     return;
   }
   if (a === 'home' || a === 'tab-home') return go('home');
@@ -5690,7 +8507,10 @@ $.addEventListener('click', e => {
   if (a === 'library') { if (!lib.list) libPull(); return go('library'); }
   if (a === 'board') { if (!board.rows) boardPull(); return go('board'); }
   if (a === 'doadd') return doAdd();
-  if (a === 'handle') return openMenu('handle');
+  /* Le pseudo scolaire vient de l'établissement : la base renverse déjà
+     toute tentative de le changer, l'écran n'ouvre donc pas le formulaire. */
+  if (a === 'handle') return isPupil() ? toast(I.lock, 'Ton pseudo est celui de ton établissement')
+                                       : openMenu('handle');
   if (a === 'newgroup') { addQ = ''; return openMenu('newgroup'); }
   if (a === 'joingroup') { addQ = ''; return openMenu('joingroup'); }
   /* un quiz se lance depuis un paquet : en sortir, c'est y revenir */
@@ -5711,6 +8531,7 @@ $.addEventListener('click', e => {
   if (a === 'goalinfo' || a === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (a === 'group') { groupPull(); return go('group'); }
   if (a === 'help') return openMenu('tuto');
+  if (a === 'install') return openInstall();
   if (a === 'duelnew') return openMenu('duelnew');
   if (a === 'duelquit') { duelRun = null; return go('group'); }
   if (a === 'addshared') {
@@ -5741,6 +8562,51 @@ $.addEventListener('click', e => {
     study = r; return go('study', r.id);
   }
   if (a === 'settings') return go('settings');
+  if (a === 'tolog') return go('login');
+  if (a === 'mod') { if (!mods.list) modPull(); return go('mod'); }
+  if (a === 'admin') { if (!accounts) accountsPull(); if (!adm.orgs) admPull(); return go('admin'); }
+  /* Le bouton vit dans les Réglages, donc il porte data-act : le
+     gestionnaire était rangé avec ceux des feuilles, qui lisent data-mact.
+     Il n'a jamais été atteint une seule fois. */
+  if (a === 'blocked') { blocksPull().then(() => paintMenu()); return openMenu('blocked'); }
+  /* Trois publics, trois écrans derrière le même bouton : l'élève n'a
+     qu'une classe et n'a pas à traverser une liste d'un seul élément ; le
+     professeur en a dix et lui faut une grille ; un compte personnel qui
+     s'est fait une classe garde l'écran d'origine. */
+  if (a === 'classes') {
+    if (isPupil()) { maClassePull(); return go('maclasse'); }
+    if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
+    if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
+    if (!classes) classesPull(); return go('classes');
+  }
+  if (a === 'prof') { if (!prof.classes) profPull(); return go('prof'); }
+  if (a === 'ref') { refPull(); return go('ref'); }
+  if (a === 'refnew') { ref.form = { role: 'eleve' }; return openMenu('refnew'); }
+  if (a === 'refnewclass') { ref.form = {}; return openMenu('refnewclass'); }
+  if (a === 'pnew') {
+    /* Le vrai éditeur : photo d'une page, PDF, export, cours collé,
+       image et son sur chaque face. On y entre, on en ressort sur
+       « à qui, pour quand ». */
+    prof.comp = compNeuf();
+    resetComp({ cours: true, pour: 'devoir' });
+    return go('import');
+  }
+  if (a === 'plib') { prof.comp = compNeuf(); return openMenu('plivre'); }
+  if (a === 'pretour') {
+    /* Retour de l'éditeur vers le devoir en préparation. */
+    const d = deck(view.id);
+    if (d) return donnerLivre(d);
+    return go('prof');
+  }
+  if (a === 'pbilan') { prof.tab = 'bilan'; if (!prof.open && (prof.classes || []).length) {
+      prof.open = prof.classes[0].id; profClassePull(prof.open); }
+    return prof.open ? go('profclasse') : undefined; }
+  if (a === 'pcode') return openMenu('classcode');
+  if (a === 'pback') return go('profclasse');
+  if (a === 'pmot') return openMenu('pmot');
+  if (a === 'newclass') return openMenu('newclass');
+  if (a === 'joinclass') return openMenu('joinclass');
+  if (a === 'newwork') return openMenu('newwork');
   if (a === 'backup2') return openMenu('backup');
   if (a === 'undo2') { doUndo(); return; }
   if (a === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
@@ -5930,15 +8796,78 @@ function consumeHash() {
   return false;
 }
 
+/* ══════════ ce qui appartient à un compte ══════════
+   Changer de compte laissait tout en place : les amis de l'un
+   apparaissaient chez l'autre, ses clubs, ses défis, son rôle. Les données
+   n'avaient pourtant jamais traversé — la base refusait déjà de les rendre
+   — mais l'écran, lui, gardait la dernière réponse reçue et la montrait au
+   suivant. Une fuite d'affichage, pas de données, et tout aussi
+   inacceptable : on ne peut pas demander à quelqu'un de croire un
+   cloisonnement qu'il voit se faire contredire.
+
+   Tout ce qui dépend du compte connecté est donc listé ICI, à un seul
+   endroit, et remis à zéro à chaque changement. Une variable ajoutée
+   ailleurs et oubliée ici recrée le bug : quand on en déclare une nouvelle
+   qui parle du compte, elle vient dans cette liste. */
+function resetSession() {
+  /* la bibliothèque et ce qui attend d'être envoyé */
+  db = { subjects: [], decks: [], hist: {} };
+  prefs = { ...DEFPREFS };
+  dirty = {}; gone = []; conflicts = []; undos = [];
+  trash = { n: 0, list: null, err: 0 };
+  vers = { list: null, err: 0, of: null };
+
+  /* le cercle : qui l'on est, qui l'on connaît, ce qu'on partage */
+  me = null; friends = null; mates = null; asks = null;
+  groups = null; groupOf = null; scope = null; groupTab = 'lib';
+  lib = { list: null, err: 0, open: null };
+  duels = { list: null, scores: null, err: 0, open: null };
+  board = { rows: null, err: 0, range: 7 };
+  blocks = null;
+  mailbox = { n: 0, list: null, err: 0 };
+  mateOpen = null; mateProf = { id: null, range: 7, row: null, lib: null, load: 0 };
+  sendTo = null; sendMsg = ''; mailOpen = null; addQ = '';
+
+  /* le rôle et ce qu'il ouvre */
+  myRole = 'eleve'; iAmMod = false;
+  school = null; team = null; mates2 = null;
+  prof = { annee: null, annees: null, classes: null, err: 0,
+           open: null, tab: 'eleves', roster: null, devoirs: null, bilan: null,
+           tri: 'retard', q: '', eleve: null, fiche: null,
+           work: null, cartes: null, comp: null,
+           vue: 'liste', mois: null, agenda: null, jour: null };
+  adm = { orgs: null, etat: null, tab: 'orgs' };
+  ref = { tab: 'etab', board: null, err: 0,
+          gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
+          classes: null, open: null, team: null,
+          who: null, service: null, form: null, trace: null };
+  mods = { list: null, err: 0, seen: 0 };
+  accounts = null; accOpen = null;
+  classes = null; classOf = null; roster = null; asgs = null;
+  workOpen = null; memberOpen = null;
+  reportOn = null; reportWhy = '';
+
+  /* les écrans en cours */
+  view = { name: 'login' }; menu = null; study = null; quiz = null;
+  stats = { rows: null, err: 0, range: 30 };
+  shared = null; duelRun = null; previewOf = null; leaving = null;
+  filter = ''; peek = false; sel = null; reorder = false;
+  findQ = ''; deckQ = ''; deckOpen = false; deckShow = DECKPAGE;
+  subjEdit = null; cardEdit = null; comp = { subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false };
+
+  /* les images et sons déjà rapatriés : ils appartenaient à l'autre compte,
+     et les laisser en mémoire serait garder ouvert ce qu'on vient de fermer */
+  for (const u of mediaCache.values()) { try { URL.revokeObjectURL(u); } catch (e) {} }
+  mediaCache.clear();
+}
+
 function logout() {
   flush();
   const key = cacheKey();
   saveAuth(null);
   if (key) { try { localStorage.removeItem(key); } catch (e) {} }
-  db = { subjects: [], decks: [], hist: {} };
-  prefs = { ...DEFPREFS };
-  view = { name: 'login' }; filter = ''; peek = false; loginMode = 'in';
-  study = null; quiz = null; menu = null;
+  resetSession();
+  loginMode = 'in';
   animate = true; render();
 }
 
@@ -6116,7 +9045,7 @@ function startTour(chapId) {
   if (tour) return;
   const steps = tourSteps(chapId);
   if (!steps.length) return;
-  tourSave = { db, prefs, view, study, quiz, filter, peek, groupTab,
+  tourSave = { db, prefs, view, study, quiz, filter, peek, groupTab, scope,
                me, mates, asks, friends, groups, duels, lib, board };
   demo = true;
   closeMenu(); selOff();
@@ -6191,7 +9120,7 @@ function endTour(done) {
   demo = false;
   if (sv) {
     db = sv.db; prefs = sv.prefs; view = sv.view; study = sv.study; quiz = sv.quiz;
-    filter = sv.filter; peek = sv.peek; groupTab = sv.groupTab;
+    filter = sv.filter; peek = sv.peek; groupTab = sv.groupTab; scope = sv.scope;
     me = sv.me; mates = sv.mates; asks = sv.asks; friends = sv.friends;
     groups = sv.groups; duels = sv.duels; lib = sv.lib; board = sv.board;
   }
@@ -6301,9 +9230,199 @@ function helpSheet(w) {
 /* Premier lancement d'un compte : la visite part toute seule. Elle ne
    coupe jamais un lien de partage ou un raccourci en train de s'ouvrir —
    on est venu pour autre chose, ce serait la pire des interruptions. */
+/* La visite guidée apprend à réviser : à retourner une fiche, à la lancer
+   à gauche ou à droite, à s'en fabriquer. Un professeur, un référent ou
+   l'éditeur ne font rien de tout cela — et elle leur reprenait l'écran
+   600 ms après la connexion, en les ramenant sur une bibliothèque vide
+   juste après que leur console se soit affichée. Elle ne part donc que
+   pour ceux à qui elle s'adresse, et seulement une fois le rôle connu :
+   au moment où on l'appelle, on ne le sait pas encore. */
 function maybeTour() {
   if (prefs.tuto || tour || location.hash || location.search.includes('go=')) return;
-  setTimeout(() => { if (!tour && !prefs.tuto) startTour(); }, 600);
+  setTimeout(() => {
+    if (tour || prefs.tuto) return;
+    if (myRole !== 'eleve') return;
+    startTour();
+  }, 900);
+}
+
+/* ══════════ l'écran d'accueil ══════════
+   Une app web n'est vraiment installée que le jour où elle a son icône.
+   Avant ça elle n'a ni rappels, ni stockage durable, ni place dans les
+   habitudes — et sur iPhone, le geste qui l'installe n'est proposé par
+   personne. Ce module s'occupe de ce seul moment, et il compte plus que
+   n'importe quelle fonctionnalité de révision : une app pas installée
+   n'est pas rouverte.
+
+   Le vrai piège n'est pas iOS. C'est le navigateur intégré d'Instagram,
+   de Snapchat, d'un client mail ou d'une appli d'ENT : « Sur l'écran
+   d'accueil » n'y figure pas du tout. L'élève cherche, ne trouve pas, et
+   abandonne sans savoir pourquoi. C'est le seul cas où l'on parle avant
+   d'attendre qu'on nous le demande. */
+const INSTKEY = 'folio.install';
+const instLoad = () => { try { return JSON.parse(localStorage.getItem(INSTKEY)) || {}; } catch (e) { return {}; } };
+const instSave = o => { try { localStorage.setItem(INSTKEY, JSON.stringify(o)); } catch (e) {} };
+
+const UA = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+/* déjà posée sur l'écran d'accueil : plus jamais un mot à ce sujet */
+const installed = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches)
+  || navigator.standalone === true;
+/* iPad récent se présente comme un Mac : le test tactile le rattrape */
+const isIOS = () => /iPad|iPhone|iPod/.test(UA)
+  || (/Macintosh/.test(UA) && typeof document !== 'undefined' && 'ontouchend' in document);
+const isAndroid = () => /Android/.test(UA);
+/* Navigateur enfermé dans une autre application. La liste est faite de
+   ce qu'on croise réellement dans une classe, pas de l'exhaustivité. */
+const inApp = () => /FBAN|FBAV|Instagram|Snapchat|TikTok|Line\/|LinkedInApp|Twitter|Pinterest|GSA\//.test(UA)
+  || (isAndroid() && /\bwv\b/.test(UA))
+  || (isIOS() && !/Safari/.test(UA) && !/CriOS|FxiOS|EdgiOS/.test(UA));
+/* Sur iOS, seul Safari sait ajouter à l'écran d'accueil. Chrome et
+   Firefox y sont le même moteur mais sans ce menu. */
+const iosOther = () => isIOS() && /CriOS|FxiOS|EdgiOS|OPiOS/.test(UA);
+
+/* L'invite native d'Android n'est donnée qu'une fois, très tôt : on la
+   met de côté au lieu de la laisser passer, pour la rejouer au moment
+   où elle a du sens pour l'élève. */
+let bip = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); bip = e; });
+window.addEventListener('appinstalled', () => {
+  bip = null;
+  instSave({ ...instLoad(), done: 1 });
+  closeMenu();
+  toast(I.check, 'Folio est sur ton écran d’accueil');
+});
+
+function instCtx() {
+  if (installed()) return 'done';
+  if (inApp()) return 'webview';
+  if (iosOther()) return 'iosother';
+  if (bip) return 'prompt';
+  if (isIOS()) return 'ios';
+  if (isAndroid()) return 'android';
+  return 'desktop';
+}
+
+/* Quand se permettre de demander. Trois règles, et aucune n'est
+   négociable : jamais par-dessus autre chose, jamais plus de trois fois,
+   jamais deux fois la même semaine. Une invite qu'on subit se referme
+   sans être lue, et brûle le geste pour de bon. */
+const WEEK = 7 * DAY;
+function canAsk() {
+  if (installed() || demo || tour) return false;
+  if (menu || study || quiz || view.name === 'login') return false;
+  const s = instLoad();
+  if (s.done) return false;
+  if ((s.n || 0) >= 3) return false;
+  return !s.at || Date.now() - s.at > WEEK;
+}
+/* La demande spontanée n'arrive jamais au premier écran : on ne sait pas
+   encore ce qu'on installerait. Elle arrive après une séance finie,
+   quand l'app vient de servir à quelque chose. */
+function maybeAskInstall() {
+  if (!canAsk()) return;
+  const s = instLoad();
+  s.n = (s.n || 0) + 1; s.at = Date.now(); instSave(s);
+  setTimeout(() => { if (!menu && !study && !quiz) openMenu('install'); }, 900);
+}
+/* Ouverture explicite, depuis les Réglages : ni compteur, ni délai —
+   c'est demandé, donc c'est montré. */
+function openInstall() { openMenu('install'); }
+
+async function copyLink() {
+  const url = location.origin + location.pathname;
+  try {
+    await navigator.clipboard.writeText(url);
+    toast(I.check, 'Lien copié');
+  } catch (e) {
+    toast(I.link, url);
+  }
+}
+async function doPrompt() {
+  if (!bip) return;
+  const e = bip; bip = null;
+  closeMenu();
+  try {
+    e.prompt();
+    const r = await e.userChoice;
+    if (r && r.outcome === 'accepted') instSave({ ...instLoad(), done: 1 });
+  } catch (x) {}
+}
+
+const instep = (n, txt) => `<div class="instep"><i>${n}</i><span>${txt}</span></div>`;
+/* Pourquoi on le demande, dit une seule fois et honnêtement : les
+   rappels et le hors-ligne complet n'existent qu'une fois installée.
+   Une raison vraie convainc mieux qu'une insistance. */
+const INSTWHY = 'Une fois posée sur l’écran d’accueil, Folio s’ouvre en un tap, '
+  + 'fonctionne entièrement hors ligne et peut te rappeler tes révisions.';
+
+/* Le vrai glyphe de partage d'iOS, dessiné plutôt que décrit : « touche
+   le carré avec la flèche » se cherche, l'icône se reconnaît. */
+const SVGSHARE = `<svg viewBox="0 0 24 24" class="shg">${I.share}</svg>`;
+
+function installSheet(w) {
+  const ctx = instCtx();
+  const head = (icon, t, s) => `<div class="mhd">${svg(icon)}<span class="mhx">
+    <b>${t}</b><span class="msub">${s}</span></span></div>`;
+  let inner = '';
+
+  if (ctx === 'webview') {
+    /* Le cas le plus fréquent et le seul vraiment bloquant : on ne
+       demande pas d'installer, on explique comment sortir d'ici. */
+    inner = head(I.warn, 'Ouvre Folio dans ton navigateur',
+        'Tu es dans le navigateur d’une autre application. L’ajout à l’écran d’accueil n’y existe pas.')
+      + `<div class="insteps">
+          ${instep(1, `Touche le menu ${isIOS() ? '<b>•••</b> en haut à droite' : '<b>⋮</b> en haut à droite'}`)}
+          ${instep(2, `Choisis <b>${isIOS() ? 'Ouvrir dans Safari' : 'Ouvrir dans Chrome'}</b>`)}
+          ${instep(3, 'Reviens ici : Folio te montrera la suite')}
+        </div>
+        <button class="mi" data-mact="instcopy" style="justify-content:center;font-weight:700">
+          ${svg(I.copy)}Copier le lien</button>`;
+  } else if (ctx === 'iosother') {
+    inner = head(I.warn, 'Ouvre cette page dans Safari',
+        'Sur iPhone et iPad, seul Safari sait ajouter une app à l’écran d’accueil.')
+      + `<div class="insteps">
+          ${instep(1, 'Copie le lien ci-dessous')}
+          ${instep(2, 'Ouvre <b>Safari</b> et colle-le')}
+          ${instep(3, 'Folio te montrera la suite')}
+        </div>
+        <button class="mi" data-mact="instcopy" style="justify-content:center;font-weight:700">
+          ${svg(I.copy)}Copier le lien</button>`;
+  } else if (ctx === 'prompt') {
+    inner = head(I.plus, 'Installer Folio', INSTWHY)
+      + `<button class="cta" data-mact="instgo" style="margin:6px 7px 8px;width:calc(100% - 14px)">
+          ${svg(I.down)}Installer</button>`;
+  } else if (ctx === 'ios') {
+    /* Le bouton Partager n'est pas au même endroit selon l'appareil :
+       le dire évite la minute passée à chercher en haut sur un iPhone. */
+    const where = /iPad/.test(UA) ? 'en haut de l’écran' : 'en bas de l’écran';
+    inner = head(I.plus, 'Ajoute Folio à ton écran d’accueil', INSTWHY)
+      + `<div class="insteps">
+          ${instep(1, `Touche <b class="inshare">${SVGSHARE}</b> Partager, ${where}`)}
+          ${instep(2, 'Fais défiler et choisis <b>Sur l’écran d’accueil</b>')}
+          ${instep(3, 'Touche <b>Ajouter</b>, puis ouvre Folio par son icône')}
+        </div>
+        <div class="note">Ferme ensuite cet onglet : c’est par l’icône que Folio gardera tes rappels.</div>`;
+  } else if (ctx === 'android') {
+    inner = head(I.plus, 'Ajoute Folio à ton écran d’accueil', INSTWHY)
+      + `<div class="insteps">
+          ${instep(1, 'Touche le menu <b>⋮</b> en haut à droite')}
+          ${instep(2, 'Choisis <b>Ajouter à l’écran d’accueil</b>')}
+          ${instep(3, 'Confirme, puis ouvre Folio par son icône')}
+        </div>`;
+  } else {
+    inner = head(I.plus, 'Installer Folio', INSTWHY)
+      + `<div class="insteps">
+          ${instep(1, 'Cherche l’icône d’installation dans la barre d’adresse')}
+          ${instep(2, 'Ou, dans le menu du navigateur, <b>Installer Folio</b>')}
+        </div>`;
+  }
+
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">${inner}
+      <div class="msep"></div>
+      <button class="mi" data-mact="instlater">${svg(I.x)}Plus tard</button>
+    </div>`;
+  mountMenu(w);
 }
 
 /* ---------- démarrage ---------- */
@@ -6318,7 +9437,7 @@ async function boot() {
     if (auth.exp && Date.now() > auth.exp - 60000 && !(await refreshToken())) throw new Error('session');
     await pull();
     setOnline(true);
-    if (!(shortcut && consumeGoto())) render();
+    if (!(shortcut && consumeGoto())) { render(); accueil(); }
     flush();
     maybeTour();
   } catch (e) {
