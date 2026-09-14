@@ -139,7 +139,7 @@ const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false
                    sort: 'manual', list: false, zen: false,
                    /* FSRS : rétention visée, paramètres du modèle, intervalle
                       plafond. `w` vide = les paramètres par défaut du moteur. */
-                   dr: 0.9, w: null, maxIvl: 36500 };
+                   dr: 0.9, w: null, maxIvl: 36500, wAt: 0, wN: 0 };
 let prefs = { ...DEFPREFS };
 let prefsTimer = 0;
 
@@ -495,6 +495,7 @@ async function pull() {
      pour toutes : sans ça le moteur repartirait de zéro sur toute une
      bibliothèque déjà travaillée. */
   fsrsMigrate();
+  fsrsAuto();                            // le moteur se règle tout seul, au calme
   save();
 }
 async function seedSubjects() {
@@ -1108,27 +1109,31 @@ function markDups(cards, target) {
 
 
 /* ══════════ FSRS ══════════
-   Le moteur de répétition espacée de l'app est FSRS (Free Spaced
-   Repetition Scheduler) de Jarrett Ye, porté ici depuis le code de
-   référence d'open-spaced-repetition, fonction par fonction :
+   Le moteur de révision de l'app est celui d'Anki, sans écart : FSRS-6
+   (Free Spaced Repetition Scheduler) de Jarrett Ye, tel que le publie le
+   crate `fsrs` 6.6.2 — la version exacte qu'Anki épingle dans son
+   Cargo.toml. Rien n'est inventé ici, tout est porté fonction par
+   fonction depuis le code de référence d'open-spaced-repetition :
 
-   · mémoire FSRS-7 — 34 paramètres, deux traces mémoire (une rapide, une
-     lente) : fsrs-rs/src/model_v7.rs, fonctions `*_scalar` ;
-   · mémoire FSRS-6 — 21 paramètres, une seule trace :
-     py-fsrs/fsrs/scheduler.py ;
+   · mémoire — 21 paramètres, une courbe d'oubli en puissance :
+     fsrs 6.6.2 src/inference.rs, et py-fsrs/fsrs/scheduler.py ;
    · machine d'états — paliers d'apprentissage, rechute, intervalle
-     maximal, flou : py-fsrs/fsrs/scheduler.py, celle-là même qu'Anki.
+     maximal, flou : py-fsrs/fsrs/scheduler.py ;
+   · optimiseur — le crate lui-même, compilé pour le navigateur
+     (fsrs.wasm, voir tools/BUILD-FSRS.md).
 
-   La version suit le nombre de paramètres, comme `check_and_fill_parameters`
-   en amont : 34 → FSRS-7, 21 → FSRS-6. Le portage est vérifié contre le
-   code amont compilé (écart < 5·10⁻⁵ sur FSRS-7, nul sur FSRS-6).
+   Le jeu à 34 paramètres (FSRS-7, deux traces mémoire, porté depuis
+   model_v7.rs) reste reconnu pour que l'app suive si l'amont le publie un
+   jour : la version se choisit sur le nombre de paramètres, exactement
+   comme `check_and_fill_parameters`. Le portage est vérifié contre py-fsrs
+   (écart 2·10⁻⁸) et contre le code v7 compilé (2·10⁻⁵, l'écart f32/f64).
 
    Chaque fiche porte son état de mémoire :
    S = stabilité (jours avant d'oublier) · D = difficulté [1,10]
-   F = stabilité de la trace rapide · st = 1 apprentissage, 2 révision,
-   3 rechute · sp = palier en cours · lr = dernière révision (ms)
-   d = échéance (ms) · i = dernier intervalle (jours) · n = révisions
-   l = rechutes · x = mise de côté                                        */
+   F = seconde trace, égale à S en FSRS-6 · st = 1 apprentissage,
+   2 révision, 3 rechute · sp = palier en cours · lr = dernière révision
+   (ms) · d = échéance (ms) · i = dernier intervalle (jours)
+   n = révisions · l = rechutes · x = mise de côté                        */
 const DAY = 864e5;
 const MIN = 6e4;
 
@@ -1137,7 +1142,14 @@ const DR_MIN = 0.0001, DR_MAX = 0.9999;
 const MIN_T = 1 / 86400, NEWTON_ITERS = 7, BISECT_ITERS = 50;
 const cl = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
 
-/* fsrs-rs/src/inference_v7.rs : DEFAULT_PARAMETERS */
+/* Les paramètres par défaut du moteur, copiés de `DEFAULT_PARAMETERS`
+   (fsrs 6.6.2, src/inference.rs) : exactement ceux d'Anki tant qu'on n'a
+   pas assez d'historique pour en calculer de meilleurs. */
+const W6 = [0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722,
+  0.1666, 0.796, 1.4835, 0.0614, 0.2629, 1.6483, 0.6014, 1.8729, 0.5425, 0.0912,
+  0.0658, 0.1542];
+/* Le jeu à 34 paramètres n'est pas celui d'Anki aujourd'hui ; il reste
+   reconnu pour que l'app suive si l'amont le publie un jour. */
 const W7 = [0.1104, 2.2395, 3.9221, 11.7841, 6.1686, 0.6457, 3.6807, 1.9795, 0.0,
   1.3826, 0.7024, 0.5999, 0.8146, 0.6398, 1.0, 1.3207, 0.6707, 3.8668, 0.4416,
   0.0934, 1.8631, 0.6162, 1.0869, 0.1567, 0.0801, 0.2421, 0.9464, 0.1433, 0.7145,
@@ -1277,7 +1289,7 @@ const f6init = (w, g) => {
 
 /* ---------- façade ---------- */
 const isV7 = w => w.length === 34;
-const fsrsW = () => (prefs.w && (prefs.w.length === 34 || prefs.w.length === 21)) ? prefs.w : W7;
+const fsrsW = () => (prefs.w && (prefs.w.length === 34 || prefs.w.length === 21)) ? prefs.w : W6;
 const fsrsDR = () => cl(prefs.dr || 0.9, 0.7, 0.99);
 const fsrsMax = () => Math.max(1, prefs.maxIvl || 36500);
 const LEARN_STEPS = [1, 10];          // paliers d'apprentissage, en minutes
@@ -1359,7 +1371,8 @@ const cstate = c => {
    on la travaille, on la relit, puis on la sait. */
 const STATE = { new: 'À lire', learn: 'En cours', young: 'Relue',
                 mature: 'Sue', susp: 'De côté' };
-const isLeech = c => (c.l || 0) >= 4;
+/* huit rechutes : le seuil d'Anki (« leech threshold ») */
+const isLeech = c => (c.l || 0) >= 8;
 const isDue = c => !c.x && (!c.d || c.d <= Date.now());
 
 function grade(c, rating) {
@@ -1409,6 +1422,11 @@ function preview(c, rating) {
   return nextIn({ d: p.d });
 }
 
+/* Anki compte des dates, pas des durées : deux révisions à 23 h puis 1 h
+   du matin sont séparées d'un jour, pas de deux heures. Tout ce qui nourrit
+   le moteur passe donc par ce compteur de jours calendaires locaux. */
+const dayNo = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return Math.round(d.getTime() / DAY); };
+
 /* ---------- recalcul depuis l'historique réel ----------
    La conversion ci-dessous part de l'intervalle atteint : c'est le pont
    officiel, mais il jette la difficulté (tout le monde à 5) et ne sait
@@ -1437,7 +1455,7 @@ function fsrsReplay(rows) {
     log.sort((a, b) => a.t - b.t);
     let m = null, last = 0, lapses = 0, reps = 0;
     for (const { g, t } of log) {
-      const dt = m ? Math.max(0, Math.floor((t - last) / DAY)) : 0;
+      const dt = m ? Math.max(0, dayNo(t) - dayNo(last)) : 0;
       m = m ? fsrsStep(w, m, dt, g) : fsrsInit(w, g);
       if (g === 1 && reps) lapses++;
       if (g > 1) reps++;
@@ -1457,20 +1475,152 @@ function fsrsReplay(rows) {
   return done;
 }
 
+/* ══════════ l'optimiseur officiel ══════════
+   Les paramètres par défaut décrivent un apprenant moyen. Anki apprend les
+   tiens sur ton propre historique : c'est ce qui fait la moitié de sa
+   force. L'optimiseur n'existe qu'en Rust ; plutôt que d'en réécrire un,
+   `fsrs.wasm` est le crate officiel `fsrs` 6.6.2 — la version exacte
+   qu'Anki épingle — compilé pour le navigateur (voir tools/BUILD-FSRS.md).
+   Il tourne dans un fil séparé pour que rien ne se fige à l'écran.        */
+
+const OPT_MIN_REVIEWS = 400;          // en dessous, les défauts font mieux
+const OPT_EVERY = 14 * DAY;           // on repasse toutes les deux semaines
+const OPT_GROWTH = 1.25;              // ou dès que l'historique a bien grossi
+
+/* La conversion d'Anki (convert_to_fsrs_items) : chaque fiche donne un
+   élément par révision — la révision et tout ce qui l'a précédée — et on
+   écarte ceux dont la dernière révision tombe le jour même, qui
+   n'apprennent rien sur l'oubli. */
+function fsrsItems(rows) {
+  const byCard = new Map();
+  for (const r of rows || []) {
+    if (r.rating == null) continue;
+    if (!byCard.has(r.card_id)) byCard.set(r.card_id, []);
+    byCard.get(r.card_id).push({ g: cl((+r.rating | 0) + 1, 1, 4), t: +new Date(r.created_at) });
+  }
+  const ratings = [], deltas = [], lengths = [];
+  for (const log of byCard.values()) {
+    if (log.length < 2) continue;
+    log.sort((a, b) => a.t - b.t);
+    const g = log.map(x => x.g);
+    const dt = log.map((x, i) => i ? Math.max(0, dayNo(x.t) - dayNo(log[i - 1].t)) : 0);
+    for (let i = 1; i < log.length; i++) {
+      if (dt[i] <= 0) continue;
+      lengths.push(i + 1);
+      for (let k = 0; k <= i; k++) { ratings.push(g[k]); deltas.push(dt[k]); }
+    }
+  }
+  return { ratings: Uint32Array.from(ratings), deltas: Uint32Array.from(deltas),
+           lengths: Uint32Array.from(lengths) };
+}
+
+/* Le fil de calcul : il charge le module, lui passe les tableaux, rend les
+   paramètres. Aucun import dans le wasm, donc rien à lui fournir. */
+const OPT_WORKER = `onmessage = async e => {
+  try {
+    const d = e.data, r = await fetch(d.url, { cache: 'force-cache' });
+    const { instance } = await WebAssembly.instantiate(await r.arrayBuffer(), {});
+    const X = instance.exports;
+    const put = a => { const p = X.folio_alloc(a.length);
+      new Uint32Array(X.memory.buffer, p, a.length).set(a); return p; };
+    const pr = put(d.ratings), pd = put(d.deltas), pl = put(d.lengths), po = X.folio_alloc(1);
+    const out = X.folio_optimize(pr, pd, pl, d.lengths.length, 1, 0xFFFFFFFF, po);
+    const n = new DataView(X.memory.buffer).getUint32(po, true);
+    postMessage(out && n ? Array.from(new Float32Array(X.memory.buffer, out, n)) : null);
+  } catch (err) { postMessage(null); }
+};`;
+
+function fsrsOptimize(items) {
+  return new Promise(resolve => {
+    let w = null, done = 0;
+    const fin = v => { if (done) return; done = 1; try { w && w.terminate(); } catch (e) {} resolve(v); };
+    try {
+      const url = URL.createObjectURL(new Blob([OPT_WORKER], { type: 'text/javascript' }));
+      w = new Worker(url);
+      URL.revokeObjectURL(url);
+      w.onmessage = e => fin(e.data);
+      w.onerror = () => fin(null);
+      setTimeout(() => fin(null), 60000);     // un calcul qui s'éternise n'aura pas lieu
+      w.postMessage({ url: new URL('fsrs.wasm', location.href).href,
+        ratings: items.ratings, deltas: items.deltas, lengths: items.lengths });
+    } catch (e) { fin(null); }
+  });
+}
+
+/* L'historique complet, sans la fenêtre d'un an des statistiques : le
+   moteur apprend sur tout ce qu'on lui a donné depuis le début. */
+async function histPull() {
+  const out = [];
+  for (let page = 0; page < 20; page++) {
+    const rows = await api('/rest/v1/reviews?select=card_id,rating,created_at'
+      + `&rating=not.is.null&order=created_at.asc&limit=10000&offset=${page * 10000}`);
+    if (!rows || !rows.length) break;
+    out.push(...rows);
+    if (rows.length < 10000) break;
+  }
+  return out;
+}
+
+/* Un passage complet : on relit l'historique, on en tire les paramètres,
+   puis on refait la mémoire de chaque fiche avec eux. Anki appelle ça
+   « optimiser » puis « recalculer la mémoire » ; ici c'est un seul geste. */
+let optRunning = 0;
+async function fsrsTune(force) {
+  if (optRunning) return 0;
+  optRunning = 1;
+  try {
+    const rows = await histPull();
+    const n = rows.length;
+    if (!force && n < OPT_MIN_REVIEWS) return 0;
+    const items = fsrsItems(rows);
+    if (items.lengths.length >= 64) {
+      const w = await fsrsOptimize(items);
+      if (w && (w.length === 21 || w.length === 34) && w.every(x => isFinite(x))) {
+        prefs.w = w; prefs.wAt = Date.now(); prefs.wN = n;
+        savePrefs();
+      }
+    }
+    return fsrsReplay(rows) || 0;
+  } catch (e) { return 0; }
+  finally { optRunning = 0; }
+}
+
+/* Anki réoptimise tout seul ; ici pareil, sans rien demander ni afficher :
+   au calme après le démarrage, quand l'historique a assez bougé. */
+function fsrsAuto() {
+  if (prefs.simple || !auth.uid) return;
+  const age = Date.now() - (prefs.wAt || 0);
+  const grown = !prefs.wN || (stats.rows && stats.rows.length > prefs.wN * OPT_GROWTH);
+  if (prefs.wAt && age < OPT_EVERY && !grown) return;
+  const idle = window.requestIdleCallback || (f => setTimeout(f, 4000));
+  idle(() => { fsrsTune(false); }, { timeout: 15000 });
+}
+
 /* ---------- reprise d'une bibliothèque existante ----------
    Les fiches déjà travaillées n'ont ni stabilité ni difficulté : on les
-   convertit avec le pont officiel de FSRS-7 (memory_state_from_sm2_fsrs,
-   fsrs-rs/src/model_v7.rs) — la stabilité part de l'intervalle déjà
-   atteint, la difficulté du milieu de l'échelle. Rien n'est perdu : une
-   fiche qui revenait dans 30 jours revient toujours dans 30 jours, et le
-   moteur prend la suite à partir de là. */
+   convertit avec le pont officiel du crate. Rien n'est perdu — une fiche
+   qui revenait dans 30 jours revient toujours dans 30 jours — et le moteur
+   prend la suite à partir de là. C'est un point de départ approximatif :
+   « Régler le moteur sur moi » rejoue ensuite l'historique réel, ce que ce
+   pont ne sait pas faire. */
+/* Le pont officiel vers une fiche déjà travaillée : `memory_state_from_sm2`
+   (fsrs 6.6.2, src/inference.rs). Faute d'avoir jamais stocké une facilité
+   par fiche, on prend 2,5 — la facilité de départ d'Anki. */
+function sm2State(w, ease, ivl, ret) {
+  const dec = -w[20], fac = Math.pow(0.9, 1 / dec) - 1;
+  const S = Math.max(ivl, S_MIN) * fac / (Math.pow(ret, 1 / dec) - 1);
+  const D = 11 - (ease - 1)
+    / (Math.exp(w[8]) * Math.pow(S, -w[9]) * Math.expm1((1 - ret) * w[10]));
+  return isFinite(S) && isFinite(D)
+    ? { S: cl(S, S_MIN, S_MAX), D: cl(D, D_MIN, D_MAX) }
+    : { S: cl(Math.max(ivl, S_MIN), S_MIN, S_MAX), D: 5 };
+}
 function fsrsSeed(c) {
   if (c.S || !c.n) return false;
   const ivl = +c.i || 0;
   if (ivl >= 1) {
-    c.S = cl(ivl, S_MIN, S_MAX);
-    c.D = 5;
-    c.F = cl(c.S * 0.8, S_MIN, S_MAX);
+    const m = sm2State(fsrsW(), 2.5, ivl, 0.9);
+    c.S = m.S; c.D = m.D; c.F = m.S;
     c.st = 2; delete c.sp;
     c.lr = (c.d || Date.now()) - ivl * DAY;
   } else {
@@ -2888,6 +3038,11 @@ const HELP = {
   order: ['Ordre des cartes',
     'Aléatoire : mélangées à chaque séance.\nDu livre : l’ordre dans lequel tu les as écrites.\n' +
     'Ratées : celles que tu manques le plus souvent d’abord.\nUrgentes : les plus en retard d’abord.'],
+  tune: ['Régler le moteur sur moi',
+    'Les réglages d’origine décrivent une mémoire moyenne. Le moteur peut apprendre la ' +
+    'tienne sur tes révisions passées : à quelle vitesse tu oublies, ce qui te résiste, ce ' +
+    'qui tient tout seul.\n\nIl le fait de lui-même dès que tu as assez d’historique, et ' +
+    'recommence de temps en temps. Ce bouton force le calcul tout de suite.'],
   fast: ['Mode rapide',
     'Une bonne réponse enchaîne toute seule sur la suivante, au quiz comme en QCM et en vrai/faux. ' +
     'Sans lui, la correction reste à l’écran jusqu’à ce que tu appuies sur Suivant.']
@@ -2954,9 +3109,12 @@ function settingsView() {
         <div class="srw"><button class="sr flat" data-act="tglfast">${svg(I.skip)}
           <span class="n">Mode rapide</span>
           <span class="tgl ${prefs.fast ? 'on' : ''}"></span></button>${hlp('fast')}</div>
-        ${prefs.simple ? '' : `<button class="sr flat" data-act="replay">${svg(I.chart)}
-          <span class="n">Recalculer depuis mon historique</span>
-          ${svg(I.arrow)}</button>`}
+        ${prefs.simple ? '' : `<div class="srw"><button class="sr flat" data-act="replay">${svg(I.chart)}
+          <span class="n">Régler le moteur sur moi</span>
+          <span class="c">${prefs.wAt
+            ? (prefs.wN ? prefs.wN.toLocaleString('fr-FR') + ' révisions' : 'réglé')
+            : 'réglages d’origine'}</span>
+          ${svg(I.arrow)}</button>${hlp('tune')}</div>`}
       </div>
 
       <div class="lbl"><span>Affichage</span></div>
@@ -8904,12 +9062,14 @@ $.addEventListener('click', e => {
     toast(I.chart, 'Lecture de ton historique…');
     (async () => {
       try {
-        if (!stats.rows) await statsPull();
-        const n = fsrsReplay(stats.rows);
+        const before = prefs.wAt || 0;
+        const n = await fsrsTune(true);
         animate = false; render();
-        toast(n ? I.check : I.x, n
-          ? plur(n, 'page') + ' recalculée' + (n > 1 ? 's' : '') + ' sur ton historique'
-          : 'Pas encore assez d’historique noté');
+        const tuned = (prefs.wAt || 0) !== before;
+        toast(n || tuned ? I.check : I.x,
+          !n && !tuned ? 'Pas encore assez d’historique noté'
+          : tuned ? 'Moteur réglé sur ton historique' + (n ? ' · ' + plur(n, 'page') + ' à jour' : '')
+          : plur(n, 'page') + ' recalculée' + (n > 1 ? 's' : '') + ' sur ton historique');
       } catch (e) { toast(I.x, 'Historique indisponible'); }
     })();
     return;

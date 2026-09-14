@@ -1,5 +1,5 @@
-const C = 'folio-v68';
-const SHELL = ['.', 'index.html', 'app.css', 'app.js', 'manifest.webmanifest',
+const C = 'folio-v69';
+const SHELL = ['.', 'index.html', 'app.css', 'app.js', 'fsrs.wasm', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png', 'icons/icon-maskable.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
