@@ -136,7 +136,10 @@ const cacheKey = () => 'cartes.cache.' + (auth && auth.uid);
    simpleAt: date de bascule, pour étaler l'arriéré au retour du moteur       */
 const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false,
                    font: 1, tol: 'normal', name: '', simple: false, simpleAt: 0, fast: false,
-                   sort: 'manual', list: false, zen: false };
+                   sort: 'manual', list: false, zen: false,
+                   /* FSRS : rétention visée, paramètres du modèle, intervalle
+                      plafond. `w` vide = les paramètres par défaut du moteur. */
+                   dr: 0.9, w: null, maxIvl: 36500 };
 let prefs = { ...DEFPREFS };
 let prefsTimer = 0;
 
@@ -488,6 +491,10 @@ async function pull() {
     if (db.hist[k].length > 24) db.hist[k].shift();
   }
   if (!db.subjects.length) await seedSubjects();
+  /* Les fiches d'avant FSRS reçoivent ici leur état de mémoire, une fois
+     pour toutes : sans ça le moteur repartirait de zéro sur toute une
+     bibliothèque déjà travaillée. */
+  fsrsMigrate();
   save();
 }
 async function seedSubjects() {
@@ -1100,16 +1107,252 @@ function markDups(cards, target) {
 }
 
 
-/* ---------- moteur de planification ----------
-   État par carte, rangé dans la carte elle-même :
-   d = échéance (ms) · i = intervalle (jours) · e = facilité · n = réussites
-   l = rechutes · x = suspendue · fl = signalée coriace                       */
+/* ══════════ FSRS ══════════
+   Le moteur de répétition espacée de l'app est FSRS (Free Spaced
+   Repetition Scheduler) de Jarrett Ye, porté ici depuis le code de
+   référence d'open-spaced-repetition, fonction par fonction :
+
+   · mémoire FSRS-7 — 34 paramètres, deux traces mémoire (une rapide, une
+     lente) : fsrs-rs/src/model_v7.rs, fonctions `*_scalar` ;
+   · mémoire FSRS-6 — 21 paramètres, une seule trace :
+     py-fsrs/fsrs/scheduler.py ;
+   · machine d'états — paliers d'apprentissage, rechute, intervalle
+     maximal, flou : py-fsrs/fsrs/scheduler.py, celle-là même qu'Anki.
+
+   La version suit le nombre de paramètres, comme `check_and_fill_parameters`
+   en amont : 34 → FSRS-7, 21 → FSRS-6. Le portage est vérifié contre le
+   code amont compilé (écart < 5·10⁻⁵ sur FSRS-7, nul sur FSRS-6).
+
+   Chaque fiche porte son état de mémoire :
+   S = stabilité (jours avant d'oublier) · D = difficulté [1,10]
+   F = stabilité de la trace rapide · st = 1 apprentissage, 2 révision,
+   3 rechute · sp = palier en cours · lr = dernière révision (ms)
+   d = échéance (ms) · i = dernier intervalle (jours) · n = révisions
+   l = rechutes · x = mise de côté                                        */
 const DAY = 864e5;
 const MIN = 6e4;
+
+const S_MIN = 0.0001, S_MAX = 36500, D_MIN = 1, D_MAX = 10;
+const DR_MIN = 0.0001, DR_MAX = 0.9999;
+const MIN_T = 1 / 86400, NEWTON_ITERS = 7, BISECT_ITERS = 50;
+const cl = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+
+/* fsrs-rs/src/inference_v7.rs : DEFAULT_PARAMETERS */
+const W7 = [0.1104, 2.2395, 3.9221, 11.7841, 6.1686, 0.6457, 3.6807, 1.9795, 0.0,
+  1.3826, 0.7024, 0.5999, 0.8146, 0.6398, 1.0, 1.3207, 0.6707, 3.8668, 0.4416,
+  0.0934, 1.8631, 0.6162, 1.0869, 0.1567, 0.0801, 0.2421, 0.9464, 0.1433, 0.7145,
+  0.0, 0.5667, 0.3734, 0.5333, 0.3048];
+
+/* ---------- FSRS-7 : model_v7.rs ---------- */
+const f7initD = (w, g) => w[4] - Math.exp(w[5] * (g - 1)) + 1;
+function f7nextD(w, d, g, r) {
+  g = cl(g, 1, 4);
+  let delta = -w[6] * (g - 3);
+  if (g === 1) delta *= r + 0.1;
+  const nd = d + (10 - d) * delta / 9;                          // linear damping
+  return cl(f7initD(w, 4) * 0.01 + nd * 0.99, D_MIN, D_MAX);    // mean reversion
+}
+/* Une seule fonction pour les deux traces : `start` vaut 7 pour la trace
+   lente, 15 pour la rapide. */
+function f7setS(w, lastS, lastD, r, g, start) {
+  g = cl(g, 1, 4);
+  const hard = g === 2 ? w[start + 6] : 1, easy = g === 4 ? w[start + 7] : 1;
+  const sFail = w[start + 3] * (Math.pow(lastS + 1, w[start + 4]) - 1)
+              * Math.exp((1 - r) * w[start + 5]);
+  const pls = Math.min(lastS, sFail);
+  const sinc = Math.exp(w[start] - 1.5) * (11 - lastD) * Math.pow(lastS, -w[start + 1])
+             * (Math.exp((1 - r) * w[start + 2]) - 1) * hard * easy + 1;
+  return cl(g > 1 ? Math.max(pls, lastS * sinc) : pls, S_MIN, S_MAX);
+}
+function f7fastR(w, t, sF) {
+  t = Math.max(t, 0); sF = cl(sF, S_MIN, S_MAX);
+  const dec = -cl(w[23] * Math.pow(sF, w[33] - 0.3), 0.01, 0.95);
+  const fac = Math.exp(Math.min(Math.log(w[25]) / dec, 60)) - 1;
+  return Math.pow(1 + fac * (t / sF), dec);
+}
+/* La courbe d'oubli : deux puissances mélangées, l'une portée par la trace
+   rapide, l'autre par la lente, avec des poids qui dépendent de la
+   stabilité et de la difficulté. C'est toute la nouveauté de FSRS-7 —
+   FSRS-6 n'avait qu'une seule courbe. */
+function f7curve(w, t, m) {
+  t = Math.max(t, 0);
+  const s = Math.max(m.S, S_MIN), sf = Math.max(m.F, S_MIN), d = cl(m.D, D_MIN, D_MAX);
+  const dec1 = -cl(w[23] * Math.pow(sf, w[33] - 0.3), 0.01, 0.95);
+  const fac1 = Math.exp(Math.min(Math.log(w[25]) / dec1, 60)) - 1;
+  const r1 = Math.pow(1 + fac1 * (t / sf), dec1);
+  const dec2 = -cl(w[24], 0.01, 0.95);
+  const fac2 = Math.pow(w[26], 1 / dec2) - 1;
+  const dts = Math.exp((d - 5) * (w[32] - 0.3));
+  const r2 = Math.pow(1 + fac2 * dts * (t / s), dec2);
+  const w1 = w[27] * Math.pow(sf, -w[29]);
+  const w2 = w[28] * Math.pow(s, w[30]) * Math.exp((d - 5) * (w[31] - 0.5));
+  return ((w1 * r1 + w2 * r2) / (w1 + w2)) * (1 - 2e-5) + 1e-5;
+}
+function f7curveD(w, t, m) {
+  t = Math.max(t, 0);
+  const s = Math.max(m.S, S_MIN), sf = Math.max(m.F, S_MIN), d = cl(m.D, D_MIN, D_MAX);
+  const dec1 = -cl(w[23] * Math.pow(sf, w[33] - 0.3), 0.01, 0.95);
+  const fac1 = Math.exp(Math.min(Math.log(w[25]) / dec1, 60)) - 1;
+  const b1 = 1 + fac1 * (t / sf), r1 = Math.pow(b1, dec1);
+  const d1 = dec1 * Math.pow(b1, dec1 - 1) * fac1 / sf;
+  const dec2 = -cl(w[24], 0.01, 0.95);
+  const fac2 = Math.pow(w[26], 1 / dec2) - 1;
+  const dts = Math.exp((d - 5) * (w[32] - 0.3));
+  const b2 = 1 + fac2 * dts * (t / s), r2 = Math.pow(b2, dec2);
+  const d2 = dec2 * Math.pow(b2, dec2 - 1) * fac2 * dts / s;
+  const w1 = w[27] * Math.pow(sf, -w[29]);
+  const w2 = w[28] * Math.pow(s, w[30]) * Math.exp((d - 5) * (w[31] - 0.5));
+  const sum = Math.max(w1 + w2, 1e-9);
+  return [((w1 * r1 + w2 * r2) / sum) * (1 - 2e-5) + 1e-5,
+          ((w1 * d1 + w2 * d2) / sum) * (1 - 2e-5)];
+}
+function f7next(w, m, dt, g) {
+  dt = Math.max(dt, 0); g = cl(g, 1, 4);
+  const r = f7curve(w, dt, m);
+  const slow = f7setS(w, m.S, m.D, r, g, 7);
+  let fast = f7setS(w, m.F, m.D, f7fastR(w, dt, m.F), g, 15);
+  if (g === 1) fast = Math.min(fast, slow * 0.8);
+  return { S: slow, D: f7nextD(w, m.D, g, r), F: cl(fast, S_MIN, S_MAX) };
+}
+function f7init(w, g) {
+  g = cl(g, 1, 4);
+  const s = cl(w[g - 1], S_MIN, S_MAX);
+  return { S: s, D: cl(f7initD(w, g), D_MIN, D_MAX), F: cl(s * 0.8, S_MIN, S_MAX) };
+}
+function f7bisect(w, m, dr) {
+  let lo = 0, hi = Math.max(Math.max(m.S, m.F), 1);
+  while (f7curve(w, hi, m) > dr && hi < S_MAX) hi = Math.min(hi * 2, S_MAX);
+  for (let i = 0; i < BISECT_ITERS; i++) {
+    const mid = (lo + hi) * .5;
+    if (f7curve(w, mid, m) > dr) lo = mid; else hi = mid;
+  }
+  return cl((lo + hi) * .5, 0, S_MAX);
+}
+/* FSRS-7 n'a plus de forme fermée pour l'intervalle : on résout
+   R(t) = rétention visée par Newton sur log(t), repli sur dichotomie. */
+function f7ivl(w, m, dr) {
+  dr = cl(dr, DR_MIN, DR_MAX);
+  if (dr >= DR_MAX) return 0;
+  m = { S: cl(m.S, S_MIN, S_MAX), D: cl(m.D, D_MIN, D_MAX), F: cl(m.F, S_MIN, S_MAX) };
+  const loL = Math.log(MIN_T), hiL = Math.log(S_MAX);
+  let logT = Math.log(Math.max(Math.max(m.S, m.F), MIN_T));
+  for (let i = 0; i < NEWTON_ITERS; i++) {
+    logT = cl(logT, loL, hiL);
+    const t = cl(Math.exp(logT), MIN_T, S_MAX);
+    const [r, der] = f7curveD(w, t, m);
+    logT -= cl((r - dr) / Math.min(der * t, -1e-12), -4, 4);
+    if (!isFinite(logT)) return f7bisect(w, m, dr);
+  }
+  const ivl = cl(Math.exp(logT), 0, S_MAX);
+  const r = f7curve(w, ivl, m);
+  return isFinite(r) && Math.abs(r - dr) <= 1e-3 ? ivl : f7bisect(w, m, dr);
+}
+
+/* ---------- FSRS-6 : py-fsrs/fsrs/scheduler.py ---------- */
+const f6dec = w => -w[20];
+const f6fac = w => Math.pow(0.9, 1 / f6dec(w)) - 1;
+const f6curve = (w, t, m) => Math.pow(1 + f6fac(w) * Math.max(t, 0) / m.S, f6dec(w));
+const f6initD = (w, g) => w[4] - Math.exp(w[5] * (g - 1)) + 1;
+const f6nextD = (w, d, g) => cl(w[7] * f6initD(w, 4)
+  + (1 - w[7]) * (d + (10 - d) * (-(w[6] * (g - 3))) / 9), D_MIN, D_MAX);
+function f6shortS(w, s, g) {
+  let inc = Math.exp(w[17] * (g - 3 + w[18])) * Math.pow(s, -w[19]);
+  if (g >= 2) inc = Math.max(inc, 1);
+  return Math.max(s * inc, S_MIN);
+}
+function f6next(w, m, dt, g) {
+  const r = f6curve(w, dt, m);
+  let S;
+  if (g === 1) S = Math.min(w[11] * Math.pow(m.D, -w[12]) * (Math.pow(m.S + 1, w[13]) - 1)
+      * Math.exp((1 - r) * w[14]), m.S / Math.exp(w[17] * w[18]));
+  else S = m.S * (1 + Math.exp(w[8]) * (11 - m.D) * Math.pow(m.S, -w[9])
+      * (Math.exp((1 - r) * w[10]) - 1) * (g === 2 ? w[15] : 1) * (g === 4 ? w[16] : 1));
+  S = Math.max(S, S_MIN);
+  return { S, D: f6nextD(w, m.D, g), F: S };
+}
+const f6init = (w, g) => {
+  const s = Math.max(w[g - 1], S_MIN);
+  return { S: s, D: cl(f6initD(w, g), D_MIN, D_MAX), F: s };
+};
+
+/* ---------- façade ---------- */
+const isV7 = w => w.length === 34;
+const fsrsW = () => (prefs.w && (prefs.w.length === 34 || prefs.w.length === 21)) ? prefs.w : W7;
+const fsrsDR = () => cl(prefs.dr || 0.9, 0.7, 0.99);
+const fsrsMax = () => Math.max(1, prefs.maxIvl || 36500);
+const LEARN_STEPS = [1, 10];          // paliers d'apprentissage, en minutes
+const RELEARN_STEPS = [10];           // palier de rechute
+const fsrsInit = (w, g) => isV7(w) ? f7init(w, g) : f6init(w, g);
+const fsrsStep = (w, m, dt, g) => isV7(w) ? f7next(w, m, dt, g)
+  : (dt < 1 ? { S: f6shortS(w, m.S, g), D: f6nextD(w, m.D, g), F: f6shortS(w, m.S, g) }
+            : f6next(w, m, dt, g));
+const fsrsR = (w, t, m) => isV7(w) ? f7curve(w, t, m) : f6curve(w, t, m);
+const fsrsIvl = (w, m, dr) => isV7(w) ? f7ivl(w, m, dr)
+  : (m.S / f6fac(w)) * (Math.pow(dr, 1 / f6dec(w)) - 1);
+
+/* Probabilité de se rappeler la fiche à l'instant t : c'est la grandeur
+   que FSRS optimise, et celle qui décide de l'échéance. */
+function recall(c, at) {
+  if (!c || !c.S || !c.lr) return c && c.n ? 0 : 1;
+  const t = Math.max(0, Math.floor(((at || Date.now()) - c.lr) / DAY));
+  return fsrsR(fsrsW(), t, { S: c.S, D: c.D || 5, F: c.F || c.S });
+}
+
+/* Flou : py-fsrs tire au hasard dans une fourchette autour de
+   l'intervalle, pour éviter que des fiches apprises le même jour
+   reviennent toutes le même jour. Ici le tirage est dérivé de la fiche :
+   l'aperçu sur les boutons annonce donc exactement ce qui arrivera. */
+const FUZZ = [[2.5, 7, .15], [7, 20, .1], [20, Infinity, .05]];
+function fuzzSeed(c, g) {
+  let h = 2166136261;
+  const k = String(c.id || '') + ':' + (c.n || 0) + ':' + g;
+  for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 100000) / 100000;
+}
+function fuzzIvl(ivl, maxIvl, rnd) {
+  if (ivl < 2.5) return ivl;
+  let delta = 1;
+  for (const [a, b, f] of FUZZ) delta += f * Math.max(Math.min(ivl, b) - a, 0);
+  let lo = Math.max(2, Math.round(ivl - delta)), hi = Math.min(Math.round(ivl + delta), maxIvl);
+  lo = Math.min(lo, hi);
+  return Math.min(Math.round(rnd * (hi - lo + 1) + lo), maxIvl);
+}
+
+/* ---------- la machine d'états, port de py-fsrs ---------- */
+/* rating de l'app : 0 encore · 1 difficile · 2 correct · 3 facile
+   FSRS attend 1..4 — la conversion se fait ici, et nulle part ailleurs. */
+function fsrsPlan(c, rating, now, fuzzy) {
+  const w = fsrsW(), dr = fsrsDR(), maxIvl = fsrsMax();
+  const g = cl((rating | 0) + 1, 1, 4);
+  const since = c.lr ? Math.max(0, Math.floor((now - c.lr) / DAY)) : 0;
+  const m = c.S ? fsrsStep(w, { S: c.S, D: c.D || 5, F: c.F || c.S }, since, g)
+                : fsrsInit(w, g);
+  let st = c.st || 1, sp = c.sp == null ? null : c.sp, mins = null, days = null;
+  const toReview = () => {
+    st = 2; sp = null;
+    days = Math.min(Math.max(Math.round(fsrsIvl(w, m, dr)), 1), maxIvl);
+  };
+  if (st === 1 || st === 3) {
+    const S = st === 3 ? RELEARN_STEPS : LEARN_STEPS;
+    if (sp == null) sp = 0;
+    if (!S.length || (sp >= S.length && g >= 2)) toReview();
+    else if (g === 1) { sp = 0; mins = S[0]; }
+    else if (g === 2) mins = sp === 0 ? (S.length === 1 ? S[0] * 1.5 : (S[0] + S[1]) / 2) : S[sp];
+    else if (g === 3) { if (sp + 1 === S.length) toReview(); else mins = S[++sp]; }
+    else toReview();
+  } else if (g === 1) {
+    if (!RELEARN_STEPS.length) days = Math.min(Math.max(Math.round(fsrsIvl(w, m, dr)), 1), maxIvl);
+    else { st = 3; sp = 0; mins = RELEARN_STEPS[0]; }
+  } else days = Math.min(Math.max(Math.round(fsrsIvl(w, m, dr)), 1), maxIvl);
+  if (days != null && fuzzy !== false && st === 2) days = fuzzIvl(days, maxIvl, fuzzSeed(c, g));
+  return { S: m.S, D: m.D, F: m.F, st, sp, ivl: days || 0,
+           d: now + (days != null ? days * DAY : mins * MIN) };
+}
+
 const cstate = c => {
   if (c.x) return 'susp';
-  if (!c.n) return 'new';
-  if (!c.i || c.i < 1) return 'learn';
+  if (!c.n && !c.S) return 'new';
+  if (c.st === 1 || c.st === 3 || !c.i || c.i < 1) return 'learn';
   return c.i < 21 ? 'young' : 'mature';
 };
 /* Les quatre âges d'une fiche, dans le vocabulaire du livre : on l'ouvre,
@@ -1119,34 +1362,13 @@ const STATE = { new: 'À lire', learn: 'En cours', young: 'Relue',
 const isLeech = c => (c.l || 0) >= 4;
 const isDue = c => !c.x && (!c.d || c.d <= Date.now());
 
-/* Échelons de reprise recommandés en pédagogie scolaire.
-   Ebbinghaus pour la forme de la courbe, Cepeda & Pashler pour l'écart :
-   l'espacement optimal vaut 10 à 20 % de l'horizon visé, d'où J+1, J+3,
-   J+7, J+15, J+30 — la série enseignée en collège et lycée — puis on
-   double jusqu'à l'année. Rien n'est calculé au hasard : la carte monte
-   d'un échelon quand elle passe, redescend d'un quand elle résiste. */
-const LADDER = [1, 3, 7, 15, 30, 60, 120, 240, 365];
-const rung = i => { for (let k = LADDER.length - 1; k >= 0; k--) if (i >= LADDER[k] - .01) return k; return -1; };
-const step = k => LADDER[Math.max(0, Math.min(LADDER.length - 1, k))];
-
-/* rating : 0 encore · 1 difficile · 2 correct · 3 facile */
 function grade(c, rating) {
   const now = Date.now();
-  c.e = Math.min(2.9, Math.max(1.3, (c.e || 2.5) + [-0.2, -0.15, 0, 0.15][rating]));
-  const known = c.n && c.i >= 1;
-  if (rating === 0) {                          // rechute : retour à l'apprentissage
-    c.l = (c.l || 0) + 1;
-    c.i = 0;
-    c.d = now + (known ? 10 * MIN : MIN);      // une carte connue qui tombe reprend plus tard
-  } else if (!known) {                         // paliers du jour, puis première reprise
-    c.i = rating === 1 ? 0 : rating === 2 ? 1 : 3;
-    c.d = rating === 1 ? now + 10 * MIN : now + c.i * DAY;
-  } else {                                     // sur l'échelle
-    const k = rung(c.i);
-    const up = rating === 3 ? 2 : c.e < 1.9 ? 0 : 1;   // carte pénible : on ne monte pas
-    c.i = step(rating === 1 ? k - 1 : k + up);
-    c.d = now + c.i * DAY;
-  }
+  const p = fsrsPlan(c, rating, now, true);
+  if (rating === 0 && (c.st === 2 || (c.i || 0) >= 1)) c.l = (c.l || 0) + 1;
+  c.S = p.S; c.D = p.D; c.F = p.F;
+  c.st = p.st; if (p.sp == null) delete c.sp; else c.sp = p.sp;
+  c.i = p.ivl; c.d = p.d; c.lr = now;
   c.n = (c.n || 0) + (rating > 0 ? 1 : 0);
   return c;
 }
@@ -1158,13 +1380,110 @@ function nextIn(c) {
   if (ms < 45 * MIN) return Math.max(1, Math.round(ms / MIN)) + ' min';
   if (ms < DAY) return Math.round(ms / (60 * MIN)) + ' h';
   const j = Math.round(ms / DAY);
-  return j < 31 ? j + ' j' : Math.round(j / 30) + ' mois';
+  if (j < 31) return j + ' j';
+  if (j < 365) return Math.round(j / 30) + ' mois';
+  const an = j / 365;
+  return (an < 10 ? an.toFixed(1).replace('.0', '').replace('.', ',') : Math.round(an)) + ' ans';
 }
-/* Ce que proposerait chaque bouton, pour l'afficher dessus */
+/* Ce que le moteur sait d'une page, dit en clair. La stabilité est le
+   nombre de jours au bout duquel le souvenir retombe à 90 % ; la
+   difficulté, la peine intrinsèque de la page sur dix. Ces deux nombres,
+   plus la date du dernier passage, suffisent à placer le suivant. */
+function memDays(v) {
+  if (v < 1) return Math.max(1, Math.round(v * 24)) + ' h';
+  if (v < 31) return Math.round(v) + ' j';
+  if (v < 365) return Math.round(v / 30) + ' mois';
+  const an = v / 365;
+  return (an < 10 ? an.toFixed(1).replace('.0', '').replace('.', ',') : Math.round(an)) + ' ans';
+}
+function memLine(c) {
+  if (!c.S) return '';
+  return `souvenir ${Math.round(recall(c, Date.now()) * 100)} %`
+    + ` · tient ${memDays(c.S)}`
+    + ` · difficulté ${(Math.round((c.D || 5) * 10) / 10).toString().replace('.', ',')}/10`;
+}
+/* Ce que proposerait chaque bouton, pour l'afficher dessus. Le flou étant
+   dérivé de la fiche, l'aperçu dit exactement la vérité. */
 function preview(c, rating) {
-  const copy = { ...c };
-  grade(copy, rating);
-  return nextIn(copy);
+  const p = fsrsPlan(c, rating, Date.now(), true);
+  return nextIn({ d: p.d });
+}
+
+/* ---------- recalcul depuis l'historique réel ----------
+   La conversion ci-dessous part de l'intervalle atteint : c'est le pont
+   officiel, mais il jette la difficulté (tout le monde à 5) et ne sait
+   rien du chemin parcouru. Or l'app garde chaque réponse donnée. Rejouer
+   cet historique dans le moteur — ce qu'Anki appelle « recalculer la
+   mémoire » — rend à chaque fiche la stabilité et la difficulté qu'elle
+   aurait si FSRS l'avait suivie depuis le premier jour.
+
+   Seules les réponses notées sur les quatre boutons comptent : c'est le
+   signal que FSRS attend. Les QCM, associations et récitations, qui ne
+   produisent qu'un juste ou faux, ne sont pas des notes et n'entrent pas
+   dans le calcul. */
+function fsrsReplay(rows) {
+  const w = fsrsW(), byCard = new Map();
+  for (const r of rows || []) {
+    if (r.rating == null) continue;
+    if (!byCard.has(r.card_id)) byCard.set(r.card_id, []);
+    byCard.get(r.card_id).push({ g: cl((+r.rating | 0) + 1, 1, 4), t: +new Date(r.created_at) });
+  }
+  const index = new Map();
+  for (const d of db.decks) for (const c of d.cards) index.set(c.id, [c, d]);
+  let done = 0;
+  for (const [id, log] of byCard) {
+    const hit = index.get(id); if (!hit) continue;
+    const [c, d] = hit;
+    log.sort((a, b) => a.t - b.t);
+    let m = null, last = 0, lapses = 0, reps = 0;
+    for (const { g, t } of log) {
+      const dt = m ? Math.max(0, Math.floor((t - last) / DAY)) : 0;
+      m = m ? fsrsStep(w, m, dt, g) : fsrsInit(w, g);
+      if (g === 1 && reps) lapses++;
+      if (g > 1) reps++;
+      last = t;
+    }
+    if (!m) continue;
+    c.S = m.S; c.D = m.D; c.F = m.F; c.lr = last;
+    c.st = 2; delete c.sp;
+    c.n = Math.max(c.n || 0, reps);
+    c.l = Math.max(c.l || 0, lapses);
+    /* l'échéance n'est pas touchée : on refait la mémoire, pas le calendrier,
+       exactement comme Anki qui ne replanifie que si on le lui demande */
+    c.i = Math.min(Math.max(Math.round(fsrsIvl(w, m, fsrsDR())), 1), fsrsMax());
+    dirty[d.id] = 1; done++;
+  }
+  if (done) { save(); scheduleFlush(); }
+  return done;
+}
+
+/* ---------- reprise d'une bibliothèque existante ----------
+   Les fiches déjà travaillées n'ont ni stabilité ni difficulté : on les
+   convertit avec le pont officiel de FSRS-7 (memory_state_from_sm2_fsrs,
+   fsrs-rs/src/model_v7.rs) — la stabilité part de l'intervalle déjà
+   atteint, la difficulté du milieu de l'échelle. Rien n'est perdu : une
+   fiche qui revenait dans 30 jours revient toujours dans 30 jours, et le
+   moteur prend la suite à partir de là. */
+function fsrsSeed(c) {
+  if (c.S || !c.n) return false;
+  const ivl = +c.i || 0;
+  if (ivl >= 1) {
+    c.S = cl(ivl, S_MIN, S_MAX);
+    c.D = 5;
+    c.F = cl(c.S * 0.8, S_MIN, S_MAX);
+    c.st = 2; delete c.sp;
+    c.lr = (c.d || Date.now()) - ivl * DAY;
+  } else {
+    c.st = 1; c.sp = 0;                      // encore en apprentissage
+    c.lr = c.d ? c.d - 10 * MIN : Date.now();
+  }
+  return true;
+}
+function fsrsMigrate() {
+  let n = 0;
+  for (const d of db.decks) { let touched = 0; for (const c of d.cards) if (fsrsSeed(c)) { n++; touched = 1; } if (touched) dirty[d.id] = 1; }
+  if (n) { save(); scheduleFlush(); }
+  return n;
 }
 
 /* ---------- génération de cartes ----------
@@ -2556,10 +2875,16 @@ function loginView() {
    Tout ce qui se devine au premier coup d'œil n'a pas de pastille. */
 const HELP = {
   simple: ['Mode simple',
-    'Le moteur choisit quand chaque carte revient : le lendemain, puis à 3, 7, 15 et 30 jours, ' +
-    'en s’ajustant à ce que tu réponds.\n\nL’éteindre rend l’app manuelle — les cartes défilent ' +
-    'dans l’ordre choisi, tu balaies à gauche si tu sais, à droite sinon. Ta progression reste ' +
+    'Le moteur estime, pour chaque page, le jour où tu serais sur le point de l’oublier, et te ' +
+    'la redonne juste avant.\n\nL’éteindre rend l’app manuelle — les pages défilent dans ' +
+    'l’ordre choisi, tu balaies à droite si tu sais, à gauche sinon. Ta progression reste ' +
     'enregistrée et repart où elle en était dès que tu le rallumes.'],
+  dr: ['Rétention visée',
+    'La part de tes pages que tu veux encore savoir au moment où elles reviennent.\n\n' +
+    'À 90 %, une page sur dix t’échappe au retour : c’est le réglage conseillé, celui qui ' +
+    'demande le moins de révisions pour ce que tu retiens.\n\nViser plus haut fait revenir ' +
+    'les pages plus souvent et coûte beaucoup plus de travail pour peu de mémoire en plus. ' +
+    'Viser plus bas allège les journées mais laisse filer davantage.'],
   order: ['Ordre des cartes',
     'Aléatoire : mélangées à chaque séance.\nDu livre : l’ordre dans lequel tu les as écrites.\n' +
     'Ratées : celles que tu manques le plus souvent d’abord.\nUrgentes : les plus en retard d’abord.'],
@@ -2605,7 +2930,12 @@ function settingsView() {
           <div class="srh">${svg(I.plus)}<span class="n">Nouvelles pages par séance</span>
             <span class="c">${prefs.cap || 'sans limite'}</span></div>
           <input class="rng" id="pCap" type="range" min="0" max="100" step="5" value="${prefs.cap}"
-            aria-label="Nouvelles pages par séance"></div>`}
+            aria-label="Nouvelles pages par séance"></div>
+        <div class="sr flat col">
+          <div class="srh">${svg(I.brain)}<span class="n">Rétention visée</span>
+            <span class="c">${Math.round(fsrsDR() * 100)} %</span>${hlp('dr')}</div>
+          <input class="rng" id="pDr" type="range" min="70" max="97" step="1"
+            value="${Math.round(fsrsDR() * 100)}" aria-label="Rétention visée"></div>`}
         <div class="sr flat col">
           <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des pages</span>${hlp('order')}</div>
           <div class="seg" id="pOrder">
@@ -2624,6 +2954,9 @@ function settingsView() {
         <div class="srw"><button class="sr flat" data-act="tglfast">${svg(I.skip)}
           <span class="n">Mode rapide</span>
           <span class="tgl ${prefs.fast ? 'on' : ''}"></span></button>${hlp('fast')}</div>
+        ${prefs.simple ? '' : `<button class="sr flat" data-act="replay">${svg(I.chart)}
+          <span class="n">Recalculer depuis mon historique</span>
+          ${svg(I.arrow)}</button>`}
       </div>
 
       <div class="lbl"><span>Affichage</span></div>
@@ -2704,6 +3037,13 @@ function settingsView() {
   if (c) c.addEventListener('input', () => {
     prefs.cap = +c.value; savePrefs();
     c.closest('.sr').querySelector('.c').textContent = prefs.cap || 'sans limite';
+  });
+  /* Le seul bouton de réglage du moteur : viser plus haut, c'est plus de
+     révisions ; viser plus bas, c'est en oublier davantage. */
+  const dr = document.getElementById('pDr');
+  if (dr) dr.addEventListener('input', () => {
+    prefs.dr = +dr.value / 100; savePrefs();
+    dr.closest('.sr').querySelector('.c').textContent = dr.value + ' %';
   });
   const fo = document.getElementById('pFont');
   if (fo) fo.addEventListener('input', () => {
@@ -5643,7 +5983,7 @@ function paintMenu() {
           enterkeyhint="done" maxlength="${mk ? 40 : 8}">
         ${mk ? `<input class="tok" id="cl" placeholder="Niveau — Seconde (facultatif)"
           autocorrect="off" spellcheck="false" maxlength="20">` : ''}
-        <button class="mi" data-mact="${mk ? 'doclass' : 'dojoin'}"
+        <button class="mi" data-mact="${mk ? 'doclass' : 'doclassjoin'}"
           style="justify-content:center;font-weight:700">${svg(I.check)}${mk ? 'Créer' : 'Rejoindre'}</button>
       </div>`;
     mountMenu(w);
@@ -5943,6 +6283,10 @@ function paintMenu() {
         <div class="mhd">${svg(I.card)}
           <span class="mhx"><b>${esc(plain(c.f) || 'Carte')}</b>
             <i>${esc(plain(c.b)) || 'verso vide'}</i></span></div>
+        ${c.S ? `<div class="mrow"><span class="ml">${svg(I.brain)}Mémoire</span>
+          <span class="tail">${memLine(c)}</span></div>
+          <div class="mrow"><span class="ml">${svg(I.clock)}Prochain passage</span>
+          <span class="tail">${nextIn(c) || '—'}</span></div>` : ''}
         <div class="seg mseg">
           ${[['', 'Basique'], ['tf', 'Vrai / faux']].map(([v, l]) =>
             `<button data-ct="${v}" class="${(c.t || '') === v ? 'on' : ''}">${l}</button>`).join('')}
@@ -6003,16 +6347,17 @@ function paintMenu() {
          paquets et le marathon toutes matières disparaissent.`,
         `Les quatre boutons <b>Encore · Difficile · Correct · Facile</b> disparaissent. Il ne
          reste que le balayage : à droite je sais, à gauche je ne sais pas.`,
-        `Les intervalles n’avancent plus. Une carte revue en mode simple reste exactement à
-         l’échelon où elle était — réviser en mode simple ne fait pas progresser le moteur.`,
+        `La mémoire ne bouge plus. Une page revue en mode simple garde exactement la
+         stabilité et la difficulté qu’elle avait — réviser en mode simple n’apprend rien
+         au moteur.`,
         `La barre de maturité et les pastilles d’état ne s’affichent plus.`,
         `Le tri « Urgentes » disparaît : il n’y a plus de date pour trier.`
       ]),
       bloc('Ce qui est conservé', [
-        `<b>Rien n’est effacé.</b> Échéance, intervalle, facilité et nombre de réussites
-         restent écrits dans chaque carte et t’attendent.`,
-        `Le quiz, l’objectif du jour, le résumé de fin de session, les courbes, les matières,
-         les cartes suspendues et les sauvegardes fonctionnent à l’identique.`,
+        `<b>Rien n’est effacé.</b> Stabilité, difficulté, échéance et historique de
+         révisions restent écrits dans chaque page et t’attendent.`,
+        `La récitation, l’objectif du jour, le résumé de fin de session, les courbes, les
+         matières, les pages mises de côté et les sauvegardes fonctionnent à l’identique.`,
         `Les pages ratées continuent d’être comptées : le tri « Ratées » et les pages
          coriaces restent justes.`
       ]),
@@ -6033,8 +6378,9 @@ function paintMenu() {
       bloc('Ce qui revient', [
         `Les quatre boutons de notation, les échéances, les pastilles de rappel, la barre de
          maturité et le marathon.`,
-        `Les échelons de reprise : le lendemain, puis 3, 7, 15 et 30 jours, puis 2, 4, 8 mois
-         et un an — la carte monte d’un cran quand elle passe, redescend quand elle résiste.`
+        `Le calcul de la prochaine date : le moteur estime pour chaque page ta probabilité
+         de t’en souvenir, puis la programme au jour où elle tombe sur ta rétention visée.
+         Plus la page est solide, plus il attend ; plus elle résiste, plus il resserre.`
       ]),
       bloc('Où en est ta progression', [
         `Le moteur reprend au point exact où il s’était arrêté${since ? ` il y a ${since} jour${since > 1 ? 's' : ''}` : ''}.
@@ -6688,7 +7034,7 @@ document.addEventListener('click', async e => {
     const l = (document.getElementById('cl') || {}).value || '';
     return makeClass(n, l);
   }
-  if (a === 'dojoin') {
+  if (a === 'doclassjoin') {
     const v = ((document.getElementById('cn') || {}).value || '').trim();
     if (v) return joinClass(v);
     return;
@@ -7698,8 +8044,16 @@ function scoreCard(id, ok, rating) {
 const paintQ = () => { study.mode === 'mcq' ? paintMCQ() : (paintStack(), paintFoot()); };
 function commit(ok, rating) {
   const id = study.queue[study.i];
-  scoreCard(id, ok, rating);
-  if (!ok) study.again.push(id);
+  const [card] = scoreCard(id, ok, rating);
+  /* Une fiche quitte la séance quand elle est acquise, pas quand elle est
+     juste juste. FSRS la fait passer par des paliers — une minute, dix
+     minutes — avant de l'envoyer à des jours de distance : tant qu'elle
+     est sur ces paliers, elle revient avant la fin de la séance. C'est la
+     file d'apprentissage d'Anki, et c'est ce qui donne son sens aux
+     paliers : sans ça, la fiche sortait de l'écran et revenait dix
+     minutes plus tard sans qu'on s'y attende. */
+  const learning = card && !study.simple && (card.st === 1 || card.st === 3);
+  if (!ok || learning) study.again.push(id);
   study.i++; study.flip = false; study.pick = null; study.opts = null;
   saveResume();
   if (study.i >= study.queue.length) return studyView();
@@ -8543,6 +8897,23 @@ $.addEventListener('click', e => {
     return toast(I.check, plur(cards.length, 'page') + ' ajoutée' + (cards.length > 1 ? 's' : ''));
   }
   if (a === 'expstats') return exportStats();
+  /* Rejoue tout l'historique de révision dans le moteur : chaque fiche
+     retrouve la stabilité et la difficulté qu'elle aurait si FSRS l'avait
+     suivie depuis sa toute première lecture. */
+  if (a === 'replay') {
+    toast(I.chart, 'Lecture de ton historique…');
+    (async () => {
+      try {
+        if (!stats.rows) await statsPull();
+        const n = fsrsReplay(stats.rows);
+        animate = false; render();
+        toast(n ? I.check : I.x, n
+          ? plur(n, 'page') + ' recalculée' + (n > 1 ? 's' : '') + ' sur ton historique'
+          : 'Pas encore assez d’historique noté');
+      } catch (e) { toast(I.x, 'Historique indisponible'); }
+    })();
+    return;
+  }
   if (a === 'find') { findQ = ''; return go('find'); }
   if (a === 'deckfind') {
     deckOpen = !deckOpen;
@@ -9429,6 +9800,7 @@ function installSheet(w) {
 async function boot() {
   if (!auth) { view = { name: 'login' }; return render(); }
   db = load();
+  fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état
   if (!consumeHash()) render();          // le cache s'affiche tout de suite
   /* le raccourci attend d'avoir les paquets : « réviser » ne veut rien
      dire tant qu'on ne sait pas ce qui est dû */
