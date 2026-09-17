@@ -1,6 +1,13 @@
-const C = 'folio-v69';
-const SHELL = ['.', 'index.html', 'app.css', 'app.js', 'fsrs.wasm', 'manifest.webmanifest',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png', 'icons/icon-maskable.png'];
+/* Modèle du service worker. Il n'est pas servi tel quel : au build, le
+   plugin `serviceWorker` de vite.config.js remplace les deux marqueurs par
+   l'empreinte du build et la liste exacte des fichiers produits.
+
+   Le numéro de cache s'écrivait avant à la main (folio-v69) : un oubli, ou
+   un merge qui le faisait redescendre (v66 → v47, c'est arrivé), et les
+   téléphones gardaient l'ancienne app. Il se calcule maintenant sur le
+   contenu : un fichier change, le cache change. */
+const C = 'folio-__BUILD__';
+const SHELL = __SHELL__;
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
@@ -16,6 +23,6 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(req)
       .then(r => { const c = r.clone(); caches.open(C).then(x => x.put(req, c)); return r; })
-      .catch(() => caches.match(req).then(hit => hit || caches.match('index.html')))
+      .catch(() => caches.match(req).then(hit => hit || caches.match('/index.html')))
   );
 });

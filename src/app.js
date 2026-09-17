@@ -1,9 +1,12 @@
 /* Cartes — révision + quiz. PWA, comptes cloisonnés sur Supabase. */
 const SB = {
-  url: 'https://qqbzefpdeinlynjtarqr.supabase.co',
-  // clé publique : elle est faite pour vivre dans le code client.
-  // Ce sont les règles RLS de la base qui cloisonnent réellement les comptes.
-  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxYnplZnBkZWlubHluanRhcnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5Nzk0MTIsImV4cCI6MjEwNDU1NTQxMn0.CLTRJl1ZOg1tbzSIEBiRhhoiiJIVD4cHqkk1qBwV9FI'
+  /* Valeurs injectées au build depuis .env.local (en local) ou les
+     variables d'environnement Vercel (en ligne). La clé anon est publique
+     par nature : ce sont les règles RLS de la base qui cloisonnent les
+     comptes. Elle sort du code pour pouvoir pointer vers un autre projet
+     (préproduction, établissement) sans toucher une ligne. */
+  url: import.meta.env.VITE_SUPABASE_URL,
+  key: import.meta.env.VITE_SUPABASE_ANON_KEY
 };
 const AKEY = 'cartes.auth';
 const $ = document.getElementById('app');
@@ -10003,8 +10006,10 @@ boot();
 window.addEventListener('hashchange', consumeHash);
 window.addEventListener('online', flush);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) flush(); });
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+/* En développement, pas de service worker : il servirait l'ancien code
+   depuis son cache à chaque rechargement. */
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
   let reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!reloaded) { reloaded = true; location.reload(); }

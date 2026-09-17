@@ -1,0 +1,23 @@
+# dépendances et build
+node_modules/
+dist/
+
+# secrets et configuration locale — seul .env.example est suivi
+.env
+.env.*
+!.env.example
+
+# outils
+.vercel/
+supabase/.temp/
+supabase/.branches/
+playwright-report/
+test-results/
+coverage/
+*.log
+
+# système et éditeurs
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

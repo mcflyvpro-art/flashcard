@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
 <title>Folio</title>
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#FAF6EC">
 <meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Folio">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" href="/icons/icon-192.png">
 <!-- Peint avant tout le reste. La feuille de style est un fichier à part :
      le temps qu'elle arrive, l'écran n'appartenait à personne et le
      téléphone le remplissait de noir. Ces quelques règles tiennent dans
@@ -36,15 +36,15 @@ html,body{margin:0;background:#FAF6EC;-webkit-text-size-adjust:100%}
 @keyframes bootname{from{opacity:0;transform:translateY(10px)}}
 @keyframes bootbar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 </style>
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="/src/app.css">
 </head>
 <body>
 <i class="statusmask" aria-hidden="true"></i>
 <!-- L'ouverture. Elle dure trois secondes pleines : le trait sous le nom
      se remplit pendant que le compte, les livres et la feuille de style
      finissent d'arriver, puis elle s'efface. -->
-<div id="boot"><img src="icons/icon-192.png" alt=""><b>Folio</b><i aria-hidden="true"></i></div>
+<div id="boot"><img src="/icons/icon-192.png" alt=""><b>Folio</b><i aria-hidden="true"></i></div>
 <main id="app"></main>
-<script src="app.js"></script>
+<script type="module" src="/src/app.js"></script>
 </body>
 </html>
