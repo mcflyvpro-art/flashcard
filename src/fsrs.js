@@ -266,3 +266,64 @@ export function fsrsStates(c, now, cfg) {
   }
   return s;
 }
+
+/* ---------- rejouer un journal de révisions ----------
+   L'état stocké sur une fiche (S, D, F...) n'est qu'un cache : la vérité
+   est le journal des révisions (`reviews`). Rejouer ce journal dans le
+   moteur — ce qu'Anki appelle « recalculer la mémoire » — reconstruit ce
+   cache depuis rien, note après note, dans l'ordre où elles ont été
+   données. Seules les notes sur les quatre boutons comptent : QCM,
+   associations et récitations ne notent pas la mémoire, ils ne disent
+   que juste ou faux, et `rating` y vaut `null`.
+
+   Les intervalles entre deux révisions se comptent en jours calendaires
+   (`dayNo`), pas en fenêtres de 24 h glissantes : deux révisions faites
+   le même jour à midi et à minuit et demi ne doivent pas compter un jour
+   d'écart. C'est aussi ce que suppose l'optimiseur côté app
+   (`fsrsItems`), qui doit voir le même découpage en jours. */
+export const dayNo = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return Math.round(d.getTime() / DAY); };
+
+/* Une seule fiche. `log` : des lignes `{ rating, created_at }`, dans
+   n'importe quel ordre — celles sans note sont ignorées. Rend `null` si
+   aucune note n'a compté, sinon l'état mémoire reconstruit : de quoi
+   remplacer S, D, F, lr, n, l sur la fiche, et son intervalle si on
+   souhaite aussi recalculer l'échéance (`cfg` : { w, dr, maxIvl }, comme
+   pour `fsrsPlan`). */
+export function fsrsReplayCard(log, cfg) {
+  const rows = (log || [])
+    .filter(r => r && r.rating != null)
+    .map(r => ({ g: cl((+r.rating | 0) + 1, 1, 4), t: +new Date(r.created_at) }))
+    .sort((a, b) => a.t - b.t);
+  if (!rows.length) return null;
+  const w = cfg.w;
+  let m = null, last = 0, lapses = 0, reps = 0;
+  for (const { g, t } of rows) {
+    const dt = m ? Math.max(0, dayNo(t) - dayNo(last)) : 0;
+    m = m ? fsrsStep(w, m, dt, g) : fsrsInit(w, g);
+    if (g === 1 && reps) lapses++;
+    if (g > 1) reps++;
+    last = t;
+  }
+  const ivl = Math.min(Math.max(Math.round(fsrsIvl(w, m, cfg.dr)), 1), cfg.maxIvl);
+  return { S: m.S, D: m.D, F: m.F, st: 2, sp: null, lr: last, n: reps, l: lapses, i: ivl };
+}
+
+/* Le même rejeu, mais pour tout un journal d'un coup : des lignes brutes
+   au format de la table `reviews` (chacune porte un `card_id`) donnent
+   une carte -> état reconstruit par carte qui a au moins une note
+   valable. C'est ce que l'app appelle après un import ou un changement de
+   paramètres ; elle ne touche à rien d'autre que ce qu'on lui donne. */
+export function fsrsReplayAll(rows, cfg) {
+  const byCard = new Map();
+  for (const r of rows || []) {
+    if (r.rating == null) continue;
+    if (!byCard.has(r.card_id)) byCard.set(r.card_id, []);
+    byCard.get(r.card_id).push(r);
+  }
+  const out = new Map();
+  for (const [id, log] of byCard) {
+    const state = fsrsReplayCard(log, cfg);
+    if (state) out.set(id, state);
+  }
+  return out;
+}

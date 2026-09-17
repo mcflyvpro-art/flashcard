@@ -227,6 +227,41 @@ async function api(path, method = 'GET', body, extra = {}) {
   }
   return r.status === 204 ? null : r.json().catch(() => null);
 }
+/* PostgREST refuse de rendre plus de `db-max-rows` lignes d'un coup
+   (1000 sur ce projet) — une lecture simple au-delà de ce nombre serait
+   tronquée en silence, sans erreur, sans rien qui le signale. `apiAll`
+   lit la première page, découvre le total réel dans l'en-tête
+   `Content-Range` (`Prefer: count=exact`), puis va chercher le reste en
+   parallèle. M03.T6 : c'est la bibliothèque de cartes, une ligne par
+   carte désormais, qui peut dépasser cette limite. */
+const PAGE = 1000;
+async function apiPage(path, from, to) {
+  if (demo) return { rows: [], total: 0 };
+  if (auth && auth.refresh && auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
+  const h = { apikey: SB.key, Range: `${from}-${to}`, Prefer: 'count=exact' };
+  if (auth && auth.token) h.Authorization = 'Bearer ' + auth.token;
+  const r = await fetch(SB.url + path, { headers: h });
+  if (r.status === 401 && auth && auth.refresh) {
+    if (await refreshToken()) return apiPage(path, from, to);
+  }
+  if (!r.ok && r.status !== 206) {
+    const e = new Error(await r.text().catch(() => String(r.status)));
+    e.status = r.status;
+    throw e;
+  }
+  const rows = await r.json().catch(() => []);
+  const total = +((r.headers.get('content-range') || '').split('/')[1]) || rows.length;
+  return { rows, total };
+}
+async function apiAll(path) {
+  const first = await apiPage(path, 0, PAGE - 1);
+  if (first.total <= first.rows.length) return first.rows;
+  const suite = [];
+  for (let from = first.rows.length; from < first.total; from += PAGE) {
+    suite.push(apiPage(path, from, from + PAGE - 1));
+  }
+  return first.rows.concat(...(await Promise.all(suite)).map(p => p.rows));
+}
 function keepSession(j) {
   /* Le seul endroit par lequel passe TOUT changement de compte : connexion,
      inscription, renouvellement de jeton. Si l'identifiant change, c'est
@@ -455,6 +490,17 @@ async function pushDeck(d) {
   d.rev = (got && got[0] && got[0].rev) || d.rev + 1;
   return true;
 }
+/* M03.T3 — double écriture : le JSONB (ci-dessus) reste la seule chose
+   lue, mais chaque paquet poussé pousse aussi une ligne par carte dans
+   `cards` (M03.T1), via une fonction serveur qui fait l'upsert et le
+   ménage en une seule transaction (migration 20260918090000). Le paquet
+   ne quitte `dirty` que si les deux écritures ont réussi : si le miroir
+   échoue seul, `pushDeck` est rejoué au prochain passage — un PATCH
+   identique est sans conséquence, la file n'a pas d'autre état à tenir
+   pour ça. */
+async function pushCardsTable(d) {
+  await api('/rest/v1/rpc/sync_deck_cards', 'POST', { p_deck_id: d.id, p_cards: d.cards });
+}
 async function flush() {
   if (demo || flushing || !auth) return;
   flushing = true;
@@ -463,7 +509,7 @@ async function flush() {
     for (const id of ids) {
       const d = deck(id);
       if (!d) { delete dirty[id]; continue; }
-      if (await pushDeck(d)) delete dirty[id];
+      if (await pushDeck(d)) { await pushCardsTable(d); delete dirty[id]; }
       else { delete dirty[id]; await raiseConflict(d); }
     }
     if (ids.length) save();
@@ -496,18 +542,42 @@ function setOnline(v) {
   }
 }
 
+/* M03.T6 — bascule des lectures : les cartes viennent désormais de
+   `cards` (une ligne chacune, M03.T1), plus du tableau JSONB embarqué
+   dans `decks`. Celui-ci reste écrit (double écriture, M03.T3, encore en
+   observation jusqu'au 2026-09-25) mais plus lu ici — `decks` ne demande
+   même plus la colonne. Les alias (`f:front`, `S:stability`...) évitent
+   qu'une carte pèse plus sur le réseau qu'avant : les noms de colonnes,
+   lisibles en base, redeviennent les clés courtes que le reste de l'app
+   attend, sans passer par une conversion côté client. */
+const CARDS_SELECT = 'deck_id,id,f:front,b:back,st:state,sp:step,'
+  + 'S:stability,D:difficulty,F:trace2,d:due,lr:last_review,i:interval_days,'
+  + 'n:reviews_count,l:lapses,meta';
+function cardsParDeck(rows) {
+  const m = new Map();
+  for (const r of rows) {
+    const { deck_id, meta, ...c } = r;
+    let arr = m.get(deck_id);
+    if (!arr) { arr = []; m.set(deck_id, arr); }
+    arr.push({ ...c, ...(meta || {}) });
+  }
+  return m;
+}
+
 /* récupère matières, paquets et historique du compte */
 async function pull() {
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-  const [subs, decks, sess, pf, today, bin, unread] = await Promise.all([
+  const [subs, decks, cardRows, sess, pf, today, bin, unread] = await Promise.all([
     api('/rest/v1/subjects?select=*&order=pos.asc'),
-    api('/rest/v1/decks?select=*&deleted_at=is.null&order=pos.asc'),
+    api('/rest/v1/decks?select=id,name,subject,hidden,pos,pinned,meta,rev&deleted_at=is.null&order=pos.asc'),
+    apiAll(`/rest/v1/cards?select=${CARDS_SELECT}`),
     api('/rest/v1/sessions?select=deck_id,mode,pct,created_at&order=created_at.asc'),
     api('/rest/v1/prefs?select=*'),
     api(`/rest/v1/reviews?select=id&created_at=gte.${midnight.toISOString()}`),
     api('/rest/v1/decks?select=id&deleted_at=not.is.null'),
     api('/rest/v1/mail?select=id&read_at=is.null')
   ]);
+  const cardsByDeck = cardsParDeck(cardRows || []);
   trash.n = (bin || []).length;
   mailbox.n = (unread || []).length;
   const wasSimple = prefs.simple;
@@ -529,7 +599,7 @@ async function pull() {
     return {
       id: x.id, name: x.name, subject: x.subject, hidden: x.hidden,
       pos: x.pos, pinned: x.pinned, meta: x.meta || {}, rev: x.rev,
-      cards: (x.cards || []).map(c => ({ ...c, id: c.id || uid() }))
+      cards: cardsByDeck.get(x.id) || []
     };
   });
   /* un paquet créé hors ligne n'est encore nulle part : il reprend sa place */
@@ -1160,7 +1230,7 @@ function markDups(cards, target) {
 
 import {
   DAY, MIN, S_MIN, S_MAX, D_MIN, D_MAX, cl, W6,
-  fsrsInit, fsrsStep, fsrsR, fsrsIvl, fsrsStates
+  fsrsR, fsrsStates, dayNo, fsrsReplayAll
 } from './fsrs.js';
 
 /* ══════════ FSRS ══════════
@@ -1246,53 +1316,26 @@ function preview(c, rating) {
   return nextIn({ d: p.d });
 }
 
-/* Anki compte des dates, pas des durées : deux révisions à 23 h puis 1 h
-   du matin sont séparées d'un jour, pas de deux heures. Tout ce qui nourrit
-   le moteur passe donc par ce compteur de jours calendaires locaux. */
-const dayNo = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return Math.round(d.getTime() / DAY); };
-
 /* ---------- recalcul depuis l'historique réel ----------
-   La conversion ci-dessous part de l'intervalle atteint : c'est le pont
-   officiel, mais il jette la difficulté (tout le monde à 5) et ne sait
-   rien du chemin parcouru. Or l'app garde chaque réponse donnée. Rejouer
-   cet historique dans le moteur — ce qu'Anki appelle « recalculer la
-   mémoire » — rend à chaque fiche la stabilité et la difficulté qu'elle
-   aurait si FSRS l'avait suivie depuis le premier jour.
-
-   Seules les réponses notées sur les quatre boutons comptent : c'est le
-   signal que FSRS attend. Les QCM, associations et récitations, qui ne
-   produisent qu'un juste ou faux, ne sont pas des notes et n'entrent pas
-   dans le calcul. */
+   Le rejeu lui-même (`fsrsReplayAll`) est dans src/fsrs.js, pur et testé
+   (test/revlog.test.js) : ici ne reste que ce qu'un module pur ne peut
+   pas savoir — où vivent les fiches, et comment les écritures se
+   propagent (file durable, sauvegarde). */
 function fsrsReplay(rows) {
-  const w = fsrsW(), byCard = new Map();
-  for (const r of rows || []) {
-    if (r.rating == null) continue;
-    if (!byCard.has(r.card_id)) byCard.set(r.card_id, []);
-    byCard.get(r.card_id).push({ g: cl((+r.rating | 0) + 1, 1, 4), t: +new Date(r.created_at) });
-  }
+  const results = fsrsReplayAll(rows, fsrsCfg());
   const index = new Map();
   for (const d of db.decks) for (const c of d.cards) index.set(c.id, [c, d]);
   let done = 0;
-  for (const [id, log] of byCard) {
+  for (const [id, state] of results) {
     const hit = index.get(id); if (!hit) continue;
     const [c, d] = hit;
-    log.sort((a, b) => a.t - b.t);
-    let m = null, last = 0, lapses = 0, reps = 0;
-    for (const { g, t } of log) {
-      const dt = m ? Math.max(0, dayNo(t) - dayNo(last)) : 0;
-      m = m ? fsrsStep(w, m, dt, g) : fsrsInit(w, g);
-      if (g === 1 && reps) lapses++;
-      if (g > 1) reps++;
-      last = t;
-    }
-    if (!m) continue;
-    c.S = m.S; c.D = m.D; c.F = m.F; c.lr = last;
-    c.st = 2; delete c.sp;
-    c.n = Math.max(c.n || 0, reps);
-    c.l = Math.max(c.l || 0, lapses);
+    c.S = state.S; c.D = state.D; c.F = state.F; c.lr = state.lr;
+    c.st = state.st; delete c.sp;
+    c.n = Math.max(c.n || 0, state.n);
+    c.l = Math.max(c.l || 0, state.l);
     /* l'échéance n'est pas touchée : on refait la mémoire, pas le calendrier,
        exactement comme Anki qui ne replanifie que si on le lui demande */
-    c.i = Math.min(Math.max(Math.round(fsrsIvl(w, m, fsrsDR())), 1), fsrsMax());
+    c.i = state.i;
     dirty[d.id] = 1; done++;
   }
   if (done) { save(); scheduleFlush(); }

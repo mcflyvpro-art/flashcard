@@ -67,6 +67,24 @@ select cron.schedule('purge-signalements-mensuelle', '32 3 1 * *',
 
 Vérifier ensuite que les deux tâches existent : `select * from cron.job;`.
 
+## Audit de la double écriture (M03.T3)
+
+Le temps que `decks.cards` (JSONB) et `cards` (une ligne par carte,
+M03.T1) tournent en double écriture avant de basculer les lectures
+(M03.T6) et de retirer le JSONB (M03.T7), une tâche `pg_cron`
+(`audit-double-ecriture-cards-quotidien`, migration `20260918100000`)
+rejoue chaque jour à 4 h 03 la comparaison des deux et journalise le
+résultat dans `card_sync_audit`. Vérifier l'absence d'écart sur les sept
+jours avant de cocher M03.T3 :
+
+```sql
+select * from card_sync_audit order by checked_at;
+```
+
+Une fois M03.T7 fait (JSONB retiré), cette tâche et la table n'ont plus
+d'objet : les retirer (`select cron.unschedule('audit-double-ecriture-cards-quotidien');`
+puis `drop table public.card_sync_audit; drop function public.check_card_sync_drift();`).
+
 ## Sauvegardes
 
 L'offre gratuite ne garantit ni sauvegarde ni restauration, et met le projet
