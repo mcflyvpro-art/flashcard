@@ -7,14 +7,38 @@ professeurs, référents, éditeurs — modèle « à la Pronote »). Tout ce qu
 
 Langue : **français** partout — code commenté, messages de commit, réponses.
 
+## Où on en est : PROGRESS.md
+
+`PROGRESS.md` est la mémoire du projet. Il tient l'état de 148 tâches
+chiffrées, réparties en 26 missions et 3 phases.
+
+**Protocole, à suivre à la lettre — il est fait pour coûter le moins de
+lecture possible :**
+
+```sh
+sed -n '1,20p' PROGRESS.md            # où on en est (20 lignes suffisent)
+grep -A20 '^## M03' PROGRESS.md       # le détail d'une mission
+grep -n '^- \[ \].*\[P0\]' PROGRESS.md  # ce qui reste avant le lancement
+```
+
+Ne jamais relire le fichier entier. Mettre à jour = changer `[ ]` en `[x]`
+sur la ligne concernée, puis réécrire le bloc ÉTAT (CURSEUR, FAIT, DERNIER).
+
+Une tâche ne se coche que si **sa preuve tourne au vert**. La preuve est
+écrite sur la ligne : une commande, un chiffre, un rapport. Pas « ça a
+l'air de marcher ».
+
 ## Architecture réelle (à ne pas supposer autrement)
 
-- **Aucun build, aucune dépendance, aucun framework.** Fichiers servis en statique.
-  - `index.html` — écran d'ouverture inline, charge `app.css` puis `app.js`
-  - `app.js` — **~10 000 lignes, un seul fichier**, découpé en sections
-    `/* ---------- nom ---------- */`. Chercher la section par `grep -n -- "---------- "` avant d'éditer.
-  - `app.css` — ~2 200 lignes
-  - `sw.js` — service worker, réseau d'abord, cache en secours
+- **Build Vite, sans framework ni dépendance à l'exécution.**
+  - `index.html` — écran d'ouverture inline, charge `/src/app.css` puis `/src/app.js`
+  - `src/app.js` — **~9 800 lignes, un seul fichier** (chantier M06.T3 : le
+    découper), sections `/* ---------- nom ---------- */`. Chercher par
+    `grep -n -- "---------- " src/app.js` avant d'éditer.
+  - `src/fsrs.js` — le moteur, pur et testé (`test/fsrs.test.js`)
+  - `src/app.css` — ~2 200 lignes
+  - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
+  - `public/` — fsrs.wasm, manifeste, icônes
   - `fsrs.wasm` — crate Rust `fsrs` 6.6.2 compilé (recette : `tools/BUILD-FSRS.md`). Ne jamais réécrire les formules à la main.
 - **Rendu** : état global en `let` (haut de `app.js`, section « état »), `render()` reconstruit l'écran depuis `view`.
 - **Backend : Supabase** (projet `qqbzefpdeinlynjtarqr`, eu-west-1), appelé en `fetch` brut via `api(path, method, body)` — pas de SDK `supabase-js`.
@@ -27,7 +51,7 @@ Langue : **français** partout — code commenté, messages de commit, réponses
 
 ## Règles non négociables
 
-1. **Bumper `const C = 'folio-vNN'` dans `sw.js` à chaque changement livré** de `app.js`, `app.css`, `index.html` ou `fsrs.wasm`. Toujours prendre le max existant + 1 — après un merge, vérifier qu'il n'a pas régressé (c'est déjà arrivé : v66 → v47).
+1. **Ne jamais écrire de règle métier hors du noyau.** Le calcul vit dans un module pur et testé ; l'interface affiche, la couche données transporte.
 2. **Toute table nouvelle a la RLS activée et des politiques** dans la même migration. Après une migration, lancer les advisors Supabase (sécurité + performance) via MCP.
 3. **Aucun secret dans le dépôt.** Seule la clé `anon` vit dans `app.js`. Clés privées → secrets Edge Functions.
 4. **Données d'élèves mineurs (RGPD)** : minimisation, pas de donnée perso dans les logs, purge programmée respectée (`20260917090000_purge_corbeille_programmee.sql`).
@@ -52,8 +76,10 @@ Langue : **français** partout — code commenté, messages de commit, réponses
 ## Commandes utiles
 
 ```sh
-python3 -m http.server 8080          # servir l'app en local (http://localhost:8080)
-grep -n -- "---------- " app.js      # table des matières de app.js
+npm run dev                          # serveur local (http://localhost:5173)
+npm test                             # tests du noyau
+npm run check                        # lint + tests + build, comme la CI
+grep -n -- "---------- " src/app.js  # table des matières de app.js
 supabase db diff / supabase migration new <nom>   # si la CLI est installée
 ```
 
