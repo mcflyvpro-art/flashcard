@@ -51,6 +51,17 @@ l'air de marcher ».
 
 ## Règles non négociables
 
+0. **Ces deux fichiers se mettent à jour dans le même commit que le
+   changement, jamais « plus tard ».** Un dépôt qui se décrit faux est pire
+   qu'un dépôt qui ne se décrit pas : on agit sur ce qu'il raconte.
+   - `CLAUDE.md` dès que bouge l'architecture, l'infrastructure, une
+     commande, le schéma, un service externe, une clé ou une règle de
+     travail. C'est le fichier qui coûte le plus cher à laisser périmer :
+     c'est lui qu'on lit en premier, à chaque session.
+   - `PROGRESS.md` dès qu'une tâche avance : la case, puis le bloc ÉTAT.
+   Un commit qui change l'infra sans toucher CLAUDE.md est un commit
+   incomplet — le relire avant de valider.
+
 1. **Ne jamais écrire de règle métier hors du noyau.** Le calcul vit dans un module pur et testé ; l'interface affiche, la couche données transporte.
 2. **Toute table nouvelle a la RLS activée et des politiques** dans la même migration. Après une migration, lancer les advisors Supabase (sécurité + performance) via MCP.
 3. **Aucun secret dans le dépôt.** Seule la clé `anon` vit dans `app.js`. Clés privées → secrets Edge Functions.
