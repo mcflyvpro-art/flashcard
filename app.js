@@ -2821,6 +2821,10 @@ instructions.
   accompagne.
 - *L’usage de l’IA* : le nombre d’appels et leur coût, pour tenir les
   plafonds de dépense. Le texte de tes cours n’est pas conservé.
+- *Un signalement que tu fais ou que tu reçois* : une copie du contenu visé
+  est jointe, pour qu’elle reste lisible même si l’original est effacé
+  entretemps. Seuls les modérateurs y accèdent, pour instruire la plainte.
+- *Qui tu bloques.*
 
 Aucun traceur publicitaire, aucune mesure d’audience, aucun cookie autre
 que ce qui est strictement nécessaire à ta session.
@@ -2844,17 +2848,24 @@ n’existe que si tu appuies.
 
 **Combien de temps.** Tes livres restent tant que ton compte existe. Un
 livre supprimé part en corbeille et s’efface définitivement au bout de 30
-jours. Les dix dernières versions d’un livre sont conservées. Ton
+jours, purgés chaque nuit sans qu’il soit besoin de rouvrir l’écran
+Corbeille. Les dix dernières versions d’un livre sont conservées. Ton
 historique de révision est gardé tant que ton compte vit, puisque c’est
-lui qui fait fonctionner le moteur. Tout disparaît à la suppression du
-compte.
+lui qui fait fonctionner le moteur. Un signalement reste le temps de son
+instruction, et douze mois après sa clôture — le temps de répondre à une
+contestation — puis s’efface. Tout disparaît à la suppression du compte.
 
 **Qui d’autre peut voir.** Personne, par défaut. Un autre compte ne voit
 tes fiches que si tu les lui as prêtées, ou si tu les as posées sur une
 étagère dont il fait partie. Ce n’est pas qu’une règle d’affichage : la
 base elle-même refuse de rendre les lignes d’un autre compte. Les images
 et les sons ne quittent jamais ton compte, même quand tu prêtes un livre :
-seul le texte des fiches voyage.
+seul le texte des fiches voyage. Si tu es signalé, un modérateur voit la
+copie jointe au signalement, rien d’autre de ton compte. En établissement
+scolaire, ton professeur voit si tu as ouvert et rendu ses devoirs, jamais
+tes réponses ni tes livres personnels ; le référent de l’établissement
+peut, lui, corriger ton identité ou refaire ton mot de passe — chacun de
+ses gestes sur ton compte est tracé et consultable par l’établissement.
 
 **Tes droits.** Tu peux consulter, corriger, exporter et effacer tes
 données. L’export du journal se fait depuis l’écran Journal de lecture ;
@@ -2891,6 +2902,17 @@ utilisateurs restent la propriété de leurs auteurs.
 
 *Version du ${LEGALV}.*`]
 };
+
+/* Tant qu'un ⟦crochet⟧ traîne dans ces trois textes, l'app ne dit pas qui
+   traite les données ni comment le joindre — exigé dès la collecte par
+   l'art. 13.1.a et .b du RGPD (et par la LCEN pour les mentions légales).
+   Le commentaire au-dessus d'EDITEUR/CONTACT prévenait déjà ; ce signal-ci
+   reste visible en production tant que le remplacement n'est pas fait. */
+if (/⟦/.test(EDITEUR + CONTACT + Object.values(LEGAL).map(v => v[1]).join(''))) {
+  console.error('Folio : mentions légales incomplètes — des ⟦placeholders⟧ sont encore '
+    + 'servis aux utilisateurs (identité/coordonnées du responsable de traitement, art. 13 RGPD). '
+    + 'Voir EDITEUR, CONTACT et LEGAL.mentions dans app.js.');
+}
 
 /* Le rendu : gras, italique, listes et paragraphes. Cinq lignes plutôt
    qu'une bibliothèque, pour la même raison que le reste de l'app. */
@@ -3369,7 +3391,7 @@ async function sendDeck(d, p) {
   sendTo = null; sendMsg = '';
   try {
     await api('/rest/v1/mail', 'POST', [{
-      from_user: auth.uid, to_user: p.id, from_name: prefs.name || auth.email,
+      from_user: auth.uid, to_user: p.id, from_name: prefs.name || (me && me.handle) || 'Compte',
       deck_name: d.name, message: msg, cards
     }], { Prefer: 'return=minimal' });
     toast(I.check, 'Envoyé à ' + (p.name || p.email));
@@ -3577,7 +3599,7 @@ async function libPull() {
 async function libPublish(d) {
   closeMenu();
   const where = scopeName();
-  const row = { deck_id: d.id, user_id: auth.uid, who: prefs.name || auth.email,
+  const row = { deck_id: d.id, user_id: auth.uid, who: prefs.name || (me && me.handle) || 'Compte',
                 name: d.name, subject: d.subject ? subj(d.subject).name : '',
                 n: d.cards.length, cards: d.cards.map(c => [plain(c.f), plain(c.b)]),
                 group_id: scope, updated_at: new Date().toISOString() };
@@ -3639,7 +3661,7 @@ async function duelMake(d) {
   closeMenu();
   try {
     await api('/rest/v1/duels', 'POST',
-      [{ deck_id: d.id, owner: auth.uid, who: prefs.name || auth.email,
+      [{ deck_id: d.id, owner: auth.uid, who: prefs.name || (me && me.handle) || 'Compte',
          name: d.name, total: cards.length, cards, group_id: scope }], { Prefer: 'return=minimal' });
     duels.list = null; groupTab = 'duel'; go('group'); duelsPull();
     toast(I.flame, 'Défi lancé chez ' + scopeName() + ' — ' + plur(cards.length, 'question'));
@@ -3664,7 +3686,7 @@ async function duelClasse(aid, nom) {
   const q = shuffle(uniq.slice()).slice(0, DUELQ);
   try {
     await api('/rest/v1/duels', 'POST',
-      [{ deck_id: null, owner: auth.uid, who: prefs.name || auth.email,
+      [{ deck_id: null, owner: auth.uid, who: prefs.name || (me && me.handle) || 'Compte',
          name: nom, total: q.length, cards: q, class_id: cid }], { Prefer: 'return=minimal' });
     closeMenu(); render();
     toast(I.flame, 'Défi lancé · ' + plur(q.length, 'question'));
@@ -3706,7 +3728,7 @@ function duelPick(k) {
 }
 async function duelEnd() {
   const r = duelRun; if (!r) return;
-  const row = { duel_id: r.id, user_id: auth.uid, who: prefs.name || auth.email,
+  const row = { duel_id: r.id, user_id: auth.uid, who: prefs.name || (me && me.handle) || 'Compte',
                 score: r.score, ms: Date.now() - r.t0 };
   duelRun = null;
   duels.scores = (duels.scores || []).filter(s => !(s.duel_id === row.duel_id && s.user_id === auth.uid));
@@ -4206,7 +4228,7 @@ function scolaire() {
 async function joinClass(code) {
   try {
     await api('/rest/v1/rpc/join_class', 'POST',
-      { join_code: code, who: prefs.name || auth.email });
+      { join_code: code, who: prefs.name || (me && me.handle) || 'Compte' });
     closeMenu(); classes = null; await classesPull();
     toast(I.check, 'Classe rejointe');
   } catch (e) { toast(I.x, 'Code inconnu'); }
@@ -4249,7 +4271,7 @@ async function takeWork(a) {
   const d = importPayload({ name: a.name, subject: '', cards: cartes }, true);
   try {
     await api('/rest/v1/assignment_progress', 'POST',
-      [{ assignment_id: a.id, user_id: auth.uid, who: prefs.name || auth.email, pct: 0 }],
+      [{ assignment_id: a.id, user_id: auth.uid, who: prefs.name || (me && me.handle) || 'Compte', pct: 0 }],
       { Prefer: 'resolution=merge-duplicates,return=minimal' });
   } catch (e) {}
   closeMenu();
@@ -7225,7 +7247,7 @@ document.addEventListener('click', async e => {
     if (!t) return toast(I.x, 'Écris ton message');
     const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
     api('/rest/v1/mail', 'POST', [{ from_user: auth.uid, to_user: prof.eleve,
-      from_name: prefs.name || auth.email, deck_name: '', message: t.slice(0, 600), cards: [] }],
+      from_name: prefs.name || (me && me.handle) || 'Compte', deck_name: '', message: t.slice(0, 600), cards: [] }],
       { Prefer: 'return=minimal' })
       .then(() => { closeMenu(); render();
         toast(I.check, 'Mot envoyé à ' + (m ? m.who.split(' ')[0] : 'l’élève')); },

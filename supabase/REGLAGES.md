@@ -46,6 +46,27 @@ prévenir personne. Aux quotas actuels, un élève qui les consomme entièrement
 coûte environ 1,20 $ par jour. À remplacer par un pool de crédits par
 établissement avant toute vente.
 
+## Purge programmée
+
+La confidentialité promet un livre supprimé « effacé définitivement au bout
+de 30 jours » et un signalement clos effacé douze mois après. La migration
+`20260917_purge_corbeille_programmee` pose deux tâches `pg_cron` qui
+appliquent ces promesses côté serveur, plutôt que de dépendre d'un geste
+(rouvrir l'écran Corbeille) ou de rien du tout (les signalements clos).
+
+Si le projet Supabase n'a pas `pg_cron` activé, la migration le signale sans
+échouer (`raise notice`). Activer alors **Database → Extensions → pg_cron**
+dans le tableau de bord, puis exécuter une fois :
+
+```sql
+select cron.schedule('purge-corbeille-quotidienne', '17 3 * * *',
+  'select public.purge_corbeille();');
+select cron.schedule('purge-signalements-mensuelle', '32 3 1 * *',
+  'select public.purge_signalements_clos();');
+```
+
+Vérifier ensuite que les deux tâches existent : `select * from cron.job;`.
+
 ## Sauvegardes
 
 L'offre gratuite ne garantit ni sauvegarde ni restauration, et met le projet
