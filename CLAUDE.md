@@ -32,11 +32,36 @@ l'air de marcher ».
 
 - **Build Vite, sans framework ni dépendance à l'exécution.**
   - `index.html` — écran d'ouverture inline, charge `/src/app.css` puis `/src/app.js`
-  - `src/app.js` — **~9 500 lignes, un seul fichier** (chantier M06.T3 : le
-    découper ; étape 1/2 faite, l'état en est sorti — reste à couper le
-    fichier lui-même en modules ≤ 800 lignes), sections
-    `/* ---------- nom ---------- */`. Chercher par
-    `grep -n -- "---------- " src/app.js` avant d'éditer.
+  - `src/app.js` — **point d'entrée seulement** (26 lignes) : importe les 18
+    modules ci-dessous chacun pour ses effets de bord. M06.T3 fini : plus
+    aucun fichier `src/*.js` ne dépasse 800 lignes (le plus gros,
+    `classement.js`, fait 716 lignes). La coupe a suivi les anciennes
+    sections `/* ---------- nom ---------- */` (qui existent toujours
+    dans chaque module — `grep -n -- "---------- " src/*.js` avant
+    d'éditer), sauf `paintMenu` (menu contextuel), qui à elle seule
+    faisait 957 lignes : décomposée en 46 fonctions (`paintMenuSubject`,
+    `paintMenuCard`...) réparties sur `menus-a/b/c.js`.
+  - `src/coeur-sync.js`, `carte-media.js`, `import-cartes.js`,
+    `bibliotheque.js`, `connexion.js`, `reglages-corbeille.js`,
+    `defis.js`, `classement.js`, `etablissement.js`, `bilan-devoirs.js`,
+    `ecran-groupe.js`, `menus-a.js`, `menus-b.js`, `menus-c.js`,
+    `revision.js`, `quiz.js`, `interactions.js`, `onboarding.js` — les 18
+    modules de l'app (UI + logique encore mêlées : leur séparation stricte
+    core/data/ui est M06.T4, pas fait ici). Chacun importe explicitement
+    ce dont il a besoin des autres et de `src/data/etat.js` — aucune
+    variable globale implicite entre modules.
+  - `src/icones.js`, `src/racine.js` — deux constantes sans la moindre
+    dépendance (`I`/`svg`/`SWIPE`, `$`), sorties à part exprès : le graphe
+    d'imports entre les 18 modules ci-dessus a des cycles (deux écrans qui
+    s'invoquent l'un l'autre), inévitables vu combien de choses se
+    répondent dans cette app — mais une valeur utilisée par un module au
+    niveau module (pas dans une fonction) doit venir d'un fichier qui ne
+    peut jamais faire partie d'un cycle, sinon ES la trouve pas encore
+    initialisée (`Cannot access '…' before initialization`, vu deux fois
+    pendant la découpe, corrigé les deux fois de cette façon). Le même
+    raisonnement vaut pour tout nouvel « utilitaire sans dépendance » :
+    il va dans un fichier à lui, jamais dans un module qui a lui-même des
+    imports.
   - `src/data/etat.js` — tout l'état mutable de l'app (109 variables : `db`,
     `view`, `study`, `animate`...), une liaison vive ES (`export let`) par
     variable et un « setter » générique par variable pour la réaffectation
@@ -50,7 +75,7 @@ l'air de marcher ».
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes
   - `fsrs.wasm` — crate Rust `fsrs` 6.6.2 compilé (recette : `tools/BUILD-FSRS.md`). Ne jamais réécrire les formules à la main.
-- **Rendu** : état global dans `src/data/etat.js` (voir plus haut), `render()` (dans `app.js`) reconstruit l'écran depuis `view`.
+- **Rendu** : état global dans `src/data/etat.js` (voir plus haut), `render()` (dans `bibliotheque.js`) reconstruit l'écran depuis `view`. Le démarrage (`boot()`, dans `onboarding.js`) est différé d'un micro-tick (`queueMicrotask`) exprès : appelé au fil de l'évaluation des modules, il pouvait tomber sur un module pas encore lié à cause des cycles ci-dessus.
 - **Backend : Supabase** (projet `qqbzefpdeinlynjtarqr`, eu-west-1), appelé en `fetch` brut via `api(path, method, body)` — pas de SDK `supabase-js`.
   - Auth : `signIn` / `signUp` / `refreshToken` (un seul rafraîchissement à la fois — ne pas casser ce verrou).
   - Données : PostgREST (`/rest/v1/...`), RLS stricte `user_id = auth.uid()` + rôles établissement.

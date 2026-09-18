@@ -16,23 +16,27 @@
 
 ## ÉTAT
 ```
-CURSEUR   M06.T3 (découpe d'app.js) — étape 1/2 faite (état centralisé), reste
-          la découpe en fichiers ; ordre P0 décidé le 2026-09-18, voir ORDRE
+CURSEUR   M06.T4 (séparation core/data/ui) — ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      19 / 148 (M06.T3 compte encore pour 0 : sa preuve — aucun fichier
-          > 800 lignes — n'est pas encore vraie, voir le détail sur sa ligne)
-DERNIER   2026-09-18 · M06.T3 (étape 1/2) : les 109 variables d'état d'app.js
-          sorties vers `src/data/etat.js` par un codemod AST (espree +
-          eslint-scope + estraverse), pas par regex — le risque réel était le
-          masquage (une variable locale de même nom, ex. un paramètre `team`),
-          exclu par une vraie analyse de portée. `npx eslint src/` → 0 nouvelle
-          erreur (seule reste `profCartesDeDevoir`, dette connue) ; `npm test`
-          → 134/134 ; `npm run build` ok ; vérifié en plus au navigateur
-          (Playwright, compte élève) : créer un livre, réviser une carte,
-          noter, l'échéance FSRS s'affiche juste — 0 nouvelle erreur console.
-          Reste l'étape 2/2 : découper les 72 sections (9 539 lignes, encore
-          un seul fichier) en modules ≤ 800 lignes ; `paintMenu` (952 lignes)
-          devra d'abord être décomposé, lui seul dépasse la cible.
+FAIT      20 / 148
+DERNIER   2026-09-18 · M06.T3 fini : `app.js` (9 795 lignes à l'origine) est
+          maintenant un point d'entrée de 26 lignes qui importe 18 modules,
+          aucun > 800 lignes (le plus gros, `classement.js`, 716). État
+          centralisé dans `src/data/etat.js` d'abord (109 variables, voir
+          M01.T5 pour la méthode du codemod AST) ; `paintMenu` (952 lignes à
+          elle seule) décomposée en 46 fonctions avant de pouvoir tenir dans
+          un fichier. La découpe en 18 fichiers a produit des cycles d'import
+          (40+ paires — inévitable vu le couplage réel de l'app) : deux bugs
+          `Cannot access '…' before initialization` trouvés au premier
+          chargement navigateur (pas au lint ni au build), corrigés en
+          sortant les constantes sans dépendance (`I`/`svg`/`SWIPE`, `$`)
+          dans des fichiers dédiés sans import, et en différant `boot()`
+          d'un micro-tick (`queueMicrotask`). `npx eslint src/` → 0 nouvelle
+          erreur ; `npm test` → 134/134 ; `npm run build` ok ; vérifié au
+          navigateur (Playwright, compte élève) après chaque correction —
+          connexion, révision complète, menu de livre, et spécifiquement la
+          page « Conditions d'utilisation » (le dernier bug) — 0 nouvelle
+          erreur console. Détail complet sur la ligne M06.T3.
 ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 → M13 → M12
           (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
           intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
@@ -99,39 +103,59 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M05.T5 · sonde externe + page d'état publique — cible: contrôle toutes les 5 min — preuve: URL publique
 - [ ] M05.T6 · alerte si le taux d'erreur dépasse 1 % sur 1 h — preuve: alerte déclenchée en test
 
-## M06 · Qualité du code [P0] 2/8
+## M06 · Qualité du code [P0] 3/8
 - [x] M06.T1 · build Vite + variables d'environnement — preuve: `npm run build`
 - [x] M06.T2 · ESLint au dépôt + CI — preuve: `.github/workflows/ci.yml`
-- [~] M06.T3 · découpe `src/app.js` en modules — cible: **aucun fichier > 800 lignes** (9 795 au départ) — preuve: `awk 'END{print FILENAME, NR}'` sur chaque fichier.
-      Étape 1/2 faite : les 109 variables d'état (`let` au niveau module — `db`,
-      `view`, `study`, `animate`...) qui rendaient tout le fichier solidaire
-      sont sorties vers `src/data/etat.js` (liaisons vives + un « setter » par
-      variable ; front-loadé sur M06.T4). Réécriture des ~500 sites de lecture
-      et d'écriture faite par un codemod AST (espree + eslint-scope +
-      estraverse, tous trois déjà en dépendance transitive d'ESLint — aucune
-      dépendance ajoutée), jamais par regex : le risque réel était qu'une
-      variable locale de même nom (ex. un paramètre `team` ou `me` dans un
-      callback) masque la variable de module — une réécriture texte l'aurait
+- [x] M06.T3 · découpe `src/app.js` en modules — cible: **aucun fichier > 800 lignes** (9 795 au départ) — preuve: `awk 'END{print FILENAME, NR}'` sur chaque fichier → le plus gros, `classement.js`, fait 716 lignes.
+      Fait en deux étapes. 1) Les 109 variables d'état (`let` au niveau module
+      — `db`, `view`, `study`, `animate`...) qui rendaient tout le fichier
+      solidaire sorties vers `src/data/etat.js` (liaisons vives + un
+      « setter » par variable ; front-loadé sur M06.T4). 2) `app.js`
+      (9 539 lignes) découpé selon ses anciennes sections en 18 modules
+      (`coeur-sync.js`, `bibliotheque.js`, `revision.js`... voir CLAUDE.md) +
+      2 fichiers de constantes sans dépendance (`icones.js`, `racine.js`) ;
+      `app.js` n'est plus qu'un point d'entrée de 26 lignes qui importe les
+      18. `paintMenu` (952 lignes à elle seule, plus que la cible d'un
+      fichier entier) décomposée d'abord en 46 fonctions (une par branche
+      `menu === 'x'`, chacune se refermait déjà sur un `return` — vérifié par
+      AST avant de toucher au fichier, 44 branches sur 44).
+      Les deux étapes, comme M01.T3-T5, faites par codemod AST (espree +
+      eslint-scope + estraverse, déjà en dépendance transitive d'ESLint —
+      aucune dépendance ajoutée) et jamais par regex : le risque réel était
+      qu'une variable locale de même nom (un paramètre `team` ou `me` dans un
+      callback) masque une variable de module — une réécriture texte l'aurait
       corrompue en silence, l'analyse de portée l'exclut par construction.
-      Un seul nom de setter entrait en collision avec une fonction réelle déjà
+      Un nom de setter entrait en collision avec une fonction réelle déjà
       existante (`setOnline`, qui met aussi à jour la pastille hors-ligne) —
-      celui-là a gardé son vrai nom, la variable brute a un setter à part
+      elle a gardé son vrai nom, la variable brute a un setter à part
       (`setOnlineState`) appelé uniquement par `setOnline`.
-      Preuve de cette étape : `npx eslint src/` → 0 nouvelle erreur `no-undef`
-      sur 9 539 lignes touchées (seule reste `profCartesDeDevoir`, dette déjà
-      connue) — c'est le filet qui aurait attrapé un site d'écriture manqué ;
-      `npm test` → 134/134 ; `npm run build` → ok (le fait de construire est
-      lui-même une preuve forte : une affectation à une liaison importée est
-      une erreur de build, pas un bug silencieux) ; vérifié en plus dans un
-      vrai navigateur (Playwright, 390 px, compte `eleve@folio.app`) : créer
-      un livre, coller/ajouter une carte, lancer une révision, retourner la
-      carte, noter « Correct », l'échéance affichée passe bien à 10 min — 0
-      nouvelle erreur console sur tout le parcours.
-      **Reste à faire (étape 2/2) : découper les 72 sections d'`app.js`
-      (9 539 lignes, encore un seul fichier) en une douzaine de modules
-      ≤ 800 lignes.** Un obstacle identifié : `paintMenu` (menu contextuel,
-      952 lignes) dépasse à lui seul la cible et devra être décomposé en
-      plusieurs fonctions avant de pouvoir tenir dans un fichier.
+      La découpe en 18 fichiers a un vrai risque que l'étape 1 n'avait pas :
+      des cycles d'import (deux écrans qui s'appellent l'un l'autre — 40+
+      paires trouvées, inévitable vu le couplage réel de l'app). Deux bugs
+      trouvés au premier chargement navigateur (pas au build, ni au lint) :
+      `Cannot access 'I'/'$' before initialization` — une constante sans
+      dépendance (icônes, racine DOM) utilisée au niveau module par un
+      fichier qui n'avait pas fini de se lier. Corrigé en sortant `I`/`svg`/
+      `SWIPE` et `$` dans deux fichiers dédiés, sans aucun import — un
+      utilitaire sans dépendance ne doit jamais rester dans un module qui a
+      lui-même des imports, sous peine de cycle. Un troisième bug de la même
+      famille (`LEGAL` inaccessible) a montré la vraie cause : `boot()`
+      s'appelait au fil de l'évaluation des modules ; différé d'un
+      micro-tick (`queueMicrotask(boot)`, dans `onboarding.js`), le graphe
+      entier a fini de se lier avant qu'il tourne, quel que soit l'ordre des
+      cycles.
+      Preuve : `npx eslint src/` → 0 nouvelle erreur `no-undef` (seule reste
+      `profCartesDeDevoir`, dette déjà connue) — le filet qui aurait attrapé
+      un site d'écriture ou un import manqué ; `npm test` → 134/134 ;
+      `npm run build` → ok (30 modules, une seule erreur d'export/import
+      manquant aurait fait planter le build, pas juste un avertissement) ;
+      vérifié en plus dans un vrai navigateur (Playwright, 390 px, compte
+      `eleve@folio.app`) après chaque correction : connexion, classe,
+      bibliothèque, création d'un livre, collage d'une carte, révision
+      complète (retourner, noter « Correct », l'échéance FSRS s'affiche
+      juste), menu « Réglages du livre », et spécifiquement la page
+      « Conditions d'utilisation » (`LEGAL`, le dernier bug) — 0 nouvelle
+      erreur console sur tout le parcours.
 - [ ] M06.T4 · séparation core / data / ui — cible: `src/ui/` n'appelle jamais `api()` directement — preuve: `grep -rc "api(" src/ui/` = 0
 - [ ] M06.T5 · 0 variable globale mutable partagée hors `src/data/etat.js` — preuve: revue + lint
 - [ ] M06.T6 · ESLint strict (complexité ≤ 15, profondeur ≤ 4) — cible: 0 erreur, 0 avertissement — preuve: `npm run lint`
