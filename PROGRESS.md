@@ -1,7 +1,7 @@
 # PROGRESS — Folio
 
 <!-- PROTOCOLE (Claude, lis ceci avant tout) :
-     · état courant      : sed -n '1,16p' PROGRESS.md
+     · état courant      : sed -n '1,24p' PROGRESS.md
      · une mission       : grep -A20 '^## M07' PROGRESS.md
      · ce qui reste en P0: grep -n '^- \[ \].*\[P0\]' PROGRESS.md
      Mise à jour = changer [ ] en [x] sur la ligne + réécrire le bloc ÉTAT.
@@ -9,12 +9,19 @@
 
 ## ÉTAT
 ```
-CURSEUR   M04.T1 (M03.T7 et la case de M03.T3 attendent le 2026-09-25, voir BLOQUÉ)
+CURSEUR   M01.T3 (file de révision) — ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
 FAIT      16 / 148
 DERNIER   2026-09-18 · M03.T6 : lectures basculées sur `cards`, pagination `apiAll` (bug db-max-rows corrigé au passage), pull() mesuré à 483 ms pour 5 000 cartes (cible 800 ms)
-BLOQUÉ    M03.T7 (retrait du JSONB `decks.cards`) ne se fait pas avant le 2026-09-25 : couper la source avant la fin de l'observation de M03.T3 (7 jours, un seul relevé fait à ce jour) prendrait le risque que l'audit contredise le mirror une fois la semaine passée. Décision du 2026-09-18 : ne pas bloquer le reste du projet là-dessus — on avance sur M04/M05/M06, et le 2026-09-25 on relit `card_sync_audit` sur les sept jours, on coche M03.T3 si 0 écart partout, puis M03.T7 dans la foulée avec le code qui aura avancé d'ici là (tâche planifiée `folio-m03t3-audit-7j`).
-DETTE     M06.T7 profCartesDeDevoir (CI rouge, volontaire)
+ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 → M13 → M12
+          (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
+          intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
+          test Playwright · paiement en dernier, sécurité/légal/infra déjà posés)
+BLOQUÉ    M03.T3 (case) et M03.T7 (retrait JSONB `decks.cards`) : en suspens jusqu'au
+          2026-09-25, fin des 7 j d'observation (tâche `folio-m03t3-audit-7j`). Alors :
+          relire `card_sync_audit`, cocher M03.T3 si 0 écart, puis faire M03.T7. Ne
+          bloque pas le reste du projet.
+DETTE     M06.T7 profCartesDeDevoir (CI rouge, volontaire) — dans le lot M06
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.
