@@ -12,6 +12,7 @@ dist/
 supabase/.temp/
 supabase/.branches/
 playwright-report/
+.playwright-mcp/
 test-results/
 coverage/
 *.log

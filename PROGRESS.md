@@ -16,16 +16,22 @@
 
 ## ÉTAT
 ```
-CURSEUR   M01.T4 (parseur de cartes) — ordre P0 décidé le 2026-09-18, voir ORDRE
+CURSEUR   M01.T5 (couverture du noyau) — ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      17 / 148
-DERNIER   2026-09-18 · M01.T3 : file de révision extraite d'app.js vers `src/file.js`
-          (buildQueue, isDue, isLeech, shuffle), pure — horloge (`now`) et hasard
-          (`rand`) toujours fournis par l'appelant, jamais lus dans le module.
-          `npm test -- file` → 27/27 ; suite complète `npm test` → 68/68 ; `npm run
-          build` ok. app.js n'a plus de définition locale de buildQueue/isDue/
-          isLeech/shuffle, seulement l'import ; `startStudy` passe explicitement
-          cap (repli sur prefs.cap) et now (Date.now()) à l'appel.
+FAIT      18 / 148
+DERNIER   2026-09-18 · M01.T4 : parseur de cartes (collage, Quizlet, Anki texte
+          brut, CSV/TSV, JSON) extrait d'app.js vers `src/parseur.js`, pur —
+          `npm test -- parseur` → 54/54 (25 cas de robustesse dédiés, 0 crash) ;
+          suite complète `npm test` → 122/122 ; `npm run build` ok. Vérifié aussi
+          dans un vrai navigateur (Playwright MCP, 390 px, compte `eleve@folio.app`) :
+          collage d'un texte `=` dans l'écran « Nouveau livre » → 3 cartes
+          reconnues dans l'aperçu, « Ajouter » les range, 0 erreur console
+          nouvelle. Au passage, le `catch (e) {}` muet du JSON invalide a reçu
+          son commentaire (règle 6) au lieu de rester silencieux.
+          MCP playwright reconnecté (config user cassée : commande `npx` sans
+          PATH résolvable dans ce processus → basculée sur le chemin absolu
+          `/opt/homebrew/bin/npx` + PATH explicite dans l'entrée `env`,
+          `~/.claude.json`) ; chromium installé (`npx playwright install chromium`).
 ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 → M13 → M12
           (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
           intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
@@ -48,12 +54,12 @@ But de phase : **zéro perte de données démontrée**, zéro erreur console sur
 parcours principaux, et une app vendable à un particulier.
 Sortie de phase : les 13 missions P0 à 100 %.
 
-## M01 · Noyau testable [P0] 3/5
+## M01 · Noyau testable [P0] 4/5
 But : toutes les règles métier dans du code pur, testé, sans DOM ni réseau.
 - [x] M01.T1 · extraire le moteur FSRS dans `src/core/` — cible: 0 accès DOM/réseau — preuve: `grep -cE 'document|fetch|localStorage' src/fsrs.js` = 0
 - [x] M01.T2 · tests du moteur — cible: ≥ 14 tests, ordre des 4 boutons garanti — preuve: `npm test`
 - [x] M01.T3 · extraire la file de révision (sélection, mélange, quotas) — cible: fonction pure, 20 tests — preuve: `npm test -- file` → 27/27 (`grep -cE 'document|fetch|localStorage' src/file.js` = 0)
-- [ ] M01.T4 · extraire le parseur de cartes (collage, Quizlet, CSV) — cible: 25 cas, 0 crash sur entrée malformée — preuve: `npm test -- parseur`
+- [x] M01.T4 · extraire le parseur de cartes (collage, Quizlet, CSV) — cible: 25 cas, 0 crash sur entrée malformée — preuve: `npm test -- parseur` → 54/54 (dont 25 cas malformés dédiés) ; `grep -cE 'document|fetch|localStorage' src/parseur.js` = 0 ; vérifié aussi dans le navigateur (Playwright)
 - [ ] M01.T5 · couverture du noyau — cible: ≥ 90 % lignes sur `src/core/` — preuve: `npx vitest run --coverage`
 
 ## M02 · Écritures qui ne se perdent jamais [P0] 4/4 ✅
