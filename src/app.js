@@ -5678,8 +5678,90 @@ function paintMenu() {
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
   document.documentElement.classList.remove('sheet-open');
   const w = document.createElement('div');
-  if (menu === 'subject') {
-    const t = db.subjects.find(x => x.id === subjEdit) || { id: '', name: '', color: 'graphite' };
+  if (menu === 'subject') return paintMenuSubject(w);
+  if (menu === 'install') return paintMenuInstall(w);
+  if (menu === 'newclass' || menu === 'joinclass') return paintMenuNewclass(w);
+  /* Donner un devoir vit maintenant dans une seule feuille : `compSheet`,
+     qui sait aussi bien reprendre un livre de la bibliothèque que le
+     fabriquer sur place. Hors établissement, l'ancien envoi direct reste
+     la bonne réponse — il n'y a qu'une classe et rien à composer. */
+  if (menu === 'compo') return paintMenuCompo(w);
+  if (menu === 'plivre') return paintMenuPlivre(w);
+  if (menu === 'pwork') return paintMenuPwork(w);
+  if (menu === 'pmot') return paintMenuPmot(w);
+  if (menu === 'newwork') return paintMenuNewwork(w);
+  /* ---------- les feuilles du référent ---------- */
+  if (menu === 'refwho') return paintMenuRefwho(w);
+  if (menu === 'refcls') return paintMenuRefcls(w);
+  if (menu === 'refnew' || menu === 'refnewclass') return paintMenuRefnew(w);
+  if (menu === 'devoir') return paintMenuDevoir(w);
+  if (menu === 'classcode') return paintMenuClasscode(w);
+  if (menu === 'workone') return paintMenuWorkone(w);
+  if (menu === 'member') return paintMenuMember(w);
+  if (menu === 'account') return paintMenuAccount(w);
+  if (menu === 'report') return paintMenuReport(w);
+  if (menu === 'blocked') return paintMenuBlocked(w);
+  if (menu === 'backup') return paintMenuBackup(w);
+  if (menu === 'card') return paintMenuCard(w);
+  if (menu === 'deckset') return paintMenuDeckset(w);
+  if (menu === 'simple' || menu === 'engine') return paintMenuSimple(w);
+  if (menu === 'merge') return paintMenuMerge(w);
+  if (menu === 'fnr') return paintMenuFnr(w);
+  if (menu === 'leave') return paintMenuLeave(w);
+  if (menu === 'sortpick') return paintMenuSortpick(w);
+  if (menu === 'preview') return paintMenuPreview(w);
+  if (menu === 'sharepick') return paintMenuSharepick(w);
+  if (menu === 'handle') return paintMenuHandle(w);
+  if (menu === 'newgroup' || menu === 'joingroup') return paintMenuNewgroup(w);
+  if (menu === 'mate') return paintMenuMate(w);
+  if (menu === 'groupitem') return paintMenuGroupitem(w);
+  if (menu === 'tuto') return paintMenuTuto(w);
+  if (menu === 'help') return paintMenuHelp(w);
+  if (menu === 'vers') return paintMenuVers(w);
+  if (menu === 'conflict') return paintMenuConflict(w);
+  if (menu === 'libitem') return paintMenuLibitem(w);
+  if (menu === 'duelitem') return paintMenuDuelitem(w);
+  if (menu === 'duelnew') return paintMenuDuelnew(w);
+  if (menu === 'sendfriend') return paintMenuSendfriend(w);
+  /* Prêter un livre : on part de l'ami, pas du livre. La feuille montre
+     toute la bibliothèque personnelle ; le livre choisi part aussitôt
+     dans sa boîte aux lettres. */
+  if (menu === 'lend') return paintMenuLend(w);
+  if (menu === 'mateprof') return paintMenuMateprof(w);
+  if (menu === 'mailitem') return paintMenuMailitem(w);
+  if (menu === 'move') return paintMenuMove(w);
+  if (menu === 'split') return paintMenuSplit(w);
+  if (menu === 'rename' || menu === 'pwd' || menu === 'delacc') return paintMenuRename(w);
+  const d = deck(view.id); if (!d) return;
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">
+      <div class="mgrid">
+        ${db.subjects.map(x => subj(x.id)).map(s => `<button class="ms ${d.subject === s.id ? 'on' : ''}"
+          data-msubj="${s.id}" style="--d:${s.d}"><i></i><span>${esc(s.name)}</span></button>`).join('')}
+      </div>
+      <div class="msep"></div>
+      <button class="mi" data-mact="pindeck">${svg(I.pin)}${d.pinned ? 'Détacher' : 'Épingler en haut'}</button>
+      <button class="mi" data-mact="hide">${svg(d.hidden ? I.eye : I.eyeoff)}${d.hidden ? 'Réafficher' : 'Masquer'}</button>
+      <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
+      <button class="mi" data-mact="mcq">${svg(I.grid)}QCM</button>
+      <button class="mi" data-mact="match">${svg(I.link)}Association</button>
+      <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du livre</button>
+      ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
+      <div class="msep"></div>
+      ${canUndo() ? `<button class="mi" data-mact="undo">${svg(I.redo)}Annuler<span class="tail">${esc(undoLabel())}</span></button>` : ''}
+      ${d.cards.length ? `<button class="mi" data-mact="fnropen">${svg(I.search)}Chercher et remplacer</button>` : ''}
+      <button class="mi" data-mact="versopen">${svg(I.clock)}Éditions précédentes</button>
+      <button class="mi" data-mact="clone">${svg(I.copy)}Dupliquer</button>
+      ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
+      ${d.cards.length > 3 ? `<button class="mi" data-mact="splitopen">${svg(I.split)}Scinder<span class="tail">${d.cards.length}</span></button>` : ''}
+      <button class="mi" data-mact="sharepick">${svg(I.share)}Partager</button>
+      <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
+    </div>`;
+  mountMenu(w);
+}
+
+function paintMenuSubject(w) {
+  const t = db.subjects.find(x => x.id === subjEdit) || { id: '', name: '', color: 'graphite' };
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <input class="tok" id="sn" placeholder="Nom de la matière" spellcheck="false"
@@ -5697,10 +5779,14 @@ function paintMenu() {
     sn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sn.blur(); } });
     setTimeout(() => { if (!subjName) sn.focus(); }, 60);
     return;
-  }
-  if (menu === 'install') return installSheet(w);
-  if (menu === 'newclass' || menu === 'joinclass') {
-    const mk = menu === 'newclass';
+}
+
+function paintMenuInstall(w) {
+  return installSheet(w);
+}
+
+function paintMenuNewclass(w) {
+  const mk = menu === 'newclass';
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(mk ? I.plus : I.key)}<span class="mhx">
@@ -5716,14 +5802,14 @@ function paintMenu() {
     mountMenu(w);
     setTimeout(() => { const f = document.getElementById('cn'); if (f) f.focus(); }, 60);
     return;
-  }
-  /* Donner un devoir vit maintenant dans une seule feuille : `compSheet`,
-     qui sait aussi bien reprendre un livre de la bibliothèque que le
-     fabriquer sur place. Hors établissement, l'ancien envoi direct reste
-     la bonne réponse — il n'y a qu'une classe et rien à composer. */
-  if (menu === 'compo') return compSheet(w);
-  if (menu === 'plivre') {
-    const l = live();
+}
+
+function paintMenuCompo(w) {
+  return compSheet(w);
+}
+
+function paintMenuPlivre(w) {
+  const l = live();
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu pv">
         <div class="mhd">${svg(I.book)}<span class="mhx"><b>Quel livre ?</b></span></div>
@@ -5734,13 +5820,14 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'pwork') return workSheet(w);
-  if (menu === 'pmot') {
-    /* Un mot dans le courrier de l'élève, sans paquet joint. Le seul canal
-       que l'app possède : elle n'envoie ni notification ni e-mail, et
-       laisser croire le contraire serait pire que ne rien proposer. */
-    const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
+}
+
+function paintMenuPwork(w) {
+  return workSheet(w);
+}
+
+function paintMenuPmot(w) {
+  const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
     if (!m) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -5755,9 +5842,10 @@ function paintMenu() {
     mountMenu(w);
     setTimeout(() => { const i = document.getElementById('pmt'); if (i) i.focus(); }, 60);
     return;
-  }
-  if (menu === 'newwork') {
-    const l = live();
+}
+
+function paintMenuNewwork(w) {
+  const l = live();
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.share)}<span class="mhx"><b>Donner un devoir</b></span></div>
@@ -5768,10 +5856,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  /* ---------- les feuilles du référent ---------- */
-  if (menu === 'refwho') {
-    const g = ref.who;
+}
+
+function paintMenuRefwho(w) {
+  const g = ref.who;
     if (!g) { setMenu(null); return; }
     const f = ref.form || {};
     const eleve = g.role === 'eleve';
@@ -5825,9 +5913,10 @@ function paintMenu() {
     mountMenu(w);
     if (g.role !== 'eleve' && !ref.service) refService(g.id);
     return;
-  }
-  if (menu === 'refcls') {
-    const c = (ref.classes || []).find(x => x.id === ref.open);
+}
+
+function paintMenuRefcls(w) {
+  const c = (ref.classes || []).find(x => x.id === ref.open);
     if (!c) { setMenu(null); return; }
     const f = ref.form || {};
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -5874,9 +5963,10 @@ function paintMenu() {
     mountMenu(w);
     if (!ref.team) refTeam(c.id);
     return;
-  }
-  if (menu === 'refnew' || menu === 'refnewclass') {
-    const cpt = menu === 'refnew';
+}
+
+function paintMenuRefnew(w) {
+  const cpt = menu === 'refnew';
     const f = ref.form || {};
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu pv">
@@ -5922,9 +6012,10 @@ function paintMenu() {
     mountMenu(w);
     setTimeout(() => { const i = document.getElementById(cpt ? 'nmel' : 'knom'); if (i) i.focus(); }, 60);
     return;
-  }
-  if (menu === 'devoir') {
-    const a = (asgs || []).find(x => x.id === workOpen);
+}
+
+function paintMenuDevoir(w) {
+  const a = (asgs || []).find(x => x.id === workOpen);
     if (!a) { setMenu(null); return; }
     const tard = a.due && Date.parse(a.due + 'T12:00:00') < Date.now();
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -5936,11 +6027,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'classcode') {
-    /* Le code se projette au tableau : il doit être lisible du fond de la
-       salle, pas niché dans un coin d'écran. */
-    const k = (prof.classes || []).find(x => x.id === prof.open) || {};
+}
+
+function paintMenuClasscode(w) {
+  const k = (prof.classes || []).find(x => x.id === prof.open) || {};
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.key)}<span class="mhx"><b>${esc(k.name || 'Cette classe')}</b></span></div>
@@ -5951,9 +6041,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'workone') {
-    const a = (asgs || []).find(x => x.id === workOpen);
+}
+
+function paintMenuWorkone(w) {
+  const a = (asgs || []).find(x => x.id === workOpen);
     const c = (classes || []).find(x => x.id === classOf);
     if (!a || !c) { setMenu(null); return; }
     const owner = c.owner === auth.uid;
@@ -5969,9 +6060,10 @@ function paintMenu() {
     mountMenu(w);
     if (owner) workProgress(a.id);
     return;
-  }
-  if (menu === 'member') {
-    const m = (roster || []).find(x => x.user_id === memberOpen);
+}
+
+function paintMenuMember(w) {
+  const m = (roster || []).find(x => x.user_id === memberOpen);
     if (!m) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -5981,12 +6073,22 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'account') return accountSheet(w);
-  if (menu === 'report') return reportSheet(w);
-  if (menu === 'blocked') return blockedSheet(w);
-  if (menu === 'backup') {
-    const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
+}
+
+function paintMenuAccount(w) {
+  return accountSheet(w);
+}
+
+function paintMenuReport(w) {
+  return reportSheet(w);
+}
+
+function paintMenuBlocked(w) {
+  return blockedSheet(w);
+}
+
+function paintMenuBackup(w) {
+  const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <button class="mi" data-mact="backup">${svg(I.share)}Sauvegarder
@@ -5994,9 +6096,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'card') {
-    const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
+}
+
+function paintMenuCard(w) {
+  const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
     if (!c) { setMenu(null); return; }
     const med = (side, kind) => {
       const k = side + (kind === 'img' ? 'i' : 'a');
@@ -6033,9 +6136,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'deckset') {
-    const d = deck(view.id); if (!d) { setMenu(null); return; }
+}
+
+function paintMenuDeckset(w) {
+  const d = deck(view.id); if (!d) { setMenu(null); return; }
     const m = metaOf(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6061,9 +6165,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'simple' || menu === 'engine') {
-    const on = menu === 'simple';
+}
+
+function paintMenuSimple(w) {
+  const on = menu === 'simple';
     const n = backlog(), per = Math.max(5, prefs.goal || 30), j = Math.max(1, Math.ceil(n / per));
     const ago = prefs.simpleAt ? Date.now() - prefs.simpleAt : 0;
     const since = ago >= DAY ? Math.round(ago / DAY) : 0;
@@ -6131,9 +6236,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'merge') {
-    const d = deck(view.id); if (!d) { setMenu(null); return; }
+}
+
+function paintMenuMerge(w) {
+  const d = deck(view.id); if (!d) { setMenu(null); return; }
     const others = db.decks.filter(x => x.id !== d.id);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6144,9 +6250,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'fnr') {
-    const d = deck(view.id); if (!d) { setMenu(null); return; }
+}
+
+function paintMenuFnr(w) {
+  const d = deck(view.id); if (!d) { setMenu(null); return; }
     const s = fnrScan(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6179,9 +6286,10 @@ function paintMenu() {
     q.addEventListener('input', refresh); r.addEventListener('input', refresh);
     setTimeout(() => q.focus(), 60);
     return;
-  }
-  if (menu === 'leave') {
-    const n = quiz && quiz.pool ? quiz.pool.length - quiz.i : study.queue.length - study.i;
+}
+
+function paintMenuLeave(w) {
+  const n = quiz && quiz.pool ? quiz.pool.length - quiz.i : study.queue.length - study.i;
     w.innerHTML = `<div class="scrim" data-mact="leavestay"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.warn)}Quitter cet exercice ?</div>
@@ -6193,9 +6301,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'sortpick') {
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+}
+
+function paintMenuSortpick(w) {
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.sort)}Trier les livres</div>
         ${Object.entries(SORTS).map(([k, l]) => `<button class="mi ${prefs.sort === k ? 'on' : ''}"
@@ -6205,9 +6314,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'preview') {
-    const d = deck(previewOf); if (!d) { setMenu(null); return; }
+}
+
+function paintMenuPreview(w) {
+  const d = deck(previewOf); if (!d) { setMenu(null); return; }
     const due = simpleMode() ? 0 : dueCount(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6230,9 +6340,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'sharepick') {
-    const d = deck(view.id); if (!d) { setMenu(null); return; }
+}
+
+function paintMenuSharepick(w) {
+  const d = deck(view.id); if (!d) { setMenu(null); return; }
     const m = metaOf(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6252,9 +6363,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'handle') {
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
+}
+
+function paintMenuHandle(w) {
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.user)}<span class="mhx"><b>Ton pseudo</b></span></div>
         <div class="fld addf"><span class="at">@</span><input id="hq" type="text"
@@ -6266,9 +6378,10 @@ function paintMenu() {
     mountMenu(w);
     setTimeout(() => { const i = document.getElementById('hq'); if (i) i.focus(); }, 80);
     return;
-  }
-  if (menu === 'newgroup' || menu === 'joingroup') {
-    const join = menu === 'joingroup';
+}
+
+function paintMenuNewgroup(w) {
+  const join = menu === 'joingroup';
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${join ? 'Rejoindre un club' : 'Créer un club'}</b>
@@ -6283,9 +6396,10 @@ function paintMenu() {
     mountMenu(w);
     setTimeout(() => { const i = document.getElementById('gq'); if (i) i.focus(); }, 80);
     return;
-  }
-  if (menu === 'mate') {
-    const f = (mates || []).find(x => x.id === mateOpen);
+}
+
+function paintMenuMate(w) {
+  const f = (mates || []).find(x => x.id === mateOpen);
     if (!f) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6300,9 +6414,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'groupitem') {
-    const g = (groups || []).find(x => x.id === groupOf);
+}
+
+function paintMenuGroupitem(w) {
+  const g = (groups || []).find(x => x.id === groupOf);
     if (!g) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6315,10 +6430,14 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'tuto') return helpSheet(w);
-  if (menu === 'help') {
-    const h = HELP[helpKey];
+}
+
+function paintMenuTuto(w) {
+  return helpSheet(w);
+}
+
+function paintMenuHelp(w) {
+  const h = HELP[helpKey];
     if (!h) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6327,9 +6446,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'vers') {
-    const d = deck(view.id); if (!d) { setMenu(null); return; }
+}
+
+function paintMenuVers(w) {
+  const d = deck(view.id); if (!d) { setMenu(null); return; }
     const l = vers.list;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6346,9 +6466,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'conflict') {
-    const c = conflicts[0];
+}
+
+function paintMenuConflict(w) {
+  const c = conflicts[0];
     if (!c) { setMenu(null); return; }
     const side = (v, lab, when) => `<div class="cside">
       <b>${lab}</b><i>${plur(v.cards.length, 'page')}${when ? ' · ' + when : ''}</i>
@@ -6370,9 +6491,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'libitem') {
-    const it = (lib.list || []).find(x => x.deck_id === lib.open);
+}
+
+function paintMenuLibitem(w) {
+  const it = (lib.list || []).find(x => x.deck_id === lib.open);
     if (!it) { setMenu(null); return; }
     const mine = it.user_id === auth.uid;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -6393,9 +6515,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'duelitem') {
-    const du = (duels.list || []).find(x => x.id === duels.open);
+}
+
+function paintMenuDuelitem(w) {
+  const du = (duels.list || []).find(x => x.id === duels.open);
     if (!du) { setMenu(null); return; }
     const r = rankOf(du.id), me = myScore(du.id), mine = du.owner === auth.uid;
     const MED = ['🥇', '🥈', '🥉'];
@@ -6418,9 +6541,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'duelnew') {
-    const list = db.decks.filter(x => x.cards.length >= 4);
+}
+
+function paintMenuDuelnew(w) {
+  const list = db.decks.filter(x => x.cards.length >= 4);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.flame)}Défier le groupe</div>
@@ -6431,9 +6555,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'sendfriend') {
-    const d = deck(view.id); if (!d) { setMenu(null); return; }
+}
+
+function paintMenuSendfriend(w) {
+  const d = deck(view.id); if (!d) { setMenu(null); return; }
     /* seuls les lecteurs qui ont accepté : envoyer un livre à quelqu'un
        qui n'a pas encore répondu ne mène nulle part */
     const list = mates || [];
@@ -6457,12 +6582,10 @@ function paintMenu() {
     const ta = document.getElementById('mmsg');
     if (ta) { ta.addEventListener('input', () => setSendMsg(ta.value)); setTimeout(() => ta.focus(), 60); }
     return;
-  }
-  /* Prêter un livre : on part de l'ami, pas du livre. La feuille montre
-     toute la bibliothèque personnelle ; le livre choisi part aussitôt
-     dans sa boîte aux lettres. */
-  if (menu === 'lend') {
-    const f = (mates || []).find(x => x.id === mateOpen);
+}
+
+function paintMenuLend(w) {
+  const f = (mates || []).find(x => x.id === mateOpen);
     if (!f) { setMenu(null); return; }
     const mine = db.decks.filter(x => x.cards.length);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -6478,9 +6601,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'mateprof') {
-    const f = (mates || []).find(x => x.id === mateOpen);
+}
+
+function paintMenuMateprof(w) {
+  const f = (mates || []).find(x => x.id === mateOpen);
     if (!f) { setMenu(null); return; }
     const r = mateProf.row, l = mateProf.lib;
     const pctok = r && +r.n ? Math.round(r.ok / r.n * 100) : 0;
@@ -6509,9 +6633,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'mailitem') {
-    const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen);
+}
+
+function paintMenuMailitem(w) {
+  const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen);
     if (!it) { setMenu(null); return; }
     const n = (it.cards || []).length;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -6533,9 +6658,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'move') {
-    const d = deck(view.id); if (!d || !sel) { setMenu(null); return; }
+}
+
+function paintMenuMove(w) {
+  const d = deck(view.id); if (!d || !sel) { setMenu(null); return; }
     const n = [...sel].filter(i => d.cards.some(c => c.id === i)).length;
     const others = db.decks.filter(x => x.id !== d.id);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -6547,9 +6673,10 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     return;
-  }
-  if (menu === 'split') {
-    const d = deck(view.id); if (!d) { setMenu(null); return; }
+}
+
+function paintMenuSplit(w) {
+  const d = deck(view.id); if (!d) { setMenu(null); return; }
     const n = d.cards.length;
     const size = Math.min(Math.max(2, splitSize), n - 1);
     const parts = Math.ceil(n / size), last = n - size * (parts - 1);
@@ -6583,9 +6710,10 @@ function paintMenu() {
       btn.lastChild.textContent = 'Scinder en ' + p;
     });
     return;
-  }
-  if (menu === 'rename' || menu === 'pwd' || menu === 'delacc') {
-    const conf = {
+}
+
+function paintMenuRename(w) {
+  const conf = {
       rename: ['Nom affiché', I.user, 'text', 'Comment on t’appelle', prefs.name || '', 'Enregistrer'],
       pwd: ['Nouveau mot de passe', I.lock, 'password', `Au moins ${PWMIN} caractères`, '', 'Changer'],
       delacc: ['Supprimer le compte', I.trash, null, '', '', 'Tout supprimer']
@@ -6604,33 +6732,6 @@ function paintMenu() {
     mountMenu(w);
     setTimeout(() => { const f = document.getElementById('fld'); if (f) f.focus(); }, 60);
     return;
-  }
-  const d = deck(view.id); if (!d) return;
-  w.innerHTML = `<div class="scrim" data-mact="close"></div>
-    <div class="menu">
-      <div class="mgrid">
-        ${db.subjects.map(x => subj(x.id)).map(s => `<button class="ms ${d.subject === s.id ? 'on' : ''}"
-          data-msubj="${s.id}" style="--d:${s.d}"><i></i><span>${esc(s.name)}</span></button>`).join('')}
-      </div>
-      <div class="msep"></div>
-      <button class="mi" data-mact="pindeck">${svg(I.pin)}${d.pinned ? 'Détacher' : 'Épingler en haut'}</button>
-      <button class="mi" data-mact="hide">${svg(d.hidden ? I.eye : I.eyeoff)}${d.hidden ? 'Réafficher' : 'Masquer'}</button>
-      <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
-      <button class="mi" data-mact="mcq">${svg(I.grid)}QCM</button>
-      <button class="mi" data-mact="match">${svg(I.link)}Association</button>
-      <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du livre</button>
-      ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
-      <div class="msep"></div>
-      ${canUndo() ? `<button class="mi" data-mact="undo">${svg(I.redo)}Annuler<span class="tail">${esc(undoLabel())}</span></button>` : ''}
-      ${d.cards.length ? `<button class="mi" data-mact="fnropen">${svg(I.search)}Chercher et remplacer</button>` : ''}
-      <button class="mi" data-mact="versopen">${svg(I.clock)}Éditions précédentes</button>
-      <button class="mi" data-mact="clone">${svg(I.copy)}Dupliquer</button>
-      ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
-      ${d.cards.length > 3 ? `<button class="mi" data-mact="splitopen">${svg(I.split)}Scinder<span class="tail">${d.cards.length}</span></button>` : ''}
-      <button class="mi" data-mact="sharepick">${svg(I.share)}Partager</button>
-      <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
-    </div>`;
-  mountMenu(w);
 }
 async function mateProfPull(id) {
   const seq = setMateProfSeq(mateProfSeq + 1), range = mateProf.range;
