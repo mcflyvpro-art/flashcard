@@ -16,20 +16,23 @@
 
 ## ÉTAT
 ```
-CURSEUR   M06.T3 (découpe d'app.js) — M01 fini, ordre P0 décidé le 2026-09-18, voir ORDRE
+CURSEUR   M06.T3 (découpe d'app.js) — étape 1/2 faite (état centralisé), reste
+          la découpe en fichiers ; ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      19 / 148
-DERNIER   2026-09-18 · M01.T5 : couverture du noyau (fsrs.js, fusion.js, file.js,
-          parseur.js) mesurée avec `@vitest/coverage-v8` (devDependency ajoutée) —
-          `npx vitest run --coverage` → 100 % lignes (327/327), 98,8 % instructions,
-          100 % fonctions sur les 4 modules purs (cible : ≥ 90 % lignes). Le seul
-          vrai trou trouvé était réel : FSRS-7 (34 paramètres, `f7*`) n'était
-          exercé par aucun test — code mort en pratique (Anki et donc l'app
-          n'utilisent que W6), mais dans le noyau et jamais vérifié ; désormais
-          couvert par les mêmes propriétés que FSRS-6 dans test/fsrs.test.js.
-          `mergeCard` avait aussi un angle mort sur les champs inconnus (ni
-          contenu ni mémoire) : ajouté à test/fusion.test.js. Suite complète
-          `npm test` → 134/134 ; `npm run build` ok. M01 est fini (5/5).
+FAIT      19 / 148 (M06.T3 compte encore pour 0 : sa preuve — aucun fichier
+          > 800 lignes — n'est pas encore vraie, voir le détail sur sa ligne)
+DERNIER   2026-09-18 · M06.T3 (étape 1/2) : les 109 variables d'état d'app.js
+          sorties vers `src/data/etat.js` par un codemod AST (espree +
+          eslint-scope + estraverse), pas par regex — le risque réel était le
+          masquage (une variable locale de même nom, ex. un paramètre `team`),
+          exclu par une vraie analyse de portée. `npx eslint src/` → 0 nouvelle
+          erreur (seule reste `profCartesDeDevoir`, dette connue) ; `npm test`
+          → 134/134 ; `npm run build` ok ; vérifié en plus au navigateur
+          (Playwright, compte élève) : créer un livre, réviser une carte,
+          noter, l'échéance FSRS s'affiche juste — 0 nouvelle erreur console.
+          Reste l'étape 2/2 : découper les 72 sections (9 539 lignes, encore
+          un seul fichier) en modules ≤ 800 lignes ; `paintMenu` (952 lignes)
+          devra d'abord être décomposé, lui seul dépasse la cible.
 ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 → M13 → M12
           (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
           intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
@@ -99,7 +102,36 @@ But : ne plus jamais deviner pourquoi ça plante.
 ## M06 · Qualité du code [P0] 2/8
 - [x] M06.T1 · build Vite + variables d'environnement — preuve: `npm run build`
 - [x] M06.T2 · ESLint au dépôt + CI — preuve: `.github/workflows/ci.yml`
-- [ ] M06.T3 · découpe `src/app.js` en modules — cible: **aucun fichier > 800 lignes** (9 795 aujourd'hui) — preuve: `awk 'END{print FILENAME, NR}'` sur chaque fichier
+- [~] M06.T3 · découpe `src/app.js` en modules — cible: **aucun fichier > 800 lignes** (9 795 au départ) — preuve: `awk 'END{print FILENAME, NR}'` sur chaque fichier.
+      Étape 1/2 faite : les 109 variables d'état (`let` au niveau module — `db`,
+      `view`, `study`, `animate`...) qui rendaient tout le fichier solidaire
+      sont sorties vers `src/data/etat.js` (liaisons vives + un « setter » par
+      variable ; front-loadé sur M06.T4). Réécriture des ~500 sites de lecture
+      et d'écriture faite par un codemod AST (espree + eslint-scope +
+      estraverse, tous trois déjà en dépendance transitive d'ESLint — aucune
+      dépendance ajoutée), jamais par regex : le risque réel était qu'une
+      variable locale de même nom (ex. un paramètre `team` ou `me` dans un
+      callback) masque la variable de module — une réécriture texte l'aurait
+      corrompue en silence, l'analyse de portée l'exclut par construction.
+      Un seul nom de setter entrait en collision avec une fonction réelle déjà
+      existante (`setOnline`, qui met aussi à jour la pastille hors-ligne) —
+      celui-là a gardé son vrai nom, la variable brute a un setter à part
+      (`setOnlineState`) appelé uniquement par `setOnline`.
+      Preuve de cette étape : `npx eslint src/` → 0 nouvelle erreur `no-undef`
+      sur 9 539 lignes touchées (seule reste `profCartesDeDevoir`, dette déjà
+      connue) — c'est le filet qui aurait attrapé un site d'écriture manqué ;
+      `npm test` → 134/134 ; `npm run build` → ok (le fait de construire est
+      lui-même une preuve forte : une affectation à une liaison importée est
+      une erreur de build, pas un bug silencieux) ; vérifié en plus dans un
+      vrai navigateur (Playwright, 390 px, compte `eleve@folio.app`) : créer
+      un livre, coller/ajouter une carte, lancer une révision, retourner la
+      carte, noter « Correct », l'échéance affichée passe bien à 10 min — 0
+      nouvelle erreur console sur tout le parcours.
+      **Reste à faire (étape 2/2) : découper les 72 sections d'`app.js`
+      (9 539 lignes, encore un seul fichier) en une douzaine de modules
+      ≤ 800 lignes.** Un obstacle identifié : `paintMenu` (menu contextuel,
+      952 lignes) dépasse à lui seul la cible et devra être décomposé en
+      plusieurs fonctions avant de pouvoir tenir dans un fichier.
 - [ ] M06.T4 · séparation core / data / ui — cible: `src/ui/` n'appelle jamais `api()` directement — preuve: `grep -rc "api(" src/ui/` = 0
 - [ ] M06.T5 · 0 variable globale mutable partagée hors `src/data/etat.js` — preuve: revue + lint
 - [ ] M06.T6 · ESLint strict (complexité ≤ 15, profondeur ≤ 4) — cible: 0 erreur, 0 avertissement — preuve: `npm run lint`

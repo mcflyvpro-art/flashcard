@@ -46,60 +46,15 @@ const subj = id => {
 const sty = s => `--c:${s.c};--ci:${s.ci};--d:${s.d}`;
 
 /* ---------- état ---------- */
-let auth = loadAuth();
-let db = { subjects: [], decks: [], hist: {} };
-let view = { name: 'home' };
-let filter = '';
-let peek = false;
-let study = null, quiz = null, menu = null, typing = 0, pendingGrade = null;
-let dirty = {}, gone = [], online = true;
-let outbox = [];          // révisions et séances en attente d'envoi
-let trash = { n: 0, list: null, err: 0 };
-let splitSize = 12;
-/* boîte de réception : n = non lus (toujours à jour), list = plein détail
-   (chargé seulement à l'ouverture de l'écran, comme la corbeille) */
-let mailbox = { n: 0, list: null, err: 0 };
-let stats = { rows: null, err: 0, range: 30 };
-let reorder = false;          // l'accueil est en cours de réorganisation
-let previewOf = null;         // paquet dont on regarde l'aperçu
-let findQ = '';               // recherche globale
-let deckQ = '';               // recherche à l'intérieur d'un paquet
-let deckOpen = false;         // son champ est-il déployé
-const DECKPAGE = 80;          // cartes posées d'un coup dans la liste
-let deckShow = DECKPAGE;
-let leaving = null;           // action de sortie en attente de confirmation
-let friends = null;          // annuaire des autres comptes, pour choisir un destinataire
-let sendTo = null;           // destinataire choisi dans la feuille d'envoi
-let mailOpen = null;         // id de l'e-mail affiché dans sa feuille de détail
-let sendMsg = '';            // message en cours de frappe dans la feuille d'envoi
-let lib = { list: null, err: 0, open: null };      // l'étagère commune du groupe
-let duels = { list: null, scores: null, err: 0, open: null };
-let board = { rows: null, err: 0, range: 7 };
-let shared = null;            // paquet ouvert par un lien de consultation
-let duelRun = null;           // défi en cours de partie
-let groupTab = 'lib';         // onglet courant de la bibliothèque du groupe
-/* Où l'on regarde, et donc où l'on publie. null = mes lecteurs (les amis
-   acceptés), sinon l'identifiant d'un club. La base sait déjà cloisonner
-   — library.group_id et duels.group_id existent, et leurs règles de
-   lecture s'appuient dessus — mais rien ne les renseignait : tout partait
-   donc avec group_id nul, c'est-à-dire à tous les amis, sans qu'on ait
-   jamais eu le choix. */
-let scope = null;
 const scopeName = () => {
   const g = (groups || []).find(x => x.id === scope);
   return g ? g.name : 'Mes lecteurs';
 };
-let mates = null, asks = null;   // amis acceptés, demandes reçues
-let me = null;                   // mon profil public : pseudo
-let groups = null, groupOf = null;  // mes groupes, et celui qu'on regarde
-let addQ = '';                   // pseudo en cours de frappe
-let mateOpen = null;             // ami dont on regarde la fiche
 
 /* ---------- annuler ----------
    Avant toute action qui écrase ou efface, on photographie les paquets
    touchés. Annuler repose la photo et la repousse en base. Dix pas en
    arrière suffisent : au-delà, ce n'est plus une erreur qu'on rattrape. */
-let undos = [];
 const snap = ids => ids.map(id => {
   const d = db.decks.find(x => x.id === id);
   return { id, deck: d ? JSON.parse(JSON.stringify(d)) : null };
@@ -132,20 +87,12 @@ function doUndo() {
 }
 
 function loadAuth() { try { return JSON.parse(localStorage.getItem(AKEY)); } catch (e) { return null; } }
-function saveAuth(a) { auth = a; a ? localStorage.setItem(AKEY, JSON.stringify(a)) : localStorage.removeItem(AKEY); }
+function saveAuth(a) { setAuth(a); a ? localStorage.setItem(AKEY, JSON.stringify(a)) : localStorage.removeItem(AKEY); }
 const cacheKey = () => 'cartes.cache.' + (auth && auth.uid);
 
 /* ---------- réglages du compte ----------
    simple  : moteur coupé, on ne fait plus que swiper
    simpleAt: date de bascule, pour étaler l'arriéré au retour du moteur       */
-const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false,
-                   font: 1, tol: 'normal', name: '', simple: false, simpleAt: 0, fast: false,
-                   sort: 'manual', list: false, zen: false,
-                   /* FSRS : rétention visée, paramètres du modèle, intervalle
-                      plafond. `w` vide = les paramètres par défaut du moteur. */
-                   dr: 0.9, w: null, maxIvl: 36500, wAt: 0, wN: 0 };
-let prefs = { ...DEFPREFS };
-let prefsTimer = 0;
 
 /* La file d'attente est enregistrée avec les données. Sans elle, une
    modification faite dans le métro survivait à l'écran mais pas au
@@ -156,10 +103,10 @@ function load() {
   try {
     const d = JSON.parse(localStorage.getItem(cacheKey()));
     if (d && Array.isArray(d.decks)) {
-      prefs = { ...DEFPREFS, ...(d.prefs || {}) };     // le mode reste le bon hors ligne
-      dirty = d.dirty && typeof d.dirty === 'object' ? { ...d.dirty } : {};
-      gone = Array.isArray(d.gone) ? d.gone.slice() : [];
-      outbox = Array.isArray(d.outbox) ? d.outbox.slice() : [];
+      setPrefs({ ...DEFPREFS, ...(d.prefs || {}) });     // le mode reste le bon hors ligne
+      setDirty(d.dirty && typeof d.dirty === 'object' ? { ...d.dirty } : {});
+      setGone(Array.isArray(d.gone) ? d.gone.slice() : []);
+      setOutbox(Array.isArray(d.outbox) ? d.outbox.slice() : []);
       return { subjects: d.subjects || [], decks: d.decks, hist: d.hist || {}, today: d.today };
     }
   } catch (e) {}
@@ -301,17 +248,10 @@ async function signIn(email, password) {
   keepSession(j);
   return j;
 }
-/* Supabase fait tourner le jeton de rafraîchissement : chaque échange en
-   rend un neuf et invalide l'ancien. Deux appels partis en même temps —
-   ce qui arrive dès qu'on revient sur l'app et que trois requêtes
-   redémarrent ensemble — se battaient donc pour le même jeton, et le
-   perdant déconnectait le compte. Un seul échange à la fois, tout le
-   monde attend le même. */
-let refreshing = null;
 function refreshToken() {
   if (refreshing) return refreshing;
   const had = auth && auth.refresh;
-  refreshing = (async () => {
+  setRefreshing((async () => {
     try {
       const r = await fetch(SB.url + '/auth/v1/token?grant_type=refresh_token', {
         method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' },
@@ -329,8 +269,8 @@ function refreshToken() {
       keepSession(j);
       return true;
     } catch (e) { return false; }
-    finally { refreshing = null; }
-  })();
+    finally { setRefreshing(null); }
+  })());
   return refreshing;
 }
 function sessionLost() {
@@ -338,7 +278,7 @@ function sessionLost() {
   flushSave();
   saveAuth(null);
   resetSession();
-  animate = true; render();
+  setAnimate(true); render();
   toast(I.lock, 'Session expirée, reconnecte-toi');
 }
 /* ce qui attend encore reste sur l'appareil : une déconnexion ne doit pas
@@ -358,7 +298,6 @@ const rowOf = d => ({ id: d.id, user_id: auth.uid, name: d.name, subject: d.subj
    réseau, les deux versions existent et aucune n'est « la bonne ». On ne
    choisit pas à la place de l'utilisateur — on montre les deux, avec de
    quoi les départager, et « garder les deux » reste toujours possible. */
-let conflicts = [];
 async function raiseConflict(d) {
   let row = null;
   try {
@@ -456,10 +395,7 @@ async function flushOutbox() {
   }
 }
 
-/* pousse tout ce qui est en attente ; garde la file si le réseau manque */
-let flushTimer = 0;
-function scheduleFlush() { clearTimeout(flushTimer); flushTimer = setTimeout(flush, 2500); }
-let flushing = false;
+function scheduleFlush() { clearTimeout(flushTimer); setFlushTimer(setTimeout(flush, 2500)); }
 /* Envoi d'un paquet, en tenant compte de ce que le serveur a déjà.
    Chaque ligne porte un numéro de révision ; on n'écrit que si ce numéro
    est encore celui qu'on a lu. Sinon c'est qu'un autre appareil est passé
@@ -502,7 +438,7 @@ async function pushCardsTable(d) {
 }
 async function flush() {
   if (demo || flushing || !auth) return;
-  flushing = true;
+  setFlushing(true);
   try {
     const ids = Object.keys(dirty);
     for (const id of ids) {
@@ -523,11 +459,11 @@ async function flush() {
     await flushOutbox();
     setOnline(true);
   } catch (e) { setOnline(false); }
-  flushing = false;
+  setFlushing(false);
 }
 function setOnline(v) {
   const was = online;
-  online = v;
+  setOnlineState(v);
   const n = document.getElementById('offdot');
   if (n) n.style.display = v ? 'none' : '';
   /* la pastille porte un compteur : elle change aussi quand la file bouge,
@@ -580,7 +516,7 @@ async function pull() {
   trash.n = (bin || []).length;
   mailbox.n = (unread || []).length;
   const wasSimple = prefs.simple;
-  prefs = { ...DEFPREFS, ...((pf && pf[0] && pf[0].data) || {}) };
+  setPrefs({ ...DEFPREFS, ...((pf && pf[0] && pf[0].data) || {}) });
   if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
   if (study && prefs.simple !== wasSimple) prefs.simple = wasSimple;   // pas de bascule à chaud
   upsertProfile();
@@ -975,13 +911,12 @@ function pickFile(accept) {
     document.body.appendChild(i); i.click();
   });
 }
-let recorder = null, recChunks = [];
 const REC = typeof MediaRecorder !== 'undefined' &&
             typeof navigator !== 'undefined' && !!(navigator.mediaDevices || {}).getUserMedia;
 async function recStart() {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  recChunks = [];
-  recorder = new MediaRecorder(stream);
+  setRecChunks([]);
+  setRecorder(new MediaRecorder(stream));
   recorder.ondataavailable = e => { if (e.data && e.data.size) recChunks.push(e.data); };
   recorder.onstop = () => stream.getTracks().forEach(t => t.stop());
   recorder.start();
@@ -989,7 +924,7 @@ async function recStart() {
 function recStop() {
   return new Promise(res => {
     if (!recorder) return res(null);
-    const r = recorder; recorder = null;
+    const r = recorder; setRecorder(null);
     r.addEventListener('stop', () => {
       const b = new Blob(recChunks, { type: r.mimeType || 'audio/webm' });
       b.name = 'voix.webm';
@@ -1022,7 +957,6 @@ function listen(lang, done) {
 const TTS = typeof speechSynthesis !== 'undefined';
 const LANGS = [['', 'Aucune'], ['fr-FR', 'Français'], ['it-IT', 'Italien'],
                ['en-GB', 'Anglais'], ['es-ES', 'Espagnol'], ['de-DE', 'Allemand']];
-let player = null;
 /* Le son porte un chemin comme l'image : on le signe avant de le jouer.
    L'appui est déjà passé quand l'adresse arrive, mais c'est un
    aller-retour, pas une attente — et le navigateur garde l'autorisation
@@ -1032,7 +966,7 @@ async function play(ref) {
     const p = mediaPath(ref);
     const url = p ? await mediaUrl(p) : ref;
     if (player) player.pause();
-    player = new Audio(url);
+    setPlayer(new Audio(url));
     player.play().catch(() => {});
   } catch (e) {}
 }
@@ -1105,6 +1039,35 @@ import {
 } from './fsrs.js';
 import { buildQueue, isDue, isLeech, shuffle } from './file.js';
 import { parseText } from './parseur.js';
+
+import {
+  auth, setAuth, db, setDb, view, setView, filter, setFilter, peek, setPeek, study, setStudy,
+  quiz, setQuiz, menu, setMenu, typing, setTyping, pendingGrade, setPendingGrade, dirty,
+  setDirty, gone, setGone, online, setOnlineState, outbox, setOutbox, trash, setTrash,
+  splitSize, setSplitSize, mailbox, setMailbox, stats, setStats, reorder, setReorder,
+  previewOf, setPreviewOf, findQ, setFindQ, deckQ, setDeckQ, deckOpen, setDeckOpen, deckShow,
+  setDeckShow, leaving, setLeaving, friends, setFriends, sendTo, setSendTo, mailOpen,
+  setMailOpen, sendMsg, setSendMsg, lib, setLib, duels, setDuels, board, setBoard, shared,
+  setShared, duelRun, setDuelRun, groupTab, setGroupTab, scope, setScope, mates, setMates,
+  asks, setAsks, me, setMe, groups, setGroups, groupOf, setGroupOf, addQ, setAddQ, mateOpen,
+  setMateOpen, undos, setUndos, prefs, setPrefs, prefsTimer, setPrefsTimer, refreshing,
+  setRefreshing, conflicts, setConflicts, flushTimer, setFlushTimer, flushing, setFlushing,
+  recorder, setRecorder, recChunks, setRecChunks, player, setPlayer, optRunning,
+  setOptRunning, fnr, setFnr, actx, setActx, tt, setTt, animate, setAnimate, booted,
+  setBooted, liveT, setLiveT, liveAt, setLiveAt, liveSoon, setLiveSoon, pageDir, setPageDir,
+  pagerEnd, setPagerEnd, sel, setSel, legalTab, setLegalTab, legalBack, setLegalBack,
+  loginBusy, setLoginBusy, loginMode, setLoginMode, helpKey, setHelpKey, subjEdit,
+  setSubjEdit, subjColor, setSubjColor, subjName, setSubjName, cardEdit, setCardEdit, vers,
+  setVers, blocks, setBlocks, reportOn, setReportOn, reportWhy, setReportWhy, iAmMod,
+  setIAmMod, mods, setMods, accounts, setAccounts, accOpen, setAccOpen, adm, setAdm, myRole,
+  setMyRole, classes, setClasses, classOf, setClassOf, school, setSchool, team, setTeam,
+  roster, setRoster, workOpen, setWorkOpen, memberOpen, setMemberOpen, asgs, setAsgs, mates2,
+  setMates2, ref, setRef, prof, setProf, mateProf, setMateProf, mateProfSeq, setMateProfSeq,
+  recKey, setRecKey, flipAt, setFlipAt, asrOn, setAsrOn, asrRec, setAsrRec, quizTick,
+  setQuizTick, comp, setComp, aiBusy, setAiBusy, tour, setTour, tourSave, setTourSave,
+  tourPoll, setTourPoll, demo, setDemo, bip, setBip, DECKPAGE, DEFPREFS
+} from './data/etat.js';
+setAuth(loadAuth());
 
 /* ══════════ FSRS ══════════
    Le moteur lui-même est dans src/fsrs.js — voir son bandeau. Ici ne
@@ -1299,13 +1262,9 @@ async function histPull() {
   return out;
 }
 
-/* Un passage complet : on relit l'historique, on en tire les paramètres,
-   puis on refait la mémoire de chaque fiche avec eux. Anki appelle ça
-   « optimiser » puis « recalculer la mémoire » ; ici c'est un seul geste. */
-let optRunning = 0;
 async function fsrsTune(force) {
   if (optRunning) return 0;
-  optRunning = 1;
+  setOptRunning(1);
   try {
     const rows = await histPull();
     const n = rows.length;
@@ -1320,7 +1279,7 @@ async function fsrsTune(force) {
     }
     return fsrsReplay(rows) || 0;
   } catch (e) { return 0; }
-  finally { optRunning = 0; }
+  finally { setOptRunning(0); }
 }
 
 /* Anki réoptimise tout seul ; ici pareil, sans rien demander ni afficher :
@@ -1472,11 +1431,11 @@ function spreadBacklog() {
 
 function savePrefs() {
   clearTimeout(prefsTimer);
-  prefsTimer = setTimeout(() => {
+  setPrefsTimer(setTimeout(() => {
     save();                                            // le cache local garde le mode
     api('/rest/v1/prefs', 'POST', [{ user_id: auth.uid, name: prefs.name || null, data: prefs }],
       { Prefer: 'resolution=merge-duplicates,return=minimal' }).catch(() => setOnline(false));
-  }, 400);
+  }, 400));
 }
 /* Progression du jour, pour l'anneau d'objectif */
 function todayCount() {
@@ -1563,7 +1522,6 @@ function splitDeck(d, size) {
    Recherche littérale, jamais une expression régulière : on remplace ce
    qu'on a tapé, caractère pour caractère. Le compte des occurrences est
    fait avant tout changement, pour qu'on sache ce qu'on s'apprête à faire. */
-let fnr = { q: '', r: '', side: 'both', cs: false };
 const fnrSides = () => fnr.side === 'both' ? ['f', 'b'] : [fnr.side];
 function fnrCount(txt, q) {
   if (!q) return 0;
@@ -1633,11 +1591,10 @@ function importPayload(p, fresh) {
    Deux notes synthétisées à la volée : rien à télécharger, rien à mettre
    en cache, et le son ne part jamais avant un vrai geste de l'utilisateur
    (iOS refuse d'ouvrir le contexte audio autrement). */
-let actx = null;
 function beep(good, force) {
   if (!prefs.sound && !force) return;
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    setActx(actx || new (window.AudioContext || window.webkitAudioContext)());
     if (actx.state === 'suspended') actx.resume();
     const t = actx.currentTime;
     const o = actx.createOscillator(), g = actx.createGain();
@@ -1653,7 +1610,6 @@ function beep(good, force) {
 }
 
 /* ---------- toast ---------- */
-let tt;
 function toast(icon, text, undo) {
   clearTimeout(tt); document.querySelectorAll('.toast').forEach(n => n.remove());
   const n = document.createElement('div'); n.className = 'toast';
@@ -1672,11 +1628,10 @@ function toast(icon, text, undo) {
   } else if (document.querySelector('.selb')) n.style.bottom = 'calc(84px + env(safe-area-inset-bottom))';
   else if (document.querySelector('.tabs')) n.style.bottom = 'calc(80px + env(safe-area-inset-bottom))';
   else n.style.bottom = 'calc(22px + env(safe-area-inset-bottom))';
-  document.body.appendChild(n); tt = setTimeout(() => n.remove(), undo ? 5200 : 1600);
+  document.body.appendChild(n); setTt(setTimeout(() => n.remove(), undo ? 5200 : 1600));
 }
 
 /* ---------- rendu ---------- */
-let animate = true;
 /* .fade porte l'entrée en douceur des listes (tuiles, lignes, boutons…) —
    voir app.css. Elle n'est présente qu'au moment exact où le contenu neuf
    est inséré lors d'une vraie navigation (animate === true) ; retirée
@@ -1696,11 +1651,10 @@ function applyFont() {
    finir de charger en silence, et l'animation se regarde en entier au
    lieu d'être coupée au milieu. */
 const BOOTMS = 3000;
-let booted = 0;
 function dropBoot() {
   const n = document.getElementById('boot');
   if (!n || booted) return;
-  booted = 1;
+  setBooted(1);
   const rest = Math.max(0, BOOTMS - performance.now());
   setTimeout(() => { n.classList.add('off'); setTimeout(() => n.remove(), 520); }, rest);
 }
@@ -1716,12 +1670,11 @@ setTimeout(dropBoot, 6000);
    dès qu'on revient sur l'app, et une page jouée déclenche une mise à
    jour rapprochée pour que son effet se voie tout de suite. */
 const LIVEMS = 15000;
-let liveT = 0, liveAt = 0, liveSoon = 0;
 const LIVEV = /^(stats|commu|board|duels|library|friends|groups|group)$/;
 function livePull(force) {
   if (!auth || demo || document.hidden || !LIVEV.test(view.name)) return;
   if (!force && Date.now() - liveAt < 4000) return;
-  liveAt = Date.now();
+  setLiveAt(Date.now());
   if (view.name === 'stats') statsPull(1);
   else {
     boardPull(1);
@@ -1731,14 +1684,14 @@ function livePull(force) {
 }
 function liveSync() {
   const want = auth && !demo && LIVEV.test(view.name);
-  if (want && !liveT) { liveT = setInterval(livePull, LIVEMS); livePull(); }
-  if (!want && liveT) { clearInterval(liveT); liveT = 0; }
+  if (want && !liveT) { setLiveT(setInterval(livePull, LIVEMS)); livePull(); }
+  if (!want && liveT) { clearInterval(liveT); setLiveT(0); }
 }
 /* Après une page jouée : le serveur vient d'encaisser la ligne, on lui
    laisse un souffle puis on redemande le décompte partagé. */
 function liveBump() {
   clearTimeout(liveSoon);
-  liveSoon = setTimeout(() => livePull(true), 1200);
+  setLiveSoon(setTimeout(() => livePull(true), 1200));
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) livePull(true); });
 window.addEventListener('focus', () => livePull(true));
@@ -1764,21 +1717,20 @@ function render() {
   if (pageDir) {
     const pg = document.getElementById('page');
     if (pg) pg.classList.add(pageDir < 0 ? 'in-right' : 'in-left');
-    pageDir = 0;
+    setPageDir(0);
   }
-  animate = false;
+  setAnimate(false);
   const on = $.querySelector('.pills .p.on');
   if (on && on.previousElementSibling) on.scrollIntoView({ block: 'nearest', inline: 'center' });
   if (menu) paintMenu();
   liveSync();
   dropBoot();
 }
-let pageDir = 0;
 function go(name, id, dir) {
   closeMenu();
   if (name !== 'run') stopTimer();
-  if (name !== 'deck' || id !== view.id) { selOff(); deckQ = ''; deckOpen = false; deckShow = DECKPAGE; }
-  pageDir = dir || 0; view = { name, id }; animate = !dir;
+  if (name !== 'deck' || id !== view.id) { selOff(); setDeckQ(''); setDeckOpen(false); setDeckShow(DECKPAGE); }
+  setPageDir(dir || 0); setView({ name, id }); setAnimate(!dir);
   render(); window.scrollTo(0, 0);
 }
 
@@ -1924,11 +1876,10 @@ function bindPager() {
   pg.addEventListener('pointerup', end);
   pg.addEventListener('pointercancel', end);
   if (pagerEnd) { removeEventListener('pointerup', pagerEnd); removeEventListener('pointercancel', pagerEnd); }
-  pagerEnd = end;
+  setPagerEnd(end);
   addEventListener('pointerup', pagerEnd);
   addEventListener('pointercancel', pagerEnd);
 }
-let pagerEnd = null;
 
 const pills = (active, list, act) => `<div class="pills">
   <button class="p ${active === '' ? 'on' : ''}" data-${act}="">Tout</button>
@@ -2188,7 +2139,7 @@ function bindDeckOrder() {
     pushUndo('Ordre des livres', ids);
     ids.forEach((id, i) => { const d = deck(id); if (d) { d.pos = i; dirty[id] = 1; } });
     if (prefs.sort !== 'manual') { prefs.sort = 'manual'; savePrefs(); }
-    save(); flush(); animate = false; render();
+    save(); flush(); setAnimate(false); render();
   };
   wrap.addEventListener('pointerup', drop);
   wrap.addEventListener('pointercancel', drop);
@@ -2212,7 +2163,7 @@ function bindPeek() {
        chose se prépare, au lieu d'une feuille qui surgit sans prévenir */
     held = b.closest('.tile, .lrow') || b;
     held.classList.add('hold');
-    t = setTimeout(() => { if (!moved) { previewOf = b.dataset.peek; openMenu('preview'); } }, 480);
+    t = setTimeout(() => { if (!moved) { setPreviewOf(b.dataset.peek); openMenu('preview'); } }, 480);
   };
   const stop = () => {
     moved = true; clearTimeout(t);
@@ -2258,8 +2209,7 @@ const cardIcon = c => c.t === 'tf' ? I.type : (c.fi || c.bi) ? I.image
    `sel` est nul hors du mode ; sinon c'est l'ensemble des cartes cochées.
    La barre du bas ne propose que ce qui a du sens : rien de grisé, rien
    qui ne réponde pas. */
-let sel = null;
-const selOff = () => { sel = null; };
+const selOff = () => { setSel(null); };
 function selBar(d) {
   const ids = [...sel].filter(i => d.cards.some(c => c.id === i));
   const n = ids.length;
@@ -2358,7 +2308,7 @@ function deckView() {
     const io2 = new IntersectionObserver(es => {
       if (!es.some(e => e.isIntersecting)) return;
       io2.disconnect();
-      deckShow += DECKPAGE; animate = false; render();
+      setDeckShow(deckShow + DECKPAGE); setAnimate(false); render();
     }, { rootMargin: '400px' });
     io2.observe(more);
   }
@@ -2384,20 +2334,20 @@ function deckView() {
       tag.textContent = (max - len) + '';
       tag.classList.toggle('ko', len > max);
     } else if (tag) tag.remove();
-    clearTimeout(typing); typing = setTimeout(() => saveDeck(d), 700);
+    clearTimeout(typing); setTyping(setTimeout(() => saveDeck(d), 700));
   }));
   if (!nq) bindReorder(d);
   const dq = document.getElementById('dq');
   if (dq) {
     let dt = 0;
     dq.addEventListener('input', () => {
-      deckQ = dq.value;
+      setDeckQ(dq.value);
       clearTimeout(dt);
       dt = setTimeout(() => {
         /* on garde le champ vivant et on ne refait que la liste : sinon
            le clavier se referme entre deux lettres */
         const keep = document.activeElement === dq && dq.selectionStart;
-        animate = false; render();
+        setAnimate(false); render();
         const again = document.getElementById('dq');
         if (again && keep != null) { again.focus(); again.setSelectionRange(keep, keep); }
       }, 160);
@@ -2651,8 +2601,6 @@ function legalHtml(src) {
   }).join('');
 }
 
-let legalTab = 'cgu';
-let legalBack = 'settings';        // d'où l'on vient : connexion ou réglages
 function legalView() {
   const [title, body] = LEGAL[legalTab];
   $.innerHTML = `
@@ -2665,7 +2613,6 @@ function legalView() {
     </div>`;
 }
 
-let loginBusy = false, loginMode = 'in';
 function loginView() {
   const up = loginMode === 'up';
   $.innerHTML = `<div class="login">
@@ -2695,7 +2642,7 @@ function loginView() {
   </div>`;
   document.getElementById('lmode').onclick = e => {
     const b = e.target.closest('[data-lm]'); if (!b) return;
-    loginMode = b.dataset.lm; loginView();
+    setLoginMode(b.dataset.lm); loginView();
   };
   const em = document.getElementById('em'), pw = document.getElementById('pw'),
         err = document.getElementById('le'), btn = document.getElementById('go');
@@ -2730,18 +2677,18 @@ function loginView() {
     if (up && age && !age.checked) {
       err.textContent = 'Confirme que tu as 15 ans ou plus'; return;
     }
-    loginBusy = true; btn.disabled = true; err.textContent = '';
+    setLoginBusy(true); btn.disabled = true; err.textContent = '';
     btn.firstChild.textContent = up ? 'Création…' : 'Connexion…';
     try {
       if (up) {
         const done = await signUp(em.value, pw.value);
         if (!done) {
           err.textContent = 'Compte créé. Confirme l’e-mail reçu, puis connecte-toi.';
-          loginMode = 'in'; loginBusy = false; loginView();
+          setLoginMode('in'); setLoginBusy(false); loginView();
           return;
         }
       } else await signIn(em.value, pw.value);
-      db = load();
+      setDb(load());
       await pull();
       /* Un lien de partage ouvert alors qu'on n'était pas connecté attend
          dans l'adresse : c'est maintenant qu'il faut le suivre, sinon on
@@ -2756,7 +2703,7 @@ function loginView() {
       btn.disabled = false;
       btn.firstChild.textContent = up ? 'Créer le compte' : 'Se connecter';
     }
-    loginBusy = false;
+    setLoginBusy(false);
   };
   setTimeout(() => em.focus(), 80);
 }
@@ -2791,12 +2738,9 @@ const HELP = {
     'Une bonne réponse enchaîne toute seule sur la suivante, au quiz comme en QCM et en vrai/faux. ' +
     'Sans lui, la correction reste à l’écran jusqu’à ce que tu appuies sur Suivant.']
 };
-let helpKey = null;
 const hlp = k => `<button class="hq" data-help="${k}" aria-label="${esc(HELP[k][0])}, explication">?</button>`;
 
 /* ---------- réglages ---------- */
-let subjEdit = null, subjColor = 'graphite', subjName = '';
-let cardEdit = null;
 function openSubject(id) {
   const t0 = db.subjects.find(x => x.id === id);
   /* Une matière posée par le professeur ne s'édite pas : elle sert de lien
@@ -2804,10 +2748,10 @@ function openSubject(id) {
      la modification comme l'effacement — ouvrir le formulaire ne ferait
      qu'annoncer un enregistrement qui n'aurait pas lieu. */
   if (t0 && t0.locked) return toast(I.lock, 'Matière du cours · posée par ton professeur');
-  subjEdit = id;
+  setSubjEdit(id);
   const t = t0;
-  subjColor = t ? t.color : COLORS[db.subjects.length % COLORS.length];
-  subjName = t ? t.name : '';
+  setSubjColor(t ? t.color : COLORS[db.subjects.length % COLORS.length]);
+  setSubjName(t ? t.name : '');
   openMenu('subject');
 }
 function settingsView() {
@@ -3044,11 +2988,11 @@ async function upsertProfile() {
 async function friendsPull() {
   try {
     const rows = await api('/rest/v1/rpc/my_friends', 'POST', {});
-    friends = (rows || []);
-    mates = friends.filter(f => f.status === 'ok');
-    asks = friends.filter(f => f.status === 'pending' && f.sens === 'recue');
-  } catch (e) { friends = friends || []; mates = mates || []; asks = asks || []; }
-  if (view.name === 'commu' || view.name === 'friends') { animate = false; render(); }
+    setFriends(rows || []);
+    setMates(friends.filter(f => f.status === 'ok'));
+    setAsks(friends.filter(f => f.status === 'pending' && f.sens === 'recue'));
+  } catch (e) { setFriends(friends || []); setMates(mates || []); setAsks(asks || []); }
+  if (view.name === 'commu' || view.name === 'friends') { setAnimate(false); render(); }
   if (menu) paintMenu();
 }
 async function askFriend(q) {
@@ -3100,8 +3044,8 @@ async function saveHandle(v) {
 async function mePull() {
   try {
     const r = (await api('/rest/v1/profiles?select=id,handle,name&id=eq.' + auth.uid) || [])[0];
-    me = r || { id: auth.uid, handle: '' };
-  } catch (e) { me = me || { id: auth.uid, handle: '' }; }
+    setMe(r || { id: auth.uid, handle: '' });
+  } catch (e) { setMe(me || { id: auth.uid, handle: '' }); }
 }
 
 /* ---------- envoyer un paquet à un ami ----------
@@ -3110,7 +3054,7 @@ async function mePull() {
    doit pouvoir repartir de zéro sur ce paquet comme sur les siens. */
 async function sendDeck(d, p) {
   const msg = sendMsg.trim(), cards = d.cards.map(c => [c.f, c.b]);
-  sendTo = null; sendMsg = '';
+  setSendTo(null); setSendMsg('');
   try {
     await api('/rest/v1/mail', 'POST', [{
       from_user: auth.uid, to_user: p.id, from_name: prefs.name || (me && me.handle) || 'Compte',
@@ -3163,7 +3107,7 @@ function mailView() {
     </div>`;
 }
 async function openMail(id) {
-  mailOpen = id;
+  setMailOpen(id);
   const it = mailbox.list && mailbox.list.find(x => x.id === id);
   openMenu('mailitem');
   if (it && !it.read_at) {
@@ -3213,9 +3157,8 @@ async function snapVersion(d, why) {
     }
   } catch (e) {}
 }
-let vers = { list: null, err: 0, of: null };
 async function versPull(id) {
-  vers = { list: null, err: 0, of: id };
+  setVers({ list: null, err: 0, of: id });
   paintMenu();
   try {
     vers.list = await api(`/rest/v1/deck_versions?deck_id=eq.${encodeURIComponent(id)}`
@@ -3280,13 +3223,13 @@ async function revokeShare(d) {
   catch (e) {}
 }
 async function openShared(tok) {
-  shared = { tok, st: 'load' };
-  view = { name: 'shared' }; animate = true; render(); window.scrollTo(0, 0);
+  setShared({ tok, st: 'load' });
+  setView({ name: 'shared' }); setAnimate(true); render(); window.scrollTo(0, 0);
   try {
     const rows = await api('/rest/v1/rpc/shared_deck', 'POST', { tok });
     const r = (rows || [])[0];
-    shared = r ? { tok, st: 'ok', d: r } : { tok, st: 'gone' };
-  } catch (e) { shared = { tok, st: 'err' }; }
+    setShared(r ? { tok, st: 'ok', d: r } : { tok, st: 'gone' });
+  } catch (e) { setShared({ tok, st: 'err' }); }
   if (view.name === 'shared') render();
 }
 function sharedView() {
@@ -3316,7 +3259,7 @@ async function libPull() {
       + '&order=updated_at.desc&limit=100') || [];
     lib.err = 0;
   } catch (e) { lib.err = 1; }
-  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { animate = false; render(); }
+  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { setAnimate(false); render(); }
 }
 async function libPublish(d) {
   closeMenu();
@@ -3366,7 +3309,7 @@ async function duelsPull() {
     ]);
     duels.list = ds || []; duels.scores = sc || []; duels.err = 0;
   } catch (e) { duels.err = 1; }
-  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { animate = false; render(); }
+  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { setAnimate(false); render(); }
 }
 const myScore = id => (duels.scores || []).find(s => s.duel_id === id && s.user_id === auth.uid);
 const rankOf = id => (duels.scores || []).filter(s => s.duel_id === id)
@@ -3385,7 +3328,7 @@ async function duelMake(d) {
     await api('/rest/v1/duels', 'POST',
       [{ deck_id: d.id, owner: auth.uid, who: prefs.name || (me && me.handle) || 'Compte',
          name: d.name, total: cards.length, cards, group_id: scope }], { Prefer: 'return=minimal' });
-    duels.list = null; groupTab = 'duel'; go('group'); duelsPull();
+    duels.list = null; setGroupTab('duel'); go('group'); duelsPull();
     toast(I.flame, 'Défi lancé chez ' + scopeName() + ' — ' + plur(cards.length, 'question'));
   } catch (e) { toast(I.x, 'Défi impossible'); }
 }
@@ -3429,11 +3372,11 @@ function duelOpts() {
 }
 function duelStart(du) {
   if (myScore(du.id)) return;
-  duelRun = { id: du.id, name: du.name, cards: du.cards || [], i: 0, score: 0,
-              t0: Date.now(), pick: null, opts: [] };
-  if (duelRun.cards.length < 4) { duelRun = null; return toast(I.x, 'Défi incomplet'); }
+  setDuelRun({ id: du.id, name: du.name, cards: du.cards || [], i: 0, score: 0,
+              t0: Date.now(), pick: null, opts: [] });
+  if (duelRun.cards.length < 4) { setDuelRun(null); return toast(I.x, 'Défi incomplet'); }
   duelOpts(); closeMenu();
-  view = { name: 'duel' }; animate = true; render();
+  setView({ name: 'duel' }); setAnimate(true); render();
 }
 function duelPick(k) {
   const r = duelRun; if (!r || r.pick != null) return;
@@ -3452,10 +3395,10 @@ async function duelEnd() {
   const r = duelRun; if (!r) return;
   const row = { duel_id: r.id, user_id: auth.uid, who: prefs.name || (me && me.handle) || 'Compte',
                 score: r.score, ms: Date.now() - r.t0 };
-  duelRun = null;
+  setDuelRun(null);
   duels.scores = (duels.scores || []).filter(s => !(s.duel_id === row.duel_id && s.user_id === auth.uid));
   duels.scores.push(row);
-  duels.open = r.id; groupTab = 'duel';
+  duels.open = r.id; setGroupTab('duel');
   go('group'); openMenu('duelitem');
   try {
     await api('/rest/v1/duel_scores', 'POST', [row],
@@ -3464,7 +3407,7 @@ async function duelEnd() {
 }
 function duelView() {
   const r = duelRun;
-  if (!r) { view = { name: 'group' }; return groupView(); }
+  if (!r) { setView({ name: 'group' }); return groupView(); }
   const c = r.cards[r.i], good = c[1];
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="duelquit" aria-label="Abandonner">${svg(I.x)}</button>
@@ -3493,37 +3436,24 @@ async function boardPull(bg) {
   const same = bg && sig === board.sig;        // rien de neuf : on ne fait pas clignoter l'écran
   board.sig = sig;
   if (same) return;
-  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { animate = false; render(); }
+  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { setAnimate(false); render(); }
 }
 
-/* ══════════ signaler, bloquer ══════════
-   Des mineurs, du contenu écrit librement, et jusqu'ici aucun moyen de
-   dire « ça ne va pas » ni de couper le contact. C'était le dernier vrai
-   trou du volet protection : le reste du cloisonnement tenait déjà, celui-ci
-   n'existait pas du tout.
-
-   Deux gestes distincts, volontairement. Bloquer est immédiat, personnel
-   et réversible : je ne veux plus rien recevoir de cette personne, et la
-   coupure vaut dans les deux sens — un blocage à sens unique laisserait
-   celui qu'on fuit continuer de vous lire. Signaler ne coupe rien mais
-   laisse une trace instruite ailleurs, avec une copie du contenu :
-   sans elle, il suffirait d'effacer pour rendre la plainte incompréhensible. */
-let blocks = null;                 // liste des comptes que j'ai bloqués
 const isBlocked = id => !!(blocks || []).some(b => b.blocked_id === id);
 
 async function blocksPull() {
-  try { blocks = await api('/rest/v1/blocks?select=blocked_id,who,created_at&order=created_at.desc') || []; }
-  catch (e) { blocks = blocks || []; }
+  try { setBlocks(await api('/rest/v1/blocks?select=blocked_id,who,created_at&order=created_at.desc') || []); }
+  catch (e) { setBlocks(blocks || []); }
 }
 async function blockUser(id, who) {
   closeMenu();
   try {
     await api('/rest/v1/rpc/block_user', 'POST', { other: id, who: shortWho(who || '') });
-    blocks = null; await blocksPull();
+    setBlocks(null); await blocksPull();
     /* Ce que la personne avait posé doit disparaître tout de suite : la
        base ne le rend déjà plus, mais l'écran garde sa dernière copie. */
     lib.list = null; duels.list = null; mailbox.list = null; board.rows = null;
-    friends = null; mates = null; asks = null;
+    setFriends(null); setMates(null); setAsks(null);
     friendsPull(); libPull(); duelsPull(); mailPull(); boardPull();
     toast(I.lock, (who ? shortWho(who) : 'Ce compte') + ' est bloqué');
   } catch (e) { toast(I.x, 'Blocage impossible'); }
@@ -3533,7 +3463,7 @@ async function unblockUser(id) {
   try {
     await api('/rest/v1/blocks?blocked_id=eq.' + encodeURIComponent(id), 'DELETE',
       null, { Prefer: 'return=minimal' });
-    blocks = null; await blocksPull();
+    setBlocks(null); await blocksPull();
     lib.list = null; duels.list = null; board.rows = null;
     toast(I.check, 'Compte débloqué');
   } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
@@ -3551,12 +3481,10 @@ const RAISONS = [
   ['copy', 'Copié sans autorisation'],
   ['other', 'Autre']
 ];
-let reportOn = null;               // { kind, id, user, label, snapshot }
-let reportWhy = '';
 
 function openReport(kind, id, user, label, snapshot) {
-  reportOn = { kind, id: String(id || ''), user: user || null, label: label || '', snapshot: snapshot || {} };
-  reportWhy = '';
+  setReportOn({ kind, id: String(id || ''), user: user || null, label: label || '', snapshot: snapshot || {} });
+  setReportWhy('');
   openMenu('report');
 }
 async function sendReport() {
@@ -3570,12 +3498,12 @@ async function sendReport() {
     }], { Prefer: 'return=minimal' });
     toast(I.check, 'Signalement envoyé');
   } catch (e) { toast(I.x, 'Envoi impossible'); }
-  reportOn = null; reportWhy = '';
+  setReportOn(null); setReportWhy('');
 }
 
 function reportSheet(w) {
   const r = reportOn;
-  if (!r) { menu = null; return; }
+  if (!r) { setMenu(null); return; }
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
       <div class="mhd">${svg(I.warn)}<span class="mhx"><b>Signaler</b>
@@ -3609,24 +3537,10 @@ function blockedSheet(w) {
   mountMenu(w);
 }
 
-/* ══════════ la console de modération ══════════
-   Elle n'apparaît que pour les comptes inscrits dans la table des
-   modérateurs. Ce qu'elle montre, ce sont les signalements — qui portent
-   chacun leur copie du contenu — et rien d'autre : un modérateur n'obtient
-   aucun accès aux bibliothèques ni au courrier. C'est précisément à ça que
-   sert la copie jointe, et c'est ce qui permet de juger sans ouvrir la vie
-   privée de tout le monde à quelqu'un.
-
-   Deux réponses seulement. Masquer, quand le contenu n'a pas sa place ;
-   rien à signaler, qui rend visible ce que le compteur avait retiré. Une
-   suspension de compte ne se décide pas depuis un téléphone à minuit :
-   elle reste un geste manuel, tracé ailleurs. */
-let iAmMod = false;
-let mods = { list: null, err: 0, seen: 0 };
 
 async function modCheck() {
-  try { iAmMod = !!(await api('/rest/v1/rpc/is_mod', 'POST', {})); }
-  catch (e) { iAmMod = false; }
+  try { setIAmMod(!!(await api('/rest/v1/rpc/is_mod', 'POST', {}))); }
+  catch (e) { setIAmMod(false); }
 }
 async function modPull() {
   try {
@@ -3634,8 +3548,8 @@ async function modPull() {
       + 'snapshot,status,created_at&status=eq.open&order=created_at.desc&limit=60') || [];
     mods.err = 0;
   } catch (e) { mods.err = 1; }
-  if (view.name === 'mod') { animate = false; render(); }
-  if (view.name === 'settings') { animate = false; render(); }
+  if (view.name === 'mod') { setAnimate(false); render(); }
+  if (view.name === 'settings') { setAnimate(false); render(); }
 }
 async function modAct(id, act) {
   closeMenu();
@@ -3693,31 +3607,19 @@ function modView() {
     </div>`;
 }
 
-/* ══════════ la console d'administration ══════════
-   Un administrateur gère des accès, il ne lit pas les fiches des élèves.
-   Cet écran ne montre donc que ce qu'il faut pour reconnaître quelqu'un et
-   décider de son rôle : pseudo, adresse, date d'arrivée, nombre de livres.
-   Aucun contenu, aucune progression, aucun courrier.
-
-   Le rôle ne se change pas en écrivant dans une table — elle n'a aucune
-   politique d'écriture, exprès. Il passe par une fonction qui vérifie
-   elle-même qui appelle, et qui refuse qu'on se retire son propre rôle :
-   sans cette garde, le dernier administrateur se verrouille dehors et
-   plus personne ne peut rendre la main. */
-let accounts = null, accOpen = null;
 const ROLES = { eleve: 'Élève', prof: 'Professeur',
                 ref: 'Référent d’établissement', admin: 'Éditeur' };
 
 async function accountsPull() {
-  try { accounts = await api('/rest/v1/rpc/admin_accounts', 'POST', {}) || []; }
-  catch (e) { accounts = []; }
-  if (view.name === 'admin') { animate = false; render(); }
+  try { setAccounts(await api('/rest/v1/rpc/admin_accounts', 'POST', {}) || []); }
+  catch (e) { setAccounts([]); }
+  if (view.name === 'admin') { setAnimate(false); render(); }
 }
 async function setRole(id, role) {
   closeMenu();
   try {
     await api('/rest/v1/rpc/set_role', 'POST', { cible: id, nouveau: role });
-    accounts = null; await accountsPull();
+    setAccounts(null); await accountsPull();
     toast(I.check, ROLES[role] + ' · rôle enregistré');
   } catch (e) {
     const m = String((e && e.message) || '');
@@ -3727,16 +3629,6 @@ async function setRole(id, role) {
   render();
 }
 
-/* L'éditeur ne gère pas un établissement : il les vend et les tient. Ce
-   qu'il regarde n'est donc ni une classe ni un élève, c'est une ligne par
-   établissement — combien de comptes ouverts, combien s'en servent
-   vraiment, et ce que l'IA coûte. L'écart entre « ouverts » et « venus »
-   est la seule chose qui dise si un déploiement a pris ou non, et c'est ce
-   qu'il faut lire en premier.
-
-   Pas de coloration, pas d'animation, deux tableaux : c'est un écran qu'on
-   ouvre pour décider, pas pour s'y attarder. */
-let adm = { orgs: null, etat: null, tab: 'orgs' };
 
 async function admPull() {
   try {
@@ -3746,7 +3638,7 @@ async function admPull() {
     ]);
     adm.orgs = o || []; adm.etat = (e || [])[0] || null;
   } catch (x) { adm.orgs = adm.orgs || []; }
-  if (view.name === 'admin') { animate = false; render(); }
+  if (view.name === 'admin') { setAnimate(false); render(); }
 }
 const euros = c => (Math.round(+c || 0) / 100).toFixed(2).replace('.', ',') + ' €';
 
@@ -3817,7 +3709,7 @@ function adminView() {
 
 function accountSheet(w) {
   const a = (accounts || []).find(x => x.id === accOpen);
-  if (!a) { menu = null; return; }
+  if (!a) { setMenu(null); return; }
   const moi = a.id === auth.uid;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
@@ -3836,50 +3728,21 @@ function accountSheet(w) {
   mountMenu(w);
 }
 
-/* ══════════ rôles, classes, devoirs ══════════
-   Trois métiers dans la même app, et trois écrans différents. L'élève
-   reçoit et travaille ; le professeur distribue et suit ; l'administrateur
-   instruit les signalements. Personne ne voit les outils des autres — non
-   par discrétion, mais parce qu'une interface qui montre ce qu'on ne peut
-   pas faire n'apprend rien à personne.
 
-   Le rôle vient de la base, jamais du client : une valeur gardée ici ne
-   ferait qu'afficher des boutons, et la base refuserait de toute façon.
-   C'est bien elle qui décide. */
-let myRole = 'eleve';
-let classes = null;                 // mes classes (tenues ou rejointes)
-let classOf = null;                 // celle qu'on regarde
-
-/* ══════════ scolaire ou personnel ══════════
-   Folio sert deux publics dans la même app : quelqu'un qui révise pour lui,
-   et un élève inscrit par son établissement. Le second n'est pas le premier
-   avec moins de boutons — c'est un autre produit. Il n'a ni club, ni
-   annuaire ouvert, ni pseudo à choisir : son identité, sa classe et ses
-   matières lui sont données, et il ne peut ni les changer ni en sortir.
-
-   `school` répond à la seule question qui commande tout le reste : ce
-   compte appartient-il à un établissement ? `null` tant qu'on ne sait pas,
-   `false` quand on sait que non — la nuance compte, sinon l'écran s'affiche
-   en version personnelle une fraction de seconde avant de se corriger. */
-let school = null;                  // { org, classe, niveau, … } | false
-let team = null;                    // les professeurs de sa classe
 const atSchool = () => !!(school && school.org_id);
 const isPupil = () => atSchool() && myRole === 'eleve';
 
 async function schoolPull() {
   try {
     const [r] = await api('/rest/v1/rpc/my_school', 'POST', {}) || [];
-    school = r || false;
-  } catch (e) { school = false; }
+    setSchool(r || false);
+  } catch (e) { setSchool(false); }
 }
 async function teamPull() {
-  try { team = await api('/rest/v1/rpc/my_class_team', 'POST', {}) || []; }
-  catch (e) { team = []; }
-  if (view.name === 'classe' || view.name === 'classes') { animate = false; render(); }
+  try { setTeam(await api('/rest/v1/rpc/my_class_team', 'POST', {}) || []); }
+  catch (e) { setTeam([]); }
+  if (view.name === 'classe' || view.name === 'classes') { setAnimate(false); render(); }
 }
-let roster = null;                  // la liste d'une classe, côté professeur
-let workOpen = null, memberOpen = null;
-let asgs = null;                    // les devoirs de la classe regardée
 const isProf = () => myRole === 'prof' || myRole === 'admin';
 const isAdmin = () => myRole === 'admin';
 
@@ -3904,19 +3767,19 @@ async function accueil() {
 async function cerclePull() {
   await Promise.all([rolePull(), schoolPull(), modCheck(), blocksPull()]);
   await Promise.all([classesPull(), iAmMod ? modPull() : null]);
-  animate = false; render();
+  setAnimate(false); render();
 }
 async function rolePull() {
-  try { myRole = (await api('/rest/v1/rpc/my_role', 'POST', {})) || 'eleve'; }
-  catch (e) { myRole = 'eleve'; }
+  try { setMyRole((await api('/rest/v1/rpc/my_role', 'POST', {})) || 'eleve'); }
+  catch (e) { setMyRole('eleve'); }
 }
 async function classesPull() {
   try {
     /* Deux origines pour une même liste : celles qu'on tient et celles
        qu'on a rejointes. Les règles de lecture rendent déjà les deux. */
-    classes = await api('/rest/v1/classes?select=id,name,level,year,code,owner&order=created_at.desc') || [];
-  } catch (e) { classes = classes || []; }
-  if (/^(classes|classe)$/.test(view.name)) { animate = false; render(); }
+    setClasses(await api('/rest/v1/classes?select=id,name,level,year,code,owner&order=created_at.desc') || []);
+  } catch (e) { setClasses(classes || []); }
+  if (/^(classes|classe)$/.test(view.name)) { setAnimate(false); render(); }
 }
 async function classPull(id) {
   try {
@@ -3924,9 +3787,9 @@ async function classPull(id) {
       api(`/rest/v1/class_members?select=user_id,who,joined_at&class_id=eq.${id}&order=who.asc`),
       api(`/rest/v1/assignments?select=id,name,n,due,created_at&class_id=eq.${id}&order=created_at.desc`)
     ]);
-    roster = m || []; asgs = a || [];
-  } catch (e) { roster = roster || []; asgs = asgs || []; }
-  if (view.name === 'classe') { animate = false; render(); }
+    setRoster(m || []); setAsgs(a || []);
+  } catch (e) { setRoster(roster || []); setAsgs(asgs || []); }
+  if (view.name === 'classe') { setAnimate(false); render(); }
 }
 const classCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)),
   b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
@@ -3937,8 +3800,8 @@ async function makeClass(name, level) {
       [{ name: (name || '').trim() || 'Ma classe', level: (level || '').trim(),
          year: scolaire(), code: classCode(), owner: auth.uid }],
       { Prefer: 'return=representation' }) || [];
-    closeMenu(); classes = null; await classesPull();
-    if (c) { classOf = c.id; roster = null; asgs = null; classPull(c.id); go('classe'); }
+    closeMenu(); setClasses(null); await classesPull();
+    if (c) { setClassOf(c.id); setRoster(null); setAsgs(null); classPull(c.id); go('classe'); }
     toast(I.check, 'Classe créée · code ' + (c ? c.code : ''));
   } catch (e) { toast(I.x, 'Création impossible'); }
 }
@@ -3951,7 +3814,7 @@ async function joinClass(code) {
   try {
     await api('/rest/v1/rpc/join_class', 'POST',
       { join_code: code, who: prefs.name || (me && me.handle) || 'Compte' });
-    closeMenu(); classes = null; await classesPull();
+    closeMenu(); setClasses(null); await classesPull();
     toast(I.check, 'Classe rejointe');
   } catch (e) { toast(I.x, 'Code inconnu'); }
 }
@@ -3959,7 +3822,7 @@ async function dropMember(cid, uid2) {
   try {
     await api(`/rest/v1/class_members?class_id=eq.${cid}&user_id=eq.${uid2}`, 'DELETE',
       null, { Prefer: 'return=minimal' });
-    roster = (roster || []).filter(m => m.user_id !== uid2);
+    setRoster((roster || []).filter(m => m.user_id !== uid2));
   } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
   closeMenu(); render();
 }
@@ -3973,7 +3836,7 @@ async function giveWork(d, cid, days) {
     await api('/rest/v1/assignments', 'POST',
       [{ class_id: cid, name: d.name, cards, n: cards.length, due, created_by: auth.uid }],
       { Prefer: 'return=minimal' });
-    closeMenu(); asgs = null; classPull(cid);
+    closeMenu(); setAsgs(null); classPull(cid);
     toast(I.check, plur(cards.length, 'page') + ' à rendre avant le ' + due.split('-').reverse().slice(0, 2).join('/'));
   } catch (e) { toast(I.x, 'Envoi impossible'); }
 }
@@ -4028,21 +3891,14 @@ const dueLabel = s => {
        : j === 0 ? 'aujourd’hui' : j === 1 ? 'demain' : `dans ${j} jours`;
 };
 
-/* ══════════ « Ma classe », côté élève ══════════
-   Un seul écran, et rien qui ressemble à de la gestion. Ce qu'il y a à
-   faire d'abord — un devoir se rend, il ne se cherche pas —, puis qui lui
-   fait cours, puis les camarades qu'il peut ajouter. Aucun code à saisir,
-   aucune classe à quitter, aucun bouton qui échouerait s'il le pressait :
-   la base refuse déjà tout cela, l'écran n'a pas à le proposer. */
-let mates2 = null;                  // ses camarades de classe
 
 async function matesPull() {
-  try { mates2 = await api('/rest/v1/rpc/my_classmates', 'POST', {}) || []; }
-  catch (e) { mates2 = []; }
-  if (view.name === 'classe') { animate = false; render(); }
+  try { setMates2(await api('/rest/v1/rpc/my_classmates', 'POST', {}) || []); }
+  catch (e) { setMates2([]); }
+  if (view.name === 'classe') { setAnimate(false); render(); }
 }
 function maClassePull() {
-  if (school === null) schoolPull().then(() => { maClassePull(); animate = false; render(); });
+  if (school === null) schoolPull().then(() => { maClassePull(); setAnimate(false); render(); });
   if (school && school.class_id && !asgs) classPull(school.class_id);
   if (!team) teamPull();
   if (!mates2) matesPull();
@@ -4108,38 +3964,18 @@ function maClasseView() {
     </div>`;
 }
 
-/* ══════════ la console du référent d'établissement ══════════
-   Le référent n'est pas un professeur avec plus de classes. C'est la
-   personne qui, dans le lycée, ouvre les comptes, refait les mots de passe
-   oubliés et déplace un élève de la 2nde 3 à la 2nde 1 en octobre. Il
-   travaille sur un ordinateur, il connaît son métier, et ce qu'il veut
-   c'est voir et corriger vite — pas être accompagné.
-
-   Cet écran est donc écrit comme un outil de gestion, pas comme une app :
-   des tableaux denses, des colonnes alignées, la recherche toujours au même
-   endroit, aucune animation. On y tient six cents lignes à l'écran et on en
-   change une en trois clics. Rien n'y est joli, et ce n'est pas un oubli :
-   ce qu'on lui demande, c'est que ça marche.
-
-   Trois onglets, parce qu'il n'y a que trois questions : l'établissement
-   (où en est-on ?), les comptes (qui, et comment le corriger ?), les
-   classes (qui est où, et qui y enseigne ?). */
-let ref = { tab: 'etab', board: null, err: 0,
-            gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
-            classes: null, open: null, team: null,
-            who: null, service: null, form: null, trace: null };
 const PAGE_REF = 60;
 const ROLENOM = { eleve: 'Élève', prof: 'Professeur', ref: 'Référent', admin: 'Éditeur' };
 
 async function refBoard() {
   try { const [r] = await api('/rest/v1/rpc/ref_dashboard', 'POST', {}) || []; ref.board = r || false; }
   catch (e) { ref.board = false; ref.err = 1; }
-  if (view.name === 'ref') { animate = false; render(); }
+  if (view.name === 'ref') { setAnimate(false); render(); }
 }
 async function refClasses() {
   try { ref.classes = await api('/rest/v1/rpc/ref_classes', 'POST', {}) || []; }
   catch (e) { ref.classes = []; }
-  if (view.name === 'ref') { animate = false; render(); }
+  if (view.name === 'ref') { setAnimate(false); render(); }
 }
 /* La recherche repart toujours de la première page : garder la page 4 en
    changeant le filtre donne un écran vide qu'on ne sait pas expliquer. */
@@ -4153,7 +3989,7 @@ async function refPeople(reset) {
     if (n !== ref.cherche) return;                 // une frappe plus récente a gagné
     ref.gens = rows; ref.total = rows.length ? +rows[0].total : 0;
   } catch (e) { if (n === ref.cherche) { ref.gens = []; ref.total = 0; } }
-  if (view.name === 'ref') { animate = false; render(); }
+  if (view.name === 'ref') { setAnimate(false); render(); }
 }
 async function refTeam(cid) {
   try { ref.team = await api('/rest/v1/rpc/ref_class_team', 'POST', { cid }) || []; }
@@ -4391,17 +4227,6 @@ function refCls() {
    téléphone les grilles deviennent des colonnes et les tableaux se replient
    en fiches. C'est le même écran, pas une version amoindrie. */
 
-let prof = {
-  annee: null, annees: null,            // l'année scolaire regardée
-  classes: null, err: 0,
-  open: null, tab: 'eleves',            // la classe ouverte, et son onglet
-  roster: null, devoirs: null, bilan: null,
-  tri: 'retard', q: '',
-  eleve: null, fiche: null,             // la fiche d'un élève
-  work: null, cartes: null,             // le devoir ouvert, et ce qui bloque
-  comp: null,                           // le composeur de devoir
-  vue: 'liste', mois: null, agenda: null, jour: null   // le cahier de textes
-};
 
 const CYCLES = { college: 'Collège', lycee_gt: 'Lycée général', lycee_techno: 'Lycée technologique',
                  lycee_pro: 'Lycée professionnel', cpge: 'CPGE' };
@@ -4418,7 +4243,7 @@ async function profPull() {
       { annee: prof.annee }) || [];
     prof.err = 0;
   } catch (e) { prof.classes = prof.classes || []; prof.err = 1; }
-  if (/^prof/.test(view.name)) { animate = false; render(); }
+  if (/^prof/.test(view.name)) { setAnimate(false); render(); }
 }
 async function profClassePull(cid) {
   try {
@@ -4428,12 +4253,12 @@ async function profClassePull(cid) {
     ]);
     prof.roster = r || []; prof.devoirs = d || [];
   } catch (e) { prof.roster = prof.roster || []; prof.devoirs = prof.devoirs || []; }
-  if (/^prof/.test(view.name)) { animate = false; render(); }
+  if (/^prof/.test(view.name)) { setAnimate(false); render(); }
 }
 async function profFichePull(cid, qui) {
   try { prof.fiche = await api('/rest/v1/rpc/prof_eleve', 'POST', { cid, qui }) || []; }
   catch (e) { prof.fiche = []; }
-  if (view.name === 'profeleve') { animate = false; render(); }
+  if (view.name === 'profeleve') { setAnimate(false); render(); }
 }
 async function profCartesPull(aid) {
   try { prof.cartes = await api('/rest/v1/rpc/prof_cartes', 'POST', { aid }) || []; }
@@ -4596,7 +4421,7 @@ function profView() {
   const sel = document.getElementById('pan');
   if (sel) sel.addEventListener('change', () => {
     prof.annee = sel.value; prof.classes = null; prof.open = null;
-    profPull(); animate = false; render();
+    profPull(); setAnimate(false); render();
   });
 }
 
@@ -4912,7 +4737,7 @@ function donnerLivre(d) {
 
 function compSheet(w) {
   const k = prof.comp;
-  if (!k) { menu = null; return; }
+  if (!k) { setMenu(null); return; }
   const d = k.livre ? deck(k.livre) : null;
   const cartes = compCartes();
   const cls = prof.classes || [];
@@ -4986,7 +4811,7 @@ async function compDonner() {
 /* ---------- la feuille d'un devoir ---------- */
 function workSheet(w) {
   const d = (prof.devoirs || []).find(x => x.id === prof.work);
-  if (!d) { menu = null; return; }
+  if (!d) { setMenu(null); return; }
   const pas = Math.max(0, (d.effectif || 0) - (d.ouvert || 0));
   const ca = prof.cartes;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -5096,9 +4921,9 @@ function classeView() {
 async function groupsPull() {
   try {
     const rows = await api('/rest/v1/group_members?select=group_id,groups(id,name,code,owner)');
-    groups = (rows || []).map(r => r.groups).filter(Boolean);
-  } catch (e) { groups = groups || []; }
-  if (view.name === 'commu' || view.name === 'groups') { animate = false; render(); }
+    setGroups((rows || []).map(r => r.groups).filter(Boolean));
+  } catch (e) { setGroups(groups || []); }
+  if (view.name === 'commu' || view.name === 'groups') { setAnimate(false); render(); }
   if (menu) paintMenu();
 }
 async function makeGroup(name) {
@@ -5110,14 +4935,14 @@ async function makeGroup(name) {
       { Prefer: 'return=representation' }) || [];
     if (g) await api('/rest/v1/group_members', 'POST', [{ group_id: g.id, user_id: auth.uid }],
       { Prefer: 'return=minimal' });
-    closeMenu(); groups = null; groupsPull();
+    closeMenu(); setGroups(null); groupsPull();
     toast(I.check, 'Club créé · code ' + code);
   } catch (e) { toast(I.x, 'Création impossible'); }
 }
 async function joinGroup(code) {
   try {
     const [g] = await api('/rest/v1/rpc/join_group', 'POST', { join_code: code }) || [];
-    closeMenu(); groups = null; groupsPull();
+    closeMenu(); setGroups(null); groupsPull();
     toast(I.check, g ? 'Bienvenue dans ' + g.name : 'Club rejoint');
   } catch (e) { toast(I.x, 'Code inconnu'); }
 }
@@ -5126,18 +4951,18 @@ async function leaveGroup(id) {
     await api(`/rest/v1/group_members?group_id=eq.${id}&user_id=eq.${auth.uid}`, 'DELETE',
       null, { Prefer: 'return=minimal' });
   } catch (e) {}
-  closeMenu(); groups = null; groupsPull();
+  closeMenu(); setGroups(null); groupsPull();
 }
 
 /* tout ce que l'écran a besoin de savoir, en un seul aller-retour groupé */
 function commuPull() {
-  if (!me) mePull().then(() => { if (view.name === 'commu') { animate = false; render(); } });
+  if (!me) mePull().then(() => { if (view.name === 'commu') { setAnimate(false); render(); } });
   if (!friends) friendsPull();
   if (!groups && !atSchool()) groupsPull();   // pas de club à l'école
   if (!duels.list) duelsPull();
   if (!lib.list) libPull();
   if (!board.rows) boardPull();
-  if (school === null) schoolPull().then(() => { if (view.name === 'commu') { animate = false; render(); } });
+  if (school === null) schoolPull().then(() => { if (view.name === 'commu') { setAnimate(false); render(); } });
 }
 
 const initial = s => (String(s || '?').trim()[0] || '?').toUpperCase();
@@ -5228,13 +5053,13 @@ function friendsView() {
     </div>`;
   const q = document.getElementById('addq');
   if (q) {
-    q.addEventListener('input', () => addQ = q.value);
+    q.addEventListener('input', () => setAddQ(q.value));
     q.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
   }
 }
 async function doAdd() {
   const v = addQ.trim(); if (!v) return;
-  if (await askFriend(v)) { addQ = ''; animate = false; render(); }
+  if (await askFriend(v)) { setAddQ(''); setAnimate(false); render(); }
 }
 
 function groupsView() {
@@ -5405,7 +5230,7 @@ async function statsPull(bg) {
   const sig = (stats.rows || []).length + ':' + stats.err;
   const same = bg && sig === stats.sig;       // rafraîchissement de fond sans rien de neuf
   stats.sig = sig;
-  if (view.name === 'stats' && !same) { animate = false; render(); }
+  if (view.name === 'stats' && !same) { setAnimate(false); render(); }
 }
 
 /* index texte des cartes, pour nommer celles qui reviennent dans le top */
@@ -5583,7 +5408,7 @@ function bindFind() {
      clavier se refermait au milieu du mot. */
   let t = 0;
   f.addEventListener('input', () => {
-    findQ = f.value;
+    setFindQ(f.value);
     clearTimeout(t);
     t = setTimeout(paintFind, 90);
   });
@@ -5697,7 +5522,7 @@ function statsView() {
   const seg = document.getElementById('stRange');
   seg.addEventListener('click', e => {
     const b = e.target.closest('[data-strange]'); if (!b) return;
-    stats.range = +b.dataset.strange; animate = false; render();
+    stats.range = +b.dataset.strange; setAnimate(false); render();
   });
 }
 
@@ -5758,9 +5583,9 @@ function askPages(done) {
 }
 
 /* ---------- menu contextuel ---------- */
-function openMenu(kind) { menu = kind; paintMenu(); }
+function openMenu(kind) { setMenu(kind); paintMenu(); }
 function closeMenu() {
-  menu = null;
+  setMenu(null);
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
   document.documentElement.classList.remove('sheet-open');
 }
@@ -5868,7 +5693,7 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     const sn = document.getElementById('sn');
-    sn.addEventListener('input', () => subjName = sn.value);
+    sn.addEventListener('input', () => setSubjName(sn.value));
     sn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sn.blur(); } });
     setTimeout(() => { if (!subjName) sn.focus(); }, 60);
     return;
@@ -5916,7 +5741,7 @@ function paintMenu() {
        que l'app possède : elle n'envoie ni notification ni e-mail, et
        laisser croire le contraire serait pire que ne rien proposer. */
     const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
-    if (!m) { menu = null; return; }
+    if (!m) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd"><i class="av">${esc(initial(m.who))}</i>
@@ -5947,7 +5772,7 @@ function paintMenu() {
   /* ---------- les feuilles du référent ---------- */
   if (menu === 'refwho') {
     const g = ref.who;
-    if (!g) { menu = null; return; }
+    if (!g) { setMenu(null); return; }
     const f = ref.form || {};
     const eleve = g.role === 'eleve';
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -6003,7 +5828,7 @@ function paintMenu() {
   }
   if (menu === 'refcls') {
     const c = (ref.classes || []).find(x => x.id === ref.open);
-    if (!c) { menu = null; return; }
+    if (!c) { setMenu(null); return; }
     const f = ref.form || {};
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu pv">
@@ -6100,7 +5925,7 @@ function paintMenu() {
   }
   if (menu === 'devoir') {
     const a = (asgs || []).find(x => x.id === workOpen);
-    if (!a) { menu = null; return; }
+    if (!a) { setMenu(null); return; }
     const tard = a.due && Date.parse(a.due + 'T12:00:00') < Date.now();
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6130,7 +5955,7 @@ function paintMenu() {
   if (menu === 'workone') {
     const a = (asgs || []).find(x => x.id === workOpen);
     const c = (classes || []).find(x => x.id === classOf);
-    if (!a || !c) { menu = null; return; }
+    if (!a || !c) { setMenu(null); return; }
     const owner = c.owner === auth.uid;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6147,7 +5972,7 @@ function paintMenu() {
   }
   if (menu === 'member') {
     const m = (roster || []).find(x => x.user_id === memberOpen);
-    if (!m) { menu = null; return; }
+    if (!m) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd"><i class="av">${esc(initial(m.who))}</i>
@@ -6172,7 +5997,7 @@ function paintMenu() {
   }
   if (menu === 'card') {
     const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
-    if (!c) { menu = null; return; }
+    if (!c) { setMenu(null); return; }
     const med = (side, kind) => {
       const k = side + (kind === 'img' ? 'i' : 'a');
       const has = c[k];
@@ -6210,7 +6035,7 @@ function paintMenu() {
     return;
   }
   if (menu === 'deckset') {
-    const d = deck(view.id); if (!d) { menu = null; return; }
+    const d = deck(view.id); if (!d) { setMenu(null); return; }
     const m = metaOf(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6308,7 +6133,7 @@ function paintMenu() {
     return;
   }
   if (menu === 'merge') {
-    const d = deck(view.id); if (!d) { menu = null; return; }
+    const d = deck(view.id); if (!d) { setMenu(null); return; }
     const others = db.decks.filter(x => x.id !== d.id);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6321,7 +6146,7 @@ function paintMenu() {
     return;
   }
   if (menu === 'fnr') {
-    const d = deck(view.id); if (!d) { menu = null; return; }
+    const d = deck(view.id); if (!d) { setMenu(null); return; }
     const s = fnrScan(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6382,7 +6207,7 @@ function paintMenu() {
     return;
   }
   if (menu === 'preview') {
-    const d = deck(previewOf); if (!d) { menu = null; return; }
+    const d = deck(previewOf); if (!d) { setMenu(null); return; }
     const due = simpleMode() ? 0 : dueCount(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6407,7 +6232,7 @@ function paintMenu() {
     return;
   }
   if (menu === 'sharepick') {
-    const d = deck(view.id); if (!d) { menu = null; return; }
+    const d = deck(view.id); if (!d) { setMenu(null); return; }
     const m = metaOf(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6461,7 +6286,7 @@ function paintMenu() {
   }
   if (menu === 'mate') {
     const f = (mates || []).find(x => x.id === mateOpen);
-    if (!f) { menu = null; return; }
+    if (!f) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd"><i class="av">${esc(initial(f.handle || f.name))}</i>
@@ -6478,7 +6303,7 @@ function paintMenu() {
   }
   if (menu === 'groupitem') {
     const g = (groups || []).find(x => x.id === groupOf);
-    if (!g) { menu = null; return; }
+    if (!g) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${esc(g.name)}</b>
@@ -6494,7 +6319,7 @@ function paintMenu() {
   if (menu === 'tuto') return helpSheet(w);
   if (menu === 'help') {
     const h = HELP[helpKey];
-    if (!h) { menu = null; return; }
+    if (!h) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.bulb)}<span class="mhx"><b>${esc(h[0])}</b></span></div>
@@ -6504,7 +6329,7 @@ function paintMenu() {
     return;
   }
   if (menu === 'vers') {
-    const d = deck(view.id); if (!d) { menu = null; return; }
+    const d = deck(view.id); if (!d) { setMenu(null); return; }
     const l = vers.list;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6524,7 +6349,7 @@ function paintMenu() {
   }
   if (menu === 'conflict') {
     const c = conflicts[0];
-    if (!c) { menu = null; return; }
+    if (!c) { setMenu(null); return; }
     const side = (v, lab, when) => `<div class="cside">
       <b>${lab}</b><i>${plur(v.cards.length, 'page')}${when ? ' · ' + when : ''}</i>
       <span>${esc(v.name)}</span></div>`;
@@ -6548,7 +6373,7 @@ function paintMenu() {
   }
   if (menu === 'libitem') {
     const it = (lib.list || []).find(x => x.deck_id === lib.open);
-    if (!it) { menu = null; return; }
+    if (!it) { setMenu(null); return; }
     const mine = it.user_id === auth.uid;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6571,7 +6396,7 @@ function paintMenu() {
   }
   if (menu === 'duelitem') {
     const du = (duels.list || []).find(x => x.id === duels.open);
-    if (!du) { menu = null; return; }
+    if (!du) { setMenu(null); return; }
     const r = rankOf(du.id), me = myScore(du.id), mine = du.owner === auth.uid;
     const MED = ['🥇', '🥈', '🥉'];
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -6608,7 +6433,7 @@ function paintMenu() {
     return;
   }
   if (menu === 'sendfriend') {
-    const d = deck(view.id); if (!d) { menu = null; return; }
+    const d = deck(view.id); if (!d) { setMenu(null); return; }
     /* seuls les lecteurs qui ont accepté : envoyer un livre à quelqu'un
        qui n'a pas encore répondu ne mène nulle part */
     const list = mates || [];
@@ -6630,7 +6455,7 @@ function paintMenu() {
       </div>`;
     mountMenu(w);
     const ta = document.getElementById('mmsg');
-    if (ta) { ta.addEventListener('input', () => sendMsg = ta.value); setTimeout(() => ta.focus(), 60); }
+    if (ta) { ta.addEventListener('input', () => setSendMsg(ta.value)); setTimeout(() => ta.focus(), 60); }
     return;
   }
   /* Prêter un livre : on part de l'ami, pas du livre. La feuille montre
@@ -6638,7 +6463,7 @@ function paintMenu() {
      dans sa boîte aux lettres. */
   if (menu === 'lend') {
     const f = (mates || []).find(x => x.id === mateOpen);
-    if (!f) { menu = null; return; }
+    if (!f) { setMenu(null); return; }
     const mine = db.decks.filter(x => x.cards.length);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6656,7 +6481,7 @@ function paintMenu() {
   }
   if (menu === 'mateprof') {
     const f = (mates || []).find(x => x.id === mateOpen);
-    if (!f) { menu = null; return; }
+    if (!f) { setMenu(null); return; }
     const r = mateProf.row, l = mateProf.lib;
     const pctok = r && +r.n ? Math.round(r.ok / r.n * 100) : 0;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -6687,7 +6512,7 @@ function paintMenu() {
   }
   if (menu === 'mailitem') {
     const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen);
-    if (!it) { menu = null; return; }
+    if (!it) { setMenu(null); return; }
     const n = (it.cards || []).length;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -6710,7 +6535,7 @@ function paintMenu() {
     return;
   }
   if (menu === 'move') {
-    const d = deck(view.id); if (!d || !sel) { menu = null; return; }
+    const d = deck(view.id); if (!d || !sel) { setMenu(null); return; }
     const n = [...sel].filter(i => d.cards.some(c => c.id === i)).length;
     const others = db.decks.filter(x => x.id !== d.id);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -6724,7 +6549,7 @@ function paintMenu() {
     return;
   }
   if (menu === 'split') {
-    const d = deck(view.id); if (!d) { menu = null; return; }
+    const d = deck(view.id); if (!d) { setMenu(null); return; }
     const n = d.cards.length;
     const size = Math.min(Math.max(2, splitSize), n - 1);
     const parts = Math.ceil(n / size), last = n - size * (parts - 1);
@@ -6749,7 +6574,7 @@ function paintMenu() {
     const note = r.closest('.menu').querySelector('.note');
     const btn = r.closest('.menu').querySelector('[data-mact="dosplit"] ');
     r.addEventListener('input', () => {
-      splitSize = +r.value;
+      setSplitSize(+r.value);
       const p = Math.ceil(n / splitSize), lastN = n - splitSize * (p - 1);
       lab.textContent = splitSize;
       note.innerHTML = `${n} pages → <b>${p} livres</b> de ${splitSize}${
@@ -6807,21 +6632,10 @@ function paintMenu() {
     </div>`;
   mountMenu(w);
 }
-/* Le profil d'un lecteur : ce que le classement sait déjà de lui, sur
-   trois périodes, plus les livres qu'il a posés dans la bibliothèque.
-   Rien de plus n'est demandé au serveur — le détail de ses révisions ne
-   sort pas de son compte. */
-let mateProf = { id: null, range: 7, row: null, lib: null, load: 0 };
-/* Changer de période relance une requête sans attendre la précédente :
-   « Tout » (plus de lignes à agréger côté serveur) peut très bien revenir
-   après un « 30 jours » lancé juste ensuite, et écraser l'affichage avec
-   des chiffres d'une autre période que celle sélectionnée à l'écran. Un
-   jeton par appel règle ça — seule la dernière réponse compte. */
-let mateProfSeq = 0;
 async function mateProfPull(id) {
-  const seq = ++mateProfSeq, range = mateProf.range;
+  const seq = setMateProfSeq(mateProfSeq + 1), range = mateProf.range;
   mateProf.load = 1;
-  if (mateProf.id !== id) mateProf = { id, range, row: null, lib: null, load: 1 };
+  if (mateProf.id !== id) setMateProf({ id, range, row: null, lib: null, load: 1 });
   let row = null, lib = null;
   try {
     const rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: range }) || [];
@@ -6837,7 +6651,6 @@ async function mateProfPull(id) {
   mateProf.load = 0;
   if (menu === 'mateprof') paintMenu();
 }
-let recKey = null;
 /* Les feuilles vivent sur `document.body`, hors de `#app` : c'est ce
    gestionnaire-ci qui les sert. Lui aussi n'énumérait que des attributs, et
    tout bouton de feuille portant un `data-` absent de la liste restait
@@ -6859,7 +6672,7 @@ document.addEventListener('click', async e => {
   if (b.dataset.chap !== undefined) { closeMenu(); return startTour(b.dataset.chap || null); }
   if (b.dataset.msubj !== undefined) { d.subject = b.dataset.msubj; saveDeck(d); render(); return; }
   if (b.dataset.fside !== undefined) { fnr.side = b.dataset.fside; return paintMenu(); }
-  if (b.dataset.friend !== undefined) { sendTo = b.dataset.friend; return paintMenu(); }
+  if (b.dataset.friend !== undefined) { setSendTo(b.dataset.friend); return paintMenu(); }
   if (b.dataset.mrange !== undefined) {
     mateProf.range = +b.dataset.mrange; mateProf.row = null;
     paintMenu(); return mateProfPull(mateOpen);
@@ -6872,7 +6685,7 @@ document.addEventListener('click', async e => {
   }
   if (b.dataset.sortby !== undefined) {
     prefs.sort = b.dataset.sortby; savePrefs();
-    closeMenu(); animate = false; return render();
+    closeMenu(); setAnimate(false); return render();
   }
   if (b.dataset.move !== undefined) {
     const t = deck(b.dataset.move); if (!t || !d || !sel) return;
@@ -6881,7 +6694,7 @@ document.addEventListener('click', async e => {
     pushUndo('Déplacement', [d.id, t.id]);
     d.cards = d.cards.filter(c => !sel.has(c.id));
     t.cards.push(...moved);                       // identifiants et progression conservés
-    sel = new Set();
+    setSel(new Set());
     dirty[d.id] = 1; dirty[t.id] = 1; save(); flush();
     closeMenu(); render();
     return toast(I.out, moved.length + ' carte' + (moved.length > 1 ? 's' : '')
@@ -6906,7 +6719,7 @@ document.addEventListener('click', async e => {
   }
   const a = b.dataset.mact;
   if (a === 'close') return closeMenu();
-  if (b.dataset.why !== undefined) { reportWhy = b.dataset.why; return paintMenu(); }
+  if (b.dataset.why !== undefined) { setReportWhy(b.dataset.why); return paintMenu(); }
   if (b.dataset.unblock !== undefined) return unblockUser(b.dataset.unblock);
   if (b.dataset.setrole !== undefined) return setRole(b.dataset.who, b.dataset.setrole);
   if (a === 'rsend') return sendReport();
@@ -7026,7 +6839,7 @@ document.addEventListener('click', async e => {
   }
   if (a === 'refclsgens') {
     ref.cls = ref.open; ref.tab = 'gens'; ref.role = ''; ref.q = '';
-    refPeople(true); closeMenu(); animate = false; return render();
+    refPeople(true); closeMenu(); setAnimate(false); return render();
   }
   if (a === 'refdonew') {
     const f = { ...(ref.form || {}), ...lireNew() };
@@ -7055,7 +6868,7 @@ document.addEventListener('click', async e => {
     const id = workOpen; closeMenu();
     api('/rest/v1/assignments?id=eq.' + encodeURIComponent(id), 'DELETE', null,
       { Prefer: 'return=minimal' })
-      .then(() => { asgs = (asgs || []).filter(x => x.id !== id); render(); toast(I.check, 'Devoir retiré'); },
+      .then(() => { setAsgs((asgs || []).filter(x => x.id !== id)); render(); toast(I.check, 'Devoir retiré'); },
             () => toast(I.x, 'Impossible pour l’instant'));
     return;
   }
@@ -7079,7 +6892,7 @@ document.addEventListener('click', async e => {
     return paintMenu();
   }
   if (a === 'rec-stop') {
-    const key = recKey; recKey = null;
+    const key = recKey; setRecKey(null);
     const blob = await recStop();
     paintMenu();
     if (!blob || !blob.size) return;
@@ -7096,7 +6909,7 @@ document.addEventListener('click', async e => {
     const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
     if (!c) return;
     if (key.endsWith('a') && REC && !recorder) {
-      try { await recStart(); recKey = key; return paintMenu(); }
+      try { await recStart(); setRecKey(key); return paintMenu(); }
       catch (x) { /* micro refusé : on retombe sur le choix de fichier */ }
     }
     const f = await pickFile(key.endsWith('i') ? 'image/*' : 'audio/*');
@@ -7135,7 +6948,7 @@ document.addEventListener('click', async e => {
       .catch(() => { err.textContent = 'Suppression impossible'; });
     return;
   }
-  if (b.dataset.color) { subjColor = b.dataset.color; return paintMenu(); }
+  if (b.dataset.color) { setSubjColor(b.dataset.color); return paintMenu(); }
   if (a === 'studyall' || a === 'studyleech') {
     closeMenu();
     return startStudy(view.id, false, null, a === 'studyleech' ? { only: 'leech' } : {});
@@ -7191,7 +7004,7 @@ document.addEventListener('click', async e => {
     return n ? toast(I.check, n + ' remplacement' + (n > 1 ? 's' : ''), true) : toast(I.x, 'Rien à remplacer');
   }
   if (a === 'mergeopen') return openMenu('merge');
-  if (a === 'splitopen') { splitSize = Math.min(splitSize, d.cards.length - 1); return openMenu('split'); }
+  if (a === 'splitopen') { setSplitSize(Math.min(splitSize, d.cards.length - 1)); return openMenu('split'); }
   if (a === 'dosplit') {
     const made = splitDeck(d, Math.min(Math.max(2, splitSize), d.cards.length - 1));
     closeMenu();
@@ -7199,42 +7012,42 @@ document.addEventListener('click', async e => {
     go('home');
     return toast(I.split, made.length + ' livres créés', true);
   }
-  if (a === 'leavestay') { leaving = null; return closeMenu(); }
+  if (a === 'leavestay') { setLeaving(null); return closeMenu(); }
   if (a === 'leavego') {
-    const act = leaving; leaving = null; closeMenu();
-    quiz = null; study = study && study.mode ? null : study;
+    const act = leaving; setLeaving(null); closeMenu();
+    setQuiz(null); setStudy(study && study.mode ? null : study);
     const back = act === 'quitquiz' ? (quiz && quiz.id) : act === 'deck' ? view.id : null;
-    if (act === 'quitquiz') quiz = null;
+    if (act === 'quitquiz') setQuiz(null);
     return go(back && deck(back) ? 'deck' : 'home', back && deck(back) ? back : null);
   }
-  if (a === 'reorderon') { closeMenu(); reorder = true; prefs.sort = 'manual'; savePrefs(); animate = false; return render(); }
+  if (a === 'reorderon') { closeMenu(); setReorder(true); prefs.sort = 'manual'; savePrefs(); setAnimate(false); return render(); }
   if (a === 'pindeck') {
     /* la même entrée sert depuis l'aperçu et depuis le menu du paquet :
        c'est la feuille ouverte qui dit de quel paquet on parle */
     const t = (menu === 'preview' ? deck(previewOf) : d) || d; if (!t) return;
     t.pinned = !t.pinned; saveDeck(t);
-    closeMenu(); animate = false; render();
+    closeMenu(); setAnimate(false); render();
     return toast(I.pin, t.pinned ? 'Épinglé en haut' : 'Détaché');
   }
   if (a === 'openpeek') { const id = previewOf; closeMenu(); return go('deck', id); }
   if (a && a.startsWith('pk')) {
     const id = previewOf, t = deck(id); if (!t) return closeMenu();
     closeMenu();
-    if (a === 'pkhide') { t.hidden = !t.hidden; saveDeck(t); animate = false; render();
+    if (a === 'pkhide') { t.hidden = !t.hidden; saveDeck(t); setAnimate(false); render();
       return toast(t.hidden ? I.eyeoff : I.eye, t.hidden ? 'Masqué' : 'Réaffiché'); }
     if (a === 'pkdel') {
       pushUndo(t.name, [t.id]);
       db.decks = db.decks.filter(x => x.id !== t.id);
       delete dirty[t.id]; gone.push(t.id); save(); flush();
-      animate = false; render();
+      setAnimate(false); render();
       return toast(I.trash, 'Livre dans la corbeille', true);
     }
     go('deck', id);
     if (a === 'pkshare') { if (!friends) friendsPull(); return openMenu('sharepick'); }
-    if (a === 'pkfind') { deckOpen = true; deckQ = ''; animate = false; render();
+    if (a === 'pkfind') { setDeckOpen(true); setDeckQ(''); setAnimate(false); render();
       return setTimeout(() => { const i = document.getElementById('dq'); if (i) i.focus(); }, 80); }
     if (a === 'pksplit') { if (t.cards.length < 4) return toast(I.x, 'Trop court pour être scindé');
-      splitSize = Math.min(splitSize, t.cards.length - 1); return openMenu('split'); }
+      setSplitSize(Math.min(splitSize, t.cards.length - 1)); return openMenu('split'); }
     if (a === 'pkset') return openMenu('deckset');
     return;
   }
@@ -7257,7 +7070,7 @@ document.addEventListener('click', async e => {
   if (a === 'versopen') { if (!d) return; openMenu('vers'); return versPull(d.id); }
   if (a === 'savehandle') {
     const i = document.getElementById('hq');
-    if (await saveHandle(i ? i.value : '')) { closeMenu(); animate = false; render(); }
+    if (await saveHandle(i ? i.value : '')) { closeMenu(); setAnimate(false); render(); }
     return;
   }
   if (a === 'domake') { const i = document.getElementById('gq'); return makeGroup(i ? i.value : ''); }
@@ -7271,7 +7084,7 @@ document.addEventListener('click', async e => {
   }
   if (a === 'gleave') { return leaveGroup(groupOf); }
   if (a === 'matedrop') { return dropFriend(mateOpen); }
-  if (a === 'matesend') { sendMsg = ''; return openMenu('lend'); }
+  if (a === 'matesend') { setSendMsg(''); return openMenu('lend'); }
   if (a === 'mateprof') { mateProfPull(mateOpen); return openMenu('mateprof'); }
   if (a === 'cfmine') return solveConflict('mine');
   if (a === 'cftheirs') return solveConflict('theirs');
@@ -7289,7 +7102,7 @@ document.addEventListener('click', async e => {
     return;
   }
   if (a === 'sendfriend') {
-    sendTo = null; sendMsg = '';
+    setSendTo(null); setSendMsg('');
     if (!friends) friendsPull();
     return openMenu('sendfriend');
   }
@@ -7323,13 +7136,13 @@ document.addEventListener('click', async e => {
    sauvegardée appartiennent au mode qui les a créées. */
 function setSimple(on) {
   closeMenu();
-  study = null; pendingGrade = null;
+  setStudy(null); setPendingGrade(null);
   try { localStorage.removeItem('cartes.resume.' + auth.uid); } catch (e) {}
   const days = (!on && prefs.simple) ? spreadBacklog() : 0;   // rallumage : on étale l'arriéré
   prefs.simple = !!on;
   prefs.simpleAt = on ? Date.now() : 0;
   save(); savePrefs();
-  if (view.name === 'study') view = { name: 'home' };
+  if (view.name === 'study') setView({ name: 'home' });
   render();
   toast(on ? I.swap : I.brain, on ? 'Mode simple'
     : days > 1 ? `Moteur rallumé · rattrapage sur ${days} jours` : 'Moteur rallumé');
@@ -7377,10 +7190,10 @@ function startStudy(id, rev, subset, opt) {
     ids = ids.filter(x => keep.has(x));
     if (!ids.length) { toast(I.x, 'Rien à mettre en QCM'); return; }
   }
-  study = { id, name, langf: dm.langf, langb: dm.langb, mode, pool, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
+  setStudy({ id, name, langf: dm.langf, langb: dm.langb, mode, pool, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
             ok: 0, total: ids.length, t0: Date.now(), tq: Date.now(), tried: {}, missSet: {},
             miss: [], log: [], saved: false, opt: o, simple: sm,
-            dirs: Object.fromEntries(ids.map(x => [x, o.both ? Math.random() < .5 : !!rev])) };
+            dirs: Object.fromEntries(ids.map(x => [x, o.both ? Math.random() < .5 : !!rev])) });
   saveResume();
   go('study', id);
 }
@@ -7731,7 +7544,7 @@ function answerTF(said) {
   turnPage(document.getElementById('top'), true);
   paintFoot();
   if (prefs.fast) {
-    pendingGrade = study.tf ? 2 : 0;
+    setPendingGrade(study.tf ? 2 : 0);
     setTimeout(() => { if (study && study.tf != null) fling(study.tf ? 1 : -1); }, 820);
   }
 }
@@ -7758,15 +7571,11 @@ function paintFoot() {
     : `<div class="hint">${SWIPE}<span class="keys">
         <kbd>←</kbd>${svg(I.x)}<kbd>→</kbd>${svg(I.check)}<kbd>espace</kbd>${svg(I.swap)}</span></div>`;
 }
-/* Le temps que met la page à tourner. Sans ce verrou, une série de
-   touches rapides relançait l'animation à chaque fois et la page
-   tournoyait sans fin sans jamais se poser. */
-let flipAt = 0;
 function toggleFlip() {
   const top = document.getElementById('top'); if (!top) return;
   const now = Date.now();
   if (now - flipAt < 480) return;
-  flipAt = now;
+  setFlipAt(now);
   study.flip = !study.flip;
   turnPage(top, study.flip);
   paintFoot();
@@ -7901,7 +7710,7 @@ function fling(dir, v, fx, fy) {
   el.style.transform = `translate3d(${(fx || 0) + ux * loin}px, ${(fy || 0) + uy * loin}px, 0)`
     + ` rotate(${dir * (18 + Math.min(16, sp * 9))}deg)`;
   el.style.opacity = 0;
-  const g = pendingGrade; pendingGrade = null;
+  const g = pendingGrade; setPendingGrade(null);
   /* À droite je sais, à gauche à revoir : le sens des applications de
      cartes, et celui des deux pastilles qui apparaissent sous le doigt. */
   setTimeout(() => commit(g != null ? g > 0 : dir > 0, g), 250);
@@ -8106,7 +7915,7 @@ function startQuiz(id, pool, rev, opt) {
     }
   }
   const mode = o.mode !== undefined ? o.mode : (quiz && quiz.id === id ? quiz.mode : '');
-  quiz = { id, rev: !!rev, name: id === 'all' ? 'Tout' : (deck(id) || {}).name || '',
+  setQuiz({ id, rev: !!rev, name: id === 'all' ? 'Tout' : (deck(id) || {}).name || '',
            sub: id === 'all' ? '' : (deck(id) || {}).subject,
            pool: items, answers, i: 0, ok: 0, bad: [], miss: [], log: [], forced: 0,
            t0: Date.now(), saved: false, state: 'ask', typed: '',
@@ -8116,7 +7925,7 @@ function startQuiz(id, pool, rev, opt) {
               si le quiz est inversé, question et réponse ont échangé de langue
               avec leur contenu. */
            tol: m.tol, qlang: rev ? m.langb : m.langf, alang: rev ? m.langf : m.langb, timer: m.timer,
-           streak: 0, best: 0, hint: 0, hints: 0, opts: null, optsFor: -1 };
+           streak: 0, best: 0, hint: 0, hints: 0, opts: null, optsFor: -1 });
   if (o.at) {
     const k = quiz.pool.findIndex(q => norm(plain(q.f)) === o.at);
     if (k > 0) quiz.i = k;
@@ -8125,31 +7934,29 @@ function startQuiz(id, pool, rev, opt) {
 }
 /* ---------- chrono par question ----------
    La barre se vide ; à zéro la question est perdue, comme à l'oral. */
-let asrOn = false, asrRec = null;
 /* Dictée : le navigateur transcrit, on garde la variante qui passe la
    correction, sinon la première. */
 function dictate() {
   if (asrOn) { try { asrRec && asrRec.stop(); } catch (e) {} return; }
   const q = quiz.pool[quiz.i];
-  asrOn = true; render();
-  asrRec = listen(quiz.alang, alts => {
+  setAsrOn(true); render();
+  setAsrRec(listen(quiz.alang, alts => {
     if (alts) {
       const best = alts.find(t => accepts(t, q.a, quiz.tol)) || alts[0];
       quiz.typed = best;
     }
-    if (alts !== null && alts !== undefined) { asrOn = false; asrRec = null; render(); submit(); return; }
-    asrOn = false; asrRec = null; render();
-  });
-  if (!asrRec) { asrOn = false; toast(I.x, 'Dictée indisponible'); render(); }
+    if (alts !== null && alts !== undefined) { setAsrOn(false); setAsrRec(null); render(); submit(); return; }
+    setAsrOn(false); setAsrRec(null); render();
+  }));
+  if (!asrRec) { setAsrOn(false); toast(I.x, 'Dictée indisponible'); render(); }
 }
-let quizTick = 0;
-function stopTimer() { clearInterval(quizTick); quizTick = 0; }
+function stopTimer() { clearInterval(quizTick); setQuizTick(0); }
 function armTimer() {
   stopTimer();
   if (!quiz || quiz.state !== 'ask' || !quiz.timer) return;
   const span = quiz.timer * 1000;
   quiz.tEnd = Date.now() + span;
-  quizTick = setInterval(() => {
+  setQuizTick(setInterval(() => {
     if (!quiz || quiz.state !== 'ask') return stopTimer();
     const left = Math.max(0, quiz.tEnd - Date.now());
     const el = document.getElementById('tmr');
@@ -8158,7 +7965,7 @@ function armTimer() {
       el.classList.toggle('low', left < span * 0.3);
     }
     if (left <= 0) { stopTimer(); if (quiz.state === 'ask') fail(); }
-  }, 90);
+  }, 90));
 }
 function quizOpts(q) {
   if (quiz.optsFor === quiz.i && quiz.opts) return quiz.opts;
@@ -8281,10 +8088,8 @@ function nextQ() {
 }
 
 /* ---------- création / import ---------- */
-let comp = { subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false };
-let aiBusy = false;
-const resetComp = extra => { comp = { subject: '', cards: [], edit: -1, bulk: false,
-  text: '', dups: false, ...(extra || {}) }; };
+const resetComp = extra => { setComp({ subject: '', cards: [], edit: -1, bulk: false,
+  text: '', dups: false, ...(extra || {}) }); };
 
 function importView() {
   const t = view.id ? deck(view.id) : null;
@@ -8373,7 +8178,7 @@ function importView() {
        découpé en cartes, éditable avant l'ajout. */
     gen.onclick = async () => {
       if (aiBusy || gen.disabled) return;
-      aiBusy = true; gen.classList.add('busy'); gen.disabled = true;
+      setAiBusy(true); gen.classList.add('busy'); gen.disabled = true;
       try {
         const cards = await aiCards(tx.value, t ? t.name : comp.name);
         if (!cards.length) throw new Error('empty');
@@ -8382,7 +8187,7 @@ function importView() {
       } catch (x) {
         toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
       }
-      aiBusy = false; gen.classList.remove('busy'); up();
+      setAiBusy(false); gen.classList.remove('busy'); up();
     };
     /* Photo et PDF passent par la même passerelle : ils reviennent sous
        forme de texte tabulé dans la zone, donc tout ce qui suit — aperçu,
@@ -8391,7 +8196,7 @@ function importView() {
     const fshot = document.getElementById('fshot'), fpdf = document.getElementById('fpdf');
     const grab = async (btn, file, pages) => {
       if (aiBusy || !file) return;
-      aiBusy = true; btn.classList.add('busy'); [shot, pdf, gen].forEach(x => x.disabled = true);
+      setAiBusy(true); btn.classList.add('busy'); [shot, pdf, gen].forEach(x => x.disabled = true);
       try {
         const cards = await aiFromFile(file, t ? t.name : comp.name, pages);
         if (!cards.length) throw new Error('empty');
@@ -8401,7 +8206,7 @@ function importView() {
       } catch (x) {
         toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
       }
-      aiBusy = false; btn.classList.remove('busy');
+      setAiBusy(false); btn.classList.remove('busy');
       [shot, pdf].forEach(x => x.disabled = false); up();
     };
     /* La galerie peut rendre plusieurs photos d'un coup : chacune passe
@@ -8410,7 +8215,7 @@ function importView() {
        une par une, en une seule fois. */
     const grabShots = async files => {
       if (aiBusy || !files.length) return;
-      aiBusy = true; shot.classList.add('busy'); [shot, pdf, gen].forEach(x => x.disabled = true);
+      setAiBusy(true); shot.classList.add('busy'); [shot, pdf, gen].forEach(x => x.disabled = true);
       let total = 0, fail = 0, lastMsg = '';
       for (const file of files) {
         try {
@@ -8426,7 +8231,7 @@ function importView() {
       fit(); up();
       if (total) toast(I.spark, plur(total, 'page') + (fail ? ` · ${fail} photo${fail > 1 ? 's' : ''} en échec` : ''));
       else toast(I.x, lastMsg);
-      aiBusy = false; shot.classList.remove('busy'); [shot, pdf].forEach(x => x.disabled = false);
+      setAiBusy(false); shot.classList.remove('busy'); [shot, pdf].forEach(x => x.disabled = false);
     };
     shot.onclick = () => { if (!aiBusy) fshot.click(); };
     pdf.onclick = () => { if (!aiBusy) fpdf.click(); };
@@ -8617,47 +8422,47 @@ $.addEventListener('click', e => {
      minutes disparaissent pour de bon. Ce sont les seules qu'on protège,
      sinon la question deviendrait un réflexe qu'on clique sans lire. */
   if (/^(home|quitquiz|deck)$/.test(a0 || '') && lostOnLeave() && !leaving) {
-    leaving = a0; return openMenu('leave');
+    setLeaving(a0); return openMenu('leave');
   }
-  if (ds.help !== undefined) { helpKey = ds.help; return openMenu('help'); }
+  if (ds.help !== undefined) { setHelpKey(ds.help); return openMenu('help'); }
   if (ds.modact !== undefined) return modAct(+ds.rid, ds.modact);
-  if (ds.account !== undefined) { accOpen = ds.account; return openMenu('account'); }
+  if (ds.account !== undefined) { setAccOpen(ds.account); return openMenu('account'); }
   if (ds.classe !== undefined) {
-    classOf = ds.classe; roster = null; asgs = null; classPull(classOf); return go('classe');
+    setClassOf(ds.classe); setRoster(null); setAsgs(null); classPull(classOf); return go('classe');
   }
   /* Le même devoir, deux feuilles : celle de l'élève l'ajoute à sa
      bibliothèque, celle du professeur montre le suivi. L'ancienne feuille
      cherchait la classe dans `classes`, que l'élève ne charge plus depuis
      qu'il a son propre écran — elle se refermait sans rien dire. */
   if (ds.work !== undefined) {
-    workOpen = ds.work;
+    setWorkOpen(ds.work);
     return openMenu(isPupil() ? 'devoir' : 'workone');
   }
-  if (ds.member !== undefined) { memberOpen = ds.member; return openMenu('member'); }
+  if (ds.member !== undefined) { setMemberOpen(ds.member); return openMenu('member'); }
   /* On doit pouvoir lire ces textes sans compte : le retour ramène donc
      là d'où l'on venait, y compris l'écran de connexion. */
   if (ds.legal !== undefined) {
-    legalTab = ds.legal;
-    if (view.name !== 'legal') legalBack = view.name === 'login' ? 'login' : 'settings';
+    setLegalTab(ds.legal);
+    if (view.name !== 'legal') setLegalBack(view.name === 'login' ? 'login' : 'settings');
     return go('legal');
   }
   if (ds.yes !== undefined) return answerFriend(ds.yes, true);
   if (ds.no !== undefined) return answerFriend(ds.no, false);
-  if (ds.mate !== undefined) { mateOpen = ds.mate; return openMenu('mate'); }
-  if (ds.group !== undefined) { groupOf = ds.group; return openMenu('groupitem'); }
+  if (ds.mate !== undefined) { setMateOpen(ds.mate); return openMenu('mate'); }
+  if (ds.group !== undefined) { setGroupOf(ds.group); return openMenu('groupitem'); }
   if (ds.mail !== undefined) return openMail(+ds.mail);
   if (ds.dpick !== undefined) return duelPick(+ds.dpick);
   if (ds.lib !== undefined) { lib.open = ds.lib; return openMenu('libitem'); }
   if (ds.duel !== undefined) { duels.open = ds.duel; return openMenu('duelitem'); }
-  if (ds.gtab !== undefined) { groupTab = ds.gtab; groupPull(); animate = false; return render(); }
+  if (ds.gtab !== undefined) { setGroupTab(ds.gtab); groupPull(); setAnimate(false); return render(); }
   /* changer de portée, c'est changer de public : le classement se
      recalcule côté base, la bibliothèque et les défis se refiltrent ici */
   if (ds.scope !== undefined) {
-    scope = ds.scope || null;
-    board.rows = null; animate = false; render();
+    setScope(ds.scope || null);
+    board.rows = null; setAnimate(false); render();
     return boardPull();
   }
-  if (ds.brange !== undefined) { board.range = +ds.brange; board.rows = null; animate = false; render(); return boardPull(); }
+  if (ds.brange !== undefined) { board.range = +ds.brange; board.rows = null; setAnimate(false); render(); return boardPull(); }
   if (ds.pkc !== undefined && sel) {
     /* on ne repeint que la ligne touchée et le décompte : reconstruire la
        liste entière ferait sauter le défilement à chaque coche */
@@ -8683,7 +8488,7 @@ $.addEventListener('click', e => {
     return render();
   }
   if (ds.ed !== undefined) { comp.edit = +ds.ed; return render(); }
-  if (ds.filt !== undefined) { filter = ds.filt; render(); return; }
+  if (ds.filt !== undefined) { setFilter(ds.filt); render(); return; }
   if (ds.nsubj !== undefined) {
     comp.subject = ds.nsubj;
     $.querySelectorAll('[data-nsubj]').forEach(x => x.classList.toggle('on', x.dataset.nsubj === comp.subject));
@@ -8695,23 +8500,23 @@ $.addEventListener('click', e => {
   /* pendant le rangement, un livre se prend et se pose : il ne s'ouvre pas */
   if (ds.go) { if (reorder) return; return go('deck', ds.go); }
   if (ds.a) return fling(ds.a === 'yes' ? 1 : -1);
-  if (ds.g !== undefined) { pendingGrade = +ds.g; return fling(+ds.g > 0 ? 1 : -1); }
+  if (ds.g !== undefined) { setPendingGrade(+ds.g); return fling(+ds.g > 0 ? 1 : -1); }
   if (ds.rm) { const d = deck(view.id); d.cards = d.cards.filter(c => c.id !== ds.rm); saveDeck(d); return render(); }
   if (ds.sus) {
     const d = deck(view.id), c = d.cards.find(x => x.id === ds.sus);
     c.x = !c.x; saveDeck(d); return render();
   }
   const a = ds.act, d = view.id ? deck(view.id) : null;
-  if (ds.card) { cardEdit = ds.card; return openMenu('card'); }
+  if (ds.card) { setCardEdit(ds.card); return openMenu('card'); }
   /* Ajouter un camarade depuis la liste de sa classe : pas de pseudo à
      taper, on appuie sur le plus en face du nom. */
   /* ---- la console du référent ---- */
-  if (ds.atab) { adm.tab = ds.atab; animate = false; return render(); }
+  if (ds.atab) { adm.tab = ds.atab; setAnimate(false); return render(); }
   if (ds.rtab) { ref.tab = ds.rtab; if (ref.tab === 'gens' && !ref.gens) refPeople(true);
-    animate = false; return render(); }
-  if (ds.rrole !== undefined) { ref.role = ds.rrole; refPeople(true); animate = false; return render(); }
-  if (ds.rpage !== undefined) { ref.page = +ds.rpage; refPeople(false); animate = false; return render(); }
-  if (ds.rclsoff) { ref.cls = null; refPeople(true); animate = false; return render(); }
+    setAnimate(false); return render(); }
+  if (ds.rrole !== undefined) { ref.role = ds.rrole; refPeople(true); setAnimate(false); return render(); }
+  if (ds.rpage !== undefined) { ref.page = +ds.rpage; refPeople(false); setAnimate(false); return render(); }
+  if (ds.rclsoff) { ref.cls = null; refPeople(true); setAnimate(false); return render(); }
   if (ds.rwho) {
     ref.who = (ref.gens || []).find(x => x.id === ds.rwho) || null;
     ref.service = null; ref.form = {};
@@ -8723,12 +8528,12 @@ $.addEventListener('click', e => {
     prof.roster = null; prof.devoirs = null;
     profClassePull(prof.open); return go('profclasse');
   }
-  if (ds.ptab) { prof.tab = ds.ptab; animate = false; return render(); }
-  if (ds.pvue) { prof.vue = ds.pvue; animate = false; return render(); }
-  if (ds.pmois) { prof.mois = ds.pmois; animate = false; return render(); }
+  if (ds.ptab) { prof.tab = ds.ptab; setAnimate(false); return render(); }
+  if (ds.pvue) { prof.vue = ds.pvue; setAnimate(false); return render(); }
+  if (ds.pmois) { prof.mois = ds.pmois; setAnimate(false); return render(); }
   if (ds.pjour) { prof.jour = prof.jour === ds.pjour ? null : ds.pjour;
-    prof.mois = ds.pjour; animate = false; return render(); }
-  if (ds.ptri) { prof.tri = ds.ptri; animate = false; return render(); }
+    prof.mois = ds.pjour; setAnimate(false); return render(); }
+  if (ds.ptri) { prof.tri = ds.ptri; setAnimate(false); return render(); }
   if (ds.peleve) {
     prof.eleve = ds.peleve; prof.fiche = null;
     profFichePull(prof.open, prof.eleve); return go('profeleve');
@@ -8736,7 +8541,7 @@ $.addEventListener('click', e => {
   if (ds.pwork) { prof.work = ds.pwork; prof.cartes = null; return openMenu('pwork'); }
   if (ds.camadd) {
     const n = ds.camn;
-    askFriend(n).then(ok => { if (ok) { mates2 = null; matesPull(); } })
+    askFriend(n).then(ok => { if (ok) { setMates2(null); matesPull(); } })
       .catch(() => toast(I.x, 'Impossible pour l’instant'));
     return;
   }
@@ -8771,17 +8576,17 @@ $.addEventListener('click', e => {
      toute tentative de le changer, l'écran n'ouvre donc pas le formulaire. */
   if (a === 'handle') return isPupil() ? toast(I.lock, 'Ton pseudo est celui de ton établissement')
                                        : openMenu('handle');
-  if (a === 'newgroup') { addQ = ''; return openMenu('newgroup'); }
-  if (a === 'joingroup') { addQ = ''; return openMenu('joingroup'); }
+  if (a === 'newgroup') { setAddQ(''); return openMenu('newgroup'); }
+  if (a === 'joingroup') { setAddQ(''); return openMenu('joingroup'); }
   /* un quiz se lance depuis un paquet : en sortir, c'est y revenir */
-  if (a === 'quitquiz') { const id = quiz && quiz.id; quiz = null;
+  if (a === 'quitquiz') { const id = quiz && quiz.id; setQuiz(null);
     return deck(id) ? go('deck', id) : go('home'); }
-  if (a === 'peek') { peek = !peek; render(); return; }
+  if (a === 'peek') { setPeek(!peek); render(); return; }
   if (a === 'marathon') return startStudy('all', false, null, { only: 'due', both: prefs.both });
   if (a === 'retry') {
     if (!pending()) return toast(I.check, 'Tout est enregistré');
     toast(I.cloud, 'Envoi…');
-    flush().then(() => { animate = false; render(); if (online && !pending()) toast(I.check, 'À jour'); });
+    flush().then(() => { setAnimate(false); render(); if (online && !pending()) toast(I.check, 'À jour'); });
     return;
   }
   if (a === 'mcq' || a === 'match') return startStudy(view.id, false, null, { mode: a });
@@ -8793,12 +8598,12 @@ $.addEventListener('click', e => {
   if (a === 'help') return openMenu('tuto');
   if (a === 'install') return openInstall();
   if (a === 'duelnew') return openMenu('duelnew');
-  if (a === 'duelquit') { duelRun = null; return go('group'); }
+  if (a === 'duelquit') { setDuelRun(null); return go('group'); }
   if (a === 'addshared') {
     const sd = shared && shared.d; if (!sd) return;
     const cards = (sd.cards || []).map(c => [cf(c), cb(c)]);
     const nd = importPayload({ name: sd.name, subject: '', cards }, true);
-    shared = null;
+    setShared(null);
     if (nd) go('deck', nd.id); else go('home');
     return toast(I.check, plur(cards.length, 'page') + ' ajoutée' + (cards.length > 1 ? 's' : ''));
   }
@@ -8812,7 +8617,7 @@ $.addEventListener('click', e => {
       try {
         const before = prefs.wAt || 0;
         const n = await fsrsTune(true);
-        animate = false; render();
+        setAnimate(false); render();
         const tuned = (prefs.wAt || 0) !== before;
         toast(n || tuned ? I.check : I.x,
           !n && !tuned ? 'Pas encore assez d’historique noté'
@@ -8822,23 +8627,23 @@ $.addEventListener('click', e => {
     })();
     return;
   }
-  if (a === 'find') { findQ = ''; return go('find'); }
+  if (a === 'find') { setFindQ(''); return go('find'); }
   if (a === 'deckfind') {
-    deckOpen = !deckOpen;
-    if (!deckOpen) deckQ = '';
-    animate = false; return render();
+    setDeckOpen(!deckOpen);
+    if (!deckOpen) setDeckQ('');
+    setAnimate(false); return render();
   }
-  if (a === 'zen') { prefs.zen = !prefs.zen; savePrefs(); animate = false; return render(); }
+  if (a === 'zen') { prefs.zen = !prefs.zen; savePrefs(); setAnimate(false); return render(); }
   if (a === 'sortpick') return openMenu('sortpick');
-  if (a === 'listview') { prefs.list = !prefs.list; savePrefs(); animate = false; return render(); }
+  if (a === 'listview') { prefs.list = !prefs.list; savePrefs(); setAnimate(false); return render(); }
   if (a === 'reorder') {
-    reorder = !reorder;
+    setReorder(!reorder);
     if (reorder && prefs.sort !== 'manual') { prefs.sort = 'manual'; savePrefs(); }
-    animate = false; return render();
+    setAnimate(false); return render();
   }
   if (a === 'resume') {
     const r = loadResume(); if (!r) return render();
-    study = r; return go('study', r.id);
+    setStudy(r); return go('study', r.id);
   }
   if (a === 'settings') return go('settings');
   if (a === 'tolog') return go('login');
@@ -8891,10 +8696,10 @@ $.addEventListener('click', e => {
   if (a === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
   if (a === 'trash') { trash.list = null; trashPull(); return go('trash'); }
   /* ---- sélection multiple ---- */
-  if (a === 'selmode') { sel = sel ? null : new Set(); return render(); }
+  if (a === 'selmode') { setSel(sel ? null : new Set()); return render(); }
   if (a === 'selall') {
     const d = deck(view.id); if (!d) return;
-    sel = new Set(sel.size === d.cards.length ? [] : d.cards.map(c => c.id));
+    setSel(new Set(sel.size === d.cards.length ? [] : d.cards.map(c => c.id)));
     return render();
   }
   if (a === 'selmove') return openMenu('move');
@@ -8912,7 +8717,7 @@ $.addEventListener('click', e => {
     const n = d.cards.filter(c => sel.has(c.id)).length;
     pushUndo('Suppression', [d.id]);
     d.cards = d.cards.filter(c => !sel.has(c.id));
-    sel = new Set(); saveDeck(d); render();
+    setSel(new Set()); saveDeck(d); render();
     return toast(I.trash, n + ' carte' + (n > 1 ? 's' : '') + ' supprimée' + (n > 1 ? 's' : ''), true);
   }
   if (a === 'logout') return logout();
@@ -8981,7 +8786,7 @@ $.addEventListener('click', e => {
   if (a === 'nextcard') {
     if (!study) return;
     if (study.mode === 'mcq' && study.pick != null) return commit(study.pickOk, study.pickOk ? 2 : 0);
-    if (study.tf != null) { pendingGrade = study.tf ? 2 : 0; return fling(study.tf ? 1 : -1); }
+    if (study.tf != null) { setPendingGrade(study.tf ? 2 : 0); return fling(study.tf ? 1 : -1); }
     return;
   }
   if (a === 'redostudy') return startStudy(study.id, study.rev, study.miss.map(m => m.id));
@@ -9030,7 +8835,7 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (study.flip && !study.simple && '1234'.includes(e.key)) {
-    pendingGrade = +e.key - 1;
+    setPendingGrade(+e.key - 1);
     return fling(pendingGrade > 0 ? 1 : -1);
   }
   if (e.key === 'ArrowLeft') fling(-1);
@@ -9090,49 +8895,49 @@ function consumeHash() {
    qui parle du compte, elle vient dans cette liste. */
 function resetSession() {
   /* la bibliothèque et ce qui attend d'être envoyé */
-  db = { subjects: [], decks: [], hist: {} };
-  prefs = { ...DEFPREFS };
-  dirty = {}; gone = []; conflicts = []; undos = [];
-  trash = { n: 0, list: null, err: 0 };
-  vers = { list: null, err: 0, of: null };
+  setDb({ subjects: [], decks: [], hist: {} });
+  setPrefs({ ...DEFPREFS });
+  setDirty({}); setGone([]); setConflicts([]); setUndos([]);
+  setTrash({ n: 0, list: null, err: 0 });
+  setVers({ list: null, err: 0, of: null });
 
   /* le cercle : qui l'on est, qui l'on connaît, ce qu'on partage */
-  me = null; friends = null; mates = null; asks = null;
-  groups = null; groupOf = null; scope = null; groupTab = 'lib';
-  lib = { list: null, err: 0, open: null };
-  duels = { list: null, scores: null, err: 0, open: null };
-  board = { rows: null, err: 0, range: 7 };
-  blocks = null;
-  mailbox = { n: 0, list: null, err: 0 };
-  mateOpen = null; mateProf = { id: null, range: 7, row: null, lib: null, load: 0 };
-  sendTo = null; sendMsg = ''; mailOpen = null; addQ = '';
+  setMe(null); setFriends(null); setMates(null); setAsks(null);
+  setGroups(null); setGroupOf(null); setScope(null); setGroupTab('lib');
+  setLib({ list: null, err: 0, open: null });
+  setDuels({ list: null, scores: null, err: 0, open: null });
+  setBoard({ rows: null, err: 0, range: 7 });
+  setBlocks(null);
+  setMailbox({ n: 0, list: null, err: 0 });
+  setMateOpen(null); setMateProf({ id: null, range: 7, row: null, lib: null, load: 0 });
+  setSendTo(null); setSendMsg(''); setMailOpen(null); setAddQ('');
 
   /* le rôle et ce qu'il ouvre */
-  myRole = 'eleve'; iAmMod = false;
-  school = null; team = null; mates2 = null;
-  prof = { annee: null, annees: null, classes: null, err: 0,
+  setMyRole('eleve'); setIAmMod(false);
+  setSchool(null); setTeam(null); setMates2(null);
+  setProf({ annee: null, annees: null, classes: null, err: 0,
            open: null, tab: 'eleves', roster: null, devoirs: null, bilan: null,
            tri: 'retard', q: '', eleve: null, fiche: null,
            work: null, cartes: null, comp: null,
-           vue: 'liste', mois: null, agenda: null, jour: null };
-  adm = { orgs: null, etat: null, tab: 'orgs' };
-  ref = { tab: 'etab', board: null, err: 0,
+           vue: 'liste', mois: null, agenda: null, jour: null });
+  setAdm({ orgs: null, etat: null, tab: 'orgs' });
+  setRef({ tab: 'etab', board: null, err: 0,
           gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
           classes: null, open: null, team: null,
-          who: null, service: null, form: null, trace: null };
-  mods = { list: null, err: 0, seen: 0 };
-  accounts = null; accOpen = null;
-  classes = null; classOf = null; roster = null; asgs = null;
-  workOpen = null; memberOpen = null;
-  reportOn = null; reportWhy = '';
+          who: null, service: null, form: null, trace: null });
+  setMods({ list: null, err: 0, seen: 0 });
+  setAccounts(null); setAccOpen(null);
+  setClasses(null); setClassOf(null); setRoster(null); setAsgs(null);
+  setWorkOpen(null); setMemberOpen(null);
+  setReportOn(null); setReportWhy('');
 
   /* les écrans en cours */
-  view = { name: 'login' }; menu = null; study = null; quiz = null;
-  stats = { rows: null, err: 0, range: 30 };
-  shared = null; duelRun = null; previewOf = null; leaving = null;
-  filter = ''; peek = false; sel = null; reorder = false;
-  findQ = ''; deckQ = ''; deckOpen = false; deckShow = DECKPAGE;
-  subjEdit = null; cardEdit = null; comp = { subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false };
+  setView({ name: 'login' }); setMenu(null); setStudy(null); setQuiz(null);
+  setStats({ rows: null, err: 0, range: 30 });
+  setShared(null); setDuelRun(null); setPreviewOf(null); setLeaving(null);
+  setFilter(''); setPeek(false); setSel(null); setReorder(false);
+  setFindQ(''); setDeckQ(''); setDeckOpen(false); setDeckShow(DECKPAGE);
+  setSubjEdit(null); setCardEdit(null); setComp({ subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false });
 
   /* les images et sons déjà rapatriés : ils appartenaient à l'autre compte,
      et les laisser en mémoire serait garder ouvert ce qu'on vient de fermer */
@@ -9146,8 +8951,8 @@ function logout() {
   saveAuth(null);
   if (key) { try { localStorage.removeItem(key); } catch (e) {} }
   resetSession();
-  loginMode = 'in';
-  animate = true; render();
+  setLoginMode('in');
+  setAnimate(true); render();
 }
 
 /* ══════════ visite guidée ══════════
@@ -9220,13 +9025,11 @@ function demoDB() {
   return { subjects: DEMOSUBJ.map(x => ({ ...x })), decks, hist, today: { d: +mid, n: 14 } };
 }
 
-let tour = null, tourSave = null, tourPoll = 0;
-let demo = false;                       // pendant la visite : plus rien ne sort de l'appareil
 
 /* ---------- le fil des chapitres ----------
    Chaque étape : où aller (go), quoi montrer (sel), quoi dire, et
    éventuellement le geste qui la fait avancer toute seule (done). */
-const nav = (name, id) => () => { closeMenu(); view = { name, id }; };
+const nav = (name, id) => () => { closeMenu(); setView({ name, id }); };
 const CHAPTERS = [
   { id: 'bases', name: 'Ta bibliothèque', icon: 'layers', steps: [
     { go: nav('home'), title: 'Bienvenue',
@@ -9265,10 +9068,10 @@ const CHAPTERS = [
     { go: nav('home'), sel: '.fab', pass: 1, tap: 'Touche le +', wait: 450,
       done: () => view.name === 'import', title: 'Un nouveau livre',
       text: 'Le bouton rond en bas à droite.' },
-    { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
+    { go: () => { resetComp(); comp.bulk = true; setView({ name: 'import' }); setMenu(null); },
       sel: '#tx', title: 'Colle une liste',
       text: 'Une ligne par page : le mot, une tabulation ou un tiret, la réponse. Le découpage se fait tout seul.' },
-    { go: () => { resetComp(); comp.bulk = true; view = { name: 'import' }; menu = null; },
+    { go: () => { resetComp(); comp.bulk = true; setView({ name: 'import' }); setMenu(null); },
       sel: '.airow', title: 'Ou pars de ton cours',
       text: 'Photo d’une page, PDF, ou texte collé : les pages sont écrites pour toi.' }
   ] },
@@ -9324,29 +9127,29 @@ function startTour(chapId) {
   if (tour) return;
   const steps = tourSteps(chapId);
   if (!steps.length) return;
-  tourSave = { db, prefs, view, study, quiz, filter, peek, groupTab, scope,
-               me, mates, asks, friends, groups, duels, lib, board };
-  demo = true;
+  setTourSave({ db, prefs, view, study, quiz, filter, peek, groupTab, scope,
+               me, mates, asks, friends, groups, duels, lib, board });
+  setDemo(true);
   closeMenu(); selOff();
-  db = demoDB();
-  prefs = { ...DEFPREFS, name: 'Léa', goal: 40, sound: true, tuto: 1 };
-  me = { id: 'demo', handle: 'lea' };
-  mates = [{ id: 'f1', handle: 'thibault', name: 'Thibault', status: 'ok', sens: 'envoyee' },
-           { id: 'f2', handle: 'ibti', name: 'Ibti', status: 'ok', sens: 'recue' }];
-  asks = []; friends = mates.slice();
-  groups = [{ id: 'g1', name: 'Prépa D1', code: 'K7PQR', owner: 'demo' }];
-  duels = { list: [{ id: 'du1', owner: 'f1', who: 'thibault', name: 'Droit civil',
+  setDb(demoDB());
+  setPrefs({ ...DEFPREFS, name: 'Léa', goal: 40, sound: true, tuto: 1 });
+  setMe({ id: 'demo', handle: 'lea' });
+  setMates([{ id: 'f1', handle: 'thibault', name: 'Thibault', status: 'ok', sens: 'envoyee' },
+           { id: 'f2', handle: 'ibti', name: 'Ibti', status: 'ok', sens: 'recue' }]);
+  setAsks([]); setFriends(mates.slice());
+  setGroups([{ id: 'g1', name: 'Prépa D1', code: 'K7PQR', owner: 'demo' }]);
+  setDuels({ list: [{ id: 'du1', owner: 'f1', who: 'thibault', name: 'Droit civil',
                      total: 10, cards: [], created_at: new Date(Date.now() - 3600e3).toISOString() }],
-            scores: [], err: 0, open: null };
-  lib = { list: [{ deck_id: 'lx', user_id: 'f1', who: 'thibault', name: 'Droit civil — définitions',
+            scores: [], err: 0, open: null });
+  setLib({ list: [{ deck_id: 'lx', user_id: 'f1', who: 'thibault', name: 'Droit civil — définitions',
                    subject: 'Droit', n: 64, cards: [], updated_at: new Date(Date.now() - 2 * DAY).toISOString() }],
-          err: 0, open: null };
-  board = { rows: [{ uid: 'f1', who: 'Thibault', handle: 'thibault', n: 185, ok: 127, jours: 5 },
+          err: 0, open: null });
+  setBoard({ rows: [{ uid: 'f1', who: 'Thibault', handle: 'thibault', n: 185, ok: 127, jours: 5 },
                    { uid: auth.uid, who: 'Léa', handle: 'lea', n: 92, ok: 70, jours: 4 },
                    { uid: 'f2', who: 'Ibti', handle: 'ibti', n: 31, ok: 28, jours: 2 }],
-            err: 0, range: 7 };
-  study = null; quiz = null; filter = ''; peek = false; deckQ = ''; reorder = false;
-  tour = { i: 0, steps };
+            err: 0, range: 7 });
+  setStudy(null); setQuiz(null); setFilter(''); setPeek(false); setDeckQ(''); setReorder(false);
+  setTour({ i: 0, steps });
   document.body.classList.add('touring');
   runStep();
 }
@@ -9356,7 +9159,7 @@ function runStep() {
   if (!s) return endTour(true);
   tour.lock = s.lock || 0;
   try { if (s.go) s.go(); } catch (e) {}
-  animate = false; render();
+  setAnimate(false); render();
   /* La cible peut être plus bas que l'écran — l'entrée « Aide » est en
      fin de réglages. On l'amène au centre avant de mesurer, sinon le halo
      se pose dans le vide et l'étape ne montre rien. */
@@ -9369,7 +9172,7 @@ function runStep() {
     requestAnimationFrame(paintTour);
   });
   clearInterval(tourPoll);
-  tourPoll = setInterval(() => {
+  setTourPoll(setInterval(() => {
     if (!tour) return clearInterval(tourPoll);
     paintTour();
     if (s.done && !tour.hold) {
@@ -9381,7 +9184,7 @@ function runStep() {
         }
       } catch (e) {}
     }
-  }, 140);
+  }, 140));
 }
 function nextStep() {
   if (!tour) return;
@@ -9391,21 +9194,21 @@ function nextStep() {
   runStep();
 }
 function endTour(done) {
-  clearInterval(tourPoll); tourPoll = 0;
+  clearInterval(tourPoll); setTourPoll(0);
   const o = document.getElementById('tour'); if (o) o.remove();
   document.body.classList.remove('touring');
-  tour = null;
-  const sv = tourSave; tourSave = null;
-  demo = false;
+  setTour(null);
+  const sv = tourSave; setTourSave(null);
+  setDemo(false);
   if (sv) {
-    db = sv.db; prefs = sv.prefs; view = sv.view; study = sv.study; quiz = sv.quiz;
-    filter = sv.filter; peek = sv.peek; groupTab = sv.groupTab; scope = sv.scope;
-    me = sv.me; mates = sv.mates; asks = sv.asks; friends = sv.friends;
-    groups = sv.groups; duels = sv.duels; lib = sv.lib; board = sv.board;
+    setDb(sv.db); setPrefs(sv.prefs); setView(sv.view); setStudy(sv.study); setQuiz(sv.quiz);
+    setFilter(sv.filter); setPeek(sv.peek); setGroupTab(sv.groupTab); setScope(sv.scope);
+    setMe(sv.me); setMates(sv.mates); setAsks(sv.asks); setFriends(sv.friends);
+    setGroups(sv.groups); setDuels(sv.duels); setLib(sv.lib); setBoard(sv.board);
   }
   closeMenu();
   if (!prefs.tuto) { prefs.tuto = 1; savePrefs(); }
-  animate = true; render();
+  setAnimate(true); render();
   if (done) toast(I.check, 'Visite terminée');
 }
 
@@ -9559,13 +9362,9 @@ const inApp = () => /FBAN|FBAV|Instagram|Snapchat|TikTok|Line\/|LinkedInApp|Twit
    Firefox y sont le même moteur mais sans ce menu. */
 const iosOther = () => isIOS() && /CriOS|FxiOS|EdgiOS|OPiOS/.test(UA);
 
-/* L'invite native d'Android n'est donnée qu'une fois, très tôt : on la
-   met de côté au lieu de la laisser passer, pour la rejouer au moment
-   où elle a du sens pour l'élève. */
-let bip = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); bip = e; });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); setBip(e); });
 window.addEventListener('appinstalled', () => {
-  bip = null;
+  setBip(null);
   instSave({ ...instLoad(), done: 1 });
   closeMenu();
   toast(I.check, 'Folio est sur ton écran d’accueil');
@@ -9618,7 +9417,7 @@ async function copyLink() {
 }
 async function doPrompt() {
   if (!bip) return;
-  const e = bip; bip = null;
+  const e = bip; setBip(null);
   closeMenu();
   try {
     e.prompt();
@@ -9706,8 +9505,8 @@ function installSheet(w) {
 
 /* ---------- démarrage ---------- */
 async function boot() {
-  if (!auth) { view = { name: 'login' }; return render(); }
-  db = load();
+  if (!auth) { setView({ name: 'login' }); return render(); }
+  setDb(load());
   fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état
   if (!consumeHash()) render();          // le cache s'affiche tout de suite
   /* le raccourci attend d'avoir les paquets : « réviser » ne veut rien
@@ -9721,7 +9520,7 @@ async function boot() {
     flush();
     maybeTour();
   } catch (e) {
-    if (/JWT|session|401/i.test(String(e.message || e))) { saveAuth(null); view = { name: 'login' }; render(); }
+    if (/JWT|session|401/i.test(String(e.message || e))) { saveAuth(null); setView({ name: 'login' }); render(); }
     else setOnline(false);
   }
 }
