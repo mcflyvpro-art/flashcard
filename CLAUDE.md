@@ -36,6 +36,8 @@ l'air de marcher ».
     découper), sections `/* ---------- nom ---------- */`. Chercher par
     `grep -n -- "---------- " src/app.js` avant d'éditer.
   - `src/fsrs.js` — le moteur, pur et testé (`test/fsrs.test.js`)
+  - `src/fusion.js` — fusion à trois versions d'un paquet (M03.T4), pur et testé (`test/fusion.test.js`, `test/concurrence.test.js`)
+  - `src/file.js` — construction de la file de révision : sélection, quota de cartes neuves, ordre (M01.T3), pur et testé (`test/file.test.js`)
   - `src/app.css` — ~2 200 lignes
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes

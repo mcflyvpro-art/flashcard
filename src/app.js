@@ -200,7 +200,6 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID()
       return (c === 'x' ? r : (r & 3 | 8)).toString(16);
     }));
 const deck = id => db.decks.find(d => d.id === id);
-const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[a[i], a[j]] = [a[j], a[i]]; } return a; };
 const live = () => db.decks.filter(d => !d.hidden);
 const slugify = n => (n || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'matiere';
@@ -1232,6 +1231,7 @@ import {
   DAY, MIN, S_MIN, S_MAX, D_MIN, D_MAX, cl, W6,
   fsrsR, fsrsStates, dayNo, fsrsReplayAll
 } from './fsrs.js';
+import { buildQueue, isDue, isLeech, shuffle } from './file.js';
 
 /* ══════════ FSRS ══════════
    Le moteur lui-même est dans src/fsrs.js — voir son bandeau. Ici ne
@@ -1265,9 +1265,7 @@ const cstate = c => {
    on la travaille, on la relit, puis on la sait. */
 const STATE = { new: 'À lire', learn: 'En cours', young: 'Relue',
                 mature: 'Sue', susp: 'De côté' };
-/* huit rechutes : le seuil d'Anki (« leech threshold ») */
-const isLeech = c => (c.l || 0) >= 8;
-const isDue = c => !c.x && (!c.d || c.d <= Date.now());
+/* isLeech, isDue : voir src/file.js (M01.T3, la file de révision) */
 
 function grade(c, rating) {
   const now = Date.now();
@@ -1568,23 +1566,7 @@ async function aiFromFile(file, hint, pages) {
   return aiCall({ op: pdf ? 'pdf' : 'ocr', mime, data, hint: hint || '', pages: pages || '' });
 }
 
-/* ---------- construction d'une file ---------- */
-function buildQueue(cards, o = {}) {
-  let list = cards.filter(c => !c.x || o.susp);
-  if (o.only === 'due') list = list.filter(isDue);
-  if (o.only === 'leech') list = list.filter(isLeech);
-  const fresh = list.filter(c => !c.n), seen = list.filter(c => c.n);
-  const cap = o.cap != null ? o.cap : prefs.cap;
-  const kept = cap > 0 ? fresh.slice(0, cap) : fresh;
-  if (o.order === 'deck') list = [...kept, ...seen];
-  else if (o.order === 'worst') list = [...kept, ...seen].sort((a, b) => (b.l || 0) - (a.l || 0));
-  else if (o.order === 'due') list = [...kept, ...seen].sort((a, b) => (a.d || 0) - (b.d || 0));
-  else if (o.fresh) list = [...shuffle(kept), ...shuffle(seen)];
-  else list = shuffle([...kept, ...seen]);
-  if (o.limit > 0) list = list.slice(0, o.limit);
-  return list;
-}
-const dueCount = d => d.cards.filter(c => !c.x && isDue(c)).length;
+const dueCount = d => d.cards.filter(c => isDue(c, Date.now())).length;
 
 /* ---------- mode simple ----------
    Le moteur est coupé : plus d'échéance, plus de note, on swipe et c'est tout.
@@ -7501,7 +7483,8 @@ function startStudy(id, rev, subset, opt) {
     ids = buildQueue(cards, sm
       ? { order: o.order || (prefs.order === 'due' ? 'random' : prefs.order), cap: 0,
           fresh: prefs.fresh, only: o.only === 'leech' ? 'leech' : '' }
-      : { ...o, order: o.order || prefs.order, fresh: prefs.fresh }).map(c => c.id);
+      : { ...o, order: o.order || prefs.order, fresh: prefs.fresh,
+          cap: o.cap != null ? o.cap : prefs.cap }, Date.now()).map(c => c.id);
   }
   if (!ids.length) { toast(I.check, 'Rien à revoir ici'); return; }
   const dm = id === 'all' ? DEFMETA : metaOf(deck(id));

@@ -5,14 +5,27 @@
      · une mission       : grep -A20 '^## M07' PROGRESS.md
      · ce qui reste en P0: grep -n '^- \[ \].*\[P0\]' PROGRESS.md
      Mise à jour = changer [ ] en [x] sur la ligne + réécrire le bloc ÉTAT.
-     Ne JAMAIS relire le fichier entier : il est fait pour être grepé. -->
+     Ne JAMAIS relire le fichier entier : il est fait pour être grepé.
+
+     Décidé le 2026-09-18 : quand l'utilisateur tape /goal sans rien
+     préciser, c'est le signal « reprends ». Aller voir CURSEUR ci-dessous,
+     faire UNE seule tâche (celle-là, pas la suite de la mission), la
+     cocher avec sa preuve une fois vraiment verte, mettre à jour ÉTAT,
+     puis s'arrêter et attendre — jamais enchaîner sur la tâche suivante
+     sans un nouveau /goal. -->
 
 ## ÉTAT
 ```
-CURSEUR   M01.T3 (file de révision) — ordre P0 décidé le 2026-09-18, voir ORDRE
+CURSEUR   M01.T4 (parseur de cartes) — ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      16 / 148
-DERNIER   2026-09-18 · M03.T6 : lectures basculées sur `cards`, pagination `apiAll` (bug db-max-rows corrigé au passage), pull() mesuré à 483 ms pour 5 000 cartes (cible 800 ms)
+FAIT      17 / 148
+DERNIER   2026-09-18 · M01.T3 : file de révision extraite d'app.js vers `src/file.js`
+          (buildQueue, isDue, isLeech, shuffle), pure — horloge (`now`) et hasard
+          (`rand`) toujours fournis par l'appelant, jamais lus dans le module.
+          `npm test -- file` → 27/27 ; suite complète `npm test` → 68/68 ; `npm run
+          build` ok. app.js n'a plus de définition locale de buildQueue/isDue/
+          isLeech/shuffle, seulement l'import ; `startStudy` passe explicitement
+          cap (repli sur prefs.cap) et now (Date.now()) à l'appel.
 ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 → M13 → M12
           (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
           intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
@@ -35,11 +48,11 @@ But de phase : **zéro perte de données démontrée**, zéro erreur console sur
 parcours principaux, et une app vendable à un particulier.
 Sortie de phase : les 13 missions P0 à 100 %.
 
-## M01 · Noyau testable [P0] 2/5
+## M01 · Noyau testable [P0] 3/5
 But : toutes les règles métier dans du code pur, testé, sans DOM ni réseau.
 - [x] M01.T1 · extraire le moteur FSRS dans `src/core/` — cible: 0 accès DOM/réseau — preuve: `grep -cE 'document|fetch|localStorage' src/fsrs.js` = 0
 - [x] M01.T2 · tests du moteur — cible: ≥ 14 tests, ordre des 4 boutons garanti — preuve: `npm test`
-- [ ] M01.T3 · extraire la file de révision (sélection, mélange, quotas) — cible: fonction pure, 20 tests — preuve: `npm test -- file`
+- [x] M01.T3 · extraire la file de révision (sélection, mélange, quotas) — cible: fonction pure, 20 tests — preuve: `npm test -- file` → 27/27 (`grep -cE 'document|fetch|localStorage' src/file.js` = 0)
 - [ ] M01.T4 · extraire le parseur de cartes (collage, Quizlet, CSV) — cible: 25 cas, 0 crash sur entrée malformée — preuve: `npm test -- parseur`
 - [ ] M01.T5 · couverture du noyau — cible: ≥ 90 % lignes sur `src/core/` — preuve: `npx vitest run --coverage`
 
@@ -60,7 +73,7 @@ Cible globale : **0 perte et 0 conflit visible sur 10 000 opérations concurrent
 - [x] M03.T4 · fusion à trois versions (base commune, locale, distante) — cible: 0 boîte de dialogue de conflit sur le jeu de tests — preuve: `npm test -- fusion` → 18/18 (dont 200 scénarios synthétiques, 0 exception, résultat déterministe) ; `src/fusion.js`, pur (`grep -cE 'document|fetch|localStorage'` = 0) ; suite complète `npm test` → 40/40
 - [x] M03.T5 · simulateur de concurrence (2 appareils, hors ligne, reconnexion) — cible: 10 000 opérations, 0 divergence — preuve: `npm test -- concurrence` → 1/1 ; sur la même graine, 2381 reconnexions désordonnées, 340 conflits tranchés sans dialogue, 20 points de calme sans écart entre A, B et le serveur, point fixe atteint à la fin (une reconnexion de plus ne change plus rien) ; suite complète `npm test` → 41/41 ; `test/concurrence.test.js`, appuyé uniquement sur `mergeDeck` (`src/fusion.js`, M03.T4), aucune règle métier réécrite
 - [x] M03.T6 · bascule des lectures sur les nouvelles tables — cible: temps de `pull()` < 800 ms pour 5 000 cartes — preuve: mesure journalisée — `pull()` lit désormais `cards` (M03.T1) par un `select` aliasé (`f:front`, `S:stability`...) qui rend au client les mêmes clés courtes qu'avant, sans conversion ; `decks` ne demande plus sa colonne `cards` (le JSONB reste écrit, M03.T3, en observation jusqu'au 2026-09-25, mais n'est plus lu ici). En vérifiant, trouvé un vrai bug avant toute mesure : PostgREST plafonne toute lecture à `db-max-rows` (1000 sur ce projet) et tronque au-delà **sans erreur** — un compte à plus de 1000 cartes aurait silencieusement perdu les suivantes. Corrigé par pagination (`apiPage`/`apiAll`, `src/app.js`) : première page avec `Range`+`Prefer: count=exact`, total lu dans `Content-Range`, pages suivantes en parallèle. Mesure : 5 000 cartes de test injectées sur `eleve@folio.app` (paquet temporaire, JSONB et `cards` mirroirs pour ne pas fausser l'audit M03.T3), 8 appels réels à `/rest/v1` (authentification comprise, comme fait l'app) : 468–597 ms, moyenne hors 1re connexion 483 ms — sous la cible de 800 ms. Nettoyage vérifié après coup : `decks` 32→32, `cards` 974→974. `npm run check` propre (41/41 tests, build ok) ; `get_advisors` (sécurité + performance) sans nouveau signalement.
-- [ ] M03.T7 · retrait du champ `cards` JSONB — preuve: migration + `npm test` — **différé au 2026-09-25** : attend la fin de l'observation de M03.T3 (voir BLOQUÉ en tête de fichier), pas de blocage du reste du projet d'ici là
+- [~] M03.T7 · retrait du champ `cards` JSONB — preuve: migration + `npm test` — **différé au 2026-09-25** : attend la fin de l'observation de M03.T3 (voir BLOQUÉ en tête de fichier), pas de blocage du reste du projet d'ici là
 
 ## M04 · Intégrité de la bibliothèque [P0] 0/6
 - [ ] M04.T1 · invariants de carte (S>0, 1≤D≤10, échéance future, état cohérent) — cible: 12 invariants — preuve: `npm test -- invariants`
