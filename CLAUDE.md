@@ -92,6 +92,7 @@ l'air de marcher ».
 ```sh
 npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
+npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build, comme la CI
 grep -n -- "---------- " src/app.js  # table des matières de app.js
 supabase db diff / supabase migration new <nom>   # si la CLI est installée

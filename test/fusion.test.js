@@ -65,6 +65,23 @@ describe('une carte (mergeCard)', () => {
     expect(card.n).toBe(2);
     expect(conflicts).toEqual([]);
   });
+
+  it('un champ inconnu (ni contenu ni mémoire) se fusionne comme un simple scalaire', () => {
+    const b = { ...carte('c1'), ...etat(), tag: 'grammaire' };
+    const mine = { ...b, tag: 'vocabulaire' };                     // changé ici seulement
+    const { card, conflicts } = mergeCard(b, mine, b);
+    expect(card.tag).toBe('vocabulaire');
+    expect(conflicts).toEqual([]);
+  });
+
+  it('un champ inconnu changé des deux côtés autrement est signalé en conflit', () => {
+    const b = { ...carte('c1'), ...etat(), tag: 'grammaire' };
+    const mine = { ...b, tag: 'vocabulaire' };
+    const theirs = { ...b, tag: 'oral' };
+    const { card, conflicts } = mergeCard(b, mine, theirs);
+    expect(card.tag).toBe('oral');            // règle fixe : la distante gagne
+    expect(conflicts).toContain('tag');
+  });
 });
 
 describe('le tableau de cartes (mergeCards)', () => {

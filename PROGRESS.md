@@ -16,22 +16,20 @@
 
 ## ÉTAT
 ```
-CURSEUR   M01.T5 (couverture du noyau) — ordre P0 décidé le 2026-09-18, voir ORDRE
+CURSEUR   M06.T3 (découpe d'app.js) — M01 fini, ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      18 / 148
-DERNIER   2026-09-18 · M01.T4 : parseur de cartes (collage, Quizlet, Anki texte
-          brut, CSV/TSV, JSON) extrait d'app.js vers `src/parseur.js`, pur —
-          `npm test -- parseur` → 54/54 (25 cas de robustesse dédiés, 0 crash) ;
-          suite complète `npm test` → 122/122 ; `npm run build` ok. Vérifié aussi
-          dans un vrai navigateur (Playwright MCP, 390 px, compte `eleve@folio.app`) :
-          collage d'un texte `=` dans l'écran « Nouveau livre » → 3 cartes
-          reconnues dans l'aperçu, « Ajouter » les range, 0 erreur console
-          nouvelle. Au passage, le `catch (e) {}` muet du JSON invalide a reçu
-          son commentaire (règle 6) au lieu de rester silencieux.
-          MCP playwright reconnecté (config user cassée : commande `npx` sans
-          PATH résolvable dans ce processus → basculée sur le chemin absolu
-          `/opt/homebrew/bin/npx` + PATH explicite dans l'entrée `env`,
-          `~/.claude.json`) ; chromium installé (`npx playwright install chromium`).
+FAIT      19 / 148
+DERNIER   2026-09-18 · M01.T5 : couverture du noyau (fsrs.js, fusion.js, file.js,
+          parseur.js) mesurée avec `@vitest/coverage-v8` (devDependency ajoutée) —
+          `npx vitest run --coverage` → 100 % lignes (327/327), 98,8 % instructions,
+          100 % fonctions sur les 4 modules purs (cible : ≥ 90 % lignes). Le seul
+          vrai trou trouvé était réel : FSRS-7 (34 paramètres, `f7*`) n'était
+          exercé par aucun test — code mort en pratique (Anki et donc l'app
+          n'utilisent que W6), mais dans le noyau et jamais vérifié ; désormais
+          couvert par les mêmes propriétés que FSRS-6 dans test/fsrs.test.js.
+          `mergeCard` avait aussi un angle mort sur les champs inconnus (ni
+          contenu ni mémoire) : ajouté à test/fusion.test.js. Suite complète
+          `npm test` → 134/134 ; `npm run build` ok. M01 est fini (5/5).
 ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 → M13 → M12
           (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
           intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
@@ -54,13 +52,13 @@ But de phase : **zéro perte de données démontrée**, zéro erreur console sur
 parcours principaux, et une app vendable à un particulier.
 Sortie de phase : les 13 missions P0 à 100 %.
 
-## M01 · Noyau testable [P0] 4/5
+## M01 · Noyau testable [P0] 5/5 ✅
 But : toutes les règles métier dans du code pur, testé, sans DOM ni réseau.
 - [x] M01.T1 · extraire le moteur FSRS dans `src/core/` — cible: 0 accès DOM/réseau — preuve: `grep -cE 'document|fetch|localStorage' src/fsrs.js` = 0
 - [x] M01.T2 · tests du moteur — cible: ≥ 14 tests, ordre des 4 boutons garanti — preuve: `npm test`
 - [x] M01.T3 · extraire la file de révision (sélection, mélange, quotas) — cible: fonction pure, 20 tests — preuve: `npm test -- file` → 27/27 (`grep -cE 'document|fetch|localStorage' src/file.js` = 0)
 - [x] M01.T4 · extraire le parseur de cartes (collage, Quizlet, CSV) — cible: 25 cas, 0 crash sur entrée malformée — preuve: `npm test -- parseur` → 54/54 (dont 25 cas malformés dédiés) ; `grep -cE 'document|fetch|localStorage' src/parseur.js` = 0 ; vérifié aussi dans le navigateur (Playwright)
-- [ ] M01.T5 · couverture du noyau — cible: ≥ 90 % lignes sur `src/core/` — preuve: `npx vitest run --coverage`
+- [x] M01.T5 · couverture du noyau — cible: ≥ 90 % lignes sur `src/core/` — preuve: `npx vitest run --coverage` → 100 % lignes (327/327) sur fsrs.js/fusion.js/file.js/parseur.js
 
 ## M02 · Écritures qui ne se perdent jamais [P0] 4/4 ✅
 - [x] M02.T1 · file d'attente durable pour révisions et séances — preuve: `grep -c enqueue src/app.js` ≥ 3

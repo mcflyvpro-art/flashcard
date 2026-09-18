@@ -2,7 +2,8 @@
    testées ici ne sont pas des détails d'affichage : ce sont les promesses
    qu'un élève constate à l'écran, et qu'un bug rend absurdes. */
 import { describe, it, expect } from 'vitest';
-import { W6, DAY, fsrsPlan, fsrsStates, fsrsR, fsrsIvl, fsrsInit } from '../src/fsrs.js';
+import { W6, W7, DAY, fsrsPlan, fsrsStates, fsrsR, fsrsIvl, fsrsInit, isV7,
+         f7bisect, f7curve } from '../src/fsrs.js';
 
 const CFG = { w: W6, dr: 0.9, maxIvl: 36500 };
 const NOW = Date.UTC(2026, 8, 17, 9, 0, 0);
@@ -152,5 +153,101 @@ describe('conformité au moteur d’Anki', () => {
   it('viser une rétention plus haute rapproche l’échéance', () => {
     const m = { S: 50, D: 5, F: 50 };
     expect(fsrsIvl(W6, m, 0.95)).toBeLessThan(fsrsIvl(W6, m, 0.85));
+  });
+});
+
+/* FSRS-7 (34 paramètres, model_v7.rs) n'est branché nulle part dans
+   l'app aujourd'hui — Anki, et donc W6, reste la seule version en usage
+   (voir le bandeau de src/fsrs.js). Le portage reste néanmoins dans le
+   noyau, sélectionné par `isV7` sur la seule longueur de `w` : mêmes
+   propriétés que FSRS-6, vérifiées ici pour qu'il ne se dégrade pas en
+   silence si l'amont le publie un jour. */
+describe('FSRS-7 (34 paramètres)', () => {
+  const CFG7 = { w: W7, dr: 0.9, maxIvl: 36500 };
+
+  it('sélectionné par la longueur de w, pas par un réglage explicite', () => {
+    expect(isV7(W7)).toBe(true);
+    expect(isV7(W6)).toBe(false);
+  });
+
+  it('une note plus haute ne ramène jamais la fiche plus tôt', () => {
+    const fautes = [];
+    for (const c of fiches()) {
+      const s = fsrsStates(c, NOW, CFG7);
+      for (let g = 1; g < 4; g++) {
+        if (s[g].d < s[g - 1].d) fautes.push(c.id);
+      }
+    }
+    expect(fautes).toEqual([]);
+  });
+
+  it('un intervalle de révision vaut au moins un jour et jamais plus que le plafond', () => {
+    const cfg = { ...CFG7, maxIvl: 180 };
+    for (const c of fiches()) {
+      for (const s of fsrsStates(c, NOW, cfg)) {
+        if (s.st !== 2) continue;
+        expect(s.ivl).toBeGreaterThanOrEqual(1);
+        expect(s.ivl).toBeLessThanOrEqual(180);
+      }
+    }
+  });
+
+  it('l’échéance est toujours dans le futur, et la mémoire reste dans les bornes du modèle', () => {
+    for (const c of fiches()) {
+      for (const s of fsrsStates(c, NOW, CFG7)) {
+        expect(s.d).toBeGreaterThan(NOW);
+        expect(s.S).toBeGreaterThan(0);
+        expect(Number.isFinite(s.S)).toBe(true);
+        expect(s.F).toBeGreaterThan(0);
+        expect(Number.isFinite(s.F)).toBe(true);
+        expect(s.D).toBeGreaterThanOrEqual(1);
+        expect(s.D).toBeLessThanOrEqual(10);
+      }
+    }
+  });
+
+  it('deux appels sur la même fiche donnent le même résultat, sans la modifier', () => {
+    const c = { id: 'x', S: 10, D: 5, F: 8, st: 2, i: 10, n: 4, lr: NOW - 10 * DAY };
+    const copie = JSON.parse(JSON.stringify(c));
+    expect(fsrsStates(c, NOW, CFG7).map(s => s.d))
+      .toEqual(fsrsStates(c, NOW, CFG7).map(s => s.d));
+    expect(c).toEqual(copie);
+  });
+
+  it('une fiche neuve notée « facile » sort de l’apprentissage', () => {
+    const s = fsrsStates({ id: 'n' }, NOW, CFG7);
+    expect(s[3].st).toBe(2);
+    expect(s[3].ivl).toBeGreaterThanOrEqual(1);
+  });
+
+  it('« encore » sur une fiche sue la fait retomber en rechute, pas à zéro', () => {
+    const c = { id: 'm', S: 100, D: 5, F: 80, st: 2, i: 90, n: 12, lr: NOW - 90 * DAY };
+    const s = fsrsStates(c, NOW, CFG7);
+    expect(s[0].st).toBe(3);
+    expect(s[0].S).toBeLessThan(c.S);
+    expect(s[0].S).toBeGreaterThan(0);
+  });
+
+  it('la courbe à deux traces part de 1 et décroît', () => {
+    const m = { S: 10, D: 5, F: 8 };
+    expect(f7curve(W7, 0, m)).toBeCloseTo(1, 4);
+    let av = 1;
+    for (const t of [1, 2, 5, 10, 20, 50, 200]) {
+      const r = f7curve(W7, t, m);
+      expect(r).toBeLessThan(av);
+      av = r;
+    }
+  });
+
+  it('à la rétention visée, la courbe retombe sur la rétention demandée', () => {
+    const m = fsrsInit(W7, 3);
+    const t = fsrsIvl(W7, m, 0.9);
+    expect(f7curve(W7, t, m)).toBeCloseTo(0.9, 2);
+  });
+
+  it('f7bisect retrouve seul le même intervalle que la résolution par défaut (repli direct)', () => {
+    const m = { S: 20, D: 5, F: 15 };
+    const t = f7bisect(W7, m, 0.9);
+    expect(f7curve(W7, t, m)).toBeCloseTo(0.9, 2);
   });
 });
