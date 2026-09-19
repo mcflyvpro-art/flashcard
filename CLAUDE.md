@@ -83,6 +83,19 @@ l'air de marcher ».
   - Edge Function unique : `supabase/functions/ai/index.ts` (Anthropic, quotas dans `ai_usage`).
 - **Schéma** : uniquement par migrations dans `supabase/migrations/` (horodatage `YYYYMMDDHHMMSS_nom_en_francais.sql`). Jamais de changement de schéma à la main dans le tableau de bord.
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
+- **Hébergement : deux cibles, un seul build.** Vercel est l'hébergement réel
+  (domaine racine). GitHub Pages (`.github/workflows/pages.yml`, indépendant
+  du contrôle qualité `ci.yml` — un avertissement de lint n'empêche pas de
+  voir l'app tourner) sert à tester depuis GitHub, à l'URL
+  `https://mcflyvpro-art.github.io/flashcard/` — un dépôt de projet, donc
+  sous un sous-dossier, pas à la racine du domaine comme Vercel. `vite.config.js`
+  pose le bon `base` (`/flashcard/` seulement quand la variable d'environnement
+  `GITHUB_PAGES=true`, posée uniquement par ce workflow) et le propage au
+  service worker (`src/sw.js`, marqueur `__BASE__`) et à l'enregistrement
+  du service worker (`import.meta.env.BASE_URL` dans `onboarding.js`) — ne
+  jamais réintroduire un chemin `/xxx` codé en dur dans ces deux endroits.
+  Réglage à faire une fois, à la main, dans le dépôt GitHub : Settings →
+  Pages → Source → **GitHub Actions** (pas « Deploy from a branch »).
 
 ## Règles non négociables
 

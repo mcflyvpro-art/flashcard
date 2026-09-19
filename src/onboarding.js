@@ -716,7 +716,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) flus
 /* En développement, pas de service worker : il servirait l'ancien code
    depuis son cache à chaque rechargement. */
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(() => {});
   let reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!reloaded) { reloaded = true; location.reload(); }

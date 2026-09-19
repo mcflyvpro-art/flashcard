@@ -7,6 +7,7 @@
    téléphones gardaient l'ancienne app. Il se calcule maintenant sur le
    contenu : un fichier change, le cache change. */
 const C = 'folio-__BUILD__';
+const BASE = '__BASE__';
 const SHELL = __SHELL__;
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -23,6 +24,6 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(req)
       .then(r => { const c = r.clone(); caches.open(C).then(x => x.put(req, c)); return r; })
-      .catch(() => caches.match(req).then(hit => hit || caches.match('/index.html')))
+      .catch(() => caches.match(req).then(hit => hit || caches.match(BASE + 'index.html')))
   );
 });
