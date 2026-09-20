@@ -9,7 +9,7 @@ import {
   subjEdit, subjName, view, workOpen
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
-import { compDonner, lireComp } from './bilan-devoirs.js';
+import { compDonner, lireComp, profCartesDeDevoir } from './bilan-devoirs.js';
 import { joinGroup, leaveGroup, makeGroup } from '../core/bilan-devoirs.js';
 import {
   REC, enc, pickFile, recStart, recStop, upErr

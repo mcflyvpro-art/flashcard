@@ -18,7 +18,7 @@ import { BRANGE } from './ecran-groupe.js';
 import {
   auJour, calendrier, dansJours, etatEleve, iso, jourFr, pcClass
 } from './etablissement.js';
-import { profCartesPull, profDo } from '../core/etablissement.js';
+import { profAssignmentCartes, profCartesPull, profDo } from '../core/etablissement.js';
 import { toast } from './import-cartes.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { timeAgo } from './reglages-corbeille.js';
@@ -183,15 +183,35 @@ const carteNue = c => {
 };
 
 function compCartes() {
-  const k = prof.comp; if (!k || !k.livre) return [];
-  const d = deck(k.livre);
-  return d ? d.cards.map(carteNue).filter(c => c.f || c.fi || c.fa) : [];
+  const k = prof.comp; if (!k) return [];
+  /* Deux origines possibles : un livre vivant (k.livre, relu à chaque
+     repeinture — modifier le livre entre-temps se reflète tout seul), ou
+     un devoir déjà donné (k.cartes, figées : le livre d'origine a pu
+     changer ou disparaître depuis, voir profCartesDeDevoir). */
+  if (k.livre) { const d = deck(k.livre); return d ? d.cards.map(carteNue).filter(c => c.f || c.fi || c.fa) : []; }
+  return k.cartes || [];
 }
 
 /* Ouvrir la feuille « à qui, pour quand » sur un livre donné. */
 export function donnerLivre(d) {
   prof.comp = compNeuf({ livre: d.id, nom: d.name,
     matiere: d.subject ? (subj(d.subject) || {}).name || '' : (prof.comp || {}).matiere || '' });
+  openMenu('compo');
+}
+
+/* « Redonner un devoir » : repartir des cartes telles qu'elles avaient été
+   données, pas du livre d'aujourd'hui — il a pu changer de nom, de cartes,
+   ou être supprimé depuis. `profAssignmentCartes` relit l'instantané pris
+   au moment du « Donner » (`assignments.cards`), pas les statistiques
+   d'erreur de `prof.cartes`/`profCartesPull` (autre chose, voir plus haut). */
+export async function profCartesDeDevoir(d) {
+  let brutes;
+  try { brutes = await profAssignmentCartes(d.id); }
+  catch (e) { return toast(I.x, 'Impossible pour l’instant'); }
+  const cartes = brutes.map(c => Array.isArray(c) ? { f: plain(c[0]), b: plain(c[1]) } : carteNue(c))
+    .filter(c => c.f || c.fi || c.fa);
+  if (!cartes.length) return toast(I.x, 'Ce devoir n’a plus aucune carte');
+  prof.comp = compNeuf({ nom: d.nom, matiere: d.matiere, cartes });
   openMenu('compo');
 }
 

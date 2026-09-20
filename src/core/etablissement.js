@@ -43,6 +43,22 @@ export async function profCartesPull(aid) {
   if (menu) paintMenu();
 }
 
+/* Les cartes telles qu'envoyées avec le devoir — `assignments.cards`, un
+   instantané pris au moment du « Donner » (voir compDonner dans
+   src/ui/bilan-devoirs.js). Rien à voir avec `prof_cartes` ci-dessus, qui
+   ne renvoie que des statistiques d'erreur (recto/verso/ratees/vues) pour
+   le panneau « Ce qui bloque » : redonner le devoir a besoin du contenu
+   entier, pas de ses statistiques.
+   Passe par une RPC (`prof_assignment_cards`, migration
+   20260920140000) et non par un SELECT PostgREST direct sur `assignments` :
+   la politique `asg_read` n'autorise que l'élève inscrit ou le propriétaire
+   de la classe, pas le professeur de matière qui l'enseigne sans la
+   posséder (`teaches`, via `teachings`) — RLS aurait filtré la ligne en
+   silence pour ce cas-là, sans jamais lever d'erreur. */
+export async function profAssignmentCartes(aid) {
+  return await api('/rest/v1/rpc/prof_assignment_cards', 'POST', { aid }) || [];
+}
+
 /* ---------- écrire ---------- */
 export async function profDo(rpc, args, bon) {
   try {

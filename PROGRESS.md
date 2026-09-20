@@ -18,7 +18,7 @@
 ```
 CURSEUR   M06.T5 (0 variable globale mutable partagée hors src/data/etat.js) — ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      21 / 148
+FAIT      22 / 148
 DERNIER   2026-09-20 · M06.T4 fini : les 8 écrans qui mélangeaient réseau et
           rendu (classement, etablissement, defis, bilan-devoirs,
           ecran-groupe, reglages-corbeille, menus-c, carte-media) sont
@@ -31,16 +31,23 @@ DERNIER   2026-09-20 · M06.T4 fini : les 8 écrans qui mélangeaient réseau et
           déjà des déclarations séparées des fonctions de rendu — même
           méthode et mêmes cycles d'import qu'en M06.T3. Preuve :
           `grep -rc "api(" src/ui/*.js` → 0 partout ; `npm run check` vert
-          (134/134 tests, build ok, lint à 41 problèmes/1 erreur — identique
-          à l'état d'avant, l'erreur restante est M06.T7) ; vérifié au
-          navigateur (Playwright, 390 px) sur les 3 comptes de test — accueil
-          élève, un livre, révision, réglages, journal, corbeille, courrier,
-          ma classe, écran professeur + une classe, admin, modération — 0
-          nouvelle erreur console. En chemin, un vrai bug de connexion
-          trouvé et corrigé (hors périmètre M06, voir commit dédié) :
-          `coeur-sync.js` lisait la session sauvegardée avant la déclaration
-          de la constante qu'elle utilise, l'erreur étant avalée en silence
-          — l'app se croyait déconnectée à chaque démarrage.
+          (134/134 tests, build ok, lint à 41 problèmes/1 erreur — l'erreur
+          restante, `profCartesDeDevoir`, réparée dans la foulée : c'est
+          M06.T7, cochée le même jour). Vérifié au navigateur (Playwright,
+          390 px) sur les 3 comptes de test — accueil élève, un livre,
+          révision, réglages, journal, corbeille, courrier, ma classe,
+          écran professeur + une classe + redonner un devoir, admin,
+          modération — 0 nouvelle erreur console.
+          En chemin, deux choses trouvées et corrigées hors périmètre M06 :
+          1) un vrai bug de connexion (voir commit dédié) — `coeur-sync.js`
+          lisait la session sauvegardée avant la déclaration de la
+          constante qu'elle utilise, l'erreur étant avalée en silence,
+          donc l'app se croyait déconnectée à chaque démarrage ; 2) le
+          déploiement GitHub Pages échouait sur chaque push depuis sa
+          création (`vite build` refuse de partir sans
+          `VITE_SUPABASE_URL`) faute des variables d'environnement du
+          workflow posées côté GitHub — voir CLAUDE.md, réglage à faire à
+          la main dans Settings → Actions → Variables.
 ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 → M13 → M12
           (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
           intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
@@ -49,7 +56,6 @@ BLOQUÉ    M03.T3 (case) et M03.T7 (retrait JSONB `decks.cards`) : en suspens ju
           2026-09-25, fin des 7 j d'observation (tâche `folio-m03t3-audit-7j`). Alors :
           relire `card_sync_audit`, cocher M03.T3 si 0 écart, puis faire M03.T7. Ne
           bloque pas le reste du projet.
-DETTE     M06.T7 profCartesDeDevoir (CI rouge, volontaire) — dans le lot M06
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.
@@ -107,7 +113,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M05.T5 · sonde externe + page d'état publique — cible: contrôle toutes les 5 min — preuve: URL publique
 - [ ] M05.T6 · alerte si le taux d'erreur dépasse 1 % sur 1 h — preuve: alerte déclenchée en test
 
-## M06 · Qualité du code [P0] 4/8
+## M06 · Qualité du code [P0] 5/8
 - [x] M06.T1 · build Vite + variables d'environnement — preuve: `npm run build`
 - [x] M06.T2 · ESLint au dépôt + CI — preuve: `.github/workflows/ci.yml`
 - [x] M06.T3 · découpe `src/app.js` en modules — cible: **aucun fichier > 800 lignes** (9 795 au départ) — preuve: `awk 'END{print FILENAME, NR}'` sur chaque fichier → le plus gros, `classement.js`, fait 716 lignes.
@@ -163,7 +169,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [x] M06.T4 · séparation core / data / ui — cible: `src/ui/` n'appelle jamais `api()` directement — preuve: `grep -rc "api(" src/ui/*.js` → 0 sur les 17 fichiers ; `npm run check` vert (134/134, build ok, lint identique à avant : 41/1) ; parcours Playwright (390 px, 3 comptes) sans nouvelle erreur console. Détail sur la ligne ÉTAT.
 - [ ] M06.T5 · 0 variable globale mutable partagée hors `src/data/etat.js` — preuve: revue + lint
 - [ ] M06.T6 · ESLint strict (complexité ≤ 15, profondeur ≤ 4) — cible: 0 erreur, 0 avertissement — preuve: `npm run lint`
-- [ ] M06.T7 · réparer « Redonner un devoir » (`profCartesDeDevoir`) — cible: CI verte — preuve: `npm run lint` + test bout-en-bout
+- [x] M06.T7 · réparer « Redonner un devoir » (`profCartesDeDevoir`) — cible: CI verte — preuve: `npx eslint src/` → 0 erreur (était 1) ; `npm run check` vert ; test bout-en-bout Playwright (compte prof@folio.app, devoir « Anglais · Révisions — 1 ») — 17 cartes préremplies, 1 classe cochée, 0 erreur console. La fonction manquante lisait la mauvaise source (`prof_cartes`, des statistiques d'erreur recto/verso, pas le contenu) ; corrigé pour lire `assignments.cards` via une nouvelle RPC `prof_assignment_cards` (migration `20260920140000`) plutôt qu'un SELECT PostgREST direct — RLS (`asg_read`) n'autorise que l'élève inscrit ou le propriétaire de la classe, pas le professeur de matière qui l'enseigne sans la posséder ; un SELECT direct aurait filtré la ligne en silence pour ce cas, exactement celui du compte de test.
 - [ ] M06.T8 · TypeScript en vérification douce (`checkJs` + JSDoc) sur `src/core/` — cible: 0 erreur `tsc --noEmit` — preuve: la commande
 
 ## M07 · Tests bout-en-bout [P0] 0/7

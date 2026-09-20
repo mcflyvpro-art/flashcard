@@ -123,6 +123,13 @@ l'air de marcher ».
   jamais réintroduire un chemin `/xxx` codé en dur dans ces deux endroits.
   Réglage à faire une fois, à la main, dans le dépôt GitHub : Settings →
   Pages → Source → **GitHub Actions** (pas « Deploy from a branch »).
+  Deuxième réglage, oublié à la création du workflow et qui a fait échouer
+  chaque déploiement Pages en silence jusqu'au 2026-09-20 (`vite build`
+  refuse de partir sans `VITE_SUPABASE_URL`) : `ci.yml` et `pages.yml` lisent
+  `vars.VITE_SUPABASE_URL` / `vars.VITE_SUPABASE_ANON_KEY` — à poser une fois
+  dans Settings → Secrets and variables → Actions → onglet **Variables**
+  (pas Secrets : la clé anon est publique par nature, voir plus haut).
+  Mêmes valeurs que `.env.local`.
 
 ## Règles non négociables
 
