@@ -1,3 +1,4 @@
+// @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I } from '../icones.js';
 import {
   mailbox, menu, pendingGrade, prefs, setPendingGrade, stats, study, view

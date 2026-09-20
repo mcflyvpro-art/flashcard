@@ -206,11 +206,16 @@ async function refreshIfUnauthorized(r) {
   return r.status === 401 && auth && auth.refresh && await refreshToken();
 }
 
+/** @returns {Error & { status: number }} */
+function apiError(message, status) {
+  const e = /** @type {Error & { status: number }} */ (new Error(message));
+  e.status = status;                   // la file d'attente en a besoin
+  return e;
+}
+
 async function throwIfError(r) {
   if (r.ok) return;
-  const e = new Error(await r.text().catch(() => String(r.status)));
-  e.status = r.status;                 // la file d'attente en a besoin
-  throw e;
+  throw apiError(await r.text().catch(() => String(r.status)), r.status);
 }
 
 export async function api(path, method = 'GET', body, extra = {}) {
@@ -236,9 +241,7 @@ const PAGE = 1000;
 
 async function throwIfPageError(r) {
   if (r.ok || r.status === 206) return;
-  const e = new Error(await r.text().catch(() => String(r.status)));
-  e.status = r.status;
-  throw e;
+  throw apiError(await r.text().catch(() => String(r.status)), r.status);
 }
 
 async function apiPage(path, from, to) {

@@ -16,10 +16,33 @@
 
 ## ÉTAT
 ```
-CURSEUR   M06.T8 (TypeScript en vérification douce sur src/core/) — ordre P0 décidé le 2026-09-18, voir ORDRE
+CURSEUR   M04.T1 (invariants de carte) — M06 fini (8/8), ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      24 / 148
-DERNIER   2026-09-20 · M06.T6 fini : `complexity: ['error', 15]` et
+FAIT      25 / 148
+DERNIER   2026-09-20 · M06.T8 fini : `tsconfig.json` (`allowJs`+`checkJs`,
+          `strict: false` — vérification douce, pas de migration en
+          `.ts`), `include` limité à `src/core/`, `src/data/etat.js`,
+          `src/icones.js`, `src/racine.js`. `tsc` suit quand même tout
+          fichier importé même hors `include` (c'est ainsi qu'il résout
+          les types) : sans rien de plus, les 18 écrans de `src/ui/`
+          remontaient ~140 erreurs de DOM non typé (`.dataset`, `.value`
+          sur `Element`...) qui n'intéressent pas cette passe — un
+          `// @ts-nocheck` en première ligne de chacun les tait sans
+          les exclure du programme (leurs exports restent inférés
+          normalement pour le core qui les appelle). Restaient trois
+          vraies bêtises dans `src/core/` : un cast manquant sur
+          `document.getElementById(...).value` (`classement.js`), et
+          `e.status = r.status` posé sur un `Error` nu dans
+          `coeur-sync.js` (factorisé dans un seul `apiError()` typé,
+          utilisé aux deux appels) ; plus une dans `src/parseur.js`,
+          tiré dans le programme par un écran importé (`SEPNAMES` que
+          `sniffSep` déstructure perdait son typage `RegExp` faute
+          d'annotation de tuple). `interactions.js`, déjà à 799 lignes
+          après M06.T6, passe à 800 pile avec sa ligne `@ts-nocheck` —
+          toujours dans la limite, mais sans marge. Preuve : `npm run
+          typecheck` (`tsc --noEmit`) → rien affiché ; `npm run check`
+          vert (134/134, build ok, lint 0 problème).
+          2026-09-20 (plus tôt) · M06.T6 fini : `complexity: ['error', 15]` et
           `max-depth: ['error', 4]` ajoutées à eslint.config.js, en même
           temps que le passage en erreur des règles `no-empty`/
           `no-useless-assignment`/`no-unused-vars` qui étaient encore en
@@ -135,7 +158,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M05.T5 · sonde externe + page d'état publique — cible: contrôle toutes les 5 min — preuve: URL publique
 - [ ] M05.T6 · alerte si le taux d'erreur dépasse 1 % sur 1 h — preuve: alerte déclenchée en test
 
-## M06 · Qualité du code [P0] 7/8
+## M06 · Qualité du code [P0] 8/8
 - [x] M06.T1 · build Vite + variables d'environnement — preuve: `npm run build`
 - [x] M06.T2 · ESLint au dépôt + CI — preuve: `.github/workflows/ci.yml`
 - [x] M06.T3 · découpe `src/app.js` en modules — cible: **aucun fichier > 800 lignes** (9 795 au départ) — preuve: `awk 'END{print FILENAME, NR}'` sur chaque fichier → le plus gros, `classement.js`, fait 716 lignes.
@@ -192,7 +215,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [x] M06.T5 · 0 variable globale mutable partagée hors `src/data/etat.js` — preuve: revue + lint — `grep -rn "^export let \|^let \|^var \|^export var " src/*.js src/core/*.js src/ui/*.js` → tout dans `src/data/etat.js`, rien ailleurs ; une seule vraie exception trouvée, `mediaCache` (un `Map` exporté depuis `src/ui/carte-media.js`, importé et muté par `resetSession()` dans `src/ui/onboarding.js`) — déplacée dans `etat.js` avec son setter (`setMediaCache`), même schéma que les 109 autres. `npm run check` vert ; vérifié au navigateur : une déconnexion (qui vide `mediaCache` via `resetSession`) ne plante pas.
 - [x] M06.T6 · ESLint strict (complexité ≤ 15, profondeur ≤ 4) — cible: 0 erreur, 0 avertissement — preuve: `npm run lint` → 0 problème (`eslint .` sort en code 0). Détail sur la ligne ÉTAT.
 - [x] M06.T7 · réparer « Redonner un devoir » (`profCartesDeDevoir`) — cible: CI verte — preuve: `npx eslint src/` → 0 erreur (était 1) ; `npm run check` vert ; test bout-en-bout Playwright (compte prof@folio.app, devoir « Anglais · Révisions — 1 ») — 17 cartes préremplies, 1 classe cochée, 0 erreur console. La fonction manquante lisait la mauvaise source (`prof_cartes`, des statistiques d'erreur recto/verso, pas le contenu) ; corrigé pour lire `assignments.cards` via une nouvelle RPC `prof_assignment_cards` (migration `20260920140000`) plutôt qu'un SELECT PostgREST direct — RLS (`asg_read`) n'autorise que l'élève inscrit ou le propriétaire de la classe, pas le professeur de matière qui l'enseigne sans la posséder ; un SELECT direct aurait filtré la ligne en silence pour ce cas, exactement celui du compte de test.
-- [ ] M06.T8 · TypeScript en vérification douce (`checkJs` + JSDoc) sur `src/core/` — cible: 0 erreur `tsc --noEmit` — preuve: la commande
+- [x] M06.T8 · TypeScript en vérification douce (`checkJs` + JSDoc) sur `src/core/` — cible: 0 erreur `tsc --noEmit` — preuve: `npm run typecheck` → rien affiché ; `npm run check` vert. Détail sur la ligne ÉTAT.
 
 ## M07 · Tests bout-en-bout [P0] 0/7
 - [ ] M07.T1 · Playwright installé, 1 parcours témoin — preuve: `npx playwright test`

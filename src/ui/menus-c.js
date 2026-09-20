@@ -1,3 +1,4 @@
+// @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
 import {
   asgs, auth, cardEdit, classOf, db, dirty, duels, fnr, friends, gone, groupOf, groups,

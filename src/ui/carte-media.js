@@ -1,3 +1,4 @@
+// @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import {
   DAY, D_MAX, D_MIN, MIN, S_MAX, S_MIN, W6, cl, dayNo, fsrsR, fsrsReplayAll, fsrsStates
 } from '../fsrs.js';

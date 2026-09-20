@@ -55,7 +55,10 @@ l'air de marcher ».
     raccourcis d'ouverture `?go=…` — extrait d'`interactions.js` sur M06.T6,
     qui frôlait la limite de lignes une fois ses tables de dispatch posées),
     `onboarding.js`. Aucun fichier, `core/` ou `ui/`, ne dépasse 800 lignes
-    (le plus gros, `interactions.js`, fait 799 lignes).
+    (le plus gros, `interactions.js`, fait tout juste 800 lignes — la
+    ligne `// @ts-nocheck` posée sur chaque écran par M06.T8, voir plus
+    bas, l'a fait passer de 799 à 800 : la prochaine ligne ajoutée devra
+    en retirer une ailleurs dans ce fichier).
 
     Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
     a d'abord suivi les anciennes sections `/* ---------- nom ---------- */`
@@ -105,6 +108,18 @@ l'air de marcher ».
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes
   - `fsrs.wasm` — crate Rust `fsrs` 6.6.2 compilé (recette : `tools/BUILD-FSRS.md`). Ne jamais réécrire les formules à la main.
+- **Vérification de types, en douceur** (`tsconfig.json`, M06.T8) : `tsc`
+  relit le JS existant (`allowJs` + `checkJs`) sans qu'on ait besoin de
+  migrer quoi que ce soit vers `.ts`, en mode permissif (`strict: false`) —
+  seuls `src/core/`, `src/data/etat.js`, `src/icones.js` et `src/racine.js`
+  sont dans `include`. Chaque écran de `src/ui/` porte en première ligne
+  un `// @ts-nocheck` : sans lui, `tsc` les suivrait quand même (un
+  fichier importé par un fichier vérifié entre dans le programme même
+  hors `include`) et noierait le vrai signal (accès DOM non typés,
+  `.dataset`, `.value`...) sous des centaines d'erreurs qui n'intéressent
+  pas cette passe. Annoter un type qui ne se déduit pas de lui-même se
+  fait en JSDoc (`/** @type {...} */`), jamais en réécrivant le fichier
+  en `.ts`. Preuve : `npm run typecheck`.
 - **Rendu** : état global dans `src/data/etat.js` (voir plus haut), `render()` (dans `src/ui/bibliotheque.js`) reconstruit l'écran depuis `view`. Le démarrage (`boot()`, dans `src/ui/onboarding.js`) est différé d'un micro-tick (`queueMicrotask`) exprès : appelé au fil de l'évaluation des modules, il pouvait tomber sur un module pas encore lié à cause des cycles ci-dessus.
 - **Backend : Supabase** (projet `qqbzefpdeinlynjtarqr`, eu-west-1), appelé en `fetch` brut via `api(path, method, body)` — pas de SDK `supabase-js`.
   - Auth : `signIn` / `signUp` / `refreshToken` (un seul rafraîchissement à la fois — ne pas casser ce verrou).
@@ -176,6 +191,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build, comme la CI
+npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
 supabase db diff / supabase migration new <nom>   # si la CLI est installée
 ```

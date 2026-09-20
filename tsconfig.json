@@ -1,0 +1,22 @@
+{
+  /* Vérification douce (M06.T8) : pas de refonte en TypeScript, juste
+     `tsc` qui relit le JS existant à la recherche des vraies bêtises
+     (mauvais nombre d'arguments, propriété qui n'existe pas...) sans
+     exiger d'annoter tout ce qui n'a pas besoin de l'être. Les fichiers
+     sans JSDoc restent en `any` implicite et ne remontent donc rien :
+     seul `src/core/`, seul dossier annoté, profite d'un vrai contrôle. */
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["vite/client"],
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true
+  },
+  "include": ["src/core/**/*.js", "src/data/etat.js", "src/icones.js", "src/racine.js"]
+}

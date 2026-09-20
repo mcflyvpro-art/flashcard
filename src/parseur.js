@@ -18,6 +18,7 @@
 export const SEPS = [/\s*\t+\s*/, /\s*::\s*/, /\s*=>?\s*/, /\s*\|\s*/, /\s+[–—]\s+/, /\s+-\s+/, /\s*:\s*/, /\s*;\s*/, /\s*,\s*/];
 export const BULLET = /^\s*(?:[-*•·–—]|\d+[.)])\s+/;
 
+/** @type {[string, RegExp, RegExp][]} */
 export const SEPNAMES = [
   ['tabulation', /\t+/, /\s*\t+\s*/],
   ['«  :: »', /::/, /\s*::\s*/],

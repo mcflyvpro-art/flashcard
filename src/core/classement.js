@@ -66,7 +66,8 @@ export async function unblockUser(id) {
 }
 
 export async function sendReport() {
-  const r = reportOn, note = (document.getElementById('rnote') || {}).value || '';
+  const r = reportOn;
+  const note = (/** @type {{ value?: string }} */ (document.getElementById('rnote') || {})).value || '';
   if (!r || !reportWhy) return;
   closeMenu();
   try {

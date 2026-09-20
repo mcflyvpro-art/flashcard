@@ -1,3 +1,4 @@
+// @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
 import { I } from '../icones.js';
 import { shuffle } from '../file.js';
