@@ -89,10 +89,10 @@ l'air de marcher ».
     imports — et toute constante lue par une fonction doit être déclarée
     avant le premier appel à cette fonction dans le fichier, pas seulement
     avant son usage syntaxique.
-  - `src/data/etat.js` — tout l'état mutable de l'app (109 variables : `db`,
-    `view`, `study`, `animate`...), une liaison vive ES (`export let`) par
-    variable et un « setter » générique par variable pour la réaffectation
-    (`setDb`, `setView`...) — lire ses champs reste direct (`db.decks.push`),
+  - `src/data/etat.js` — tout l'état mutable de l'app (110 variables : `db`,
+    `view`, `study`, `animate`, `mediaCache`...), une liaison vive ES
+    (`export let`) par variable et un « setter » générique par variable pour
+    la réaffectation (`setDb`, `setView`...) — lire ses champs reste direct (`db.decks.push`),
     seule une réaffectation complète passe par le setter (M06.T3/M06.T4)
   - `src/fsrs.js` — le moteur, pur et testé (`test/fsrs.test.js`)
   - `src/fusion.js` — fusion à trois versions d'un paquet (M03.T4), pur et testé (`test/fusion.test.js`, `test/concurrence.test.js`)

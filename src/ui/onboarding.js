@@ -2,7 +2,7 @@ import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import {
   DECKPAGE, DEFPREFS, asks, auth, bip, board, comp, db, demo, duels, filter, friends,
-  groupTab, groups, lib, mates, me, menu, myRole, peek, prefs, quiz, scope, setAccOpen,
+  groupTab, groups, lib, mates, me, mediaCache, menu, myRole, peek, prefs, quiz, scope, setAccOpen,
   setAccounts, setAddQ, setAdm, setAnimate, setAsgs, setAsks, setBip, setBlocks, setBoard,
   setCardEdit, setClassOf, setClasses, setComp, setConflicts, setDb, setDeckOpen, setDeckQ,
   setDeckShow, setDemo, setDirty, setDuelRun, setDuels, setFilter, setFindQ, setFriends,
@@ -15,7 +15,7 @@ import {
   study, tour, tourPoll, tourSave, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
-import { dec, fsrsMigrate, mediaCache } from './carte-media.js';
+import { dec, fsrsMigrate } from './carte-media.js';
 import { accueil } from '../core/classement.js';
 import { cacheKey, esc, flush, load, plur, pull, refreshToken, saveAuth, setOnline } from '../core/coeur-sync.js';
 import { selOff } from './connexion.js';

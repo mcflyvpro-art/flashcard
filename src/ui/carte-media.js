@@ -2,7 +2,7 @@ import {
   DAY, D_MAX, D_MIN, MIN, S_MAX, S_MIN, W6, cl, dayNo, fsrsR, fsrsReplayAll, fsrsStates
 } from '../fsrs.js';
 import {
-  auth, db, dirty, player, prefs, recChunks, recorder,
+  auth, db, dirty, mediaCache, player, prefs, recChunks, recorder,
   setPlayer, setRecChunks, setRecorder, stats
 } from '../data/etat.js';
 import {
@@ -159,8 +159,6 @@ const mediaPath = r => {
    donne à la balise une adresse locale. Un seul mécanisme, sans durée de
    validité à surveiller — et le navigateur garde l'objet tant que
    l'onglet vit. */
-export const mediaCache = new Map();
-
 async function mediaUrl(path) {
   const hit = mediaCache.get(path);
   if (hit) return hit;

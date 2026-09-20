@@ -135,6 +135,11 @@ export let recorder = null, recChunks = [];
 
 export let player = null;
 
+/* Les URL d'objet créées pour afficher l'image ou le son d'une carte —
+   `URL.createObjectURL`, coûteuses à refaire, gardées tant que le compte
+   ne change pas (voir resetSession, qui les révoque et vide la table). */
+export let mediaCache = new Map();
+
 /* Un passage complet : on relit l'historique, on en tire les paramètres,
    puis on refait la mémoire de chaque fiche avec eux. Anki appelle ça
    « optimiser » puis « recalculer la mémoire » ; ici c'est un seul geste. */
@@ -398,6 +403,7 @@ export const setFlushing = v => flushing = v;
 export const setRecorder = v => recorder = v;
 export const setRecChunks = v => recChunks = v;
 export const setPlayer = v => player = v;
+export const setMediaCache = v => mediaCache = v;
 export const setOptRunning = v => optRunning = v;
 export const setFnr = v => fnr = v;
 export const setActx = v => actx = v;
