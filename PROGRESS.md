@@ -16,10 +16,30 @@
 
 ## ÉTAT
 ```
-CURSEUR   M04.T1 (invariants de carte) — M06 fini (8/8), ordre P0 décidé le 2026-09-18, voir ORDRE
+CURSEUR   M04.T2 (écran « Vérifier ma bibliothèque ») — M06 fini (8/8), ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      25 / 148
-DERNIER   2026-09-20 · M06.T8 fini : `tsconfig.json` (`allowJs`+`checkJs`,
+FAIT      26 / 148
+DERNIER   2026-09-20 · M04.T1 fini : `src/invariants.js`, pur et testé,
+          12 règles (`CARD_INVARIANTS`) que doit respecter une carte —
+          identifiant, recto, verso, état FSRS (`st` ∈ {1,2,3} ou absent),
+          stabilité/difficulté/seconde-trace dans les bornes du moteur
+          (`S_MIN..S_MAX`, `D_MIN..D_MAX`, importées de `src/fsrs.js`,
+          jamais redéfinies à côté), cohérence révisée↔mémoire dans les
+          deux sens (une fiche `n>0` doit porter S/D — le cas que
+          `fsrsSeed()` migre justement — et une fiche `n=0` ne doit en
+          porter aucune trace), échéance qui ne précède jamais la
+          dernière révision (mais qui peut être dans le passé : en
+          retard n'est pas invalide), palier d'apprentissage (`sp`)
+          présent seulement pendant apprentissage/rechute, et compteurs
+          révisions/rechutes entiers positifs avec rechutes ≤ révisions.
+          `null` et `undefined` comptent pareil pour « absent », comme
+          dans `fsrsPlan`. `cardIssues(c)` rend la liste des codes
+          violés — base pour l'écran de réparation (M04.T2) et la
+          contrainte CHECK en base (M04.T3). Preuve : `npm test --
+          invariants` → 27/27 (12 règles, un cas sain et un cas violé
+          chacune au minimum) ; `npm run check` vert (161/161 tests,
+          lint et build inchangés).
+          2026-09-20 (plus tôt) · M06.T8 fini : `tsconfig.json` (`allowJs`+`checkJs`,
           `strict: false` — vérification douce, pas de migration en
           `.ts`), `include` limité à `src/core/`, `src/data/etat.js`,
           `src/icones.js`, `src/racine.js`. `tsc` suit quand même tout
@@ -141,8 +161,8 @@ Cible globale : **0 perte et 0 conflit visible sur 10 000 opérations concurrent
 - [x] M03.T6 · bascule des lectures sur les nouvelles tables — cible: temps de `pull()` < 800 ms pour 5 000 cartes — preuve: mesure journalisée — `pull()` lit désormais `cards` (M03.T1) par un `select` aliasé (`f:front`, `S:stability`...) qui rend au client les mêmes clés courtes qu'avant, sans conversion ; `decks` ne demande plus sa colonne `cards` (le JSONB reste écrit, M03.T3, en observation jusqu'au 2026-09-25, mais n'est plus lu ici). En vérifiant, trouvé un vrai bug avant toute mesure : PostgREST plafonne toute lecture à `db-max-rows` (1000 sur ce projet) et tronque au-delà **sans erreur** — un compte à plus de 1000 cartes aurait silencieusement perdu les suivantes. Corrigé par pagination (`apiPage`/`apiAll`, `src/app.js`) : première page avec `Range`+`Prefer: count=exact`, total lu dans `Content-Range`, pages suivantes en parallèle. Mesure : 5 000 cartes de test injectées sur `eleve@folio.app` (paquet temporaire, JSONB et `cards` mirroirs pour ne pas fausser l'audit M03.T3), 8 appels réels à `/rest/v1` (authentification comprise, comme fait l'app) : 468–597 ms, moyenne hors 1re connexion 483 ms — sous la cible de 800 ms. Nettoyage vérifié après coup : `decks` 32→32, `cards` 974→974. `npm run check` propre (41/41 tests, build ok) ; `get_advisors` (sécurité + performance) sans nouveau signalement.
 - [~] M03.T7 · retrait du champ `cards` JSONB — preuve: migration + `npm test` — **différé au 2026-09-25** : attend la fin de l'observation de M03.T3 (voir BLOQUÉ en tête de fichier), pas de blocage du reste du projet d'ici là
 
-## M04 · Intégrité de la bibliothèque [P0] 0/6
-- [ ] M04.T1 · invariants de carte (S>0, 1≤D≤10, échéance future, état cohérent) — cible: 12 invariants — preuve: `npm test -- invariants`
+## M04 · Intégrité de la bibliothèque [P0] 1/6
+- [x] M04.T1 · invariants de carte (S>0, 1≤D≤10, échéance future, état cohérent) — cible: 12 invariants — preuve: `npm test -- invariants` → 27/27. Détail sur la ligne ÉTAT.
 - [ ] M04.T2 · écran « Vérifier ma bibliothèque » qui détecte et répare — cible: répare 8 familles d'anomalies — preuve: test sur base corrompue fabriquée
 - [ ] M04.T3 · contrainte en base sur l'état de carte (CHECK) — cible: 0 ligne invalide acceptable — preuve: insert refusé
 - [ ] M04.T4 · déduplication des cartes (même recto/verso) — cible: 0 doublon après passage — preuve: `npm test -- doublons`

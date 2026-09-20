@@ -104,6 +104,7 @@ l'air de marcher ».
   - `src/fusion.js` — fusion à trois versions d'un paquet (M03.T4), pur et testé (`test/fusion.test.js`, `test/concurrence.test.js`)
   - `src/file.js` — construction de la file de révision : sélection, quota de cartes neuves, ordre (M01.T3), pur et testé (`test/file.test.js`)
   - `src/parseur.js` — parseur de cartes : collage, Quizlet, Anki texte brut, CSV/TSV, JSON (M01.T4), pur et testé (`test/parseur.test.js`)
+  - `src/invariants.js` — les 12 invariants qu'une carte doit toujours respecter (S>0, 1≤D≤10, cohérence de l'état FSRS...), pour l'écran « Vérifier ma bibliothèque » à venir (M04.T2) et la contrainte CHECK en base (M04.T3) — pur et testé (`test/invariants.test.js`)
   - `src/app.css` — ~2 200 lignes
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes
