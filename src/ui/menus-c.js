@@ -1,41 +1,48 @@
-import { I, svg } from './icones.js';
+import { I, svg } from '../icones.js';
 import {
   asgs, auth, cardEdit, classOf, db, dirty, duels, fnr, friends, gone, groupOf, groups,
-  leaving, lib, mailOpen, mailbox, mateOpen, mateProf, mateProfSeq, mates, me, memberOpen,
+  leaving, lib, mailOpen, mailbox, mateOpen, mateProf, mates, memberOpen,
   menu, prefs, previewOf, prof, quiz, recKey, recorder, ref, reportOn, sel, sendTo,
-  setAnimate, setAsgs, setDeckOpen, setDeckQ, setLeaving, setMateProf, setMateProfSeq,
+  setAnimate, setAsgs, setDeckOpen, setDeckQ, setLeaving,
   setPendingGrade, setQuiz, setRecKey, setReorder, setReportWhy, setSel, setSendMsg,
   setSendTo, setSplitSize, setStudy, setSubjColor, setView, splitSize, study, subjColor,
   subjEdit, subjName, view, workOpen
-} from './data/etat.js';
+} from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
+import { compDonner, lireComp } from './bilan-devoirs.js';
+import { joinGroup, leaveGroup, makeGroup } from '../core/bilan-devoirs.js';
 import {
-  compDonner, joinGroup, leaveGroup, lireComp, makeGroup
-} from './bilan-devoirs.js';
-import {
-  REC, enc, pickFile, recStart, recStop, upErr, upload
+  REC, enc, pickFile, recStart, recStop, upErr
 } from './carte-media.js';
+import { upload } from '../core/carte-media.js';
+import { openReport } from './classement.js';
 import {
-  blockUser, dropMember, giveWork, joinClass, lireClass, lireNew, makeClass, openReport,
-  refDo, refPeople, sendReport, setRole, takeWork, unblockUser
-} from './classement.js';
+  blockUser, dropMember, giveWork, joinClass, makeClass, refDo, refPeople, sendReport,
+  setRole, takeWork, unblockUser
+} from '../core/classement.js';
+import { lireClass, lireNew } from './classement.js';
 import {
-  api, deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
+  deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
   setMeta, slugify, solveConflict
-} from './coeur-sync.js';
+} from '../core/coeur-sync.js';
 import { PWMIN } from './connexion.js';
-import { duelClasse, duelDrop, duelMake, duelStart } from './defis.js';
-import { profDo } from './etablissement.js';
+import { duelStart } from './defis.js';
+import { duelClasse, duelDrop, duelMake } from '../core/defis.js';
+import { profDo } from '../core/etablissement.js';
 import {
   cloneDeck, fnrApply, mergeDecks, savePrefs, splitDeck, spreadBacklog, toast
 } from './import-cartes.js';
 import { feuilleTap } from './interactions.js';
 import { closeMenu, mountMenu, openMenu, paintMenu } from './menus-a.js';
+import { changePassword, deleteAccount, deleteAssignment, mateProfPull, sendMotProf } from '../core/menus-c.js';
 import { copyLink, doPrompt, logout, startTour } from './onboarding.js';
+import { libAdd, versRestore } from './reglages-corbeille.js';
 import {
-  addMail, delMail, dropFriend, friendsPull, libAdd, libPublish, libRemove, revokeShare,
-  saveHandle, sendDeck, shareLink, versPull, versRestore
-} from './reglages-corbeille.js';
+  addMail, delMail, dropFriend, libRemove
+} from '../core/reglages-corbeille.js';
+import {
+  friendsPull, libPublish, revokeShare, saveHandle, sendDeck, shareLink, versPull
+} from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
 
 export function paintMenuRename(w) {
@@ -58,26 +65,6 @@ export function paintMenuRename(w) {
     mountMenu(w);
     setTimeout(() => { const f = document.getElementById('fld'); if (f) f.focus(); }, 60);
     return;
-}
-
-async function mateProfPull(id) {
-  const seq = setMateProfSeq(mateProfSeq + 1), range = mateProf.range;
-  mateProf.load = 1;
-  if (mateProf.id !== id) setMateProf({ id, range, row: null, lib: null, load: 1 });
-  let row = null, lib = null;
-  try {
-    const rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: range }) || [];
-    row = rows.find(x => x.uid === id) || { n: 0, ok: 0, jours: 0 };
-  } catch (e) {}
-  try {
-    lib = await api('/rest/v1/library?select=deck_id,name,subject,n,updated_at'
-      + `&user_id=eq.${id}&order=updated_at.desc&limit=20`) || [];
-  } catch (e) {}
-  if (seq !== mateProfSeq) return;        // une demande plus récente est déjà en vol
-  if (row) mateProf.row = row;
-  if (lib) mateProf.lib = lib;
-  mateProf.load = 0;
-  if (menu === 'mateprof') paintMenu();
 }
 
 /* Les feuilles vivent sur `document.body`, hors de `#app` : c'est ce
@@ -210,9 +197,7 @@ document.addEventListener('click', async e => {
     const t = ((document.getElementById('pmt') || {}).value || '').trim();
     if (!t) return toast(I.x, 'Écris ton message');
     const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
-    api('/rest/v1/mail', 'POST', [{ from_user: auth.uid, to_user: prof.eleve,
-      from_name: prefs.name || (me && me.handle) || 'Compte', deck_name: '', message: t.slice(0, 600), cards: [] }],
-      { Prefer: 'return=minimal' })
+    sendMotProf(prof.eleve, t)
       .then(() => { closeMenu(); render();
         toast(I.check, 'Mot envoyé à ' + (m ? m.who.split(' ')[0] : 'l’élève')); },
             () => toast(I.x, 'Envoi impossible'));
@@ -295,8 +280,7 @@ document.addEventListener('click', async e => {
   }
   if (a === 'delwork') {
     const id = workOpen; closeMenu();
-    api('/rest/v1/assignments?id=eq.' + encodeURIComponent(id), 'DELETE', null,
-      { Prefer: 'return=minimal' })
+    deleteAssignment(id)
       .then(() => { setAsgs((asgs || []).filter(x => x.id !== id)); render(); toast(I.check, 'Devoir retiré'); },
             () => toast(I.x, 'Impossible pour l’instant'));
     return;
@@ -359,7 +343,7 @@ document.addEventListener('click', async e => {
     const v = document.getElementById('fld').value, err = document.getElementById('mrr');
     if (v.length < PWMIN) { err.textContent = `Au moins ${PWMIN} caractères`; return; }
     err.textContent = 'Envoi…';
-    api('/auth/v1/user', 'PUT', { password: v })
+    changePassword(v)
       .then(() => { closeMenu(); toast(I.check, 'Mot de passe changé'); })
       .catch(() => { err.textContent = 'Changement impossible'; });
     return;
@@ -372,7 +356,7 @@ document.addEventListener('click', async e => {
       return;
     }
     err.textContent = 'Suppression…';
-    api('/rest/v1/rpc/delete_me', 'POST', {})
+    deleteAccount()
       .then(() => { closeMenu(); logout(); })
       .catch(() => { err.textContent = 'Suppression impossible'; });
     return;

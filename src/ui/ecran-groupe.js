@@ -1,20 +1,22 @@
-import { $ } from './racine.js';
-import { I, svg } from './icones.js';
-import { DAY } from './fsrs.js';
+import { $ } from '../racine.js';
+import { I, svg } from '../icones.js';
+import { DAY } from '../fsrs.js';
 import {
   auth, board, db, duels, findQ, groupTab, groups, lib, quiz, scope, setAnimate, setFindQ,
-  stats, study, view
-} from './data/etat.js';
+  stats, study
+} from '../data/etat.js';
 import { render } from './bibliotheque.js';
-import { groupsPull } from './bilan-devoirs.js';
+import { groupsPull } from '../core/bilan-devoirs.js';
 import { STATE, cstate, plain } from './carte-media.js';
-import { boardPull } from './classement.js';
-import { PALETTE, api, esc, live, plur, scopeName, shortWho, sty, subj } from './coeur-sync.js';
-import { duelsPull, myScore, rankOf } from './defis.js';
+import { boardPull } from '../core/classement.js';
+import { PALETTE, esc, live, plur, scopeName, shortWho, sty, subj } from '../core/coeur-sync.js';
+import { myScore, rankOf } from './defis.js';
+import { duelsPull } from '../core/defis.js';
 import { toast } from './import-cartes.js';
 import { mountMenu } from './menus-a.js';
 import { norm } from './quiz.js';
-import { libPull, timeAgo } from './reglages-corbeille.js';
+import { timeAgo } from './reglages-corbeille.js';
+import { libPull } from '../core/reglages-corbeille.js';
 
 /* ---------- l'écran du groupe ---------- */
 const GTABS = { lib: 'Bibliothèque', duel: 'Défis', board: 'Classement' };
@@ -110,22 +112,6 @@ export function groupPull() {
 const dayKey = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return +d; };
 
 const dayLabel = t => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-
-export async function statsPull(bg) {
-  try {
-    const since = new Date(Date.now() - 365 * DAY).toISOString();
-    const rows = await api('/rest/v1/reviews?select=deck_id,card_id,mode,rating,correct,ms,created_at'
-      + `&created_at=gte.${since}&order=created_at.asc&limit=20000`);
-    stats.rows = rows || [];
-    stats.err = 0;
-  } catch (e) { stats.err = 1; }
-  /* Le rafraîchissement de fond ne redessine que si les chiffres ont
-     bougé : sinon l'écran sautait toutes les quinze secondes pour rien. */
-  const sig = (stats.rows || []).length + ':' + stats.err;
-  const same = bg && sig === stats.sig;       // rafraîchissement de fond sans rien de neuf
-  stats.sig = sig;
-  if (view.name === 'stats' && !same) { setAnimate(false); render(); }
-}
 
 /* index texte des cartes, pour nommer celles qui reviennent dans le top */
 function cardIndex() {

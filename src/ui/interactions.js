@@ -1,6 +1,6 @@
-import { $ } from './racine.js';
-import { I } from './icones.js';
-import { shuffle } from './file.js';
+import { $ } from '../racine.js';
+import { I } from '../icones.js';
+import { shuffle } from '../file.js';
 import {
   accounts, adm, board, classOf, classes, comp, deckOpen, duels, friends, groups, leaving,
   lib, mailbox, menu, mods, myRole, online, peek, pendingGrade, prefs, prof, quiz, ref,
@@ -9,24 +9,31 @@ import {
   setHelpKey, setLeaving, setLegalBack, setLegalTab, setMateOpen, setMates2, setMemberOpen,
   setPeek, setPendingGrade, setQuiz, setReorder, setRoster, setScope, setSel, setShared,
   setStudy, setWorkOpen, shared, stats, study, trash, view
-} from './data/etat.js';
+} from '../data/etat.js';
 import { allDue, go, render } from './bibliotheque.js';
 import {
-  commuPull, compNeuf, doAdd, donnerLivre, groupsPull, lireComp
+  commuPull, compNeuf, doAdd, donnerLivre, lireComp
 } from './bilan-devoirs.js';
-import { fsrsTune, plain, play, say } from './carte-media.js';
+import { groupsPull } from '../core/bilan-devoirs.js';
+import { plain, play, say } from './carte-media.js';
+import { fsrsTune } from '../core/carte-media.js';
 import {
-  accountsPull, admPull, atSchool, blocksPull, boardPull, classPull, classesPull, isProf,
-  isPupil, lireClass, lireNew, maClassePull, matesPull, modAct, modPull, refDo, refPeople,
-  refPull, refTeam
+  atSchool, isProf, isPupil, lireClass, lireNew, maClassePull
 } from './classement.js';
-import { canUndo, deck, doUndo, flush, pending, plur, pushUndo, saveDeck, sty, subj, uid } from './coeur-sync.js';
-import { selBar } from './connexion.js';
-import { duelPick, duelsPull } from './defis.js';
-import { exportStats, groupPull, lostOnLeave, statsPull } from './ecran-groupe.js';
 import {
-  jourFr, profClassePull, profDo, profFichePull, profPull
-} from './etablissement.js';
+  accountsPull, admPull, blocksPull, boardPull, classPull, classesPull, matesPull, modAct,
+  modPull, refDo, refPeople, refPull, refTeam
+} from '../core/classement.js';
+import { canUndo, deck, doUndo, flush, pending, plur, pushUndo, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
+import { selBar } from './connexion.js';
+import { duelPick } from './defis.js';
+import { duelsPull } from '../core/defis.js';
+import { exportStats, groupPull, lostOnLeave } from './ecran-groupe.js';
+import { statsPull } from '../core/ecran-groupe.js';
+import { jourFr } from './etablissement.js';
+import {
+  profClassePull, profDo, profFichePull, profPull
+} from '../core/etablissement.js';
 import {
   beep, dueCount, importPayload, savePrefs, toast
 } from './import-cartes.js';
@@ -35,10 +42,11 @@ import { logout, openInstall } from './onboarding.js';
 import {
   dictate, fail, nextQ, norm, pickQuiz, resetComp, startQuiz, submit
 } from './quiz.js';
+import { cb, cf, openSubject } from './reglages-corbeille.js';
 import {
-  answerFriend, askFriend, cb, cf, friendsPull, libPull, mailPull, openMail, openSubject,
+  answerFriend, askFriend, friendsPull, libPull, mailPull, openMail,
   trashPull, trashPurge, trashRestore
-} from './reglages-corbeille.js';
+} from '../core/reglages-corbeille.js';
 import {
   answerTF, cardOf, cardOrigin, commit, fling, isTF, loadResume, paintQ, pickMCQ, pickMatch,
   saveResume, startStudy, toggleFlip

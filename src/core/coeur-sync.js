@@ -3,15 +3,15 @@ import {
   menu, online, outbox, prefs, refreshing, scope, setAnimate, setAuth, setDirty,
   setFlushTimer, setFlushing, setGone, setOnlineState, setOutbox, setPrefs, setRefreshing,
   study, trash, undos, view
-} from './data/etat.js';
-import { I } from './icones.js';
-import { $ } from './racine.js';
-import { queueChip, render } from './bibliotheque.js';
-import { fsrsAuto, fsrsMigrate } from './carte-media.js';
+} from '../data/etat.js';
+import { I } from '../icones.js';
+import { $ } from '../racine.js';
+import { queueChip, render } from '../ui/bibliotheque.js';
+import { fsrsAuto, fsrsMigrate } from '../ui/carte-media.js';
 import { cerclePull } from './classement.js';
-import { addDeck, freeName, toast } from './import-cartes.js';
-import { closeMenu, openMenu } from './menus-a.js';
-import { maybeAskInstall, resetSession } from './onboarding.js';
+import { addDeck, freeName, toast } from '../ui/import-cartes.js';
+import { closeMenu, openMenu } from '../ui/menus-a.js';
+import { maybeAskInstall, resetSession } from '../ui/onboarding.js';
 import { upsertProfile } from './reglages-corbeille.js';
 
 /* Cartes — révision + quiz. PWA, comptes cloisonnés sur Supabase. */

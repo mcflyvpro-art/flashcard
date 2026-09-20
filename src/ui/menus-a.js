@@ -1,17 +1,17 @@
-import { I, svg } from './icones.js';
-import { isLeech } from './file.js';
+import { I, svg } from '../icones.js';
+import { isLeech } from '../file.js';
 import {
   asgs, auth, classOf, classes, db, memberOpen, menu, prof, ref, roster, setMenu,
   setSubjName, subjColor, subjEdit, subjName, view, workOpen
-} from './data/etat.js';
+} from '../data/etat.js';
 import { render } from './bibliotheque.js';
 import { compSheet, initial, workSheet } from './bilan-devoirs.js';
 import { paintMedia } from './carte-media.js';
 import {
-  ROLENOM, accountSheet, blockedSheet, dueLabel, refService, refTeam, reportSheet,
-  workProgress
+  accountSheet, blockedSheet, dueLabel, reportSheet
 } from './classement.js';
-import { COLORS, PALETTE, canUndo, deck, esc, live, plur, subj, undoLabel } from './coeur-sync.js';
+import { ROLENOM, refService, refTeam, workProgress } from '../core/classement.js';
+import { COLORS, PALETTE, canUndo, deck, esc, live, plur, subj, undoLabel } from '../core/coeur-sync.js';
 import { CYCLES } from './etablissement.js';
 import {
   paintMenuCard, paintMenuConflict, paintMenuDeckset, paintMenuDuelitem, paintMenuDuelnew,

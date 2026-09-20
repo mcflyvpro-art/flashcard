@@ -1,18 +1,18 @@
-import { $ } from './racine.js';
-import { I, SWIPE, svg } from './icones.js';
-import { DAY } from './fsrs.js';
-import { buildQueue, shuffle } from './file.js';
+import { $ } from '../racine.js';
+import { I, SWIPE, svg } from '../icones.js';
+import { DAY } from '../fsrs.js';
+import { buildQueue, shuffle } from '../file.js';
 import {
   auth, db, demo, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
   stats, study, tour
-} from './data/etat.js';
+} from '../data/etat.js';
 import { go, liveBump } from './bibliotheque.js';
 import {
   TTS, grade, mimg, paintMedia, plain, preview, rt
 } from './carte-media.js';
 import {
   DEFMETA, deck, enqueue, esc, live, metaOf, pushHist, save, scheduleFlush, sty, subj, uid
-} from './coeur-sync.js';
+} from '../core/coeur-sync.js';
 import { beep, bumpToday, simpleMode, toast } from './import-cartes.js';
 import { norm } from './quiz.js';
 

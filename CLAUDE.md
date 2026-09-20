@@ -32,36 +32,63 @@ l'air de marcher ».
 
 - **Build Vite, sans framework ni dépendance à l'exécution.**
   - `index.html` — écran d'ouverture inline, charge `/src/app.css` puis `/src/app.js`
-  - `src/app.js` — **point d'entrée seulement** (26 lignes) : importe les 18
-    modules ci-dessous chacun pour ses effets de bord. M06.T3 fini : plus
-    aucun fichier `src/*.js` ne dépasse 800 lignes (le plus gros,
-    `classement.js`, fait 716 lignes). La coupe a suivi les anciennes
-    sections `/* ---------- nom ---------- */` (qui existent toujours
-    dans chaque module — `grep -n -- "---------- " src/*.js` avant
-    d'éditer), sauf `paintMenu` (menu contextuel), qui à elle seule
+  - `src/app.js` — **point d'entrée seulement** (26 lignes) : importe
+    `src/core/coeur-sync.js` puis les 17 modules de `src/ui/`, chacun pour
+    ses effets de bord.
+  - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
+    HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout).
+    `coeur-sync.js` (650 lignes — `api()`, auth, sync, undo, palette) et huit
+    modules extraits des écrans mixtes du dessous, un par domaine :
+    `classement.js`, `etablissement.js`, `defis.js`, `bilan-devoirs.js`
+    (les groupes/clubs), `ecran-groupe.js` (`statsPull`), `reglages-corbeille.js`
+    (corbeille, amis, courrier, versions, étagère), `menus-c.js` (les quelques
+    écritures posées à même le gestionnaire de clics), `carte-media.js`
+    (upload média + rejeu FSRS depuis l'historique serveur).
+  - `src/ui/` — les 17 écrans (rendu, DOM, `$.innerHTML`, menus, événements),
+    même noms de fichier que leur pendant `core/` quand les deux existent
+    (`ui/classement.js` ↔ `core/classement.js`, etc.) : `bibliotheque.js`,
+    `carte-media.js`, `import-cartes.js`, `connexion.js`,
+    `reglages-corbeille.js`, `defis.js`, `classement.js`, `etablissement.js`,
+    `bilan-devoirs.js`, `ecran-groupe.js`, `menus-a.js`, `menus-b.js`,
+    `menus-c.js`, `revision.js`, `quiz.js`, `interactions.js`,
+    `onboarding.js`. Aucun fichier, `core/` ou `ui/`, ne dépasse 800 lignes
+    (le plus gros, `onboarding.js`, fait 742 lignes).
+
+    Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
+    a d'abord suivi les anciennes sections `/* ---------- nom ---------- */`
+    (qui existent toujours dans chaque fichier — `grep -n -- "---------- " src/ui/*.js`
+    avant d'éditer), sauf `paintMenu` (menu contextuel), qui à elle seule
     faisait 957 lignes : décomposée en 46 fonctions (`paintMenuSubject`,
-    `paintMenuCard`...) réparties sur `menus-a/b/c.js`.
-  - `src/coeur-sync.js`, `carte-media.js`, `import-cartes.js`,
-    `bibliotheque.js`, `connexion.js`, `reglages-corbeille.js`,
-    `defis.js`, `classement.js`, `etablissement.js`, `bilan-devoirs.js`,
-    `ecran-groupe.js`, `menus-a.js`, `menus-b.js`, `menus-c.js`,
-    `revision.js`, `quiz.js`, `interactions.js`, `onboarding.js` — les 18
-    modules de l'app (UI + logique encore mêlées : leur séparation stricte
-    core/data/ui est M06.T4, pas fait ici). Chacun importe explicitement
-    ce dont il a besoin des autres et de `src/data/etat.js` — aucune
-    variable globale implicite entre modules.
+    `paintMenuCard`...) réparties sur `menus-a/b/c.js`. La séparation
+    core/ui qui a suivi était surtout une **relocalisation**, pas une
+    réécriture : dans presque tous les écrans mixtes, les fonctions réseau
+    (`xPull`, `xMake`...) étaient déjà des déclarations distinctes des
+    fonctions de rendu (`xView`, `xSheet`) — il a suffi de les déplacer et
+    de réécrire les imports, fichier par fichier, en revérifiant `npm run
+    check` à chaque étape.
+  - Chaque module (`core/` ou `ui/`) importe explicitement ce dont il a
+    besoin des autres et de `src/data/etat.js` — aucune variable globale
+    implicite entre modules, et rien n'empêche `core/` d'importer `ui/`
+    (ex. `core/classement.js` appelle `render()` depuis `ui/bibliotheque.js`)
+    ni l'inverse : la règle stricte est à sens unique, dans `src/ui/` on
+    n'appelle jamais `api()`/`apiPage()`/`apiAll()` directement.
   - `src/icones.js`, `src/racine.js` — deux constantes sans la moindre
-    dépendance (`I`/`svg`/`SWIPE`, `$`), sorties à part exprès : le graphe
-    d'imports entre les 18 modules ci-dessus a des cycles (deux écrans qui
-    s'invoquent l'un l'autre), inévitables vu combien de choses se
-    répondent dans cette app — mais une valeur utilisée par un module au
-    niveau module (pas dans une fonction) doit venir d'un fichier qui ne
-    peut jamais faire partie d'un cycle, sinon ES la trouve pas encore
-    initialisée (`Cannot access '…' before initialization`, vu deux fois
-    pendant la découpe, corrigé les deux fois de cette façon). Le même
+    dépendance (`I`/`svg`/`SWIPE`, `$`), sorties à part exprès, hors de
+    `core/` et `ui/` : le graphe d'imports entre les modules ci-dessus a des
+    cycles (deux écrans qui s'invoquent l'un l'autre, ou un écran `ui/` et
+    son pendant `core/`), inévitables vu combien de choses se répondent
+    dans cette app — mais une valeur utilisée par un module au niveau
+    module (pas dans une fonction) doit venir d'un fichier qui ne peut
+    jamais faire partie d'un cycle, sinon ES la trouve pas encore
+    initialisée (`Cannot access '…' before initialization`, ou pire, une
+    exception silencieusement avalée par un `try/catch` qui l'entoure —
+    vu trois fois entre M06.T3 et M06.T4, la troisième ayant fait
+    échouer `loadAuth()` à chaque démarrage sans jamais planter). Le même
     raisonnement vaut pour tout nouvel « utilitaire sans dépendance » :
     il va dans un fichier à lui, jamais dans un module qui a lui-même des
-    imports.
+    imports — et toute constante lue par une fonction doit être déclarée
+    avant le premier appel à cette fonction dans le fichier, pas seulement
+    avant son usage syntaxique.
   - `src/data/etat.js` — tout l'état mutable de l'app (109 variables : `db`,
     `view`, `study`, `animate`...), une liaison vive ES (`export let`) par
     variable et un « setter » générique par variable pour la réaffectation
@@ -75,7 +102,7 @@ l'air de marcher ».
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes
   - `fsrs.wasm` — crate Rust `fsrs` 6.6.2 compilé (recette : `tools/BUILD-FSRS.md`). Ne jamais réécrire les formules à la main.
-- **Rendu** : état global dans `src/data/etat.js` (voir plus haut), `render()` (dans `bibliotheque.js`) reconstruit l'écran depuis `view`. Le démarrage (`boot()`, dans `onboarding.js`) est différé d'un micro-tick (`queueMicrotask`) exprès : appelé au fil de l'évaluation des modules, il pouvait tomber sur un module pas encore lié à cause des cycles ci-dessus.
+- **Rendu** : état global dans `src/data/etat.js` (voir plus haut), `render()` (dans `src/ui/bibliotheque.js`) reconstruit l'écran depuis `view`. Le démarrage (`boot()`, dans `src/ui/onboarding.js`) est différé d'un micro-tick (`queueMicrotask`) exprès : appelé au fil de l'évaluation des modules, il pouvait tomber sur un module pas encore lié à cause des cycles ci-dessus.
 - **Backend : Supabase** (projet `qqbzefpdeinlynjtarqr`, eu-west-1), appelé en `fetch` brut via `api(path, method, body)` — pas de SDK `supabase-js`.
   - Auth : `signIn` / `signUp` / `refreshToken` (un seul rafraîchissement à la fois — ne pas casser ce verrou).
   - Données : PostgREST (`/rest/v1/...`), RLS stricte `user_id = auth.uid()` + rôles établissement.
@@ -92,7 +119,7 @@ l'air de marcher ».
   pose le bon `base` (`/flashcard/` seulement quand la variable d'environnement
   `GITHUB_PAGES=true`, posée uniquement par ce workflow) et le propage au
   service worker (`src/sw.js`, marqueur `__BASE__`) et à l'enregistrement
-  du service worker (`import.meta.env.BASE_URL` dans `onboarding.js`) — ne
+  du service worker (`import.meta.env.BASE_URL` dans `src/ui/onboarding.js`) — ne
   jamais réintroduire un chemin `/xxx` codé en dur dans ces deux endroits.
   Réglage à faire une fois, à la main, dans le dépôt GitHub : Settings →
   Pages → Source → **GitHub Actions** (pas « Deploy from a branch »).
@@ -112,7 +139,7 @@ l'air de marcher ».
 
 1. **Ne jamais écrire de règle métier hors du noyau.** Le calcul vit dans un module pur et testé ; l'interface affiche, la couche données transporte.
 2. **Toute table nouvelle a la RLS activée et des politiques** dans la même migration. Après une migration, lancer les advisors Supabase (sécurité + performance) via MCP.
-3. **Aucun secret dans le dépôt.** Seule la clé `anon` vit dans `app.js`. Clés privées → secrets Edge Functions.
+3. **Aucun secret dans le dépôt.** Seule la clé `anon` vit dans `src/core/coeur-sync.js`. Clés privées → secrets Edge Functions.
 4. **Données d'élèves mineurs (RGPD)** : minimisation, pas de donnée perso dans les logs, purge programmée respectée (`20260917090000_purge_corbeille_programmee.sql`).
 5. **Hors ligne d'abord** : toute écriture doit survivre à une coupure réseau (passer par la file, pas un `fetch` direct qui se perd).
 6. Ne pas « corriger » en silence : un `catch (e) {}` vide doit être justifié par un commentaire, sinon remonter l'erreur (toast ou journal).
@@ -139,7 +166,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build, comme la CI
-grep -n -- "---------- " src/app.js  # table des matières de app.js
+grep -n -- "---------- " src/ui/*.js # table des matières des écrans
 supabase db diff / supabase migration new <nom>   # si la CLI est installée
 ```
 

@@ -16,27 +16,31 @@
 
 ## ÉTAT
 ```
-CURSEUR   M06.T4 (séparation core/data/ui) — ordre P0 décidé le 2026-09-18, voir ORDRE
+CURSEUR   M06.T5 (0 variable globale mutable partagée hors src/data/etat.js) — ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      20 / 148
-DERNIER   2026-09-18 · M06.T3 fini : `app.js` (9 795 lignes à l'origine) est
-          maintenant un point d'entrée de 26 lignes qui importe 18 modules,
-          aucun > 800 lignes (le plus gros, `classement.js`, 716). État
-          centralisé dans `src/data/etat.js` d'abord (109 variables, voir
-          M01.T5 pour la méthode du codemod AST) ; `paintMenu` (952 lignes à
-          elle seule) décomposée en 46 fonctions avant de pouvoir tenir dans
-          un fichier. La découpe en 18 fichiers a produit des cycles d'import
-          (40+ paires — inévitable vu le couplage réel de l'app) : deux bugs
-          `Cannot access '…' before initialization` trouvés au premier
-          chargement navigateur (pas au lint ni au build), corrigés en
-          sortant les constantes sans dépendance (`I`/`svg`/`SWIPE`, `$`)
-          dans des fichiers dédiés sans import, et en différant `boot()`
-          d'un micro-tick (`queueMicrotask`). `npx eslint src/` → 0 nouvelle
-          erreur ; `npm test` → 134/134 ; `npm run build` ok ; vérifié au
-          navigateur (Playwright, compte élève) après chaque correction —
-          connexion, révision complète, menu de livre, et spécifiquement la
-          page « Conditions d'utilisation » (le dernier bug) — 0 nouvelle
-          erreur console. Détail complet sur la ligne M06.T3.
+FAIT      21 / 148
+DERNIER   2026-09-20 · M06.T4 fini : les 8 écrans qui mélangeaient réseau et
+          rendu (classement, etablissement, defis, bilan-devoirs,
+          ecran-groupe, reglages-corbeille, menus-c, carte-media) sont
+          scindés en `src/core/<nom>.js` (fonctions `api()`) et
+          `src/ui/<nom>.js` (rendu) ; les 9 écrans déjà purs (bibliotheque,
+          import-cartes, connexion, menus-a/b, revision, quiz,
+          interactions, onboarding) et `coeur-sync.js` (déjà 100 % core)
+          simplement déplacés. Presque toujours une relocalisation, pas une
+          réécriture : les fonctions réseau (`xPull`, `xMake`...) étaient
+          déjà des déclarations séparées des fonctions de rendu — même
+          méthode et mêmes cycles d'import qu'en M06.T3. Preuve :
+          `grep -rc "api(" src/ui/*.js` → 0 partout ; `npm run check` vert
+          (134/134 tests, build ok, lint à 41 problèmes/1 erreur — identique
+          à l'état d'avant, l'erreur restante est M06.T7) ; vérifié au
+          navigateur (Playwright, 390 px) sur les 3 comptes de test — accueil
+          élève, un livre, révision, réglages, journal, corbeille, courrier,
+          ma classe, écran professeur + une classe, admin, modération — 0
+          nouvelle erreur console. En chemin, un vrai bug de connexion
+          trouvé et corrigé (hors périmètre M06, voir commit dédié) :
+          `coeur-sync.js` lisait la session sauvegardée avant la déclaration
+          de la constante qu'elle utilise, l'erreur étant avalée en silence
+          — l'app se croyait déconnectée à chaque démarrage.
 ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 → M13 → M12
           (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
           intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
@@ -103,7 +107,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M05.T5 · sonde externe + page d'état publique — cible: contrôle toutes les 5 min — preuve: URL publique
 - [ ] M05.T6 · alerte si le taux d'erreur dépasse 1 % sur 1 h — preuve: alerte déclenchée en test
 
-## M06 · Qualité du code [P0] 3/8
+## M06 · Qualité du code [P0] 4/8
 - [x] M06.T1 · build Vite + variables d'environnement — preuve: `npm run build`
 - [x] M06.T2 · ESLint au dépôt + CI — preuve: `.github/workflows/ci.yml`
 - [x] M06.T3 · découpe `src/app.js` en modules — cible: **aucun fichier > 800 lignes** (9 795 au départ) — preuve: `awk 'END{print FILENAME, NR}'` sur chaque fichier → le plus gros, `classement.js`, fait 716 lignes.
@@ -156,7 +160,7 @@ But : ne plus jamais deviner pourquoi ça plante.
       juste), menu « Réglages du livre », et spécifiquement la page
       « Conditions d'utilisation » (`LEGAL`, le dernier bug) — 0 nouvelle
       erreur console sur tout le parcours.
-- [ ] M06.T4 · séparation core / data / ui — cible: `src/ui/` n'appelle jamais `api()` directement — preuve: `grep -rc "api(" src/ui/` = 0
+- [x] M06.T4 · séparation core / data / ui — cible: `src/ui/` n'appelle jamais `api()` directement — preuve: `grep -rc "api(" src/ui/*.js` → 0 sur les 17 fichiers ; `npm run check` vert (134/134, build ok, lint identique à avant : 41/1) ; parcours Playwright (390 px, 3 comptes) sans nouvelle erreur console. Détail sur la ligne ÉTAT.
 - [ ] M06.T5 · 0 variable globale mutable partagée hors `src/data/etat.js` — preuve: revue + lint
 - [ ] M06.T6 · ESLint strict (complexité ≤ 15, profondeur ≤ 4) — cible: 0 erreur, 0 avertissement — preuve: `npm run lint`
 - [ ] M06.T7 · réparer « Redonner un devoir » (`profCartesDeDevoir`) — cible: CI verte — preuve: `npm run lint` + test bout-en-bout

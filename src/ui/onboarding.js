@@ -1,5 +1,5 @@
-import { I, SWIPE, svg } from './icones.js';
-import { DAY } from './fsrs.js';
+import { I, SWIPE, svg } from '../icones.js';
+import { DAY } from '../fsrs.js';
 import {
   DECKPAGE, DEFPREFS, asks, auth, bip, board, comp, db, demo, duels, filter, friends,
   groupTab, groups, lib, mates, me, menu, myRole, peek, prefs, quiz, scope, setAccOpen,
@@ -13,17 +13,17 @@ import {
   setSel, setSendMsg, setSendTo, setShared, setStats, setStudy, setSubjEdit, setTeam,
   setTour, setTourPoll, setTourSave, setTrash, setUndos, setVers, setView, setWorkOpen,
   study, tour, tourPoll, tourSave, view
-} from './data/etat.js';
+} from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { dec, fsrsMigrate, mediaCache } from './carte-media.js';
-import { accueil } from './classement.js';
-import { cacheKey, esc, flush, load, plur, pull, refreshToken, saveAuth, setOnline } from './coeur-sync.js';
+import { accueil } from '../core/classement.js';
+import { cacheKey, esc, flush, load, plur, pull, refreshToken, saveAuth, setOnline } from '../core/coeur-sync.js';
 import { selOff } from './connexion.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
 import { consumeGoto } from './interactions.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { resetComp, startQuiz } from './quiz.js';
-import { openShared } from './reglages-corbeille.js';
+import { openShared } from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
 
 /* ---------- lien d'injection ---------- */

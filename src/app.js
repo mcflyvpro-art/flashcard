@@ -6,21 +6,21 @@
    rien : seul `onboarding.js`, qui porte l'amorçage (section « démarrage »),
    doit s'évaluer après que tous les autres aient défini leurs fonctions —
    déjà garanti par le graphe d'imports ES, pas par cet ordre-ci. */
-import './coeur-sync.js';
-import './carte-media.js';
-import './import-cartes.js';
-import './bibliotheque.js';
-import './connexion.js';
-import './reglages-corbeille.js';
-import './defis.js';
-import './classement.js';
-import './etablissement.js';
-import './bilan-devoirs.js';
-import './ecran-groupe.js';
-import './menus-a.js';
-import './menus-b.js';
-import './menus-c.js';
-import './revision.js';
-import './quiz.js';
-import './interactions.js';
-import './onboarding.js';
+import './core/coeur-sync.js';
+import './ui/carte-media.js';
+import './ui/import-cartes.js';
+import './ui/bibliotheque.js';
+import './ui/connexion.js';
+import './ui/reglages-corbeille.js';
+import './ui/defis.js';
+import './ui/classement.js';
+import './ui/etablissement.js';
+import './ui/bilan-devoirs.js';
+import './ui/ecran-groupe.js';
+import './ui/menus-a.js';
+import './ui/menus-b.js';
+import './ui/menus-c.js';
+import './ui/revision.js';
+import './ui/quiz.js';
+import './ui/interactions.js';
+import './ui/onboarding.js';

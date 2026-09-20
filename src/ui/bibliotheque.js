@@ -1,34 +1,38 @@
-import { $ } from './racine.js';
-import { I, svg } from './icones.js';
-import { isLeech } from './file.js';
+import { $ } from '../racine.js';
+import { I, svg } from '../icones.js';
+import { isLeech } from '../file.js';
 import {
   DECKPAGE, accounts, adm, animate, asks, auth, classes, db, demo, dirty, filter, liveAt,
   liveSoon, liveT, mailbox, menu, myRole, online, pageDir, pagerEnd, peek, prefs, prof,
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
   setPageDir, setPagerEnd, setPreviewOf, setView, stats, view
-} from './data/etat.js';
+} from '../data/etat.js';
 import {
   boardView, classeView, classesView, commuPull, commuView, duelsView, friendsView,
   groupsView, libraryView, profEleveView
 } from './bilan-devoirs.js';
 import { STATE, cstate, paintMedia } from './carte-media.js';
 import {
-  accountsPull, admPull, adminView, atSchool, boardPull, classesPull, isProf, isPupil,
-  maClassePull, maClasseView, modView, refPull, refView
+  adminView, atSchool, isProf, isPupil, maClassePull, maClasseView, modView, refView
 } from './classement.js';
-import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from './coeur-sync.js';
+import { accountsPull, admPull, boardPull, classesPull, refPull } from '../core/classement.js';
+import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { deckView, legalView, loginView, selOff } from './connexion.js';
-import { duelView, duelsPull } from './defis.js';
-import { findView, groupView, statsPull, statsView } from './ecran-groupe.js';
-import { profClasseView, profPull, profView } from './etablissement.js';
+import { duelView } from './defis.js';
+import { duelsPull } from '../core/defis.js';
+import { findView, groupView, statsView } from './ecran-groupe.js';
+import { statsPull } from '../core/ecran-groupe.js';
+import { profClasseView, profView } from './etablissement.js';
+import { profPull } from '../core/etablissement.js';
 import {
   applyFont, dropBoot, dueCount, savePrefs, simpleMode, todayCount
 } from './import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { importView, quizView, stopTimer } from './quiz.js';
 import {
-  libPull, mailPull, mailView, settingsView, sharedView, trashView
+  mailView, settingsView, sharedView, trashView
 } from './reglages-corbeille.js';
+import { libPull, mailPull } from '../core/reglages-corbeille.js';
 import { loadResume, studyView } from './revision.js';
 
 /* ---------- synchronisation vivante ----------

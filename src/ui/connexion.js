@@ -1,21 +1,21 @@
-import { $ } from './racine.js';
-import { I, svg } from './icones.js';
-import { isLeech } from './file.js';
+import { $ } from '../racine.js';
+import { I, svg } from '../icones.js';
+import { isLeech } from '../file.js';
 import {
   DECKPAGE, db, deckOpen, deckQ, deckShow, legalBack, legalTab, loginBusy, loginMode, prof,
   sel, setAnimate, setDb, setDeckQ, setDeckShow, setLoginBusy, setLoginMode, setSel,
   setTyping, typing, view
-} from './data/etat.js';
+} from '../data/etat.js';
 import {
   cardIcon, cardRich, go, mixBar, render
 } from './bibliotheque.js';
 import {
   MAXB, MAXF, STATE, cstate, nextIn, plain
 } from './carte-media.js';
-import { accueil } from './classement.js';
+import { accueil } from '../core/classement.js';
 import {
   deck, esc, load, plur, pull, pushUndo, resetPassword, saveDeck, signIn, signUp, sty, subj
-} from './coeur-sync.js';
+} from '../core/coeur-sync.js';
 import { dueCount, simpleMode } from './import-cartes.js';
 import { consumeGoto } from './interactions.js';
 import { consumeHash, maybeTour } from './onboarding.js';

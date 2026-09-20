@@ -1,15 +1,15 @@
-import { I, svg } from './icones.js';
-import { DAY } from './fsrs.js';
-import { isDue } from './file.js';
+import { I, svg } from '../icones.js';
+import { DAY } from '../fsrs.js';
+import { isDue } from '../file.js';
 import {
   actx, auth, booted, db, dirty, fnr, gone, prefs, prefsTimer, setActx, setBooted,
   setPrefsTimer, setTt, tt
-} from './data/etat.js';
+} from '../data/etat.js';
 import {
   SB, api, doUndo, esc, flush, pushUndo, refreshToken, save, saveDeck, setOnline, uid
-} from './coeur-sync.js';
+} from '../core/coeur-sync.js';
 import { norm } from './quiz.js';
-import { snapVersion } from './reglages-corbeille.js';
+import { snapVersion } from '../core/reglages-corbeille.js';
 
 /* ---------- génération de cartes ----------
    La clé Anthropic n'est jamais ici. app.js est servi par GitHub Pages, donc

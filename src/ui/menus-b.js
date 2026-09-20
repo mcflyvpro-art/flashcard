@@ -1,24 +1,26 @@
-import { I, svg } from './icones.js';
-import { DAY } from './fsrs.js';
+import { I, svg } from '../icones.js';
+import { DAY } from '../fsrs.js';
 import {
   auth, cardEdit, conflicts, db, duels, fnr, friends, groupOf, groups, helpKey, lib,
   mailOpen, mailbox, mateOpen, mateProf, mates, me, menu, prefs, previewOf, quiz, recorder,
   sel, sendMsg, sendTo, setMenu, setSendMsg, setSplitSize, splitSize, study, vers, view
-} from './data/etat.js';
+} from '../data/etat.js';
 import { SORTS } from './bibliotheque.js';
 import { initial } from './bilan-devoirs.js';
 import {
   LANGS, memLine, mimg, nextIn, plain
 } from './carte-media.js';
-import { deck, esc, metaOf, noDetect, plur, scopeName, shortWho, subj } from './coeur-sync.js';
+import { deck, esc, metaOf, noDetect, plur, scopeName, shortWho, subj } from '../core/coeur-sync.js';
 import { HELP } from './connexion.js';
-import { DUELQ, myScore, rankOf } from './defis.js';
+import { myScore, rankOf } from './defis.js';
+import { DUELQ } from '../core/defis.js';
 import {
   backlog, dueCount, fnrNote, fnrScan, simpleMode
 } from './import-cartes.js';
 import { mountMenu } from './menus-a.js';
 import { helpSheet } from './onboarding.js';
-import { VERSN, cb, cf, timeAgo } from './reglages-corbeille.js';
+import { cb, cf, timeAgo } from './reglages-corbeille.js';
+import { VERSN } from '../core/reglages-corbeille.js';
 
 export function paintMenuCard(w) {
   const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);

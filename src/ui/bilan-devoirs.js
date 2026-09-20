@@ -1,25 +1,28 @@
-import { $ } from './racine.js';
-import { I, svg } from './icones.js';
+import { $ } from '../racine.js';
+import { I, svg } from '../icones.js';
 import {
   addQ, asgs, asks, auth, board, classOf, classes, duels, friends, groups, lib, mates, me,
-  menu, prof, roster, school, setAddQ, setAnimate, setGroups, setMenu, view
-} from './data/etat.js';
+  prof, roster, school, setAddQ, setAnimate, setMenu, view
+} from '../data/etat.js';
 import { bindPager, go, render, tabs } from './bibliotheque.js';
 import { plain } from './carte-media.js';
 import {
-  atSchool, boardPull, dueLabel, isProf, isPupil, schoolPull
+  atSchool, dueLabel, isProf, isPupil
 } from './classement.js';
-import { api, deck, esc, plur, shortWho, subj } from './coeur-sync.js';
-import { duelsPull, myScore, rankOf } from './defis.js';
+import { boardPull, schoolPull } from '../core/classement.js';
+import { deck, esc, plur, shortWho, subj } from '../core/coeur-sync.js';
+import { groupsPull } from '../core/bilan-devoirs.js';
+import { myScore, rankOf } from './defis.js';
+import { duelsPull } from '../core/defis.js';
 import { BRANGE } from './ecran-groupe.js';
 import {
-  auJour, calendrier, dansJours, etatEleve, iso, jourFr, pcClass, profCartesPull, profDo
+  auJour, calendrier, dansJours, etatEleve, iso, jourFr, pcClass
 } from './etablissement.js';
+import { profCartesPull, profDo } from '../core/etablissement.js';
 import { toast } from './import-cartes.js';
-import { closeMenu, mountMenu, openMenu, paintMenu } from './menus-a.js';
-import {
-  askFriend, friendsPull, libPull, mePull, timeAgo
-} from './reglages-corbeille.js';
+import { closeMenu, mountMenu, openMenu } from './menus-a.js';
+import { timeAgo } from './reglages-corbeille.js';
+import { askFriend, friendsPull, libPull, mePull } from '../core/reglages-corbeille.js';
 
 /* ---------- onglet Bilan ----------
    La même classe, mais répartie : combien suivent, combien décrochent,
@@ -376,44 +379,6 @@ export function classeView() {
    Un centre unique : qui tu es, qui tu connais, les groupes, les défis,
    l'étagère commune et le classement. Le reste de l'app n'a plus à parler
    de « groupe » ici et là — tout ce qui concerne les autres vit ici. */
-export async function groupsPull() {
-  try {
-    const rows = await api('/rest/v1/group_members?select=group_id,groups(id,name,code,owner)');
-    setGroups((rows || []).map(r => r.groups).filter(Boolean));
-  } catch (e) { setGroups(groups || []); }
-  if (view.name === 'commu' || view.name === 'groups') { setAnimate(false); render(); }
-  if (menu) paintMenu();
-}
-
-export async function makeGroup(name) {
-  const code = Array.from(crypto.getRandomValues(new Uint8Array(5)),
-    b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
-  try {
-    const [g] = await api('/rest/v1/groups', 'POST',
-      [{ name: (name || '').trim() || 'Mon club', code, owner: auth.uid }],
-      { Prefer: 'return=representation' }) || [];
-    if (g) await api('/rest/v1/group_members', 'POST', [{ group_id: g.id, user_id: auth.uid }],
-      { Prefer: 'return=minimal' });
-    closeMenu(); setGroups(null); groupsPull();
-    toast(I.check, 'Club créé · code ' + code);
-  } catch (e) { toast(I.x, 'Création impossible'); }
-}
-
-export async function joinGroup(code) {
-  try {
-    const [g] = await api('/rest/v1/rpc/join_group', 'POST', { join_code: code }) || [];
-    closeMenu(); setGroups(null); groupsPull();
-    toast(I.check, g ? 'Bienvenue dans ' + g.name : 'Club rejoint');
-  } catch (e) { toast(I.x, 'Code inconnu'); }
-}
-
-export async function leaveGroup(id) {
-  try {
-    await api(`/rest/v1/group_members?group_id=eq.${id}&user_id=eq.${auth.uid}`, 'DELETE',
-      null, { Prefer: 'return=minimal' });
-  } catch (e) {}
-  closeMenu(); setGroups(null); groupsPull();
-}
 
 /* tout ce que l'écran a besoin de savoir, en un seul aller-retour groupé */
 export function commuPull() {

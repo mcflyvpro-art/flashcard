@@ -1,17 +1,17 @@
-import { $ } from './racine.js';
-import { I, svg } from './icones.js';
-import { shuffle } from './file.js';
-import { parseText } from './parseur.js';
+import { $ } from '../racine.js';
+import { I, svg } from '../icones.js';
+import { shuffle } from '../file.js';
+import { parseText } from '../parseur.js';
 import {
   aiBusy, asrOn, asrRec, comp, db, prefs, quiz, quizTick, setAiBusy, setAsrOn, setAsrRec,
   setComp, setQuiz, setQuizTick, view
-} from './data/etat.js';
+} from '../data/etat.js';
 import { go, pills, render } from './bibliotheque.js';
 import { donnerLivre } from './bilan-devoirs.js';
 import {
   ASRC, MAXB, MAXF, TTS, listen, markDups, markOver, plain, rt
 } from './carte-media.js';
-import { DEFMETA, deck, esc, live, metaOf, plur, pushHist, saveDeck, sty, subj, uid } from './coeur-sync.js';
+import { DEFMETA, deck, esc, live, metaOf, plur, pushHist, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
 import { askPages } from './ecran-groupe.js';
 import {
   AIERR, addDeck, aiCards, aiFromFile, toast
