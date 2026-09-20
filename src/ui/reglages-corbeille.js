@@ -34,11 +34,8 @@ export function openSubject(id) {
   openMenu('subject');
 }
 
-export function settingsView() {
-  $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
-    <div class="page">
-      <div class="top"><div class="hero">Réglages</div></div>
+function settingsRevisionHtml() {
+  return `
       <div class="lbl"><span>Révision</span></div>
       <div class="slist">
         <div class="srw"><button class="sr flat" data-act="tglsimple">${svg(I.brain)}
@@ -83,8 +80,11 @@ export function settingsView() {
             ? (prefs.wN ? prefs.wN.toLocaleString('fr-FR') + ' révisions' : 'réglé')
             : 'réglages d’origine'}</span>
           ${svg(I.arrow)}</button>${hlp('tune')}</div>`}
-      </div>
+      </div>`;
+}
 
+function settingsAffichageHtml() {
+  return `
       <div class="lbl"><span>Affichage</span></div>
       <div class="slist">
         <div class="sr flat col">
@@ -97,8 +97,11 @@ export function settingsView() {
         <button class="sr flat" data-act="tglsound">${svg(I.sound)}
           <span class="n">Sons</span>
           <span class="tgl ${prefs.sound ? 'on' : ''}"></span></button>
-      </div>
+      </div>`;
+}
 
+function settingsMatieresHtml() {
+  return `
       <div class="lbl"><span>Matières</span><span>${db.subjects.length}</span></div>
       <div class="slist">
         ${db.subjects.map(t => {
@@ -109,8 +112,11 @@ export function settingsView() {
             <span class="c">${n || ''}</span>${svg(I.arrow)}</button>`;
         }).join('')}
         <button class="sr add" data-sub="">${svg(I.plus)}<span class="n">Nouvelle matière</span></button>
-      </div>
+      </div>`;
+}
 
+function settingsCompteHtml() {
+  return `
       <div class="lbl"><span>Mon compte</span></div>
       <div class="slist">
         <button class="sr flat" data-act="rename">${svg(I.user)}
@@ -118,8 +124,25 @@ export function settingsView() {
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="commu">${svg(I.user)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
-      </div>
+      </div>`;
+}
 
+/* Les lignes de rôle (référent, admin, modération) : chacune ne s'affiche
+   qu'à qui elle concerne, séparées ici pour ne pas alourdir settingsView. */
+function settingsRoleRowsHtml() {
+  return (myRole === 'ref' && atSchool() ? `<button class="sr flat" data-act="ref">${svg(I.build)}
+      <span class="n">Mon établissement</span>
+      <span class="c">${ref.board ? esc(ref.board.org) : ''}</span>${svg(I.arrow)}</button>` : '')
+    + (isAdmin() ? `<button class="sr flat" data-act="admin">${svg(I.key)}
+      <span class="n">Administration</span>
+      <span class="c">${accounts ? accounts.length : ''}</span>${svg(I.arrow)}</button>` : '')
+    + (iAmMod ? `<button class="sr flat" data-act="mod">${svg(I.warn)}
+      <span class="n">Signalements</span>
+      <span class="c">${mods.list ? (mods.list.length || '') : ''}</span>${svg(I.arrow)}</button>` : '');
+}
+
+function settingsDonneesHtml() {
+  return `
       <div class="lbl"><span>Mes données</span></div>
       <div class="slist">
         ${canUndo() ? `<button class="sr flat" data-act="undo2">${svg(I.redo)}
@@ -130,22 +153,17 @@ export function settingsView() {
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
           <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
-        ${myRole === 'ref' && atSchool() ? `<button class="sr flat" data-act="ref">${svg(I.build)}
-          <span class="n">Mon établissement</span>
-          <span class="c">${ref.board ? esc(ref.board.org) : ''}</span>${svg(I.arrow)}</button>` : ''}
-        ${isAdmin() ? `<button class="sr flat" data-act="admin">${svg(I.key)}
-          <span class="n">Administration</span>
-          <span class="c">${accounts ? accounts.length : ''}</span>${svg(I.arrow)}</button>` : ''}
-        ${iAmMod ? `<button class="sr flat" data-act="mod">${svg(I.warn)}
-          <span class="n">Signalements</span>
-          <span class="c">${mods.list ? (mods.list.length || '') : ''}</span>${svg(I.arrow)}</button>` : ''}
+        ${settingsRoleRowsHtml()}
         <button class="sr flat" data-act="blocked">${svg(I.lock)}
           <span class="n">Comptes bloqués</span>
           <span class="c">${blocks && blocks.length ? blocks.length : ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-legal="cgu">${svg(I.file)}
           <span class="n">Conditions et confidentialité</span>${svg(I.arrow)}</button>
-      </div>
+      </div>`;
+}
 
+function settingsQuitterHtml() {
+  return `
       <div class="lbl"><span>Quitter</span></div>
       <div class="slist">
         <button class="sr flat warn" data-act="logout">${svg(I.exit)}<span class="n">Se déconnecter</span></button>
@@ -153,7 +171,20 @@ export function settingsView() {
       </div>
       <div class="foot">${pending()
         ? plur(pending(), 'modification') + ' en attente' + (online ? ' d’envoi' : ' — reprise dès le retour du réseau')
-        : online ? 'Synchronisé' : 'Hors ligne — rien en attente'}</div>
+        : online ? 'Synchronisé' : 'Hors ligne — rien en attente'}</div>`;
+}
+
+export function settingsView() {
+  $.innerHTML = `
+    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
+    <div class="page">
+      <div class="top"><div class="hero">Réglages</div></div>
+      ${settingsRevisionHtml()}
+      ${settingsAffichageHtml()}
+      ${settingsMatieresHtml()}
+      ${settingsCompteHtml()}
+      ${settingsDonneesHtml()}
+      ${settingsQuitterHtml()}
     </div>`;
   const g = document.getElementById('pGoal'), c = document.getElementById('pCap');
   g.addEventListener('input', () => {

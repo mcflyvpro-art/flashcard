@@ -50,7 +50,7 @@ export async function duelMake(d) {
    devoir lui-même, pas d'un livre du professeur. */
 export async function duelClasse(aid, nom) {
   const cid = prof.open; if (!cid) return;
-  let cartes = [];
+  let cartes;
   try {
     const [a] = await api('/rest/v1/assignments?select=cards,name&id=eq.'
       + encodeURIComponent(aid)) || [];

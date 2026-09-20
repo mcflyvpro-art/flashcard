@@ -9,12 +9,17 @@ export default [
     languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals: globals.browser },
     rules: {
       /* Un catch vide doit porter un commentaire qui dit pourquoi (CLAUDE.md,
-         règle 6). En avertissement tant que l'existant n'est pas passé en revue :
-         il y en a une trentaine, à trier un par un plutôt qu'à faire taire. */
-      'no-empty': ['warn', { allowEmptyCatch: false }],
-      'no-useless-assignment': 'warn',
+         règle 6) — l'existant a été passé en revue et chaque cas justifié
+         (M06.T6), donc plus d'avertissement toléré : en erreur. */
+      'no-empty': ['error', { allowEmptyCatch: false }],
+      'no-useless-assignment': 'error',
       'no-undef': 'error',
-      'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none' }]
+      'no-unused-vars': ['error', { args: 'none', caughtErrors: 'none' }],
+      /* ESLint strict (M06.T6) : une fonction trop complexe ou trop
+         profondément imbriquée est le signe qu'elle mélange plusieurs
+         responsabilités — à ce point, mieux vaut l'extraire. */
+      complexity: ['error', 15],
+      'max-depth': ['error', 4]
     }
   },
   {

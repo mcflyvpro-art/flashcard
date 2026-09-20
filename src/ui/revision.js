@@ -17,48 +17,59 @@ import { beep, bumpToday, simpleMode, toast } from './import-cartes.js';
 import { norm } from './quiz.js';
 
 /* ---------- révision ---------- */
+function studySource(id) {
+  if (id === 'all') {                                  // mode marathon
+    return { cards: live().flatMap(d => d.cards.map(c => ({ ...c, _d: d.id }))), name: 'Marathon' };
+  }
+  const d = deck(id);
+  return d ? { cards: d.cards, name: d.name } : null;
+}
+
+function studyIds(cards, subset, o, sm) {
+  if (subset && subset.length) {
+    const keep = new Set(subset);
+    return cards.filter(c => keep.has(c.id)).map(c => c.id);
+  }
+  /* un ordre demandé par l'appelant (le bouton mélanger) l'emporte sur
+     la préférence, dans les deux modes */
+  return buildQueue(cards, sm
+    ? { order: o.order || (prefs.order === 'due' ? 'random' : prefs.order), cap: 0,
+        fresh: prefs.fresh, only: o.only === 'leech' ? 'leech' : '' }
+    : { ...o, order: o.order || prefs.order, fresh: prefs.fresh,
+        cap: o.cap != null ? o.cap : prefs.cap }, Date.now()).map(c => c.id);
+}
+
+/* Le QCM a besoin d'au moins deux réponses distinctes pour avoir un sens ;
+   une carte vrai/faux n'a pas sa place dans un QCM à quatre entrées. */
+function mcqPoolAndIds(cards, ids) {
+  const seen = new Set(), pool = [];
+  for (const c of cards) {
+    if (isTF(c) || isBool(c.b)) continue;
+    const k = norm(plain(c.b));
+    if (k && !seen.has(k)) { seen.add(k); pool.push(c.b); }
+  }
+  if (pool.length < 2) return { error: 'Pas assez de réponses différentes' };
+  const keep = new Set(cards.filter(c => !isTF(c)).map(c => c.id));
+  const kept = ids.filter(x => keep.has(x));
+  return kept.length ? { pool, ids: kept } : { error: 'Rien à mettre en QCM' };
+}
+
 export function startStudy(id, rev, subset, opt) {
   const o = opt || {};
   const sm = simpleMode();          // figé pour toute la session : pas de bascule à chaud
-  let cards, name, ids;
-  if (id === 'all') {                                  // mode marathon
-    cards = live().flatMap(d => d.cards.map(c => ({ ...c, _d: d.id })));
-    name = 'Marathon';
-  } else {
-    const d = deck(id); if (!d) return;
-    cards = d.cards; name = d.name;
-  }
-  if (subset && subset.length) {
-    const keep = new Set(subset);
-    ids = cards.filter(c => keep.has(c.id)).map(c => c.id);
-  } else {
-    /* un ordre demandé par l'appelant (le bouton mélanger) l'emporte sur
-       la préférence, dans les deux modes */
-    ids = buildQueue(cards, sm
-      ? { order: o.order || (prefs.order === 'due' ? 'random' : prefs.order), cap: 0,
-          fresh: prefs.fresh, only: o.only === 'leech' ? 'leech' : '' }
-      : { ...o, order: o.order || prefs.order, fresh: prefs.fresh,
-          cap: o.cap != null ? o.cap : prefs.cap }, Date.now()).map(c => c.id);
-  }
+  const src = studySource(id);
+  if (!src) return;
+  let ids = studyIds(src.cards, subset, o, sm);
   if (!ids.length) { toast(I.check, 'Rien à revoir ici'); return; }
   const dm = id === 'all' ? DEFMETA : metaOf(deck(id));
   const mode = o.mode || '';
-  /* Le QCM a besoin d'au moins deux réponses distinctes pour avoir un sens. */
   let pool = [];
   if (mode === 'mcq') {
-    const seen = new Set();
-    for (const c of cards) {
-      if (isTF(c) || isBool(c.b)) continue;
-      const k = norm(plain(c.b));
-      if (k && !seen.has(k)) { seen.add(k); pool.push(c.b); }
-    }
-    if (pool.length < 2) { toast(I.x, 'Pas assez de réponses différentes'); return; }
-    /* une carte vrai/faux n'a pas sa place dans un QCM à quatre entrées */
-    const keep = new Set(cards.filter(c => !isTF(c)).map(c => c.id));
-    ids = ids.filter(x => keep.has(x));
-    if (!ids.length) { toast(I.x, 'Rien à mettre en QCM'); return; }
+    const mcq = mcqPoolAndIds(src.cards, ids);
+    if (mcq.error) { toast(I.x, mcq.error); return; }
+    pool = mcq.pool; ids = mcq.ids;
   }
-  setStudy({ id, name, langf: dm.langf, langb: dm.langb, mode, pool, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
+  setStudy({ id, name: src.name, langf: dm.langf, langb: dm.langb, mode, pool, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
             ok: 0, total: ids.length, t0: Date.now(), tq: Date.now(), tried: {}, missSet: {},
             miss: [], log: [], saved: false, opt: o, simple: sm,
             dirs: Object.fromEntries(ids.map(x => [x, o.both ? Math.random() < .5 : !!rev])) });
@@ -77,7 +88,7 @@ export function saveResume() {
        références de cartes : on ne les met pas en reprise. */
     if (!study || study.mode || study.i >= study.queue.length) localStorage.removeItem('cartes.resume.' + auth.uid);
     else localStorage.setItem('cartes.resume.' + auth.uid, JSON.stringify({ ...study, t: Date.now() }));
-  } catch (e) {}
+  } catch (e) { /* stockage indisponible : la reprise ne sera simplement pas proposée */ }
 }
 
 export function loadResume() {
@@ -86,7 +97,7 @@ export function loadResume() {
     const r = JSON.parse(localStorage.getItem('cartes.resume.' + auth.uid));
     if (r && Date.now() - r.t < 3 * DAY && r.i < r.queue.length
         && !!r.simple === simpleMode()) return r;      // snapshot d'un autre mode : on l'ignore
-  } catch (e) {}
+  } catch (e) { /* snapshot corrompu ou absent : pas de reprise, comme un démarrage neuf */ }
   return null;
 }
 
@@ -130,7 +141,6 @@ const bestRun = log => { let b = 0, c = 0; for (const v of log) { c = v ? c + 1 
 
 /* bilan de fin de session : chiffres, séries, historique, liste des ratés */
 export function review(o) {
-  const p = o.total ? o.ok / o.total : 0;
   const per = o.log.length ? o.ms / o.log.length : 0;
   const hist = o.hist || [];
   const tiles = [
@@ -278,27 +288,41 @@ export const isBool = t => /^(vrai|faux|true|false|oui|non|yes|no)$/i.test(plain
 
 const tfTruth = c => /^\s*(v|vrai|true|oui|yes|1|y)\b/i.test(plain(c.b));
 
+/* Les deux faces d'une carte, selon son sens d'affichage : le sens fixé
+   pour la carte (`study.dirs`) ou celui de la session, sauf sur une
+   carte vrai/faux, qui n'a pas de sens à inverser. */
+function cardFacesFor(c, tf) {
+  const rv = !tf && (study.dirs ? study.dirs[c.id] : study.rev);
+  const org = cardOrigin(c);
+  return {
+    rv, org,
+    front: rv ? c.b : c.f, back: rv ? c.f : c.b,
+    fimg: rv ? c.bi : c.fi, bimg: rv ? c.fi : c.bi,
+    faud: rv ? c.ba : c.fa, baud: rv ? c.fa : c.ba,
+    frontLang: rv ? org.langb : org.langf, backLang: rv ? org.langf : org.langb
+  };
+}
+
+/* Posées sur la fiche et non dedans, la matière et les étiquettes
+   restaient en place pendant que la fiche se retournait : elles avaient
+   l'air collées par-dessus. Elles appartiennent maintenant à chaque
+   face, donc elles tournent avec. */
+function cardTagHtml(c, org) {
+  return `${org.subj ? `<div class="sbj"><i></i>${esc(org.subj.name)}</div>` : ''}${
+    (c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
+      `<i>${esc(t)}</i>`).join('')}</div>` : ''}`;
+}
+
 function paintStack() {
   const st = document.getElementById('stack'); if (!st) return;
   const c = cardOf(0);
   if (!c) { st.innerHTML = ''; return; }
   study.tf = null;                                   // verdict vrai/faux de la carte courante
   const tf = isTF(c);
-  const rv = !tf && (study.dirs ? study.dirs[c.id] : study.rev);
-  const front = rv ? c.b : c.f, back = rv ? c.f : c.b;
-  const fimg = rv ? c.bi : c.fi, bimg = rv ? c.fi : c.bi;
-  const faud = rv ? c.ba : c.fa, baud = rv ? c.fa : c.ba;
-  const org = cardOrigin(c);
-  const frontLang = rv ? org.langb : org.langf, backLang = rv ? org.langf : org.langb;
+  const { front, back, fimg, bimg, faud, baud, frontLang, backLang, org } = cardFacesFor(c, tf);
   /* la pile prend la couleur de la matière de la carte, carte après carte */
   if (org.subj) st.setAttribute('style', sty(org.subj));
-  /* Posées sur la fiche et non dedans, la matière et les étiquettes
-     restaient en place pendant que la fiche se retournait : elles avaient
-     l'air collées par-dessus. Elles appartiennent maintenant à chaque
-     face, donc elles tournent avec. */
-  const tag = `${org.subj ? `<div class="sbj"><i></i>${esc(org.subj.name)}</div>` : ''}${
-    (c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
-      `<i>${esc(t)}</i>`).join('')}</div>` : ''}`;
+  const tag = cardTagHtml(c, org);
   st.innerHTML = `<div class="card in${tf ? ' tf' : ''}" id="top">
       <div class="flipper">
         ${faceHtml(false, front, fimg, faud, frontLang, tag)}
@@ -545,7 +569,7 @@ function bindDrag(el) {
     const r = el.getBoundingClientRect();
     haut = e.clientY < r.top + r.height / 2;
     trace = [{ x: 0, y: 0, t: Date.now() }];
-    try { el.setPointerCapture(pid); } catch (x) {}
+    try { el.setPointerCapture(pid); } catch (x) { /* capture refusée : le glissé marche quand même via pointermove */ }
     el.style.transition = 'none';
   });
   el.addEventListener('pointermove', e => {
@@ -611,6 +635,34 @@ export function fling(dir, v, fx, fy) {
   setTimeout(() => commit(g != null ? g > 0 : dir > 0, g), 250);
 }
 
+/* Mode simple : on ne planifie pas et on ne touche ni à n, ni à i, ni à d.
+   La carte garde son état exact, seul le compteur de ratés avance —
+   il sert au tri « ratées » et vaut dans les deux modes. */
+function applyGrade(c, ok, r) {
+  if (study.simple) { if (!ok) c.l = (c.l || 0) + 1; }
+  else grade(c, r);
+}
+
+function scoreRow(id, d, r, ok, ms, rv) {
+  return {
+    client_id: uid(),                       // rejouable sans doublon
+    user_id: auth.uid, deck_id: d ? d.id : null, card_id: id,
+    mode: study.simple ? 'simple' : (study.mode || 'study'),
+    rating: study.simple ? null : r, correct: !!ok, ms: Math.min(ms, 600000), reversed: !!rv
+  };
+}
+
+function recordTried(id, ok) {
+  if (!study.tried[id]) { study.tried[id] = 1; if (ok) study.ok++; study.log.push(ok ? 1 : 0); }
+}
+
+function recordMiss(id, ok, c, rv) {
+  if (!ok && !study.missSet[id]) {
+    study.missSet[id] = 1;
+    study.miss.push({ id, q: rv ? c.b : c.f, a: rv ? c.f : c.b });
+  }
+}
+
 /* Note une carte et l'inscrit au journal. Partagé par la révision, le QCM et
    l'association : un seul endroit décide de ce qui est écrit dans la carte. */
 function scoreCard(id, ok, rating) {
@@ -620,18 +672,9 @@ function scoreCard(id, ok, rating) {
   const rv = !isTF(c) && (study.dirs ? study.dirs[id] : study.rev);
   const ms = Date.now() - (study.tq || Date.now());
   study.tq = Date.now();
-  /* Mode simple : on ne planifie pas et on ne touche ni à n, ni à i, ni à d.
-     La carte garde son état exact, seul le compteur de ratés avance —
-     il sert au tri « ratées » et vaut dans les deux modes. */
-  if (study.simple) { if (!ok) c.l = (c.l || 0) + 1; }
-  else grade(c, r);
+  applyGrade(c, ok, r);
   if (d) { dirty[d.id] = 1; save(); scheduleFlush(); }
-  const row = {
-    client_id: uid(),                       // rejouable sans doublon
-    user_id: auth.uid, deck_id: d ? d.id : null, card_id: id,
-    mode: study.simple ? 'simple' : (study.mode || 'study'),
-    rating: study.simple ? null : r, correct: !!ok, ms: Math.min(ms, 600000), reversed: !!rv
-  };
+  const row = scoreRow(id, d, r, ok, ms, rv);
   /* Sans paquet identifié, la ligne serait refusée par la base (deck_id
      est un uuid) : mieux vaut ne pas l'inscrire que boucher la file. */
   if (d) enqueue('/rest/v1/reviews', row);
@@ -645,11 +688,8 @@ function scoreCard(id, ok, rating) {
      pour le moteur, mais à l'oreille c'est une fiche qui a résisté. Les
      deux notes de gauche sonnent bas, les deux de droite sonnent haut. */
   beep(r >= 2);
-  if (!study.tried[id]) { study.tried[id] = 1; if (ok) study.ok++; study.log.push(ok ? 1 : 0); }
-  if (!ok && !study.missSet[id]) {
-    study.missSet[id] = 1;
-    study.miss.push({ id, q: rv ? c.b : c.f, a: rv ? c.f : c.b });
-  }
+  recordTried(id, ok);
+  recordMiss(id, ok, c, rv);
   return [c, d, !!rv];
 }
 

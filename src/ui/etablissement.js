@@ -207,81 +207,126 @@ export function calendrier(ancre, choisi, marques, prefixe, saut) {
 }
 
 /* ══════════ 1. Mes classes — la page d'accueil du professeur ══════════ */
-export function profView() {
-  const l = prof.classes;
-  const som = k => (l || []).reduce((a, c) => a + (c[k] || 0), 0);
-  const retard = som('retard'), jamais = som('jamais'), eleves = som('effectif');
-  const encours = som('encours'), actifs = som('actifs7');
-
-  const tuile = c => {
-    const chaud = c.retard > 0 || c.jamais > 0;
-    return `<button class="kls${chaud ? ' chaud' : ''}" data-pclasse="${esc(c.id)}">
-      <span class="kn">${esc(c.name)}
-        ${c.principal ? '<i class="pp">PP</i>' : ''}
-        <em class="keff">${c.effectif}</em></span>
-      <span class="ks">${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''}${
-        c.matiere ? ' · ' + esc(c.matiere) : ''}</span>
-      <span class="kw">
-        ${c.retard ? `<em class="ko">${c.retard} en retard</em>` : ''}
-        ${c.pas_ouvert ? `<em class="am">${c.pas_ouvert} sans ouvrir</em>` : ''}
-        ${c.jamais ? `<em class="gris">${c.jamais} jamais connectés</em>` : ''}
-        ${!c.retard && !c.pas_ouvert && !c.jamais && c.devoirs ? '<em class="ok">à jour</em>' : ''}
-        ${!c.devoirs ? '<em class="gris">aucun devoir donné</em>' : ''}
-      </span>
-      ${c.dernier ? `<span class="kd">${svg(I.card)}<b>${esc(c.dernier)}</b>
-        <i>${c.dernier_due ? dueLabel(c.dernier_due) : ''}</i></span>` : ''}
-      ${c.devoirs ? `<span class="kbar"><i class="${pcClass(c.pct)}"
-          style="width:${Math.max(2, c.pct)}%"></i></span>
-        <span class="kp">${c.pct} % de réussite au dernier devoir · ${
-          plur(c.encours, 'devoir')} en cours</span>` : ''}
-    </button>`;
-  };
-
+function classGroups(l) {
   const groupes = [];
   for (const c of l || []) {
     const k = c.cycle || 'autre';
     const g = groupes.find(x => x.k === k);
-    (g || (groupes.push({ k, l: [] }), groupes[groupes.length - 1])).l.push(c);
+    if (g) g.l.push(c);
+    else groupes.push({ k, l: [c] });
   }
-  const an = prof.annees || [];
+  return groupes;
+}
 
-  $.innerHTML = `
-    <div class="bar">
-      <h1>Mes classes</h1>
-      ${an.length > 1 ? `<select class="anne" id="pan" aria-label="Année scolaire">
+function anneeSelector(an) {
+  if (an.length <= 1) return `<span class="anne fixe">${esc(prof.annee || '')}</span>`;
+  return `<select class="anne" id="pan" aria-label="Année scolaire">
         ${an.map(a => `<option value="${esc(a.annee)}"${a.annee === prof.annee ? ' selected' : ''}
-          >${esc(a.annee)}</option>`).join('')}</select>`
-        : `<span class="anne fixe">${esc(prof.annee || '')}</span>`}
-    </div>
-    <div class="page console">
-      ${school && school.org ? `<div class="ecole">${svg(I.school)}<span>
-        <b>${esc(prefs.name || auth.email)}</b>
-        <i>${esc(school.org)}${school.ville ? ' · ' + esc(school.ville) : ''}</i></span></div>` : ''}
+          >${esc(a.annee)}</option>`).join('')}</select>`;
+}
 
-      ${!l ? '' : `<div class="kpi cinq">
+function ecoleBanner() {
+  if (!school || !school.org) return '';
+  return `<div class="ecole">${svg(I.school)}<span>
+        <b>${esc(prefs.name || auth.email)}</b>
+        <i>${esc(school.org)}${school.ville ? ' · ' + esc(school.ville) : ''}</i></span></div>`;
+}
+
+function classesKpi(l, retard, jamais, eleves, encours) {
+  if (!l) return '';
+  return `<div class="kpi cinq">
         <div class="kc"><b>${l.length}</b><span>classes</span></div>
         <div class="kc"><b>${eleves}</b><span>élèves</span></div>
         <div class="kc"><b>${encours}</b><span>devoirs en cours</span></div>
         <div class="kc ${retard ? 'ko' : ''}"><b>${retard}</b><span>élèves en retard</span></div>
         <div class="kc ${jamais ? 'am' : ''}"><b>${jamais}</b><span>jamais connectés</span></div>
-      </div>`}
+      </div>`;
+}
+
+function classeMeta(c) {
+  return `${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''}${c.matiere ? ' · ' + esc(c.matiere) : ''}`;
+}
+
+function classeStatusLine(c) {
+  const aJour = !c.retard && !c.pas_ouvert && !c.jamais && c.devoirs;
+  return `
+        ${c.retard ? `<em class="ko">${c.retard} en retard</em>` : ''}
+        ${c.pas_ouvert ? `<em class="am">${c.pas_ouvert} sans ouvrir</em>` : ''}
+        ${c.jamais ? `<em class="gris">${c.jamais} jamais connectés</em>` : ''}
+        ${aJour ? '<em class="ok">à jour</em>' : ''}
+        ${!c.devoirs ? '<em class="gris">aucun devoir donné</em>' : ''}`;
+}
+
+function classeDernier(c) {
+  if (!c.dernier) return '';
+  return `<span class="kd">${svg(I.card)}<b>${esc(c.dernier)}</b>
+        <i>${c.dernier_due ? dueLabel(c.dernier_due) : ''}</i></span>`;
+}
+
+function classeProgress(c) {
+  if (!c.devoirs) return '';
+  return `<span class="kbar"><i class="${pcClass(c.pct)}"
+          style="width:${Math.max(2, c.pct)}%"></i></span>
+        <span class="kp">${c.pct} % de réussite au dernier devoir · ${
+          plur(c.encours, 'devoir')} en cours</span>`;
+}
+
+function classeTuile(c) {
+  const chaud = c.retard > 0 || c.jamais > 0;
+  return `<button class="kls${chaud ? ' chaud' : ''}" data-pclasse="${esc(c.id)}">
+      <span class="kn">${esc(c.name)}
+        ${c.principal ? '<i class="pp">PP</i>' : ''}
+        <em class="keff">${c.effectif}</em></span>
+      <span class="ks">${classeMeta(c)}</span>
+      <span class="kw">${classeStatusLine(c)}</span>
+      ${classeDernier(c)}
+      ${classeProgress(c)}
+    </button>`;
+}
+
+function classesBody(l, groupes) {
+  if (!l) return `<div class="empty">${svg(I.school)}<p>${prof.err ? 'Liste indisponible' : 'Chargement…'}</p></div>`;
+  if (!l.length) return `<div class="empty">${svg(I.school)}<p><b>Aucune classe cette année</b></p></div>`;
+  return groupes.map(g => `
+            <div class="lbl"><span>${esc(CYCLES[g.k] || 'Autres classes')}</span><span>${g.l.length}</span></div>
+            <div class="grille">${g.l.map(classeTuile).join('')}</div>`).join('');
+}
+
+function bindAnneeSelect() {
+  const sel = document.getElementById('pan');
+  if (!sel) return;
+  sel.addEventListener('change', () => {
+    prof.annee = sel.value; prof.classes = null; prof.open = null;
+    profPull(); setAnimate(false); render();
+  });
+}
+
+export function profView() {
+  const l = prof.classes;
+  const som = k => (l || []).reduce((a, c) => a + (c[k] || 0), 0);
+  const retard = som('retard'), jamais = som('jamais'), eleves = som('effectif');
+  const encours = som('encours'), actifs = som('actifs7');
+  const groupes = classGroups(l);
+  const an = prof.annees || [];
+
+  $.innerHTML = `
+    <div class="bar">
+      <h1>Mes classes</h1>
+      ${anneeSelector(an)}
+    </div>
+    <div class="page console">
+      ${ecoleBanner()}
+
+      ${classesKpi(l, retard, jamais, eleves, encours)}
 
       <div class="duo ghost gros">
         <button data-act="pnew">${svg(I.plus)}Créer et donner un devoir</button>
         ${actifs ? `<button data-act="pbilan">${svg(I.chart)}${actifs} élèves actifs cette semaine</button>` : ''}
       </div>
 
-      ${!l ? `<div class="empty">${svg(I.school)}<p>${prof.err ? 'Liste indisponible' : 'Chargement…'}</p></div>`
-        : !l.length ? `<div class="empty">${svg(I.school)}<p><b>Aucune classe cette année</b></p></div>`
-        : groupes.map(g => `
-            <div class="lbl"><span>${esc(CYCLES[g.k] || 'Autres classes')}</span><span>${g.l.length}</span></div>
-            <div class="grille">${g.l.map(tuile).join('')}</div>`).join('')}
+      ${classesBody(l, groupes)}
     </div>`;
-  const sel = document.getElementById('pan');
-  if (sel) sel.addEventListener('change', () => {
-    prof.annee = sel.value; prof.classes = null; prof.open = null;
-    profPull(); setAnimate(false); render();
-  });
+  bindAnneeSelect();
 }
 
 /* ══════════ 2. Une classe ══════════ */

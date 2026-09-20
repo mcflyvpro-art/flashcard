@@ -44,6 +44,6 @@ export async function leaveGroup(id) {
   try {
     await api(`/rest/v1/group_members?group_id=eq.${id}&user_id=eq.${auth.uid}`, 'DELETE',
       null, { Prefer: 'return=minimal' });
-  } catch (e) {}
+  } catch (e) { /* échec réseau : groupsPull() qui suit rétablira l'état exact */ }
   closeMenu(); setGroups(null); groupsPull();
 }

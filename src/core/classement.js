@@ -34,8 +34,6 @@ export async function boardPull(bg) {
   if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { setAnimate(false); render(); }
 }
 
-const isBlocked = id => !!(blocks || []).some(b => b.blocked_id === id);
-
 export async function blocksPull() {
   try { setBlocks(await api('/rest/v1/blocks?select=blocked_id,who,created_at&order=created_at.desc') || []); }
   catch (e) { setBlocks(blocks || []); }
@@ -274,7 +272,7 @@ export async function takeWork(a) {
     await api('/rest/v1/assignment_progress', 'POST',
       [{ assignment_id: a.id, user_id: auth.uid, who: prefs.name || (me && me.handle) || 'Compte', pct: 0 }],
       { Prefer: 'resolution=merge-duplicates,return=minimal' });
-  } catch (e) {}
+  } catch (e) { /* juste un compteur de suivi côté prof : le devoir est déjà dans la bibliothèque */ }
   closeMenu();
   if (d) go('deck', d.id);
   toast(I.check, 'Devoir ajouté à ta bibliothèque');

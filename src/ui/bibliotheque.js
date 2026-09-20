@@ -113,6 +113,77 @@ export function go(name, id, dir) {
   render(); window.scrollTo(0, 0);
 }
 
+function railOn() {
+  if (view.name === 'settings') return 'settings';
+  if (view.name === 'mail') return 'mail';
+  if (view.name === 'stats') return 'stats';
+  if (/^(classes|classe|maclasse|prof|ref$|admin$)/.test(view.name)) return 'classes';
+  if (/commu|friends|groups|duels|library|board|shared/.test(view.name)) return 'commu';
+  return 'home';
+}
+
+function railClasseNom() {
+  if (myRole === 'ref') return 'Mon établissement';
+  if (myRole === 'admin') return 'Administration';
+  return isProf() ? 'Mes classes' : 'Ma classe';
+}
+
+const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' : ''}" data-r="${k}">${
+  svg(ic)}<span>${nom}</span>${badge ? `<i class="icb">${badge}</i>` : ''}</button>`;
+
+const railMailBadge = () => mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0;
+
+function railNavBoulot(on, classeNom) {
+  const ent = (k, ic, nom, badge) => railEntry(on, k, ic, nom, badge);
+  return `
+    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
+    <nav>
+      ${ent('classes', I.school, classeNom)}
+      ${ent('home', I.layers, 'Livres')}
+      ${ent('mail', I.mail, 'Courrier', railMailBadge())}
+      ${ent('settings', I.gear, 'Réglages')}
+    </nav>
+    <div class="sp"></div>
+    <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
+}
+
+const railHasClasses = () => isProf() || atSchool() || !!(classes || []).length;
+
+function railNavHome(on, classeNom) {
+  const ent = (k, ic, nom, badge) => railEntry(on, k, ic, nom, badge);
+  return `
+    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
+    <nav>
+      ${ent('home', I.layers, 'Livres')}
+    </nav>
+    <div class="sp"></div>
+    <nav>
+      ${ent('stats', I.chart, 'Journal')}
+      ${railHasClasses() ? ent('classes', I.school, classeNom) : ''}
+      ${ent('commu', I.user, 'Le cercle', (asks || []).length)}
+      ${ent('mail', I.mail, 'Courrier', railMailBadge())}
+      ${ent('settings', I.gear, 'Réglages')}
+    </nav>
+    <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
+}
+
+function railClickClasses() {
+  if (isPupil()) { maClassePull(); return go('maclasse'); }
+  if (myRole === 'admin') { if (!accounts) accountsPull(); if (!adm.orgs) admPull(); return go('admin'); }
+  if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
+  if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
+  if (!classes) classesPull(); return go('classes');
+}
+
+function railClick(e) {
+  const b = e.target.closest('[data-r]'); if (!b) return;
+  if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
+  if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
+  if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
+  if (b.dataset.r === 'classes') return railClickClasses();
+  go(b.dataset.r === 'settings' ? 'settings' : 'home');
+}
+
 function paintRail() {
   let r = document.getElementById('rail');
   if (!auth || view.name === 'login') {
@@ -120,10 +191,7 @@ function paintRail() {
     document.documentElement.classList.remove('nav-haut');
     return;
   }
-  const on = view.name === 'settings' ? 'settings'
-    : view.name === 'mail' ? 'mail' : view.name === 'stats' ? 'stats'
-    : /^(classes|classe|maclasse|prof|ref$|admin$)/.test(view.name) ? 'classes'
-    : /commu|friends|groups|duels|library|board|shared/.test(view.name) ? 'commu' : 'home';
+  const on = railOn();
   /* Un compte d'établissement travaille, il ne révise pas : ni journal de
      lecture, ni cercle des lecteurs. Quatre entrées, et elles passent en
      barre horizontale — la page de gestion prend alors toute la largeur au
@@ -136,49 +204,9 @@ function paintRail() {
   r.dataset.sig = sig;
   r.className = boulot ? 'haut' : '';
   document.documentElement.classList.toggle('nav-haut', boulot);
-  const ent = (k, ic, nom, badge) => `<button class="${on === k ? 'on' : ''}" data-r="${k}">${
-    svg(ic)}<span>${nom}</span>${badge ? `<i class="icb">${badge}</i>` : ''}</button>`;
-  const classeNom = myRole === 'ref' ? 'Mon établissement'
-    : myRole === 'admin' ? 'Administration'
-    : isProf() ? 'Mes classes' : 'Ma classe';
-  r.innerHTML = boulot ? `
-    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
-    <nav>
-      ${ent('classes', I.school, classeNom)}
-      ${ent('home', I.layers, 'Livres')}
-      ${ent('mail', I.mail, 'Courrier', mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0)}
-      ${ent('settings', I.gear, 'Réglages')}
-    </nav>
-    <div class="sp"></div>
-    <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`
-  : `
-    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
-    <nav>
-      ${ent('home', I.layers, 'Livres')}
-    </nav>
-    <div class="sp"></div>
-    <nav>
-      ${ent('stats', I.chart, 'Journal')}
-      ${isProf() || atSchool() || (classes || []).length ? ent('classes', I.school, classeNom) : ''}
-      ${ent('commu', I.user, 'Le cercle', (asks || []).length)}
-      ${ent('mail', I.mail, 'Courrier', mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0)}
-      ${ent('settings', I.gear, 'Réglages')}
-    </nav>
-    <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
-  r.onclick = e => {
-    const b = e.target.closest('[data-r]'); if (!b) return;
-    if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
-    if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
-    if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
-    if (b.dataset.r === 'classes') {
-      if (isPupil()) { maClassePull(); return go('maclasse'); }
-      if (myRole === 'admin') { if (!accounts) accountsPull(); if (!adm.orgs) admPull(); return go('admin'); }
-      if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
-      if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
-      if (!classes) classesPull(); return go('classes');
-    }
-    go(b.dataset.r === 'settings' ? 'settings' : 'home');
-  };
+  const classeNom = railClasseNom();
+  r.innerHTML = boulot ? railNavBoulot(on, classeNom) : railNavHome(on, classeNom);
+  r.onclick = railClick;
 }
 
 /* Deux écrans de premier niveau, donc deux onglets et un balayage entre
@@ -342,6 +370,46 @@ export function queueChip() {
     ${svg(online ? I.cloud : I.warn)}${n ? `<b>${n}</b>` : 'hors ligne'}</button>`;
 }
 
+function mailBadge() {
+  return mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : '';
+}
+
+function peekButton(hidden) {
+  if (!hidden) return '';
+  return `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>`;
+}
+
+function sortRow(list) {
+  if (list.length <= 2 || reorder) return '';
+  return `<div class="hbar">
+    <button class="lnk" data-act="sortpick">${svg(I.sort)}${SORTS[prefs.sort] || 'Manuel'}</button>
+    <div style="flex:1"></div>
+    <button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>
+  </div>`;
+}
+
+function deckList(list) {
+  if (!list.length) {
+    return `<div class="empty">${svg(I.layers)}<p><b>Ta bibliothèque est vide</b>Appuie sur + pour écrire ton premier livre.</p></div>`;
+  }
+  const sorted = sortDecks(list);
+  return prefs.list
+    ? `<div class="rows lst ${reorder ? 'reord' : ''}">${sorted.map(listRow).join('')}</div>`
+    : `<div class="grid ${reorder ? 'reord' : ''}">${sorted.map(tile).join('')}</div>`;
+}
+
+function marathonBanner() {
+  if (simpleMode() || !allDue()) return '';
+  return `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
+    <span>Lecture du jour</span><i>${allDue()} pages dues, toutes matières</i></button>`;
+}
+
+function homeFab() {
+  return reorder
+    ? `<button class="fab fabok" data-act="reorder" aria-label="Valider l’ordre">${svg(I.check)}</button>`
+    : `<button class="fab" data-act="new" aria-label="Nouveau livre">${svg(I.plus)}<span>Nouveau livre</span></button>`;
+}
+
 function home() {
   const used = db.subjects.filter(s => db.decks.some(d => d.subject === s.id && (peek || !d.hidden))).map(x => subj(x.id));
   const hidden = db.decks.some(d => d.hidden);
@@ -353,27 +421,18 @@ function home() {
         ${queueChip()}
         ${goalRing()}
         <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
-        <button class="ic icmail" data-act="mail" aria-label="Boîte de réception">${svg(I.mail)}${mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : ''}</button>
+        <button class="ic icmail" data-act="mail" aria-label="Boîte de réception">${svg(I.mail)}${mailBadge()}</button>
         <button class="ic" data-act="settings" aria-label="Réglages">${svg(I.gear)}</button>
-        ${hidden ? `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>` : ''}
+        ${peekButton(hidden)}
       </div>
       ${resumeBanner()}
       ${used.length > 1 ? pills(filter, used, 'filt') : ''}
       ${list.length ? subBar(list) : ''}
-      ${list.length > 2 && !reorder ? `<div class="hbar">
-        <button class="lnk" data-act="sortpick">${svg(I.sort)}${SORTS[prefs.sort] || 'Manuel'}</button>
-        <div style="flex:1"></div>
-        <button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>
-      </div>` : ''}
-      ${!list.length ? `<div class="empty">${svg(I.layers)}<p><b>Ta bibliothèque est vide</b>Appuie sur + pour écrire ton premier livre.</p></div>`
-        : prefs.list
-          ? `<div class="rows lst ${reorder ? 'reord' : ''}">${sortDecks(list).map(listRow).join('')}</div>`
-          : `<div class="grid ${reorder ? 'reord' : ''}">${sortDecks(list).map(tile).join('')}</div>`}
-      ${!simpleMode() && allDue() ? `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
-        <span>Lecture du jour</span><i>${allDue()} pages dues, toutes matières</i></button>` : ''}
+      ${sortRow(list)}
+      ${deckList(list)}
+      ${marathonBanner()}
     </div>
-    ${reorder ? `<button class="fab fabok" data-act="reorder" aria-label="Valider l’ordre">${svg(I.check)}</button>`
-      : `<button class="fab" data-act="new" aria-label="Nouveau livre">${svg(I.plus)}<span>Nouveau livre</span></button>`}
+    ${homeFab()}
     ${tabs('home')}`;
   $.classList.toggle('reordering', reorder);
   bindPager();
@@ -476,8 +535,8 @@ function bindDeckOrder() {
     g.bx = r.left; g.by = r.top; g.tx = 0; g.ty = 0; g.ow = r.width; g.oh = r.height;
     g.el.classList.add('drag');
     wrap.classList.add('dragging');
-    try { g.el.setPointerCapture(g.pid); } catch (e) {}
-    if (navigator.vibrate) try { navigator.vibrate(12); } catch (e) {}
+    try { g.el.setPointerCapture(g.pid); } catch (e) { /* capture refusée : le glissé continue sans elle */ }
+    if (navigator.vibrate) try { navigator.vibrate(12); } catch (e) { /* vibration refusée ou non permise : sans effet sur le geste */ }
     place();
   };
   wrap.addEventListener('pointerdown', e => {

@@ -215,32 +215,54 @@ export function fuzzIvl(ivl, maxIvl, rnd) {
 }
 
 /* ---------- la machine d'états, port de py-fsrs ---------- */
+const reviewIvl = (w, m, dr, maxIvl) => Math.min(Math.max(Math.round(fsrsIvl(w, m, dr)), 1), maxIvl);
+
+/* Paliers d'apprentissage ou de réapprentissage (st 1 ou 3) : chaque note
+   avance, recule ou fait passer en révision, sans jamais toucher `m`. */
+function stepLearning(st, sp, g, S, w, m, dr, maxIvl) {
+  if (sp == null) sp = 0;
+  if (!S.length || (sp >= S.length && g >= 2)) return { st: 2, sp: null, days: reviewIvl(w, m, dr, maxIvl) };
+  if (g === 1) return { st, sp: 0, mins: S[0] };
+  if (g === 2) return { st, sp, mins: sp === 0 ? (S.length === 1 ? S[0] * 1.5 : (S[0] + S[1]) / 2) : S[sp] };
+  if (g === 3) {
+    return sp + 1 === S.length
+      ? { st: 2, sp: null, days: reviewIvl(w, m, dr, maxIvl) }
+      : { st, sp: sp + 1, mins: S[sp + 1] };
+  }
+  return { st: 2, sp: null, days: reviewIvl(w, m, dr, maxIvl) };
+}
+
+/* Une fiche déjà en révision (st 2) : seul un « encore » la fait retomber
+   en réapprentissage, s'il y a des paliers pour ça. */
+function stepReview(st, g, w, m, dr, maxIvl) {
+  if (g !== 1) return { st, days: reviewIvl(w, m, dr, maxIvl) };
+  return RELEARN_STEPS.length
+    ? { st: 3, sp: 0, mins: RELEARN_STEPS[0] }
+    : { st, days: reviewIvl(w, m, dr, maxIvl) };
+}
+
+const sinceReview = (c, now) => c.lr ? Math.max(0, Math.floor((now - c.lr) / DAY)) : 0;
+
+const memoryState = (c, since, g, w) => c.S
+  ? fsrsStep(w, { S: c.S, D: c.D || 5, F: c.F || c.S }, since, g)
+  : fsrsInit(w, g);
+
+const withFuzz = (c, g, rawDays, st, maxIvl, fuzzy) =>
+  (rawDays != null && fuzzy !== false && st === 2) ? fuzzIvl(rawDays, maxIvl, fuzzSeed(c, g)) : rawDays;
+
 /* rating de l'app : 0 encore · 1 difficile · 2 correct · 3 facile
    FSRS attend 1..4 — la conversion se fait ici, et nulle part ailleurs. */
 export function fsrsPlan(c, rating, now, cfg, fuzzy) {
   const w = cfg.w, dr = cfg.dr, maxIvl = cfg.maxIvl;
   const g = cl((rating | 0) + 1, 1, 4);
-  const since = c.lr ? Math.max(0, Math.floor((now - c.lr) / DAY)) : 0;
-  const m = c.S ? fsrsStep(w, { S: c.S, D: c.D || 5, F: c.F || c.S }, since, g)
-                : fsrsInit(w, g);
-  let st = c.st || 1, sp = c.sp == null ? null : c.sp, mins = null, days = null;
-  const toReview = () => {
-    st = 2; sp = null;
-    days = Math.min(Math.max(Math.round(fsrsIvl(w, m, dr)), 1), maxIvl);
-  };
-  if (st === 1 || st === 3) {
-    const S = st === 3 ? RELEARN_STEPS : LEARN_STEPS;
-    if (sp == null) sp = 0;
-    if (!S.length || (sp >= S.length && g >= 2)) toReview();
-    else if (g === 1) { sp = 0; mins = S[0]; }
-    else if (g === 2) mins = sp === 0 ? (S.length === 1 ? S[0] * 1.5 : (S[0] + S[1]) / 2) : S[sp];
-    else if (g === 3) { if (sp + 1 === S.length) toReview(); else mins = S[++sp]; }
-    else toReview();
-  } else if (g === 1) {
-    if (!RELEARN_STEPS.length) days = Math.min(Math.max(Math.round(fsrsIvl(w, m, dr)), 1), maxIvl);
-    else { st = 3; sp = 0; mins = RELEARN_STEPS[0]; }
-  } else days = Math.min(Math.max(Math.round(fsrsIvl(w, m, dr)), 1), maxIvl);
-  if (days != null && fuzzy !== false && st === 2) days = fuzzIvl(days, maxIvl, fuzzSeed(c, g));
+  const m = memoryState(c, sinceReview(c, now), g, w);
+  const initSt = c.st || 1, initSp = c.sp == null ? null : c.sp;
+  const S = initSt === 3 ? RELEARN_STEPS : LEARN_STEPS;
+  const step = (initSt === 1 || initSt === 3)
+    ? stepLearning(initSt, initSp, g, S, w, m, dr, maxIvl)
+    : stepReview(initSt, g, w, m, dr, maxIvl);
+  const { st, sp = initSp, mins = null, days: rawDays = null } = step;
+  const days = withFuzz(c, g, rawDays, st, maxIvl, fuzzy);
   return { S: m.S, D: m.D, F: m.F, st, sp, ivl: days || 0,
            d: now + (days != null ? days * DAY : mins * MIN) };
 }

@@ -102,6 +102,25 @@ export function profBilan(c) {
    a été rendu, quand, et avec quel taux de réussite. Jamais les réponses,
    jamais les horaires de travail, jamais les paquets personnels. La
    différence entre suivre une classe et surveiller quelqu'un. */
+function devoirLigneHtml(x, ETAT) {
+  return `<div class="dvr lect">
+            <span class="c1"><b>${esc(x.devoir)}</b>
+              <i>${plur(x.n, 'page')}${x.matiere ? ' · ' + esc(x.matiere) : ''}${
+                x.mien ? '' : ' · d’un collègue'}</i></span>
+            <span class="an"><b class="${x.pct ? pcClass(x.pct) : ''}">${x.pct || '—'}</b>
+              <i>% juste</i></span>
+            <span class="an"><b>${x.due ? jourFr(x.due) : '—'}</b><i>à rendre</i></span>
+            <span class="an"><b>${x.rendu ? timeAgo(x.rendu) : '—'}</b><i>rendu</i></span>
+            <span class="etat ${ETAT[x.etat] || ''}">${esc(x.etat)}</span>
+          </div>`;
+}
+
+function devoirsClasseHtml(f, ETAT) {
+  if (!f) return `<div class="card2"></div>`;
+  if (!f.length) return `<div class="card2"><div class="note">Aucun devoir dans cette classe.</div></div>`;
+  return `<div class="dvrs">${f.map(x => devoirLigneHtml(x, ETAT)).join('')}</div>`;
+}
+
 export function profEleveView() {
   const c = (prof.classes || []).find(x => x.id === prof.open);
   const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
@@ -136,18 +155,7 @@ export function profEleveView() {
       </div>
 
       <div class="lbl"><span>Devoirs de la classe</span><span>${f ? f.length : ''}</span></div>
-      ${!f ? `<div class="card2"></div>`
-        : !f.length ? `<div class="card2"><div class="note">Aucun devoir dans cette classe.</div></div>`
-        : `<div class="dvrs">${f.map(x => `<div class="dvr lect">
-            <span class="c1"><b>${esc(x.devoir)}</b>
-              <i>${plur(x.n, 'page')}${x.matiere ? ' · ' + esc(x.matiere) : ''}${
-                x.mien ? '' : ' · d’un collègue'}</i></span>
-            <span class="an"><b class="${x.pct ? pcClass(x.pct) : ''}">${x.pct || '—'}</b>
-              <i>% juste</i></span>
-            <span class="an"><b>${x.due ? jourFr(x.due) : '—'}</b><i>à rendre</i></span>
-            <span class="an"><b>${x.rendu ? timeAgo(x.rendu) : '—'}</b><i>rendu</i></span>
-            <span class="etat ${ETAT[x.etat] || ''}">${esc(x.etat)}</span>
-          </div>`).join('')}</div>`}
+      ${devoirsClasseHtml(f, ETAT)}
     </div>`;
 }
 
@@ -288,26 +296,31 @@ export async function compDonner() {
   }
 }
 
-/* ---------- la feuille d'un devoir ---------- */
-export function workSheet(w) {
-  const d = (prof.devoirs || []).find(x => x.id === prof.work);
-  if (!d) { setMenu(null); return; }
-  const pas = Math.max(0, (d.effectif || 0) - (d.ouvert || 0));
-  const ca = prof.cartes;
-  w.innerHTML = `<div class="scrim" data-mact="close"></div>
-    <div class="menu pv">
-      <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(d.nom)}</b>
-        <i>${plur(d.n, 'page')}${d.matiere ? ' · ' + esc(d.matiere) : ''}${
-          d.due ? ' · ' + dueLabel(d.due) : ''}${d.mien ? '' : ' · donné par ' + esc(d.auteur)}</i></span></div>
-      <div class="mscroll">
-        <div class="fiche">
+const workHeaderSub = d => `${plur(d.n, 'page')}${d.matiere ? ' · ' + esc(d.matiere) : ''}${
+  d.due ? ' · ' + dueLabel(d.due) : ''}${d.mien ? '' : ' · donné par ' + esc(d.auteur)}`;
+
+function workFicheHtml(d, pas) {
+  return `<div class="fiche">
           <div><b>${d.rendu} / ${d.effectif}</b><span>ont rendu</span></div>
           <div><b>${d.ouvert}</b><span>ont ouvert</span></div>
           <div><b class="${pas ? 'ko' : ''}">${pas}</b><span>n’ont pas ouvert</span></div>
           <div><b class="${d.pct ? pcClass(d.pct) : ''}">${d.pct || '—'}${
             d.pct ? ' %' : ''}</b><span>de réussite</span></div>
-        </div>
-        ${d.mien ? `
+        </div>`;
+}
+
+function workBloqueHtml(ca) {
+  if (!ca) return ``;
+  if (!ca.length) return ``;
+  return `<div class="mscroll courte">${ca.map(c => `<div class="mi lect">
+              <span class="carte"><b>${esc(c.recto)} → ${esc(c.verso)}</b>
+                <i>${c.ratees} erreurs sur ${c.vues} passages · ${plur(c.eleves, 'élève')}</i></span>
+              </div>`).join('')}</div>`;
+}
+
+function workMienHtml(d, pas) {
+  if (!d.mien) return '<div class="msep"></div>';
+  return `
           <div class="msep"></div>
           <div class="mlbl">À rendre le ${jourFr(d.due)}</div>
           ${calendrier(auJour(prof.mois || d.due || iso(new Date())), d.due, null, 'cdue', 'pmois2')}
@@ -318,15 +331,25 @@ export function workSheet(w) {
             <span>Lancer un défi à la classe</span></button>
           <button class="mi" data-mact="predonner">${svg(I.copy)}
             <span>Redonner à d’autres classes</span></button>
-          <div class="msep"></div>` : '<div class="msep"></div>'}
+          <div class="msep"></div>`;
+}
+
+/* ---------- la feuille d'un devoir ---------- */
+export function workSheet(w) {
+  const d = (prof.devoirs || []).find(x => x.id === prof.work);
+  if (!d) { setMenu(null); return; }
+  const pas = Math.max(0, (d.effectif || 0) - (d.ouvert || 0));
+  const ca = prof.cartes;
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu pv">
+      <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(d.nom)}</b>
+        <i>${workHeaderSub(d)}</i></span></div>
+      <div class="mscroll">
+        ${workFicheHtml(d, pas)}
+        ${workMienHtml(d, pas)}
 
         <div class="mlbl">Ce qui bloque dans ce devoir</div>
-        ${!ca ? ``
-          : !ca.length ? ``
-          : `<div class="mscroll courte">${ca.map(c => `<div class="mi lect">
-              <span class="carte"><b>${esc(c.recto)} → ${esc(c.verso)}</b>
-                <i>${c.ratees} erreurs sur ${c.vues} passages · ${plur(c.eleves, 'élève')}</i></span>
-              </div>`).join('')}</div>`}
+        ${workBloqueHtml(ca)}
 
         ${d.mien ? `<div class="msep"></div>
           <button class="mi warn" data-mact="pdel">${svg(I.trash)}<span>Retirer ce devoir</span>
@@ -413,6 +436,52 @@ export function commuPull() {
 
 export const initial = s => (String(s || '?').trim()[0] || '?').toUpperCase();
 
+const ctile = (act, ic, lab, val, warn) => `<button class="ctile" data-act="${act}">
+  <i class="ci">${svg(ic)}${warn ? `<b class="cbdg">${warn}</b>` : ''}</i>
+  <span class="cn">${lab}</span><span class="cv">${val}</span></button>`;
+
+function meCardEleveHtml(school) {
+  return `<div class="mecard fixe">
+        <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
+        <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : esc((me && me.name) || 'Élève')}</b>
+          <i>${school.classe ? `<b class="maclasse">${esc(school.classe)}</b> · ${esc(school.org)}`
+            : esc(school.org)}</i></span></div>`;
+}
+
+function meCardAutreHtml(rows, mine, MED) {
+  return `<button class="mecard" data-act="handle">
+        <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
+        <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : 'Choisis ton pseudo'}</b>
+          <i>${me && me.handle ? (mine >= 0 ? `${MED[mine] || (mine + 1) + 'ᵉ'} cette semaine · ${plur(+rows[mine].n, 'page')}`
+            : 'Pas encore révisé cette semaine')
+            : 'C’est ce que tes amis taperont pour t’ajouter'}</i></span>
+        ${svg(I.arrow)}</button>`;
+}
+
+/* Un élève inscrit par son établissement n'a ni pseudo à choisir, ni
+   club, ni annuaire ouvert : sa carte affiche sa classe, et ses trois
+   tuiles sont Défis, Ma classe, Bibliothèque. Un compte personnel garde
+   les quatre d'origine. */
+function ctilesHtml(eleve, toPlay, nAsk, nLib, nMates, nGroup) {
+  if (eleve) {
+    return `
+          ${ctile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
+          ${ctile('classes', I.school, 'Ma classe', school.effectif ? school.effectif + ' élèves' : '—', nAsk)}
+          ${ctile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`;
+  }
+  return `
+          ${ctile('friends', I.user, 'Lecteurs', nMates || '—', nAsk)}
+          ${atSchool() ? '' : ctile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
+          ${ctile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
+          ${ctile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`;
+}
+
+function boardListHtml(rows) {
+  if (!board.rows) return `<div class="card2"><div class="note">${board.err ? 'Indisponible' : 'Chargement…'}</div></div>`;
+  if (!rows.length) return `<div class="card2"><div class="note">Ajoute un lecteur.</div></div>`;
+  return `<div class="rows">${rows.slice(0, 3).map((x, i) => bdRow(x, i)).join('')}</div>`;
+}
+
 export function commuView() {
   const nMates = (mates || []).length, nAsk = (asks || []).length;
   const nGroup = (groups || []).length;
@@ -421,45 +490,17 @@ export function commuView() {
   const rows = board.rows || [];
   const mine = rows.findIndex(r => r.uid === auth.uid);
   const MED = ['🥇', '🥈', '🥉'];
-  const tile = (act, ic, lab, val, warn) => `<button class="ctile" data-act="${act}">
-    <i class="ci">${svg(ic)}${warn ? `<b class="cbdg">${warn}</b>` : ''}</i>
-    <span class="cn">${lab}</span><span class="cv">${val}</span></button>`;
-  /* Un élève inscrit par son établissement n'a ni pseudo à choisir, ni
-     club, ni annuaire ouvert : sa carte affiche sa classe, et ses trois
-     tuiles sont Défis, Ma classe, Bibliothèque. Un compte personnel garde
-     les quatre d'origine. */
   const eleve = isPupil();
   $.innerHTML = `
     <div class="page" id="page">
       <div class="top"><div class="hero">Le cercle des lecteurs</div></div>
-      ${eleve ? `<div class="mecard fixe">
-        <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
-        <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : esc((me && me.name) || 'Élève')}</b>
-          <i>${school.classe ? `<b class="maclasse">${esc(school.classe)}</b> · ${esc(school.org)}`
-            : esc(school.org)}</i></span></div>`
-      : `<button class="mecard" data-act="handle">
-        <i class="av">${esc(initial(me && (me.handle || me.name)))}</i>
-        <span class="mex"><b>${me && me.handle ? '@' + esc(me.handle) : 'Choisis ton pseudo'}</b>
-          <i>${me && me.handle ? (mine >= 0 ? `${MED[mine] || (mine + 1) + 'ᵉ'} cette semaine · ${plur(+rows[mine].n, 'page')}`
-            : 'Pas encore révisé cette semaine')
-            : 'C’est ce que tes amis taperont pour t’ajouter'}</i></span>
-        ${svg(I.arrow)}</button>`}
+      ${eleve ? meCardEleveHtml(school) : meCardAutreHtml(rows, mine, MED)}
       <div class="ctiles${eleve || atSchool() ? ' trois' : ''}">
-        ${eleve ? `
-          ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
-          ${tile('classes', I.school, 'Ma classe', school.effectif ? school.effectif + ' élèves' : '—', nAsk)}
-          ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`
-        : `
-          ${tile('friends', I.user, 'Lecteurs', nMates || '—', nAsk)}
-          ${atSchool() ? '' : tile('groups', I.layers, 'Clubs', nGroup || '—', 0)}
-          ${tile('duels', I.flame, 'Défis', toPlay ? toPlay + ' à jouer' : '—', toPlay)}
-          ${tile('library', I.book, 'Bibliothèque', nLib || '—', 0)}`}
+        ${ctilesHtml(eleve, toPlay, nAsk, nLib, nMates, nGroup)}
       </div>
       <div class="lbl"><span>Classement de la semaine</span>
         ${rows.length > 3 ? '<button class="lnk" data-act="board">Tout voir</button>' : ''}</div>
-      ${!board.rows ? `<div class="card2"><div class="note">${board.err ? 'Indisponible' : 'Chargement…'}</div></div>`
-        : !rows.length ? `<div class="card2"><div class="note">Ajoute un lecteur.</div></div>`
-        : `<div class="rows">${rows.slice(0, 3).map((x, i) => bdRow(x, i)).join('')}</div>`}
+      ${boardListHtml(rows)}
     </div>
     ${tabs('commu')}`;
   bindPager();

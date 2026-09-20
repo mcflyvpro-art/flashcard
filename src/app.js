@@ -23,4 +23,5 @@ import './ui/menus-c.js';
 import './ui/revision.js';
 import './ui/quiz.js';
 import './ui/interactions.js';
+import './ui/raccourcis.js';
 import './ui/onboarding.js';

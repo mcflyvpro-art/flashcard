@@ -20,7 +20,7 @@ import { accueil } from '../core/classement.js';
 import { cacheKey, esc, flush, load, plur, pull, refreshToken, saveAuth, setOnline } from '../core/coeur-sync.js';
 import { selOff } from './connexion.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
-import { consumeGoto } from './interactions.js';
+import { consumeGoto } from './raccourcis.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { resetComp, startQuiz } from './quiz.js';
 import { openShared } from '../core/reglages-corbeille.js';
@@ -104,7 +104,7 @@ export function resetSession() {
 
   /* les images et sons déjà rapatriés : ils appartenaient à l'autre compte,
      et les laisser en mémoire serait garder ouvert ce qu'on vient de fermer */
-  for (const u of mediaCache.values()) { try { URL.revokeObjectURL(u); } catch (e) {} }
+  for (const u of mediaCache.values()) { try { URL.revokeObjectURL(u); } catch (e) { /* déjà révoquée : sans conséquence */ } }
   mediaCache.clear();
 }
 
@@ -112,7 +112,7 @@ export function logout() {
   flush();
   const key = cacheKey();
   saveAuth(null);
-  if (key) { try { localStorage.removeItem(key); } catch (e) {} }
+  if (key) { try { localStorage.removeItem(key); } catch (e) { /* stockage indisponible : la déconnexion continue sans ce nettoyage */ } }
   resetSession();
   setLoginMode('in');
   setAnimate(true); render();
@@ -313,7 +313,7 @@ function runStep() {
   const s = tour.steps[tour.i];
   if (!s) return endTour(true);
   tour.lock = s.lock || 0;
-  try { if (s.go) s.go(); } catch (e) {}
+  try { if (s.go) s.go(); } catch (e) { /* une étape de la visite guidée qui échoue ne doit pas bloquer les suivantes */ }
   setAnimate(false); render();
   /* La cible peut être plus bas que l'écran — l'entrée « Aide » est en
      fin de réglages. On l'amène au centre avant de mesurer, sinon le halo
@@ -337,7 +337,7 @@ function runStep() {
           tour.hold = 1;
           setTimeout(() => { if (tour) { tour.hold = 0; nextStep(); } }, s.wait || 250);
         }
-      } catch (e) {}
+      } catch (e) { /* la condition de fin d'étape ne doit jamais coincer la visite guidée */ }
     }
   }, 140));
 }
@@ -369,52 +369,42 @@ function endTour(done) {
   if (done) toast(I.check, 'Visite terminée');
 }
 
-/* ---------- l'habillage ----------
-   Un halo qui se déplace d'une zone à l'autre plutôt que d'apparaître et
-   disparaître : l'œil suit le mouvement et sait d'où il vient. Le reste de
-   l'écran s'assombrit par l'ombre portée de ce même halo — un seul élément
-   à animer, donc rien ne saccade. */
-function paintTour() {
-  if (!tour) return;
-  const s = tour.steps[tour.i];
+function ensureTourOverlay() {
   let o = document.getElementById('tour');
-  if (!o) {
-    o = document.createElement('div');
-    o.id = 'tour'; o.className = 'tour';
-    o.innerHTML = '<i class="tspot"></i><i class="tring"></i>' +
-      '<i class="tblk t" data-t="1"></i><i class="tblk r" data-t="1"></i>' +
-      '<i class="tblk b" data-t="1"></i><i class="tblk l" data-t="1"></i>' +
-      '<i class="tblk h" data-t="1"></i><div class="tbub"></div>';
-    document.body.appendChild(o);
-    o.addEventListener('click', e => {
-      const b = e.target.closest('[data-tour]');
-      if (!b) return;
-      e.stopPropagation();
-      if (b.dataset.tour === 'next') nextStep();
-      else endTour(false);
-    });
-  }
+  if (o) return o;
+  o = document.createElement('div');
+  o.id = 'tour'; o.className = 'tour';
+  o.innerHTML = '<i class="tspot"></i><i class="tring"></i>' +
+    '<i class="tblk t" data-t="1"></i><i class="tblk r" data-t="1"></i>' +
+    '<i class="tblk b" data-t="1"></i><i class="tblk l" data-t="1"></i>' +
+    '<i class="tblk h" data-t="1"></i><div class="tbub"></div>';
+  document.body.appendChild(o);
+  o.addEventListener('click', e => {
+    const b = e.target.closest('[data-tour]');
+    if (!b) return;
+    e.stopPropagation();
+    if (b.dataset.tour === 'next') nextStep();
+    else endTour(false);
+  });
+  return o;
+}
+
+function tourTargetBox(s, W, H) {
   const el = s.sel ? document.querySelector(s.sel) : null;
   const r = el && el.getBoundingClientRect();
-  const W = innerWidth, H = innerHeight;
-  const spot = o.querySelector('.tspot'), ring = o.querySelector('.tring');
-  let box;
-  if (r && r.width > 2 && r.height > 2 && r.bottom > 0 && r.top < H) {
+  const hasTarget = !!(r && r.width > 2 && r.height > 2 && r.bottom > 0 && r.top < H);
+  if (hasTarget) {
     const p = s.pad == null ? 9 : s.pad;
-    box = { x: Math.max(4, r.left - p), y: Math.max(4, r.top - p),
-            w: Math.min(W - 8, r.width + p * 2), h: r.height + p * 2 };
-    spot.style.opacity = 1; ring.style.opacity = 1;
-  } else {
-    /* pas de cible : le voile couvre tout, le halo se réduit au centre */
-    box = { x: W / 2, y: H / 2, w: 0, h: 0 };
-    spot.style.opacity = 1; ring.style.opacity = 0;
+    return { r, hasTarget, box: { x: Math.max(4, r.left - p), y: Math.max(4, r.top - p),
+            w: Math.min(W - 8, r.width + p * 2), h: r.height + p * 2 } };
   }
-  for (const n of [spot, ring]) {
-    n.style.left = box.x + 'px'; n.style.top = box.y + 'px';
-    n.style.width = box.w + 'px'; n.style.height = box.h + 'px';
-  }
-  /* les quatre volets bloquent tout sauf la zone montrée ; le cinquième
-     ferme le trou quand l'étape n'attend aucun geste */
+  /* pas de cible : le voile couvre tout, le halo se réduit au centre */
+  return { r, hasTarget, box: { x: W / 2, y: H / 2, w: 0, h: 0 } };
+}
+
+/* les quatre volets bloquent tout sauf la zone montrée ; le cinquième
+   ferme le trou quand l'étape n'attend aucun geste */
+function paintTourBlockers(o, box, W, H, pass) {
   const set = (k, x, y, w, h) => { const n = o.querySelector('.tblk.' + k);
     n.style.left = x + 'px'; n.style.top = y + 'px';
     n.style.width = Math.max(0, w) + 'px'; n.style.height = Math.max(0, h) + 'px'; };
@@ -422,12 +412,11 @@ function paintTour() {
   set('b', 0, box.y + box.h, W, H - box.y - box.h);
   set('l', 0, box.y, box.x, box.h);
   set('r', box.x + box.w, box.y, W - box.x - box.w, box.h);
-  set('h', box.x, box.y, s.pass ? 0 : box.w, s.pass ? 0 : box.h);
+  set('h', box.x, box.y, pass ? 0 : box.w, pass ? 0 : box.h);
+}
 
-  const bub = o.querySelector('.tbub');
-  const last = tour.i === tour.steps.length - 1;
-  const pct = Math.round((tour.i + 1) / tour.steps.length * 100);
-  const html = `<i class="tprog"><b style="width:${pct}%"></b></i>
+function tourBubbleHtml(s, last, pct) {
+  return `<i class="tprog"><b style="width:${pct}%"></b></i>
     <i class="tchap">${esc(s.chap)} · ${tour.i + 1}/${tour.steps.length}
       <b class="tdemo">compte d’essai</b></i>
     <b>${esc(s.title)}</b><p>${esc(s.text)}</p>
@@ -437,19 +426,48 @@ function paintTour() {
       <button class="tskip" data-tour="skip">Passer</button>
       <button class="tnext" data-tour="next">${last ? 'Terminer' : 'Suivant'}${svg(I.arrow)}</button>
     </div>`;
-  if (bub.dataset.k !== String(tour.i)) { bub.dataset.k = String(tour.i); bub.innerHTML = html; }
-  /* la bulle se met du côté où il reste de la place */
+}
+
+/* sous la zone si ça tient, sinon au-dessus, sinon collée en bas : une
+   carte de révision occupe presque tout l'écran et ne laisse le choix
+   qu'entre recouvrir un peu ou sortir de l'écran */
+function positionBubble(bub, r, box, H) {
   const bh = bub.offsetHeight || 190;
   const below = box.y + box.h + 14;
   const above = box.y - bh - 14;
-  /* sous la zone si ça tient, sinon au-dessus, sinon collée en bas : une
-     carte de révision occupe presque tout l'écran et ne laisse le choix
-     qu'entre recouvrir un peu ou sortir de l'écran */
   const top = (!r || box.h === 0) ? Math.round((H - bh) / 2)
     : below + bh < H - 12 ? below
     : above > 12 ? above
     : H - bh - 14;
   bub.style.top = top + 'px';
+}
+
+/* ---------- l'habillage ----------
+   Un halo qui se déplace d'une zone à l'autre plutôt que d'apparaître et
+   disparaître : l'œil suit le mouvement et sait d'où il vient. Le reste de
+   l'écran s'assombrit par l'ombre portée de ce même halo — un seul élément
+   à animer, donc rien ne saccade. */
+function paintTour() {
+  if (!tour) return;
+  const s = tour.steps[tour.i];
+  const o = ensureTourOverlay();
+  const W = innerWidth, H = innerHeight;
+  const spot = o.querySelector('.tspot'), ring = o.querySelector('.tring');
+  const { r, hasTarget, box } = tourTargetBox(s, W, H);
+  spot.style.opacity = 1; ring.style.opacity = hasTarget ? 1 : 0;
+  for (const n of [spot, ring]) {
+    n.style.left = box.x + 'px'; n.style.top = box.y + 'px';
+    n.style.width = box.w + 'px'; n.style.height = box.h + 'px';
+  }
+  paintTourBlockers(o, box, W, H, s.pass);
+
+  const bub = o.querySelector('.tbub');
+  const last = tour.i === tour.steps.length - 1;
+  const pct = Math.round((tour.i + 1) / tour.steps.length * 100);
+  const html = tourBubbleHtml(s, last, pct);
+  if (bub.dataset.k !== String(tour.i)) { bub.dataset.k = String(tour.i); bub.innerHTML = html; }
+  /* la bulle se met du côté où il reste de la place, cf. positionBubble() */
+  positionBubble(bub, r, box, H);
 }
 
 /* ---------- l'aide, chapitre par chapitre ---------- */
@@ -502,7 +520,7 @@ const INSTKEY = 'folio.install';
 
 const instLoad = () => { try { return JSON.parse(localStorage.getItem(INSTKEY)) || {}; } catch (e) { return {}; } };
 
-const instSave = o => { try { localStorage.setItem(INSTKEY, JSON.stringify(o)); } catch (e) {} };
+const instSave = o => { try { localStorage.setItem(INSTKEY, JSON.stringify(o)); } catch (e) { /* stockage indisponible : la prochaine relance proposera l'install à nouveau, sans gravité */ } };
 
 const UA = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
 
@@ -592,7 +610,7 @@ export async function doPrompt() {
     e.prompt();
     const r = await e.userChoice;
     if (r && r.outcome === 'accepted') instSave({ ...instLoad(), done: 1 });
-  } catch (x) {}
+  } catch (x) { /* invite refusée ou déjà consommée par le navigateur : rien à faire de plus */ }
 }
 
 const instep = (n, txt) => `<div class="instep"><i>${n}</i><span>${txt}</span></div>`;
@@ -611,7 +629,7 @@ export function installSheet(w) {
   const ctx = instCtx();
   const head = (icon, t, s) => `<div class="mhd">${svg(icon)}<span class="mhx">
     <b>${t}</b><span class="msub">${s}</span></span></div>`;
-  let inner = '';
+  let inner;
 
   if (ctx === 'webview') {
     /* Le cas le plus fréquent et le seul vraiment bloquant : on ne

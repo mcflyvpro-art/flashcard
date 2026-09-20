@@ -108,6 +108,41 @@ function aBouge(base, carte) {
    les notes sur les cas vraiment divergents — jamais une carte perdue
    silencieusement : toute carte présente d'un côté et absente de l'autre
    sans avoir été supprimée légitimement se retrouve dans le résultat. */
+function mergeCardsAllThree(id, b, m, t) {
+  const { card, conflicts } = mergeCard(b, m, t);
+  return { cards: [card], notes: conflicts.length ? [{ id, champs: conflicts }] : [] };
+}
+
+/* supprimée d'un côté, présente en base et de l'autre : l'édition l'emporte
+   toujours sur la suppression, voir aBouge() plus haut. */
+function mergeCardsOneMissing(id, base, present, restauree) {
+  if (!aBouge(base, present)) return { cards: [], notes: [] };
+  return { cards: [present], notes: [{ id, champs: [restauree] }] };
+}
+
+/* pas de base commune : soit une carte n'existait que d'un côté, soit les
+   deux appareils ont créé la même id de leur côté sans se voir. */
+function mergeCardsNew(id, m, t) {
+  if (!m) return { cards: [t], notes: [] };
+  if (!t) return { cards: [m], notes: [] };
+  if (eq(m, t)) return { cards: [m], notes: [] };
+  return { cards: [m, { ...t, id: t.id + '·distante' }],
+           notes: [{ id, champs: ['créée en double, gardée des deux côtés'] }] };
+}
+
+function mergeCardsCase(id, b, m, t) {
+  if (!b) return mergeCardsNew(id, m, t);
+  if (m && t) return mergeCardsAllThree(id, b, m, t);
+  if (m) return mergeCardsOneMissing(id, b, m, 'restaurée : modifiée ici pendant sa suppression ailleurs');
+  if (t) return mergeCardsOneMissing(id, b, t, 'restaurée : modifiée ailleurs pendant sa suppression ici');
+  return { cards: [], notes: [] };   // supprimée des deux côtés : rien à faire
+}
+
+/* Les trois tableaux de cartes d'un paquet (même forme que `decks.cards`
+   ou que ce que fournit `cards`, M03.T1). Rend le tableau fusionné et
+   les notes sur les cas vraiment divergents — jamais une carte perdue
+   silencieusement : toute carte présente d'un côté et absente de l'autre
+   sans avoir été supprimée légitimement se retrouve dans le résultat. */
 export function mergeCards(baseArr, mineArr, theirsArr) {
   const B = new Map((baseArr || []).map(c => [c.id, c]));
   const M = new Map((mineArr || []).map(c => [c.id, c]));
@@ -116,25 +151,9 @@ export function mergeCards(baseArr, mineArr, theirsArr) {
   const cards = [], notes = [];
 
   for (const id of ids) {
-    const b = B.get(id), m = M.get(id), t = T.get(id);
-    if (b && m && t) {
-      const { card, conflicts } = mergeCard(b, m, t);
-      cards.push(card);
-      if (conflicts.length) notes.push({ id, champs: conflicts });
-    } else if (b && m && !t) {
-      if (aBouge(b, m)) { cards.push(m); notes.push({ id, champs: ['restaurée : modifiée ici pendant sa suppression ailleurs'] }); }
-    } else if (b && !m && t) {
-      if (aBouge(b, t)) { cards.push(t); notes.push({ id, champs: ['restaurée : modifiée ailleurs pendant sa suppression ici'] }); }
-    } else if (b && !m && !t) {
-      /* supprimée des deux côtés : rien à faire */
-    } else if (!b && m && !t) {
-      cards.push(m);
-    } else if (!b && !m && t) {
-      cards.push(t);
-    } else if (!b && m && t) {
-      if (eq(m, t)) cards.push(m);
-      else { cards.push(m); cards.push({ ...t, id: t.id + '·distante' }); notes.push({ id, champs: ['créée en double, gardée des deux côtés'] }); }
-    }
+    const r = mergeCardsCase(id, B.get(id), M.get(id), T.get(id));
+    cards.push(...r.cards);
+    notes.push(...r.notes);
   }
   return { cards, notes };
 }

@@ -121,64 +121,71 @@ function bindSheetDrag(box, body) {
   box.addEventListener('gesturestart', e => { e.preventDefault(); cancel(); });
 }
 
-export function paintMenu() {
-  document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
-  document.documentElement.classList.remove('sheet-open');
-  const w = document.createElement('div');
-  if (menu === 'subject') return paintMenuSubject(w);
-  if (menu === 'install') return paintMenuInstall(w);
-  if (menu === 'newclass' || menu === 'joinclass') return paintMenuNewclass(w);
-  /* Donner un devoir vit maintenant dans une seule feuille : `compSheet`,
-     qui sait aussi bien reprendre un livre de la bibliothèque que le
-     fabriquer sur place. Hors établissement, l'ancien envoi direct reste
-     la bonne réponse — il n'y a qu'une classe et rien à composer. */
-  if (menu === 'compo') return paintMenuCompo(w);
-  if (menu === 'plivre') return paintMenuPlivre(w);
-  if (menu === 'pwork') return paintMenuPwork(w);
-  if (menu === 'pmot') return paintMenuPmot(w);
-  if (menu === 'newwork') return paintMenuNewwork(w);
-  /* ---------- les feuilles du référent ---------- */
-  if (menu === 'refwho') return paintMenuRefwho(w);
-  if (menu === 'refcls') return paintMenuRefcls(w);
-  if (menu === 'refnew' || menu === 'refnewclass') return paintMenuRefnew(w);
-  if (menu === 'devoir') return paintMenuDevoir(w);
-  if (menu === 'classcode') return paintMenuClasscode(w);
-  if (menu === 'workone') return paintMenuWorkone(w);
-  if (menu === 'member') return paintMenuMember(w);
-  if (menu === 'account') return paintMenuAccount(w);
-  if (menu === 'report') return paintMenuReport(w);
-  if (menu === 'blocked') return paintMenuBlocked(w);
-  if (menu === 'backup') return paintMenuBackup(w);
-  if (menu === 'card') return paintMenuCard(w);
-  if (menu === 'deckset') return paintMenuDeckset(w);
-  if (menu === 'simple' || menu === 'engine') return paintMenuSimple(w);
-  if (menu === 'merge') return paintMenuMerge(w);
-  if (menu === 'fnr') return paintMenuFnr(w);
-  if (menu === 'leave') return paintMenuLeave(w);
-  if (menu === 'sortpick') return paintMenuSortpick(w);
-  if (menu === 'preview') return paintMenuPreview(w);
-  if (menu === 'sharepick') return paintMenuSharepick(w);
-  if (menu === 'handle') return paintMenuHandle(w);
-  if (menu === 'newgroup' || menu === 'joingroup') return paintMenuNewgroup(w);
-  if (menu === 'mate') return paintMenuMate(w);
-  if (menu === 'groupitem') return paintMenuGroupitem(w);
-  if (menu === 'tuto') return paintMenuTuto(w);
-  if (menu === 'help') return paintMenuHelp(w);
-  if (menu === 'vers') return paintMenuVers(w);
-  if (menu === 'conflict') return paintMenuConflict(w);
-  if (menu === 'libitem') return paintMenuLibitem(w);
-  if (menu === 'duelitem') return paintMenuDuelitem(w);
-  if (menu === 'duelnew') return paintMenuDuelnew(w);
-  if (menu === 'sendfriend') return paintMenuSendfriend(w);
-  /* Prêter un livre : on part de l'ami, pas du livre. La feuille montre
-     toute la bibliothèque personnelle ; le livre choisi part aussitôt
-     dans sa boîte aux lettres. */
-  if (menu === 'lend') return paintMenuLend(w);
-  if (menu === 'mateprof') return paintMenuMateprof(w);
-  if (menu === 'mailitem') return paintMenuMailitem(w);
-  if (menu === 'move') return paintMenuMove(w);
-  if (menu === 'split') return paintMenuSplit(w);
-  if (menu === 'rename' || menu === 'pwd' || menu === 'delacc') return paintMenuRename(w);
+/* Table de correspondance construite à l'appel, jamais au niveau module :
+   plusieurs feuilles listées ici viennent de menus-b.js et menus-c.js, qui
+   importent eux-mêmes depuis ce fichier (cycle inévitable, voir CLAUDE.md) —
+   un objet au niveau module capturerait ces imports avant qu'ils soient
+   initialisés. */
+function menuPainter(m) {
+  return {
+    subject: paintMenuSubject,
+    install: paintMenuInstall,
+    newclass: paintMenuNewclass, joinclass: paintMenuNewclass,
+    /* Donner un devoir vit maintenant dans une seule feuille : `compSheet`,
+       qui sait aussi bien reprendre un livre de la bibliothèque que le
+       fabriquer sur place. Hors établissement, l'ancien envoi direct reste
+       la bonne réponse — il n'y a qu'une classe et rien à composer. */
+    compo: paintMenuCompo,
+    plivre: paintMenuPlivre,
+    pwork: paintMenuPwork,
+    pmot: paintMenuPmot,
+    newwork: paintMenuNewwork,
+    /* ---------- les feuilles du référent ---------- */
+    refwho: paintMenuRefwho,
+    refcls: paintMenuRefcls,
+    refnew: paintMenuRefnew, refnewclass: paintMenuRefnew,
+    devoir: paintMenuDevoir,
+    classcode: paintMenuClasscode,
+    workone: paintMenuWorkone,
+    member: paintMenuMember,
+    account: paintMenuAccount,
+    report: paintMenuReport,
+    blocked: paintMenuBlocked,
+    backup: paintMenuBackup,
+    card: paintMenuCard,
+    deckset: paintMenuDeckset,
+    simple: paintMenuSimple, engine: paintMenuSimple,
+    merge: paintMenuMerge,
+    fnr: paintMenuFnr,
+    leave: paintMenuLeave,
+    sortpick: paintMenuSortpick,
+    preview: paintMenuPreview,
+    sharepick: paintMenuSharepick,
+    handle: paintMenuHandle,
+    newgroup: paintMenuNewgroup, joingroup: paintMenuNewgroup,
+    mate: paintMenuMate,
+    groupitem: paintMenuGroupitem,
+    tuto: paintMenuTuto,
+    help: paintMenuHelp,
+    vers: paintMenuVers,
+    conflict: paintMenuConflict,
+    libitem: paintMenuLibitem,
+    duelitem: paintMenuDuelitem,
+    duelnew: paintMenuDuelnew,
+    sendfriend: paintMenuSendfriend,
+    /* Prêter un livre : on part de l'ami, pas du livre. La feuille montre
+       toute la bibliothèque personnelle ; le livre choisi part aussitôt
+       dans sa boîte aux lettres. */
+    lend: paintMenuLend,
+    mateprof: paintMenuMateprof,
+    mailitem: paintMenuMailitem,
+    move: paintMenuMove,
+    split: paintMenuSplit,
+    rename: paintMenuRename, pwd: paintMenuRename, delacc: paintMenuRename
+  }[m];
+}
+
+function paintMenuDeck(w) {
   const d = deck(view.id); if (!d) return;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
@@ -205,6 +212,15 @@ export function paintMenu() {
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
   mountMenu(w);
+}
+
+export function paintMenu() {
+  document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
+  document.documentElement.classList.remove('sheet-open');
+  const w = document.createElement('div');
+  const painter = menuPainter(menu);
+  if (painter) return painter(w);
+  return paintMenuDeck(w);
 }
 
 function paintMenuSubject(w) {
@@ -362,14 +378,31 @@ function paintMenuRefwho(w) {
     return;
 }
 
+function equipePedagogiqueHtml(team) {
+  if (!team || !team.length) return ``;
+  return `<div class="mscroll courte">${team.map(t => `<div class="mi lect">
+      ${svg(t.principal ? I.check : I.user)}
+      <span>${esc(t.nom)} · ${esc(t.matiere)}${t.principal ? ' (PP)' : ''}</span>
+      <button class="tail" data-rpp="${esc(t.teacher)}|${esc(t.matiere)}">PP</button>
+      <button class="tail warn" data-rdropt="${esc(t.teaching_id)}">retirer</button>
+      </div>`).join('')}</div>`;
+}
+
+function profsAAjouterHtml(gens) {
+  return (gens || []).filter(x => x.role === 'prof').map(p => `
+    <button class="mi" data-raddt="${esc(p.id)}">${svg(I.plus)}<span>${esc(p.name)}</span>
+      <span class="tail">${esc(p.matiere || '')}</span></button>`).join('');
+}
+
 function paintMenuRefcls(w) {
   const c = (ref.classes || []).find(x => x.id === ref.open);
     if (!c) { setMenu(null); return; }
     const f = ref.form || {};
+    const filiere = c.filiere ? ' · ' + esc(c.filiere) : '';
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu pv">
         <div class="mhd">${svg(I.school)}<span class="mhx"><b>${esc(c.name)}</b>
-          <i>${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''} · ${
+          <i>${esc(c.niveau || '')}${filiere} · ${
             plur(c.effectif, 'élève')} · code ${esc(c.code || '—')}</i></span></div>
         <div class="mscroll">
           <div class="rform">
@@ -384,23 +417,13 @@ function paintMenuRefcls(w) {
           <div class="msep"></div>
 
           <div class="mlbl">Équipe pédagogique</div>
-          ${!ref.team ? ``
-            : !ref.team.length ? ``
-            : `<div class="mscroll courte">${ref.team.map(t => `<div class="mi lect">
-                ${svg(t.principal ? I.check : I.user)}
-                <span>${esc(t.nom)} · ${esc(t.matiere)}${t.principal ? ' (PP)' : ''}</span>
-                <button class="tail" data-rpp="${esc(t.teacher)}|${esc(t.matiere)}">PP</button>
-                <button class="tail warn" data-rdropt="${esc(t.teaching_id)}">retirer</button>
-                </div>`).join('')}</div>`}
+          ${equipePedagogiqueHtml(ref.team)}
           <div class="rform">
             <label>Ajouter un professeur — matière
               <input id="tmat" value="${esc(f.mat || '')}" spellcheck="false"
                 placeholder="Mathématiques"></label>
           </div>
-          <div class="mscroll courte">${(ref.gens || []).filter(x => x.role === 'prof').map(p => `
-            <button class="mi" data-raddt="${esc(p.id)}">${svg(I.plus)}<span>${esc(p.name)}</span>
-              <span class="tail">${esc(p.matiere || '')}</span></button>`).join('')
-            || ``}</div>
+          <div class="mscroll courte">${profsAAjouterHtml(ref.gens)}</div>
           <div class="msep"></div>
           <button class="mi warn" data-mact="refclsdel">${svg(I.trash)}
             <span>Supprimer la classe</span>
@@ -412,6 +435,42 @@ function paintMenuRefcls(w) {
     return;
 }
 
+function formNouveauCompte(f) {
+  return `<div class="rform">
+      <label>Adresse<input id="nmel" value="${esc(f.mel || '')}" type="email"
+        autocapitalize="none" spellcheck="false" placeholder="prenom.nom@lycee.fr"></label>
+      <label>Nom<input id="nnom" value="${esc(f.nom || '')}" spellcheck="false"></label>
+      <label>Pseudo (facultatif)<input id="npse" value="${esc(f.pse || '')}"
+        autocapitalize="none" spellcheck="false"></label>
+      <label>Mot de passe<input id="npw" value="${esc(f.pw || '')}"
+        autocapitalize="none" spellcheck="false" placeholder="dix caractères au moins"></label>
+    </div>
+    <div class="mlbl">Rôle</div>
+    ${['eleve', 'prof'].map(k => `<button class="mi${(f.role || 'eleve') === k ? ' on' : ''}"
+      data-rnrole="${k}">${svg((f.role || 'eleve') === k ? I.check : I.arrow)}${ROLENOM[k]}</button>`).join('')}
+    ${(f.role || 'eleve') === 'eleve' ? `
+      <div class="mlbl">Classe</div>
+      <div class="mscroll courte">${(ref.classes || []).map(c => `
+        <button class="mi${f.cls === c.id ? ' on' : ''}" data-rncls="${esc(c.id)}">
+          ${svg(f.cls === c.id ? I.check : I.arrow)}<span>${esc(c.name)}</span>
+          <span class="tail">${c.effectif} él.</span></button>`).join('')}</div>` : ''}`;
+}
+
+function formNouvelleClasse(f) {
+  return `<div class="rform">
+      <label>Nom de la classe<input id="knom" value="${esc(f.nom || '')}"
+        spellcheck="false" placeholder="2nde 4"></label>
+      <label>Niveau<input id="kniv" value="${esc(f.niv || '')}" spellcheck="false"
+        placeholder="Seconde"></label>
+      <label>Filière (facultatif)<input id="kfil" value="${esc(f.fil || '')}"
+        spellcheck="false"></label>
+      <label>Effectif prévu<input id="kpre" value="${esc(f.pre || '')}" inputmode="numeric"></label>
+    </div>
+    <div class="mlbl">Cycle</div>
+    ${Object.entries(CYCLES).map(([k, n]) => `<button class="mi${f.cyc === k ? ' on' : ''}"
+      data-rncyc="${k}">${svg(f.cyc === k ? I.check : I.arrow)}${n}</button>`).join('')}`;
+}
+
 function paintMenuRefnew(w) {
   const cpt = menu === 'refnew';
     const f = ref.form || {};
@@ -420,36 +479,7 @@ function paintMenuRefnew(w) {
         <div class="mhd">${svg(I.plus)}<span class="mhx">
           <b>${cpt ? 'Ouvrir un compte' : 'Créer une classe'}</b></span></div>
         <div class="mscroll">
-          ${cpt ? `<div class="rform">
-              <label>Adresse<input id="nmel" value="${esc(f.mel || '')}" type="email"
-                autocapitalize="none" spellcheck="false" placeholder="prenom.nom@lycee.fr"></label>
-              <label>Nom<input id="nnom" value="${esc(f.nom || '')}" spellcheck="false"></label>
-              <label>Pseudo (facultatif)<input id="npse" value="${esc(f.pse || '')}"
-                autocapitalize="none" spellcheck="false"></label>
-              <label>Mot de passe<input id="npw" value="${esc(f.pw || '')}"
-                autocapitalize="none" spellcheck="false" placeholder="dix caractères au moins"></label>
-            </div>
-            <div class="mlbl">Rôle</div>
-            ${['eleve', 'prof'].map(k => `<button class="mi${(f.role || 'eleve') === k ? ' on' : ''}"
-              data-rnrole="${k}">${svg((f.role || 'eleve') === k ? I.check : I.arrow)}${ROLENOM[k]}</button>`).join('')}
-            ${(f.role || 'eleve') === 'eleve' ? `
-              <div class="mlbl">Classe</div>
-              <div class="mscroll courte">${(ref.classes || []).map(c => `
-                <button class="mi${f.cls === c.id ? ' on' : ''}" data-rncls="${esc(c.id)}">
-                  ${svg(f.cls === c.id ? I.check : I.arrow)}<span>${esc(c.name)}</span>
-                  <span class="tail">${c.effectif} él.</span></button>`).join('')}</div>` : ''}`
-          : `<div class="rform">
-              <label>Nom de la classe<input id="knom" value="${esc(f.nom || '')}"
-                spellcheck="false" placeholder="2nde 4"></label>
-              <label>Niveau<input id="kniv" value="${esc(f.niv || '')}" spellcheck="false"
-                placeholder="Seconde"></label>
-              <label>Filière (facultatif)<input id="kfil" value="${esc(f.fil || '')}"
-                spellcheck="false"></label>
-              <label>Effectif prévu<input id="kpre" value="${esc(f.pre || '')}" inputmode="numeric"></label>
-            </div>
-            <div class="mlbl">Cycle</div>
-            ${Object.entries(CYCLES).map(([k, n]) => `<button class="mi${f.cyc === k ? ' on' : ''}"
-              data-rncyc="${k}">${svg(f.cyc === k ? I.check : I.arrow)}${n}</button>`).join('')}`}
+          ${cpt ? formNouveauCompte(f) : formNouvelleClasse(f)}
           <div class="msep"></div>
           <button class="mi" data-mact="${cpt ? 'refdonew' : 'refdonewclass'}"
             style="justify-content:center;font-weight:700">${svg(I.check)}${
@@ -464,7 +494,6 @@ function paintMenuRefnew(w) {
 function paintMenuDevoir(w) {
   const a = (asgs || []).find(x => x.id === workOpen);
     if (!a) { setMenu(null); return; }
-    const tard = a.due && Date.parse(a.due + 'T12:00:00') < Date.now();
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(a.name)}</b>

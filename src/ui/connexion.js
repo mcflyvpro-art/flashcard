@@ -17,7 +17,7 @@ import {
   deck, esc, load, plur, pull, pushUndo, resetPassword, saveDeck, signIn, signUp, sty, subj
 } from '../core/coeur-sync.js';
 import { dueCount, simpleMode } from './import-cartes.js';
-import { consumeGoto } from './interactions.js';
+import { consumeGoto } from './raccourcis.js';
 import { consumeHash, maybeTour } from './onboarding.js';
 import { norm } from './quiz.js';
 
@@ -46,6 +46,134 @@ export function selBar(d) {
   </div>`;
 }
 
+function ctaButton(d) {
+  if (prof.comp && prof.comp.livre === d.id) {
+    return `<button class="cta read" data-act="pretour">
+        ${svg(I.share)}Donner ce devoir</button>`;
+  }
+  const due = !simpleMode() && dueCount(d);
+  return `<button class="cta read" data-act="study">${svg(I.play)}Lire${due ? ` <b>${due}</b>` : ''}</button>`;
+}
+
+function deckHeadMeta(d) {
+  const due = !simpleMode() && dueCount(d);
+  return `${due ? `<b></b><span>${svg(I.play)}${due} à revoir</span>` : ''}
+        ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}`;
+}
+
+function findButton(d) {
+  if (d.cards.length <= 5) return '';
+  return `<button class="pick ico ${deckQ ? 'on' : ''}" data-act="deckfind"
+        aria-label="Chercher dans ce livre">${svg(I.search)}</button>`;
+}
+
+function selectButton(d) {
+  if (!d.cards.length) return '';
+  return `<button class="pick ${sel ? 'on' : ''}" data-act="selmode">${
+        svg(sel ? I.check : I.pick)}${sel ? 'Terminer' : 'Sélectionner'}</button>`;
+}
+
+const countLabel = (shown, d) => shown.length === d.cards.length ? d.cards.length : shown.length + ' / ' + d.cards.length;
+
+function searchField() {
+  if (!deckOpen) return '';
+  return `<div class="fld deckfld"><input id="dq" type="search"
+      placeholder="Chercher dans ce livre" autocomplete="off" autocapitalize="none"
+      spellcheck="false" value="${esc(deckQ)}" aria-label="Chercher dans ce livre"></div>`;
+}
+
+function rowStateIcon(c) {
+  if (simpleMode()) return '';
+  return `<i class="cst ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>`;
+}
+
+function rowLeftDecor(c, nq) {
+  if (sel) return `<button class="ck" data-pkc="${c.id}" aria-label="Sélectionner">${svg(I.check)}</button>`;
+  const grip = nq ? '' : `<button class="grip" aria-label="Déplacer">${svg(I.grip)}</button>`;
+  return grip + rowStateIcon(c);
+}
+
+function rowActions(c) {
+  if (sel) return '';
+  return `<button class="x ${cardRich(c) ? 'on' : ''}" data-card="${c.id}"
+            title="Type, étiquettes, image, son">${svg(cardIcon(c))}</button>
+          <button class="x sus ${c.x ? 'on' : ''}" data-sus="${c.id}"
+            title="${c.x ? 'Réactiver' : 'Suspendre'}">${svg(c.x ? I.eyeoff : I.eye)}</button>
+          <button class="x" data-rm="${c.id}">${svg(I.x)}</button>`;
+}
+
+function cardRow(c, i, nq) {
+  return `
+      <div class="row ${c.x ? 'off' : ''} ${sel && sel.has(c.id) ? 'pk' : ''}" data-id="${c.id}" style="--i:${i}">
+        ${rowLeftDecor(c, nq)}
+        <div class="fl">
+          <input value="${esc(c.f)}" data-k="f" placeholder="Recto" ${sel ? 'tabindex="-1"' : ''}>
+          <input class="b" value="${esc(c.b)}" data-k="b" placeholder="Verso" ${sel ? 'tabindex="-1"' : ''}>
+        </div>
+        ${rowActions(c)}
+      </div>`;
+}
+
+function bindInfiniteScroll() {
+  const more = document.getElementById('more');
+  if (!more) return;
+  const io2 = new IntersectionObserver(es => {
+    if (!es.some(e => e.isIntersecting)) return;
+    io2.disconnect();
+    setDeckShow(deckShow + DECKPAGE); setAnimate(false); render();
+  }, { rootMargin: '400px' });
+  io2.observe(more);
+}
+
+function bindDeckName(d) {
+  const t = document.getElementById('dn');
+  t.addEventListener('blur', () => {
+    const v = t.textContent.replace(/\s+/g, ' ').trim();
+    if (v !== d.name) { d.name = v || 'Paquet'; saveDeck(d); t.textContent = d.name; }
+  });
+  t.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); t.blur(); } });
+}
+
+function bindCardInputs(d) {
+  $.querySelectorAll('.row input').forEach(inp => inp.addEventListener('input', () => {
+    const c = d.cards.find(x => x.id === inp.closest('.row').dataset.id);
+    if (!c) return;
+    c[inp.dataset.k] = inp.value;
+    /* On n'empêche pas d'écrire — perdre ce qu'on vient de taper serait
+       pire que tout — mais on le signale, et le compte restant apparaît
+       quand on approche de la limite. */
+    const max = inp.dataset.k === 'f' ? MAXF : MAXB;
+    const len = plain(inp.value).length;
+    inp.classList.toggle('over', len > max);
+    let tag = inp.parentElement.querySelector('.lim');
+    if (len > max * .8) {
+      if (!tag) { tag = document.createElement('i'); tag.className = 'lim'; inp.parentElement.appendChild(tag); }
+      tag.textContent = (max - len) + '';
+      tag.classList.toggle('ko', len > max);
+    } else if (tag) tag.remove();
+    clearTimeout(typing); setTyping(setTimeout(() => saveDeck(d), 700));
+  }));
+}
+
+function bindDeckSearchField() {
+  const dq = document.getElementById('dq');
+  if (!dq) return;
+  let dt = 0;
+  dq.addEventListener('input', () => {
+    setDeckQ(dq.value);
+    clearTimeout(dt);
+    dt = setTimeout(() => {
+      /* on garde le champ vivant et on ne refait que la liste : sinon
+         le clavier se referme entre deux lettres */
+      const keep = document.activeElement === dq && dq.selectionStart;
+      setAnimate(false); render();
+      const again = document.getElementById('dq');
+      if (again && keep != null) { again.focus(); again.setSelectionRange(keep, keep); }
+    }, 160);
+  });
+  if (!deckQ) setTimeout(() => dq.focus(), 50);
+}
+
 export function deckView() {
   const d = deck(view.id); if (!d) return go('home');
   const s = subj(d.subject);
@@ -72,14 +200,10 @@ export function deckView() {
       <div class="s">
         <span>${svg(I.tag)}${esc(s.name)}</span><b></b>
         <span>${svg(I.card)}${plur(d.cards.length, 'page')}</span>
-        ${!simpleMode() && dueCount(d) ? `<b></b><span>${svg(I.play)}${dueCount(d)} à revoir</span>` : ''}
-        ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}
+        ${deckHeadMeta(d)}
       </div>
     </div>
-    ${prof.comp && prof.comp.livre === d.id ? `<button class="cta read" data-act="pretour">
-        ${svg(I.share)}Donner ce devoir</button>`
-      : `<button class="cta read" data-act="study">${svg(I.play)}Lire${
-          !simpleMode() && dueCount(d) ? ` <b>${dueCount(d)}</b>` : ''}</button>`}
+    ${ctaButton(d)}
     <div class="acts">
       <button data-act="quizdeck">${svg(I.pen)}Récitation</button>
       <button data-act="mcq">${svg(I.grid)}QCM</button>
@@ -88,31 +212,13 @@ export function deckView() {
     </div>
     ${simpleMode() ? '' : mixBar(d)}
     <div class="lbl"><span>Pages</span>
-      ${d.cards.length > 5 ? `<button class="pick ico ${deckQ ? 'on' : ''}" data-act="deckfind"
-        aria-label="Chercher dans ce livre">${svg(I.search)}</button>` : ''}
-      ${d.cards.length ? `<button class="pick ${sel ? 'on' : ''}" data-act="selmode">${
-        svg(sel ? I.check : I.pick)}${sel ? 'Terminer' : 'Sélectionner'}</button>` : ''}
-      <span>${shown.length === d.cards.length ? d.cards.length : shown.length + ' / ' + d.cards.length}</span></div>
-    ${deckOpen ? `<div class="fld deckfld"><input id="dq" type="search"
-      placeholder="Chercher dans ce livre" autocomplete="off" autocapitalize="none"
-      spellcheck="false" value="${esc(deckQ)}" aria-label="Chercher dans ce livre"></div>` : ''}
+      ${findButton(d)}
+      ${selectButton(d)}
+      <span>${countLabel(shown, d)}</span></div>
+    ${searchField()}
     <div class="rows ${sel ? 'picking' : ''}">
       ${!shown.length ? `<div class="note" style="padding:14px 4px">Aucune carte ne contient « ${esc(deckQ)} ».</div>` : ''}
-      ${part.map((c, i) => `
-        <div class="row ${c.x ? 'off' : ''} ${sel && sel.has(c.id) ? 'pk' : ''}" data-id="${c.id}" style="--i:${i}">
-          ${sel ? `<button class="ck" data-pkc="${c.id}" aria-label="Sélectionner">${svg(I.check)}</button>`
-            : `${nq ? '' : `<button class="grip" aria-label="Déplacer">${svg(I.grip)}</button>`}
-              ${simpleMode() ? '' : `<i class="cst ${cstate(c)}" title="${STATE[cstate(c)]}${isLeech(c) ? ' · coriace' : ''}${c.d ? ' · dans ' + nextIn(c) : ''}"></i>`}`}
-          <div class="fl">
-            <input value="${esc(c.f)}" data-k="f" placeholder="Recto" ${sel ? 'tabindex="-1"' : ''}>
-            <input class="b" value="${esc(c.b)}" data-k="b" placeholder="Verso" ${sel ? 'tabindex="-1"' : ''}>
-          </div>
-          ${sel ? '' : `<button class="x ${cardRich(c) ? 'on' : ''}" data-card="${c.id}"
-            title="Type, étiquettes, image, son">${svg(cardIcon(c))}</button>
-          <button class="x sus ${c.x ? 'on' : ''}" data-sus="${c.id}"
-            title="${c.x ? 'Réactiver' : 'Suspendre'}">${svg(c.x ? I.eyeoff : I.eye)}</button>
-          <button class="x" data-rm="${c.id}">${svg(I.x)}</button>`}
-        </div>`).join('')}
+      ${part.map((c, i) => cardRow(c, i, nq)).join('')}
       ${rest ? `<div class="more" id="more">${plur(rest, 'page')} de plus…</div>` : ''}
       ${sel ? '' : `<div class="duo ghost">
         <button data-act="add">${svg(I.plus)}Page</button>
@@ -120,57 +226,11 @@ export function deckView() {
       </div>`}
     </div>
     ${sel ? selBar(d) : ''}`;
-  const more = document.getElementById('more');
-  if (more) {
-    const io2 = new IntersectionObserver(es => {
-      if (!es.some(e => e.isIntersecting)) return;
-      io2.disconnect();
-      setDeckShow(deckShow + DECKPAGE); setAnimate(false); render();
-    }, { rootMargin: '400px' });
-    io2.observe(more);
-  }
-  const t = document.getElementById('dn');
-  t.addEventListener('blur', () => {
-    const v = t.textContent.replace(/\s+/g, ' ').trim();
-    if (v !== d.name) { d.name = v || 'Paquet'; saveDeck(d); t.textContent = d.name; }
-  });
-  t.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); t.blur(); } });
-  $.querySelectorAll('.row input').forEach(inp => inp.addEventListener('input', () => {
-    const c = d.cards.find(x => x.id === inp.closest('.row').dataset.id);
-    if (!c) return;
-    c[inp.dataset.k] = inp.value;
-    /* On n'empêche pas d'écrire — perdre ce qu'on vient de taper serait
-       pire que tout — mais on le signale, et le compte restant apparaît
-       quand on approche de la limite. */
-    const max = inp.dataset.k === 'f' ? MAXF : MAXB;
-    const len = plain(inp.value).length;
-    inp.classList.toggle('over', len > max);
-    let tag = inp.parentElement.querySelector('.lim');
-    if (len > max * .8) {
-      if (!tag) { tag = document.createElement('i'); tag.className = 'lim'; inp.parentElement.appendChild(tag); }
-      tag.textContent = (max - len) + '';
-      tag.classList.toggle('ko', len > max);
-    } else if (tag) tag.remove();
-    clearTimeout(typing); setTyping(setTimeout(() => saveDeck(d), 700));
-  }));
+  bindInfiniteScroll();
+  bindDeckName(d);
+  bindCardInputs(d);
   if (!nq) bindReorder(d);
-  const dq = document.getElementById('dq');
-  if (dq) {
-    let dt = 0;
-    dq.addEventListener('input', () => {
-      setDeckQ(dq.value);
-      clearTimeout(dt);
-      dt = setTimeout(() => {
-        /* on garde le champ vivant et on ne refait que la liste : sinon
-           le clavier se referme entre deux lettres */
-        const keep = document.activeElement === dq && dq.selectionStart;
-        setAnimate(false); render();
-        const again = document.getElementById('dq');
-        if (again && keep != null) { again.focus(); again.setSelectionRange(keep, keep); }
-      }, 160);
-    });
-    if (!deckQ) setTimeout(() => dq.focus(), 50);
-  }
+  bindDeckSearchField();
 }
 
 /* ---------- réordonner par glisser-déposer ----------
@@ -203,7 +263,7 @@ function bindReorder(d) {
     /* le doigt garde la poignée même s'il sort de la liste ; si la capture
        est refusée (doigt déjà relâché), le glissé marche quand même, les
        mouvements étant écoutés sur la liste elle-même */
-    try { h.setPointerCapture(e.pointerId); } catch (x) {}
+    try { h.setPointerCapture(e.pointerId); } catch (x) { /* voir le commentaire au-dessus */ }
     row.classList.add('drag'); wrap.classList.add('dragging');
     e.preventDefault();
   });
@@ -431,6 +491,62 @@ export function legalView() {
     </div>`;
 }
 
+/* Six caractères se cassent hors ligne en quelques secondes. Dix est
+   le plancher, et il ne vaut que parce que le même est réglé côté
+   Supabase : ce contrôle-ci ne protège que la personne qui se sert du
+   formulaire, pas celle qui appelle l'API directement.
+   La case n'est pas une formalité : en dessous de 15 ans, le
+   consentement d'un parent est requis, et on ne peut pas le recueillir
+   ici. Mieux vaut ne pas ouvrir le compte que de faire semblant. */
+function validateLoginForm(up, em, pw, err) {
+  if (!em.value.trim() || !pw.value) { err.textContent = 'Renseigne les deux champs'; return false; }
+  if (up && pw.value.length < PWMIN) {
+    err.textContent = `Mot de passe : ${PWMIN} caractères minimum`; return false;
+  }
+  const age = document.getElementById('age');
+  if (up && age && !age.checked) {
+    err.textContent = 'Confirme que tu as 15 ans ou plus'; return false;
+  }
+  return true;
+}
+
+/* Rend true quand l'inscription vient de s'arrêter net (compte créé mais
+   e-mail à confirmer) : la vue a déjà été repeinte, l'appelant n'a plus
+   rien à faire. */
+async function submitSignUp(em, pw, err) {
+  const done = await signUp(em.value, pw.value);
+  if (done) return false;
+  err.textContent = 'Compte créé. Confirme l’e-mail reçu, puis connecte-toi.';
+  setLoginMode('in'); setLoginBusy(false); loginView();
+  return true;
+}
+
+function loginErrorMessage(x, up) {
+  const m = String(x.message || '');
+  if (/already|exist|registered/i.test(m)) return 'Cette adresse a déjà un compte';
+  if (/Invalid|credentials|refus/i.test(m)) return 'E-mail ou mot de passe incorrect';
+  return up ? 'Inscription impossible' : 'Connexion impossible';
+}
+
+async function doLogin(up, em, pw, err, btn) {
+  try {
+    if (up) {
+      if (await submitSignUp(em, pw, err)) return;
+    } else await signIn(em.value, pw.value);
+    setDb(load());
+    await pull();
+    /* Un lien de partage ouvert alors qu'on n'était pas connecté attend
+       dans l'adresse : c'est maintenant qu'il faut le suivre, sinon on
+       atterrit sur l'accueil sans savoir ce qu'on venait voir. */
+    if (!consumeHash() && !consumeGoto()) { go('home'); accueil(); }
+    maybeTour();
+  } catch (x) {
+    err.textContent = loginErrorMessage(x, up);
+    btn.disabled = false;
+    btn.firstChild.textContent = up ? 'Créer le compte' : 'Se connecter';
+  }
+}
+
 export function loginView() {
   const up = loginMode === 'up';
   $.innerHTML = `<div class="login">
@@ -480,47 +596,10 @@ export function loginView() {
   document.getElementById('lf').onsubmit = async e => {
     e.preventDefault();
     if (loginBusy) return;
-    if (!em.value.trim() || !pw.value) { err.textContent = 'Renseigne les deux champs'; return; }
-    /* Six caractères se cassent hors ligne en quelques secondes. Dix est
-       le plancher, et il ne vaut que parce que le même est réglé côté
-       Supabase : ce contrôle-ci ne protège que la personne qui se sert du
-       formulaire, pas celle qui appelle l'API directement. */
-    if (up && pw.value.length < PWMIN) {
-      err.textContent = `Mot de passe : ${PWMIN} caractères minimum`; return;
-    }
-    /* La case n'est pas une formalité : en dessous de 15 ans, le
-       consentement d'un parent est requis, et on ne peut pas le recueillir
-       ici. Mieux vaut ne pas ouvrir le compte que de faire semblant. */
-    const age = document.getElementById('age');
-    if (up && age && !age.checked) {
-      err.textContent = 'Confirme que tu as 15 ans ou plus'; return;
-    }
+    if (!validateLoginForm(up, em, pw, err)) return;
     setLoginBusy(true); btn.disabled = true; err.textContent = '';
     btn.firstChild.textContent = up ? 'Création…' : 'Connexion…';
-    try {
-      if (up) {
-        const done = await signUp(em.value, pw.value);
-        if (!done) {
-          err.textContent = 'Compte créé. Confirme l’e-mail reçu, puis connecte-toi.';
-          setLoginMode('in'); setLoginBusy(false); loginView();
-          return;
-        }
-      } else await signIn(em.value, pw.value);
-      setDb(load());
-      await pull();
-      /* Un lien de partage ouvert alors qu'on n'était pas connecté attend
-         dans l'adresse : c'est maintenant qu'il faut le suivre, sinon on
-         atterrit sur l'accueil sans savoir ce qu'on venait voir. */
-      if (!consumeHash() && !consumeGoto()) { go('home'); accueil(); }
-      maybeTour();
-    } catch (x) {
-      const m = String(x.message || '');
-      err.textContent = /already|exist|registered/i.test(m) ? 'Cette adresse a déjà un compte'
-        : /Invalid|credentials|refus/i.test(m) ? 'E-mail ou mot de passe incorrect'
-        : up ? 'Inscription impossible' : 'Connexion impossible';
-      btn.disabled = false;
-      btn.firstChild.textContent = up ? 'Créer le compte' : 'Se connecter';
-    }
+    await doLogin(up, em, pw, err, btn);
     setLoginBusy(false);
   };
   setTimeout(() => em.focus(), 80);

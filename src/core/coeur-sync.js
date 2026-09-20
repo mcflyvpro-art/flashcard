@@ -143,7 +143,7 @@ export function load() {
       setOutbox(Array.isArray(d.outbox) ? d.outbox.slice() : []);
       return { subjects: d.subjects || [], decks: d.decks, hist: d.hist || {}, today: d.today };
     }
-  } catch (e) {}
+  } catch (e) { /* cache local corrompu ou absent : on repart d'un état vide, régénéré par la sync */ }
   return { subjects: [], decks: [], hist: {} };
 }
 
@@ -177,8 +177,6 @@ export function pushHist(id, mode, pct) {
   return db.hist[k];
 }
 
-const histOf = (id, mode) => db.hist[id + ':' + mode] || [];
-
 export const uid = () => (crypto.randomUUID ? crypto.randomUUID()
   : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
       const r = Math.random() * 16 | 0;
@@ -193,25 +191,37 @@ export const slugify = n => (n || '').normalize('NFKD').replace(/[\u0300-\u036f]
   .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'matiere';
 
 /* ---------- accès à Supabase ---------- */
+/* On renouvelle avant d'essuyer un refus plutôt qu'après : un 401 au
+   milieu d'un envoi coûte un aller-retour et, sur une requête d'écriture,
+   la refaire n'est pas toujours anodin. */
+const tokenExpiring = () => !!(auth && auth.refresh && auth.exp && Date.now() > auth.exp - 60000);
+
+function authHeaders(extra) {
+  const h = { apikey: SB.key, 'Content-Type': 'application/json', ...extra };
+  if (auth && auth.token) h.Authorization = 'Bearer ' + auth.token;
+  return h;
+}
+
+async function refreshIfUnauthorized(r) {
+  return r.status === 401 && auth && auth.refresh && await refreshToken();
+}
+
+async function throwIfError(r) {
+  if (r.ok) return;
+  const e = new Error(await r.text().catch(() => String(r.status)));
+  e.status = r.status;                 // la file d'attente en a besoin
+  throw e;
+}
+
 export async function api(path, method = 'GET', body, extra = {}) {
   /* Pendant la visite guidée, aucune requête ne part : ni lecture, ni
      écriture. Le compte de démonstration n'existe que dans cet onglet. */
   if (demo) return [];
-  /* On renouvelle avant d'essuyer un refus plutôt qu'après : un 401 au
-     milieu d'un envoi coûte un aller-retour et, sur une requête d'écriture,
-     la refaire n'est pas toujours anodin. */
-  if (auth && auth.refresh && auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
-  const h = { apikey: SB.key, 'Content-Type': 'application/json', ...extra };
-  if (auth && auth.token) h.Authorization = 'Bearer ' + auth.token;
-  const r = await fetch(SB.url + path, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
-  if (r.status === 401 && auth && auth.refresh) {
-    if (await refreshToken()) return api(path, method, body, extra);
-  }
-  if (!r.ok) {
-    const e = new Error(await r.text().catch(() => String(r.status)));
-    e.status = r.status;                 // la file d'attente en a besoin
-    throw e;
-  }
+  if (tokenExpiring()) await refreshToken();
+  const r = await fetch(SB.url + path,
+    { method, headers: authHeaders(extra), body: body ? JSON.stringify(body) : undefined });
+  if (await refreshIfUnauthorized(r)) return api(path, method, body, extra);
+  await throwIfError(r);
   return r.status === 204 ? null : r.json().catch(() => null);
 }
 
@@ -224,20 +234,21 @@ export async function api(path, method = 'GET', body, extra = {}) {
    carte désormais, qui peut dépasser cette limite. */
 const PAGE = 1000;
 
+async function throwIfPageError(r) {
+  if (r.ok || r.status === 206) return;
+  const e = new Error(await r.text().catch(() => String(r.status)));
+  e.status = r.status;
+  throw e;
+}
+
 async function apiPage(path, from, to) {
   if (demo) return { rows: [], total: 0 };
-  if (auth && auth.refresh && auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
+  if (tokenExpiring()) await refreshToken();
   const h = { apikey: SB.key, Range: `${from}-${to}`, Prefer: 'count=exact' };
   if (auth && auth.token) h.Authorization = 'Bearer ' + auth.token;
   const r = await fetch(SB.url + path, { headers: h });
-  if (r.status === 401 && auth && auth.refresh) {
-    if (await refreshToken()) return apiPage(path, from, to);
-  }
-  if (!r.ok && r.status !== 206) {
-    const e = new Error(await r.text().catch(() => String(r.status)));
-    e.status = r.status;
-    throw e;
-  }
+  if (await refreshIfUnauthorized(r)) return apiPage(path, from, to);
+  await throwIfPageError(r);
   const rows = await r.json().catch(() => []);
   const total = +((r.headers.get('content-range') || '').split('/')[1]) || rows.length;
   return { rows, total };
@@ -334,7 +345,7 @@ function sessionLost() {
 
 /* ce qui attend encore reste sur l'appareil : une déconnexion ne doit pas
    emporter des modifications qu'on n'a pas réussi à envoyer */
-function flushSave() { try { save(); } catch (e) {} }
+function flushSave() { try { save(); } catch (e) { /* quota localStorage dépassé : rien de plus à tenter ici */ } }
 
 /* deleted_at: null est écrit à chaque fois, sans exception. Un paquet
    présent ici est vivant par définition ; sans cette ligne, annuler une
@@ -354,7 +365,7 @@ async function raiseConflict(d) {
   try {
     const got = await api(`/rest/v1/decks?id=eq.${encodeURIComponent(d.id)}&select=*`);
     row = got && got[0];
-  } catch (e) {}
+  } catch (e) { /* réseau indisponible : traité comme un paquet distant absent, cf. ligne suivante */ }
   if (!row) { d.rev = 0; dirty[d.id] = 1; return; }   // disparu : on le repose tel quel
   if (conflicts.some(c => c.id === d.id)) return;
   conflicts.push({
@@ -562,6 +573,42 @@ function cardsParDeck(rows) {
   return m;
 }
 
+function applyPulledPrefs(pf) {
+  const wasSimple = prefs.simple;
+  setPrefs({ ...DEFPREFS, ...((pf && pf[0] && pf[0].data) || {}) });
+  if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
+  if (study && prefs.simple !== wasSimple) prefs.simple = wasSimple;   // pas de bascule à chaud
+}
+
+/* Ce qui attend d'être envoyé ne se fait pas écraser par la relecture :
+   on garde la version locale et son tour dans la file. Sans cette
+   réserve, ouvrir l'app hors ligne puis retrouver le réseau effaçait la
+   dernière séance de travail au moment même où elle allait partir. */
+function mergeDecks(decks, cardsByDeck) {
+  const held = new Map(db.decks.filter(d => dirty[d.id]).map(d => [d.id, d]));
+  const merged = decks.map(x => {
+    const mine = held.get(x.id);
+    if (mine) { mine.rev = x.rev; held.delete(x.id); return mine; }
+    return {
+      id: x.id, name: x.name, subject: x.subject, hidden: x.hidden,
+      pos: x.pos, pinned: x.pinned, meta: x.meta || {}, rev: x.rev,
+      cards: cardsByDeck.get(x.id) || []
+    };
+  });
+  for (const d of held.values()) merged.push(d);   // un paquet créé hors ligne reprend sa place
+  return merged;
+}
+
+function buildHist(sess) {
+  const hist = {};
+  for (const r of sess) {
+    const k = r.deck_id + ':' + r.mode;
+    (hist[k] = hist[k] || []).push({ t: +new Date(r.created_at), p: r.pct });
+    if (hist[k].length > 24) hist[k].shift();
+  }
+  return hist;
+}
+
 /* récupère matières, paquets et historique du compte */
 export async function pull() {
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
@@ -578,36 +625,13 @@ export async function pull() {
   const cardsByDeck = cardsParDeck(cardRows || []);
   trash.n = (bin || []).length;
   mailbox.n = (unread || []).length;
-  const wasSimple = prefs.simple;
-  setPrefs({ ...DEFPREFS, ...((pf && pf[0] && pf[0].data) || {}) });
-  if (pf && pf[0] && pf[0].name) prefs.name = pf[0].name;
-  if (study && prefs.simple !== wasSimple) prefs.simple = wasSimple;   // pas de bascule à chaud
+  applyPulledPrefs(pf);
   upsertProfile();
   cerclePull();                 // rôle, coupures, classes : tout arrive ensemble
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
-  /* Ce qui attend d'être envoyé ne se fait pas écraser par la relecture :
-     on garde la version locale et son tour dans la file. Sans cette
-     réserve, ouvrir l'app hors ligne puis retrouver le réseau effaçait la
-     dernière séance de travail au moment même où elle allait partir. */
-  const held = new Map(db.decks.filter(d => dirty[d.id]).map(d => [d.id, d]));
-  db.decks = decks.map(x => {
-    const mine = held.get(x.id);
-    if (mine) { mine.rev = x.rev; held.delete(x.id); return mine; }
-    return {
-      id: x.id, name: x.name, subject: x.subject, hidden: x.hidden,
-      pos: x.pos, pinned: x.pinned, meta: x.meta || {}, rev: x.rev,
-      cards: cardsByDeck.get(x.id) || []
-    };
-  });
-  /* un paquet créé hors ligne n'est encore nulle part : il reprend sa place */
-  for (const d of held.values()) db.decks.push(d);
-  db.hist = {};
-  for (const r of sess) {
-    const k = r.deck_id + ':' + r.mode;
-    (db.hist[k] = db.hist[k] || []).push({ t: +new Date(r.created_at), p: r.pct });
-    if (db.hist[k].length > 24) db.hist[k].shift();
-  }
+  db.decks = mergeDecks(decks, cardsByDeck);
+  db.hist = buildHist(sess);
   if (!db.subjects.length) await seedSubjects();
   /* Les fiches d'avant FSRS reçoivent ici leur état de mémoire, une fois
      pour toutes : sans ça le moteur repartirait de zéro sur toute une

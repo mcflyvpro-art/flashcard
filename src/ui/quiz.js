@@ -147,13 +147,12 @@ function buildPool(cards) {
   return [...m.values()];
 }
 
-export function startQuiz(id, pool, rev, opt) {
-  const o = opt || {};
-  let src = id === 'all' ? live().flatMap(d => d.cards) : (deck(id) || { cards: [] }).cards;
-  if (rev) src = src.map(c => ({ ...c, f: c.b, b: c.f, fi: c.bi, bi: c.fi, fa: c.ba, ba: c.fa }));
-  const items = pool || shuffle(buildPool(src));
-  if (!items.length) return;
-  const m = id === 'all' ? DEFMETA : metaOf(deck(id));
+function quizSrcCards(id, rev) {
+  const base = id === 'all' ? live().flatMap(d => d.cards) : (deck(id) || { cards: [] }).cards;
+  return rev ? base.map(c => ({ ...c, f: c.b, b: c.f, fi: c.bi, bi: c.fi, fa: c.ba, ba: c.fa })) : base;
+}
+
+function collectAnswerPool(items) {
   const seen = new Set(), answers = [];
   for (const it of items) {
     for (const a of it.a) {
@@ -162,12 +161,25 @@ export function startQuiz(id, pool, rev, opt) {
       if (k && !seen.has(k)) { seen.add(k); answers.push(a); }
     }
   }
+  return answers;
+}
+
+const quizMode = (o, id, nAnswers) => {
   const mode = o.mode !== undefined ? o.mode : (quiz && quiz.id === id ? quiz.mode : '');
+  return mode === 'qcm' && nAnswers >= 2 ? 'qcm' : '';
+};
+
+export function startQuiz(id, pool, rev, opt) {
+  const o = opt || {};
+  const items = pool || shuffle(buildPool(quizSrcCards(id, rev)));
+  if (!items.length) return;
+  const m = id === 'all' ? DEFMETA : metaOf(deck(id));
+  const answers = collectAnswerPool(items);
   setQuiz({ id, rev: !!rev, name: id === 'all' ? 'Tout' : (deck(id) || {}).name || '',
            sub: id === 'all' ? '' : (deck(id) || {}).subject,
            pool: items, answers, i: 0, ok: 0, bad: [], miss: [], log: [], forced: 0,
            t0: Date.now(), saved: false, state: 'ask', typed: '',
-           mode: mode === 'qcm' && answers.length >= 2 ? 'qcm' : '',
+           mode: quizMode(o, id, answers.length),
            /* qlang lit la question, alang attend/écoute la réponse — la langue
               suit ce qui est vraiment affiché à chaque rôle, pas un côté fixe :
               si le quiz est inversé, question et réponse ont échangé de langue
@@ -186,7 +198,7 @@ export function startQuiz(id, pool, rev, opt) {
 /* Dictée : le navigateur transcrit, on garde la variante qui passe la
    correction, sinon la première. */
 export function dictate() {
-  if (asrOn) { try { asrRec && asrRec.stop(); } catch (e) {} return; }
+  if (asrOn) { try { asrRec && asrRec.stop(); } catch (e) { /* déjà arrêtée : sans conséquence */ } return; }
   const q = quiz.pool[quiz.i];
   setAsrOn(true); render();
   setAsrRec(listen(quiz.alang, alts => {
@@ -228,6 +240,55 @@ function quizOpts(q) {
   return quiz.opts;
 }
 
+function quizFinishedScreen(barHtml) {
+  stopTimer();
+  const n = quiz.pool.length;
+  if (!quiz.saved) { quiz.saved = true; quiz.ms = Date.now() - quiz.t0;
+    quiz.hist = pushHist(quiz.id, 'quiz', n ? quiz.ok / n : 0); }
+  $.innerHTML = barHtml + review({
+    ok: quiz.ok, total: n, log: quiz.log, ms: quiz.ms, hist: quiz.hist, forced: quiz.forced,
+    hints: quiz.hints,
+    miss: quiz.miss, redo: 'redo', again: 'requiz', done: 'quitquiz'
+  });
+  return fillRing(quiz.ok, n);
+}
+
+function quizOptionsHtml(q, ask) {
+  return quizOpts(q).map((o, k) => {
+    const right = norm(plain(o)) === norm(plain(q.a[0]));
+    const cl = ask ? '' : right ? ' ok' : (quiz.pickd === k ? ' ko' : ' dim');
+    return `<button class="op${cl}" data-qp="${k}">${rt(o)}</button>`;
+  }).join('');
+}
+
+function quizTypedRowHtml(ask) {
+  return `<div class="arow">
+      <input id="ans" class="ans ${quiz.state}" value="${esc(quiz.typed)}" placeholder="Réponse"
+        autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
+        enterkeyhint="go" ${ask ? '' : 'readonly'}>
+      ${ASRC && ask ? `<button class="ai mic ${asrOn ? 'busy' : ''}" data-act="asr">${svg(I.mic)}</button>` : ''}
+    </div>`;
+}
+
+function quizFooterHtml(qcm, ask) {
+  if (quiz.state === 'bad') {
+    return `<div class="duo" style="margin:11px 0 0">
+        <button data-act="anyway">${svg(I.check)}Compter juste</button>
+        <button class="prim" data-act="next">Suivant${svg(I.arrow)}</button>
+      </div>`;
+  }
+  if (!ask) return `<button class="cta" style="margin-top:11px" data-act="next">Suivant${svg(I.arrow)}</button>`;
+  return `<div class="qrow">
+      ${qcm ? '' : `<button class="qb" data-act="hint" title="Indice">${svg(I.bulb)}</button>
+      <button class="qb" data-act="idk" title="Je ne sais pas">${svg(I.skip)}</button>`}
+      ${quiz.answers.length >= 2
+        ? `<button class="qb ${qcm ? 'on' : ''}" data-act="qcm2" title="Choix multiples">${svg(I.grid)}</button>`
+        : ''}
+      ${qcm ? '<div style="flex:1"></div>'
+            : `<button class="cta" data-act="send">Valider${svg(I.arrow)}</button>`}
+    </div>`;
+}
+
 export function quizView() {
   const qcm = quiz.mode === 'qcm';
   const bar = n => `<div class="bar">
@@ -238,18 +299,7 @@ export function quizView() {
       <button class="ic ${quiz.rev ? 'solid' : ''}" data-act="swapq">${svg(I.swap)}</button>
       <button class="ic" data-act="requiz" aria-label="Relancer">${svg(I.shuffle)}</button>
     </div>`;
-  if (quiz.i >= quiz.pool.length) {
-    stopTimer();
-    const n = quiz.pool.length;
-    if (!quiz.saved) { quiz.saved = true; quiz.ms = Date.now() - quiz.t0;
-      quiz.hist = pushHist(quiz.id, 'quiz', n ? quiz.ok / n : 0); }
-    $.innerHTML = bar('') + review({
-      ok: quiz.ok, total: n, log: quiz.log, ms: quiz.ms, hist: quiz.hist, forced: quiz.forced,
-      hints: quiz.hints,
-      miss: quiz.miss, redo: 'redo', again: 'requiz', done: 'quitquiz'
-    });
-    return fillRing(quiz.ok, n);
-  }
+  if (quiz.i >= quiz.pool.length) return quizFinishedScreen(bar(''));
   const q = quiz.pool[quiz.i];
   const ask = quiz.state === 'ask';
   const canSay = quiz.qlang && TTS && plain(q.f);
@@ -263,34 +313,8 @@ export function quizView() {
         ${ask && quiz.hint ? `<div class="hmask">${esc(hintMask(q, quiz.hint))}</div>` : ''}
         ${quiz.state === 'bad' ? `<div class="sol">${svg(I.check)}${q.a.map(rt).join('  ·  ')}</div>` : ''}
       </div>
-      ${qcm
-        ? `<div class="opts qopts">${quizOpts(q).map((o, k) => {
-            const right = norm(plain(o)) === norm(plain(q.a[0]));
-            const cl = ask ? '' : right ? ' ok' : (quiz.pickd === k ? ' ko' : ' dim');
-            return `<button class="op${cl}" data-qp="${k}">${rt(o)}</button>`;
-          }).join('')}</div>`
-        : `<div class="arow">
-            <input id="ans" class="ans ${quiz.state}" value="${esc(quiz.typed)}" placeholder="Réponse"
-              autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
-              enterkeyhint="go" ${ask ? '' : 'readonly'}>
-            ${ASRC && ask ? `<button class="ai mic ${asrOn ? 'busy' : ''}" data-act="asr">${svg(I.mic)}</button>` : ''}
-          </div>`}
-      ${quiz.state === 'bad'
-        ? `<div class="duo" style="margin:11px 0 0">
-            <button data-act="anyway">${svg(I.check)}Compter juste</button>
-            <button class="prim" data-act="next">Suivant${svg(I.arrow)}</button>
-          </div>`
-        : ask
-        ? `<div class="qrow">
-            ${qcm ? '' : `<button class="qb" data-act="hint" title="Indice">${svg(I.bulb)}</button>
-            <button class="qb" data-act="idk" title="Je ne sais pas">${svg(I.skip)}</button>`}
-            ${quiz.answers.length >= 2
-              ? `<button class="qb ${qcm ? 'on' : ''}" data-act="qcm2" title="Choix multiples">${svg(I.grid)}</button>`
-              : ''}
-            ${qcm ? '<div style="flex:1"></div>'
-                  : `<button class="cta" data-act="send">Valider${svg(I.arrow)}</button>`}
-          </div>`
-        : `<button class="cta" style="margin-top:11px" data-act="next">Suivant${svg(I.arrow)}</button>`}
+      ${qcm ? `<div class="opts qopts">${quizOptionsHtml(q, ask)}</div>` : quizTypedRowHtml(ask)}
+      ${quizFooterHtml(qcm, ask)}
     </div>`;
   requestAnimationFrame(() => {
     const p = document.getElementById('pg');
@@ -349,49 +373,65 @@ export function nextQ() {
 export const resetComp = extra => { setComp({ subject: '', cards: [], edit: -1, bulk: false,
   text: '', dups: false, ...(extra || {}) }); };
 
-export function importView() {
-  const t = view.id ? deck(view.id) : null;
-  const s = subj(t ? t.subject : comp.subject);
-  $.innerHTML = `
+function importHeaderHtml(t) {
+  return `
     <div class="bar">
       <button class="ic" data-act="${t ? 'deck' : comp.pour === 'devoir' ? 'prof' : 'home'}"
         aria-label="Retour">${svg(I.back)}</button>
       <h1>${t ? esc(t.name) : comp.pour === 'devoir' ? 'Nouveau devoir' : 'Nouveau livre'}</h1>
       <button class="ic ${comp.bulk ? 'solid' : ''}" data-act="bulk">${svg(I.down)}</button>
+    </div>`;
+}
+
+function importBulkHtml() {
+  return `
+    <div class="ta"><textarea id="tx" placeholder="chat = gatto&#10;chien = cane&#10;maison = casa"
+      autocapitalize="off" autocorrect="off" spellcheck="false">${esc(comp.text)}</textarea></div>
+    <div class="airow">
+      <button class="ai" id="aishot" title="Photo d'une ou plusieurs pages de cours, prises ou depuis la galerie">${svg(I.image)}</button>
+      <button class="ai" id="aipdf" title="Fichier : PDF, texte, CSV, export Anki ou Quizlet">${svg(I.file)}</button>
+      <button class="ai" id="aigen" title="Fabriquer les pages">${svg(I.spark)}</button>
+      <button class="cta" id="bulkadd" disabled>Ajouter${svg(I.plus)}</button>
     </div>
+    <!-- Sans « capture », le sélecteur propose l'appareil photo ET la
+         galerie (Photos sur iPhone, Galerie/Fichiers sur Android),
+         et « multiple » permet d'en choisir plusieurs d'un coup. Avec
+         « capture », les deux systèmes sautaient tout droit à
+         l'appareil photo, sans jamais montrer la pellicule. -->
+    <input type="file" id="fshot" accept="image/*" multiple hidden>
+    <input type="file" id="fpdf" accept=".pdf,.txt,.csv,.tsv,.apkg,application/pdf,text/plain,text/csv" hidden>
+    <div class="prev" id="prev"></div>`;
+}
+
+function importComposerHtml(s) {
+  return `
+    <div class="comp" id="comp" style="${sty(s)}">
+      <input id="cf" class="cf" placeholder="Recto" enterkeyhint="next" spellcheck="false">
+      <div class="csep"></div>
+      <input id="cb" class="cb" placeholder="Verso" enterkeyhint="done" spellcheck="false">
+      <button class="cadd" id="cadd">${svg(comp.edit >= 0 ? I.check : I.plus)}</button>
+    </div>
+    <div class="lbl"><span>Pages</span><span id="cn">${comp.cards.length}</span></div>
+    <div class="dlist" id="dlist"></div>`;
+}
+
+function importOkButtonHtml(t) {
+  if (comp.bulk) return '';
+  const label = t ? 'Ajouter' : comp.pour === 'devoir' ? 'Continuer' : 'Créer';
+  return `<button class="cta" id="ok" ${comp.cards.length ? '' : 'disabled'}>${label}${svg(I.check)}</button>`;
+}
+
+export function importView() {
+  const t = view.id ? deck(view.id) : null;
+  const s = subj(t ? t.subject : comp.subject);
+  $.innerHTML = importHeaderHtml(t) + `
     <div class="sheet ${comp.bulk ? 'sh-bulk' : 'sh-comp'}">
       ${t ? '' : `<div class="field"><input id="nm" placeholder="${
         comp.pour === 'devoir' ? 'Titre du devoir' : 'Titre du livre'}" spellcheck="false"
         enterkeyhint="next" value="${esc(comp.name || '')}"></div>
         ${pills(comp.subject, db.subjects.map(x => subj(x.id)), 'nsubj')}`}
-      ${comp.bulk ? `
-        <div class="ta"><textarea id="tx" placeholder="chat = gatto&#10;chien = cane&#10;maison = casa"
-          autocapitalize="off" autocorrect="off" spellcheck="false">${esc(comp.text)}</textarea></div>
-        <div class="airow">
-          <button class="ai" id="aishot" title="Photo d'une ou plusieurs pages de cours, prises ou depuis la galerie">${svg(I.image)}</button>
-          <button class="ai" id="aipdf" title="Fichier : PDF, texte, CSV, export Anki ou Quizlet">${svg(I.file)}</button>
-          <button class="ai" id="aigen" title="Fabriquer les pages">${svg(I.spark)}</button>
-          <button class="cta" id="bulkadd" disabled>Ajouter${svg(I.plus)}</button>
-        </div>
-        <!-- Sans « capture », le sélecteur propose l'appareil photo ET la
-             galerie (Photos sur iPhone, Galerie/Fichiers sur Android),
-             et « multiple » permet d'en choisir plusieurs d'un coup. Avec
-             « capture », les deux systèmes sautaient tout droit à
-             l'appareil photo, sans jamais montrer la pellicule. -->
-        <input type="file" id="fshot" accept="image/*" multiple hidden>
-        <input type="file" id="fpdf" accept=".pdf,.txt,.csv,.tsv,.apkg,application/pdf,text/plain,text/csv" hidden>
-        <div class="prev" id="prev"></div>`
-      : `
-        <div class="comp" id="comp" style="${sty(s)}">
-          <input id="cf" class="cf" placeholder="Recto" enterkeyhint="next" spellcheck="false">
-          <div class="csep"></div>
-          <input id="cb" class="cb" placeholder="Verso" enterkeyhint="done" spellcheck="false">
-          <button class="cadd" id="cadd">${svg(comp.edit >= 0 ? I.check : I.plus)}</button>
-        </div>
-        <div class="lbl"><span>Pages</span><span id="cn">${comp.cards.length}</span></div>
-        <div class="dlist" id="dlist"></div>`}
-      ${comp.bulk ? '' : `<button class="cta" id="ok" ${comp.cards.length ? '' : 'disabled'}>
-        ${t ? 'Ajouter' : comp.pour === 'devoir' ? 'Continuer' : 'Créer'}${svg(I.check)}</button>`}
+      ${comp.bulk ? importBulkHtml() : importComposerHtml(s)}
+      ${importOkButtonHtml(t)}
     </div>`;
 
   const nm = document.getElementById('nm');
@@ -505,7 +545,7 @@ export function importView() {
       if (nm.endsWith('.apkg')) return toast(I.x, 'Exporte en texte depuis Anki');
       if (f.type === 'application/pdf' || nm.endsWith('.pdf'))
         return askPages(p => grab(pdf, f, p));
-      let txt = '';
+      let txt;
       try { txt = await f.text(); } catch (x) { return toast(I.x, 'Fichier illisible'); }
       const found = parseText(txt);
       if (!found.length) return toast(I.x, 'Aucune carte reconnue');

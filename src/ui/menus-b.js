@@ -91,13 +91,8 @@ export function paintMenuDeckset(w) {
     return;
 }
 
-export function paintMenuSimple(w) {
-  const on = menu === 'simple';
-    const n = backlog(), per = Math.max(5, prefs.goal || 30), j = Math.max(1, Math.ceil(n / per));
-    const ago = prefs.simpleAt ? Date.now() - prefs.simpleAt : 0;
-    const since = ago >= DAY ? Math.round(ago / DAY) : 0;
-    const bloc = (t, items) => `<div class="pvh">${t}</div><ul class="pvl">${items.map(x => `<li>${x}</li>`).join('')}</ul>`;
-    const body = on ? [
+function corpsModeSimpleOn(bloc) {
+  return [
       bloc('Ce qui s’arrête', [
         `Les échéances. Plus aucune carte n’arrive à date : les pastilles de rappel sur les
          paquets et le marathon toutes matières disparaissent.`,
@@ -130,7 +125,11 @@ export function paintMenuSimple(w) {
          validée dans un mode et enregistrée dans l’autre.`,
         `Tu peux revenir en arrière à tout moment, ici même.`
       ])
-    ].join('') : [
+  ].join('');
+}
+
+function corpsModeSimpleOff(bloc, n, per, j, since) {
+  return [
       bloc('Ce qui revient', [
         `Les quatre boutons de notation, les échéances, les pastilles de rappel, la barre de
          maturité et le marathon.`,
@@ -150,7 +149,16 @@ export function paintMenuSimple(w) {
         `Les cartes vues en mode simple n’ont pas progressé. Celles qui n’avaient jamais été
          notées repartent comme des cartes neuves.`
       ])
-    ].join('');
+  ].join('');
+}
+
+export function paintMenuSimple(w) {
+  const on = menu === 'simple';
+    const n = backlog(), per = Math.max(5, prefs.goal || 30), j = Math.max(1, Math.ceil(n / per));
+    const ago = prefs.simpleAt ? Date.now() - prefs.simpleAt : 0;
+    const since = ago >= DAY ? Math.round(ago / DAY) : 0;
+    const bloc = (t, items) => `<div class="pvh">${t}</div><ul class="pvl">${items.map(x => `<li>${x}</li>`).join('')}</ul>`;
+    const body = on ? corpsModeSimpleOn(bloc) : corpsModeSimpleOff(bloc, n, per, j, since);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu pv">
         <div class="mi" style="font-weight:750">${svg(on ? I.swap : I.brain)}${on ? 'Passer en mode simple' : 'Rallumer le moteur'}</div>

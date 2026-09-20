@@ -301,7 +301,7 @@ export function beep(good, force) {
     g.gain.exponentialRampToValueAtTime(.0001, t + .16);
     o.connect(g); g.connect(actx.destination);
     o.start(t); o.stop(t + .18);
-  } catch (e) {}
+  } catch (e) { /* Web Audio indisponible ou bloquée : le bip est un bonus, pas une nécessité */ }
 }
 
 /* ---------- toast ---------- */

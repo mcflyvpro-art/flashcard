@@ -32,8 +32,8 @@ l'air de marcher ».
 
 - **Build Vite, sans framework ni dépendance à l'exécution.**
   - `index.html` — écran d'ouverture inline, charge `/src/app.css` puis `/src/app.js`
-  - `src/app.js` — **point d'entrée seulement** (26 lignes) : importe
-    `src/core/coeur-sync.js` puis les 17 modules de `src/ui/`, chacun pour
+  - `src/app.js` — **point d'entrée seulement** (27 lignes) : importe
+    `src/core/coeur-sync.js` puis les 18 modules de `src/ui/`, chacun pour
     ses effets de bord.
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
     HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout).
@@ -44,15 +44,18 @@ l'air de marcher ».
     (corbeille, amis, courrier, versions, étagère), `menus-c.js` (les quelques
     écritures posées à même le gestionnaire de clics), `carte-media.js`
     (upload média + rejeu FSRS depuis l'historique serveur).
-  - `src/ui/` — les 17 écrans (rendu, DOM, `$.innerHTML`, menus, événements),
+  - `src/ui/` — les 18 écrans (rendu, DOM, `$.innerHTML`, menus, événements),
     même noms de fichier que leur pendant `core/` quand les deux existent
     (`ui/classement.js` ↔ `core/classement.js`, etc.) : `bibliotheque.js`,
     `carte-media.js`, `import-cartes.js`, `connexion.js`,
     `reglages-corbeille.js`, `defis.js`, `classement.js`, `etablissement.js`,
     `bilan-devoirs.js`, `ecran-groupe.js`, `menus-a.js`, `menus-b.js`,
     `menus-c.js`, `revision.js`, `quiz.js`, `interactions.js`,
+    `raccourcis.js` (raccourcis clavier pendant une révision, et les
+    raccourcis d'ouverture `?go=…` — extrait d'`interactions.js` sur M06.T6,
+    qui frôlait la limite de lignes une fois ses tables de dispatch posées),
     `onboarding.js`. Aucun fichier, `core/` ou `ui/`, ne dépasse 800 lignes
-    (le plus gros, `onboarding.js`, fait 742 lignes).
+    (le plus gros, `interactions.js`, fait 799 lignes).
 
     Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
     a d'abord suivi les anciennes sections `/* ---------- nom ---------- */`

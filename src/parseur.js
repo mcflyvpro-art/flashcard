@@ -80,54 +80,63 @@ export const deHtml = s => s
 export function parseText(raw) {
   return parseRaw(raw).map(c => ({ f: deHtml(c.f), b: deHtml(c.b) })).filter(c => c.f && c.b);
 }
-export function parseRaw(raw) {
-  const txt = deAnki(String(raw));
-  const t = txt.trim(); if (!t) return [];
-  if (t[0] === '{' || t[0] === '[') {
-    try {
-      const j = JSON.parse(t), arr = Array.isArray(j) ? j : (j.cards || []);
-      const out = arr.map(c => Array.isArray(c)
-        ? { f: String(c[0] || '').trim(), b: String(c[1] || '').trim() }
-        : { f: String(c.f ?? c.front ?? c.q ?? '').trim(), b: String(c.b ?? c.back ?? c.a ?? '').trim() })
-        .filter(c => c.f);
-      if (out.length) return out;
-    } catch (e) { /* pas du JSON valide : on retombe sur les découpes suivantes */ }
+function parseJSON(t) {
+  if (t[0] !== '{' && t[0] !== '[') return null;
+  try {
+    const j = JSON.parse(t), arr = Array.isArray(j) ? j : (j.cards || []);
+    const out = arr.map(c => Array.isArray(c)
+      ? { f: String(c[0] || '').trim(), b: String(c[1] || '').trim() }
+      : { f: String(c.f ?? c.front ?? c.q ?? '').trim(), b: String(c.b ?? c.back ?? c.a ?? '').trim() })
+      .filter(c => c.f);
+    return out.length ? out : null;
+  } catch (e) { return null; /* pas du JSON valide : on retombe sur les découpes suivantes */ }
+}
+
+/* Blocs séparés par une ligne vide, deux lignes chacun : recto dessus,
+   verso dessous. C'est ce qui sort d'un copier-coller de page web. */
+function parseBlankLineBlocks(t) {
+  if (!/\n\s*\n/.test(t)) return null;
+  const blocks = t.split(/\n\s*\n+/).map(x => x.trim()).filter(Boolean);
+  const pairs = blocks.map(x => x.split(/\r?\n/).map(l => l.replace(BULLET, '').trim()).filter(Boolean));
+  if (blocks.length < 2 || !pairs.every(p => p.length === 2)) return null;
+  return pairs.map(([f, b]) => ({ f, b }));
+}
+
+/* Tout sur une seule ligne : les lignes sont alors séparées par « ; »
+   ou « | », le choix que Quizlet propose pour les rangées. */
+function splitSingleLine(rows) {
+  if (rows.length !== 1) return rows;
+  for (const rs of [/\s*\|\s*/, /\s*;\s*/]) {
+    const p = rows[0].split(rs).map(x => x.trim()).filter(Boolean);
+    if (p.length >= 2 && sniffSep(p)) return p;
   }
-  /* Blocs séparés par une ligne vide, deux lignes chacun : recto dessus,
-     verso dessous. C'est ce qui sort d'un copier-coller de page web. */
-  if (/\n\s*\n/.test(t)) {
-    const blocks = t.split(/\n\s*\n+/).map(x => x.trim()).filter(Boolean);
-    const pairs = blocks.map(x => x.split(/\r?\n/).map(l => l.replace(BULLET, '').trim()).filter(Boolean));
-    if (blocks.length >= 2 && pairs.every(p => p.length === 2))
-      return pairs.map(([f, b]) => ({ f, b }));
-  }
-  let rows = t.split(/\r?\n/).map(l => l.replace(BULLET, '').trim()).filter(Boolean);
-  /* Tout sur une seule ligne : les lignes sont alors séparées par « ; »
-     ou « | », le choix que Quizlet propose pour les rangées. */
-  if (rows.length === 1) {
-    for (const rs of [/\s*\|\s*/, /\s*;\s*/]) {
-      const p = rows[0].split(rs).map(x => x.trim()).filter(Boolean);
-      if (p.length >= 2 && sniffSep(p)) { rows = p; break; }
-    }
-  }
+  return rows;
+}
+
+function parseBySeparator(rows) {
   const sep = sniffSep(rows);
-  if (sep) {
-    const out = [];
-    for (const r of rows) {
-      const p = r.split(sep.split);
-      if (p.length < 2) continue;
-      const f = p[0].trim(), b = p.slice(1).join(' ').trim();
-      if (f && b) out.push({ f, b });
-    }
-    if (out.length) return out;
+  if (!sep) return null;
+  const out = [];
+  for (const r of rows) {
+    const p = r.split(sep.split);
+    if (p.length < 2) continue;
+    const f = p[0].trim(), b = p.slice(1).join(' ').trim();
+    if (f && b) out.push({ f, b });
   }
-  /* Une ligne sur deux : recto, verso, recto, verso… */
-  if (rows.length >= 4 && rows.length % 2 === 0 && !rows.some(r => SEPS.some(s => s.test(r)))) {
-    const out = [];
-    for (let i = 0; i < rows.length; i += 2) out.push({ f: rows[i], b: rows[i + 1] });
-    return out;
-  }
-  /* dernier recours : ligne par ligne, comme avant */
+  return out.length ? out : null;
+}
+
+/* Une ligne sur deux : recto, verso, recto, verso… */
+function parseAlternatingLines(rows) {
+  if (rows.length < 4 || rows.length % 2 !== 0) return null;
+  if (rows.some(r => SEPS.some(s => s.test(r)))) return null;
+  const out = [];
+  for (let i = 0; i < rows.length; i += 2) out.push({ f: rows[i], b: rows[i + 1] });
+  return out;
+}
+
+/* dernier recours : ligne par ligne, comme avant */
+function parseLineByLine(rows) {
   const out = [];
   for (const line of rows) {
     for (const s of SEPS) {
@@ -138,4 +147,19 @@ export function parseRaw(raw) {
     }
   }
   return out;
+}
+
+export function parseRaw(raw) {
+  const txt = deAnki(String(raw));
+  const t = txt.trim(); if (!t) return [];
+  const asJson = parseJSON(t);
+  if (asJson) return asJson;
+  const asBlocks = parseBlankLineBlocks(t);
+  if (asBlocks) return asBlocks;
+  const rows = splitSingleLine(t.split(/\r?\n/).map(l => l.replace(BULLET, '').trim()).filter(Boolean));
+  const bySep = parseBySeparator(rows);
+  if (bySep) return bySep;
+  const alt = parseAlternatingLines(rows);
+  if (alt) return alt;
+  return parseLineByLine(rows);
 }

@@ -16,19 +16,31 @@
 
 ## ÉTAT
 ```
-CURSEUR   M06.T6 (ESLint strict, complexité ≤ 15, profondeur ≤ 4) — ordre P0 décidé le 2026-09-18, voir ORDRE
+CURSEUR   M06.T8 (TypeScript en vérification douce sur src/core/) — ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      23 / 148
-DERNIER   2026-09-20 · M06.T5 fini : une seule fuite trouvée, `mediaCache`
-          (un `Map` d'URL d'objet pour les médias des cartes) exporté
-          depuis `src/ui/carte-media.js` et muté depuis `src/ui/onboarding.js`
-          (`resetSession`, à la déconnexion) — hors de `src/data/etat.js`
-          donc contraire à M06.T5. Déplacée dans `etat.js` avec son setter
-          (`setMediaCache`), même schéma que les 109 autres variables
-          d'état. Preuve : revue de tout `export let`/`let`/`var` hors
-          etat.js → 0 restant ; `npm run check` vert ; vérifié au
-          navigateur qu'une déconnexion (qui vide `mediaCache`) ne plante
-          pas.
+FAIT      24 / 148
+DERNIER   2026-09-20 · M06.T6 fini : `complexity: ['error', 15]` et
+          `max-depth: ['error', 4]` ajoutées à eslint.config.js, en même
+          temps que le passage en erreur des règles `no-empty`/
+          `no-useless-assignment`/`no-unused-vars` qui étaient encore en
+          avertissement depuis M06.T2 (les ~40 avertissements existants
+          traités un par un : catch vides justifiés d'un commentaire
+          pourquoi, conformément à la règle 6, ou variables mortes
+          supprimées). Restait ~37 fonctions au-dessus du seuil de
+          complexité, de `pull()` (18) à deux gestionnaires de clic à
+          coups de `if (b.dataset.x) {...}` empilés (299 et 274 !) dans
+          `interactions.js` et `menus-c.js` : toutes redécoupées en petites
+          fonctions nommées, les grosses chaînes de `if`/`else if` en
+          tables de dispatch (`[[test, run], ...]` parcourue par une
+          boucle). `interactions.js` dépassait alors les 800 lignes une
+          fois ses tables posées (867) : ses raccourcis clavier et les
+          raccourcis d'ouverture `?go=…` en sont sortis vers un nouveau
+          module, `src/ui/raccourcis.js` (18e écran, CLAUDE.md à jour).
+          Comportement inchangé partout : chaque extraction est une copie
+          fidèle du bloc d'origine, même ordre de test. Preuve : `npm run
+          check` vert (134/134 tests, build ok) ; `npx eslint .` → code de
+          sortie 0, aucune ligne affichée ; `awk` sur chaque fichier →
+          le plus gros, `interactions.js`, fait 799 lignes.
           2026-09-20 (plus tôt) · M06.T4 fini : les 8 écrans qui mélangeaient réseau et
           rendu (classement, etablissement, defis, bilan-devoirs,
           ecran-groupe, reglages-corbeille, menus-c, carte-media) sont
@@ -123,7 +135,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M05.T5 · sonde externe + page d'état publique — cible: contrôle toutes les 5 min — preuve: URL publique
 - [ ] M05.T6 · alerte si le taux d'erreur dépasse 1 % sur 1 h — preuve: alerte déclenchée en test
 
-## M06 · Qualité du code [P0] 6/8
+## M06 · Qualité du code [P0] 7/8
 - [x] M06.T1 · build Vite + variables d'environnement — preuve: `npm run build`
 - [x] M06.T2 · ESLint au dépôt + CI — preuve: `.github/workflows/ci.yml`
 - [x] M06.T3 · découpe `src/app.js` en modules — cible: **aucun fichier > 800 lignes** (9 795 au départ) — preuve: `awk 'END{print FILENAME, NR}'` sur chaque fichier → le plus gros, `classement.js`, fait 716 lignes.
@@ -178,7 +190,7 @@ But : ne plus jamais deviner pourquoi ça plante.
       erreur console sur tout le parcours.
 - [x] M06.T4 · séparation core / data / ui — cible: `src/ui/` n'appelle jamais `api()` directement — preuve: `grep -rc "api(" src/ui/*.js` → 0 sur les 17 fichiers ; `npm run check` vert (134/134, build ok, lint identique à avant : 41/1) ; parcours Playwright (390 px, 3 comptes) sans nouvelle erreur console. Détail sur la ligne ÉTAT.
 - [x] M06.T5 · 0 variable globale mutable partagée hors `src/data/etat.js` — preuve: revue + lint — `grep -rn "^export let \|^let \|^var \|^export var " src/*.js src/core/*.js src/ui/*.js` → tout dans `src/data/etat.js`, rien ailleurs ; une seule vraie exception trouvée, `mediaCache` (un `Map` exporté depuis `src/ui/carte-media.js`, importé et muté par `resetSession()` dans `src/ui/onboarding.js`) — déplacée dans `etat.js` avec son setter (`setMediaCache`), même schéma que les 109 autres. `npm run check` vert ; vérifié au navigateur : une déconnexion (qui vide `mediaCache` via `resetSession`) ne plante pas.
-- [ ] M06.T6 · ESLint strict (complexité ≤ 15, profondeur ≤ 4) — cible: 0 erreur, 0 avertissement — preuve: `npm run lint`
+- [x] M06.T6 · ESLint strict (complexité ≤ 15, profondeur ≤ 4) — cible: 0 erreur, 0 avertissement — preuve: `npm run lint` → 0 problème (`eslint .` sort en code 0). Détail sur la ligne ÉTAT.
 - [x] M06.T7 · réparer « Redonner un devoir » (`profCartesDeDevoir`) — cible: CI verte — preuve: `npx eslint src/` → 0 erreur (était 1) ; `npm run check` vert ; test bout-en-bout Playwright (compte prof@folio.app, devoir « Anglais · Révisions — 1 ») — 17 cartes préremplies, 1 classe cochée, 0 erreur console. La fonction manquante lisait la mauvaise source (`prof_cartes`, des statistiques d'erreur recto/verso, pas le contenu) ; corrigé pour lire `assignments.cards` via une nouvelle RPC `prof_assignment_cards` (migration `20260920140000`) plutôt qu'un SELECT PostgREST direct — RLS (`asg_read`) n'autorise que l'élève inscrit ou le propriétaire de la classe, pas le professeur de matière qui l'enseigne sans la posséder ; un SELECT direct aurait filtré la ligne en silence pour ce cas, exactement celui du compte de test.
 - [ ] M06.T8 · TypeScript en vérification douce (`checkJs` + JSDoc) sur `src/core/` — cible: 0 erreur `tsc --noEmit` — preuve: la commande
 

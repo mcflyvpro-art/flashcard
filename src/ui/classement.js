@@ -235,6 +235,40 @@ export function maClassePull() {
   if (!mates2) matesPull();
 }
 
+function maClasseDevoirsHtml(retard, avenir, ligne) {
+  if (!asgs) return `<div class="card2"><div class="note">Chargement…</div></div>`;
+  if (!asgs.length) return `<div class="empty">${svg(I.card)}<p><b>Rien à faire</b>
+            Tes professeurs n’ont pas encore donné de devoir.</p></div>`;
+  return `${retard.length ? `<div class="slist">${retard.map(ligne).join('')}</div>` : ''}
+           ${avenir.length ? `<div class="slist">${avenir.map(ligne).join('')}</div>` : ''}`;
+}
+
+function maClasseProfsHtml() {
+  if (!team) return `<div class="card2"><div class="note">Chargement…</div></div>`;
+  if (!team.length) return `<div class="card2"><div class="note">Aucun cours renseigné.</div></div>`;
+  return `<div class="profs">${team.map(t => `<div class="pf">
+            <i class="av sm">${esc(initial(t.teacher))}</i>
+            <span class="ml2"><span class="n">${esc(t.subject)}</span>
+              <span class="sub">${esc(t.teacher)}${t.principal ? ' · professeur principal' : ''}</span></span>
+            </div>`).join('')}</div>`;
+}
+
+const maClasseCamaradeLigne = m => `<div class="sr flat">
+            <i class="av sm">${esc(initial(m.name))}</i>
+            <span class="ml2"><span class="n">${esc(m.name)}</span>
+              <span class="sub">@${esc(m.handle || '')}</span></span>
+            ${m.lien === 'ok' ? `<button class="camo" data-mate="${esc(m.id)}">${svg(I.arrow)}</button>`
+              : m.lien ? `<span class="camw">demandé</span>`
+              : `<button class="camadd" data-camadd="${esc(m.id)}" data-camn="${esc(m.handle || '')}"
+                   aria-label="Ajouter ${esc(m.name)}">${svg(I.plus)}</button>`}
+            </div>`;
+
+function maClasseCamaradesHtml(cam) {
+  if (!mates2) return `<div class="card2"><div class="note">Chargement…</div></div>`;
+  if (!cam.length) return `<div class="card2"><div class="note">Tu es seul inscrit pour l’instant.</div></div>`;
+  return `<div class="slist">${cam.map(maClasseCamaradeLigne).join('')}</div>`;
+}
+
 export function maClasseView() {
   if (!school || !school.class_id) {
     $.innerHTML = `
@@ -265,33 +299,13 @@ export function maClasseView() {
           c.effectif ? ' · ' + plur(c.effectif, 'élève') : ''}</i></span></div>
 
       <div class="lbl"><span>Devoirs</span><span>${l.length || ''}</span></div>
-      ${!asgs ? `<div class="card2"><div class="note">Chargement…</div></div>`
-        : !l.length ? `<div class="empty">${svg(I.card)}<p><b>Rien à faire</b>
-            Tes professeurs n’ont pas encore donné de devoir.</p></div>`
-        : `${retard.length ? `<div class="slist">${retard.map(ligne).join('')}</div>` : ''}
-           ${avenir.length ? `<div class="slist">${avenir.map(ligne).join('')}</div>` : ''}`}
+      ${maClasseDevoirsHtml(retard, avenir, ligne)}
 
       <div class="lbl"><span>Mes professeurs</span><span>${team ? team.length : ''}</span></div>
-      ${!team ? `<div class="card2"><div class="note">Chargement…</div></div>`
-        : !team.length ? `<div class="card2"><div class="note">Aucun cours renseigné.</div></div>`
-        : `<div class="profs">${team.map(t => `<div class="pf">
-            <i class="av sm">${esc(initial(t.teacher))}</i>
-            <span class="ml2"><span class="n">${esc(t.subject)}</span>
-              <span class="sub">${esc(t.teacher)}${t.principal ? ' · professeur principal' : ''}</span></span>
-            </div>`).join('')}</div>`}
+      ${maClasseProfsHtml()}
 
       <div class="lbl"><span>Ma classe</span><span>${cam.length || ''}</span></div>
-      ${!mates2 ? `<div class="card2"><div class="note">Chargement…</div></div>`
-        : !cam.length ? `<div class="card2"><div class="note">Tu es seul inscrit pour l’instant.</div></div>`
-        : `<div class="slist">${cam.map(m => `<div class="sr flat">
-            <i class="av sm">${esc(initial(m.name))}</i>
-            <span class="ml2"><span class="n">${esc(m.name)}</span>
-              <span class="sub">@${esc(m.handle || '')}</span></span>
-            ${m.lien === 'ok' ? `<button class="camo" data-mate="${esc(m.id)}">${svg(I.arrow)}</button>`
-              : m.lien ? `<span class="camw">demandé</span>`
-              : `<button class="camadd" data-camadd="${esc(m.id)}" data-camn="${esc(m.handle || '')}"
-                   aria-label="Ajouter ${esc(m.name)}">${svg(I.plus)}</button>`}
-            </div>`).join('')}</div>`}
+      ${maClasseCamaradesHtml(cam)}
     </div>`;
 }
 

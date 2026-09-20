@@ -12,11 +12,11 @@ export async function mateProfPull(id) {
   try {
     const rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: range }) || [];
     row = rows.find(x => x.uid === id) || { n: 0, ok: 0, jours: 0 };
-  } catch (e) {}
+  } catch (e) { /* fiche non-critique : elle s'affiche simplement sans ce chiffre */ }
   try {
     lib = await api('/rest/v1/library?select=deck_id,name,subject,n,updated_at'
       + `&user_id=eq.${id}&order=updated_at.desc&limit=20`) || [];
-  } catch (e) {}
+  } catch (e) { /* idem : la bibliothèque partagée reste vide plutôt que de bloquer la fiche */ }
   if (seq !== mateProfSeq) return;        // une demande plus récente est déjà en vol
   if (row) mateProf.row = row;
   if (lib) mateProf.lib = lib;

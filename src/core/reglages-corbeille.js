@@ -68,7 +68,7 @@ export async function upsertProfile() {
     await api('/rest/v1/profiles', 'POST',
       [{ id: auth.uid, email: auth.email, name: prefs.name || null }],
       { Prefer: 'resolution=merge-duplicates,return=minimal' });
-  } catch (e) {}
+  } catch (e) { /* ligne de profil best-effort : un futur appel réussi la remettra à jour */ }
 }
 
 /* On n'envoie un paquet qu'à quelqu'un qu'on a ajouté, et l'annuaire
@@ -110,7 +110,7 @@ export async function dropFriend(id) {
   try {
     await api(`/rest/v1/friends?or=(and(user_id.eq.${auth.uid},friend_id.eq.${id}),`
       + `and(user_id.eq.${id},friend_id.eq.${auth.uid}))`, 'DELETE', null, { Prefer: 'return=minimal' });
-  } catch (e) {}
+  } catch (e) { /* réseau indisponible : friendsPull() qui suit remontrera le lien tel quel */ }
   closeMenu(); friendsPull();
 }
 
@@ -180,7 +180,7 @@ export async function openMail(id) {
     mailbox.n = mailbox.list.filter(r => !r.read_at).length;
     if (view.name === 'mail') render();
     try { await api(`/rest/v1/mail?id=eq.${id}`, 'PATCH', { read_at: it.read_at }, { Prefer: 'return=minimal' }); }
-    catch (e) {}
+    catch (e) { /* marquage « lu » sans conséquence grave : au pire, le mail reparaît non lu au prochain mailPull() */ }
   }
 }
 
@@ -192,7 +192,7 @@ export async function addMail(it) {
   if (d) go('deck', d.id);
   toast(I.check, plur(n) + ' ajoutée' + (n > 1 ? 's' : ''));
   try { await api(`/rest/v1/mail?id=eq.${it.id}`, 'PATCH', { added_at: it.added_at }, { Prefer: 'return=minimal' }); }
-  catch (e) {}
+  catch (e) { /* le paquet est déjà dans la bibliothèque locale, ce marquage n'est qu'un repère */ }
 }
 
 export async function delMail(id) {
@@ -200,7 +200,7 @@ export async function delMail(id) {
   mailbox.n = mailbox.list.filter(r => !r.read_at).length;
   closeMenu(); render();
   try { await api(`/rest/v1/mail?id=eq.${id}`, 'DELETE', null, { Prefer: 'return=minimal' }); }
-  catch (e) {}
+  catch (e) { /* la boîte de réception locale l'a déjà retiré ; au pire il réapparaît au prochain mailPull() */ }
 }
 
 /* ---------- historique d'un paquet ----------
@@ -223,7 +223,7 @@ export async function snapVersion(d, why) {
       await api(`/rest/v1/deck_versions?id=in.(${old.map(r => r.id).join(',')})`, 'DELETE',
         null, { Prefer: 'return=minimal' });
     }
-  } catch (e) {}
+  } catch (e) { /* l'élagage n'est pas critique : les vieilles versions attendront le prochain passage */ }
 }
 
 export async function versPull(id) {
@@ -282,7 +282,7 @@ export async function revokeShare(d) {
   const tok = (d.meta || {}).tok; if (!tok) return;
   const m = { ...metaOf(d) }; delete m.tok; d.meta = m; saveDeck(d);
   try { await api('/rest/v1/shares?token=eq.' + encodeURIComponent(tok), 'DELETE', null, { Prefer: 'return=minimal' }); }
-  catch (e) {}
+  catch (e) { /* le lien local est déjà retiré du paquet ; le jeton orphelin restera sans usage */ }
 }
 
 export async function openShared(tok) {
@@ -330,7 +330,7 @@ export async function libRemove(d) {
   lib.list = (lib.list || []).filter(x => x.deck_id !== d.id);
   render();
   try { await api('/rest/v1/library?deck_id=eq.' + encodeURIComponent(d.id), 'DELETE', null, { Prefer: 'return=minimal' }); }
-  catch (e) {}
+  catch (e) { /* retiré localement de l'étagère ; au pire il faudra republier-puis-retirer pour la copie serveur */ }
   toast(I.check, 'Retiré de la bibliothèque');
 }
 

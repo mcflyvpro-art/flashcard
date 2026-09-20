@@ -120,11 +120,7 @@ function cardIndex() {
   return m;
 }
 
-function computeStats() {
-  const all = stats.rows || [];
-  const cut = stats.range ? Date.now() - stats.range * DAY : 0;
-  const R = all.filter(r => +new Date(r.created_at) >= cut);
-
+function aggregateReviews(R) {
   let ok = 0, ms = 0;
   const byDay = new Map(), byCard = new Map(), bySubj = new Map();
   for (const r of R) {
@@ -139,11 +135,14 @@ function computeStats() {
     const sname = deck ? subj(deck.subject).name : 'Autres';
     bySubj.set(sname, (bySubj.get(sname) || 0) + (r.ms || 0));
   }
+  return { ok, ms, byDay, byCard, bySubj };
+}
 
-  /* Rétention : pour chaque carte, l'écart avec sa révision précédente dit
-     à quelle distance la mémoire a été sollicitée. On garde trois paliers,
-     ceux que tout le monde lit d'un coup d'œil. Calculé sur l'année pleine,
-     pas sur la fenêtre choisie : à sept jours il n'y aurait rien à voir. */
+/* Rétention : pour chaque carte, l'écart avec sa révision précédente dit
+   à quelle distance la mémoire a été sollicitée. On garde trois paliers,
+   ceux que tout le monde lit d'un coup d'œil. Calculé sur l'année pleine,
+   pas sur la fenêtre choisie : à sept jours il n'y aurait rien à voir. */
+function computeRetention(all) {
   const seen = new Map(), ret = { 1: [0, 0], 7: [0, 0], 30: [0, 0] };
   for (const r of all) {
     const t = +new Date(r.created_at), prev = seen.get(r.card_id);
@@ -154,9 +153,12 @@ function computeStats() {
     }
     seen.set(r.card_id, t);
   }
+  return ret;
+}
 
-  /* Série de jours : un jour de grâce par semaine entamée, sinon un
-     week-end chez les grands-parents efface trois mois d'assiduité. */
+/* Série de jours : un jour de grâce par semaine entamée, sinon un
+   week-end chez les grands-parents efface trois mois d'assiduité. */
+function computeStreak(byDay) {
   let streak = 0, grace = 0, cur = dayKey(Date.now());
   if (!byDay.has(cur)) cur -= DAY;               // la journée peut n'avoir pas commencé
   for (let k = cur; ; k -= DAY) {
@@ -164,6 +166,17 @@ function computeStats() {
     if (grace < Math.floor(streak / 7) + (streak ? 1 : 0)) { grace++; continue; }
     break;
   }
+  return streak;
+}
+
+function computeStats() {
+  const all = stats.rows || [];
+  const cut = stats.range ? Date.now() - stats.range * DAY : 0;
+  const R = all.filter(r => +new Date(r.created_at) >= cut);
+
+  const { ok, ms, byDay, byCard, bySubj } = aggregateReviews(R);
+  const ret = computeRetention(all);
+  const streak = computeStreak(byDay);
 
   const maxSubj = Math.max(1, ...bySubj.values());
   return {

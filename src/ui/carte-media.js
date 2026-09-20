@@ -34,6 +34,21 @@ const OPS = { times: '×', div: '÷', pm: '±', mp: '∓', cdot: '·', ast: '∗
   simeq: '≃', cong: '≅', hbar: 'ℏ', ell: 'ℓ', aleph: 'ℵ', star: '⋆', bullet: '•',
   oplus: '⊕', otimes: '⊗', bot: '⊥', top: '⊤' };
 
+/* Les commandes qui ne touchent pas à la position de lecture (`i`) — tout
+   sauf \sqrt, dont le [indice] optionnel doit avancer `i` avant l'appel à
+   grp(), et le cas « rien reconnu », géré dans mathHtml lui-même. */
+function mathCommandHtml(name, grp) {
+  if (name === 'frac' || name === 'dfrac' || name === 'tfrac') {
+    const a = grp(), b = grp();
+    return `<span class="fr"><i>${a}</i><i>${b}</i></span>`;
+  }
+  if (name === 'text' || name === 'mathrm' || name === 'mbox') return `<span class="tx">${grp()}</span>`;
+  if (name === 'left' || name === 'right' || name === 'displaystyle') return '';   // le délimiteur suit
+  if (GREEK[name]) return GREEK[name];
+  if (OPS[name]) return OPS[name];
+  return esc(name);
+}
+
 /* LaTeX → HTML sur le sous-ensemble scolaire : fractions, racines, indices,
    exposants, lettres grecques et opérateurs. Ce qui n'est pas reconnu est
    rendu tel quel plutôt que perdu. */
@@ -61,22 +76,12 @@ function mathHtml(src) {
       while (/[a-zA-Z]/.test(src[j] || '')) name += src[j++];
       i = j;
       if (!name) { out += esc(src[i] || ''); i++; }
-      else if (name === 'frac' || name === 'dfrac' || name === 'tfrac') {
-        const a = grp(), b = grp();
-        out += `<span class="fr"><i>${a}</i><i>${b}</i></span>`;
-      } else if (name === 'sqrt') {
+      else if (name === 'sqrt') {
         let idx = '';
-        if (src[i] === '[') {
-          const k = src.indexOf(']', i);
-          if (k > 0) { idx = mathHtml(src.slice(i + 1, k)); i = k + 1; }
-        }
+        const k = src[i] === '[' ? src.indexOf(']', i) : -1;
+        if (k > 0) { idx = mathHtml(src.slice(i + 1, k)); i = k + 1; }
         out += `<span class="rt">${idx ? `<i class="ri">${idx}</i>` : ''}<i class="rs">√</i><i class="rb">${grp()}</i></span>`;
-      } else if (name === 'text' || name === 'mathrm' || name === 'mbox') {
-        out += `<span class="tx">${grp()}</span>`;
-      } else if (name === 'left' || name === 'right' || name === 'displaystyle') { /* le délimiteur suit */ }
-      else if (GREEK[name]) out += GREEK[name];
-      else if (OPS[name]) out += OPS[name];
-      else out += esc(name);
+      } else out += mathCommandHtml(name, grp);
       continue;
     }
     if (ch === '^') { i++; out += `<sup>${grp()}</sup>`; continue; }
@@ -304,7 +309,7 @@ export async function play(ref) {
     if (player) player.pause();
     setPlayer(new Audio(url));
     player.play().catch(() => {});
-  } catch (e) {}
+  } catch (e) { /* média manquant ou URL signée expirée : la carte reste utilisable sans le son */ }
 }
 
 export function say(text, lang) {
@@ -316,7 +321,7 @@ export function say(text, lang) {
     if (lang) u.lang = lang;
     u.rate = 0.95;
     speechSynthesis.speak(u);
-  } catch (e) {}
+  } catch (e) { /* TTS refusée ou indisponible : la carte reste utilisable sans voix */ }
 }
 
 /* ---------- base64url <-> unicode ---------- */
@@ -533,7 +538,7 @@ const OPT_WORKER = `onmessage = async e => {
 export function fsrsOptimize(items) {
   return new Promise(resolve => {
     let w = null, done = 0;
-    const fin = v => { if (done) return; done = 1; try { w && w.terminate(); } catch (e) {} resolve(v); };
+    const fin = v => { if (done) return; done = 1; try { w && w.terminate(); } catch (e) { /* worker déjà mort ou jamais lancé : rien à nettoyer */ } resolve(v); };
     try {
       const url = URL.createObjectURL(new Blob([OPT_WORKER], { type: 'text/javascript' }));
       w = new Worker(url);
