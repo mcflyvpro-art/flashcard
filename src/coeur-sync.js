@@ -13,7 +13,6 @@ import { addDeck, freeName, toast } from './import-cartes.js';
 import { closeMenu, openMenu } from './menus-a.js';
 import { maybeAskInstall, resetSession } from './onboarding.js';
 import { upsertProfile } from './reglages-corbeille.js';
-setAuth(loadAuth());
 
 /* Cartes — révision + quiz. PWA, comptes cloisonnés sur Supabase. */
 export const SB = {
@@ -27,6 +26,17 @@ export const SB = {
 };
 
 const AKEY = 'cartes.auth';
+
+/* `loadAuth` lit `AKEY` ci-dessus : cet appel doit rester après sa
+   déclaration. Avant, il était fait juste après les imports, avant même la
+   définition de `AKEY` (le TDZ du `const`) — `loadAuth` levait
+   silencieusement « Cannot access 'AKEY' before initialization », avalée
+   par son propre `try/catch`, et renvoyait toujours `null`. La session
+   restait bien dans `localStorage`, mais l'app démarrait chaque fois
+   convaincue qu'il n'y avait personne de connecté : c'était la vraie cause
+   de la déconnexion systématique à chaque réouverture, pas un problème de
+   jeton expiré. */
+setAuth(loadAuth());
 
 /* ---------- palette : 16 teintes accordées à l'app ---------- */
 export const PALETTE = {

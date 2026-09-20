@@ -682,15 +682,33 @@ async function boot() {
   /* le raccourci attend d'avoir les paquets : « réviser » ne veut rien
      dire tant qu'on ne sait pas ce qui est dû */
   const shortcut = new URLSearchParams(location.search).get('go');
+  /* Le jeton d'accès expire au bout d'une heure (réglage Supabase par
+     défaut) : rouvrir l'app après une coupure plus longue que ça passe
+     forcément par ici. `refreshToken()` sait déjà distinguer un vrai refus
+     du serveur (jeton révoqué : elle efface la session elle-même, via
+     `sessionLost`) d'une panne réseau au réveil du téléphone (fréquente :
+     le JS démarre avant que le wifi ne soit reconnecté) — dans ce
+     deuxième cas elle renvoie `false` sans rien effacer. Avant, tout
+     `false` ici valait déconnexion, quelle qu'en soit la cause : c'est ce
+     qui faisait sortir l'utilisateur à chaque réouverture de l'app malgré
+     un jeton de renouvellement encore valide. On se fie donc à l'état de
+     `auth` après coup plutôt qu'à un message d'erreur générique. */
+  if (auth.exp && Date.now() > auth.exp - 60000) {
+    const ok = await refreshToken();
+    if (!ok) {
+      if (!auth) return;             // sessionLost() a déjà tout géré : vue de connexion, message
+      setOnline(false);              // jeton pas renouvelé faute de réseau ; la session reste en place
+      return;
+    }
+  }
   try {
-    if (auth.exp && Date.now() > auth.exp - 60000 && !(await refreshToken())) throw new Error('session');
     await pull();
     setOnline(true);
     if (!(shortcut && consumeGoto())) { render(); accueil(); }
     flush();
     maybeTour();
   } catch (e) {
-    if (/JWT|session|401/i.test(String(e.message || e))) { saveAuth(null); setView({ name: 'login' }); render(); }
+    if (/JWT|401/i.test(String(e.message || e))) { saveAuth(null); setView({ name: 'login' }); render(); }
     else setOnline(false);
   }
 }
