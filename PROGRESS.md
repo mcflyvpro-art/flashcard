@@ -19,7 +19,10 @@
 CURSEUR   M04.T2 (écran « Vérifier ma bibliothèque ») — M06 fini (8/8), ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
 FAIT      26 / 148
-DERNIER   2026-09-20 · M04.T1 fini : `src/invariants.js`, pur et testé,
+DERNIER   2026-09-25 · Audit M03.T3 relu, PAS coché : `card_sync_audit` a 8 relevés
+          dans la fenêtre 2026-09-18→2026-09-25, tous en écart (48, 251, 386, 80,
+          81, 24, 24, 24 — jamais 0). Détail sur la ligne M03.T3.
+          2026-09-20 · M04.T1 fini : `src/invariants.js`, pur et testé,
           12 règles (`CARD_INVARIANTS`) que doit respecter une carte —
           identifiant, recto, verso, état FSRS (`st` ∈ {1,2,3} ou absent),
           stabilité/difficulté/seconde-trace dans les bornes du moteur
@@ -117,10 +120,13 @@ ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 �
           (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
           intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
           test Playwright · paiement en dernier, sécurité/légal/infra déjà posés)
-BLOQUÉ    M03.T3 (case) et M03.T7 (retrait JSONB `decks.cards`) : en suspens jusqu'au
-          2026-09-25, fin des 7 j d'observation (tâche `folio-m03t3-audit-7j`). Alors :
-          relire `card_sync_audit`, cocher M03.T3 si 0 écart, puis faire M03.T7. Ne
-          bloque pas le reste du projet.
+BLOQUÉ    M03.T3 (case) et M03.T7 (retrait JSONB `decks.cards`) : audit relu le
+          2026-09-25 (fin des 7 j d'observation), `card_sync_audit` montre un écart
+          réel et persistant chaque jour (48 à 386 selon le jour) — pas un problème
+          de délai. À corriger d'abord : revoir `sync_deck_cards` et `flush()`
+          (`src/core/coeur-sync.js`) pour trouver pourquoi les deux écritures
+          divergent, puis relancer sept jours d'observation propre avant de recocher
+          M03.T3 et d'enchaîner sur M03.T7. Ne bloque pas le reste du projet.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.
@@ -156,6 +162,7 @@ Cible globale : **0 perte et 0 conflit visible sur 10 000 opérations concurrent
 - [~] M03.T3 · double écriture (ancien champ JSONB + nouvelles tables) — cible: 100 % des écritures dans les deux, 7 jours — preuve: `card_sync_audit`, 0 écart chaque jour du 2026-09-18 au 2026-09-25.
       Déployé 2026-09-18 : migration `20260918090000` (fonction `sync_deck_cards`, amorce de toute la bibliothèque existante), `flush()` appelle la fonction juste après `pushDeck` et ne retire le paquet de `dirty` que si les deux écritures réussissent (src/app.js). Garde RLS testée en usurpant un autre compte → refusée (42501) sans rien écrire.
       Une comparaison ponctuelle ne prouve rien sur 7 jours : migration `20260918100000` pose une tâche `pg_cron` quotidienne (`audit-double-ecriture-cards-quotidien`, 4 h 03) qui journalise le résultat dans `card_sync_audit` (détail : `supabase/REGLAGES.md`). Premier relevé 2026-09-18 : 974/974, 0 écart. **Reste à faire avant de cocher : `select * from card_sync_audit order by checked_at;` le 2026-09-25, confirmer 0 écart sur les sept jours.**
+      **Vérifié le 2026-09-25 : NE PAS cocher.** `select * from card_sync_audit order by checked_at;` rend 9 relevés (2026-09-17 au 2026-09-25), dont 8 couvrent la fenêtre d'observation demandée (2026-09-18 au 2026-09-25) — mais aucun n'est à 0 écart : 2026-09-18 → 48, 2026-09-19 → 251, 2026-09-20 → 386 (`cartes_jsonb` 1103 ≠ `cartes_table` 975, un écart de comptage en plus des écarts de contenu), 2026-09-21 → 80, 2026-09-22 → 81, 2026-09-23 → 24, 2026-09-24 → 24, 2026-09-25 → 24. Ce n'est pas un relevé manquant, c'est un écart réel et persistant qui ne retombe jamais à 0 sur les sept jours : la double écriture (`sync_deck_cards`, `flush()` dans `src/core/coeur-sync.js`) a un vrai bug à corriger avant de relancer sept jours d'observation propre — voir BLOQUÉ en tête de fichier.
 - [x] M03.T4 · fusion à trois versions (base commune, locale, distante) — cible: 0 boîte de dialogue de conflit sur le jeu de tests — preuve: `npm test -- fusion` → 18/18 (dont 200 scénarios synthétiques, 0 exception, résultat déterministe) ; `src/fusion.js`, pur (`grep -cE 'document|fetch|localStorage'` = 0) ; suite complète `npm test` → 40/40
 - [x] M03.T5 · simulateur de concurrence (2 appareils, hors ligne, reconnexion) — cible: 10 000 opérations, 0 divergence — preuve: `npm test -- concurrence` → 1/1 ; sur la même graine, 2381 reconnexions désordonnées, 340 conflits tranchés sans dialogue, 20 points de calme sans écart entre A, B et le serveur, point fixe atteint à la fin (une reconnexion de plus ne change plus rien) ; suite complète `npm test` → 41/41 ; `test/concurrence.test.js`, appuyé uniquement sur `mergeDeck` (`src/fusion.js`, M03.T4), aucune règle métier réécrite
 - [x] M03.T6 · bascule des lectures sur les nouvelles tables — cible: temps de `pull()` < 800 ms pour 5 000 cartes — preuve: mesure journalisée — `pull()` lit désormais `cards` (M03.T1) par un `select` aliasé (`f:front`, `S:stability`...) qui rend au client les mêmes clés courtes qu'avant, sans conversion ; `decks` ne demande plus sa colonne `cards` (le JSONB reste écrit, M03.T3, en observation jusqu'au 2026-09-25, mais n'est plus lu ici). En vérifiant, trouvé un vrai bug avant toute mesure : PostgREST plafonne toute lecture à `db-max-rows` (1000 sur ce projet) et tronque au-delà **sans erreur** — un compte à plus de 1000 cartes aurait silencieusement perdu les suivantes. Corrigé par pagination (`apiPage`/`apiAll`, `src/app.js`) : première page avec `Range`+`Prefer: count=exact`, total lu dans `Content-Range`, pages suivantes en parallèle. Mesure : 5 000 cartes de test injectées sur `eleve@folio.app` (paquet temporaire, JSONB et `cards` mirroirs pour ne pas fausser l'audit M03.T3), 8 appels réels à `/rest/v1` (authentification comprise, comme fait l'app) : 468–597 ms, moyenne hors 1re connexion 483 ms — sous la cible de 800 ms. Nettoyage vérifié après coup : `decks` 32→32, `cards` 974→974. `npm run check` propre (41/41 tests, build ok) ; `get_advisors` (sécurité + performance) sans nouveau signalement.
