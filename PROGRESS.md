@@ -16,10 +16,12 @@
 
 ## ÉTAT
 ```
-CURSEUR   M08 (PWA, performance, mobile) — M05.T1/T4/T5/T6 en attente de toi ; M07 fini (7/7)
+CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
-FAIT      41 / 148
-DERNIER   2026-10-16 · M07 terminé : 11 parcours Playwright (témoin, élève B2C, hors
+FAIT      42 / 148
+DERNIER   2026-10-16 · M08.T2 fini : budget de poids contrôlé à chaque build et en CI
+          (JS 105,7 Ko, CSS 19 Ko gzip).
+          2026-10-16 (plus tôt) · M07 terminé : 11 parcours Playwright (témoin, élève B2C, hors
           ligne, deux appareils ×2, quiz ×4, captures ×2), en CI en 2 min 18 s.
           2026-10-16 (plus tôt) · M07.T6 fini : 24 captures de référence (12 écrans × 390/1440 px),
           0 débordement ; corrigé la grille de l'écran du livre sur ordinateur.
@@ -290,9 +292,9 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [x] M07.T6 · captures de référence mobile (390 px) et bureau (1440 px) — cible: 12 écrans, 0 débordement horizontal — preuve: `npx playwright test captures` → 2/2, stable sur 3 passages : 12 écrans (connexion, inscription, bibliothèque vide puis remplie, nouveau livre, livre, révision recto et verso, QCM, association, réglages, cercle des lecteurs) × 2 largeurs = **24 captures de référence** (`e2e/captures.e2e.js-snapshots/`), **0 débordement** à 390 comme à 1440 px. Horloge figée et hasard tiré d'une graine pour des images identiques d'un passage à l'autre ; tolérance de couleur resserrée (0,03) après avoir vu qu'à 0,2 par défaut une vraie régression passait (vérifié : l'ancien CSS est désormais détecté). Comparaison d'images en local seulement (polices Linux ≠ Mac en CI), le contrôle de débordement tourne partout. En chemin, corrigé : sur ordinateur, l'écran du livre plaçait mal son panneau gauche (règle visant un `.duo` disparu) — les quatre boutons de mode s'étiraient sur toute la hauteur de la liste.
 - [x] M07.T7 · les tests tournent en CI — cible: < 5 min — preuve: job `e2e` de `.github/workflows/ci.yml`, run 38956836012 → succès en **2 min 18 s** (19:42:04 → 19:44:22, installation de Chromium comprise), à côté du job `check` (20 s). Contre le faux Supabase : aucun secret ni écriture en base ; captures comparées en local seulement, débordement contrôlé en CI ; rapport HTML joint en cas d'échec.
 
-## M08 · PWA, performance, mobile [P0] 1/8
+## M08 · PWA, performance, mobile [P0] 2/8
 - [x] M08.T1 · service worker fabriqué au build (fini le numéro à la main) — preuve: `dist/sw.js`
-- [ ] M08.T2 · budget de poids — cible: JS ≤ 120 Ko gzip, CSS ≤ 25 Ko (97 + 20 aujourd'hui) — preuve: `npm run build` + contrôle en CI
+- [x] M08.T2 · budget de poids — cible: JS ≤ 120 Ko gzip, CSS ≤ 25 Ko (97 + 20 aujourd'hui) — preuve: `npm run budget` (`tools/budget.js`) → ✓ JS 105,7 Ko gzip / 120, ✓ CSS 19,0 Ko / 25 ; branché dans `npm run check` et dans le job `check` de la CI, juste après le build ; vérifié qu'un dépassement fait échouer (budget JS abaissé à 100 Ko pour l'essai → code de sortie 1).
 - [ ] M08.T3 · hors ligne complet — cible: 100 % des écrans consultables sans réseau — preuve: test Playwright en mode offline
 - [ ] M08.T4 · mise à jour sans perdre la saisie en cours — cible: 0 rechargement pendant une révision — preuve: test
 - [ ] M08.T5 · iOS installée: zones sûres, pas de rebond, clavier — cible: 0 défaut sur 6 contrôles — preuve: capture iPhone

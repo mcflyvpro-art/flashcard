@@ -27,7 +27,7 @@ export default [
     languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker, __SHELL__: 'readonly' } }
   },
   {
-    files: ['*.config.js'],
+    files: ['*.config.js', 'tools/**/*.js'],
     languageOptions: { sourceType: 'module', globals: globals.node }
   },
   /* M07 : un parcours tourne dans Node, mais les fonctions passées à

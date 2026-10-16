@@ -216,7 +216,8 @@ l'air de marcher ».
 npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
-npm run check                        # lint + tests + build, comme la CI
+npm run check                        # lint + tests + build + budget de poids, comme la CI
+npm run budget                       # JS ≤ 120 Ko, CSS ≤ 25 Ko gzip (tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
