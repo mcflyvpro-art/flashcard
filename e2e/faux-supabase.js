@@ -196,3 +196,14 @@ export function semerPaquetDu(store, email, n, nom = 'Révisions') {
   }
   return deckId;
 }
+
+/* Un livre neuf, posé dans le faux serveur : `cartes` = [[recto, verso, extra?]]. */
+export function semerLivre(store, email, nom, cartes) {
+  const user = store.users.find(u => u.email === email);
+  const deckId = randomUUID();
+  table(store, 'decks').push({ id: deckId, user_id: user.id, name: nom, subject: '', hidden: false, pos: 0,
+    pinned: false, meta: {}, rev: 1, deleted_at: null, cards: [], created_at: new Date().toISOString() });
+  cartes.forEach(([f, b, extra], k) => table(store, 'cards').push({ deck_id: deckId, id: 'q' + (k + 1), user_id: user.id,
+    front: f, back: b, reviews_count: 0, lapses: 0, meta: extra || {} }));
+  return deckId;
+}
