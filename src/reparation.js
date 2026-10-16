@@ -13,10 +13,10 @@
      personne. Un identifiant manquant, lui, se répare (aucune perte).
    - valeur hors bornes (état, S, D, F, palier, compteurs) → ramenée à
      la borne la plus proche, jamais à une valeur arbitraire.
-   - mémoire orpheline d'une fiche « neuve » (n ≤ 0 mais S/D/dernière
-     révision présents) → n est corrigé à la hausse plutôt que la
-     mémoire effacée : un compteur cassé est une donnée plus fragile
-     qu'une mémoire déjà calculée par le moteur.
+   - mémoire incomplète (S sans D, ou l'inverse, ou une dernière révision
+     sans mémoire) → complétée par la valeur la plus prudente (S_MIN,
+     difficulté médiane), jamais effacée. Une fiche ratée dès sa première
+     vue (n = 0 avec une mémoire) est saine : `n` compte les réussites.
    - fiche révisée sans mémoire (n > 0 mais S/D absents) → migrée avec
      le même pont SM-2 que `fsrsSeed()` (src/ui/carte-media.js), mais
      sans le cas particulier qui la laisse partiellement migrée : ici,
@@ -31,6 +31,7 @@
 import { DAY, D_MIN, D_MAX, MIN, S_MIN, S_MAX, cl, sm2State } from './fsrs.js';
 import { CARD_INVARIANTS, cardIssues } from './invariants.js';
 
+const absent = v => v == null;
 const testFor = code => CARD_INVARIANTS.find(inv => inv.code === code).test;
 
 export const ANOMALY_FAMILIES = [
@@ -38,7 +39,7 @@ export const ANOMALY_FAMILIES = [
   { code: 'state', label: 'état d’apprentissage invalide' },
   { code: 'hors-bornes', label: 'stabilité, difficulté ou seconde trace hors des bornes du moteur' },
   { code: 'memoire-orpheline-revisee', label: 'fiche révisée sans mémoire calculée' },
-  { code: 'memoire-orpheline-neuve', label: 'fiche jamais révisée qui garde une mémoire' },
+  { code: 'memoire-incomplete', label: 'mémoire à moitié posée (stabilité sans difficulté…)' },
   { code: 'echeance-anterieure', label: 'échéance antérieure à la dernière révision' },
   { code: 'palier-incoherent', label: 'palier d’apprentissage incohérent avec l’état' },
   { code: 'compteurs', label: 'compteurs de révisions ou de rechutes invalides' }
@@ -49,7 +50,7 @@ const FAMILY_OF = {
   state: 'state',
   stability: 'hors-bornes', difficulty: 'hors-bornes', trace: 'hors-bornes',
   'reviewed-has-memory': 'memoire-orpheline-revisee',
-  'new-has-no-memory': 'memoire-orpheline-neuve',
+  'memory-complete': 'memoire-incomplete',
   'due-after-review': 'echeance-anterieure',
   'step-coherent': 'palier-incoherent',
   counts: 'compteurs'
@@ -103,12 +104,14 @@ function repairReviewedMemory(c, w, now) {
   return true;
 }
 
-/* Un compteur à 0 est une donnée plus fragile qu'une mémoire déjà
-   calculée par le moteur : on relève le compteur plutôt que d'effacer
-   ce que la révision a produit. */
-function repairNewMemory(c) {
-  if (testFor('new-has-no-memory')(c)) return false;
-  c.n = Math.max(c.n || 0, 1);
+/* On complète plutôt qu'on efface : la moitié présente vient du moteur,
+   l'autre reçoit la valeur la plus prudente (stabilité minimale = la
+   fiche revient vite, difficulté médiane). */
+function repairMemoryHalf(c, now) {
+  if (testFor('memory-complete')(c)) return false;
+  if (absent(c.S)) { c.S = S_MIN; if (absent(c.F)) c.F = S_MIN; }
+  if (absent(c.D)) c.D = 5;
+  if (absent(c.lr)) c.lr = Math.min(c.d || now, now);
   return true;
 }
 
@@ -127,7 +130,7 @@ function repairStep(c) {
 function repairCounts(c) {
   if (testFor('counts')(c)) return false;
   c.n = Math.max(0, Math.round(c.n || 0));
-  c.l = Math.min(c.n, Math.max(0, Math.round(c.l || 0)));
+  c.l = Math.max(0, Math.round(c.l || 0));
   return true;
 }
 
@@ -146,7 +149,7 @@ export function repairCard(c, cfg, makeId, now = Date.now()) {
   if (repairState(c)) families.push('state');
   if (repairBounds(c)) families.push('hors-bornes');
   if (repairReviewedMemory(c, cfg.w, now)) families.push('memoire-orpheline-revisee');
-  if (repairNewMemory(c)) families.push('memoire-orpheline-neuve');
+  if (repairMemoryHalf(c, now)) families.push('memoire-incomplete');
   if (repairDueOrder(c)) families.push('echeance-anterieure');
   if (repairStep(c)) families.push('palier-incoherent');
   if (repairCounts(c)) families.push('compteurs');

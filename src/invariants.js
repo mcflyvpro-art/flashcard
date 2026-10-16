@@ -61,8 +61,14 @@ export const CARD_INVARIANTS = [
   { code: 'reviewed-has-memory', label: 'une fiche déjà révisée porte sa stabilité et sa difficulté',
     test: c => !(c.n > 0) || (!absent(c.S) && !absent(c.D)) },
 
-  { code: 'new-has-no-memory', label: 'une fiche jamais révisée ne porte ni mémoire ni dernière révision',
-    test: c => (c.n > 0) || (absent(c.S) && absent(c.D) && absent(c.lr)) },
+  /* Pas « n = 0 ⇒ aucune mémoire » : `n` compte les réussites, pas les
+     passages (`grade()` et `fsrsReplayCard()` ne l'augmentent que pour une
+     note > 0). Une fiche ratée à sa toute première vue a donc une mémoire
+     avec n = 0, et c'est sain — 175 cartes réelles dans ce cas au
+     2026-10-16. Ce qui ne doit jamais arriver, c'est une mémoire à moitié
+     posée : S sans D (ou l'inverse), ou une révision datée sans mémoire. */
+  { code: 'memory-complete', label: 'stabilité et difficulté vont ensemble, et une révision datée a sa mémoire',
+    test: c => absent(c.S) === absent(c.D) && (absent(c.lr) || !absent(c.S)) },
 
   /* L'échéance peut être dans le passé (une carte en retard n'a rien
      d'anormal) — ce qui ne doit jamais arriver, c'est qu'elle précède la
@@ -76,10 +82,11 @@ export const CARD_INVARIANTS = [
   { code: 'step-coherent', label: 'le palier d’apprentissage n’existe que pendant apprentissage ou rechute',
     test: c => (c.st === 1 || c.st === 3) ? (Number.isInteger(c.sp) && c.sp >= 0) : absent(c.sp) },
 
-  /* Une rechute est elle-même comptée comme une révision (M03.T2, le
-     journal) : il ne peut donc jamais y en avoir plus que de révisions. */
-  { code: 'counts', label: 'révisions et rechutes sont des entiers positifs, rechutes ≤ révisions',
-    test: c => nonNegInt(c.n || 0) && nonNegInt(c.l || 0) && (c.l || 0) <= (c.n || 0) }
+  /* Pas de « rechutes ≤ révisions » : `n` ne compte que les réussites et
+     `l` les ratés (`grade()`, `fsrsReplayCard()`, et le mode simple qui
+     n'avance que `l`), donc une carte souvent ratée a légitimement l > n. */
+  { code: 'counts', label: 'révisions et rechutes sont des entiers positifs',
+    test: c => nonNegInt(c.n || 0) && nonNegInt(c.l || 0) }
 ];
 
 /* Les codes des règles violées par une carte, dans l'ordre de la liste

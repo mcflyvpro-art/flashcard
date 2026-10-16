@@ -3,7 +3,7 @@
    révision puissent lui faire confiance. Chaque règle a son cas sain et
    son cas violé — 12 règles, comme la cible de PROGRESS.md. */
 import { describe, it, expect } from 'vitest';
-import { S_MIN, S_MAX, D_MIN, D_MAX } from '../src/fsrs.js';
+import { S_MIN, S_MAX, D_MIN, D_MAX, W6, fsrsReplayCard } from '../src/fsrs.js';
 import { CARD_INVARIANTS, cardIssues } from '../src/invariants.js';
 
 const carte = (extra = {}) => ({ id: 'a1', f: 'recto', b: 'verso', ...extra });
@@ -101,15 +101,19 @@ describe('reviewed-has-memory', () => {
   });
 });
 
-describe('new-has-no-memory', () => {
-  it('rejette une fiche jamais révisée qui garde une stabilité orpheline', () => {
-    expect(cardIssues(carte({ n: 0, S: 3 }))).toContain('new-has-no-memory');
+describe('memory-complete', () => {
+  it('accepte une fiche ratée à sa première vue : mémoire posée, n = 0 (n compte les réussites)', () => {
+    expect(cardIssues(carte({ st: 1, sp: 0, n: 0, l: 0, S: 0.2, D: 7, F: 0.2, lr: 1000, d: 2000 }))).toEqual([]);
   });
-  it('rejette une fiche jamais révisée qui garde une dernière révision orpheline', () => {
-    expect(cardIssues(carte({ n: 0, lr: 1000 }))).toContain('new-has-no-memory');
+  it('rejette une stabilité sans difficulté, et l’inverse', () => {
+    expect(cardIssues(carte({ n: 0, S: 3 }))).toContain('memory-complete');
+    expect(cardIssues(carte({ n: 0, D: 3 }))).toContain('memory-complete');
+  });
+  it('rejette une dernière révision datée sans mémoire', () => {
+    expect(cardIssues(carte({ n: 0, lr: 1000 }))).toContain('memory-complete');
   });
   it('accepte une fiche neuve sans aucune trace de mémoire', () => {
-    expect(cardIssues(carte({ n: 0 }))).not.toContain('new-has-no-memory');
+    expect(cardIssues(carte({ n: 0 }))).not.toContain('memory-complete');
   });
 });
 
@@ -140,10 +144,31 @@ describe('counts', () => {
     expect(cardIssues(carte({ n: 1.5 }))).toContain('counts');
     expect(cardIssues(carte({ l: -1 }))).toContain('counts');
   });
-  it('rejette plus de rechutes que de révisions', () => {
-    expect(cardIssues(carte({ n: 2, l: 3 }))).toContain('counts');
+  it('accepte plus de rechutes que de réussites (n ne compte que les réussites)', () => {
+    expect(cardIssues(carte({ n: 2, l: 7, S: 1, D: 1 }))).not.toContain('counts');
   });
-  it('accepte des rechutes égales aux révisions', () => {
-    expect(cardIssues(carte({ n: 3, l: 3, S: 1, D: 1 }))).not.toContain('counts');
+});
+
+/* Le garde-fou qui a manqué à M04.T1 : les invariants doivent décrire ce
+   que le moteur produit vraiment, pas ce qu'on imagine d'Anki. Une carte
+   reconstruite par le rejeu du journal (src/fsrs.js) à partir de ratés en
+   série — ratée à la première vue, puis bien plus ratée que réussie — doit
+   rester saine. */
+describe('ce que le moteur produit est sain', () => {
+  it('rejeu : ratée d’emblée puis souvent ratée → 0 anomalie', () => {
+    const notes = [0, 0, 2, 0, 0, 0, 0, 0, 1, 0];
+    const log = notes.map((rating, k) => ({ rating, created_at: new Date(2026, 0, 1 + k * 2).toISOString() }));
+    const m = fsrsReplayCard(log, { w: W6, dr: 0.9, maxIvl: 36500 });
+    expect(m.l).toBeGreaterThan(m.n);
+    const c = carte({ ...m, d: m.lr + m.i * 864e5 });
+    delete c.sp;
+    expect(cardIssues(c)).toEqual([]);
+  });
+  it('rejeu : une seule note « à revoir » → n = 0 avec une mémoire, 0 anomalie', () => {
+    const m = fsrsReplayCard([{ rating: 0, created_at: '2026-01-01T10:00:00Z' }], { w: W6, dr: 0.9, maxIvl: 36500 });
+    expect(m.n).toBe(0);
+    const c = carte({ ...m, d: m.lr + m.i * 864e5 });
+    delete c.sp;
+    expect(cardIssues(c)).toEqual([]);
   });
 });

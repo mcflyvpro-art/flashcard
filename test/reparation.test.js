@@ -31,10 +31,10 @@ const CASSEES = {
   state: () => carte({ st: 7 }),
   bornes: () => carte({ n: 1, S: -1, D: 99, F: -5 }),
   memoire_orpheline_revisee: () => carte({ n: 4, i: 12, d: NOW }),
-  memoire_orpheline_neuve: () => carte({ n: 0, S: 5, D: 4, lr: NOW - 1000 }),
+  memoire_incomplete: () => carte({ n: 0, S: 5, lr: NOW - 1000 }),
   echeance_anterieure: () => carte({ n: 1, S: 5, D: 4, lr: NOW, d: NOW - 1000 }),
   palier_incoherent: () => carte({ st: 2, sp: 3, n: 1, S: 5, D: 4 }),
-  compteurs: () => carte({ n: -3, l: 9 })
+  compteurs: () => carte({ n: -3, l: 2.5 })
 };
 
 describe('scanCard — chaque carte fabriquée porte bien sa famille', () => {
@@ -53,8 +53,8 @@ describe('scanCard — chaque carte fabriquée porte bien sa famille', () => {
   it('memoire-orpheline-revisee', () => {
     expect(scanCard(CASSEES.memoire_orpheline_revisee())).toEqual(['memoire-orpheline-revisee']);
   });
-  it('memoire-orpheline-neuve', () => {
-    expect(scanCard(CASSEES.memoire_orpheline_neuve())).toEqual(['memoire-orpheline-neuve']);
+  it('memoire-incomplete', () => {
+    expect(scanCard(CASSEES.memoire_incomplete())).toEqual(['memoire-incomplete']);
   });
   it('echeance-anterieure', () => {
     expect(scanCard(CASSEES.echeance_anterieure())).toEqual(['echeance-anterieure']);
@@ -122,15 +122,22 @@ describe('repairCard — répare chaque famille sans laisser d’anomalie', () =
     expect(cardIssues(c)).toEqual([]);
   });
 
-  it('memoire-orpheline-neuve : compteur relevé plutôt que mémoire effacée', () => {
-    const c = CASSEES.memoire_orpheline_neuve();
-    const avantS = c.S, avantD = c.D;
+  it('memoire-incomplete : la moitié manquante complétée, la moitié présente gardée', () => {
+    const c = CASSEES.memoire_incomplete();
     const r = repairCard(c, CFG, makeId, NOW);
-    expect(r.families).toContain('memoire-orpheline-neuve');
-    expect(c.S).toBe(avantS);
-    expect(c.D).toBe(avantD);
-    expect(c.n).toBeGreaterThan(0);
+    expect(r.families).toContain('memoire-incomplete');
+    expect(c.S).toBe(5);
+    expect(c.D).toBe(5);
+    expect(c.n).toBe(0);
     expect(cardIssues(c)).toEqual([]);
+  });
+
+  it('une fiche ratée dès sa première vue (n = 0, l > n) est saine et ne bouge pas', () => {
+    const c = carte({ st: 2, n: 0, l: 7, S: 0.4, D: 8, F: 0.4, lr: NOW - 1000, d: NOW + 1000 });
+    const avant = JSON.stringify(c);
+    const r = repairCard(c, CFG, makeId, NOW);
+    expect(r.families).toEqual([]);
+    expect(JSON.stringify(c)).toBe(avant);
   });
 
   it('echeance-anterieure : échéance ramenée à la dernière révision', () => {
@@ -153,8 +160,8 @@ describe('repairCard — répare chaque famille sans laisser d’anomalie', () =
     const c = CASSEES.compteurs();
     const r = repairCard(c, CFG, makeId, NOW);
     expect(r.families).toContain('compteurs');
-    expect(c.n).toBeGreaterThanOrEqual(0);
-    expect(c.l).toBeLessThanOrEqual(c.n);
+    expect(c.n).toBe(0);
+    expect(c.l).toBe(3);
     expect(cardIssues(c)).toEqual([]);
   });
 
@@ -178,7 +185,7 @@ describe('repairLibrary — base corrompue fabriquée, toutes familles à la foi
     {
       id: 'd2',
       cards: [
-        CASSEES.memoire_orpheline_neuve(), CASSEES.echeance_anterieure(),
+        CASSEES.memoire_incomplete(), CASSEES.echeance_anterieure(),
         CASSEES.palier_incoherent(), CASSEES.compteurs(), carte({ id: 'saine' })
       ]
     }
