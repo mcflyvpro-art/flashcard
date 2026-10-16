@@ -841,14 +841,23 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   /* ---------- fiche paquet : panneau figé + liste ---------- */
   #app[data-view="deck"]{display:grid;justify-content:center;column-gap:26px;
     grid-template-columns:minmax(0,352px) minmax(0,760px);
-    grid-template-rows:auto auto auto 1fr;align-content:start;max-width:none}
+    grid-template-rows:auto auto auto auto auto 1fr;align-content:start;max-width:none}
   #app[data-view="deck"] > *{max-width:none;margin:0}
   #app[data-view="deck"] .bar{grid-column:1/-1}
   #app[data-view="deck"] .head{grid-column:1;grid-row:2;margin-bottom:12px}
   #app[data-view="deck"] .head .t{font-size:30px}
-  #app[data-view="deck"] .duo{grid-column:1;grid-row:3;position:sticky;top:26px}
+  /* Chaque bloc du panneau de gauche a sa rangée. Avant (M07.T6, 2026-10-16),
+     la règle visait un `.duo` qui n'existait plus à ce niveau : le bouton
+     Lire, les modes et la barre se plaçaient tout seuls, les modes tombaient
+     dans la rangée `1fr` et s'étiraient sur toute la hauteur de la liste —
+     et la règle s'appliquait par erreur aux boutons Page/Coller de la liste. */
+  #app[data-view="deck"] > .cta{grid-column:1;grid-row:3}
+  #app[data-view="deck"] > .acts{grid-column:1;grid-row:4;margin-top:10px}
+  #app[data-view="deck"] > .mixwrap{grid-column:1;grid-row:5;margin-top:4px}
   #app[data-view="deck"] .lbl{grid-column:2;grid-row:2;margin-top:10px}
+  #app[data-view="deck"] > .deckfld{grid-column:2;grid-row:3}
   #app[data-view="deck"] .rows{grid-column:2;grid-row:3/-1}
+  #app[data-view="deck"] > .deckfld + .rows{grid-row:4/-1}  /* recherche ouverte : la liste descend d'un cran */
   .row{padding:13px 10px 13px 17px;border-radius:19px}
 
   /* ---------- révision ---------- */
