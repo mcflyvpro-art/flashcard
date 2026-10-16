@@ -136,7 +136,7 @@ l'air de marcher ».
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
 - **Hébergement : deux cibles, un seul build.** Vercel est l'hébergement réel
   (domaine racine). GitHub Pages (`.github/workflows/pages.yml`, indépendant
-  du contrôle qualité `ci.yml` — un avertissement de lint n'empêche pas de
+  du contrôle qualité `ci.yml` — qui a deux jobs : `check` (lint, tests, build) et `e2e` (les parcours Playwright, ~2 min 20, M07.T7) — un avertissement de lint n'empêche pas de
   voir l'app tourner) sert à tester depuis GitHub, à l'URL
   `https://mcflyvpro-art.github.io/flashcard/` — un dépôt de projet, donc
   sous un sous-dossier, pas à la racine du domaine comme Vercel. `vite.config.js`
