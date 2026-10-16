@@ -16,10 +16,12 @@
 
 ## ÉTAT
 ```
-CURSEUR   M07.T3 (parcours hors ligne) — M05.T1/T4/T5/T6 en attente de toi
+CURSEUR   M07.T4 (parcours deux appareils) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
-FAIT      36 / 148
-DERNIER   2026-10-16 · M07.T2 fini : parcours inscription → livre → séance → stats,
+FAIT      37 / 148
+DERNIER   2026-10-16 · M07.T3 fini : 50 révisions hors ligne, app rouverte hors
+          ligne, 50 retrouvées au retour du réseau, sans doublon.
+          2026-10-16 (plus tôt) · M07.T2 fini : parcours inscription → livre → séance → stats,
           chiffres affichés vérifiés, contre un faux Supabase en mémoire (aucun
           compte créé en production).
           2026-10-16 (plus tôt) · M07.T1 fini : Playwright (dépendance de dev), parcours témoin
@@ -269,10 +271,10 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [x] M06.T7 · réparer « Redonner un devoir » (`profCartesDeDevoir`) — cible: CI verte — preuve: `npx eslint src/` → 0 erreur (était 1) ; `npm run check` vert ; test bout-en-bout Playwright (compte prof@folio.app, devoir « Anglais · Révisions — 1 ») — 17 cartes préremplies, 1 classe cochée, 0 erreur console. La fonction manquante lisait la mauvaise source (`prof_cartes`, des statistiques d'erreur recto/verso, pas le contenu) ; corrigé pour lire `assignments.cards` via une nouvelle RPC `prof_assignment_cards` (migration `20260920140000`) plutôt qu'un SELECT PostgREST direct — RLS (`asg_read`) n'autorise que l'élève inscrit ou le propriétaire de la classe, pas le professeur de matière qui l'enseigne sans la posséder ; un SELECT direct aurait filtré la ligne en silence pour ce cas, exactement celui du compte de test.
 - [x] M06.T8 · TypeScript en vérification douce (`checkJs` + JSDoc) sur `src/core/` — cible: 0 erreur `tsc --noEmit` — preuve: `npm run typecheck` → rien affiché ; `npm run check` vert. Détail sur la ligne ÉTAT.
 
-## M07 · Tests bout-en-bout [P0] 2/7
+## M07 · Tests bout-en-bout [P0] 3/7
 - [x] M07.T1 · Playwright installé, 1 parcours témoin — preuve: `npx playwright test` → 1 passed (4,0 s) : `e2e/temoin.e2e.js` ouvre le build de production servi par `vite preview` sur un téléphone 390 px, attend l'écran de connexion (bouton, e-mail, mot de passe), le retrait de l'écran d'ouverture, 0 erreur JavaScript non rattrapée, 0 débordement horizontal. `@playwright/test` 1.64 en dépendance de développement seulement (rien au démarrage de l'app) ; fichiers `*.e2e.js` pour ne pas être ramassés par vitest (212 tests inchangés) ; ESLint couvre `e2e/`.
 - [x] M07.T2 · parcours élève B2C: inscription → créer un livre → réviser 10 cartes → statistiques justes — cible: assertions sur les chiffres affichés — preuve: `npx playwright test eleve-b2c` → vert, 3/3 avec `--repeat-each=3`. Inscription par l'écran, livre de 10 pages écrit page par page, séance de 10 (7 « Facile », 3 « Encore », puis les 3 revues) ; chiffres affichés vérifiés : fin de séance 70 %, 7 / 10, 3 erreurs, 3 à revoir ; livre « Relue 10 » ; compteur du jour 13 ; journal de lecture 13 pages lues, **77 % de réussite** (10/13), 1 jour d'affilée, 0 sue sur 10, 3 pages les plus ratées ; et côté serveur 13 révisions dont 3 fausses, 10 lignes `cards` en révision, 1 séance à 0,7. Contre un **faux Supabase en mémoire** (`e2e/faux-supabase.js`) : aucun compte créé dans la vraie base, faute de préproduction (M13.T4).
-- [ ] M07.T3 · parcours hors ligne: réviser sans réseau → reconnexion → 0 révision perdue — cible: 50 révisions, 50 retrouvées — preuve: le test
+- [x] M07.T3 · parcours hors ligne: réviser sans réseau → reconnexion → 0 révision perdue — cible: 50 révisions, 50 retrouvées — preuve: `npx playwright test hors-ligne` → vert (1,4 min). 50 cartes dues révisées réseau coupé (`context.setOffline` + faux serveur coupé : `page.route` passe avant la coupure de Playwright, il faut couper les deux), 0 révision arrivée ; **app fermée et rouverte toujours hors ligne** (servie par le service worker), 0 arrivée, la file survit ; réseau revenu → **50 révisions retrouvées**, 50 `client_id` distincts (aucun doublon), 50 cartes différentes, et les 50 cartes repoussées à plus tard côté serveur.
 - [ ] M07.T4 · parcours deux appareils: édition croisée → 0 perte — preuve: le test
 - [ ] M07.T5 · parcours quiz, association, QCM, vrai/faux — cible: 4 modes, score attendu exact — preuve: le test
 - [ ] M07.T6 · captures de référence mobile (390 px) et bureau (1440 px) — cible: 12 écrans, 0 débordement horizontal — preuve: comparaison d'images

@@ -180,3 +180,19 @@ export async function brancher(cible, store) {
       body: json == null ? '' : JSON.stringify(json) });
   });
 }
+
+/* Un paquet déjà travaillé, posé directement dans le faux serveur (le
+   compte doit exister) : `n` cartes en révision, toutes dues maintenant —
+   pas de quota de cartes neuves pour brouiller les comptes. */
+export function semerPaquetDu(store, email, n, nom = 'Révisions') {
+  const user = store.users.find(u => u.email === email);
+  const deckId = randomUUID(), now = Date.now(), jour = 864e5;
+  table(store, 'decks').push({ id: deckId, user_id: user.id, name: nom, subject: '', hidden: false, pos: 0,
+    pinned: false, meta: {}, rev: 1, deleted_at: null, cards: [], created_at: new Date().toISOString() });
+  for (let k = 1; k <= n; k++) {
+    table(store, 'cards').push({ deck_id: deckId, id: 'c' + k, user_id: user.id, front: 'Question ' + k, back: 'Réponse ' + k,
+      state: 2, step: null, stability: 3, difficulty: 5, trace2: 3, due: now - jour, last_review: now - 4 * jour,
+      interval_days: 3, reviews_count: 2, lapses: 0, meta: {} });
+  }
+  return deckId;
+}
