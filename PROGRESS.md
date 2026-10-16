@@ -16,10 +16,12 @@
 
 ## ÉTAT
 ```
-CURSEUR   M05.T3 (journal des erreurs serveur consultable) — M05.T1 (Sentry) sauté : demande ton compte et ton accord pour la dépendance
+CURSEUR   M05.T4 (mesure du démarrage, Lighthouse) — M05.T1 sauté (Sentry : ton compte + ton accord)
 PHASE     P0 — lancement B2C
-FAIT      33 / 148
-DERNIER   2026-10-16 · M05.T2 fini : 0 catch vide (ESLint), et les 7 `.catch(() => {})`
+FAIT      34 / 148
+DERNIER   2026-10-16 · M05.T3 fini : deux requêtes `query_logs` (erreurs HTTP par
+          route, erreurs Postgres par SQLSTATE) dans CLAUDE.md, sans donnée perso.
+          2026-10-16 (plus tôt) · M05.T2 fini : 0 catch vide (ESLint), et les 7 `.catch(() => {})`
           que la règle ne voit pas, justifiés ou journalisés (service worker).
           2026-10-16 (plus tôt) · M04.T6 fini, M04 terminé : export/import intégral
           (`src/sauvegarde.js`, pur, 13 tests), identique au bit près, vérifié au
@@ -194,11 +196,11 @@ Cible globale : **0 perte et 0 conflit visible sur 10 000 opérations concurrent
 - [x] M04.T5 · corbeille et purge vérifiées de bout en bout — cible: 30 j exactement, tâche pg_cron active — preuve: `select * from cron.job` → `purge-corbeille-quotidienne` (`17 3 * * *`, active) et `purge-signalements-mensuelle` (`32 3 1 * *`, active). **Trouvé en vérifiant : la migration `20260917090000_purge_corbeille_programmee` n'avait jamais été appliquée en production** (absente de `list_migrations`, pas de `purge_corbeille()`, 4 livres en corbeille depuis plus de 30 jours) — appliquée le 2026-10-16 à l'identique du fichier, `mod_act` comparé avant (seul ajout : `closed_at`). 30 jours exactement, en transaction annulée : livre supprimé il y a 30 j + 1 min → purgé avec ses cartes (cascade `cards`), 30 j − 1 min → gardé, livre hors corbeille → intact ; client aligné (`KEEP = 30`, `trashPull`). Première purge réelle : nuit du 2026-10-16 au 17 (relire `cron.job_run_details`, requête dans `supabase/REGLAGES.md`).
 - [x] M04.T6 · export/import intégral de la bibliothèque — cible: export puis import = état identique au bit près — preuve: `npm test -- export` → 13/13 : bibliothèque de 600 cartes (états produits par le rejeu du moteur, flottants pleine précision, paliers, suspendues, réglages de paquet) exportée puis importée dans une bibliothèque vide → `JSON.stringify` identique ; par-dessus une bibliothèque modifiée → chaque paquet revient à l'état du fichier (son `rev` local gardé) ; réexporter redonne le même fichier ; fichier d'un autre compte → nouveaux identifiants de paquet, contenu identique ; 6 fichiers invalides refusés avec un message lisible. `src/sauvegarde.js` pur. Feuille « Sauvegarde » : « Exporter toute ma bibliothèque » (fichier .json) et « Restaurer depuis un fichier » (annulable) — l'ancien lien `#i=`, qui perdait toute la progression, reste pour partager. Vérifié au navigateur (390 px, réseau coupé) : téléchargement réel → bibliothèque abîmée (nom, carte retirée, S=999) → restauration par le sélecteur de fichier → réexport **identique au fichier, octet pour octet**. `npm run check` vert (212/212). Hors périmètre, exprès : le journal `reviews` (export de toutes les données du compte = M11.T3).
 
-## M05 · Observabilité [P0] 1/6
+## M05 · Observabilité [P0] 2/6
 But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M05.T1 · Sentry branché (erreurs + rejets de promesse) — cible: 100 % des erreurs remontées, 0 donnée perso — preuve: erreur test visible dans Sentry
 - [x] M05.T2 · supprimer les `catch {}` muets — cible: 0 bloc vide sans commentaire (41 aujourd'hui) — preuve: `npx eslint .` → sortie 0, aucune ligne, avec `no-empty: ['error', { allowEmptyCatch: false }]` (le gros du travail fait par M06.T6 : les 41 justifiés un par un ou supprimés) ; balayage complémentaire de la forme que `no-empty` ne voit pas, `.catch(() => {})` sur une promesse : 7 trouvés le 2026-10-16, tous traités — 5 partages (`partager()`, menus-c.js : fermer la feuille de partage rejette la promesse, ce n'est pas une erreur, dit une fois), la lecture audio refusée (commentée), et l'échec d'enregistrement du service worker, qui privait l'app du hors-ligne sans un mot, désormais journalisé (`console.warn`, onboarding.js). Fonction Edge `ai` relue : chaque `catch` rend une réponse ou journalise. `npm run check` vert (212/212).
-- [ ] M05.T3 · journal des erreurs serveur consultable — cible: requête MCP `query_logs` documentée dans CLAUDE.md — preuve: la commande rend des lignes
+- [x] M05.T3 · journal des erreurs serveur consultable — cible: requête MCP `query_logs` documentée dans CLAUDE.md — preuve: les deux requêtes de CLAUDE.md (« Déboguer un bug », étape 2) rendent des lignes le 2026-10-16 — erreurs HTTP par route : 1 ligne (`GET /rest/v1/decks` → 401, la session périmée d'un navigateur de test) ; erreurs Postgres par SQLSTATE : 4 lignes (les transactions de test volontairement annulées de M04.T3/T5, `P0001`, et deux fautes de frappe de requêtes manuelles, `42804`/`42P01`). Sources du journal relevées (`edge_logs`, `postgres_logs`, `postgrest_logs`, `auth_logs`, `auth_audit_logs`). Aucune donnée personnelle sélectionnée (ni IP, ni ville, ni navigateur, ni identifiant de compte), règle écrite à côté des requêtes.
 - [ ] M05.T4 · mesure du démarrage (temps jusqu'à l'écran utile) — cible: p75 < 2 s en 4G simulée — preuve: Lighthouse
 - [ ] M05.T5 · sonde externe + page d'état publique — cible: contrôle toutes les 5 min — preuve: URL publique
 - [ ] M05.T6 · alerte si le taux d'erreur dépasse 1 % sur 1 h — preuve: alerte déclenchée en test

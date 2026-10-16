@@ -183,7 +183,27 @@ l'air de marcher ».
 ## Déboguer un bug — méthode attendue
 
 1. **Reproduire d'abord** (navigateur via `/run` ou Chrome, écran étroit ~390 px). Pas de correctif sans reproduction ou sans preuve lue dans les logs.
-2. Côté serveur, lire avant de toucher : MCP Supabase `get_logs` (api, postgres, auth, edge-function) et `get_advisors`.
+2. Côté serveur, lire avant de toucher : MCP Supabase `query_logs` (requêtes ci-dessous) et `get_advisors`.
+   Le journal unifié se lit en SQL ClickHouse, fenêtre de 24 h au plus
+   (passer `iso_timestamp_start`/`iso_timestamp_end` pour une autre). Sources :
+   `edge_logs` (toutes les requêtes HTTP), `postgres_logs`, `postgrest_logs`,
+   `auth_logs`, `function_edge_logs` (fonction `ai`) — `select distinct source
+   from logs` pour la liste du moment. **Ne jamais sélectionner** d'IP, de
+   ville, de navigateur ni de `request.sb.jwt.authorization.payload.subject`
+   (identifiant de compte) : des élèves mineurs, et rien de tout ça n'aide à
+   trouver un bug (règle 4). M05.T3 :
+   ```sql
+   -- erreurs HTTP par route
+   select log_attributes['response.status_code'] as statut, log_attributes['request.method'] as methode,
+          log_attributes['request.path'] as route, count(*) as n, max(timestamp) as dernier
+   from logs where source = 'edge_logs' and toInt32OrZero(log_attributes['response.status_code']) >= 400
+   group by statut, methode, route order by n desc limit 20
+   -- erreurs Postgres par code SQLSTATE (42501 = RLS, 23514 = CHECK de M04.T3...)
+   select log_attributes['parsed.error_severity'] as gravite, log_attributes['parsed.sql_state_code'] as sqlstate,
+          substring(event_message, 1, 120) as message, count(*) as n, max(timestamp) as dernier
+   from logs where source = 'postgres_logs' and log_attributes['parsed.error_severity'] in ('ERROR','FATAL','PANIC')
+   group by gravite, sqlstate, message order by n desc limit 20
+   ```
 3. Distinguer **limite d'offre gratuite** vs **bug de code** :
    - Supabase Free : pause après 7 j d'inactivité, 500 Mo de base, 50 000 MAU, pas de sauvegarde, pool de connexions réduit, Edge Functions 150 s max. Erreurs typiques d'offre : `503`, `timeout`, `too many connections`, projet en pause.
    - Tout le reste (`401` en boucle, `42501` RLS, `PGRST…`, données écrasées entre appareils, écran blanc) = **bug de code** jusqu'à preuve du contraire.
