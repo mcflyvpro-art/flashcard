@@ -170,8 +170,8 @@ export async function brancher(cible, store) {
     if (!store.online) return route.abort('internetdisconnected');
     const url = new URL(req.url());
     const path = url.pathname;
-    let body = null;
-    try { body = req.postDataJSON(); } catch (e) { body = null; } // pas de corps (GET, DELETE)
+    let body;
+    try { body = req.postDataJSON(); } catch { body = null; } // pas de corps (GET, DELETE)
     const [status, json, headers] = path.startsWith('/auth/v1/') ? auth(store, path, url, body || {})
       : path.startsWith('/rest/v1/') ? rest(store, req, url, path, body)
       : [404, {}];
