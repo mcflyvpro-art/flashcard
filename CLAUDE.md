@@ -112,6 +112,7 @@ l'air de marcher ».
   - `src/app.css` — ~2 200 lignes
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes
+  - `e2e/` — parcours de bout en bout Playwright (M07), nommés `*.e2e.js` pour que vitest ne les ramasse pas ; `playwright.config.js` construit puis sert le build de production (`vite preview`, port 4173), téléphone 390 px. Première fois sur une machine : `npx playwright install chromium`
   - `fsrs.wasm` — crate Rust `fsrs` 6.6.2 compilé (recette : `tools/BUILD-FSRS.md`). Ne jamais réécrire les formules à la main.
 - **Vérification de types, en douceur** (`tsconfig.json`, M06.T8) : `tsc`
   relit le JS existant (`allowJs` + `checkJs`) sans qu'on ait besoin de
@@ -217,6 +218,7 @@ npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build, comme la CI
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
+npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
 supabase db diff / supabase migration new <nom>   # si la CLI est installée
 ```

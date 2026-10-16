@@ -29,5 +29,11 @@ export default [
   {
     files: ['*.config.js'],
     languageOptions: { sourceType: 'module', globals: globals.node }
+  },
+  /* M07 : un parcours tourne dans Node, mais les fonctions passées à
+     page.evaluate() s'exécutent dans la page — les deux jeux de globales. */
+  {
+    files: ['e2e/**/*.js'],
+    languageOptions: { sourceType: 'module', globals: { ...globals.node, ...globals.browser } }
   }
 ];
