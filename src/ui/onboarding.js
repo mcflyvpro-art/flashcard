@@ -755,7 +755,12 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) flus
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js')
     .catch(e => console.warn('Folio : service worker non enregistré, pas de hors-ligne', e && e.message));
-  let reloaded = false;
+  /* Recharger seulement si un service worker tenait déjà la page : c'est
+     alors une mise à jour. À la toute première visite il n'y en a aucun,
+     le nouveau prend la main (clients.claim) et `controllerchange` part
+     aussi — recharger là effaçait ce qu'on tapait dans le formulaire de
+     connexion et faisait charger l'app deux fois (vu le 2026-10-16). */
+  let reloaded = !navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!reloaded) { reloaded = true; location.reload(); }
   });
