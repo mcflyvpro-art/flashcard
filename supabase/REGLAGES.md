@@ -67,6 +67,25 @@ select cron.schedule('purge-signalements-mensuelle', '32 3 1 * *',
 
 Vérifier ensuite que les deux tâches existent : `select * from cron.job;`.
 
+**Incident découvert le 2026-10-16 (M04.T5)** : cette migration n'avait
+**jamais été appliquée en production**. Elle figurait dans le dépôt, mais
+pas dans `list_migrations` : ni `purge_corbeille()`, ni
+`reports.closed_at`, ni les deux tâches n'existaient, et 4 livres
+attendaient en corbeille depuis plus de 30 jours (le plus ancien depuis le
+2026-09-12). Appliquée ce jour-là, à l'identique du fichier. La première
+purge réelle tourne la nuit suivante (3 h 17 UTC) ; la vérifier avec :
+
+```sql
+select status, return_message, start_time from cron.job_run_details
+ where jobid = (select jobid from cron.job where jobname = 'purge-corbeille-quotidienne')
+ order by start_time desc limit 5;
+```
+
+Leçon : une migration présente dans `supabase/migrations/` n'est pas une
+migration appliquée. Comparer les noms des fichiers à `list_migrations`
+après chaque session qui touche au schéma, en attendant que la CI les
+applique elle-même (M13.T6).
+
 ## Audit de la double écriture (M03.T3)
 
 Le temps que `decks.cards` (JSONB) et `cards` (une ligne par carte,
