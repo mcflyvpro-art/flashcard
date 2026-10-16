@@ -52,6 +52,7 @@ export function mergeScalar(base, mine, theirs) {
    recalculera l'état exact des deux quand les lectures basculeront sur
    les nouvelles tables (M03.T6). */
 export function mergeStateGroup(base, mine, theirs) {
+  /** @type {(o: any) => Record<string, any>} */
   const pick = o => STATE_FIELDS.reduce((acc, k) => { acc[k] = (o || {})[k]; return acc; }, {});
   const b = pick(base), m = pick(mine), t = pick(theirs);
   const mChanged = !eq(m, b), tChanged = !eq(t, b);

@@ -1,8 +1,16 @@
 // Gestes partagés par les parcours (M07) : ce qu'un élève fait le plus souvent.
 import { expect } from '@playwright/test';
 
-export async function inscrire(page, email = 'lea@exemple.fr', mdp = 'motdepasse-solide-42') {
+/* L'app redessine son écran au démarrage : remplir le formulaire avant la
+   fin de l'ouverture (qui le couvre, M05.T4) mélangeait les saisies d'un
+   champ à l'autre. Un élève ne peut pas taper si tôt ; le test non plus. */
+async function ouvrir(page) {
   await page.goto('./');
+  await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
+}
+
+export async function inscrire(page, email = 'lea@exemple.fr', mdp = 'motdepasse-solide-42') {
+  await ouvrir(page);
   await page.getByRole('button', { name: 'Créer un compte' }).click();
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill(mdp);
@@ -12,7 +20,7 @@ export async function inscrire(page, email = 'lea@exemple.fr', mdp = 'motdepasse
 }
 
 export async function connecter(page, email = 'lea@exemple.fr', mdp = 'motdepasse-solide-42') {
-  await page.goto('./');
+  await ouvrir(page);
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill(mdp);
   await page.getByRole('button', { name: 'Se connecter' }).click();

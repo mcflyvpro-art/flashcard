@@ -3,8 +3,8 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
-  DECKPAGE, db, deckOpen, deckQ, deckShow, legalBack, legalTab, loginBusy, loginMode, prof,
-  sel, setAnimate, setDb, setDeckQ, setDeckShow, setLoginBusy, setLoginMode, setSel,
+  db, deckOpen, DECKPAGE, deckQ, deckShow, dirty, legalBack, legalTab, loginBusy, loginMode,
+  prof, sel, setAnimate, setDb, setDeckQ, setDeckShow, setLoginBusy, setLoginMode, setSel,
   setTyping, typing, view
 } from '../data/etat.js';
 import {
@@ -140,6 +140,11 @@ function bindCardInputs(d) {
     const c = d.cards.find(x => x.id === inp.closest('.row').dataset.id);
     if (!c) return;
     c[inp.dataset.k] = inp.value;
+    /* marqué « à envoyer » dès la première lettre : l'enregistrement, lui,
+       attend la fin de la frappe (700 ms) — mais si l'app est fermée ou
+       passe en arrière-plan avant, onboarding.js écrit tout de suite (voir
+       `visibilitychange`), et le paquet doit déjà se savoir en attente. */
+    dirty[d.id] = 1;
     /* On n'empêche pas d'écrire — perdre ce qu'on vient de taper serait
        pire que tout — mais on le signale, et le compte restant apparaît
        quand on approche de la limite. */
@@ -153,6 +158,10 @@ function bindCardInputs(d) {
       tag.classList.toggle('ko', len > max);
     } else if (tag) tag.remove();
     clearTimeout(typing); setTyping(setTimeout(() => saveDeck(d), 700));
+  }));
+  // quitter le champ enregistre tout de suite, sans attendre la fin du délai
+  $.querySelectorAll('.row input').forEach(inp => inp.addEventListener('change', () => {
+    clearTimeout(typing); saveDeck(d);
   }));
 }
 

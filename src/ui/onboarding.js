@@ -18,7 +18,7 @@ import {
 import { go, render } from './bibliotheque.js';
 import { dec, fsrsMigrate } from './carte-media.js';
 import { accueil } from '../core/classement.js';
-import { cacheKey, esc, flush, load, plur, pull, refreshToken, saveAuth, setOnline } from '../core/coeur-sync.js';
+import { cacheKey, esc, flush, load, plur, pull, refreshToken, save, saveAuth, setOnline } from '../core/coeur-sync.js';
 import { selOff } from './connexion.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
@@ -748,7 +748,10 @@ window.addEventListener('hashchange', consumeHash);
 
 window.addEventListener('online', flush);
 
-document.addEventListener('visibilitychange', () => { if (!document.hidden) flush(); });
+/* En arrière-plan, un téléphone peut tuer l'app sans prévenir : ce qui
+   n'était qu'en mémoire (une page en cours de frappe, M07.T4) est écrit
+   tout de suite, avec sa place dans la file. */
+document.addEventListener('visibilitychange', () => { if (document.hidden) save(); else flush(); });
 
 /* En développement, pas de service worker : il servirait l'ancien code
    depuis son cache à chaque rechargement. */

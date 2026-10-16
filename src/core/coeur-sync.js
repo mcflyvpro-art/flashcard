@@ -1,10 +1,11 @@
 import {
-  DEFPREFS, auth, conflicts, db, demo, dirty, flushTimer, flushing, gone, groups, mailbox,
-  menu, online, outbox, prefs, refreshing, scope, setAnimate, setAuth, setDirty,
+  DEFPREFS, auth, bases, conflicts, db, demo, dirty, flushTimer, flushing, gone, groups, mailbox,
+  menu, online, outbox, prefs, refreshing, scope, setAnimate, setAuth, setBases, setDirty,
   setFlushTimer, setFlushing, setGone, setOnlineState, setOutbox, setPrefs, setRefreshing,
   study, trash, undos, view
 } from '../data/etat.js';
 import { I } from '../icones.js';
+import { mergeDeck } from '../fusion.js';
 import { $ } from '../racine.js';
 import { queueChip, render } from '../ui/bibliotheque.js';
 import { fsrsAuto, fsrsMigrate } from '../ui/carte-media.js';
@@ -134,6 +135,7 @@ export const cacheKey = () => 'cartes.cache.' + (auth && auth.uid);
    tout par la version du serveur, sans un mot. Ce qui est en attente est
    donc noté noir sur blanc, et repart dès que le réseau revient. */
 export function load() {
+  loadBases();                          // toujours, même sans cache : jamais celles d'un autre compte
   try {
     const d = JSON.parse(localStorage.getItem(cacheKey()));
     if (d && Array.isArray(d.decks)) {
@@ -150,6 +152,45 @@ export function load() {
 export function save() {
   if (demo) return;                       // la démonstration n'écrase pas le cache du compte
   if (auth) localStorage.setItem(cacheKey(), JSON.stringify({ ...db, prefs, dirty, gone, outbox }));
+}
+
+/* ---------- bases communes de la fusion (M03) ----------
+   Rangées à part du cache : elles doublent la taille des cartes, et un
+   quota plein ne doit jamais empêcher d'enregistrer la file d'attente. */
+const baseKey = () => 'cartes.bases.' + (auth && auth.uid);
+
+function loadBases() {
+  try { setBases(JSON.parse(localStorage.getItem(baseKey())) || {}); }
+  catch (e) { setBases({}); /* illisibles : sans base, une divergence repasse par la boîte de choix, rien n'est écrasé */ }
+}
+
+function saveBases() {
+  try { localStorage.setItem(baseKey(), JSON.stringify(bases)); }
+  catch (e) { /* quota plein : même filet que ci-dessus, la boîte de choix au lieu d'une fusion */ }
+}
+
+const snapOf = (d, rev) => JSON.parse(JSON.stringify({ rev, name: d.name, subject: d.subject,
+  hidden: !!d.hidden, pinned: !!d.pinned, meta: d.meta || {}, cards: d.cards }));
+
+/* Le paquet `d` (modifié ici depuis `localRev`) face à la version du serveur
+   `theirs`. Trois issues :
+   - 'same'   : le serveur n'a pas bougé depuis — on peut envoyer tel quel ;
+   - 'merged' : il a bougé, mais on tient la base commune — fusion à trois
+                versions (src/fusion.js), sans rien demander, `d` prend le
+                rev du serveur et repart dans la file ;
+   - 'ask'    : il a bougé et on n'a pas de base fiable (juste après la mise
+                à jour qui a introduit les bases) — la boîte de choix, où
+                « garder les deux » reste possible. Jamais d'écrasement muet. */
+function reconcile(d, theirs, localRev) {
+  if (theirs.rev === localRev) return 'same';
+  const base = bases[d.id];
+  if (!base || base.rev !== localRev) return 'ask';
+  const { deck: m } = mergeDeck(base, d, theirs);
+  d.name = m.name; d.subject = m.subject; d.hidden = m.hidden; d.pinned = m.pinned;
+  d.meta = m.meta; d.cards = m.cards;
+  d.rev = theirs.rev;
+  bases[d.id] = snapOf(theirs, theirs.rev);
+  return 'merged';
 }
 
 /* combien de changements attendent leur tour */
@@ -363,13 +404,7 @@ const rowOf = d => ({ id: d.id, user_id: auth.uid, name: d.name, subject: d.subj
    réseau, les deux versions existent et aucune n'est « la bonne ». On ne
    choisit pas à la place de l'utilisateur — on montre les deux, avec de
    quoi les départager, et « garder les deux » reste toujours possible. */
-async function raiseConflict(d) {
-  let row = null;
-  try {
-    const got = await api(`/rest/v1/decks?id=eq.${encodeURIComponent(d.id)}&select=*`);
-    row = got && got[0];
-  } catch (e) { /* réseau indisponible : traité comme un paquet distant absent, cf. ligne suivante */ }
-  if (!row) { d.rev = 0; dirty[d.id] = 1; return; }   // disparu : on le repose tel quel
+function raiseConflict(d, row) {
   if (conflicts.some(c => c.id === d.id)) return;
   conflicts.push({
     id: d.id,
@@ -377,7 +412,7 @@ async function raiseConflict(d) {
             meta: d.meta || {}, cards: d.cards.slice() },
     theirs: { name: row.name, subject: row.subject, hidden: !!row.hidden, pinned: !!row.pinned,
               meta: row.meta || {}, rev: row.rev,
-              cards: (row.cards || []).map(c => ({ ...c, id: c.id || uid() })),
+              cards: row.cards.map(c => ({ ...c, id: c.id || uid() })),
               at: row.updated_at }
   });
   save();
@@ -511,6 +546,28 @@ async function pushCardsTable(d) {
   await api('/rest/v1/rpc/sync_deck_cards', 'POST', { p_deck_id: d.id, p_cards: d.cards });
 }
 
+/* Envoie un paquet ; si le serveur l'accepte, il devient la nouvelle base
+   commune et quitte la file. */
+async function pushSynced(d) {
+  if (!(await pushDeck(d))) return false;
+  await pushCardsTable(d);
+  delete dirty[d.id];
+  bases[d.id] = snapOf(d, d.rev);
+  saveBases();
+  return true;
+}
+
+/* La version du serveur d'un paquet, cartes lues dans `cards` (M03.T6),
+   ou null s'il n'existe plus (ou est à la corbeille). */
+async function remoteDeck(id) {
+  const q = encodeURIComponent(id);
+  const rows = await api(`/rest/v1/decks?id=eq.${q}&deleted_at=is.null&select=id,name,subject,hidden,pinned,meta,rev,updated_at`);
+  const row = rows && rows[0];
+  if (!row) return null;
+  const cards = cardsParDeck(await apiAll(`/rest/v1/cards?deck_id=eq.${q}&select=${CARDS_SELECT}`)).get(row.id) || [];
+  return { ...row, hidden: !!row.hidden, pinned: !!row.pinned, meta: row.meta || {}, cards };
+}
+
 export async function flush() {
   if (demo || flushing || !auth) return;
   setFlushing(true);
@@ -519,8 +576,14 @@ export async function flush() {
     for (const id of ids) {
       const d = deck(id);
       if (!d) { delete dirty[id]; continue; }
-      if (await pushDeck(d)) { await pushCardsTable(d); delete dirty[id]; }
-      else { delete dirty[id]; await raiseConflict(d); }
+      if (await pushSynced(d)) continue;
+      const theirs = await remoteDeck(d.id);
+      if (!theirs) { d.rev = 0; continue; }            // disparu là-bas : on le repose tel quel
+      const issue = reconcile(d, theirs, d.rev);
+      if (issue === 'merged' && await pushSynced(d)) continue;
+      if (issue === 'ask') { delete dirty[id]; raiseConflict(d, theirs); }
+      /* sinon (fusion faite mais un troisième appareil est passé entre-temps) :
+         le paquet reste dans la file, le prochain passage recommence. */
     }
     if (ids.length) save();
     /* Supprimer un paquet le marque, ne l'efface pas : il reste
@@ -571,7 +634,11 @@ function cardsParDeck(rows) {
     const { deck_id, meta, ...c } = r;
     let arr = m.get(deck_id);
     if (!arr) { arr = []; m.set(deck_id, arr); }
-    arr.push({ ...c, ...(meta || {}) });
+    /* une colonne vide revient `null` ; une carte écrite ici n'a simplement
+       pas la clé. Même forme des deux côtés, sinon la fusion verrait des
+       « changements » qui n'en sont pas. */
+    const propre = Object.fromEntries(Object.entries(c).filter(([, v]) => v != null));
+    arr.push({ ...propre, ...(meta || {}) });
   }
   return m;
 }
@@ -590,13 +657,21 @@ function applyPulledPrefs(pf) {
 function mergeDecks(decks, cardsByDeck) {
   const held = new Map(db.decks.filter(d => dirty[d.id]).map(d => [d.id, d]));
   const merged = decks.map(x => {
-    const mine = held.get(x.id);
-    if (mine) { mine.rev = x.rev; held.delete(x.id); return mine; }
-    return {
+    const fresh = {
       id: x.id, name: x.name, subject: x.subject, hidden: x.hidden,
       pos: x.pos, pinned: x.pinned, meta: x.meta || {}, rev: x.rev,
       cards: cardsByDeck.get(x.id) || []
     };
+    const mine = held.get(x.id);
+    if (!mine) { bases[x.id] = snapOf(fresh, x.rev); return fresh; }
+    held.delete(x.id);
+    /* Avant : `mine.rev = x.rev` sans rien comparer. Si un autre appareil
+       avait modifié ce paquet entre-temps, l'envoi suivant passait le
+       contrôle de révision et écrasait son travail sans un mot. Désormais
+       le rev local reste celui de la dernière synchro tant qu'on n'a pas
+       fusionné ; s'il faut demander, c'est flush() qui ouvrira la boîte. */
+    reconcile(mine, fresh, mine.rev);
+    return mine;
   });
   for (const d of held.values()) merged.push(d);   // un paquet créé hors ligne reprend sa place
   return merged;
@@ -634,6 +709,7 @@ export async function pull() {
   db.today = { d: +midnight, n: (today || []).length };
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   db.decks = mergeDecks(decks, cardsByDeck);
+  saveBases();
   db.hist = buildHist(sess);
   if (!db.subjects.length) await seedSubjects();
   /* Les fiches d'avant FSRS reçoivent ici leur état de mémoire, une fois

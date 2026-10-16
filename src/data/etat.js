@@ -126,6 +126,13 @@ export let refreshing = null;
 
 export let conflicts = [];
 
+/* M03 (branché le 2026-10-16) : par paquet, la dernière version connue du
+   serveur — `rev` compris — telle qu'elle était au dernier envoi réussi ou
+   à la dernière relecture sans modification locale. C'est la base commune
+   de la fusion à trois versions (src/fusion.js) : sans elle, impossible de
+   savoir qui, de cet appareil ou de l'autre, a changé quoi. */
+export let bases = {};
+
 /* pousse tout ce qui est en attente ; garde la file si le réseau manque */
 export let flushTimer = 0;
 
@@ -404,6 +411,7 @@ export const setPrefs = v => prefs = v;
 export const setPrefsTimer = v => prefsTimer = v;
 export const setRefreshing = v => refreshing = v;
 export const setConflicts = v => conflicts = v;
+export const setBases = v => bases = v;
 export const setFlushTimer = v => flushTimer = v;
 export const setFlushing = v => flushing = v;
 export const setRecorder = v => recorder = v;
