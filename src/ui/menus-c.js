@@ -39,8 +39,9 @@ import { changePassword, deleteAccount, deleteAssignment, mateProfPull, sendMotP
 import { copyLink, doPrompt, logout, startTour } from './onboarding.js';
 import { libAdd, versRestore } from './reglages-corbeille.js';
 import {
-  addMail, delMail, dropFriend, libRemove
+  addMail, backupData, backupRestore, delMail, dropFriend, libRemove
 } from '../core/reglages-corbeille.js';
+import { readBackup } from '../sauvegarde.js';
 import {
   friendsPull, libPublish, revokeShare, saveHandle, sendDeck, shareLink, verifRepair, versPull
 } from '../core/reglages-corbeille.js';
@@ -425,6 +426,35 @@ function clickBackup() {
   else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Sauvegarde copiée'));
 }
 
+/* M04.T6 : le fichier complet, état d'apprentissage compris — le lien
+   ci-dessus ne garde que recto et verso. */
+function clickBackupFile() {
+  closeMenu();
+  const blob = new Blob([JSON.stringify(backupData())], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'folio-bibliotheque-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast(I.check, 'Bibliothèque exportée');
+}
+
+function clickBackupRestore() {
+  closeMenu();
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.onchange = async () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    let txt;
+    try { txt = await f.text(); } catch (e) { return toast(I.x, 'Fichier illisible'); }
+    const r = readBackup(txt);
+    if (!r.ok) return toast(I.x, r.error);
+    const done = backupRestore(r.data);
+    toast(I.check, plur(done.decks.length, 'paquet') + ' restauré' + (done.decks.length > 1 ? 's' : ''), true);
+  };
+  inp.click();
+}
+
 function clickHide(a, b, d) { d.hidden = !d.hidden; saveDeck(d); closeMenu(); render(); toast(d.hidden ? I.eyeoff : I.eye); }
 
 function clickClone(a, b, d) {
@@ -676,6 +706,8 @@ const CLICK_RULES = [
   [a => a === 'subjok', clickSubjok],
   [a => a === 'subjdel', clickSubjdel],
   [a => a === 'backup', clickBackup],
+  [a => a === 'backup-file', clickBackupFile],
+  [a => a === 'backup-restore', clickBackupRestore],
   [a => a === 'hide', clickHide],
   [a => a === 'clone', clickClone],
   [a => a === 'undo', clickUndo],

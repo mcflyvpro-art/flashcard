@@ -8,10 +8,11 @@ import {
 import { go, render } from '../ui/bibliotheque.js';
 import { fsrsW, plain } from '../ui/carte-media.js';
 import {
-  api, deck, metaOf, plur, pull, pushUndo, save, saveDeck, scopeName, setMeta, subj, uid
+  api, deck, metaOf, plur, pull, pushSubject, pushUndo, save, saveDeck, scopeName, setMeta, subj, uid
 } from './coeur-sync.js';
 import { scanLibrary, repairLibrary } from '../reparation.js';
 import { countDuplicates, dedupeLibrary } from '../doublons.js';
+import { exportLibrary, restoreLibrary } from '../sauvegarde.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from '../ui/menus-a.js';
 import { norm } from '../ui/quiz.js';
@@ -363,3 +364,23 @@ export function verifRepair() {
   if (menu === 'verif') paintMenu();
 }
 
+/* ---------- sauvegarde intégrale (M04.T6) ----------
+   Le format, la lecture et la restauration sont purs et testés
+   (src/sauvegarde.js) ; ici, seulement l'état courant et l'écriture :
+   chaque paquet restauré passe par saveDeck (donc la file hors ligne), et
+   toute la restauration s'annule d'un geste (pushUndo, avec les
+   identifiants tirés d'avance quand le fichier vient d'un autre compte). */
+export const backupData = () => exportLibrary(db, auth && auth.uid, Date.now());
+
+export function backupRestore(data) {
+  const owner = auth && auth.uid;
+  const foreign = !!data.owner && data.owner !== owner;
+  const ids = data.decks.map(d => (foreign ? uid() : d.id));
+  pushUndo('Restauration', ids);
+  let k = 0;
+  const r = restoreLibrary(db, data, owner, () => ids[k++]);
+  for (const d of r.decks) saveDeck(d);
+  if (auth) for (const s of r.subjects) pushSubject(s);
+  save(); render();
+  return r;
+}

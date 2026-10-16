@@ -570,8 +570,10 @@ function paintMenuBackup(w) {
   const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <button class="mi" data-mact="backup">${svg(I.share)}Sauvegarder
+        <button class="mi" data-mact="backup-file">${svg(I.check)}Exporter toute ma bibliothèque
           <span class="tail">${n} · ${c}</span></button>
+        <button class="mi" data-mact="backup-restore">${svg(I.arrow)}Restaurer depuis un fichier</button>
+        <button class="mi" data-mact="backup">${svg(I.share)}Partager un lien (recto et verso seulement)</button>
       </div>`;
     mountMenu(w);
     return;
