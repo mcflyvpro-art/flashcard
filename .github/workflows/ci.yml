@@ -24,3 +24,30 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run build
+
+  # M07.T7 : les parcours de bout en bout (Playwright), à côté du contrôle
+  # ci-dessus pour ne pas l'allonger. Ils parlent à un faux Supabase en
+  # mémoire (e2e/faux-supabase.js) : aucun secret, aucune écriture en base.
+  # Les captures d'écran ne se comparent pas ici (polices Linux ≠ Mac) ; le
+  # contrôle de débordement, si.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: rapport-playwright
+          path: playwright-report/
+          retention-days: 7
