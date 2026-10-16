@@ -40,7 +40,9 @@ test('inscription, un livre de 10 pages, une séance, des chiffres justes', asyn
   // le compteur du jour, puis le journal de lecture
   await page.getByRole('button', { name: '13', exact: true }).click();
   const journal = page.locator('main');
-  await expect(journal).toContainText(/13\s*pages lues/i);
+  // le journal se charge depuis le serveur (statsPull) : il montre « ······ » le temps d'arriver
+  // ouvert juste après la séance : la file part, puis le journal se relit tout seul
+  await expect(journal).toContainText(/13\s*pages lues/i, { timeout: 10000 });
   await expect(journal).toContainText(/77%\s*de réussite/i);        // 10 réussites sur 13 réponses
   await expect(journal).toContainText(/1\s*jour d’affilée/i);
   await expect(journal).toContainText(/0 sue sur 10/i);

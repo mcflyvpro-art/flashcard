@@ -137,6 +137,10 @@ export let bases = {};
 export let flushTimer = 0;
 
 export let flushing = false;
+/* Un flush() demandé pendant qu'un autre tourne (typiquement : le réseau
+   revient pendant qu'un envoi lancé hors ligne n'a pas encore échoué) est
+   noté ici et rejoué à la fin, au lieu d'être perdu. */
+export let flushAgain = false;
 
 export let recorder = null, recChunks = [];
 
@@ -414,6 +418,7 @@ export const setConflicts = v => conflicts = v;
 export const setBases = v => bases = v;
 export const setFlushTimer = v => flushTimer = v;
 export const setFlushing = v => flushing = v;
+export const setFlushAgain = v => flushAgain = v;
 export const setRecorder = v => recorder = v;
 export const setRecChunks = v => recChunks = v;
 export const setPlayer = v => player = v;

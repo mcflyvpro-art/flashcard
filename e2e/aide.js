@@ -12,6 +12,9 @@ async function ouvrir(page) {
 export async function inscrire(page, email = 'lea@exemple.fr', mdp = 'motdepasse-solide-42') {
   await ouvrir(page);
   await page.getByRole('button', { name: 'Créer un compte' }).click();
+  // le formulaire redonne le focus à l'e-mail 80 ms après chaque affichage (loginView) :
+  // taper avant, c'était voir le mot de passe atterrir dans le champ e-mail
+  await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toBeFocused();
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill(mdp);
   await page.getByRole('checkbox').check();
@@ -21,6 +24,7 @@ export async function inscrire(page, email = 'lea@exemple.fr', mdp = 'motdepasse
 
 export async function connecter(page, email = 'lea@exemple.fr', mdp = 'motdepasse-solide-42') {
   await ouvrir(page);
+  await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toBeFocused();
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill(mdp);
   await page.getByRole('button', { name: 'Se connecter' }).click();
@@ -35,6 +39,7 @@ export async function creerLivre(page, titre = 'Capitales', n = 10) {
     await page.locator('#cf').fill('Pays ' + k);
     await page.locator('#cb').fill('Capitale ' + k);
     await page.locator('#cb').press('Enter');
+    await expect(page.getByText('Pays ' + k, { exact: true })).toBeVisible();   // sous charge, ne pas taper plus vite que l'écran
   }
   await expect(page.getByText('Pays ' + n, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Créer' }).click();

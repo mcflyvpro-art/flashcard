@@ -1,6 +1,6 @@
 import {
-  DEFPREFS, auth, bases, conflicts, db, demo, dirty, flushTimer, flushing, gone, groups, mailbox,
-  menu, online, outbox, prefs, refreshing, scope, setAnimate, setAuth, setBases, setDirty,
+  DEFPREFS, auth, bases, conflicts, db, demo, dirty, flushAgain, flushTimer, flushing, gone, groups, mailbox,
+  menu, online, outbox, prefs, refreshing, scope, setAnimate, setAuth, setBases, setDirty, setFlushAgain,
   setFlushTimer, setFlushing, setGone, setOnlineState, setOutbox, setPrefs, setRefreshing,
   study, trash, undos, view
 } from '../data/etat.js';
@@ -10,6 +10,7 @@ import { $ } from '../racine.js';
 import { queueChip, render } from '../ui/bibliotheque.js';
 import { fsrsAuto, fsrsMigrate } from '../ui/carte-media.js';
 import { cerclePull } from './classement.js';
+import { statsPull } from './ecran-groupe.js';
 import { addDeck, freeName, toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu } from '../ui/menus-a.js';
 import { maybeAskInstall, resetSession } from '../ui/onboarding.js';
@@ -568,23 +569,27 @@ async function remoteDeck(id) {
   return { ...row, hidden: !!row.hidden, pinned: !!row.pinned, meta: row.meta || {}, cards };
 }
 
+async function flushDeck(id) {
+  const d = deck(id);
+  if (!d) { delete dirty[id]; return; }
+  if (await pushSynced(d)) return;
+  const theirs = await remoteDeck(d.id);
+  if (!theirs) { d.rev = 0; return; }                // disparu là-bas : on le repose tel quel
+  const issue = reconcile(d, theirs, d.rev);
+  if (issue === 'merged' && await pushSynced(d)) return;
+  if (issue === 'ask') { delete dirty[id]; raiseConflict(d, theirs); }
+  /* sinon (fusion faite mais un troisième appareil est passé entre-temps) :
+     le paquet reste dans la file, le prochain passage recommence. */
+}
+
 export async function flush() {
-  if (demo || flushing || !auth) return;
+  if (demo || !auth) return;
+  if (flushing) { setFlushAgain(true); return; }
   setFlushing(true);
+  setFlushAgain(false);
   try {
     const ids = Object.keys(dirty);
-    for (const id of ids) {
-      const d = deck(id);
-      if (!d) { delete dirty[id]; continue; }
-      if (await pushSynced(d)) continue;
-      const theirs = await remoteDeck(d.id);
-      if (!theirs) { d.rev = 0; continue; }            // disparu là-bas : on le repose tel quel
-      const issue = reconcile(d, theirs, d.rev);
-      if (issue === 'merged' && await pushSynced(d)) continue;
-      if (issue === 'ask') { delete dirty[id]; raiseConflict(d, theirs); }
-      /* sinon (fusion faite mais un troisième appareil est passé entre-temps) :
-         le paquet reste dans la file, le prochain passage recommence. */
-    }
+    for (const id of ids) await flushDeck(id);
     if (ids.length) save();
     /* Supprimer un paquet le marque, ne l'efface pas : il reste
        récupérable trente jours depuis la corbeille. */
@@ -594,10 +599,16 @@ export async function flush() {
         { deleted_at: new Date().toISOString() }, { Prefer: 'return=minimal' });
       gone.shift(); save();
     }
+    const envoyees = outbox.length;
     await flushOutbox();
+    /* Le journal de lecture se lit sur le serveur : ouvert juste après une
+       séance, il affichait 0 tant que les révisions attendaient leur tour,
+       et ne se corrigeait qu'au rafraîchissement suivant (15 s). */
+    if (envoyees && view.name === 'stats') statsPull(1);
     setOnline(true);
   } catch (e) { setOnline(false); }
   setFlushing(false);
+  if (flushAgain && navigator.onLine) flush();     // demandé pendant l'envoi : on repasse
 }
 
 export function setOnline(v) {

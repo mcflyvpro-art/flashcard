@@ -173,5 +173,7 @@ describe('M03.T5 — simulateur de concurrence (2 appareils, hors ligne, reconne
     expect(syncs).toBeGreaterThan(1000);
     expect(checkpoints).toBe(20);
     expect(notesTotal).toBeGreaterThan(0);
-  });
+  // 10 000 opérations : ~1 s sur une machine calme, mais 5,6 à 5,9 s quand
+  // elle est chargée (vu le 2026-10-16) — juste au-delà des 5 s par défaut.
+  }, 30000);
 });

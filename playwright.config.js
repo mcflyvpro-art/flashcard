@@ -11,6 +11,7 @@ export default defineConfig({
   testDir: 'e2e',
   testMatch: '**/*.e2e.js',
   fullyParallel: true,
+  workers: 2,                  // au-delà, une machine déjà occupée sature (charge 22 vue le 2026-10-16) et les délais sautent
   timeout: 60000,              // une séance de 13 pages, animations comprises, dépasse les 30 s par défaut
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
