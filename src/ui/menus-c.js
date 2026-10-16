@@ -47,6 +47,10 @@ import {
 } from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
 
+/* Fermer la feuille de partage sans choisir rejette la promesse (AbortError) :
+   c'est un « non merci », pas une erreur à remonter. */
+const partager = o => navigator.share(o).catch(() => {});
+
 export function paintMenuRename(w) {
   const conf = {
       rename: ['Nom affiché', I.user, 'text', 'Comment on t’appelle', prefs.name || '', 'Enregistrer'],
@@ -73,7 +77,7 @@ function clickDnew(a, b) { const t = deck(b.dataset.dnew); if (t) duelMake(t); }
 
 function clickCopy(a, b) {
   const url = b.dataset.copy;
-  if (navigator.share) navigator.share({ url }).catch(() => {});
+  if (navigator.share) partager({ url });
   else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Adresse copiée'),
                                                () => toast(I.x, 'Copie impossible'));
 }
@@ -422,7 +426,7 @@ function clickBackup() {
   closeMenu();
   const url = location.origin + location.pathname + '#i=' + enc(db.decks.map(x =>
     ({ key: x.key || x.id, name: x.name, subject: x.subject, cards: x.cards.map(c => [c.f, c.b]) })));
-  if (navigator.share) navigator.share({ url }).catch(() => {});
+  if (navigator.share) partager({ url });
   else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Sauvegarde copiée'));
 }
 
@@ -548,7 +552,7 @@ async function clickRolink(a, b, d) {
   closeMenu();
   try {
     const url = await shareLink(d);
-    if (navigator.share) navigator.share({ url }).catch(() => {});
+    if (navigator.share) partager({ url });
     else await navigator.clipboard.writeText(url);
     toast(I.link, 'Lien de consultation copié');
   } catch (err) { toast(I.x, 'Lien impossible hors ligne'); }
@@ -571,7 +575,7 @@ const clickDojoin = () => { const i = document.getElementById('gq'); return join
 function clickGcode() {
   const g = (groups || []).find(x => x.id === groupOf); if (!g) return;
   const txt = g.code;
-  if (navigator.share) navigator.share({ text: `Rejoins « ${g.name} » sur Folio avec le code ${txt}` }).catch(() => {});
+  if (navigator.share) partager({ text: `Rejoins « ${g.name} » sur Folio avec le code ${txt}` });
   else navigator.clipboard.writeText(txt).then(() => toast(I.check, 'Code copié'), () => {});
 }
 
@@ -596,7 +600,7 @@ function clickCopylink(a, b, d) {
   closeMenu();
   const url = location.origin + location.pathname + '#i=' +
     enc({ name: d.name, subject: d.subject, cards: d.cards.map(c => [c.f, c.b]) });
-  if (navigator.share) navigator.share({ url }).catch(() => {});
+  if (navigator.share) partager({ url });
   else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Lien copié'));
 }
 

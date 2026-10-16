@@ -309,7 +309,7 @@ export async function play(ref) {
     const url = p ? await mediaUrl(p) : ref;
     if (player) player.pause();
     setPlayer(new Audio(url));
-    player.play().catch(() => {});
+    player.play().catch(() => {}); // lecture refusée (autoplay, onglet en fond) : le bouton reste là pour relancer
   } catch (e) { /* média manquant ou URL signée expirée : la carte reste utilisable sans le son */ }
 }
 
