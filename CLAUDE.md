@@ -55,10 +55,10 @@ l'air de marcher ».
     raccourcis d'ouverture `?go=…` — extrait d'`interactions.js` sur M06.T6,
     qui frôlait la limite de lignes une fois ses tables de dispatch posées),
     `onboarding.js`. Aucun fichier, `core/` ou `ui/`, ne dépasse 800 lignes
-    (le plus gros, `interactions.js`, fait tout juste 800 lignes — la
-    ligne `// @ts-nocheck` posée sur chaque écran par M06.T8, voir plus
-    bas, l'a fait passer de 799 à 800 : la prochaine ligne ajoutée devra
-    en retirer une ailleurs dans ce fichier).
+    (le plus gros, `interactions.js`, fait 798 lignes depuis M04.T2 — deux
+    imports regroupés sur une ligne pour faire de la place au bouton
+    « Vérifier ma bibliothèque » : toujours sans marge, la prochaine
+    ligne ajoutée là devra en retirer une ailleurs dans ce fichier).
 
     Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
     a d'abord suivi les anciennes sections `/* ---------- nom ---------- */`
@@ -104,7 +104,8 @@ l'air de marcher ».
   - `src/fusion.js` — fusion à trois versions d'un paquet (M03.T4), pur et testé (`test/fusion.test.js`, `test/concurrence.test.js`)
   - `src/file.js` — construction de la file de révision : sélection, quota de cartes neuves, ordre (M01.T3), pur et testé (`test/file.test.js`)
   - `src/parseur.js` — parseur de cartes : collage, Quizlet, Anki texte brut, CSV/TSV, JSON (M01.T4), pur et testé (`test/parseur.test.js`)
-  - `src/invariants.js` — les 12 invariants qu'une carte doit toujours respecter (S>0, 1≤D≤10, cohérence de l'état FSRS...), pour l'écran « Vérifier ma bibliothèque » à venir (M04.T2) et la contrainte CHECK en base (M04.T3) — pur et testé (`test/invariants.test.js`)
+  - `src/invariants.js` — les 12 invariants qu'une carte doit toujours respecter (S>0, 1≤D≤10, cohérence de l'état FSRS...), pour l'écran « Vérifier ma bibliothèque » (M04.T2) et la contrainte CHECK en base (M04.T3) — pur et testé (`test/invariants.test.js`)
+  - `src/reparation.js` — réparation des cartes qui violent ces invariants, regroupées en 8 familles (`scanLibrary`/`repairLibrary`), branchée sur Réglages → « Vérifier ma bibliothèque » par `verifScan`/`verifRepair` (`src/core/reglages-corbeille.js`) — pur et testé (`test/reparation.test.js`). Le pont SM-2 → FSRS (`sm2State`) vit désormais dans `src/fsrs.js`, partagé avec `fsrsSeed()`
   - `src/app.css` — ~2 200 lignes
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes

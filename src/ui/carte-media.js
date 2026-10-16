@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import {
-  DAY, D_MAX, D_MIN, MIN, S_MAX, S_MIN, W6, cl, dayNo, fsrsR, fsrsReplayAll, fsrsStates
+  DAY, MIN, W6, cl, dayNo, fsrsR, fsrsReplayAll, fsrsStates, sm2State
 } from '../fsrs.js';
 import {
   auth, db, dirty, mediaCache, player, prefs, recChunks, recorder,
@@ -379,7 +379,7 @@ export function markDups(cards, target) {
    Le moteur lui-même est dans src/fsrs.js — voir son bandeau. Ici ne
    restent que les trois choses qu'il ne peut pas savoir : les réglages du
    compte, et ce que l'app en fait. */
-const fsrsW = () => (prefs.w && (prefs.w.length === 34 || prefs.w.length === 21)) ? prefs.w : W6;
+export const fsrsW = () => (prefs.w && (prefs.w.length === 34 || prefs.w.length === 21)) ? prefs.w : W6;
 
 export const fsrsDR = () => cl(prefs.dr || 0.9, 0.7, 0.99);
 
@@ -566,24 +566,11 @@ export function fsrsAuto() {
 
 /* ---------- reprise d'une bibliothèque existante ----------
    Les fiches déjà travaillées n'ont ni stabilité ni difficulté : on les
-   convertit avec le pont officiel du crate. Rien n'est perdu — une fiche
-   qui revenait dans 30 jours revient toujours dans 30 jours — et le moteur
-   prend la suite à partir de là. C'est un point de départ approximatif :
-   « Régler le moteur sur moi » rejoue ensuite l'historique réel, ce que ce
-   pont ne sait pas faire. */
-/* Le pont officiel vers une fiche déjà travaillée : `memory_state_from_sm2`
-   (fsrs 6.6.2, src/inference.rs). Faute d'avoir jamais stocké une facilité
-   par fiche, on prend 2,5 — la facilité de départ d'Anki. */
-function sm2State(w, ease, ivl, ret) {
-  const dec = -w[20], fac = Math.pow(0.9, 1 / dec) - 1;
-  const S = Math.max(ivl, S_MIN) * fac / (Math.pow(ret, 1 / dec) - 1);
-  const D = 11 - (ease - 1)
-    / (Math.exp(w[8]) * Math.pow(S, -w[9]) * Math.expm1((1 - ret) * w[10]));
-  return isFinite(S) && isFinite(D)
-    ? { S: cl(S, S_MIN, S_MAX), D: cl(D, D_MIN, D_MAX) }
-    : { S: cl(Math.max(ivl, S_MIN), S_MIN, S_MAX), D: 5 };
-}
-
+   convertit avec le pont officiel du crate (`sm2State`, src/fsrs.js).
+   Rien n'est perdu — une fiche qui revenait dans 30 jours revient toujours
+   dans 30 jours — et le moteur prend la suite à partir de là. C'est un
+   point de départ approximatif : « Régler le moteur sur moi » rejoue
+   ensuite l'historique réel, ce que ce pont ne sait pas faire. */
 function fsrsSeed(c) {
   if (c.S || !c.n) return false;
   const ivl = +c.i || 0;

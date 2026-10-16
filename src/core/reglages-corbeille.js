@@ -1,15 +1,16 @@
 import { I } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import {
-  asks, auth, friends, lib, mailbox, mates, me, menu, prefs, scope, sendMsg,
+  asks, auth, db, friends, lib, mailbox, mates, me, menu, prefs, scope, sendMsg,
   setAnimate, setAsks, setFriends, setMailOpen, setMates, setMe, setSendMsg,
-  setSendTo, setShared, setVers, setView, trash, vers, view
+  setSendTo, setShared, setVerif, setVers, setView, trash, verif, vers, view
 } from '../data/etat.js';
 import { go, render } from '../ui/bibliotheque.js';
-import { plain } from '../ui/carte-media.js';
+import { fsrsW, plain } from '../ui/carte-media.js';
 import {
   api, deck, metaOf, plur, pull, pushUndo, save, saveDeck, scopeName, setMeta, subj, uid
 } from './coeur-sync.js';
+import { scanLibrary, repairLibrary } from '../reparation.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from '../ui/menus-a.js';
 import { norm } from '../ui/quiz.js';
@@ -332,5 +333,28 @@ export async function libRemove(d) {
   try { await api('/rest/v1/library?deck_id=eq.' + encodeURIComponent(d.id), 'DELETE', null, { Prefer: 'return=minimal' }); }
   catch (e) { /* retiré localement de l'étagère ; au pire il faudra republier-puis-retirer pour la copie serveur */ }
   toast(I.check, 'Retiré de la bibliothèque');
+}
+
+/* ---------- vérifier ma bibliothèque (M04.T2) ----------
+   Les 12 invariants (src/invariants.js) et les 8 familles de réparation
+   (src/reparation.js) sont purs et testés ; ces deux fonctions ne font
+   que les brancher sur la bibliothèque réelle et la sauvegarde. */
+export function verifScan() {
+  const { tally, cards } = scanLibrary(db.decks);
+  setVerif({ tally, cards, busy: false, done: null });
+  if (menu === 'verif') paintMenu();
+}
+
+export function verifRepair() {
+  if (verif.busy || !verif.tally) return;
+  setVerif({ ...verif, busy: true });
+  if (menu === 'verif') paintMenu();
+  pushUndo('Réparation de la bibliothèque', db.decks.map(d => d.id));
+  const { dropped, touched } = repairLibrary(db.decks, { w: fsrsW() }, uid, Date.now());
+  for (const d of touched) saveDeck(d);
+  const { tally, cards } = scanLibrary(db.decks);
+  setVerif({ tally, cards, busy: false, done: { dropped, touched: touched.length } });
+  render();
+  if (menu === 'verif') paintMenu();
 }
 

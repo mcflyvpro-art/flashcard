@@ -12,9 +12,7 @@ import {
   setStudy, setWorkOpen, shared, stats, study, trash, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
-import {
-  commuPull, compNeuf, doAdd, donnerLivre, lireComp
-} from './bilan-devoirs.js';
+import { commuPull, compNeuf, doAdd, donnerLivre, lireComp } from './bilan-devoirs.js';
 import { groupsPull } from '../core/bilan-devoirs.js';
 import { plain, play, say } from './carte-media.js';
 import { fsrsTune } from '../core/carte-media.js';
@@ -32,9 +30,7 @@ import { duelsPull } from '../core/defis.js';
 import { exportStats, groupPull, lostOnLeave } from './ecran-groupe.js';
 import { statsPull } from '../core/ecran-groupe.js';
 import { jourFr } from './etablissement.js';
-import {
-  profClassePull, profDo, profFichePull, profPull
-} from '../core/etablissement.js';
+import { profClassePull, profDo, profFichePull, profPull } from '../core/etablissement.js';
 import {
   beep, dueCount, importPayload, savePrefs, toast
 } from './import-cartes.js';
@@ -46,7 +42,7 @@ import {
 import { cb, cf, openSubject } from './reglages-corbeille.js';
 import {
   answerFriend, askFriend, friendsPull, libPull, mailPull, openMail,
-  trashPull, trashPurge, trashRestore
+  trashPull, trashPurge, trashRestore, verifScan
 } from '../core/reglages-corbeille.js';
 import {
   answerTF, cardOf, cardOrigin, commit, fling, isTF, loadResume, paintQ, pickMCQ, pickMatch,
@@ -489,6 +485,7 @@ const tapBackup2 = () => openMenu('backup');
 const tapUndo2 = () => { doUndo(); };
 const tapMailScreen = () => { mailbox.list = null; mailPull(); return go('mail'); };
 const tapTrash = () => { trash.list = null; trashPull(); return go('trash'); };
+const tapVerif = () => { verifScan(); return openMenu('verif'); };
 
 /* ---- sélection multiple ---- */
 const tapSelmode = () => { setSel(sel ? null : new Set()); return render(); };
@@ -745,6 +742,7 @@ const CLICK_RULES = [
   [a => a === 'undo2', tapUndo2],
   [a => a === 'mail', tapMailScreen],
   [a => a === 'trash', tapTrash],
+  [a => a === 'verif', tapVerif],
   [a => a === 'selmode', tapSelmode],
   [a => a === 'selall', tapSelall],
   [a => a === 'selmove', tapSelmove],

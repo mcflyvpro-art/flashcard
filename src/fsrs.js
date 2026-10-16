@@ -194,6 +194,23 @@ export const fsrsR = (w, t, m) => isV7(w) ? f7curve(w, t, m) : f6curve(w, t, m);
 export const fsrsIvl = (w, m, dr) => isV7(w) ? f7ivl(w, m, dr)
   : (m.S / f6fac(w)) * (Math.pow(dr, 1 / f6dec(w)) - 1);
 
+/* ---------- reprise d'une fiche déjà travaillée ----------
+   Le pont officiel vers une fiche déjà travaillée : `memory_state_from_sm2`
+   (fsrs 6.6.2, src/inference.rs). Faute d'avoir jamais stocké une facilité
+   par fiche, on prend 2,5 — la facilité de départ d'Anki. Utilisé par
+   `fsrsSeed()` (src/ui/carte-media.js, migration en douceur au premier
+   affichage) et par `src/reparation.js` (M04.T2, réparation forcée d'une
+   fiche « révisée » sans mémoire). */
+export function sm2State(w, ease, ivl, ret) {
+  const dec = -w[20], fac = Math.pow(0.9, 1 / dec) - 1;
+  const S = Math.max(ivl, S_MIN) * fac / (Math.pow(ret, 1 / dec) - 1);
+  const D = 11 - (ease - 1)
+    / (Math.exp(w[8]) * Math.pow(S, -w[9]) * Math.expm1((1 - ret) * w[10]));
+  return isFinite(S) && isFinite(D)
+    ? { S: cl(S, S_MIN, S_MAX), D: cl(D, D_MIN, D_MAX) }
+    : { S: cl(Math.max(ivl, S_MIN), S_MIN, S_MAX), D: 5 };
+}
+
 /* Flou : py-fsrs tire au hasard dans une fourchette autour de
    l'intervalle, pour éviter que des fiches apprises le même jour
    reviennent toutes le même jour. Ici le tirage est dérivé de la fiche :

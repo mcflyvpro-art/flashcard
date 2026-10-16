@@ -42,7 +42,7 @@ import {
   addMail, delMail, dropFriend, libRemove
 } from '../core/reglages-corbeille.js';
 import {
-  friendsPull, libPublish, revokeShare, saveHandle, sendDeck, shareLink, versPull
+  friendsPull, libPublish, revokeShare, saveHandle, sendDeck, shareLink, verifRepair, versPull
 } from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
 
@@ -666,6 +666,7 @@ const CLICK_RULES = [
   [a => a === 'deckset', () => { closeMenu(); return openMenu('deckset'); }],
   [a => a === 'do-simple', () => setSimple(true)],
   [a => a === 'do-engine', () => setSimple(false)],
+  [a => a === 'do-verif-repair', () => verifRepair()],
   [a => a === 'do-rename', clickDoRename],
   [a => a === 'do-pwd', clickDoPwd],
   [a => a === 'do-delacc', clickDoDelacc],

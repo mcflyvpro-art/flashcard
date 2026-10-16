@@ -3,8 +3,9 @@ import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
   asgs, auth, classOf, classes, db, memberOpen, menu, prof, ref, roster, setMenu,
-  setSubjName, subjColor, subjEdit, subjName, view, workOpen
+  setSubjName, subjColor, subjEdit, subjName, verif, view, workOpen
 } from '../data/etat.js';
+import { ANOMALY_FAMILIES } from '../reparation.js';
 import { render } from './bibliotheque.js';
 import { compSheet, initial, workSheet } from './bilan-devoirs.js';
 import { paintMedia } from './carte-media.js';
@@ -153,6 +154,7 @@ function menuPainter(m) {
     report: paintMenuReport,
     blocked: paintMenuBlocked,
     backup: paintMenuBackup,
+    verif: paintMenuVerif,
     card: paintMenuCard,
     deckset: paintMenuDeckset,
     simple: paintMenuSimple, engine: paintMenuSimple,
@@ -573,4 +575,33 @@ function paintMenuBackup(w) {
       </div>`;
     mountMenu(w);
     return;
+}
+
+function verifRowHtml(f) {
+  const n = (verif.tally || {})[f.code] || 0;
+  if (!n) return '';
+  return `<div class="mi" style="justify-content:space-between;font-size:13.5px">
+      <span>${f.label}</span><b>${n}</b>
+    </div>`;
+}
+
+/* M04.T2 : les 12 invariants (src/invariants.js) et les 8 familles de
+   réparation (src/reparation.js) sont testés à part — cette feuille ne
+   fait qu'afficher ce que `verifScan()`/`verifRepair()` (core/reglages-corbeille.js)
+   y ont posé. */
+function paintMenuVerif(w) {
+  const done = verif.done, clean = !verif.cards;
+  const rows = ANOMALY_FAMILIES.map(verifRowHtml).join('');
+  w.innerHTML = `<div class="scrim" data-mact="close"></div>
+    <div class="menu">
+      <div class="mhd">${svg(I.check)}<span class="mhx"><b>Vérifier ma bibliothèque</b>
+        <i>${clean ? 'Aucune anomalie trouvée' : plur(verif.cards, 'carte') + ' à corriger'}</i></span></div>
+      ${rows ? `<div class="mrr">${rows}</div>` : ''}
+      ${done ? `<div class="note" style="padding:0 18px 12px;text-align:center">
+          ${done.dropped ? plur(done.dropped, 'carte') + ' retirée (contenu manquant) · ' : ''}
+          ${plur(done.touched, 'paquet')} corrigé${done.touched > 1 ? 's' : ''}</div>` : ''}
+      ${clean ? '' : `<button class="mi" data-mact="do-verif-repair" style="justify-content:center;font-weight:700"
+          ${verif.busy ? 'disabled' : ''}>${svg(I.check)}${verif.busy ? 'Réparation…' : 'Réparer'}</button>`}
+    </div>`;
+  mountMenu(w);
 }

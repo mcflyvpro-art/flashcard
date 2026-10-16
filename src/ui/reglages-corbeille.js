@@ -150,6 +150,8 @@ function settingsDonneesHtml() {
           <span class="n">Annuler ${esc(undoLabel().toLowerCase())}</span></button>` : ''}
         <button class="sr flat" data-act="trash">${svg(I.trash)}<span class="n">Corbeille</span>
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="verif">${svg(I.check)}
+          <span class="n">Vérifier ma bibliothèque</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="help">${svg(I.bulb)}<span class="n">Aide</span>
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
