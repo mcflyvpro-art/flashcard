@@ -11,6 +11,7 @@ import {
   api, deck, metaOf, plur, pull, pushUndo, save, saveDeck, scopeName, setMeta, subj, uid
 } from './coeur-sync.js';
 import { scanLibrary, repairLibrary } from '../reparation.js';
+import { countDuplicates, dedupeLibrary } from '../doublons.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from '../ui/menus-a.js';
 import { norm } from '../ui/quiz.js';
@@ -341,7 +342,7 @@ export async function libRemove(d) {
    que les brancher sur la bibliothèque réelle et la sauvegarde. */
 export function verifScan() {
   const { tally, cards } = scanLibrary(db.decks);
-  setVerif({ tally, cards, busy: false, done: null });
+  setVerif({ tally, cards, dups: countDuplicates(db.decks), busy: false, done: null });
   if (menu === 'verif') paintMenu();
 }
 
@@ -351,9 +352,13 @@ export function verifRepair() {
   if (menu === 'verif') paintMenu();
   pushUndo('Réparation de la bibliothèque', db.decks.map(d => d.id));
   const { dropped, touched } = repairLibrary(db.decks, { w: fsrsW() }, uid, Date.now());
-  for (const d of touched) saveDeck(d);
+  // M04.T4 : les doublons après la réparation — une carte réparée peut en devenir un
+  const dd = dedupeLibrary(db.decks);
+  const all = new Set([...touched, ...dd.touched]);
+  for (const d of all) saveDeck(d);
   const { tally, cards } = scanLibrary(db.decks);
-  setVerif({ tally, cards, busy: false, done: { dropped, touched: touched.length } });
+  setVerif({ tally, cards, dups: countDuplicates(db.decks), busy: false,
+    done: { dropped, merged: dd.removed, touched: all.size } });
   render();
   if (menu === 'verif') paintMenu();
 }

@@ -106,6 +106,8 @@ l'air de marcher ».
   - `src/parseur.js` — parseur de cartes : collage, Quizlet, Anki texte brut, CSV/TSV, JSON (M01.T4), pur et testé (`test/parseur.test.js`)
   - `src/invariants.js` — les 12 invariants qu'une carte doit toujours respecter (S>0, 1≤D≤10, cohérence de l'état FSRS...), pour l'écran « Vérifier ma bibliothèque » (M04.T2) et la contrainte CHECK en base (M04.T3 : 7 contraintes `cards_*` sur `public.cards`, seulement celles que le moteur garantit par construction — une ligne refusée bloquerait la synchro de tout le paquet) — pur et testé (`test/invariants.test.js`). Attention : `n` compte les **réussites**, pas les passages (`grade()`, `fsrsReplayCard()`), donc une carte ratée d'emblée a une mémoire avec n = 0, et l > n est sain
   - `src/reparation.js` — réparation des cartes qui violent ces invariants, regroupées en 8 familles (`scanLibrary`/`repairLibrary`), branchée sur Réglages → « Vérifier ma bibliothèque » par `verifScan`/`verifRepair` (`src/core/reglages-corbeille.js`) — pur et testé (`test/reparation.test.js`). Le pont SM-2 → FSRS (`sm2State`) vit désormais dans `src/fsrs.js`, partagé avec `fsrsSeed()`
+  - `src/doublons.js` — déduplication (M04.T4) : même recto ET même verso dans un même paquet, on garde la carte la plus avancée et on additionne les rechutes ; branchée sur « Vérifier ma bibliothèque » — pur et testé (`test/doublons.test.js`)
+  - `src/normaliser.js` — `norm()` (casse, espaces, apostrophes, ponctuation finale), sans aucune dépendance : lue par le noyau (`doublons.js`) et par les écrans (`ui/quiz.js` la réexporte)
   - `src/app.css` — ~2 200 lignes
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes

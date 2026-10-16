@@ -577,8 +577,8 @@ function paintMenuBackup(w) {
     return;
 }
 
-function verifRowHtml(f) {
-  const n = (verif.tally || {})[f.code] || 0;
+function verifRowHtml(f, count) {
+  const n = count != null ? count : (verif.tally || {})[f.code] || 0;
   if (!n) return '';
   return `<div class="mi" style="justify-content:space-between;font-size:13.5px">
       <span>${f.label}</span><b>${n}</b>
@@ -590,15 +590,18 @@ function verifRowHtml(f) {
    fait qu'afficher ce que `verifScan()`/`verifRepair()` (core/reglages-corbeille.js)
    y ont posé. */
 function paintMenuVerif(w) {
-  const done = verif.done, clean = !verif.cards;
-  const rows = ANOMALY_FAMILIES.map(verifRowHtml).join('');
+  const done = verif.done, clean = !verif.cards && !verif.dups;
+  const rows = ANOMALY_FAMILIES.map(f => verifRowHtml(f)).join('')
+    + verifRowHtml({ code: 'dups', label: 'doublons dans un même livre (même recto, même verso)' }, verif.dups);
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
       <div class="mhd">${svg(I.check)}<span class="mhx"><b>Vérifier ma bibliothèque</b>
-        <i>${clean ? 'Aucune anomalie trouvée' : plur(verif.cards, 'carte') + ' à corriger'}</i></span></div>
+        <i>${clean ? 'Aucune anomalie trouvée'
+          : plur(verif.cards + (verif.dups || 0), 'carte') + ' à corriger'}</i></span></div>
       ${rows ? `<div class="mrr">${rows}</div>` : ''}
       ${done ? `<div class="note" style="padding:0 18px 12px;text-align:center">
           ${done.dropped ? plur(done.dropped, 'carte') + ' retirée (contenu manquant) · ' : ''}
+          ${done.merged ? plur(done.merged, 'doublon') + ' retiré' + (done.merged > 1 ? 's' : '') + ' · ' : ''}
           ${plur(done.touched, 'paquet')} corrigé${done.touched > 1 ? 's' : ''}</div>` : ''}
       ${clean ? '' : `<button class="mi" data-mact="do-verif-repair" style="justify-content:center;font-weight:700"
           ${verif.busy ? 'disabled' : ''}>${svg(I.check)}${verif.busy ? 'Réparation…' : 'Réparer'}</button>`}

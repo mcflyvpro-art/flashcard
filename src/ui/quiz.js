@@ -3,6 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { shuffle } from '../file.js';
 import { parseText } from '../parseur.js';
+import { norm } from '../normaliser.js';
 import {
   aiBusy, asrOn, asrRec, comp, db, prefs, quiz, quizTick, setAiBusy, setAsrOn, setAsrRec,
   setComp, setQuiz, setQuizTick, view
@@ -20,8 +21,8 @@ import {
 import { fillRing, isBool, review } from './revision.js';
 
 /* ---------- quiz ---------- */
-export const norm = s => String(s).trim().toLowerCase()
-  .replace(/[’‘‛´`]/g, "'").replace(/\s+/g, ' ').replace(/[?!.…]+$/, '').trim();
+// norm vit dans src/normaliser.js (partagé avec le noyau, M04.T4) ; réexporté ici pour les écrans
+export { norm };
 
 /* --- validation avec marge d'erreur --- */
 // mots outils et tirets neutralisés : « to be cool-headed » == « be cool headed »
