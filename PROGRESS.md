@@ -18,8 +18,13 @@
 ```
 CURSEUR   M04.T2 (écran « Vérifier ma bibliothèque ») — M06 fini (8/8), ordre P0 décidé le 2026-09-18, voir ORDRE
 PHASE     P0 — lancement B2C
-FAIT      26 / 148
-DERNIER   2026-09-20 · M04.T1 fini : `src/invariants.js`, pur et testé,
+FAIT      27 / 148
+DERNIER   2026-10-16 · M03.T3 coché : `card_sync_audit` à 0 écart du 2026-10-07 au
+          2026-10-16 (10 jours). La fenêtre d'origine (18→25/09) avait échoué
+          (jusqu'à 386 écarts) et s'est résorbée sans correctif — cause
+          probable non prouvée : clients encore sur l'app d'avant le 18/09.
+          Détail et chiffres sur la ligne M03.T3. Reste M03.T7.
+          2026-09-20 (plus tôt) · M04.T1 fini : `src/invariants.js`, pur et testé,
           12 règles (`CARD_INVARIANTS`) que doit respecter une carte —
           identifiant, recto, verso, état FSRS (`st` ∈ {1,2,3} ou absent),
           stabilité/difficulté/seconde-trace dans les bornes du moteur
@@ -117,10 +122,10 @@ ORDRE P0  M01 → M06 → M04 → M05 → M07 → M09 → M08 → M10 → M11 �
           (noyau pur d'abord, découpe d'app.js tôt pour ne pas la laisser grossir ·
           intégrité + observabilité avant paiement · M07 avant M09, sa preuve est un
           test Playwright · paiement en dernier, sécurité/légal/infra déjà posés)
-BLOQUÉ    M03.T3 (case) et M03.T7 (retrait JSONB `decks.cards`) : en suspens jusqu'au
-          2026-09-25, fin des 7 j d'observation (tâche `folio-m03t3-audit-7j`). Alors :
-          relire `card_sync_audit`, cocher M03.T3 si 0 écart, puis faire M03.T7. Ne
-          bloque pas le reste du projet.
+RESTE     M03.T7 (retrait JSONB `decks.cards`) : débloqué depuis que M03.T3 est coché
+          (2026-10-16). À faire avant de couper le JSONB : s'assurer qu'aucun client
+          d'avant le 2026-09-18 n'écrit encore (voir la ligne M03.T3). Ne bloque pas
+          le reste du projet.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.
@@ -148,18 +153,16 @@ But : toutes les règles métier dans du code pur, testé, sans DOM ni réseau.
 - [x] M02.T3 · `rating` nullable (mode simple n'écrivait rien depuis le J1) — preuve: advisor + insert test
 - [x] M02.T4 · triage des erreurs 4xx/5xx dans la file — cible: une ligne refusée ne bloque pas les suivantes — preuve: revue `flushOutbox`
 
-## M03 · Synchronisation par carte [P0] 4/7 ⬅ EN COURS
+## M03 · Synchronisation par carte [P0] 5/7 ⬅ EN COURS
 But : deux appareils travaillent sur le même paquet sans conflit ni perte.
 Cible globale : **0 perte et 0 conflit visible sur 10 000 opérations concurrentes simulées.**
 - [x] M03.T1 · table `cards` (une ligne par carte) + `usn` par objet — preuve: migrations `20260917220000`/`20260917221000`/`20260917221500` + `list_tables` (`public.cards`, `public.sync_counters`, `decks.usn`) ; test en transaction annulée : deux insertions puis une modification sur le même compte donnent usn = 1, 2, 3
 - [x] M03.T2 · `revlog` ajoutable, l'état de carte s'en recalcule — cible: recalcul de 10 000 révisions < 500 ms — preuve: `npm test -- revlog` → 8/8, recalcul en 6 ms ; rejeu (`fsrsReplayCard`/`fsrsReplayAll`) extrait d'`app.js` vers `src/fsrs.js`, pur (`grep -cE 'document|fetch|localStorage' src/fsrs.js` = 0) ; suite complète `npm test` → 22/22
-- [~] M03.T3 · double écriture (ancien champ JSONB + nouvelles tables) — cible: 100 % des écritures dans les deux, 7 jours — preuve: `card_sync_audit`, 0 écart chaque jour du 2026-09-18 au 2026-09-25.
-      Déployé 2026-09-18 : migration `20260918090000` (fonction `sync_deck_cards`, amorce de toute la bibliothèque existante), `flush()` appelle la fonction juste après `pushDeck` et ne retire le paquet de `dirty` que si les deux écritures réussissent (src/app.js). Garde RLS testée en usurpant un autre compte → refusée (42501) sans rien écrire.
-      Une comparaison ponctuelle ne prouve rien sur 7 jours : migration `20260918100000` pose une tâche `pg_cron` quotidienne (`audit-double-ecriture-cards-quotidien`, 4 h 03) qui journalise le résultat dans `card_sync_audit` (détail : `supabase/REGLAGES.md`). Premier relevé 2026-09-18 : 974/974, 0 écart. **Reste à faire avant de cocher : `select * from card_sync_audit order by checked_at;` le 2026-09-25, confirmer 0 écart sur les sept jours.**
+- [x] M03.T3 · double écriture (ancien champ JSONB + nouvelles tables) — cible: 100 % des écritures dans les deux, 7 jours — preuve: `select * from card_sync_audit order by checked_at` (relu le 2026-10-16) → **0 écart chaque jour du 2026-10-07 au 2026-10-16** (10 relevés consécutifs), cartes 2099 → 3303 au fil de la fenêtre, JSONB et `cards` toujours égaux. La fenêtre prévue à l'origine (2026-09-18 → 2026-09-25) a **échoué** et reste au dossier : 48, 251, 386, 80, 81, 24, 24, 24 écarts (le 2026-09-20, 1103 cartes dans le JSONB contre 975 dans `cards`), puis 23–24 jusqu'au 2026-09-30, 1–2 jusqu'au 2026-10-06. Aucun commit entre le 2026-09-20 et cette relecture : les écarts se sont résorbés sans correctif, paquet par paquet (`sync_deck_cards` réécrit le paquet entier, donc un paquet repoussé par un client à jour se répare). Cause probable, **non prouvée** (journaux de l'époque hors rétention) : des appareils encore sur l'app d'avant le 2026-09-18 (onglet PWA jamais rechargé), qui n'écrivaient que le JSONB — la double écriture est appelée par le client (`flush()`), aucun déclencheur serveur ne la garantit. Fenêtre 2026-10-07 → 2026-10-16 retenue sur décision explicite de l'utilisateur le 2026-10-16. Mécanisme : migrations `20260918090000` (`sync_deck_cards`) et `20260918100000` (audit `pg_cron` quotidien, 4 h 03, `supabase/REGLAGES.md`).
 - [x] M03.T4 · fusion à trois versions (base commune, locale, distante) — cible: 0 boîte de dialogue de conflit sur le jeu de tests — preuve: `npm test -- fusion` → 18/18 (dont 200 scénarios synthétiques, 0 exception, résultat déterministe) ; `src/fusion.js`, pur (`grep -cE 'document|fetch|localStorage'` = 0) ; suite complète `npm test` → 40/40
 - [x] M03.T5 · simulateur de concurrence (2 appareils, hors ligne, reconnexion) — cible: 10 000 opérations, 0 divergence — preuve: `npm test -- concurrence` → 1/1 ; sur la même graine, 2381 reconnexions désordonnées, 340 conflits tranchés sans dialogue, 20 points de calme sans écart entre A, B et le serveur, point fixe atteint à la fin (une reconnexion de plus ne change plus rien) ; suite complète `npm test` → 41/41 ; `test/concurrence.test.js`, appuyé uniquement sur `mergeDeck` (`src/fusion.js`, M03.T4), aucune règle métier réécrite
 - [x] M03.T6 · bascule des lectures sur les nouvelles tables — cible: temps de `pull()` < 800 ms pour 5 000 cartes — preuve: mesure journalisée — `pull()` lit désormais `cards` (M03.T1) par un `select` aliasé (`f:front`, `S:stability`...) qui rend au client les mêmes clés courtes qu'avant, sans conversion ; `decks` ne demande plus sa colonne `cards` (le JSONB reste écrit, M03.T3, en observation jusqu'au 2026-09-25, mais n'est plus lu ici). En vérifiant, trouvé un vrai bug avant toute mesure : PostgREST plafonne toute lecture à `db-max-rows` (1000 sur ce projet) et tronque au-delà **sans erreur** — un compte à plus de 1000 cartes aurait silencieusement perdu les suivantes. Corrigé par pagination (`apiPage`/`apiAll`, `src/app.js`) : première page avec `Range`+`Prefer: count=exact`, total lu dans `Content-Range`, pages suivantes en parallèle. Mesure : 5 000 cartes de test injectées sur `eleve@folio.app` (paquet temporaire, JSONB et `cards` mirroirs pour ne pas fausser l'audit M03.T3), 8 appels réels à `/rest/v1` (authentification comprise, comme fait l'app) : 468–597 ms, moyenne hors 1re connexion 483 ms — sous la cible de 800 ms. Nettoyage vérifié après coup : `decks` 32→32, `cards` 974→974. `npm run check` propre (41/41 tests, build ok) ; `get_advisors` (sécurité + performance) sans nouveau signalement.
-- [~] M03.T7 · retrait du champ `cards` JSONB — preuve: migration + `npm test` — **différé au 2026-09-25** : attend la fin de l'observation de M03.T3 (voir BLOQUÉ en tête de fichier), pas de blocage du reste du projet d'ici là
+- [ ] M03.T7 · retrait du champ `cards` JSONB — preuve: migration + `npm test` — débloqué le 2026-10-16 (M03.T3 coché) ; avant de couper, vérifier qu'aucun client d'avant le 2026-09-18 n'écrit encore que le JSONB (voir M03.T3)
 
 ## M04 · Intégrité de la bibliothèque [P0] 1/6
 - [x] M04.T1 · invariants de carte (S>0, 1≤D≤10, échéance future, état cohérent) — cible: 12 invariants — preuve: `npm test -- invariants` → 27/27. Détail sur la ligne ÉTAT.
