@@ -38,6 +38,15 @@ for (const largeur of [390, 1440]) {
     await expect(page.getByRole('heading', { name: 'Votre première classe' })).toBeVisible({ timeout: 10000 });
     await voir(page, '01-accueil-vide', largeur);
 
+    // un code collègue : la feuille le met en forme et ne vérifie qu'un code complet
+    await page.getByRole('button', { name: 'J’ai un code collègue' }).click();
+    await page.getByRole('textbox', { name: 'Code collègue' }).fill('abcd efg');
+    await expect(page.getByRole('button', { name: 'Vérifier le code' })).toBeDisabled();
+    await page.getByRole('textbox', { name: 'Code collègue' }).fill('abcdefgh');
+    await expect(page.getByRole('textbox', { name: 'Code collègue' })).toHaveValue('ABCD-EFGH');
+    await expect(page.getByRole('button', { name: 'Vérifier le code' })).toBeEnabled();
+    await page.locator('.menu .mx').click();
+
     // créer la classe : la feuille d'ajout des élèves s'ouvre aussitôt
     await page.getByRole('button', { name: 'Créer une classe' }).click();
     await expect(page.getByLabel('Nom')).toBeFocused();

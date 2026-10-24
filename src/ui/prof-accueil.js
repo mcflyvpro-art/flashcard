@@ -61,7 +61,9 @@ export function navProf(actif) {
     <button class="pf-ni${actif === 'accueil' ? ' on' : ''}" data-pf="accueil">${svg(I.grid)}<span>Tableau de bord</span></button>
     <button class="pf-ni${actif === 'agenda' ? ' on' : ''}" data-pf="agenda">${svg(I.cal)}<span>Agenda</span></button>
     <div class="pf-nl"><span>Classes${an.length > 1 ? '' : prof.annee ? ' · ' + esc(prof.annee) : ''}</span>
-      <button class="pf-nadd" data-pf="creer" aria-label="Nouvelle classe" title="Nouvelle classe">${svg(I.plus)}</button></div>
+      <span><button class="pf-nadd" data-pf="rejoindre" aria-label="Rejoindre une classe avec un code collègue"
+        title="Rejoindre avec un code collègue">${svg(I.link)}</button><button class="pf-nadd" data-pf="creer"
+        aria-label="Nouvelle classe" title="Nouvelle classe">${svg(I.plus)}</button></span></div>
     ${actives.map(c => ligneNav(c, actif)).join('') || '<p class="pf-nvide">Aucune classe</p>'}
     ${archives.length ? `<button class="pf-ni pf-narch" data-pf="archives">${svg(I.clock)}<span>Archives</span><b>${
       archives.length}</b></button>${prof.archives ? archives.map(c => ligneNav(c, actif)).join('') : ''}` : ''}
@@ -147,6 +149,7 @@ function accueilVide() {
       <li><b>3</b><span>Donnez un devoir</span></li>
     </ol>
     ${btn('creer', I.plus, 'Créer une classe', 'pri lg')}
+    <button class="pf-lnk seul" data-pf="rejoindre">${svg(I.link)}J’ai un code collègue</button>
   </div>`;
 }
 
@@ -177,7 +180,8 @@ const bonjour = () => {
 export function profAccueilView() {
   const l = prof.classes;
   const actions = l && l.length
-    ? btn('donner', I.card, 'Donner un devoir') + btn('creer', I.plus, 'Nouvelle classe', 'pri') : '';
+    ? btn('rejoindre', I.link, '', 'ic', 'aria-label="Rejoindre avec un code collègue" title="Rejoindre avec un code collègue"')
+      + btn('donner', I.card, 'Donner un devoir') + btn('creer', I.plus, 'Nouvelle classe', 'pri') : '';
   const an = anneeChoix() || (prof.annee ? esc(prof.annee) : '');
   $.innerHTML = `<div class="pf">${navProf('accueil')}<main class="pf-main" id="pfmain">
     ${tete(bonjour(), `${esc(jourLong(iso(new Date())))}${an ? ' · ' + an : ''}`, actions)}

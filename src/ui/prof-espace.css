@@ -44,6 +44,7 @@ svg.qr{display:block;width:100%;height:auto;stroke:none}
 .pf-narch{margin-top:8px;color:var(--soft)}
 .pf-nl{display:flex;align-items:center;justify-content:space-between;margin:20px 0 4px;padding:0 2px 0 10px;
   font-size:11px;font-weight:750;letter-spacing:.6px;text-transform:uppercase;color:var(--soft)}
+.pf-nl > span{display:flex;gap:2px}
 .pf-nadd{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--ink2)}
 .pf-nadd svg{width:15px;height:15px}
 .pf-nvide{font-size:13px;color:var(--soft);padding:2px 10px;margin:0}
@@ -72,6 +73,8 @@ svg.qr{display:block;width:100%;height:auto;stroke:none}
 .pf-btn.ic{width:38px;padding:0}
 .pf-btn.ic.sm{width:32px}
 .pf-lnk{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--soft)}
+.pf-lnk.seul{margin:2px 0 0;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:9px}
+.pf-lnk svg{width:14px;height:14px}
 .pf-sp{flex:1}
 .pf-pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 8px;border-radius:11px;
   font-size:11.5px;font-weight:700;white-space:nowrap;background:var(--surf);color:var(--ink2);flex:none}
