@@ -18,8 +18,18 @@
 ```
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
-FAIT      42 / 148
-DERNIER   2026-10-16 · M08.T2 fini : budget de poids contrôlé à chaque build et en CI
+FAIT      43 / 148
+DERNIER   2026-10-24 · refonte de l'espace prof, ÉTAPE 1 (backend + noyau) faite, écrans
+          PAS encore refaits. Rejoindre une classe sécurisé en base (migrations
+          `20261024113815` + `…122609`, appliquées) : codes de 8 caractères tirés au hasard
+          (les codes de 4 étaient devinables), 10 essais faux/h, frontière d'établissement,
+          salle d'attente, exclusion, places, durée, code changeable ; avancement des
+          devoirs calculé par la base (aucun devoir n'était jamais « rendu ») ; M15.T6 ;
+          M10.T1 corrigé. Preuve : `supabase/tests/classes_securisees.sql` (54/55 au 1er
+          passage, le seul rouge était le test lui-même, corrigé et revérifié 3/3).
+          Noyau pur `src/classe.js` + `src/qr.js` (QR relu 10/10 par OpenCV), 46 tests.
+          Reste : les écrans prof PC/mobile et l'écran élève « Mes classes » à brancher.
+          2026-10-16 · M08.T2 fini : budget de poids contrôlé à chaque build et en CI
           (JS 105,7 Ko, CSS 19 Ko gzip).
           2026-10-16 (plus tôt) · M07 terminé : 11 parcours Playwright (témoin, élève B2C, hors
           ligne, deux appareils ×2, quiz ×4, captures ×2), en CI en 2 min 18 s.
@@ -309,7 +319,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M09.T4 · taille de cible tactile ≥ 44 px — cible: 0 bouton en dessous — preuve: test
 
 ## M10 · Sécurité [P0] 1/8
-- [x] M10.T1 · `anon` ne peut plus appeler les fonctions d'administration — preuve: migration `20260917210000` + curl 400
+- [x] M10.T1 · `anon` ne peut plus appeler les fonctions d'administration — preuve: migration `20260917210000` + curl 400 — **corrigé le 2026-10-24** : ce retrait visait `anon`, mais Postgres accorde `execute` à PUBLIC, dont `anon` hérite — 30 fonctions restaient appelables sans compte, et `ref_trace` par tout compte connecté (faux journal d'audit). Migration `20261024122609` : PUBLIC retiré partout, privilèges par défaut changés ; `anon` n'appelle plus que `shared_deck` (vérifié par `has_function_privilege`)
 - [ ] M10.T2 · revue des 100+ politiques RLS, une par une — cible: 0 avertissement Supabase — preuve: `get_advisors security`
 - [ ] M10.T3 · chaque fonction `security definer` teste son appelant en première ligne — cible: 100 % — preuve: revue documentée
 - [ ] M10.T4 · protection mots de passe compromis + longueur 10 — preuve: réglage Supabase actif
@@ -360,7 +370,7 @@ But de phase : un lycée pilote utilise Folio une année entière sans incident.
 - [ ] M15.T3 · journal d'audit des actes sensibles — cible: 100 % tracés, consultables par le référent — preuve: test
 - [ ] M15.T4 · prise d'identité pour le support, tracée — cible: impossible sans trace — preuve: test
 - [ ] M15.T5 · un élève ne voit jamais les données d'un autre — cible: 0 fuite sur 50 tentatives — preuve: test
-- [ ] M15.T6 · un prof ne voit que ses classes — cible: 0 fuite — preuve: test
+- [x] M15.T6 · un prof ne voit que ses classes — cible: 0 fuite — preuve: test — `supabase/tests/classes_securisees.sql` (transaction annulée, comptes jetables) : un prof hors de la classe lit 0 élève et 0 demande, le référent d'un autre lycée 0 (fuite `is_ref()` sans établissement fermée dans 5 fonctions, migration `20261024113815`), le référent du lycée 2/2
 
 ## M16 · Espace professeur (ordinateur d'abord) [P1] 0/7
 - [ ] M16.T1 · liste + détail côte à côte ≥ 1024 px, empilés en dessous — cible: 0 duplication de composant — preuve: revue
