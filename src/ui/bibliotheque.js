@@ -76,6 +76,23 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) live
 
 window.addEventListener('focus', () => livePull(true));
 
+/* La page défile dans <body>, pas dans la fenêtre (app.css, « la racine ne
+   défile plus ») : le window.scrollTo(0, 0) de go() n'y faisait rien, et un
+   livre ouvert depuis le bas de la bibliothèque s'affichait au milieu de sa
+   propre page. Chaque nouvel écran repart donc d'en haut, quel que soit le
+   chemin qui y mène — sauf le retour sur une liste de premier niveau, qui
+   retrouve l'endroit où on l'avait quittée, comme dans une app native. */
+const RETROUVE = /^(home|commu)$/;
+const positions = new Map();
+let ecranAvant = '';
+function placerDefilement() {
+  const k = view.name + ':' + (view.id || '');
+  if (k === ecranAvant) return;
+  positions.set(ecranAvant, document.body.scrollTop);
+  ecranAvant = k;
+  document.body.scrollTop = RETROUVE.test(view.name) ? positions.get(k) || 0 : 0;
+}
+
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
@@ -90,6 +107,7 @@ export function render() {
   if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
   (v[view.name] || home)();
   $.dataset.view = view.name;
+  placerDefilement();
   applyFont();
   paintRail();
   paintMedia($);                               // les images posées sans adresse la reçoivent ici
@@ -112,7 +130,7 @@ export function go(name, id, dir) {
   if (name !== 'run') stopTimer();
   if (name !== 'deck' || id !== view.id) { selOff(); setDeckQ(''); setDeckOpen(false); setDeckShow(DECKPAGE); }
   setPageDir(dir || 0); setView({ name, id }); setAnimate(!dir);
-  render(); window.scrollTo(0, 0);
+  render();
 }
 
 function railOn() {

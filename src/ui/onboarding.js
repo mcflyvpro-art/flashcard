@@ -321,7 +321,7 @@ function runStep() {
     if (el) {
       const r = el.getBoundingClientRect();
       if (r.top < 70 || r.bottom > innerHeight - 70) el.scrollIntoView({ block: 'center' });
-    } else window.scrollTo(0, 0);
+    } else document.body.scrollTop = 0;     // c'est <body> qui défile, pas la fenêtre
     requestAnimationFrame(paintTour);
   });
   clearInterval(tourPoll);

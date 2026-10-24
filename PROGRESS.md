@@ -19,7 +19,10 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-24 · refonte visuelle de toute l'app, PC et téléphone (aucune fonction
+DERNIER   2026-10-24 (soir) · un livre ouvert depuis le bas de la bibliothèque arrivait au
+          milieu de sa page : c'est <body> qui défile, window.scrollTo ne faisait rien ;
+          render() replace le défilement (e2e `eleve-b2c`, 390 et 1440 px).
+          2026-10-24 · refonte visuelle de toute l'app, PC et téléphone (aucune fonction
           retirée) : charte sobre (fond crème, cartes blanches cernées d'un filet, titres
           sans-serif, matière en liseré), plus aucun contour noir au focus ; sur PC barre
           latérale regroupée, contenu centré, feuilles en dialogues, livre et création en

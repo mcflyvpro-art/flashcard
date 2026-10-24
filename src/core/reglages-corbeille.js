@@ -290,7 +290,7 @@ export async function revokeShare(d) {
 
 export async function openShared(tok) {
   setShared({ tok, st: 'load' });
-  setView({ name: 'shared' }); setAnimate(true); render(); window.scrollTo(0, 0);
+  setView({ name: 'shared' }); setAnimate(true); render();
   try {
     const rows = await api('/rest/v1/rpc/shared_deck', 'POST', { tok });
     const r = (rows || [])[0];

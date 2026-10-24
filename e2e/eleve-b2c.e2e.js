@@ -3,7 +3,7 @@
 // Contre le faux Supabase en mémoire (e2e/faux-supabase.js) : aucun compte
 // créé dans la vraie base.
 import { test, expect } from '@playwright/test';
-import { brancher, nouveauStore } from './faux-supabase.js';
+import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
 import { creerLivre, inscrire, noter } from './aide.js';
 
 test('inscription, un livre de 10 pages, une séance, des chiffres justes', async ({ page }) => {
@@ -93,3 +93,29 @@ test('écran unique : écrire, coller, et « Créer » prend aussi la liste en a
   await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
   await expect(page.locator('main')).toContainText('3 pages');
 });
+
+/* C'est <body> qui défile, pas la fenêtre : le window.scrollTo(0, 0) de go()
+   ne faisait rien, et un livre ouvert depuis le bas de la bibliothèque
+   s'affichait au milieu de sa page (2026-10-24, sur PC comme sur téléphone). */
+for (const [w, h] of [[390, 700], [1440, 700]]) {
+  test(`ouvrir un livre depuis le bas de la bibliothèque arrive en haut (${w} px)`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    const store = nouveauStore();
+    await brancher(page, store);
+    await inscrire(page);
+    for (let k = 0; k < 14; k++) semerLivre(store, 'lea@exemple.fr', 'Livre ' + k, Array.from({ length: 40 }, (_, j) => ['Q' + j, 'R' + j]));
+    await page.reload();
+    await expect(page.getByRole('button', { name: /Livre 13/ })).toBeVisible();
+    await page.waitForTimeout(800);                          // la bibliothèque se repeint après sa synchro
+    const livre = page.getByRole('button', { name: /Livre 12/ });
+    await livre.scrollIntoViewIfNeeded();
+    const avant = await page.evaluate(() => document.body.scrollTop);
+    expect(avant).toBeGreaterThan(100);
+    await livre.click();
+    await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
+    expect(await page.evaluate(() => document.body.scrollTop)).toBe(0);
+    // le retour retrouve la bibliothèque là où on l'avait laissée
+    await page.getByRole('button', { name: 'Retour' }).first().click();
+    await expect(page.getByRole('button', { name: /Livre 12/ })).toBeInViewport();
+  });
+}
