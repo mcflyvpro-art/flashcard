@@ -2,7 +2,7 @@
 import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import {
-  DECKPAGE, DEFPREFS, asks, auth, bip, board, comp, db, demo, duels, filter, friends,
+  DECKPAGE, DEFPREFS, asks, auth, bip, board, db, demo, duels, filter, friends,
   groupTab, groups, lib, mates, me, mediaCache, menu, myRole, peek, prefs, quiz, scope, setAccOpen,
   setAccounts, setAddQ, setAdm, setAnimate, setAsks, setBip, setBlocks, setBoard,
   setCardEdit, setComp, setCompte, setConflicts, setDb, setDeckOpen, setDeckQ,
@@ -25,7 +25,8 @@ import { isPupil } from './classement.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
-import { resetComp, startQuiz } from './quiz.js';
+import { startQuiz } from './quiz.js';
+import { resetComp } from './creation.js';
 import { openShared } from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
 
@@ -97,7 +98,7 @@ export function resetSession() {
   setShared(null); setDuelRun(null); setPreviewOf(null); setLeaving(null);
   setFilter(''); setPeek(false); setSel(null); setReorder(false);
   setFindQ(''); setDeckQ(''); setDeckOpen(false); setDeckShow(DECKPAGE);
-  setSubjEdit(null); setCardEdit(null); setComp({ subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false });
+  setSubjEdit(null); setCardEdit(null); setComp({ subject: '', cards: [], edit: -1, mode: 'ecrire', text: '', dups: false });
 
   /* les images et sons déjà rapatriés : ils appartenaient à l'autre compte,
      et les laisser en mémoire serait garder ouvert ce qu'on vient de fermer */
@@ -219,12 +220,12 @@ const CHAPTERS = [
     { go: nav('home'), sel: '.fab', pass: 1, tap: 'Touche le +', wait: 450,
       done: () => view.name === 'import', title: 'Un nouveau livre',
       text: 'Le bouton rond en bas à droite.' },
-    { go: () => { resetComp(); comp.bulk = true; setView({ name: 'import' }); setMenu(null); },
+    { go: () => { resetComp({ mode: 'coller' }); setView({ name: 'import' }); setMenu(null); },
       sel: '#tx', title: 'Colle une liste',
       text: 'Une ligne par page : le mot, une tabulation ou un tiret, la réponse. Le découpage se fait tout seul.' },
-    { go: () => { resetComp(); comp.bulk = true; setView({ name: 'import' }); setMenu(null); },
-      sel: '.airow', title: 'Ou pars de ton cours',
-      text: 'Photo d’une page, PDF, ou texte collé : les pages sont écrites pour toi.' }
+    { go: () => { resetComp({ mode: 'coller' }); setView({ name: 'import' }); setMenu(null); },
+      sel: '.cr-tabs', title: 'Ou pars de ton cours',
+      text: 'Photo d’une page, PDF, ou passage de cours : les pages sont écrites pour toi.' }
   ] },
   { id: 'jeux', name: 'Réciter', icon: 'pen', steps: [
     { go: nav('deck', 'dmo1'), sel: '[data-act="quizdeck"]', pass: 1, tap: 'Touche Récitation', wait: 500,

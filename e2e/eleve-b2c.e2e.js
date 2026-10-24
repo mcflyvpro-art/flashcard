@@ -57,3 +57,39 @@ test('inscription, un livre de 10 pages, une séance, des chiffres justes', asyn
   expect(store.tables.sessions[0].pct).toBe(0.7);            // fraction en base, pourcentage à l'écran
   expect(erreurs).toEqual([]);
 });
+
+/* L'écran unique de création (2026-10-24) : les méthodes sont des onglets,
+   seule la choisie s'affiche, et toutes remplissent la même liste. Une liste
+   collée puis « Créer » directement — sans passer par « Ajouter » — doit
+   donner un livre complet : c'est le geste naturel, et l'ancien écran le
+   perdait (le bouton « Créer » n'existait pas dans la zone de collage). */
+test('écran unique : écrire, coller, et « Créer » prend aussi la liste en attente', async ({ page }) => {
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  await page.getByRole('button', { name: 'Nouveau livre' }).click();
+  await page.locator('#nm').fill('Italien');
+  await page.locator('#cf').fill('bonjour');
+  await page.locator('#cb').fill('buongiorno');
+  await page.locator('#cb').press('Enter');
+  await expect(page.locator('#cn')).toHaveText('1');
+
+  // une seule méthode à la fois : le composeur disparaît avec « Coller »
+  await page.getByRole('tab', { name: 'Coller' }).click();
+  await expect(page.locator('#cf')).toHaveCount(0);
+  await expect(page.locator('#aipdf')).toHaveCount(0);
+  // « bonjour » est déjà dans la liste, écrit à la main : écarté comme doublon
+  await page.locator('#tx').fill('chat = gatto\nchien = cane\nbonjour = buongiorno');
+  await expect(page.getByRole('button', { name: 'Ajouter 2 pages' })).toBeVisible();
+
+  // le titre et la page déjà écrite survivent au changement d'onglet
+  await page.getByRole('tab', { name: 'Fichier' }).click();
+  await expect(page.locator('#aipdf')).toBeVisible();
+  await page.getByRole('tab', { name: 'Coller' }).click();
+  await expect(page.locator('#tx')).toHaveValue(/chien = cane/);
+  await expect(page.locator('#nm')).toHaveValue('Italien');
+
+  await page.getByRole('button', { name: 'Créer le livre' }).click();
+  await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
+  await expect(page.locator('main')).toContainText('3 pages');
+});

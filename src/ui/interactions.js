@@ -37,8 +37,9 @@ import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { logout, openInstall } from './onboarding.js';
 import { allerAccueil, donnerLivre } from './prof-porte.js';
 import {
-  dictate, fail, nextQ, norm, pickQuiz, resetComp, startQuiz, submit
+  dictate, fail, nextQ, norm, pickQuiz, startQuiz, submit
 } from './quiz.js';
+import { resetComp } from './creation.js';
 import { cb, cf, openSubject } from './reglages-corbeille.js';
 import {
   answerFriend, askFriend, friendsPull, libPull, mailPull, openMail,
@@ -423,8 +424,7 @@ const tapChpwd = () => openMenu('pwd');
 const tapDelacc = () => openMenu('delacc');
 const tapPuball = () => openMenu('backup');
 const tapNew = () => { resetComp(); return go('import'); };
-const tapPaste = () => { resetComp(); return go('import', view.name === 'deck' ? view.id : null); };
-const tapBulk = () => { comp.bulk = !comp.bulk; comp.edit = -1; return render(); };
+const tapPaste = () => { resetComp({ mode: 'coller' }); return go('import', view.name === 'deck' ? view.id : null); };
 
 function tapDeckAction() {
   const t = (study && study.id) || view.id;
@@ -634,7 +634,6 @@ const CLICK_RULES = [
   [a => a === 'puball', tapPuball],
   [a => a === 'new', tapNew],
   [a => a === 'paste', tapPaste],
-  [a => a === 'bulk', tapBulk],
   [a => a === 'deck', tapDeckAction],
   [a => a === 'menu', tapMenu],
   [a => a === 'study', tapStudy],

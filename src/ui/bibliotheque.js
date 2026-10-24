@@ -29,7 +29,8 @@ import {
   applyFont, dropBoot, dueCount, savePrefs, simpleMode, todayCount
 } from './import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from './menus-a.js';
-import { importView, quizView, stopTimer } from './quiz.js';
+import { quizView, stopTimer } from './quiz.js';
+import { importView } from './creation.js';
 import {
   mailView, settingsView, sharedView, trashView
 } from './reglages-corbeille.js';
@@ -157,15 +158,13 @@ function railNavHome(on, classeNom) {
     <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
     <nav>
       ${ent('home', I.layers, 'Livres')}
-    </nav>
-    <div class="sp"></div>
-    <nav>
       ${ent('stats', I.chart, 'Journal')}
       ${railHasClasses() ? ent('classes', I.school, classeNom) : ''}
       ${ent('commu', I.user, 'Le cercle', (asks || []).length)}
       ${ent('mail', I.mail, 'Courrier', railMailBadge())}
-      ${ent('settings', I.gear, 'Réglages')}
     </nav>
+    <div class="sp"></div>
+    <nav>${ent('settings', I.gear, 'Réglages')}</nav>
     <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
 }
 
@@ -307,7 +306,7 @@ const tile = (d, i) => {
   ${due ? `<i class="due">${due}</i>` : ''}
   ${d.pinned ? `<i class="pind">${svg(I.pin)}</i>` : ''}
   <span class="n">${esc(d.name)}</span>
-  <span class="m">${svg(d.hidden ? I.eyeoff : I.card)}${d.cards.length}</span>
+  <span class="m">${svg(d.hidden ? I.eyeoff : I.card)}${plur(d.cards.length, 'page')}</span>
   ${p ? `<i class="tbar"><b style="width:${p}%"></b></i>` : ''}
 </button>`;
 };
@@ -422,16 +421,17 @@ function home() {
         ${queueChip()}
         ${goalRing()}
         <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
+        ${reorder ? '' : `<button class="pbtn pri newbtn" data-act="new">${svg(I.plus)}Nouveau livre</button>`}
         <button class="ic icmail" data-act="mail" aria-label="Boîte de réception">${svg(I.mail)}${mailBadge()}</button>
         <button class="ic" data-act="settings" aria-label="Réglages">${svg(I.gear)}</button>
         ${peekButton(hidden)}
       </div>
       ${resumeBanner()}
+      ${marathonBanner()}
       ${used.length > 1 ? pills(filter, used, 'filt') : ''}
       ${list.length ? subBar(list) : ''}
       ${sortRow(list)}
       ${deckList(list)}
-      ${marathonBanner()}
     </div>
     ${homeFab()}
     ${tabs('home')}`;

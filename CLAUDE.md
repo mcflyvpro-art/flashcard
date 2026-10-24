@@ -35,8 +35,8 @@ l'air de marcher ».
   - `src/app.js` — **point d'entrée seulement** (27 lignes) : importe
     `src/core/coeur-sync.js` puis les 18 modules de `src/ui/`, chacun pour
     ses effets de bord (les autres modules y arrivent par leurs imports :
-    `ui/eleve-classes.js`, `ui/prof-porte.js`, et l'espace professeur, chargé
-    à la demande — voir plus bas).
+    `ui/creation.js`, `ui/eleve-classes.js`, `ui/prof-porte.js`, et l'espace
+    professeur, chargé à la demande — voir plus bas).
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
     HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout, sauf
     l'envoi des préférences dans `ui/import-cartes.js`, plus ancien, à sortir).
@@ -64,7 +64,15 @@ l'air de marcher ».
     raccourcis d'ouverture `?go=…` — extrait d'`interactions.js` sur M06.T6,
     qui frôlait la limite de lignes une fois ses tables de dispatch posées),
     `onboarding.js`. `ui/etablissement.js` ne porte plus que la console du
-    référent. Plus, depuis le 2026-10-24 : `eleve-classes.js` (l'écran élève
+    référent. Plus, depuis le 2026-10-24 : `creation.js` (l'**écran unique de
+    création** d'un livre, sorti de `quiz.js` : titre et matière, puis les
+    méthodes en onglets — Écrire, Coller, Fichier, Photo, Depuis un cours,
+    `comp.mode` — dont seule la choisie s'affiche, et une liste de pages
+    commune à toutes ; photo, fichier et IA versent du texte tabulé dans une
+    zone de vérification avant l'ajout, « Créer » prend aussi les pages en
+    attente, un doublon se cherche dans le livre et dans la liste en cours ;
+    « Coller » d'un livre ouvre l'onglet Coller : `resetComp({ mode: 'coller' })`),
+    `eleve-classes.js` (l'écran élève
     « Mes classes », téléphone d'abord ; `consumeRejoindre()` pour les liens et
     QR `?rejoindre=CODE`, repris par `accueil()` une fois le rôle connu) et
     l'**espace professeur**, PC et téléphone : `prof-accueil.js` (tableau de
@@ -134,10 +142,10 @@ l'air de marcher ».
   - `src/normaliser.js` — `norm()` (casse, espaces, apostrophes, ponctuation finale), sans aucune dépendance : lue par le noyau (`doublons.js`) et par les écrans (`ui/quiz.js` la réexporte)
   - `src/classe.js` — les règles d'une classe (2026-10-24) : forme d'un code (8 caractères, alphabet sans 0/O/1/I/L), lien `?rejoindre=`, texte de chaque statut d'inscription renvoyé par la base, état d'un élève, tris/recherche (sans accents), synthèses de classe et d'accueil, « à traiter », échéances sans décalage de fuseau, lecture d'une liste d'élèves collée (`lireListeEleves`, « NOM Prénom » ou « Prénom NOM »), nom propre (`nomPropre`), sigle de classe (`sigleClasse`), carte de connexion (`emailCarte`, `lienCarte`, `lireCarte`) — pur et testé (`test/classe.test.js`, 48 tests dont 4 fuseaux), employé par l'espace prof et « Mes classes »
   - `src/qr.js` — encodeur QR sans bibliothèque (octets, niveau M, versions 1–10, `qrSvg()`), pour projeter le code d'une classe et imprimer les cartes de connexion — pur et testé (`test/qr.test.js` ; relu 10/10 par le décodeur d'OpenCV le 2026-10-24). Le SVG porte ses couleurs : `svg.qr{stroke:none}` (sinon le trait que l'app donne à tout SVG grossit les modules)
-  - `src/app.css` — ~2 030 lignes ; l'espace professeur a la sienne, `src/ui/prof-espace.css` (~620 lignes, préfixe `pf-`, chargée avec son morceau) ; l'écran élève « Mes classes » est dans `app.css` (préfixe `el-`)
+  - `src/app.css` — ~2 100 lignes ; l'espace professeur a la sienne, `src/ui/prof-espace.css` (~620 lignes, préfixe `pf-`, chargée avec son morceau) ; l'écran élève « Mes classes » est dans `app.css` (préfixe `el-`). **Charte visuelle (refaite le 2026-10-24)**, sobre et la même partout : jetons dans `:root` (`--bg` #F6F5F1, `--bg2`, `--ink` #1D1C19, `--ink2`, `--soft`, `--card` blanc, `--hair`/`--line` pour les filets, `--edge` = filet intérieur de 1 px, `--ring` = halo gris du focus) ; titres en sans-serif (le serif reste réservé au texte des pages lues), surfaces blanches cernées d'un filet, ombres à peine visibles ; la couleur d'une matière (`--d`) ne vit plus qu'en liseré, pastille ou badge, jamais en aplat de carte. **Aucun contour noir** : `:focus` n'a pas d'outline, `:focus-visible` un trait gris clair (clavier seulement), les champs n'en ont pas du tout — c'est leur cadre qui s'éclaire (`:focus-within` + `--ring`). Sur ordinateur (≥ 900 px) : barre latérale de 236 px (entrées groupées en haut, Réglages et compte en bas), contenu centré à 1 120 px (1 240 ≥ 1 500 px), feuilles en boîtes de dialogue centrées, mises en page à deux colonnes (livre, création, bilan) ; une barre qui ne porte qu'un retour à l'accueil est masquée, la barre latérale y mène déjà
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes
-  - `e2e/` — parcours de bout en bout Playwright (M07), nommés `*.e2e.js` pour que vitest ne les ramasse pas ; `playwright.config.js` construit puis sert le build de production (`vite preview`, port 4173), téléphone 390 px. Première fois sur une machine : `npx playwright install chromium`. Les parcours parlent à un **faux Supabase en mémoire** (`e2e/faux-supabase.js`, branché par `page.route`) : jamais à la vraie base, faute de préproduction (M13.T4) — il émule seulement ce que l'app emploie (auth, filtres PostgREST, `Range`, `rev` des paquets, `sync_deck_cards`, un cloisonnement par `user_id` des tables personnelles pour que deux comptes ne voient pas les livres l'un de l'autre) ; les fonctions des classes sont rejouées dans `e2e/faux-classes.js` (créer une classe, comptes à carte, salle d'attente, devoirs ; `faireProfesseur(store, email, nom)` pose le rôle) ; la RLS et le SQL se testent en base. Un compte sans rôle déclaré reçoit de `my_role` une réponse vide (la vraie dit « eleve ») : la visite guidée ne s'invite pas dans les parcours. `store.online = false` simule une coupure ; deux pages sur le même store = deux appareils du même compte, deux **contextes** (`browser.newContext`) = deux personnes. Gestes communs dans `e2e/aide.js`
+  - `e2e/` — parcours de bout en bout Playwright (M07), nommés `*.e2e.js` pour que vitest ne les ramasse pas ; `playwright.config.js` construit puis sert le build de production (`vite preview`, port 4173), téléphone 390 px. Première fois sur une machine : `npx playwright install chromium`. Les parcours parlent à un **faux Supabase en mémoire** (`e2e/faux-supabase.js`, branché par `page.route`) : jamais à la vraie base, faute de préproduction (M13.T4) — il émule seulement ce que l'app emploie (auth, filtres PostgREST, `Range`, `rev` des paquets, `sync_deck_cards`, un cloisonnement par `user_id` des tables personnelles pour que deux comptes ne voient pas les livres l'un de l'autre) ; les fonctions des classes sont rejouées dans `e2e/faux-classes.js` (créer une classe, comptes à carte, salle d'attente, devoirs ; `faireProfesseur(store, email, nom)` pose le rôle) ; la RLS et le SQL se testent en base. Un compte sans rôle déclaré reçoit de `my_role` une réponse vide (la vraie dit « eleve ») : la visite guidée ne s'invite pas dans les parcours. `store.online = false` simule une coupure ; deux pages sur le même store = deux appareils du même compte, deux **contextes** (`browser.newContext`) = deux personnes. Gestes communs dans `e2e/aide.js`. Les captures de référence de `captures.e2e.js` (comparées seulement sur Mac) ont été retirées avec la refonte visuelle du 2026-10-24 : le premier `npx playwright test captures` lancé sur un Mac les réécrit (il échoue une fois en signalant les images manquantes) ; les regarder, puis les committer
   - `fsrs.wasm` — crate Rust `fsrs` 6.6.2 compilé (recette : `tools/BUILD-FSRS.md`). Ne jamais réécrire les formules à la main.
 - **Vérification de types, en douceur** (`tsconfig.json`, M06.T8) : `tsc`
   relit le JS existant (`allowJs` + `checkJs`) sans qu'on ait besoin de
@@ -204,6 +212,10 @@ l'air de marcher ».
 4. **Données d'élèves mineurs (RGPD)** : minimisation, pas de donnée perso dans les logs, purge programmée respectée (`20260917090000_purge_corbeille_programmee.sql`).
 5. **Hors ligne d'abord** : toute écriture doit survivre à une coupure réseau (passer par la file, pas un `fetch` direct qui se perd).
 6. Ne pas « corriger » en silence : un `catch (e) {}` vide doit être justifié par un commentaire, sinon remonter l'erreur (toast ou journal).
+7. **Tout travail validé part aussi sur `main`** (décidé le 2026-10-24) :
+   Vercel déploie `main` en production et c'est là que l'utilisateur teste.
+   Une fois `npm run check` et les parcours e2e verts, pousser sur la branche
+   de travail **et** sur `main`, à chaque fois — jamais seulement sur la branche.
 
 ## Style de code
 

@@ -359,7 +359,7 @@ export let asrOn = false, asrRec = null;
 
 export let quizTick = 0;
 
-export let comp = { subject: '', cards: [], edit: -1, bulk: false, text: '', dups: false };
+export let comp = { subject: '', cards: [], edit: -1, mode: 'ecrire', text: '', dups: false };
 
 export let aiBusy = false;
 

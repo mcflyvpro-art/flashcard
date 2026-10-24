@@ -19,26 +19,21 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-24 · refonte de l'espace prof, ÉTAPE 2 : les écrans. Espace professeur
-          neuf, PC et téléphone (`ui/prof-*.js`, chargé à part : `ui/prof-porte.js`) :
-          tableau de bord (à traiter, semaine, classes), agenda, classe en 5 onglets
-          (élèves en tableau, demandes, devoirs liste/mois, bilan, réglages), feuilles
-          (ajouter des élèves, mode tableau avec QR, fiche élève, donner un devoir…).
-          Élèves sans pseudo : comptes à carte « Prénom NOM » créés par le prof depuis une
-          liste collée (migration `20261024125435`, nom verrouillé en base), connexion
-          « Carte élève » (identifiant + code) ou QR de la carte imprimée (8 par A4) ;
-          un compte perso qui rejoint écrit son vrai nom. Écran élève « Mes classes ».
-          M16.T5, M17.T1. Preuves : `e2e/espace-prof.e2e.js` (2 parcours prof ↔ élève,
-          390 et 1440 px, 0 débordement, 0 erreur JS) et les 11 autres parcours verts ;
-          270 tests ; budget JS au démarrage 104,2 Ko (l'espace prof, 20 Ko, n'est plus
-          téléchargé par les élèves). En base : `identite_eleve.sql` 22/22,
-          `classes_securisees.sql` 56/56 (remise à jour pour le vrai nom) ; les deux
-          fonctions de déclencheur encore appelables en RPC fermées (`20261024213744`).
-          2026-10-24 (plus tôt) · ÉTAPE 1 : rejoindre une classe sécurisé en base
-          (migrations `20261024113815` + `…122609`) : codes de 8 caractères, 10 essais
-          faux/h, frontière d'établissement, salle d'attente, exclusion, places, durée ;
-          avancement des devoirs calculé par la base ; M15.T6 ; M10.T1 corrigé
-          (`supabase/tests/classes_securisees.sql`, 55/55).
+DERNIER   2026-10-24 · refonte visuelle de toute l'app, PC et téléphone (aucune fonction
+          retirée) : charte sobre (fond crème, cartes blanches cernées d'un filet, titres
+          sans-serif, matière en liseré), plus aucun contour noir au focus ; sur PC barre
+          latérale regroupée, contenu centré, feuilles en dialogues, livre et création en
+          deux colonnes. Création d'un livre : UN seul écran (`ui/creation.js`), méthodes
+          en onglets (Écrire, Coller, Fichier, Photo, Depuis un cours), seule la choisie
+          s'affiche, une liste de pages commune ; « Créer » prend aussi la liste collée.
+          Preuves : 14 parcours e2e verts (dont le nouveau « écran unique » d'`eleve-b2c`),
+          `npm run check` vert (budget JS 105,1 Ko, CSS 19 Ko au démarrage), captures de
+          revue 1440/390 relues ; captures de référence Mac à refaire (voir CLAUDE.md).
+          2026-10-24 (plus tôt) · espace professeur neuf PC + téléphone (`ui/prof-*.js`,
+          chargé à part), comptes à carte « Prénom NOM » et connexion « Carte élève » / QR,
+          écran élève « Mes classes » ; M16.T5, M17.T1 (`e2e/espace-prof.e2e.js`,
+          `identite_eleve.sql` 22/22, `classes_securisees.sql` 56/56). Avant : rejoindre
+          une classe sécurisé en base (`20261024113815` + `…122609`), M15.T6, M10.T1.
           2026-10-16 · M08.T2 fini : budget de poids contrôlé à chaque build et en CI
           (JS 105,7 Ko, CSS 19 Ko gzip).
           2026-10-16 (plus tôt) · M07 terminé : 11 parcours Playwright (témoin, élève B2C, hors

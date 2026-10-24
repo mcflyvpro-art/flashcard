@@ -79,7 +79,8 @@ for (const ecran of LARGEURS) {
 
     await page.getByRole('button', { name: 'Réglages' }).click();
     await verifier('reglages');
-    await page.getByRole('button', { name: 'Retour' }).first().click();
+    // sur ordinateur la barre latérale mène partout : les réglages n'y portent plus de flèche de retour
+    if (ecran.width < 900) await page.getByRole('button', { name: 'Retour' }).first().click();
 
     // onglets en bas sur téléphone, barre latérale sur ordinateur
     await page.getByRole('button', { name: /^Le cercle( des lecteurs)?$/ }).first().click();

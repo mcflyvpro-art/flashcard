@@ -21,7 +21,7 @@ import { toast } from './import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { classeOuverte } from './prof-accueil.js';
 import { apercuListe, baseApp, devoirOuvert, imprimerCartes, listeLivres } from './prof-feuilles.js';
-import { resetComp } from './quiz.js';
+import { resetComp } from './creation.js';
 
 /* ══════════ ce que font les boutons de l'espace professeur ══════════
    Chaque bouton porte `data-pf="action"` (et `data-id`, `data-v`) ; un seul
