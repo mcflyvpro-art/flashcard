@@ -31,7 +31,9 @@ DERNIER   2026-10-24 · refonte de l'espace prof, ÉTAPE 2 : les écrans. Espace
           M16.T5, M17.T1. Preuves : `e2e/espace-prof.e2e.js` (2 parcours prof ↔ élève,
           390 et 1440 px, 0 débordement, 0 erreur JS) et les 11 autres parcours verts ;
           270 tests ; budget JS au démarrage 104,2 Ko (l'espace prof, 20 Ko, n'est plus
-          téléchargé par les élèves). `supabase/tests/identite_eleve.sql` 22/22.
+          téléchargé par les élèves). En base : `identite_eleve.sql` 22/22,
+          `classes_securisees.sql` 56/56 (remise à jour pour le vrai nom) ; les deux
+          fonctions de déclencheur encore appelables en RPC fermées (`20261024213744`).
           2026-10-24 (plus tôt) · ÉTAPE 1 : rejoindre une classe sécurisé en base
           (migrations `20261024113815` + `…122609`) : codes de 8 caractères, 10 essais
           faux/h, frontière d'établissement, salle d'attente, exclusion, places, durée ;

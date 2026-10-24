@@ -1,4 +1,6 @@
--- Tests d'attaque de la migration 20261024113815_des_classes_quon_ne_force_pas.
+-- Tests d'attaque de la migration 20261024113815_des_classes_quon_ne_force_pas
+-- (mis à jour pour 20261024125435 : un compte personnel rejoint avec son vrai
+-- prénom et son nom, `prof_renommer_eleve` est devenue `prof_nommer_eleve`).
 --
 -- À lancer tel quel (MCP Supabase `execute_sql`, ou psql) : tout se passe
 -- dans une transaction ANNULÉE à la fin — comptes, établissements, classes
@@ -276,10 +278,10 @@ begin
   select p.statut into s from public.class_join(kcol) p;
   insert into public.zz_res (nom, ok, vu) values ('un compte scolaire n''entre pas dans une classe privée', s = 'etablissement', s);
   perform public.zz_comme(perso);
-  select p.statut into s from public.class_join(kcol) p;
+  select p.statut into s from public.class_join(kcol, 'Lucas', 'Martin') p;
   perform public.zz_comme(pp);
   n := public.prof_admettre(cid2, array[perso]);
-  perform public.prof_renommer_eleve(cid2, perso, 'Lucas M.');
+  perform public.prof_nommer_eleve(cid2, perso, 'Lucas', 'Martin');
   perform public.zz_comme(perso);
   select e.statut, e.peut_quitter into t, b from public.eleve_classes() e where e.class_id = cid2;
   insert into public.zz_res (nom, ok, vu) values ('compte personnel : attente, admis, peut quitter',
@@ -293,8 +295,8 @@ begin
   select count(*) into n from public.join_class(kcol, 'Nom forgé');
   perform public.zz_root();
   select m.who into t from public.class_members m where m.class_id = cid2 and m.user_id = perso;
-  insert into public.zz_res (nom, ok, vu) values ('l''ancienne porte passe par les verrous et ignore le nom envoyé',
-    n = 1 and t = 'Perso', n || '/' || coalesce(t, '∅'));
+  insert into public.zz_res (nom, ok, vu) values ('l''ancienne porte passe par les verrous : sans vrai nom, pas d''entrée',
+    n = 0 and t is null, n || '/' || coalesce(t, '∅'));
 
   -- ── archiver, supprimer ──
   perform public.zz_comme(pa);
@@ -322,7 +324,7 @@ begin
 
   -- ── les droits d'exécution ──
   insert into public.zz_res (nom, ok, vu) values ('anon n''appelle aucune fonction de classe',
-    not has_function_privilege('anon', 'public.class_join(text)', 'execute')
+    not has_function_privilege('anon', 'public.class_join(text, text, text)', 'execute')
     and not has_function_privilege('anon', 'public.prof_admettre(uuid, uuid[])', 'execute'), '');
   insert into public.zz_res (nom, ok, vu) values ('les fonctions internes sont fermées à l''app',
     not has_function_privilege('authenticated', 'public.class_verdict(text)', 'execute')

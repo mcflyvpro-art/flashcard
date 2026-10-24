@@ -193,7 +193,9 @@ begin
   insert into public.zz_res (nom, ok, vu) values ('fonctions internes fermées',
     not has_function_privilege('authenticated', 'public.creer_compte_eleve(text, text, uuid)', 'execute')
     and not has_function_privilege('authenticated', 'public.code_secret()', 'execute')
-    and not has_function_privilege('anon', 'public.prof_creer_eleves(uuid, jsonb, boolean)', 'execute'), '');
+    and not has_function_privilege('anon', 'public.prof_creer_eleves(uuid, jsonb, boolean)', 'execute')
+    -- le verrou du nom est un déclencheur, pas une porte d'API (20261024213744)
+    and not has_function_privilege('authenticated', 'public.lock_identite_scolaire()', 'execute'), '');
 end $$;
 
 select n, ok, nom, vu from public.zz_res order by n;
