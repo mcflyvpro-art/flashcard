@@ -1704,15 +1704,7 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 .rb button svg{width:17px;height:17px}
 .rb button.warn svg{color:#fff}
 
-/* ---------- classes ----------
-   Le code de la classe est la seule chose que le professeur doit pouvoir
-   lire de loin, projeté au tableau : il est donc gros et détaché. */
-.ccode{display:flex;align-items:center;gap:12px;padding:16px 18px;margin-bottom:16px;
-  background:var(--card);border-radius:20px;box-shadow:var(--s1)}
-.ccode svg{width:19px;height:19px;color:var(--soft);flex:none}
-.ccode span{font-size:14px;font-weight:600;color:var(--ink2)}
-.ccode b{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-size:24px;font-weight:800;letter-spacing:3px;color:var(--ink)}
+/* l'initiale d'un membre (clubs, modération) : plus discrète que celle du cercle */
 .av{flex:none;width:34px;height:34px;border-radius:12px;background:var(--surf);
   display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:800;color:var(--ink2)}
 
@@ -1765,23 +1757,6 @@ body{height:100%;overflow-y:auto;overflow-x:hidden;
 .ctiles.trois > .ctile:last-child{grid-column:1 / -1;flex-direction:row;align-items:center;gap:12px}
 .ctiles.trois > .ctile:last-child .cn{flex:1}
 .ctiles.trois > .ctile:last-child .cv{margin-left:auto}
-
-/* l'en-tête d'établissement, en haut de « Ma classe » */
-.ecole{display:flex;align-items:center;gap:12px;background:var(--card);box-shadow:var(--s1);
-  border-radius:20px;padding:13px 15px;margin-bottom:18px}
-.ecole > svg{width:21px;height:21px;color:var(--ink2);flex:none}
-.ecole span{flex:1;min-width:0}
-.ecole b{display:block;font-size:15px;font-weight:800;letter-spacing:-.3px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ecole i{display:block;font-style:normal;font-size:12.5px;color:var(--soft);margin-top:2px}
-
-/* un devoir en retard se voit sans avoir à lire la date */
-.sr.flat.tard{box-shadow:inset 3px 0 0 var(--ko),var(--s1)}
-
-/* ses professeurs : une lecture, aucun geste */
-.profs{display:flex;flex-direction:column;gap:7px;margin-bottom:6px}
-.pf{display:flex;align-items:center;gap:11px;background:var(--card);box-shadow:var(--s1);
-  border-radius:16px;padding:9px 13px}
 
 /* ses camarades : le plus ajoute, et rien d'autre n'est cliquable */
 .camadd,.camo{flex:none;width:32px;height:32px;border-radius:11px;background:var(--surf);
@@ -1871,23 +1846,10 @@ body{height:100%;overflow-y:auto;overflow-x:hidden;
   .otab:hover{color:var(--ink)}
 }
 
-/* ══════════ la console du professeur ══════════
-   Dix classes, trois cents élèves, et quelqu'un qui n'aime pas les
-   ordinateurs. Deux principes. Rien de caché : pas de menu à découvrir,
-   pas de geste à deviner, ce qu'on peut faire est écrit sur un bouton. Et
-   le rouge d'abord : il doit voir qui décroche sans lire une ligne.
-
-   Écrit pour l'écran large, où un professeur prépare ses cours. Sur
-   téléphone les grilles deviennent des colonnes et les tableaux se
-   replient en fiches : c'est le même écran, pas une version amoindrie. */
-.console{padding-bottom:44px}
-
-/* l'année scolaire, dans la barre du haut */
-.anne{flex:none;height:32px;border-radius:10px;background:var(--surf);color:var(--ink2);
-  font-size:13px;font-weight:700;padding:0 10px;border:0;font-family:inherit}
-.anne.fixe{display:grid;place-items:center;color:var(--soft)}
-
-/* la barre de chiffres */
+/* ══════════ ce qui reste de l'ancienne console ══════════
+   L'espace professeur a sa propre feuille de style (« pf- », plus bas).
+   Ne restent ici que les briques encore lues par la console du référent,
+   celle de l'éditeur et quelques feuilles communes. */
 .kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
 .kc{background:var(--card);box-shadow:var(--s1);border-radius:16px;padding:12px 14px;
   display:flex;flex-direction:column;gap:1px;text-align:left}
@@ -1899,176 +1861,12 @@ body{height:100%;overflow-y:auto;overflow-x:hidden;
 .kc b.ok{color:var(--ok)}
 button.kc{transition:transform .15s}
 button.kc:active{transform:scale(.97)}
-
-/* une classe = une tuile. Le nom en gros, puis ce sur quoi il peut agir. */
-.grille{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:20px}
-.kls{display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--card);
-  box-shadow:var(--s1);border-radius:20px;padding:14px 16px 15px;transition:box-shadow .15s}
-.kls.chaud{box-shadow:inset 3px 0 0 var(--ko),var(--s1)}
-.kn{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:800;letter-spacing:-.5px}
-.kn .pp{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.4px;
-  background:var(--ink);color:var(--bg);border-radius:6px;padding:2px 5px}
-.kn .keff{margin-left:auto;font-style:normal;font-size:13px;font-weight:700;color:var(--soft)}
-.ks{font-size:13px;color:var(--soft);margin-bottom:6px}
-.kw{display:flex;flex-wrap:wrap;gap:6px}
-.kw em{font-style:normal;font-size:11.5px;font-weight:700;border-radius:8px;padding:3px 8px;
-  background:var(--surf);color:var(--soft)}
-.kw em.ko{background:color-mix(in srgb,var(--ko) 13%,transparent);color:var(--ko)}
-.kw em.am{background:color-mix(in srgb,var(--leather) 15%,transparent);color:var(--leather)}
-.kw em.ok{background:color-mix(in srgb,var(--ok) 13%,transparent);color:var(--ok)}
-.kd{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:12px;min-width:0}
-.kd svg{width:14px;height:14px;color:var(--soft);flex:none}
-.kd b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kd i{font-style:normal;color:var(--soft);flex:none}
-.kbar{display:block;height:5px;border-radius:3px;background:var(--surf);margin-top:9px;overflow:hidden}
-.kbar i{display:block;height:100%;border-radius:3px;background:var(--ink2)}
-.kbar i.ok{background:var(--ok)}.kbar i.am{background:var(--leather)}.kbar i.ko{background:var(--ko)}
-.kp{font-size:11.5px;color:var(--soft);margin-top:4px}
 .duo.gros button{height:58px;font-size:15px;font-weight:700}
-
-/* l'en-tête d'établissement (défini plus haut pour « Ma classe ») sert
-   aussi de bandeau de classe ; il gagne ici un bouton et un état. */
-.ecole b{display:flex;align-items:center;gap:8px}
-.ecole > .av{flex:none}
-.cbtn{flex:none;display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;
-  border-radius:11px;background:var(--surf);font-size:13px;font-weight:700;color:var(--ink2)}
-.cbtn svg{width:15px;height:15px}
-
-/* les onglets d'une classe */
 .rtabs{display:flex;gap:2px;background:var(--surf);border-radius:12px;padding:3px;margin-bottom:16px}
 .otab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:36px;
   border-radius:9px;font-size:13.5px;font-weight:700;color:var(--soft)}
 .otab.on{background:var(--card);color:var(--ink);box-shadow:var(--s1)}
 .otab em{font-style:normal;font-size:11px;font-weight:700;opacity:.65}
-
-.triq{display:flex;flex-direction:column;gap:9px;margin-bottom:11px}
-.rcount{font-size:12.5px;color:var(--soft);margin-bottom:10px}
-.rcount b{color:var(--ink);font-weight:800}
-
-/* la liste des élèves. La barre dit tout de loin : pleine il suit, vide
-   il a décroché — et le liseré nomme le cas sans qu'on ait à lire. */
-.elvs{display:flex;flex-direction:column;gap:6px}
-.elvs.serre{gap:4px}
-.elv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;align-items:center;text-align:left;
-  background:var(--card);box-shadow:var(--s1);border-radius:16px;padding:11px 14px 13px;
-  transition:box-shadow .15s}
-.elv.ko{box-shadow:inset 3px 0 0 var(--ko),var(--s1)}
-.elv.am{box-shadow:inset 3px 0 0 var(--leather),var(--s1)}
-.elv.jamais{box-shadow:inset 3px 0 0 var(--soft),var(--s1)}
-.elv > .av{grid-row:span 2}
-.en{min-width:0}
-.en b{display:block;font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis}
-.en i{font-style:normal;font-size:11.5px;color:var(--soft)}
-.ev{grid-column:2;font-size:11px;color:var(--soft);display:flex;align-items:baseline;gap:5px}
-.ev b{font-size:13.5px;font-weight:800;color:var(--ink2)}
-.ev b em{font-style:normal;font-size:11px;font-weight:700;color:var(--soft)}
-.ev b.ok{color:var(--ok)}.ev b.am{color:var(--leather)}.ev b.ko{color:var(--ko)}
-.ev i{font-style:normal}
-.ebar{grid-column:2;display:block;height:4px;border-radius:2px;background:var(--surf);
-  margin-top:6px;overflow:hidden}
-.ebar i{display:block;height:100%;border-radius:2px;background:var(--ink2)}
-.ebar i.ok{background:var(--ok)}.ebar i.am{background:var(--leather)}.ebar i.ko{background:var(--ko)}
-/* l'état d'un élève : un mot, une couleur, jamais deux à la fois */
-.etat{grid-column:2;justify-self:start;font-size:11px;font-weight:700;border-radius:8px;
-  padding:3px 8px;background:var(--surf);color:var(--soft);margin-top:4px}
-.etat.ok{background:color-mix(in srgb,var(--ok) 13%,transparent);color:var(--ok)}
-.etat.am{background:color-mix(in srgb,var(--leather) 15%,transparent);color:var(--leather)}
-.etat.ko{background:color-mix(in srgb,var(--ko) 13%,transparent);color:var(--ko)}
-.etat.jamais{background:color-mix(in srgb,var(--soft) 18%,transparent);color:var(--ink2)}
-.etat.gris{background:var(--surf);color:var(--soft)}
-
-/* les devoirs d'une classe */
-.dvrs{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
-.dvr{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;text-align:left;
-  background:var(--card);box-shadow:var(--s1);border-radius:16px;padding:12px 14px}
-.dvr.tard{box-shadow:inset 3px 0 0 var(--ko),var(--s1)}
-.dvr.lect{cursor:default}
-.dvr > svg{display:none}
-.dvr .c1{grid-column:1 / -1;min-width:0}
-.dvr .c1 b{display:block;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis}
-.dvr .c1 i{font-style:normal;font-size:11.5px;color:var(--soft)}
-.an{font-size:11px;color:var(--soft);display:flex;align-items:baseline;gap:4px;white-space:nowrap}
-.an b{font-size:14px;font-weight:800;color:var(--ink2)}
-.an b.ok{color:var(--ok)}.an b.am{color:var(--leather)}.an b.ko{color:var(--ko)}
-.an.ko b{color:var(--ko)}
-.an i{font-style:normal}
-
-/* le bilan : où en est la classe, en quatre paquets */
-.rep{display:flex;flex-direction:column;gap:7px;margin-bottom:8px}
-.rr{background:var(--card);box-shadow:var(--s1);border-radius:14px;padding:11px 14px}
-.rt2{display:block;font-size:13px;color:var(--soft)}
-.rt2 b{font-size:17px;font-weight:800;color:var(--ink);margin-right:5px}
-.rb2{display:block;height:5px;border-radius:3px;background:var(--surf);margin:7px 0 6px;overflow:hidden}
-.rb2 i{display:block;height:100%;border-radius:3px;background:var(--ink2)}
-.rr.ok .rb2 i{background:var(--ok)}
-.rr.am .rb2 i{background:var(--leather)}
-.rr.ko .rb2 i{background:var(--ko)}
-.rr.jamais .rb2 i{background:var(--soft)}
-.rn2{display:block;font-size:11.5px;color:var(--soft);line-height:1.45}
-
-/* la répartition des résultats. Une moyenne de classe cache toujours deux
-   groupes, et c'est aux deux qu'on enseigne. */
-/* Les colonnes se mesurent dans `.hz`, qui prend la hauteur qui reste une
-   fois le chiffre et l'étiquette posés. Sans ce cadre intermédiaire, une
-   hauteur en pourcentage se calculait sur toute la colonne, étiquettes
-   comprises, et la plus haute débordait sur le titre de la section. */
-.histo{display:flex;align-items:stretch;gap:8px;height:148px;background:var(--card);
-  box-shadow:var(--s1);border-radius:16px;padding:12px 14px 10px;margin-bottom:8px}
-.hb{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
-.hv{font-size:12px;font-weight:800;color:var(--ink2);height:15px;line-height:15px}
-.hz{flex:1;display:flex;align-items:flex-end;width:100%;min-height:0}
-.hc{display:block;width:100%;min-height:0;border-radius:5px 5px 2px 2px;background:var(--ink2)}
-.hc.ok{background:var(--ok)}.hc.am{background:var(--leather)}.hc.ko{background:var(--ko)}
-.hl{font-size:10.5px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  max-width:100%}
-
-/* un avertissement qui explique, pas qui gronde */
-.alerte{display:flex;gap:11px;background:color-mix(in srgb,var(--leather) 9%,var(--card));
-  box-shadow:var(--s1);border-radius:16px;padding:12px 15px;margin-bottom:16px;font-size:12.5px;
-  line-height:1.5;color:var(--ink2)}
-.alerte svg{width:19px;height:19px;color:var(--leather);flex:none;margin-top:1px}
-
-/* le code projeté au tableau : lisible du fond de la salle */
-.bigcode{font-size:44px;font-weight:800;letter-spacing:6px;text-align:center;
-  padding:14px 18px 10px;font-variant-numeric:tabular-nums}
-.fiche{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 18px 10px}
-.fiche > div{background:var(--surf);border-radius:14px;padding:10px 12px}
-.fiche b{display:block;font-size:18px;font-weight:800;letter-spacing:-.5px}
-.fiche b.ok{color:var(--ok)}.fiche b.am{color:var(--leather)}.fiche b.ko{color:var(--ko)}
-.fiche span{font-size:11.5px;color:var(--soft)}
-
-/* ---------- le composeur de devoir ---------- */
-.cetapes{display:flex;gap:2px;padding:0 18px 10px}
-.cet{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;height:34px;
-  border-radius:9px;background:var(--surf);font-size:12.5px;font-weight:700;color:var(--soft)}
-.cet.on{background:var(--ink);color:var(--bg)}
-.cet em{font-style:normal;display:grid;place-items:center;width:17px;height:17px;border-radius:50%;
-  background:color-mix(in srgb,currentColor 18%,transparent);font-size:10px;font-weight:800}
-.dly{display:flex;gap:7px;padding:8px 18px 12px;flex-wrap:wrap}
-.dly .p{flex:1;justify-content:center;min-width:62px}
-.recap{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 18px 12px}
-.recap > div{background:var(--surf);border-radius:14px;padding:10px 12px;min-width:0}
-/* le titre a le droit de tenir sur deux lignes : le tronquer ici, c'est
-   demander de vérifier un devoir dont on ne lit pas le nom */
-.recap b{display:block;font-size:16px;font-weight:800;letter-spacing:-.4px;line-height:1.25;
-  overflow-wrap:anywhere}
-.recap > div:first-child{grid-column:1 / -1}
-.recap span{font-size:11.5px;color:var(--soft)}
-/* la barre du bas dit toujours où on en est et ce qui reste à faire */
-.cbar{display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid var(--hair);
-  font-size:12px;color:var(--soft)}
-.cbar span{flex:1;min-width:0}
-.cgo{flex:none;height:42px;padding:0 20px;border-radius:13px;background:var(--ink);color:var(--bg);
-  font-size:14.5px;font-weight:700}
-.cgo:disabled{opacity:.35}
-.carte{flex:1;min-width:0}
-.carte b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis}
-.carte i{font-style:normal;font-size:11px;color:var(--soft)}
-
-/* les formulaires des feuilles */
 .rform{display:grid;gap:9px;padding:4px 18px 12px}
 .rform label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--soft)}
 .rform input,.rform textarea{border-radius:12px;background:var(--surf);padding:10px 13px;
@@ -2079,35 +1877,14 @@ button.kc:active{transform:scale(.97)}
 .mscroll.courte{max-height:210px}
 .mi.lect{cursor:default}
 .mi .tail.warn{color:var(--ko);font-weight:700}
-
 @media (min-width:760px){
   .kpi{grid-template-columns:repeat(4,1fr)}
   .kpi.cinq{grid-template-columns:repeat(5,1fr)}
   .kpi.six{grid-template-columns:repeat(6,1fr)}
-  .grille{grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:11px}
-  /* en large, chaque chiffre prend sa colonne : on lit un élève d'un trait
-     au lieu de déchiffrer une fiche repliée */
-  .elv{grid-template-columns:auto minmax(170px,1.4fr) 92px 96px 104px 128px minmax(120px,auto);
-    align-items:center;padding:12px 16px;gap:14px}
-  .elv > .av{grid-row:auto}
-  .ev{grid-column:auto;flex-direction:column;gap:0;align-items:flex-start}
-  .etat{grid-column:auto;justify-self:end;margin-top:0}
-  .ebar{grid-column:1 / -1;margin-top:9px}
-  .elvs.serre .elv{grid-template-columns:auto 1fr auto}
-  .elvs.serre .ebar{display:none}
-  .dvr{grid-template-columns:minmax(200px,1fr) 104px 104px 96px 116px 18px;gap:14px;
-    border-radius:12px}
-  .dvr .c1{grid-column:auto}
-  .dvr > svg{display:block;width:16px;height:16px;color:var(--soft);opacity:.5}
-  .an{text-align:left}
-  .fiche,.recap{grid-template-columns:repeat(4,1fr)}
   .rform{grid-template-columns:1fr 1fr}
   .rform label:has(textarea){grid-column:1 / -1}
 }
-@media (hover:hover){
-  .kls:hover,.elv:hover,.dvr:not(.lect):hover{background:var(--surf)}
-  .otab:hover,.cet:hover{color:var(--ink)}
-}
+@media (hover:hover){.otab:hover{color:var(--ink)}}
 
 /* ══════════ la barre du haut, pour les comptes d'établissement ══════════
    Un professeur, un référent et l'éditeur ne révisent pas : leur écran est
@@ -2150,55 +1927,108 @@ html.nav-haut .menu{left:0}
   html.nav-haut .tabs{display:none}
 }
 
-/* ══════════ calendrier ══════════
-   Une date de rendu se choisit sur un mois, pas dans une liste de délais :
-   « dans 7 jours » demande de calculer de tête, et tombe un dimanche une
-   fois sur sept. La même grille sert à consulter le mois : un jour chargé
-   porte le nombre de devoirs qui y tombent. */
-.cal{background:var(--card);box-shadow:var(--s1);border-radius:18px;padding:12px 12px 10px;
-  margin-bottom:14px}
-.menu .cal{box-shadow:none;background:var(--surf);margin:0 18px 12px}
-.cal-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px 10px}
-.cal-h b{font-size:15px;font-weight:800;letter-spacing:-.3px;text-transform:capitalize}
-.cal-f{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
-  background:var(--surf);color:var(--ink2)}
-.menu .cal-f{background:var(--card)}
-.cal-f svg{width:16px;height:16px}
-.cal-t,.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.cal-t span{text-align:center;font-size:10.5px;font-weight:700;color:var(--soft);padding-bottom:4px}
-.cal-v{aspect-ratio:1}
-.cal-j{position:relative;aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:1px;font-variant-numeric:tabular-nums;
-  transition:background .15s}
-.cal-j b{font-size:13.5px;font-weight:650;color:var(--ink2)}
-.cal-j.passe b{color:var(--soft);opacity:.75}
-.cal-j.auj{box-shadow:inset 0 0 0 1.5px var(--soft)}
-.cal-j.plein b{font-weight:800;color:var(--ink)}
-.cal-j i{font-style:normal;min-width:15px;height:15px;line-height:15px;border-radius:8px;
-  background:var(--leather);color:#FDF6EC;font-size:10px;font-weight:800;padding:0 4px}
-.cal-j.on{background:var(--ink)}
-.cal-j.on b{color:var(--bg)}
-.cal-j.on i{background:var(--bg);color:var(--ink)}
-@media (hover:hover){.cal-j:hover{background:var(--surf)}.menu .cal-j:hover{background:var(--card)}}
-
-/* liste ou mois : la bascule, toujours au même endroit */
-.vbasc{display:inline-flex;gap:2px;background:var(--surf);border-radius:11px;padding:3px;
-  margin-bottom:14px}
-.vbasc button{display:flex;align-items:center;gap:7px;height:32px;padding:0 13px;border-radius:8px;
-  font-size:13px;font-weight:700;color:var(--soft)}
-.vbasc button svg{width:15px;height:15px}
-.vbasc button.on{background:var(--card);color:var(--ink);box-shadow:var(--s1)}
-
 /* un titre de section dans une feuille : un mot, pas une phrase */
 .mlbl{display:flex;align-items:center;gap:8px;padding:2px 18px 8px;font-size:11.5px;
   font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--soft)}
 .mlbl em{font-style:normal;font-weight:800;color:var(--ink2);letter-spacing:0}
 
-/* le contenu d'un devoir, dans sa feuille */
-.cchif{display:flex;align-items:center;gap:10px;padding:2px 18px 12px;flex-wrap:wrap}
-.cchif > div{background:var(--surf);border-radius:13px;padding:9px 13px;min-width:92px}
-.cchif b{display:block;font-size:18px;font-weight:800;letter-spacing:-.5px}
-.cchif span{font-size:11.5px;color:var(--soft)}
-.cedit{margin-left:auto;display:flex;align-items:center;gap:8px;height:40px;padding:0 15px;
-  border-radius:13px;background:var(--surf);font-size:13.5px;font-weight:700;color:var(--ink2)}
-.cedit svg{width:16px;height:16px}
+/* une cinquième tuile (« Classes », compte personnel) prend la largeur,
+   comme la troisième d'un élève de classe */
+.ctiles.cinq > .ctile:last-child{grid-column:1 / -1;flex-direction:row;align-items:center;gap:12px}
+.ctiles.cinq > .ctile:last-child .cn{flex:1}
+.ctiles.cinq > .ctile:last-child .cv{margin-left:auto}
+
+/* L'espace professeur a sa feuille à lui (src/ui/prof-espace.css), chargée
+   avec son code (ui/prof-porte.js) : un élève ne la télécharge jamais.
+   Seul reste ici le squelette que la porte montre pendant ce chargement. */
+.pf-load{display:flex;justify-content:center;gap:6px;padding:44px 0}
+.pf-load i{width:8px;height:8px;border-radius:50%;background:var(--soft);opacity:.35;animation:pfp 1s infinite ease-in-out}
+.pf-load i:nth-child(2){animation-delay:.15s}
+.pf-load i:nth-child(3){animation-delay:.3s}
+@keyframes pfp{50%{opacity:1;transform:translateY(-4px)}}
+
+/* ══════════ « Mes classes », côté élève ══════════
+   Un téléphone, un pouce : de grandes cibles, le code en gros caractères
+   à chasse fixe (on le recopie depuis le tableau, chaque caractère doit se
+   reconnaître), et ce qui est à faire avant tout le reste. */
+.el-page{padding-bottom:120px}
+.el-qui{display:flex;align-items:center;gap:8px;margin:2px 2px 4px;font-size:13.5px;color:var(--ink2)}
+.el-qui svg{width:16px;height:16px;color:var(--soft)}
+.el-qui i{font-style:normal;font-size:11px;font-weight:750;padding:2px 7px;border-radius:7px;background:var(--surf);color:var(--soft)}
+.el-h2{display:flex;align-items:center;gap:8px;margin:22px 2px 10px;font-size:12.5px;font-weight:750;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--soft)}
+.el-h2 span{color:var(--ink2)}
+.el-carte{padding:16px;border-radius:20px;background:var(--card);box-shadow:var(--s1)}
+.el-load{height:74px;opacity:.5}
+.el-rej,.el-apercu{margin-top:22px}
+.el-rej label{display:block;margin-bottom:10px;font-size:15px;font-weight:760}
+.el-code{display:flex;gap:8px}
+.el-code input{flex:1;min-width:0;height:56px;padding:0 16px;border-radius:15px;background:var(--surf);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:22px;font-weight:800;letter-spacing:3px;text-transform:uppercase}
+.el-code input::placeholder{color:var(--soft);opacity:.45}
+.el-code input:focus{box-shadow:inset 0 0 0 2px var(--ink2)}
+.el-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:46px;padding:0 18px;border-radius:14px;
+  background:var(--surf);font-size:15px;font-weight:700;color:var(--ink);transition:transform .15s var(--sp)}
+.el-btn:active:not(:disabled){transform:scale(.96)}
+.el-btn:disabled{opacity:.35}
+.el-btn.pri{background:var(--ink);color:var(--bg)}
+.el-btn.sm{height:34px;padding:0 12px;border-radius:11px;font-size:13px}
+.el-code .el-btn{height:56px;min-width:66px}
+.el-note{display:flex;align-items:flex-start;gap:7px;margin:10px 2px 0;font-size:13px;line-height:1.45;color:var(--soft)}
+.el-note svg{width:15px;height:15px;flex:none;margin-top:2px}
+.el-note b{color:var(--ink)}
+.el-note.pad{padding:0 18px 12px}
+.el-rep{margin:10px 0 0;padding:10px 12px;border-radius:12px;font-size:13.5px;line-height:1.45;color:var(--ink2);background:var(--surf)}
+.el-rep.ok{background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.el-rep.attente{background:color-mix(in srgb,#A0640F 12%,transparent)}
+.el-rep.ko{background:color-mix(in srgb,var(--ko) 11%,transparent)}
+.el-apercu{animation:pop .4s var(--sp) both}
+.el-ap-h{display:flex;align-items:center;gap:12px}
+.el-ap-h span{display:flex;flex-direction:column;min-width:0}
+.el-ap-h b{font-size:18px;font-weight:780;letter-spacing:-.4px}
+.el-ap-h span i{font-style:normal;font-size:13px;color:var(--soft)}
+.el-k{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;flex:none;background:var(--k);color:#fff;
+  font-style:normal;font-size:15px;font-weight:800}
+.el-noms{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.el-noms input{min-width:0;height:50px;padding:0 14px;border-radius:13px;background:var(--surf);font-size:16px;font-weight:600}
+.el-noms input:focus{box-shadow:inset 0 0 0 2px var(--ink2)}
+.el-ap-b{display:flex;gap:8px;margin-top:14px}
+.el-ap-b .el-btn{flex:1}
+.el-list{display:flex;flex-direction:column;gap:8px}
+.el-dv,.el-cl{display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;border-radius:18px;text-align:left;
+  background:var(--card);box-shadow:var(--s1);transition:transform .15s var(--sp)}
+button.el-dv:active,button.el-cl:active{transform:scale(.98)}
+.el-dv > svg,.el-cl > svg{width:17px;height:17px;flex:none;color:var(--soft)}
+.el-dv.ko{box-shadow:inset 3px 0 0 var(--ko),var(--s1)}
+.el-dot{width:10px;height:10px;border-radius:3px;flex:none;background:var(--k)}
+.el-dvt,.el-clt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.el-dvt b,.el-clt b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.el-dvt i,.el-clt i{font-style:normal;font-size:12.5px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.el-pill{flex:none;font-style:normal;font-size:11.5px;font-weight:750;padding:3px 9px;border-radius:9px;background:var(--surf);color:var(--ink2)}
+.el-pill.ok{background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok)}
+.el-pill.am{background:color-mix(in srgb,#A0640F 13%,transparent);color:#A0640F}
+.el-pill.ko{background:color-mix(in srgb,var(--ko) 12%,transparent);color:var(--ko)}
+.el-cl + .el-cl{margin-top:8px}
+.el-cl.attente{background:var(--bg);box-shadow:inset 0 0 0 1px var(--hair)}
+.el-badge{flex:none;font-style:normal;min-width:22px;height:22px;padding:0 6px;border-radius:11px;display:grid;place-items:center;
+  background:var(--ko);color:#fff;font-size:12px;font-weight:800}
+.el-vide{display:flex;align-items:center;gap:9px;margin:0 2px;padding:14px 16px;border-radius:16px;background:var(--surf);
+  font-size:14px;color:var(--ink2)}
+.el-vide svg{width:18px;height:18px;color:var(--ok);flex:none}
+.el-fiche{padding:0 18px 10px}
+.el-fiche p{display:flex;align-items:center;gap:10px;margin:0 0 9px;font-size:14.5px;color:var(--ink2)}
+.el-fiche svg{width:17px;height:17px;flex:none;color:var(--soft)}
+
+/* la carte élève : l'aide sous le formulaire, et le code à chasse fixe,
+   recopié caractère par caractère depuis la carte imprimée */
+.lcode{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2px;text-transform:uppercase}
+.lnote{display:flex;align-items:flex-start;gap:9px;margin:14px 4px 0;font-size:13px;line-height:1.45;color:var(--soft)}
+.lnote svg{width:16px;height:16px;flex:none;margin-top:2px}
+.el-k.rond{border-radius:50%;background:color-mix(in srgb,var(--k) 15%,var(--card));color:var(--k);font-size:14px}
+/* le nom d'un compte à carte se lit, il ne s'ouvre sur rien */
+.sr.fixe{cursor:default}
+.sr.fixe:active{transform:none}
+#app[data-view="settings"] .note svg{width:14px;height:14px;vertical-align:-2px;margin-right:6px}
+/* l'anneau de focus du clavier entoure toute la ligne, pas le seul champ */
+.lrow input:focus-visible{outline:none}
+.lrow:has(input:focus-visible){outline:2px solid var(--ink);outline-offset:2px}

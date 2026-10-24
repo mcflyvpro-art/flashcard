@@ -9,7 +9,7 @@ import {
   setComp, setQuiz, setQuizTick, view
 } from '../data/etat.js';
 import { go, pills, render } from './bibliotheque.js';
-import { donnerLivre } from './bilan-devoirs.js';
+import { donnerLivre } from './prof-porte.js';
 import {
   ASRC, MAXB, MAXF, TTS, listen, markDups, markOver, plain, rt
 } from './carte-media.js';

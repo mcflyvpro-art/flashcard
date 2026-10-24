@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { DAY, MIN } from '../fsrs.js';
 import {
-  accounts, auth, blocks, db, iAmMod, mailbox, mods, myRole, online, prefs, ref,
+  accounts, auth, blocks, compte, db, iAmMod, mailbox, mods, myRole, online, prefs, ref,
   setSubjColor, setSubjEdit, setSubjName, shared, trash, vers
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
@@ -116,16 +116,23 @@ function settingsMatieresHtml() {
       </div>`;
 }
 
+/* Un compte à carte : son nom vient de la liste de la classe (la base le
+   verrouille) et son code, de son professeur — ni l'un ni l'autre ne se
+   change d'ici, on les montre seulement. */
+const carteEleve = () => !!(compte && compte.gere);
+
 function settingsCompteHtml() {
   return `
       <div class="lbl"><span>Mon compte</span></div>
       <div class="slist">
-        <button class="sr flat" data-act="rename">${svg(I.user)}
-          <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
+        ${carteEleve() ? `<div class="sr flat fixe">${svg(I.user)}<span class="n">${esc(compte.nom || '')}</span>
+          <span class="c">${esc(compte.identifiant || '')}</span></div>`
+        : `<button class="sr flat" data-act="rename">${svg(I.user)}
+          <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>`}
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="commu">${svg(I.user)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
-      </div>`;
+        ${carteEleve() ? '' : `<button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>`}
+      </div>${carteEleve() ? `<p class="note">${svg(I.key)}Carte élève : un nouveau code se demande à ton professeur.</p>` : ''}`;
 }
 
 /* Les lignes de rôle (référent, admin, modération) : chacune ne s'affiche
@@ -170,7 +177,7 @@ function settingsQuitterHtml() {
       <div class="lbl"><span>Quitter</span></div>
       <div class="slist">
         <button class="sr flat warn" data-act="logout">${svg(I.exit)}<span class="n">Se déconnecter</span></button>
-        <button class="sr flat warn" data-act="delacc">${svg(I.trash)}<span class="n">Supprimer le compte</span></button>
+        ${carteEleve() ? '' : `<button class="sr flat warn" data-act="delacc">${svg(I.trash)}<span class="n">Supprimer le compte</span></button>`}
       </div>
       <div class="foot">${pending()
         ? plur(pending(), 'modification') + ' en attente' + (online ? ' d’envoi' : ' — reprise dès le retour du réseau')

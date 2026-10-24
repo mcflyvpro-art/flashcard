@@ -1,20 +1,20 @@
-import { DAY } from '../fsrs.js';
 import { I } from '../icones.js';
 import {
-  adm, asgs, auth, blocks, board, classes, duels, iAmMod, lib, mailbox, me,
-  menu, mods, myRole, prefs, prof, ref, reportOn, reportWhy, roster,
-  scope, setAccounts, setAnimate, setAsgs, setAsks, setBlocks, setClassOf, setClasses,
+  adm, auth, blocks, board, duels, iAmMod, lib, mailbox,
+  menu, mods, myRole, ref, reportOn, reportWhy,
+  scope, setAccounts, setAnimate, setAsks, setBlocks,
   setFriends, setIAmMod, setMates, setMates2, setMyRole, setReportOn, setReportWhy,
-  setRoster, setSchool, setTeam, view
+  setSchool, view
 } from '../data/etat.js';
 import { go, render } from '../ui/bibliotheque.js';
-import { atSchool, isPupil, isProf, maClassePull } from '../ui/classement.js';
-import { plain } from '../ui/carte-media.js';
-import { api, esc, plur, shortWho } from './coeur-sync.js';
+import { atSchool, isPupil, isProf } from '../ui/classement.js';
+import { api, esc, shortWho } from './coeur-sync.js';
 import { duelsPull } from './defis.js';
-import { profPull } from './etablissement.js';
-import { importPayload, toast } from '../ui/import-cartes.js';
+import { comptePull, eleveClassesPull } from './eleve-classes.js';
+import { toast } from '../ui/import-cartes.js';
 import { closeMenu, paintMenu } from '../ui/menus-a.js';
+import { allerAccueil } from '../ui/prof-porte.js';
+import { consumeRejoindre } from '../ui/eleve-classes.js';
 import { friendsPull, libPull, mailPull } from './reglages-corbeille.js';
 import { timeAgo } from '../ui/reglages-corbeille.js';
 
@@ -146,33 +146,30 @@ export async function schoolPull() {
   } catch (e) { setSchool(false); }
 }
 
-export async function teamPull() {
-  try { setTeam(await api('/rest/v1/rpc/my_class_team', 'POST', {}) || []); }
-  catch (e) { setTeam([]); }
-  if (view.name === 'classe' || view.name === 'classes') { setAnimate(false); render(); }
-}
-
-/* Le rôle, les coupures, les classes et les signalements arrivent
-   ensemble, et l'écran ne se repeint qu'une fois tout su. Lancés
-   séparément, chacun repeignait de son côté : les Réglages pouvaient
-   s'afficher avant qu'on sache si le compte est administrateur, et
-   l'entrée manquait alors sans aucune raison visible. C'est exactement ce
-   qui faisait dire que le compte admin n'avait rien d'admin. */
 /* Chaque métier a son point d'arrivée. Un professeur qui ouvre l'app veut
-   savoir où en sont ses classes, pas relire sa bibliothèque ; un élève veut
-   ses devoirs. On ne le sait qu'après le rôle, donc on attend : rediriger
-   après coup ferait clignoter un écran qu'on n'a pas demandé. */
+   savoir où en sont ses classes, pas relire sa bibliothèque ; un élève de
+   classe veut ses devoirs. On ne le sait qu'après le rôle, donc on attend :
+   rediriger après coup ferait clignoter un écran qu'on n'a pas demandé. */
 export async function accueil() {
-  await Promise.all([rolePull(), schoolPull()]);
+  await Promise.all([rolePull(), schoolPull(), comptePull()]);
+  /* Un lien ou un QR « rejoindre » attendait (ouvert avant la connexion, ou
+     à l'instant) : il passe avant l'écran d'arrivée habituel. */
+  if (consumeRejoindre()) return;
   if (view.name !== 'home') return;              // l'utilisateur est déjà parti ailleurs
   if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
-  if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
-  if (isPupil()) { maClassePull(); return go('maclasse'); }
+  if (isProf()) return allerAccueil();
+  if (isPupil()) { eleveClassesPull(); matesPull(); return go('classes'); }
 }
 
+/* Le rôle, les coupures et les signalements arrivent ensemble, et l'écran
+   ne se repeint qu'une fois tout su. Lancés séparément, chacun repeignait
+   de son côté : les Réglages pouvaient s'afficher avant qu'on sache si le
+   compte est administrateur, et l'entrée manquait alors sans aucune raison
+   visible. C'est exactement ce qui faisait dire que le compte admin
+   n'avait rien d'admin. */
 export async function cerclePull() {
-  await Promise.all([rolePull(), schoolPull(), modCheck(), blocksPull()]);
-  await Promise.all([classesPull(), iAmMod ? modPull() : null]);
+  await Promise.all([rolePull(), schoolPull(), comptePull(), modCheck(), blocksPull()]);
+  if (iAmMod) await modPull();
   setAnimate(false); render();
 }
 
@@ -181,128 +178,10 @@ async function rolePull() {
   catch (e) { setMyRole('eleve'); }
 }
 
-export async function classesPull() {
-  try {
-    /* Deux origines pour une même liste : celles qu'on tient et celles
-       qu'on a rejointes. Les règles de lecture rendent déjà les deux. */
-    setClasses(await api('/rest/v1/classes?select=id,name,level,year,code,owner&order=created_at.desc') || []);
-  } catch (e) { setClasses(classes || []); }
-  if (/^(classes|classe)$/.test(view.name)) { setAnimate(false); render(); }
-}
-
-export async function classPull(id) {
-  try {
-    const [m, a] = await Promise.all([
-      api(`/rest/v1/class_members?select=user_id,who,joined_at&class_id=eq.${id}&order=who.asc`),
-      api(`/rest/v1/assignments?select=id,name,n,due,created_at&class_id=eq.${id}&order=created_at.desc`)
-    ]);
-    setRoster(m || []); setAsgs(a || []);
-  } catch (e) { setRoster(roster || []); setAsgs(asgs || []); }
-  if (view.name === 'classe') { setAnimate(false); render(); }
-}
-
-const classCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)),
-  b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 31]).join('');
-
-/* L'année scolaire bascule en août, pas en janvier. */
-function scolaire() {
-  const d = new Date(), y = d.getFullYear();
-  return d.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-}
-
-export async function makeClass(name, level) {
-  try {
-    const [c] = await api('/rest/v1/classes', 'POST',
-      [{ name: (name || '').trim() || 'Ma classe', level: (level || '').trim(),
-         year: scolaire(), code: classCode(), owner: auth.uid }],
-      { Prefer: 'return=representation' }) || [];
-    closeMenu(); setClasses(null); await classesPull();
-    if (c) { setClassOf(c.id); setRoster(null); setAsgs(null); classPull(c.id); go('classe'); }
-    toast(I.check, 'Classe créée · code ' + (c ? c.code : ''));
-  } catch (e) { toast(I.x, 'Création impossible'); }
-}
-
-export async function joinClass(code) {
-  try {
-    await api('/rest/v1/rpc/join_class', 'POST',
-      { join_code: code, who: prefs.name || (me && me.handle) || 'Compte' });
-    closeMenu(); setClasses(null); await classesPull();
-    toast(I.check, 'Classe rejointe');
-  } catch (e) { toast(I.x, 'Code inconnu'); }
-}
-
-export async function dropMember(cid, uid2) {
-  try {
-    await api(`/rest/v1/class_members?class_id=eq.${cid}&user_id=eq.${uid2}`, 'DELETE',
-      null, { Prefer: 'return=minimal' });
-    setRoster((roster || []).filter(m => m.user_id !== uid2));
-  } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
-  closeMenu(); render();
-}
-
-/* Donner un devoir, c'est envoyer une copie du livre : la bibliothèque du
-   professeur reste la sienne, et l'élève repart de zéro sur ces cartes —
-   la progression de quelqu'un d'autre ne veut rien dire chez lui. */
-export async function giveWork(d, cid, days) {
-  const cards = d.cards.map(c => [plain(c.f), plain(c.b)]);
-  const due = new Date(Date.now() + (days || 7) * DAY).toISOString().slice(0, 10);
-  try {
-    await api('/rest/v1/assignments', 'POST',
-      [{ class_id: cid, name: d.name, cards, n: cards.length, due, created_by: auth.uid }],
-      { Prefer: 'return=minimal' });
-    closeMenu(); setAsgs(null); classPull(cid);
-    toast(I.check, plur(cards.length, 'page') + ' à rendre avant le ' + due.split('-').reverse().slice(0, 2).join('/'));
-  } catch (e) { toast(I.x, 'Envoi impossible'); }
-}
-
-/* L'élève ajoute le devoir à sa bibliothèque et son avancement remonte —
-   fait ou pas fait, et le pourcentage. Jamais le détail carte par carte. */
-/* Les cartes d'un devoir gardent un identifiant qui dit d'où elles
-   viennent : « a:<devoir>:<rang> ». Sans lui, les révisions de l'élève
-   remontent sous un identifiant tiré au hasard chez lui, et plus rien ne
-   permet de dire à son professeur quelle carte sa classe rate. Avec lui,
-   `prof_cartes` recoud les deux — et ne rend jamais que des comptes,
-   jamais qui s'est trompé. */
-export async function takeWork(a) {
-  const cartes = (a.cards || []).map((c, i) => {
-    const [f, b] = Array.isArray(c) ? c : [c.f, c.b];
-    return { id: `a:${a.id}:${i}`, f, b };
-  });
-  const d = importPayload({ name: a.name, subject: '', cards: cartes }, true);
-  try {
-    await api('/rest/v1/assignment_progress', 'POST',
-      [{ assignment_id: a.id, user_id: auth.uid, who: prefs.name || (me && me.handle) || 'Compte', pct: 0 }],
-      { Prefer: 'resolution=merge-duplicates,return=minimal' });
-  } catch (e) { /* juste un compteur de suivi côté prof : le devoir est déjà dans la bibliothèque */ }
-  closeMenu();
-  if (d) go('deck', d.id);
-  toast(I.check, 'Devoir ajouté à ta bibliothèque');
-}
-
-/* Ce que le professeur a le droit de voir : combien ont rendu, et le taux
-   de réussite moyen. Pas le détail carte par carte, pas les horaires — la
-   différence entre suivre une classe et surveiller quelqu'un. */
-export async function workProgress(id) {
-  const box = document.getElementById('wprog'); if (!box) return;
-  try {
-    const rows = await api('/rest/v1/assignment_progress?select=user_id,who,pct,done_at'
-      + '&assignment_id=eq.' + encodeURIComponent(id)) || [];
-    const total = (roster || []).length;
-    const faits = rows.filter(r => r.done_at || r.pct > 0);
-    const moy = faits.length
-      ? Math.round(faits.reduce((a, r) => a + (r.pct || 0), 0) / faits.length) : 0;
-    box.innerHTML = !total ? 'Aucun élève inscrit pour l’instant.'
-      : `<b>${faits.length} / ${total}</b> ${faits.length > 1 ? 'ont commencé' : 'a commencé'}`
-        + (faits.length ? ` · ${moy} % de réussite moyenne` : '')
-        + (total - faits.length ? `<br>${plur(total - faits.length, 'élève')} n’${
-            total - faits.length > 1 ? 'ont' : 'a'} pas encore ouvert.` : '');
-  } catch (e) { box.textContent = 'Suivi indisponible.'; }
-}
-
 export async function matesPull() {
   try { setMates2(await api('/rest/v1/rpc/my_classmates', 'POST', {}) || []); }
   catch (e) { setMates2([]); }
-  if (view.name === 'classe') { setAnimate(false); render(); }
+  if (view.name === 'classes') { setAnimate(false); render(); }
 }
 
 export const PAGE_REF = 60;

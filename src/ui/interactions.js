@@ -3,24 +3,24 @@ import { $ } from '../racine.js';
 import { I } from '../icones.js';
 import { shuffle } from '../file.js';
 import {
-  accounts, adm, board, classOf, classes, comp, deckOpen, duels, friends, groups, leaving,
-  lib, mailbox, mods, myRole, online, peek, prefs, prof, quiz, ref,
-  reorder, sel, setAccOpen, setAddQ, setAnimate, setAsgs, setCardEdit, setClassOf,
+  accounts, adm, board, comp, deckOpen, duels, friends, groups, leaving,
+  lib, mailbox, mods, myRole, online, peek, prefs, quiz, ref,
+  reorder, sel, setAccOpen, setAddQ, setAnimate, setCardEdit,
   setDeckOpen, setDeckQ, setDuelRun, setFilter, setFindQ, setGroupOf, setGroupTab,
-  setHelpKey, setLeaving, setLegalBack, setLegalTab, setMateOpen, setMates2, setMemberOpen,
-  setPeek, setPendingGrade, setQuiz, setReorder, setRoster, setScope, setSel, setShared,
-  setStudy, setWorkOpen, shared, stats, study, trash, view
+  setHelpKey, setLeaving, setLegalBack, setLegalTab, setMateOpen, setMates2,
+  setPeek, setPendingGrade, setQuiz, setReorder, setScope, setSel, setShared,
+  setStudy, shared, stats, study, trash, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
-import { commuPull, compNeuf, doAdd, donnerLivre, lireComp } from './bilan-devoirs.js';
+import { commuPull, doAdd } from './bilan-devoirs.js';
 import { groupsPull } from '../core/bilan-devoirs.js';
 import { plain, play, say } from './carte-media.js';
 import { fsrsTune } from '../core/carte-media.js';
 import {
-  atSchool, isProf, isPupil, lireClass, lireNew, maClassePull
+  atSchool, isProf, isPupil, lireClass, lireNew
 } from './classement.js';
 import {
-  accountsPull, admPull, blocksPull, boardPull, classPull, classesPull, matesPull, modAct,
+  accountsPull, admPull, blocksPull, boardPull, matesPull, modAct,
   modPull, refDo, refPeople, refPull, refTeam
 } from '../core/classement.js';
 import { deck, doUndo, flush, pending, plur, pushUndo, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
@@ -29,13 +29,13 @@ import { duelPick } from './defis.js';
 import { duelsPull } from '../core/defis.js';
 import { exportStats, groupPull, lostOnLeave } from './ecran-groupe.js';
 import { statsPull } from '../core/ecran-groupe.js';
-import { jourFr } from './etablissement.js';
-import { profClassePull, profDo, profFichePull, profPull } from '../core/etablissement.js';
+import { eleveClassesPull } from '../core/eleve-classes.js';
 import {
   beep, dueCount, importPayload, savePrefs, toast
 } from './import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { logout, openInstall } from './onboarding.js';
+import { allerAccueil, donnerLivre } from './prof-porte.js';
 import {
   dictate, fail, nextQ, norm, pickQuiz, resetComp, startQuiz, submit
 } from './quiz.js';
@@ -49,41 +49,7 @@ import {
   saveResume, startStudy
 } from './revision.js';
 
-/* ---- le composeur de devoir ---- */
-function tapCdue2(a, ds) {
-  if (prof.comp) { lireComp(); prof.comp.due = ds.cdue2; prof.comp.mois = ds.cdue2; }
-  paintMenu();
-}
 
-function tapCmois(a, ds) {
-  if (prof.comp) { lireComp(); prof.comp.mois = ds.cmois; }
-  paintMenu();
-}
-
-function tapCcible(a, ds) {
-  if (!prof.comp) return;
-  lireComp();
-  const k = ds.ccible;
-  prof.comp.cibles.has(k) ? prof.comp.cibles.delete(k) : prof.comp.cibles.add(k);
-  paintMenu();
-}
-
-function tapPlivre(a, ds) { const d = deck(ds.plivre); if (d) donnerLivre(d); }
-
-/* On repart dans l'éditeur complet, et on revient ici ensuite : le
-   devoir en préparation attend dans `prof.comp`. */
-function tapCedit() {
-  if (!prof.comp || !prof.comp.livre) return;
-  lireComp(); closeMenu();
-  go('deck', prof.comp.livre);
-}
-
-function tapCdue(a, ds) {
-  profDo('prof_set_due', { aid: prof.work, due: ds.cdue },
-    r => 'À rendre le ' + jourFr(r)).then(() => { closeMenu(); render(); });
-}
-
-function tapPmois2(a, ds) { prof.mois = ds.pmois2; paintMenu(); }
 
 /* ---- les feuilles du référent ---- */
 function tapRmove(a, ds) {
@@ -122,13 +88,6 @@ function tapRncls(a, ds) { ref.form = { ...(ref.form || {}), cls: ds.rncls, ...l
 function tapRncyc(a, ds) { ref.form = { ...(ref.form || {}), cyc: ds.rncyc, ...lireClass() }; paintMenu(); }
 
 const FEUILLE_RULES = [
-  [(a, ds) => ds.cdue2, tapCdue2],
-  [(a, ds) => ds.cmois, tapCmois],
-  [(a, ds) => ds.ccible, tapCcible],
-  [(a, ds) => ds.plivre, tapPlivre],
-  [(a, ds) => ds.cedit, tapCedit],
-  [(a, ds) => ds.cdue, tapCdue],
-  [(a, ds) => ds.pmois2, tapPmois2],
   [(a, ds) => ds.rmove !== undefined, tapRmove],
   [(a, ds) => ds.rrolechg, tapRrolechg],
   [(a, ds) => ds.rdropt, tapRdropt],
@@ -163,20 +122,6 @@ function tapHelp(a, ds) { setHelpKey(ds.help); return openMenu('help'); }
 const tapModact = (a, ds) => modAct(+ds.rid, ds.modact);
 function tapAccount(a, ds) { setAccOpen(ds.account); return openMenu('account'); }
 
-function tapClasse(a, ds) {
-  setClassOf(ds.classe); setRoster(null); setAsgs(null); classPull(classOf); return go('classe');
-}
-
-/* Le même devoir, deux feuilles : celle de l'élève l'ajoute à sa
-   bibliothèque, celle du professeur montre le suivi. L'ancienne feuille
-   cherchait la classe dans `classes`, que l'élève ne charge plus depuis
-   qu'il a son propre écran — elle se refermait sans rien dire. */
-function tapWork(a, ds) {
-  setWorkOpen(ds.work);
-  return openMenu(isPupil() ? 'devoir' : 'workone');
-}
-
-function tapMember(a, ds) { setMemberOpen(ds.member); return openMenu('member'); }
 
 /* On doit pouvoir lire ces textes sans compte : le retour ramène donc
    là d'où l'on venait, y compris l'écran de connexion. */
@@ -277,30 +222,6 @@ function tapRwho(a, ds) {
 }
 
 function tapRcls(a, ds) { ref.open = ds.rcls; ref.team = null; ref.form = {}; return openMenu('refcls'); }
-
-function tapPclasse(a, ds) {
-  prof.open = ds.pclasse; prof.tab = 'eleves'; prof.q = '';
-  prof.roster = null; prof.devoirs = null;
-  profClassePull(prof.open); return go('profclasse');
-}
-
-function tapPtab(a, ds) { prof.tab = ds.ptab; setAnimate(false); return render(); }
-function tapPvue(a, ds) { prof.vue = ds.pvue; setAnimate(false); return render(); }
-function tapPmois(a, ds) { prof.mois = ds.pmois; setAnimate(false); return render(); }
-
-function tapPjour(a, ds) {
-  prof.jour = prof.jour === ds.pjour ? null : ds.pjour;
-  prof.mois = ds.pjour; setAnimate(false); return render();
-}
-
-function tapPtri(a, ds) { prof.tri = ds.ptri; setAnimate(false); return render(); }
-
-function tapPeleve(a, ds) {
-  prof.eleve = ds.peleve; prof.fiche = null;
-  profFichePull(prof.open, prof.eleve); return go('profeleve');
-}
-
-function tapPwork(a, ds) { prof.work = ds.pwork; prof.cartes = null; return openMenu('pwork'); }
 
 function tapCamadd(a, ds) {
   const n = ds.camn;
@@ -435,52 +356,26 @@ const tapAdmin = () => { if (!accounts) accountsPull(); if (!adm.orgs) admPull()
    Il n'a jamais été atteint une seule fois. */
 const tapBlocked = () => { blocksPull().then(() => paintMenu()); return openMenu('blocked'); };
 
-/* Trois publics, trois écrans derrière le même bouton : l'élève n'a
-   qu'une classe et n'a pas à traverser une liste d'un seul élément ; le
-   professeur en a dix et lui faut une grille ; un compte personnel qui
-   s'est fait une classe garde l'écran d'origine. */
+/* Trois publics, trois écrans derrière le même bouton : le référent gère
+   son établissement, le professeur ses classes, l'élève — scolaire ou
+   non — ses devoirs et les classes qu'il a rejointes. */
 function tapClasses() {
-  if (isPupil()) { maClassePull(); return go('maclasse'); }
   if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
-  if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
-  if (!classes) classesPull(); return go('classes');
+  if (isProf()) return allerAccueil();
+  eleveClassesPull(); return go('classes');
 }
 
-const tapProf = () => { if (!prof.classes) profPull(); return go('prof'); };
 const tapRef = () => { refPull(); return go('ref'); };
 const tapRefnew = () => { ref.form = { role: 'eleve' }; return openMenu('refnew'); };
 const tapRefnewclass = () => { ref.form = {}; return openMenu('refnewclass'); };
-
-function tapPnew() {
-  /* Le vrai éditeur : photo d'une page, PDF, export, cours collé,
-     image et son sur chaque face. On y entre, on en ressort sur
-     « à qui, pour quand ». */
-  prof.comp = compNeuf();
-  resetComp({ cours: true, pour: 'devoir' });
-  return go('import');
-}
-
-const tapPlib = () => { prof.comp = compNeuf(); return openMenu('plivre'); };
 
 /* Retour de l'éditeur vers le devoir en préparation. */
 function tapPretour() {
   const d = deck(view.id);
   if (d) return donnerLivre(d);
-  return go('prof');
+  return allerAccueil();
 }
 
-function tapPbilan() {
-  prof.tab = 'bilan';
-  if (!prof.open && (prof.classes || []).length) { prof.open = prof.classes[0].id; profClassePull(prof.open); }
-  return prof.open ? go('profclasse') : undefined;
-}
-
-const tapPcode = () => openMenu('classcode');
-const tapPback = () => go('profclasse');
-const tapPmot = () => openMenu('pmot');
-const tapNewclass = () => openMenu('newclass');
-const tapJoinclass = () => openMenu('joinclass');
-const tapNewwork = () => openMenu('newwork');
 const tapBackup2 = () => openMenu('backup');
 const tapUndo2 = () => { doUndo(); };
 const tapMailScreen = () => { mailbox.list = null; mailPull(); return go('mail'); };
@@ -636,9 +531,6 @@ const CLICK_RULES = [
   [(a, ds) => ds.help !== undefined, tapHelp],
   [(a, ds) => ds.modact !== undefined, tapModact],
   [(a, ds) => ds.account !== undefined, tapAccount],
-  [(a, ds) => ds.classe !== undefined, tapClasse],
-  [(a, ds) => ds.work !== undefined, tapWork],
-  [(a, ds) => ds.member !== undefined, tapMember],
   [(a, ds) => ds.legal !== undefined, tapLegal],
   [(a, ds) => ds.yes !== undefined, tapYes],
   [(a, ds) => ds.no !== undefined, tapNo],
@@ -672,14 +564,6 @@ const CLICK_RULES = [
   [(a, ds) => ds.rclsoff, tapRclsoff],
   [(a, ds) => ds.rwho, tapRwho],
   [(a, ds) => ds.rcls, tapRcls],
-  [(a, ds) => ds.pclasse, tapPclasse],
-  [(a, ds) => ds.ptab, tapPtab],
-  [(a, ds) => ds.pvue, tapPvue],
-  [(a, ds) => ds.pmois, tapPmois],
-  [(a, ds) => ds.pjour, tapPjour],
-  [(a, ds) => ds.ptri, tapPtri],
-  [(a, ds) => ds.peleve, tapPeleve],
-  [(a, ds) => ds.pwork, tapPwork],
   [(a, ds) => ds.camadd, tapCamadd],
   [(a, ds, b) => b.dataset.tf !== undefined, tapTf],
   [(a, ds, b) => b.dataset.pick !== undefined, tapPick],
@@ -724,20 +608,10 @@ const CLICK_RULES = [
   [a => a === 'admin', tapAdmin],
   [a => a === 'blocked', tapBlocked],
   [a => a === 'classes', tapClasses],
-  [a => a === 'prof', tapProf],
   [a => a === 'ref', tapRef],
   [a => a === 'refnew', tapRefnew],
   [a => a === 'refnewclass', tapRefnewclass],
-  [a => a === 'pnew', tapPnew],
-  [a => a === 'plib', tapPlib],
   [a => a === 'pretour', tapPretour],
-  [a => a === 'pbilan', tapPbilan],
-  [a => a === 'pcode', tapPcode],
-  [a => a === 'pback', tapPback],
-  [a => a === 'pmot', tapPmot],
-  [a => a === 'newclass', tapNewclass],
-  [a => a === 'joinclass', tapJoinclass],
-  [a => a === 'newwork', tapNewwork],
   [a => a === 'backup2', tapBackup2],
   [a => a === 'undo2', tapUndo2],
   [a => a === 'mail', tapMailScreen],
@@ -787,7 +661,7 @@ const CLICK_RULES = [
 ];
 
 $.addEventListener('click', e => {
-  const b = e.target.closest('button,[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact],[data-classe],[data-work],[data-member],[data-account]');
+  const b = e.target.closest('button,[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact],[data-account]');
   if (!b) return;
   const ds = b.dataset;
   if (feuilleTap(b)) return;

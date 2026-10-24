@@ -34,16 +34,25 @@ l'air de marcher ».
   - `index.html` — écran d'ouverture inline, charge `/src/app.css` puis `/src/app.js`
   - `src/app.js` — **point d'entrée seulement** (27 lignes) : importe
     `src/core/coeur-sync.js` puis les 18 modules de `src/ui/`, chacun pour
-    ses effets de bord.
+    ses effets de bord (les autres modules y arrivent par leurs imports :
+    `ui/eleve-classes.js`, `ui/prof-porte.js`, et l'espace professeur, chargé
+    à la demande — voir plus bas).
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
-    HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout).
-    `coeur-sync.js` (650 lignes — `api()`, auth, sync, undo, palette) et huit
-    modules extraits des écrans mixtes du dessous, un par domaine :
-    `classement.js`, `etablissement.js`, `defis.js`, `bilan-devoirs.js`
-    (les groupes/clubs), `ecran-groupe.js` (`statsPull`), `reglages-corbeille.js`
-    (corbeille, amis, courrier, versions, étagère), `menus-c.js` (les quelques
-    écritures posées à même le gestionnaire de clics), `carte-media.js`
-    (upload média + rejeu FSRS depuis l'historique serveur).
+    HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout, sauf
+    l'envoi des préférences dans `ui/import-cartes.js`, plus ancien, à sortir).
+    `coeur-sync.js` (774 lignes — `api()`, auth, sync, undo, palette) et neuf
+    modules, un par domaine : `classement.js` (rôle, établissement, accueil
+    selon le métier), `defis.js`, `bilan-devoirs.js` (les groupes/clubs),
+    `ecran-groupe.js` (`statsPull`), `reglages-corbeille.js` (corbeille, amis,
+    courrier, versions, étagère), `menus-c.js` (les quelques écritures posées
+    à même le gestionnaire de clics), `carte-media.js` (upload média + rejeu
+    FSRS depuis l'historique serveur), `espace-prof.js` (toutes les fonctions
+    `prof_*` de l'espace professeur : lectures, `ecrire()` qui refuse hors
+    ligne — une décision de gestion se prend contre l'état réel de la classe —,
+    `repeindre()` qui ne repeint jamais sous les doigts de qui tape) et
+    `eleve-classes.js` (« Mes classes » : `class_preview`/`class_join`,
+    devoirs, `mon_compte`, `messageErreur`). L'ancien `core/etablissement.js`
+    (console prof d'avant le 2026-10-24) n'existe plus.
   - `src/ui/` — les 18 écrans (rendu, DOM, `$.innerHTML`, menus, événements),
     même noms de fichier que leur pendant `core/` quand les deux existent
     (`ui/classement.js` ↔ `core/classement.js`, etc.) : `bibliotheque.js`,
@@ -54,11 +63,25 @@ l'air de marcher ».
     `raccourcis.js` (raccourcis clavier pendant une révision, et les
     raccourcis d'ouverture `?go=…` — extrait d'`interactions.js` sur M06.T6,
     qui frôlait la limite de lignes une fois ses tables de dispatch posées),
-    `onboarding.js`. Aucun fichier, `core/` ou `ui/`, ne dépasse 800 lignes
-    (le plus gros, `interactions.js`, fait 798 lignes depuis M04.T2 — deux
-    imports regroupés sur une ligne pour faire de la place au bouton
-    « Vérifier ma bibliothèque » : toujours sans marge, la prochaine
-    ligne ajoutée là devra en retirer une ailleurs dans ce fichier).
+    `onboarding.js`. `ui/etablissement.js` ne porte plus que la console du
+    référent. Plus, depuis le 2026-10-24 : `eleve-classes.js` (l'écran élève
+    « Mes classes », téléphone d'abord ; `consumeRejoindre()` pour les liens et
+    QR `?rejoindre=CODE`, repris par `accueil()` une fois le rôle connu) et
+    l'**espace professeur**, PC et téléphone : `prof-accueil.js` (tableau de
+    bord, agenda, barre latérale ≥ 1100 px), `prof-classe.js` (une classe, 5
+    onglets), `prof-feuilles.js` (toutes ses feuilles, une seule entrée `pf`
+    dans la table de `menus-a.js`, laquelle dans `prof.feuille`),
+    `prof-actions.js` (un seul écouteur `[data-pf]` sur le document ; chaque
+    action reçoit `(data-id, data-v, bouton)`) et leur feuille de style
+    `prof-espace.css`. Ces cinq-là forment un **morceau chargé à la demande**
+    (`import()` dans `ui/prof-porte.js`, point d'entrée `ui/prof-espace.js`) :
+    un élève ne les télécharge jamais, le service worker les met en cache
+    avec le reste. **Rien d'autre ne doit importer `ui/prof-*.js`
+    directement** — passer par `prof-porte.js` (`allerAccueil`, `donnerLivre`,
+    `rejoindreCollegue`, les trois vues, `paintMenuProf`), sinon le morceau
+    retombe dans le démarrage. Aucun fichier, `core/` ou `ui/`, ne dépasse
+    800 lignes (les plus gros : `core/coeur-sync.js` 774, `onboarding.js`
+    772, `connexion.js` 741).
 
     Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
     a d'abord suivi les anciennes sections `/* ---------- nom ---------- */`
@@ -109,12 +132,12 @@ l'air de marcher ».
   - `src/doublons.js` — déduplication (M04.T4) : même recto ET même verso dans un même paquet, on garde la carte la plus avancée et on additionne les rechutes ; branchée sur « Vérifier ma bibliothèque » — pur et testé (`test/doublons.test.js`)
   - `src/sauvegarde.js` — export/import intégral de la bibliothèque (M04.T6) : format `folio-bibliotheque` v1, état d'apprentissage compris, sans `rev` ni marques d'écran ; restauré sous les mêmes identifiants sur le même compte, de nouveaux sur un autre (RLS) ; branché sur la feuille Sauvegarde (`backupData`/`backupRestore`, `src/core/reglages-corbeille.js`) — pur et testé (`test/export.test.js`)
   - `src/normaliser.js` — `norm()` (casse, espaces, apostrophes, ponctuation finale), sans aucune dépendance : lue par le noyau (`doublons.js`) et par les écrans (`ui/quiz.js` la réexporte)
-  - `src/classe.js` — les règles d'une classe (2026-10-24) : forme d'un code (8 caractères, alphabet sans 0/O/1/I/L), lien `?rejoindre=`, texte de chaque statut d'inscription renvoyé par la base, état d'un élève, tris/recherche (sans accents), synthèses de classe et d'accueil, échéances sans décalage de fuseau — pur et testé (`test/classe.test.js`, dont 4 fuseaux). **Pas encore branché** : l'espace prof et l'écran élève qui l'emploieront sont à refaire (voir PROGRESS.md, DERNIER)
-  - `src/qr.js` — encodeur QR sans bibliothèque (octets, niveau M, versions 1–10, `qrSvg()`), pour projeter le code d'une classe — pur et testé (`test/qr.test.js` ; relu 10/10 par le décodeur d'OpenCV le 2026-10-24)
-  - `src/app.css` — ~2 200 lignes
+  - `src/classe.js` — les règles d'une classe (2026-10-24) : forme d'un code (8 caractères, alphabet sans 0/O/1/I/L), lien `?rejoindre=`, texte de chaque statut d'inscription renvoyé par la base, état d'un élève, tris/recherche (sans accents), synthèses de classe et d'accueil, « à traiter », échéances sans décalage de fuseau, lecture d'une liste d'élèves collée (`lireListeEleves`, « NOM Prénom » ou « Prénom NOM »), nom propre (`nomPropre`), sigle de classe (`sigleClasse`), carte de connexion (`emailCarte`, `lienCarte`, `lireCarte`) — pur et testé (`test/classe.test.js`, 48 tests dont 4 fuseaux), employé par l'espace prof et « Mes classes »
+  - `src/qr.js` — encodeur QR sans bibliothèque (octets, niveau M, versions 1–10, `qrSvg()`), pour projeter le code d'une classe et imprimer les cartes de connexion — pur et testé (`test/qr.test.js` ; relu 10/10 par le décodeur d'OpenCV le 2026-10-24). Le SVG porte ses couleurs : `svg.qr{stroke:none}` (sinon le trait que l'app donne à tout SVG grossit les modules)
+  - `src/app.css` — ~2 030 lignes ; l'espace professeur a la sienne, `src/ui/prof-espace.css` (~620 lignes, préfixe `pf-`, chargée avec son morceau) ; l'écran élève « Mes classes » est dans `app.css` (préfixe `el-`)
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes
-  - `e2e/` — parcours de bout en bout Playwright (M07), nommés `*.e2e.js` pour que vitest ne les ramasse pas ; `playwright.config.js` construit puis sert le build de production (`vite preview`, port 4173), téléphone 390 px. Première fois sur une machine : `npx playwright install chromium`. Les parcours parlent à un **faux Supabase en mémoire** (`e2e/faux-supabase.js`, branché par `page.route`) : jamais à la vraie base, faute de préproduction (M13.T4) — il émule seulement ce que l'app emploie (auth, filtres PostgREST, `Range`, `rev` des paquets, `sync_deck_cards`) ; la RLS et le SQL se testent en base. `store.online = false` simule une coupure ; deux pages sur le même store = deux appareils. Gestes communs dans `e2e/aide.js`
+  - `e2e/` — parcours de bout en bout Playwright (M07), nommés `*.e2e.js` pour que vitest ne les ramasse pas ; `playwright.config.js` construit puis sert le build de production (`vite preview`, port 4173), téléphone 390 px. Première fois sur une machine : `npx playwright install chromium`. Les parcours parlent à un **faux Supabase en mémoire** (`e2e/faux-supabase.js`, branché par `page.route`) : jamais à la vraie base, faute de préproduction (M13.T4) — il émule seulement ce que l'app emploie (auth, filtres PostgREST, `Range`, `rev` des paquets, `sync_deck_cards`, un cloisonnement par `user_id` des tables personnelles pour que deux comptes ne voient pas les livres l'un de l'autre) ; les fonctions des classes sont rejouées dans `e2e/faux-classes.js` (créer une classe, comptes à carte, salle d'attente, devoirs ; `faireProfesseur(store, email, nom)` pose le rôle) ; la RLS et le SQL se testent en base. Un compte sans rôle déclaré reçoit de `my_role` une réponse vide (la vraie dit « eleve ») : la visite guidée ne s'invite pas dans les parcours. `store.online = false` simule une coupure ; deux pages sur le même store = deux appareils du même compte, deux **contextes** (`browser.newContext`) = deux personnes. Gestes communs dans `e2e/aide.js`
   - `fsrs.wasm` — crate Rust `fsrs` 6.6.2 compilé (recette : `tools/BUILD-FSRS.md`). Ne jamais réécrire les formules à la main.
 - **Vérification de types, en douceur** (`tsconfig.json`, M06.T8) : `tsc`
   relit le JS existant (`allowJs` + `checkJs`) sans qu'on ait besoin de
@@ -130,7 +153,7 @@ l'air de marcher ».
   en `.ts`. Preuve : `npm run typecheck`.
 - **Rendu** : état global dans `src/data/etat.js` (voir plus haut), `render()` (dans `src/ui/bibliotheque.js`) reconstruit l'écran depuis `view`. Le démarrage (`boot()`, dans `src/ui/onboarding.js`) est différé d'un micro-tick (`queueMicrotask`) exprès : appelé au fil de l'évaluation des modules, il pouvait tomber sur un module pas encore lié à cause des cycles ci-dessus.
 - **Backend : Supabase** (projet `qqbzefpdeinlynjtarqr`, eu-west-1), appelé en `fetch` brut via `api(path, method, body)` — pas de SDK `supabase-js`.
-  - Auth : `signIn` / `signUp` / `refreshToken` (un seul rafraîchissement à la fois — ne pas casser ce verrou).
+  - Auth : `signIn` / `signUp` / `refreshToken` (un seul rafraîchissement à la fois — ne pas casser ce verrou). L'écran de connexion a trois portes : e-mail, création de compte, **« Carte élève »** (identifiant + code → `signIn(emailCarte(id), code)`) ; le QR imprimé sur la carte ouvre `?carte=identifiant-CODE`, consommé par `consumeCarte()` (`ui/connexion.js`) au tout début de `boot()` — il ne ferme un autre compte ouvert que si celui-ci n'a plus rien à envoyer, et retire le code de l'adresse. Un élève de classe (`isPupil()`) ne reçoit pas la visite guidée : il arrive sur ses devoirs.
   - Données : PostgREST (`/rest/v1/...`), RLS stricte `user_id = auth.uid()` + rôles établissement.
   - Cache local `localStorage`, écritures en file (`dirty`, `gone`) rejouées par `flush()`.
   - Edge Function unique : `supabase/functions/ai/index.ts` (Anthropic, quotas dans `ai_usage`).
@@ -138,7 +161,8 @@ l'air de marcher ».
   - **Fonctions `security definer`** : Postgres accorde `execute` à PUBLIC (donc à `anon`) à toute fonction créée — retirer `anon` seul ne sert à rien. Depuis `20261024122609`, les privilèges par défaut ne le font plus, mais chaque nouvelle fonction écrit quand même `revoke all ... from public, anon; grant execute ... to authenticated;` (rien pour les fonctions internes). Seule `shared_deck` reste ouverte à `anon`.
   - **Rejoindre une classe** (`20261024113815`, matrice des droits en tête du fichier) : uniquement par `class_preview(code)` / `class_join(code)` (l'ancienne `join_class` y renvoie). Elles **renvoient un statut au lieu de lever** quand l'essai doit être compté (une exception annulerait la ligne de `class_join_attempts`, et la limite de 10 codes faux/h ne verrait rien). Frontière d'établissement, salle d'attente (`class_requests`), exclusion (`class_bans`), places, durée, code changeable : tout est vérifié en base. L'élève ne lit plus la ligne `classes` (donc jamais le code).
   - **Avancement des devoirs** : calculé par le déclencheur `avancement_devoir` sur `reviews` (cartes `a:<devoir>:<rang>`), jamais écrit par l'app (plus aucune politique d'écriture sur `assignment_progress`).
-  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels).
+  - **Comptes à carte** (`20261024125435`) : un professeur crée les comptes de ses élèves depuis une liste (`prof_creer_eleves`, 60 par appel, homonymes signalés) ; chacun a un identifiant `prenom.nom` (e-mail technique `identifiant@eleves.folio.invalid`, jamais affiché) et un code secret de 8 caractères qui est son mot de passe GoTrue, montré une seule fois (jamais stocké en clair ; `prof_nouvelles_cartes` en refait un et déconnecte l'ancien). Table `comptes_geres` (RLS : chacun ne lit que sa ligne). Le nom « Prénom NOM » d'un élève à carte ou d'établissement est **verrouillé en base** (déclencheur `lock_identite_scolaire`) : seul son professeur le corrige (`prof_nommer_eleve`). Un compte personnel qui rejoint une classe donne son vrai prénom et son nom (`class_join(code, prénom, nom)`, statut `nom` sinon). `mon_compte()` dit à l'app si le compte est géré.
+  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `classes_securisees.sql` (55 cas) et `identite_eleve.sql` (22 cas).
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
 - **Hébergement : deux cibles, un seul build.** Vercel est l'hébergement réel
   (domaine racine). GitHub Pages (`.github/workflows/pages.yml`, indépendant
@@ -223,7 +247,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # JS ≤ 120 Ko, CSS ≤ 25 Ko gzip (tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande JS ≤ 30, CSS ≤ 12 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans

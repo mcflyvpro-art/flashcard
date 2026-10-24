@@ -8,6 +8,7 @@
 /* ---------- icônes ---------- */
 export const I = {
   plus: '<path d="M12 5.5v13M5.5 12h13"/>',
+  minus: '<path d="M5.5 12h13"/>',
   back: '<path d="M15 5l-7 7 7 7"/>',
   play: '<path d="M8.5 5.6l10 6.4-10 6.4z" fill="currentColor" stroke-linejoin="round"/>',
   pen: '<path d="M4.5 19.5h3.6L19 8.6a1.9 1.9 0 0 0-2.7-2.7L5.2 16.5v3z"/><path d="M14.5 7.7l2.8 2.8"/>',

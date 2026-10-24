@@ -2,18 +2,17 @@
 import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
-  asgs, auth, classOf, classes, db, memberOpen, menu, prof, ref, roster, setMenu,
-  setSubjName, subjColor, subjEdit, subjName, verif, view, workOpen
+  db, menu, ref, setMenu, setSubjName, subjColor, subjEdit, subjName, verif, view
 } from '../data/etat.js';
 import { ANOMALY_FAMILIES } from '../reparation.js';
 import { render } from './bibliotheque.js';
-import { compSheet, initial, workSheet } from './bilan-devoirs.js';
+import { initial } from './bilan-devoirs.js';
 import { paintMedia } from './carte-media.js';
-import {
-  accountSheet, blockedSheet, dueLabel, reportSheet
-} from './classement.js';
-import { ROLENOM, refService, refTeam, workProgress } from '../core/classement.js';
-import { COLORS, PALETTE, canUndo, deck, esc, live, plur, subj, undoLabel } from '../core/coeur-sync.js';
+import { accountSheet, blockedSheet, reportSheet } from './classement.js';
+import { ROLENOM, refService, refTeam } from '../core/classement.js';
+import { COLORS, PALETTE, canUndo, deck, esc, plur, subj, undoLabel } from '../core/coeur-sync.js';
+import { paintMenuEleve } from './eleve-classes.js';
+import { paintMenuProf } from './prof-porte.js';
 import { CYCLES } from './etablissement.js';
 import {
   paintMenuCard, paintMenuConflict, paintMenuDeckset, paintMenuDuelitem, paintMenuDuelnew,
@@ -31,9 +30,13 @@ import { timeAgo } from './reglages-corbeille.js';
 export function openMenu(kind) { setMenu(kind); paintMenu(); }
 
 export function closeMenu() {
+  const ouverte = !!menu;
   setMenu(null);
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
   document.documentElement.classList.remove('sheet-open');
+  /* L'espace professeur ne repeint pas la page sous une feuille ouverte
+     (ce serait la repeindre elle aussi) : il attend ce signal. */
+  if (ouverte) document.dispatchEvent(new Event('feuille-fermee'));
 }
 
 /* Une feuille peut porter beaucoup de contenu (les matières, la liste
@@ -132,24 +135,14 @@ function menuPainter(m) {
   return {
     subject: paintMenuSubject,
     install: paintMenuInstall,
-    newclass: paintMenuNewclass, joinclass: paintMenuNewclass,
-    /* Donner un devoir vit maintenant dans une seule feuille : `compSheet`,
-       qui sait aussi bien reprendre un livre de la bibliothèque que le
-       fabriquer sur place. Hors établissement, l'ancien envoi direct reste
-       la bonne réponse — il n'y a qu'une classe et rien à composer. */
-    compo: paintMenuCompo,
-    plivre: paintMenuPlivre,
-    pwork: paintMenuPwork,
-    pmot: paintMenuPmot,
-    newwork: paintMenuNewwork,
+    /* Toutes les feuilles de l'espace professeur passent par une seule
+       entrée ; laquelle est ouverte se lit dans `prof.feuille`. */
+    pf: paintMenuProf,
+    el: paintMenuEleve,
     /* ---------- les feuilles du référent ---------- */
     refwho: paintMenuRefwho,
     refcls: paintMenuRefcls,
     refnew: paintMenuRefnew, refnewclass: paintMenuRefnew,
-    devoir: paintMenuDevoir,
-    classcode: paintMenuClasscode,
-    workone: paintMenuWorkone,
-    member: paintMenuMember,
     account: paintMenuAccount,
     report: paintMenuReport,
     blocked: paintMenuBlocked,
@@ -249,79 +242,6 @@ function paintMenuSubject(w) {
 
 function paintMenuInstall(w) {
   return installSheet(w);
-}
-
-function paintMenuNewclass(w) {
-  const mk = menu === 'newclass';
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(mk ? I.plus : I.key)}<span class="mhx">
-          <b>${mk ? 'Créer une classe' : 'Rejoindre une classe'}</b></span></div>
-        <input class="tok" id="cn" placeholder="${mk ? 'Nom de la classe — 2nde B' : 'Code de la classe'}"
-          autocapitalize="${mk ? 'sentences' : 'characters'}" autocorrect="off" spellcheck="false"
-          enterkeyhint="done" maxlength="${mk ? 40 : 8}">
-        ${mk ? `<input class="tok" id="cl" placeholder="Niveau — Seconde (facultatif)"
-          autocorrect="off" spellcheck="false" maxlength="20">` : ''}
-        <button class="mi" data-mact="${mk ? 'doclass' : 'doclassjoin'}"
-          style="justify-content:center;font-weight:700">${svg(I.check)}${mk ? 'Créer' : 'Rejoindre'}</button>
-      </div>`;
-    mountMenu(w);
-    setTimeout(() => { const f = document.getElementById('cn'); if (f) f.focus(); }, 60);
-    return;
-}
-
-function paintMenuCompo(w) {
-  return compSheet(w);
-}
-
-function paintMenuPlivre(w) {
-  const l = live();
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu pv">
-        <div class="mhd">${svg(I.book)}<span class="mhx"><b>Quel livre ?</b></span></div>
-        ${!l.length ? `<div class="mlbl">Ta bibliothèque est vide</div>`
-          : `<div class="mscroll">${l.map(d => `<button class="mi" data-plivre="${esc(d.id)}">
-              ${svg(I.book)}<span>${esc(d.name)}</span>
-              <span class="tail">${plur(d.cards.length, 'page')}</span></button>`).join('')}</div>`}
-      </div>`;
-    mountMenu(w);
-    return;
-}
-
-function paintMenuPwork(w) {
-  return workSheet(w);
-}
-
-function paintMenuPmot(w) {
-  const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
-    if (!m) { setMenu(null); return; }
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd"><i class="av">${esc(initial(m.who))}</i>
-          <span class="mhx"><b>Un mot à ${esc(m.who.split(' ')[0])}</b></span></div>
-        <div class="rform"><label>Ton message
-          <textarea id="pmt" rows="4" spellcheck="true"
-            placeholder="Reprends la série 2, on la refait jeudi."></textarea></label></div>
-        <button class="mi" data-mact="pmotgo" style="justify-content:center;font-weight:700">
-          ${svg(I.mail2)}Envoyer</button>
-      </div>`;
-    mountMenu(w);
-    setTimeout(() => { const i = document.getElementById('pmt'); if (i) i.focus(); }, 60);
-    return;
-}
-
-function paintMenuNewwork(w) {
-  const l = live();
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.share)}<span class="mhx"><b>Donner un devoir</b></span></div>
-        ${!l.length ? `<div class="note" style="padding:4px 18px 14px">Aucun livre à donner.</div>`
-          : `<div class="mscroll">${l.map(d => `<button class="mi" data-give="${esc(d.id)}">
-               ${svg(I.book)}<span>${esc(d.name)}</span>
-               <span class="tail">${plur(d.cards.length, 'page')}</span></button>`).join('')}</div>`}
-      </div>`;
-    mountMenu(w);
-    return;
 }
 
 function paintMenuRefwho(w) {
@@ -491,66 +411,6 @@ function paintMenuRefnew(w) {
       </div>`;
     mountMenu(w);
     setTimeout(() => { const i = document.getElementById(cpt ? 'nmel' : 'knom'); if (i) i.focus(); }, 60);
-    return;
-}
-
-function paintMenuDevoir(w) {
-  const a = (asgs || []).find(x => x.id === workOpen);
-    if (!a) { setMenu(null); return; }
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(a.name)}</b>
-          <i>${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</i></span></div>
-        <button class="mi" data-mact="takework" style="justify-content:center;font-weight:700">
-          ${svg(I.plus)}Ajouter à ma bibliothèque</button>
-      </div>`;
-    mountMenu(w);
-    return;
-}
-
-function paintMenuClasscode(w) {
-  const k = (prof.classes || []).find(x => x.id === prof.open) || {};
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.key)}<span class="mhx"><b>${esc(k.name || 'Cette classe')}</b></span></div>
-        <div class="bigcode">${esc(k.code || '—')}</div>
-        <div class="note" style="padding:0 18px 16px;text-align:center">${
-          k.jamais ? `${plur(k.jamais, 'élève')} n’${k.jamais > 1 ? 'ont' : 'a'} jamais ouvert l’app.`
-                   : 'Tous tes élèves ont déjà ouvert l’app au moins une fois.'}</div>
-      </div>`;
-    mountMenu(w);
-    return;
-}
-
-function paintMenuWorkone(w) {
-  const a = (asgs || []).find(x => x.id === workOpen);
-    const c = (classes || []).find(x => x.id === classOf);
-    if (!a || !c) { setMenu(null); return; }
-    const owner = c.owner === auth.uid;
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.card)}<span class="mhx"><b>${esc(a.name)}</b>
-          <i>${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</i></span></div>
-        ${owner ? `<div class="note" style="padding:0 18px 10px" id="wprog">Chargement du suivi…</div>
-          <button class="mi warn" data-mact="delwork">${svg(I.trash)}<span>Retirer ce devoir</span></button>`
-        : `<button class="mi" data-mact="takework" style="justify-content:center;font-weight:700">
-             ${svg(I.plus)}Ajouter à ma bibliothèque</button>`}
-      </div>`;
-    mountMenu(w);
-    if (owner) workProgress(a.id);
-    return;
-}
-
-function paintMenuMember(w) {
-  const m = (roster || []).find(x => x.user_id === memberOpen);
-    if (!m) { setMenu(null); return; }
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd"><i class="av">${esc(initial(m.who))}</i>
-          <span class="mhx"><b>${esc(m.who || 'Élève')}</b></span></div>
-        <button class="mi warn" data-mact="dropmember">${svg(I.x)}<span>Retirer de la classe</span></button>
-      </div>`;
-    mountMenu(w);
     return;
 }
 

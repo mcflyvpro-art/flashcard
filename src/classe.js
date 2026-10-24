@@ -39,6 +39,105 @@ export function codeDepuisTexte(t) {
 
 export const lienRejoindre = (base, code) => `${String(base).replace(/[?#].*$/, '')}?rejoindre=${normCode(code)}`;
 
+/* ---------- le nom d'un élève : Prénom NOM, rien d'autre ----------
+   Même mise en forme que `nom_propre()` en base (migration
+   20261024125435) : l'aperçu que voit le professeur avant de créer les
+   comptes est exactement ce qui sera enregistré. */
+const NOM_OK = /^\p{L}[\p{L} '’.-]{0,39}$/u;
+
+export const nomValide = t => NOM_OK.test(String(t || '').trim());
+
+const espaces = s => String(s || '').trim().replace(/\s+/g, ' ');
+
+export const nomPropre = (prenom, nom) =>
+  espaces(prenom).toLowerCase().replace(/(^|[^\p{L}\p{N}])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
+  + ' ' + espaces(nom).toUpperCase();
+
+const cleNom = s => espaces(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+/* Un mot tout en capitales (deux lettres au moins) : c'est le nom de
+   famille, comme l'écrivent Pronote et les listes d'appel. */
+const enCapitales = w => /\p{L}.*\p{L}/u.test(w) && w === w.toUpperCase() && w !== w.toLowerCase();
+
+function decoupeColonnes(cols) {
+  const [a, b] = cols;
+  if (enCapitales(b) && !enCapitales(a)) return { prenom: a, nom: b };
+  return { prenom: b, nom: a };                  // « Nom ; Prénom », l'ordre des exports scolaires
+}
+
+function decoupeMots(mots) {
+  const caps = mots.filter(enCapitales), autres = mots.filter(w => !enCapitales(w));
+  if (caps.length && autres.length) return { prenom: autres.join(' '), nom: caps.join(' ') };
+  return { prenom: mots.slice(0, -1).join(' '), nom: mots[mots.length - 1] };
+}
+
+const ENTETE = /^(nom|prénom|prenom|élève|eleve|élèves|eleves)\b/i;
+
+const lisible = e => !!e && nomValide(e.prenom) && nomValide(e.nom);
+
+/* Une ligne : deux colonnes « nom / prénom », ou un nom complet dans la
+   première colonne (« MARTIN Alice ; 2nde 4 » : la suite est ignorée). */
+function lireLigne(l) {
+  const cols = l.split(/\t|;|,/).map(espaces).filter(Boolean);
+  if (cols.length >= 2) {
+    const e = decoupeColonnes(cols);
+    if (lisible(e)) return e;
+  }
+  const mots = espaces(cols[0] || l).split(' ');
+  const e = mots.length >= 2 ? decoupeMots(mots) : null;
+  return lisible(e) ? e : null;
+}
+
+/* Une liste collée depuis Pronote, un tableur ou un traitement de texte :
+   « MARTIN Alice », « Alice Martin », « Martin;Alice », « Martin<tab>Alice ».
+   Rend les élèves reconnus (doublons retirés, 60 au plus) et les lignes
+   qu'on n'a pas su lire, pour que le professeur les voie plutôt que de les
+   perdre. */
+export function lireListeEleves(texte, max = 60) {
+  const eleves = [], ignorees = [], vus = new Set();
+  for (const brute of String(texte || '').split(/\r?\n/)) {
+    const l = brute.trim();
+    if (!l || (ENTETE.test(l) && /nom/i.test(l))) continue;
+    const e = lireLigne(l);
+    if (!e) { ignorees.push(l); continue; }
+    const k = cleNom(nomPropre(e.prenom, e.nom));
+    if (vus.has(k)) continue;
+    vus.add(k);
+    eleves.push({ prenom: espaces(e.prenom), nom: espaces(e.nom), complet: nomPropre(e.prenom, e.nom) });
+  }
+  return { eleves: eleves.slice(0, max), ignorees, trop: Math.max(0, eleves.length - max) };
+}
+
+/* ---------- la carte de connexion ----------
+   L'identifiant « prenom.nom » est l'adresse « prenom.nom@eleves.folio.invalid »
+   du compte : `.invalid` est réservé, aucun courriel ne peut y partir. Le
+   QR de la carte ouvre l'app avec « ?carte=identifiant-CODE ». */
+export const DOMAINE_CARTE = 'eleves.folio.invalid';
+
+export const normIdentifiant = s => String(s || '').trim().toLowerCase().replace(/@.*$/, '').replace(/[^a-z0-9.]/g, '');
+
+export const emailCarte = identifiant => `${normIdentifiant(identifiant)}@${DOMAINE_CARTE}`;
+
+export const lienCarte = (base, identifiant, code) =>
+  `${String(base).replace(/[?#].*$/, '')}?carte=${normIdentifiant(identifiant)}-${normCode(code)}`;
+
+export function lireCarte(search) {
+  const v = new URLSearchParams(String(search || '')).get('carte') || '';
+  const i = v.lastIndexOf('-');
+  if (i < 1) return null;
+  const identifiant = normIdentifiant(v.slice(0, i)), code = normCode(v.slice(i + 1));
+  return identifiant && codeComplet(code) ? { identifiant, code } : null;
+}
+
+/* Ce que la base répond, ligne par ligne, quand le professeur crée les comptes. */
+export const CREATION = {
+  cree: ['ok', 'Créé'],
+  deja: ['neutre', 'Déjà dans la classe'],
+  homonyme: ['am', 'Existe déjà dans l’établissement'],
+  complet: ['ko', 'Classe complète'],
+  invalide: ['ko', 'Nom illisible']
+};
+
 /* ---------- ce que répond la base quand on tape un code ----------
    `ton` : ok (c'est fait), attente (rien à faire qu'attendre), ko (il faut
    autre chose qu'un nouvel essai). Les textes parlent à un élève de onze
@@ -58,6 +157,7 @@ const STATUTS = {
   role: ['ko', 'Ce code n’est pas pour ce compte', 'Les élèves et les professeurs n’ont pas le même code.'],
   inconnu: ['ko', 'Code inconnu', 'Vérifie les huit caractères : sans 0, O, 1, I ni L.'],
   trop: ['ko', 'Trop d’essais', 'Par sécurité, réessaie dans une heure.'],
+  nom: ['ko', 'Ton prénom et ton nom', 'Ton professeur doit savoir qui tu es : écris ton vrai prénom et ton vrai nom.'],
   demandes: ['ko', 'Trop de demandes en attente', 'Attends qu’un professeur réponde à tes demandes en cours.'],
   connexion: ['ko', 'Connecte-toi d’abord', '']
 };
@@ -217,7 +317,7 @@ export const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
 
 export const auJour = s => (s ? new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10), 12) : null);
 
-export const joursEntre = (a, b) => Math.round((auJour(b) - auJour(a)) / 864e5);
+export const joursEntre = (a, b) => Math.round((auJour(b).getTime() - auJour(a).getTime()) / 864e5);
 
 export const dansJours = (n, depuis = new Date()) => {
   const d = new Date(depuis.getFullYear(), depuis.getMonth(), depuis.getDate() + n, 12);
@@ -281,6 +381,19 @@ export function initiales(nom) {
   const mots = String(nom || '').trim().split(/[\s.\-_]+/).filter(Boolean);
   if (!mots.length) return '?';
   return (mots[0][0] + (mots.length > 1 ? mots[mots.length - 1][0] : '')).toUpperCase();
+}
+
+/* Le sigle d'une classe, pour sa pastille. Ses initiales ne disent rien
+   (« 2nde 4 » donnerait « 24 ») : on garde le chiffre d'un mot qui
+   commence par un chiffre, l'initiale d'un mot et les chiffres qui le
+   terminent (« S2 »), et un point entre deux nombres. « 2nde 4 » → « 2·4 »,
+   « 1ère S2 » → « 1S2 », « Tle G3 » → « TG3 », « 6e B » → « 6B ». */
+export function sigleClasse(nom) {
+  const mots = String(nom || '').trim().split(/[\s_]+/).filter(Boolean);
+  if (!mots.length) return '?';
+  const parts = mots.map(m => (/^\d/.test(m) ? m.match(/^\d+/)[0] : m[0].toUpperCase() + (m.slice(1).match(/\d+$/) || [''])[0]));
+  const s = parts.reduce((a, p) => a + (/\d$/.test(a) && /^\d/.test(p) ? '·' : '') + p, '');
+  return s.length > 4 ? s.slice(0, 4) : s;
 }
 
 /* Une teinte stable par personne (huit possibles) : on reconnaît un élève

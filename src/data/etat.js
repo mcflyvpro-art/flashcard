@@ -264,10 +264,6 @@ export let adm = { orgs: null, etat: null, tab: 'orgs' };
    C'est bien elle qui décide. */
 export let myRole = 'eleve';
 
-export let classes = null;                 // mes classes (tenues ou rejointes)
-
-export let classOf = null;                 // celle qu'on regarde
-
 /* ══════════ scolaire ou personnel ══════════
    Folio sert deux publics dans la même app : quelqu'un qui révise pour lui,
    et un élève inscrit par son établissement. Le second n'est pas le premier
@@ -281,20 +277,21 @@ export let classOf = null;                 // celle qu'on regarde
    en version personnelle une fraction de seconde avant de se corriger. */
 export let school = null;                  // { org, classe, niveau, … } | false
 
-export let team = null;                    // les professeurs de sa classe
+/* Le compte connecté, tel que la base le décrit (`mon_compte`) : un compte
+   à carte, ouvert par un professeur, n'a ni pseudo à choisir ni nom à
+   changer — son nom est « Prénom NOM », et la base le garde ainsi. */
+export let compte = null;                  // { gere, nom, identifiant } | null
 
-export let roster = null;                  // la liste d'une classe, côté professeur
+/* ══════════ « Mes classes », côté élève ══════════
+   Ce qu'il y a à faire d'abord — un devoir se rend, il ne se cherche pas —,
+   puis ses classes, ses demandes en attente, et de quoi en rejoindre une
+   (code tapé, lien, ou QR projeté au tableau). */
+export const eleveNeuf = () => ({
+  classes: null, devoirs: null, err: 0,
+  code: '', apercu: null, prenom: '', nom: '', reponse: null, envoi: false
+});
+export let eleve = eleveNeuf();
 
-export let workOpen = null, memberOpen = null;
-
-export let asgs = null;                    // les devoirs de la classe regardée
-
-/* ══════════ « Ma classe », côté élève ══════════
-   Un seul écran, et rien qui ressemble à de la gestion. Ce qu'il y a à
-   faire d'abord — un devoir se rend, il ne se cherche pas —, puis qui lui
-   fait cours, puis les camarades qu'il peut ajouter. Aucun code à saisir,
-   aucune classe à quitter, aucun bouton qui échouerait s'il le pressait :
-   la base refuse déjà tout cela, l'écran n'a pas à le proposer. */
 export let mates2 = null;                  // ses camarades de classe
 
 /* ══════════ la console du référent d'établissement ══════════
@@ -318,17 +315,25 @@ export let ref = { tab: 'etab', board: null, err: 0,
             classes: null, open: null, team: null,
             who: null, service: null, form: null, trace: null };
 
-export let prof = {
+/* ══════════ l'espace professeur ══════════
+   Une fabrique plutôt qu'un objet : la déconnexion repart de la même forme
+   (resetSession, onboarding.js), sans deuxième liste de champs à tenir à
+   jour à la main. */
+export const profNeuf = () => ({
   annee: null, annees: null,            // l'année scolaire regardée
-  classes: null, err: 0,
+  classes: null, err: 0,                // prof_classes
   open: null, tab: 'eleves',            // la classe ouverte, et son onglet
-  roster: null, devoirs: null, bilan: null,
-  tri: 'retard', q: '',
-  eleve: null, fiche: null,             // la fiche d'un élève
+  roster: null, demandes: null, devoirs: null, equipe: null, exclus: null,
+  tri: 'suivi', filtre: 'tous', q: '', sel: new Set(),   // la liste des élèves
+  eleve: null, fiche: null,             // l'élève ouvert dans le panneau
   work: null, cartes: null,             // le devoir ouvert, et ce qui bloque
-  comp: null,                           // le composeur de devoir
-  vue: 'liste', mois: null, agenda: null, jour: null   // le cahier de textes
-};
+  comp: null,                           // « donner un devoir »
+  vue: 'liste', mois: null, jour: null, agenda: null, semaine: null,
+  feuille: null, f: {},                 // la feuille ouverte et ses champs
+  faites: null,                         // les cartes à imprimer (codes montrés une seule fois)
+  archives: false, sale: false
+});
+export let prof = profNeuf();
 
 /* Le profil d'un lecteur : ce que le classement sait déjà de lui, sur
    trois périodes, plus les livres qu'il a posés dans la bibliothèque.
@@ -455,14 +460,9 @@ export const setAccounts = v => accounts = v;
 export const setAccOpen = v => accOpen = v;
 export const setAdm = v => adm = v;
 export const setMyRole = v => myRole = v;
-export const setClasses = v => classes = v;
-export const setClassOf = v => classOf = v;
 export const setSchool = v => school = v;
-export const setTeam = v => team = v;
-export const setRoster = v => roster = v;
-export const setWorkOpen = v => workOpen = v;
-export const setMemberOpen = v => memberOpen = v;
-export const setAsgs = v => asgs = v;
+export const setCompte = v => compte = v;
+export const setEleve = v => eleve = v;
 export const setMates2 = v => mates2 = v;
 export const setRef = v => ref = v;
 export const setProf = v => prof = v;

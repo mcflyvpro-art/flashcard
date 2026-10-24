@@ -1,16 +1,15 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
 import {
-  asgs, auth, cardEdit, classOf, db, dirty, duels, fnr, friends, gone, groupOf, groups,
-  leaving, lib, mailOpen, mailbox, mateOpen, mateProf, mates, memberOpen,
-  menu, prefs, previewOf, prof, quiz, recKey, recorder, ref, reportOn, sel, sendTo,
-  setAnimate, setAsgs, setDeckOpen, setDeckQ, setLeaving,
+  auth, cardEdit, db, dirty, duels, fnr, friends, gone, groupOf, groups,
+  leaving, lib, mailOpen, mailbox, mateOpen, mateProf, mates,
+  menu, prefs, previewOf, quiz, recKey, recorder, ref, reportOn, sel, sendTo,
+  setAnimate, setDeckOpen, setDeckQ, setLeaving,
   setPendingGrade, setQuiz, setRecKey, setReorder, setReportWhy, setSel, setSendMsg,
   setSendTo, setSplitSize, setStudy, setSubjColor, setView, splitSize, study, subjColor,
-  subjEdit, subjName, view, workOpen
+  subjEdit, subjName, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
-import { compDonner, lireComp, profCartesDeDevoir } from './bilan-devoirs.js';
 import { joinGroup, leaveGroup, makeGroup } from '../core/bilan-devoirs.js';
 import {
   REC, enc, pickFile, recStart, recStop, upErr
@@ -18,8 +17,7 @@ import {
 import { upload } from '../core/carte-media.js';
 import { openReport } from './classement.js';
 import {
-  blockUser, dropMember, giveWork, joinClass, makeClass, refDo, refPeople, sendReport,
-  setRole, takeWork, unblockUser
+  blockUser, refDo, refPeople, sendReport, setRole, unblockUser
 } from '../core/classement.js';
 import { lireClass, lireNew } from './classement.js';
 import {
@@ -28,14 +26,13 @@ import {
 } from '../core/coeur-sync.js';
 import { PWMIN } from './connexion.js';
 import { duelStart } from './defis.js';
-import { duelClasse, duelDrop, duelMake } from '../core/defis.js';
-import { profDo } from '../core/etablissement.js';
+import { duelDrop, duelMake } from '../core/defis.js';
 import {
   cloneDeck, fnrApply, mergeDecks, savePrefs, splitDeck, spreadBacklog, toast
 } from './import-cartes.js';
 import { feuilleTap } from './interactions.js';
 import { closeMenu, mountMenu, openMenu, paintMenu } from './menus-a.js';
-import { changePassword, deleteAccount, deleteAssignment, mateProfPull, sendMotProf } from '../core/menus-c.js';
+import { changePassword, deleteAccount, mateProfPull } from '../core/menus-c.js';
 import { copyLink, doPrompt, logout, startTour } from './onboarding.js';
 import { libAdd, versRestore } from './reglages-corbeille.js';
 import {
@@ -169,71 +166,6 @@ function clickMateReportBlock(a) {
     { pseudo: f.handle, nom: f.name });
 }
 
-function clickDoClass() {
-  const n = (document.getElementById('cn') || {}).value || '';
-  const l = (document.getElementById('cl') || {}).value || '';
-  return makeClass(n, l);
-}
-
-function clickDoClassJoin() {
-  const v = ((document.getElementById('cn') || {}).value || '').trim();
-  if (v) return joinClass(v);
-}
-
-function clickGive(a, b) {
-  const d = deck(b.dataset.give);
-  if (d && classOf) return giveWork(d, classOf, 7);
-}
-
-/* ---- le composeur et la feuille d'un devoir ---- */
-function clickCadd() {
-  if (!prof.comp) return;
-  lireComp();
-  const f = prof.comp.recto.trim(), b = prof.comp.verso.trim();
-  if (!f || !b) return toast(I.x, 'Il faut un recto et un verso');
-  prof.comp.cartes.push([f, b]);
-  prof.comp.recto = ''; prof.comp.verso = '';
-  paintMenu();
-  setTimeout(() => { const n = document.getElementById('crec'); if (n) n.focus(); }, 40);
-}
-
-const clickCgive = () => compDonner();
-
-function clickPdefi() {
-  const d = (prof.devoirs || []).find(x => x.id === prof.work);
-  if (d) duelClasse(d.id, d.nom);
-}
-
-function clickPmotgo() {
-  const t = ((document.getElementById('pmt') || {}).value || '').trim();
-  if (!t) return toast(I.x, 'Écris ton message');
-  const m = (prof.roster || []).find(x => x.user_id === prof.eleve);
-  sendMotProf(prof.eleve, t)
-    .then(() => { closeMenu(); render();
-      toast(I.check, 'Mot envoyé à ' + (m ? m.who.split(' ')[0] : 'l’élève')); },
-          () => toast(I.x, 'Envoi impossible'));
-}
-
-function clickPrelance() {
-  return profDo('prof_relance', { aid: prof.work, mot: '' },
-    r => r ? plur(r, 'élève') + ' relancé' + (r > 1 ? 's' : '') : 'Personne à relancer')
-    .then(() => { closeMenu(); render(); });
-}
-
-function clickPredonner() {
-  const d = (prof.devoirs || []).find(x => x.id === prof.work);
-  if (!d) return;
-  /* Redonner, c'est repartir du composeur avec tout de prérempli : le
-     professeur n'a plus qu'à cocher les classes. Les cartes viennent du
-     devoir lui-même, pas d'une bibliothèque où elles ne sont peut-être
-     plus. */
-  profCartesDeDevoir(d);
-}
-
-function clickPdel() {
-  return profDo('prof_del_work', { aid: prof.work }, 'Devoir retiré')
-    .then(() => { closeMenu(); render(); });
-}
 
 /* ---- écritures du référent ---- */
 function clickRefsave() {
@@ -293,19 +225,6 @@ function clickRefdonewclass() {
     .then(r => { if (r) { ref.form = {}; closeMenu(); render(); } });
 }
 
-function clickTakework() {
-  const x = (asgs || []).find(y => y.id === workOpen);
-  if (x) return takeWork(x);
-}
-
-function clickDelwork() {
-  const id = workOpen; closeMenu();
-  deleteAssignment(id)
-    .then(() => { setAsgs((asgs || []).filter(x => x.id !== id)); render(); toast(I.check, 'Devoir retiré'); },
-          () => toast(I.x, 'Impossible pour l’instant'));
-}
-
-function clickDropmember() { if (classOf && memberOpen) return dropMember(classOf, memberOpen); }
 const clickInstcopy = () => copyLink();
 const clickInstgo = () => doPrompt();
 
@@ -670,16 +589,6 @@ const CLICK_RULES = [
   [a => a === 'libreport' || a === 'libblock', clickLibReportBlock],
   [a => a === 'mailreport' || a === 'mailblock', clickMailReportBlock],
   [a => a === 'matereport' || a === 'mateblock', clickMateReportBlock],
-  [a => a === 'doclass', clickDoClass],
-  [a => a === 'doclassjoin', clickDoClassJoin],
-  [(a, b) => b.dataset.give !== undefined, clickGive],
-  [a => a === 'cadd', clickCadd],
-  [a => a === 'cgive', clickCgive],
-  [a => a === 'pdefi', clickPdefi],
-  [a => a === 'pmotgo', clickPmotgo],
-  [a => a === 'prelance', clickPrelance],
-  [a => a === 'predonner', clickPredonner],
-  [a => a === 'pdel', clickPdel],
   [a => a === 'refsave', clickRefsave],
   [a => a === 'refpw', clickRefpw],
   [a => a === 'refclssave', clickRefclssave],
@@ -687,9 +596,6 @@ const CLICK_RULES = [
   [a => a === 'refclsgens', clickRefclsgens],
   [a => a === 'refdonew', clickRefdonew],
   [a => a === 'refdonewclass', clickRefdonewclass],
-  [a => a === 'takework', clickTakework],
-  [a => a === 'delwork', clickDelwork],
-  [a => a === 'dropmember', clickDropmember],
   [a => a === 'instcopy', clickInstcopy],
   [a => a === 'instgo', clickInstgo],
   [a => a === 'instlater', clickClose],
@@ -762,7 +668,7 @@ const CLICK_RULES = [
    tout bouton de feuille portant un `data-` absent de la liste restait
    muet. Il attrape maintenant les boutons, comme celui de la page. */
 document.addEventListener('click', async e => {
-  const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-give],[data-setrole]');
+  const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-setrole]');
   if (!b) return;
   if (feuilleTap(b)) return;
   const a = b.dataset.mact;

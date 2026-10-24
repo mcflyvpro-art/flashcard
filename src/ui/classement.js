@@ -2,10 +2,9 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import {
-  accOpen, accounts, adm, asgs, auth, blocks, mates2, mods, myRole, ref,
-  reportOn, reportWhy, school, setAnimate, setMenu, setReportOn, setReportWhy, team
+  accOpen, accounts, adm, auth, blocks, compte, mods, myRole, ref,
+  reportOn, reportWhy, school, setMenu, setReportOn, setReportWhy
 } from '../data/etat.js';
-import { render } from './bibliotheque.js';
 import { initial } from './bilan-devoirs.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
@@ -13,9 +12,7 @@ import {
 } from './etablissement.js';
 import { openMenu, mountMenu } from './menus-a.js';
 import { cb, cf, timeAgo } from './reglages-corbeille.js';
-import {
-  classPull, matesPull, refPeople, refTrace, schoolPull, teamPull
-} from '../core/classement.js';
+import { refPeople, refTrace } from '../core/classement.js';
 
 /* ---------- classement ----------
    Les révisions de chacun restent privées : la fonction côté serveur ne
@@ -216,7 +213,10 @@ export function accountSheet(w) {
 
 export const atSchool = () => !!(school && school.org_id);
 
-export const isPupil = () => atSchool() && myRole === 'eleve';
+/* Un élève « de classe » : inscrit par son établissement, ou ouvert par un
+   professeur avec une carte. Ni l'un ni l'autre n'a de pseudo à choisir ni
+   de nom à changer, et son accueil est « Mes classes ». */
+export const isPupil = () => (atSchool() || !!(compte && compte.gere)) && myRole === 'eleve';
 
 export const isProf = () => myRole === 'prof' || myRole === 'admin';
 
@@ -228,87 +228,6 @@ export const dueLabel = s => {
   return j < 0 ? (j === -1 ? 'hier' : `il y a ${-j} jours`)
        : j === 0 ? 'aujourd’hui' : j === 1 ? 'demain' : `dans ${j} jours`;
 };
-
-export function maClassePull() {
-  if (school === null) schoolPull().then(() => { maClassePull(); setAnimate(false); render(); });
-  if (school && school.class_id && !asgs) classPull(school.class_id);
-  if (!team) teamPull();
-  if (!mates2) matesPull();
-}
-
-function maClasseDevoirsHtml(retard, avenir, ligne) {
-  if (!asgs) return `<div class="card2"><div class="note">Chargement…</div></div>`;
-  if (!asgs.length) return `<div class="empty">${svg(I.card)}<p><b>Rien à faire</b>
-            Tes professeurs n’ont pas encore donné de devoir.</p></div>`;
-  return `${retard.length ? `<div class="slist">${retard.map(ligne).join('')}</div>` : ''}
-           ${avenir.length ? `<div class="slist">${avenir.map(ligne).join('')}</div>` : ''}`;
-}
-
-function maClasseProfsHtml() {
-  if (!team) return `<div class="card2"><div class="note">Chargement…</div></div>`;
-  if (!team.length) return `<div class="card2"><div class="note">Aucun cours renseigné.</div></div>`;
-  return `<div class="profs">${team.map(t => `<div class="pf">
-            <i class="av sm">${esc(initial(t.teacher))}</i>
-            <span class="ml2"><span class="n">${esc(t.subject)}</span>
-              <span class="sub">${esc(t.teacher)}${t.principal ? ' · professeur principal' : ''}</span></span>
-            </div>`).join('')}</div>`;
-}
-
-const maClasseCamaradeLigne = m => `<div class="sr flat">
-            <i class="av sm">${esc(initial(m.name))}</i>
-            <span class="ml2"><span class="n">${esc(m.name)}</span>
-              <span class="sub">@${esc(m.handle || '')}</span></span>
-            ${m.lien === 'ok' ? `<button class="camo" data-mate="${esc(m.id)}">${svg(I.arrow)}</button>`
-              : m.lien ? `<span class="camw">demandé</span>`
-              : `<button class="camadd" data-camadd="${esc(m.id)}" data-camn="${esc(m.handle || '')}"
-                   aria-label="Ajouter ${esc(m.name)}">${svg(I.plus)}</button>`}
-            </div>`;
-
-function maClasseCamaradesHtml(cam) {
-  if (!mates2) return `<div class="card2"><div class="note">Chargement…</div></div>`;
-  if (!cam.length) return `<div class="card2"><div class="note">Tu es seul inscrit pour l’instant.</div></div>`;
-  return `<div class="slist">${cam.map(maClasseCamaradeLigne).join('')}</div>`;
-}
-
-export function maClasseView() {
-  if (!school || !school.class_id) {
-    $.innerHTML = `
-      <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
-        <h1>Ma classe</h1></div>
-      <div class="page"><div class="empty">${svg(I.school)}<p><b>Aucune classe</b>
-        ${school === null ? 'Chargement…'
-          : 'Ton établissement ne t’a pas encore inscrit dans une classe. Préviens ton professeur principal.'}</p></div></div>`;
-    return;
-  }
-  const c = school;
-  const l = asgs || [];
-  /* Les devoirs en retard d'abord : c'est la seule chose qui presse. */
-  const retard = l.filter(a => a.due && Date.parse(a.due + 'T12:00:00') < Date.now());
-  const avenir = l.filter(a => !retard.includes(a));
-  const ligne = a => `<button class="sr flat${a.due && Date.parse(a.due + 'T12:00:00') < Date.now() ? ' tard' : ''}"
-      data-work="${esc(a.id)}">${svg(I.card)}
-    <span class="ml2"><span class="n">${esc(a.name)}</span>
-      <span class="sub">${plur(a.n, 'page')}${a.due ? ' · ' + dueLabel(a.due) : ''}</span></span>
-    ${svg(I.arrow)}</button>`;
-  const cam = mates2 || [];
-  $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
-      <h1>${esc(c.classe)}</h1></div>
-    <div class="page">
-      <div class="ecole">${svg(I.school)}<span><b>${esc(c.org)}</b>
-        <i>${esc(c.niveau || '')}${c.filiere ? ' · ' + esc(c.filiere) : ''}${
-          c.effectif ? ' · ' + plur(c.effectif, 'élève') : ''}</i></span></div>
-
-      <div class="lbl"><span>Devoirs</span><span>${l.length || ''}</span></div>
-      ${maClasseDevoirsHtml(retard, avenir, ligne)}
-
-      <div class="lbl"><span>Mes professeurs</span><span>${team ? team.length : ''}</span></div>
-      ${maClasseProfsHtml()}
-
-      <div class="lbl"><span>Ma classe</span><span>${cam.length || ''}</span></div>
-      ${maClasseCamaradesHtml(cam)}
-    </div>`;
-}
 
 /* Un bouton de la feuille la repeint, et repeindre efface ce qui est tapé.
    On relit donc les champs avant chaque repeinture : sans cela, choisir le

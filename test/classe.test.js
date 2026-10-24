@@ -4,10 +4,11 @@
 import process from 'node:process';
 import { afterEach, describe, it, expect } from 'vitest';
 import {
-  ALPHABET, DUREES, aTraiter, codeComplet, codeDepuisTexte, dansJours, echeance, erreurPlaces,
-  etatDevoir, etatDevoirEleve, etatEleve, etatInscriptions, filtrerEleves, finTexte, formatCode,
-  grilleMois, initiales, iso, jourCourt, jourLong, joursEntre, lienRejoindre, messageStatut,
-  normCode, parJour, rangerClasses, syntheseAccueil, syntheseClasse, teinte, tonReussite, trierEleves
+  ALPHABET, CREATION, DUREES, aTraiter, codeComplet, codeDepuisTexte, dansJours, echeance, emailCarte,
+  erreurPlaces, etatDevoir, etatDevoirEleve, etatEleve, etatInscriptions, filtrerEleves, finTexte,
+  formatCode, grilleMois, initiales, sigleClasse, iso, jourCourt, jourLong, joursEntre, lienCarte, lienRejoindre,
+  lireCarte, lireListeEleves, messageStatut, nomPropre, nomValide, normCode, normIdentifiant, parJour,
+  rangerClasses, syntheseAccueil, syntheseClasse, teinte, tonReussite, trierEleves
 } from '../src/classe.js';
 
 describe('le code d’une classe', () => {
@@ -230,7 +231,84 @@ describe('aucun décalage de fuseau', () => {
   }
 });
 
+describe('Prénom NOM, rien d’autre', () => {
+  it('même mise en forme que la base (nom_propre)', () => {
+    expect(nomPropre('alice', 'martin')).toBe('Alice MARTIN');
+    expect(nomPropre('  jean-pierre ', 'de la  fontaine')).toBe('Jean-Pierre DE LA FONTAINE');
+    expect(nomPropre('élodie', 'ñúñez')).toBe('Élodie ÑÚÑEZ');
+    expect(nomPropre("marie-ève", "d'arc")).toBe("Marie-Ève D'ARC");
+  });
+  it('un nom fait de lettres, pas d’un pseudo', () => {
+    expect(nomValide('Élodie')).toBe(true);
+    expect(nomValide("O'Neil")).toBe(true);
+    expect(nomValide('Dark_Sasuke')).toBe(false);
+    expect(nomValide('Lucas93')).toBe(false);
+    expect(nomValide('<b>x</b>')).toBe(false);
+    expect(nomValide('')).toBe(false);
+    expect(nomValide('a'.repeat(41))).toBe(false);
+  });
+});
+
+describe('lire une liste de classe collée', () => {
+  const noms = l => lireListeEleves(l).eleves.map(e => e.complet);
+  it('l’export Pronote : « NOM Prénom », nom en capitales, même composé', () => {
+    expect(noms('MARTIN Alice\nDE LA FONTAINE Jean-Pierre\nN’DIAYE Awa')).toEqual(
+      ['Alice MARTIN', 'Jean-Pierre DE LA FONTAINE', 'Awa N’DIAYE']);
+  });
+  it('« Prénom Nom » sans capitales : le dernier mot est le nom', () => {
+    expect(noms('Alice Martin\nLéo Dubois')).toEqual(['Alice MARTIN', 'Léo DUBOIS']);
+    expect(noms('Alice MARTIN')).toEqual(['Alice MARTIN']);
+  });
+  it('un tableur : « Nom ; Prénom », tabulations, colonnes en trop, ligne d’en-tête', () => {
+    expect(noms('Nom;Prénom;Classe\nMartin;Alice;2nde 4\nDubois\tLéo\tx')).toEqual(['Alice MARTIN', 'Léo DUBOIS']);
+    expect(noms('Prénom,Nom\nAlice,MARTIN')).toEqual(['Alice MARTIN']);
+  });
+  it('un nom complet dans la première colonne, la classe dans la seconde', () => {
+    expect(noms('MARTIN Alice;2nde 4')).toEqual(['Alice MARTIN']);
+  });
+  it('doublons retirés (casse et accents), lignes illisibles rendues, 60 au plus', () => {
+    const r = lireListeEleves('Alice Martin\nalice martin\nalice MARTÎN\nZorro\nxX_dark_Xx 93\n\n');
+    expect(r.eleves.map(e => e.complet)).toEqual(['Alice MARTIN']);         // comme cle_nom() en base
+    expect(noms('ALICE martin')).toEqual(['Martin ALICE']);                  // les capitales désignent le nom
+    expect(r.ignorees).toEqual(['Zorro', 'xX_dark_Xx 93']);
+    const longue = lireListeEleves(Array.from({ length: 70 }, (_, i) => `Élève ${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[i % 26]}${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(i / 26)]}`).join('\n'));
+    expect(longue.eleves).toHaveLength(60);
+    expect(longue.trop).toBe(10);
+  });
+});
+
+describe('la carte de connexion', () => {
+  it('l’identifiant devient une adresse qui ne peut recevoir aucun courriel', () => {
+    expect(emailCarte(' Alice.Martin ')).toBe('alice.martin@eleves.folio.invalid');
+    expect(emailCarte('alice.martin@eleves.folio.invalid')).toBe('alice.martin@eleves.folio.invalid');
+    expect(normIdentifiant('jean pierre.dupont2')).toBe('jeanpierre.dupont2');
+  });
+  it('le QR porte l’identifiant et le code, et se relit', () => {
+    const l = lienCarte('https://x.github.io/flashcard/?go=stats', 'alice.martin2', 'k7qm-2xrp');
+    expect(l).toBe('https://x.github.io/flashcard/?carte=alice.martin2-K7QM2XRP');
+    expect(lireCarte(l.slice(l.indexOf('?')))).toEqual({ identifiant: 'alice.martin2', code: 'K7QM2XRP' });
+  });
+  it('une carte abîmée ne tente rien', () => {
+    expect(lireCarte('?carte=alice.martin-K7QM')).toBeNull();
+    expect(lireCarte('?carte=-K7QM2XRP')).toBeNull();
+    expect(lireCarte('?go=stats')).toBeNull();
+  });
+  it('chaque statut de création a son libellé', () => {
+    for (const s of ['cree', 'deja', 'homonyme', 'complet', 'invalide']) expect(CREATION[s][1].length).toBeGreaterThan(3);
+  });
+});
+
 describe('les visages', () => {
+  it('sigle d’une classe : chiffres et lettres qui la désignent', () => {
+    expect(sigleClasse('2nde 4')).toBe('2·4');
+    expect(sigleClasse('1ère S2')).toBe('1S2');
+    expect(sigleClasse('Tle G3')).toBe('TG3');
+    expect(sigleClasse('6e B')).toBe('6B');
+    expect(sigleClasse('anglais')).toBe('A');
+    expect(sigleClasse('Atelier théâtre du jeudi soir')).toBe('ATDJ');
+    expect(sigleClasse('  ')).toBe('?');
+  });
+
   it('initiales du premier et du dernier mot', () => {
     expect(initiales('Alice Martin')).toBe('AM');
     expect(initiales('jean-pierre dupont')).toBe('JD');

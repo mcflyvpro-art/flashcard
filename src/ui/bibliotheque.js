@@ -3,28 +3,28 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
-  DECKPAGE, accounts, adm, animate, asks, auth, classes, db, demo, dirty, filter, liveAt,
-  liveSoon, liveT, mailbox, menu, myRole, online, pageDir, pagerEnd, peek, prefs, prof,
+  DECKPAGE, accounts, adm, animate, asks, auth, db, demo, dirty, filter, liveAt,
+  liveSoon, liveT, mailbox, menu, myRole, online, pageDir, pagerEnd, peek, prefs,
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
   setPageDir, setPagerEnd, setPreviewOf, setView, stats, view
 } from '../data/etat.js';
 import {
-  boardView, classeView, classesView, commuPull, commuView, duelsView, friendsView,
-  groupsView, libraryView, profEleveView
+  boardView, commuPull, commuView, duelsView, friendsView, groupsView, libraryView
 } from './bilan-devoirs.js';
 import { STATE, cstate, paintMedia } from './carte-media.js';
 import {
-  adminView, atSchool, isProf, isPupil, maClassePull, maClasseView, modView, refView
+  adminView, atSchool, isProf, modView, refView
 } from './classement.js';
-import { accountsPull, admPull, boardPull, classesPull, refPull } from '../core/classement.js';
+import { accountsPull, admPull, boardPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { deckView, legalView, loginView, selOff } from './connexion.js';
 import { duelView } from './defis.js';
 import { duelsPull } from '../core/defis.js';
 import { findView, groupView, statsView } from './ecran-groupe.js';
 import { statsPull } from '../core/ecran-groupe.js';
-import { profClasseView, profView } from './etablissement.js';
-import { profPull } from '../core/etablissement.js';
+import { mesClassesView } from './eleve-classes.js';
+import { eleveClassesPull } from '../core/eleve-classes.js';
+import { allerAccueil, profAccueilView, profAgendaView, profClasseView } from './prof-porte.js';
 import {
   applyFont, dropBoot, dueCount, savePrefs, simpleMode, todayCount
 } from './import-cartes.js';
@@ -79,8 +79,8 @@ export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
               group: groupView, shared: sharedView, duel: duelView, legal: legalView, mod: modView,
-              classes: classesView, classe: classeView, maclasse: maClasseView,
-              prof: profView, profclasse: profClasseView, profeleve: profEleveView,
+              classes: mesClassesView,
+              prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
               ref: refView,
               admin: adminView,
               commu: commuView, friends: friendsView, groups: groupsView,
@@ -118,7 +118,7 @@ function railOn() {
   if (view.name === 'settings') return 'settings';
   if (view.name === 'mail') return 'mail';
   if (view.name === 'stats') return 'stats';
-  if (/^(classes|classe|maclasse|prof|ref$|admin$)/.test(view.name)) return 'classes';
+  if (/^(classes|prof|ref$|admin$)/.test(view.name)) return 'classes';
   if (/commu|friends|groups|duels|library|board|shared/.test(view.name)) return 'commu';
   return 'home';
 }
@@ -126,7 +126,7 @@ function railOn() {
 function railClasseNom() {
   if (myRole === 'ref') return 'Mon établissement';
   if (myRole === 'admin') return 'Administration';
-  return isProf() ? 'Mes classes' : 'Ma classe';
+  return 'Mes classes';
 }
 
 const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' : ''}" data-r="${k}">${
@@ -148,7 +148,8 @@ function railNavBoulot(on, classeNom) {
     <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
 }
 
-const railHasClasses = () => isProf() || atSchool() || !!(classes || []).length;
+/* Tout élève peut rejoindre une classe : l'entrée est là pour tous. */
+const railHasClasses = () => myRole === 'eleve' || isProf() || atSchool();
 
 function railNavHome(on, classeNom) {
   const ent = (k, ic, nom, badge) => railEntry(on, k, ic, nom, badge);
@@ -169,11 +170,10 @@ function railNavHome(on, classeNom) {
 }
 
 function railClickClasses() {
-  if (isPupil()) { maClassePull(); return go('maclasse'); }
   if (myRole === 'admin') { if (!accounts) accountsPull(); if (!adm.orgs) admPull(); return go('admin'); }
   if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
-  if (isProf() && atSchool()) { if (!prof.classes) profPull(); return go('prof'); }
-  if (!classes) classesPull(); return go('classes');
+  if (isProf()) return allerAccueil();
+  eleveClassesPull(); return go('classes');
 }
 
 function railClick(e) {
@@ -197,7 +197,7 @@ function paintRail() {
      lecture, ni cercle des lecteurs. Quatre entrées, et elles passent en
      barre horizontale — la page de gestion prend alors toute la largeur au
      lieu de vivre dans les trois quarts restants. */
-  const boulot = atSchool() && myRole !== 'eleve';
+  const boulot = (atSchool() && myRole !== 'eleve') || isProf();
   const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n
             + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v');
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas

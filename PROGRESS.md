@@ -18,17 +18,25 @@
 ```
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
-FAIT      43 / 148
-DERNIER   2026-10-24 · refonte de l'espace prof, ÉTAPE 1 (backend + noyau) faite, écrans
-          PAS encore refaits. Rejoindre une classe sécurisé en base (migrations
-          `20261024113815` + `…122609`, appliquées) : codes de 8 caractères tirés au hasard
-          (les codes de 4 étaient devinables), 10 essais faux/h, frontière d'établissement,
-          salle d'attente, exclusion, places, durée, code changeable ; avancement des
-          devoirs calculé par la base (aucun devoir n'était jamais « rendu ») ; M15.T6 ;
-          M10.T1 corrigé. Preuve : `supabase/tests/classes_securisees.sql` (54/55 au 1er
-          passage, le seul rouge était le test lui-même, corrigé et revérifié 3/3).
-          Noyau pur `src/classe.js` + `src/qr.js` (QR relu 10/10 par OpenCV), 46 tests.
-          Reste : les écrans prof PC/mobile et l'écran élève « Mes classes » à brancher.
+FAIT      45 / 148
+DERNIER   2026-10-24 · refonte de l'espace prof, ÉTAPE 2 : les écrans. Espace professeur
+          neuf, PC et téléphone (`ui/prof-*.js`, chargé à part : `ui/prof-porte.js`) :
+          tableau de bord (à traiter, semaine, classes), agenda, classe en 5 onglets
+          (élèves en tableau, demandes, devoirs liste/mois, bilan, réglages), feuilles
+          (ajouter des élèves, mode tableau avec QR, fiche élève, donner un devoir…).
+          Élèves sans pseudo : comptes à carte « Prénom NOM » créés par le prof depuis une
+          liste collée (migration `20261024125435`, nom verrouillé en base), connexion
+          « Carte élève » (identifiant + code) ou QR de la carte imprimée (8 par A4) ;
+          un compte perso qui rejoint écrit son vrai nom. Écran élève « Mes classes ».
+          M16.T5, M17.T1. Preuves : `e2e/espace-prof.e2e.js` (2 parcours prof ↔ élève,
+          390 et 1440 px, 0 débordement, 0 erreur JS) et les 11 autres parcours verts ;
+          270 tests ; budget JS au démarrage 104,2 Ko (l'espace prof, 20 Ko, n'est plus
+          téléchargé par les élèves). `supabase/tests/identite_eleve.sql` 22/22.
+          2026-10-24 (plus tôt) · ÉTAPE 1 : rejoindre une classe sécurisé en base
+          (migrations `20261024113815` + `…122609`) : codes de 8 caractères, 10 essais
+          faux/h, frontière d'établissement, salle d'attente, exclusion, places, durée ;
+          avancement des devoirs calculé par la base ; M15.T6 ; M10.T1 corrigé
+          (`supabase/tests/classes_securisees.sql`, 55/55).
           2026-10-16 · M08.T2 fini : budget de poids contrôlé à chaque build et en CI
           (JS 105,7 Ko, CSS 19 Ko gzip).
           2026-10-16 (plus tôt) · M07 terminé : 11 parcours Playwright (témoin, élève B2C, hors
@@ -372,17 +380,17 @@ But de phase : un lycée pilote utilise Folio une année entière sans incident.
 - [ ] M15.T5 · un élève ne voit jamais les données d'un autre — cible: 0 fuite sur 50 tentatives — preuve: test
 - [x] M15.T6 · un prof ne voit que ses classes — cible: 0 fuite — preuve: test — `supabase/tests/classes_securisees.sql` (transaction annulée, comptes jetables) : un prof hors de la classe lit 0 élève et 0 demande, le référent d'un autre lycée 0 (fuite `is_ref()` sans établissement fermée dans 5 fonctions, migration `20261024113815`), le référent du lycée 2/2
 
-## M16 · Espace professeur (ordinateur d'abord) [P1] 0/7
+## M16 · Espace professeur (ordinateur d'abord) [P1] 1/7
 - [ ] M16.T1 · liste + détail côte à côte ≥ 1024 px, empilés en dessous — cible: 0 duplication de composant — preuve: revue
 - [ ] M16.T2 · créer un devoir en ≤ 5 clics depuis un livre — preuve: test chronométré
 - [ ] M16.T3 · suivi de classe: rendu, réussite, alertes — cible: chiffres égaux au SQL de référence — preuve: test
 - [ ] M16.T4 · redonner un devoir (bug M06.T7) — preuve: test
-- [ ] M16.T5 · calendrier et agenda des devoirs — cible: 0 décalage de fuseau — preuve: test sur 3 fuseaux
+- [x] M16.T5 · calendrier et agenda des devoirs — cible: 0 décalage de fuseau — preuve: test sur 3 fuseaux — `npx vitest run test/classe.test.js` → 48/48, dont « aucun décalage de fuseau » sur 4 fuseaux (Kiritimati +14 h, Los Angeles, Paris, Nouméa) et le passage à l'heure d'été ; l'agenda du professeur (mois de toutes les classes, `ui/prof-accueil.js`), l'onglet Devoirs en mois et le choix de la date de rendu ne passent que par ces fonctions (`iso`, `auJour`, `dansJours`, `grilleMois`, dates « AAAA-MM-JJ » posées à midi)
 - [ ] M16.T6 · import d'un livre depuis Quizlet/Anki/CSV — cible: 4 formats, 95 % des cartes conservées — preuve: test
 - [ ] M16.T7 · tout l'espace prof utilisable au clavier — preuve: test
 
-## M17 · Espace élève scolaire (mobile d'abord) [P1] 0/5
-- [ ] M17.T1 · devoirs du jour en page d'accueil — cible: ≤ 2 taps pour commencer — preuve: test
+## M17 · Espace élève scolaire (mobile d'abord) [P1] 1/5
+- [x] M17.T1 · devoirs du jour en page d'accueil — cible: ≤ 2 taps pour commencer — preuve: test — `e2e/espace-prof.e2e.js` (390 px) : un élève à carte connecté arrive sur « Mes classes », « À faire » en tête (0 tap) ; un tap sur le devoir l'ouvre, un second sur « Lire » montre la première page
 - [ ] M17.T2 · rendu d'un devoir hors ligne, remonté à la reconnexion — cible: 0 perte — preuve: test
 - [ ] M17.T3 · séparation stricte livres perso / devoirs — cible: le prof ne voit rien du perso — preuve: test
 - [ ] M17.T4 · rappels (notification) sans compte tiers — cible: 0 service externe — preuve: revue

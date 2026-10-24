@@ -143,8 +143,14 @@ export function addDeck(name, cards, subject) {
   const d = { id: uid(), name: (name || '').trim() || 'Paquet', subject: subject || '',
               hidden: false, pos: -Date.now() / 1000 | 0,
               /* un identifiant fourni est gardé : c'est ainsi qu'un devoir
-                 reste reconnaissable une fois chez l'élève */
-              cards: cards.map(c => ({ id: c.id || uid(), f: c.f, b: c.b })) };
+                 reste reconnaissable une fois chez l'élève ; ses images et
+                 ses sons aussi (fi/bi/fa/ba, tags t/g), sinon un devoir
+                 illustré arrivait sans ses images */
+              cards: cards.map(c => {
+                const o = { id: c.id || uid(), f: c.f, b: c.b };
+                for (const k of ['fi', 'bi', 'fa', 'ba', 't', 'g']) if (c[k]) o[k] = c[k];
+                return o;
+              }) };
   db.decks.unshift(d); saveDeck(d); return d;
 }
 

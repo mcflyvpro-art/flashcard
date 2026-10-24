@@ -33,11 +33,6 @@ export function sendMotProf(eleveId, texte) {
   }], { Prefer: 'return=minimal' });
 }
 
-export function deleteAssignment(id) {
-  return api('/rest/v1/assignments?id=eq.' + encodeURIComponent(id), 'DELETE', null,
-    { Prefer: 'return=minimal' });
-}
-
 export function changePassword(pw) {
   return api('/auth/v1/user', 'PUT', { password: pw });
 }

@@ -4,22 +4,24 @@ import { DAY } from '../fsrs.js';
 import {
   DECKPAGE, DEFPREFS, asks, auth, bip, board, comp, db, demo, duels, filter, friends,
   groupTab, groups, lib, mates, me, mediaCache, menu, myRole, peek, prefs, quiz, scope, setAccOpen,
-  setAccounts, setAddQ, setAdm, setAnimate, setAsgs, setAsks, setBip, setBlocks, setBoard,
-  setCardEdit, setClassOf, setClasses, setComp, setConflicts, setDb, setDeckOpen, setDeckQ,
-  setDeckShow, setDemo, setDirty, setDuelRun, setDuels, setFilter, setFindQ, setFriends,
+  setAccounts, setAddQ, setAdm, setAnimate, setAsks, setBip, setBlocks, setBoard,
+  setCardEdit, setComp, setCompte, setConflicts, setDb, setDeckOpen, setDeckQ,
+  setDeckShow, setDemo, setDirty, setDuelRun, setDuels, setEleve, setFilter, setFindQ, setFriends,
   setGone, setGroupOf, setGroupTab, setGroups, setIAmMod, setLeaving, setLib, setLoginMode,
   setMailOpen, setMailbox, setMateOpen, setMateProf, setMates, setMates2, setMe,
-  setMemberOpen, setMenu, setMods, setMyRole, setPeek, setPrefs, setPreviewOf, setProf,
-  setQuiz, setRef, setReorder, setReportOn, setReportWhy, setRoster, setSchool, setScope,
-  setSel, setSendMsg, setSendTo, setShared, setStats, setStudy, setSubjEdit, setTeam,
-  setTour, setTourPoll, setTourSave, setTrash, setUndos, setVers, setView, setWorkOpen,
-  study, tour, tourPoll, tourSave, view
+  setMenu, setMods, setMyRole, setPeek, setPrefs, setPreviewOf, setProf,
+  setQuiz, setRef, setReorder, setReportOn, setReportWhy, setSchool, setScope,
+  setSel, setSendMsg, setSendTo, setShared, setStats, setStudy, setSubjEdit,
+  setTour, setTourPoll, setTourSave, setTrash, setUndos, setVers, setView,
+  eleveNeuf, profNeuf, study, tour, tourPoll, tourSave, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { dec, fsrsMigrate } from './carte-media.js';
 import { accueil } from '../core/classement.js';
 import { cacheKey, esc, flush, load, plur, pull, refreshToken, save, saveAuth, setOnline } from '../core/coeur-sync.js';
-import { selOff } from './connexion.js';
+import { consumeCarte, selOff } from './connexion.js';
+import { consumeRejoindre } from './eleve-classes.js';
+import { isPupil } from './classement.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
@@ -78,12 +80,8 @@ export function resetSession() {
 
   /* le rôle et ce qu'il ouvre */
   setMyRole('eleve'); setIAmMod(false);
-  setSchool(null); setTeam(null); setMates2(null);
-  setProf({ annee: null, annees: null, classes: null, err: 0,
-           open: null, tab: 'eleves', roster: null, devoirs: null, bilan: null,
-           tri: 'retard', q: '', eleve: null, fiche: null,
-           work: null, cartes: null, comp: null,
-           vue: 'liste', mois: null, agenda: null, jour: null });
+  setSchool(null); setCompte(null); setMates2(null);
+  setProf(profNeuf()); setEleve(eleveNeuf());
   setAdm({ orgs: null, etat: null, tab: 'orgs' });
   setRef({ tab: 'etab', board: null, err: 0,
           gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
@@ -91,8 +89,6 @@ export function resetSession() {
           who: null, service: null, form: null, trace: null });
   setMods({ list: null, err: 0, seen: 0 });
   setAccounts(null); setAccOpen(null);
-  setClasses(null); setClassOf(null); setRoster(null); setAsgs(null);
-  setWorkOpen(null); setMemberOpen(null);
   setReportOn(null); setReportWhy('');
 
   /* les écrans en cours */
@@ -499,7 +495,10 @@ export function maybeTour() {
   if (prefs.tuto || tour || location.hash || location.search.includes('go=')) return;
   setTimeout(() => {
     if (tour || prefs.tuto) return;
-    if (myRole !== 'eleve') return;
+    /* Un élève de classe (carte ou établissement) arrive sur ses devoirs :
+       la visite de la bibliothèque, avec ses livres d'exemple, viendrait
+       les recouvrir. C'est son professeur qui l'accompagne. */
+    if (myRole !== 'eleve' || isPupil()) return;
     startTour();
   }, 900);
 }
@@ -694,7 +693,10 @@ export function installSheet(w) {
 
 /* ---------- démarrage ---------- */
 async function boot() {
-  if (!auth) { setView({ name: 'login' }); return render(); }
+  /* Le QR d'une carte élève ouvre la session avant tout le reste ; un code
+     de classe (« ?rejoindre= ») arrivé sans session attend la connexion. */
+  await consumeCarte();
+  if (!auth) { consumeRejoindre(); setView({ name: 'login' }); return render(); }
   setDb(load());
   fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état
   if (!consumeHash()) render();          // le cache s'affiche tout de suite

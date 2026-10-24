@@ -11,12 +11,14 @@
 // minimale : juste les filtres et en-têtes que l'app emploie réellement
 // (`eq`, `is.null`, `not.is.null`, `lt`, `gte`, alias de `select`, `Range`
 // + `Content-Range`, `Prefer: resolution=merge-duplicates`, le `rev` des
-// paquets — M03).
+// paquets — M03). Les fonctions des classes (espace professeur, « Mes
+// classes ») sont rejouées à part, dans faux-classes.js.
 //
 // `store` est un objet ordinaire : deux pages branchées sur le même store
 // sont deux appareils du même compte (M07.T4).
 
 import { randomUUID } from 'node:crypto';
+import { rpcClasses } from './faux-classes.js';
 
 const CARD_COLS = { f: 'front', b: 'back', st: 'state', sp: 'step', S: 'stability', D: 'difficulty',
   F: 'trace2', d: 'due', lr: 'last_review', i: 'interval_days', n: 'reviews_count', l: 'lapses' };
@@ -83,8 +85,14 @@ function projette(url, rows) {
   return rows.map(r => Object.fromEntries(champs.map(([a, b]) => [a, r[b || a]])));
 }
 
-function lit(store, name, url, req) {
-  const rows = projette(url, table(store, name).filter(filtre(url)));
+/* La RLS « user_id = auth.uid() », réduite à ce qu'il faut pour que deux
+   comptes sur le même store (un professeur et un élève) ne voient pas les
+   livres l'un de l'autre. Les autres tables restent lues telles quelles. */
+const PROPRES = new Set(['decks', 'cards', 'subjects', 'sessions', 'prefs', 'reviews']);
+const mien = (name, user) => r => !PROPRES.has(name) || !r.user_id || !user || r.user_id === user.id;
+
+function lit(store, name, url, req, user) {
+  const rows = projette(url, table(store, name).filter(mien(name, user)).filter(filtre(url)));
   const range = /^(\d+)-(\d+)$/.exec(req.headers().range || '');
   if (!range) return [200, rows];
   const [from, to] = [+range[1], +range[2]];
@@ -92,7 +100,8 @@ function lit(store, name, url, req) {
   return [200, page, { 'content-range': `${from}-${from + page.length - 1}/${rows.length}` }];
 }
 
-const cle = (name, r) => (name === 'cards' ? r.deck_id + '/' + r.id : name === 'reviews' && r.client_id ? r.client_id : r.id);
+const cle = (name, r) => (name === 'cards' ? r.deck_id + '/' + r.id : name === 'reviews' && r.client_id ? r.client_id
+  : name === 'subjects' ? r.user_id + '/' + r.id : r.id);   // les matières de départ portent les mêmes identifiants chez tous
 
 function ecrit(store, name, body, prefer, user) {
   const t = table(store, name);
@@ -115,8 +124,8 @@ function ecrit(store, name, body, prefer, user) {
   return [/return=representation/.test(prefer) ? 201 : 201, /return=representation/.test(prefer) ? out : null];
 }
 
-function modifie(store, name, url, body, prefer) {
-  const rows = table(store, name).filter(filtre(url));
+function modifie(store, name, url, body, prefer, user) {
+  const rows = table(store, name).filter(mien(name, user)).filter(filtre(url));
   for (const r of rows) {
     Object.assign(r, body);
     if (name === 'decks' && body.rev == null) r.rev = (r.rev || 0) + 1;
@@ -124,9 +133,9 @@ function modifie(store, name, url, body, prefer) {
   return [200, /return=representation/.test(prefer) ? rows : null];
 }
 
-function efface(store, name, url) {
-  const f = filtre(url);
-  store.tables[name] = table(store, name).filter(r => !f(r));
+function efface(store, name, url, user) {
+  const f = filtre(url), m = mien(name, user);
+  store.tables[name] = table(store, name).filter(r => !(m(r) && f(r)));
   return [204, null];
 }
 
@@ -152,12 +161,12 @@ function rest(store, req, url, path, body) {
   const name = path.replace('/rest/v1/', '');
   const prefer = req.headers().prefer || '';
   if (name === 'rpc/sync_deck_cards') return syncDeckCards(store, body, user);
-  if (name.startsWith('rpc/')) return [200, []];
+  if (name.startsWith('rpc/')) return rpcClasses(store, name.slice(4), body, user) || [200, []];
   const m = req.method();
-  if (m === 'GET') return lit(store, name, url, req);
+  if (m === 'GET') return lit(store, name, url, req, user);
   if (m === 'POST') return ecrit(store, name, body, prefer, user);
-  if (m === 'PATCH') return modifie(store, name, url, body, prefer);
-  if (m === 'DELETE') return efface(store, name, url);
+  if (m === 'PATCH') return modifie(store, name, url, body, prefer, user);
+  if (m === 'DELETE') return efface(store, name, url, user);
   return [405, {}];
 }
 
