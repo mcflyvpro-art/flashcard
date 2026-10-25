@@ -38,8 +38,15 @@ for (const largeur of [390, 1440]) {
     await page.setViewportSize({ width: largeur, height: largeur > 900 ? 900 : 700 });
     const store = professeur();
     await brancher(page, store);
-    await connecter(page, 'prof@exemple.fr');
-    await page.getByRole('button', { name: /2nde 4/ }).first().click();
+    /* pas connecter() : il attend la bibliothèque, qu'un professeur ne voit
+       pas toujours — son rôle connu tôt, il arrive droit sur ses classes */
+    await page.goto('./');
+    await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
+    await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toBeFocused();
+    await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill('prof@exemple.fr');
+    await page.getByRole('textbox', { name: 'Mot de passe' }).fill('motdepasse-solide-42');
+    await page.getByRole('button', { name: 'Se connecter' }).click();
+    await page.getByRole('button', { name: /2nde 4/ }).first().click({ timeout: 10000 });
     await page.getByRole('button', { name: 'Devoir', exact: true }).click();
     await page.getByRole('button', { name: /Verbes irréguliers/ }).click();
     const feuille = page.getByRole('dialog');
