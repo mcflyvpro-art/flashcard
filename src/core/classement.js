@@ -14,11 +14,9 @@ import { comptePull, eleveClassesPull } from './eleve-classes.js';
 import { toast } from '../ui/import-cartes.js';
 import { closeMenu, paintMenu } from '../ui/menus-a.js';
 import { allerAccueil } from '../ui/prof-porte.js';
-import { consumeRejoindre } from '../ui/eleve-classes.js';
+import { lienApresRole } from '../ui/liens-entrants.js';
 import { friendsPull, mailPull } from './reglages-corbeille.js';
 import { sallesPull } from './cercle.js';
-import { consumeClub } from '../ui/cercle-feuilles.js';
-import { consumeDefi } from '../ui/direct-porte.js';
 import { timeAgo } from '../ui/reglages-corbeille.js';
 
 /* ---------- classement ----------
@@ -155,13 +153,10 @@ export async function schoolPull() {
    rediriger après coup ferait clignoter un écran qu'on n'a pas demandé. */
 export async function accueil() {
   await Promise.all([rolePull(), schoolPull(), comptePull()]);
-  /* Un lien ou un QR « rejoindre » attendait (ouvert avant la connexion, ou
-     à l'instant) : il passe avant l'écran d'arrivée habituel. */
-  if (consumeRejoindre()) return;
-  /* De même un lien de partie en direct (« ?defi= ») ou d'invitation dans
-     un club (« ?club= ») : on y va avant tout le reste. */
-  if (await consumeDefi(true)) return;
-  if (consumeClub(true)) return;
+  /* Un lien ou un QR « rejoindre », une partie en direct (« ?defi= »), une
+     invitation dans un club (« ?club= ») attendait — ouvert avant la
+     connexion, ou à l'instant : il passe avant l'écran d'arrivée habituel. */
+  if (await lienApresRole()) return;
   /* Un compte personnel peut avoir rejoint la classe d'un professeur : il
      faut le savoir pour lui montrer l'onglet « Classe ». */
   if (!isPupil() && !isProf() && myRole !== 'ref' && myRole !== 'admin') eleveClassesPull();

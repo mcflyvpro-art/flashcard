@@ -20,8 +20,8 @@ import { go, render } from './bibliotheque.js';
 import { dec, fsrsMigrate } from './carte-media.js';
 import { accueil } from '../core/classement.js';
 import { cacheKey, esc, flush, load, plur, pull, refreshToken, save, saveAuth, setOnline } from '../core/coeur-sync.js';
-import { consumeCarte, selOff } from './connexion.js';
-import { consumeRejoindre } from './eleve-classes.js';
+import { selOff } from './connexion.js';
+import { lienAvantSession } from './liens-entrants.js';
 import { isPupil } from './classement.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
@@ -691,11 +691,11 @@ export function installSheet(w) {
 }
 
 /* ---------- démarrage ---------- */
-async function boot() {
+export async function boot() {
   /* Le QR d'une carte élève ouvre la session avant tout le reste ; un code
-     de classe (« ?rejoindre= ») arrivé sans session attend la connexion. */
-  await consumeCarte();
-  if (!auth) { consumeRejoindre(); setView({ name: 'login' }); return render(); }
+     de classe, de partie ou de club arrivé sans session attend la
+     connexion (liens-entrants.js, la porte de tout lien entrant). */
+  if (!(await lienAvantSession())) { setView({ name: 'login' }); return render(); }
   setDb(load());
   fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état
   if (!consumeHash()) render();          // le cache s'affiche tout de suite

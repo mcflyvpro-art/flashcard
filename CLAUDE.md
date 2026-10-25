@@ -45,7 +45,13 @@ l'air de marcher ».
     ses effets de bord (les autres modules y arrivent par leurs imports :
     `ui/creation.js`, `ui/eleve-classes.js`, `ui/prof-porte.js`, `ui/club.js`,
     `ui/cercle-feuilles.js`, `ui/defi-nouveau.js`, `ui/direct-porte.js`,
-    `ui/jeton.js`, `ui/balayage.js`, et trois morceaux chargés à la demande, l'espace professeur,
+    `ui/jeton.js`, `ui/balayage.js`, `ui/liens-entrants.js` (**la porte de
+    tout lien entrant** : `lienAvantSession()` au démarrage — carte élève,
+    puis sans session les codes `?rejoindre=`/`?defi=`/`?club=` rangés en
+    `sessionStorage` (`folio.rejoindre`, `folio.defi`, `folio.club`) —,
+    `lienApresRole()` depuis `accueil()`, et `traiterLienEntrant(url)` pour un
+    lien reçu app ouverte : c'est là que se branche `appUrlOpen` de Capacitor ;
+    ne jamais ajouter un consommateur de lien ailleurs), et trois morceaux chargés à la demande, l'espace professeur,
     l'écran d'une partie en direct et le journal de lecture — voir plus bas).
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
     HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout, sauf
