@@ -7,6 +7,14 @@ professeurs, référents, éditeurs — modèle « à la Pronote »). Tout ce qu
 
 Langue : **français** partout — code commenté, messages de commit, réponses.
 
+## ⚠ Tâche en cours : docs/REPRISE.md (« FOLIO-REPRISE-LIENS »)
+
+Une demande de l'utilisateur est à moitié faite (liens sur le domaine
+unique www.folioflashcard.online, ouverture dans l'app, fin de GitHub
+Pages, préparation Capacitor, environnement des sessions). **La lire avant
+toute autre chose** : tout y est (faits établis, fichiers, ordre, preuves).
+Supprimer ce paragraphe et le fichier une fois la tâche finie.
+
 ## Où on en est : PROGRESS.md
 
 `PROGRESS.md` est la mémoire du projet. Il tient l'état de 148 tâches
