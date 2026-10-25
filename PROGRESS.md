@@ -19,12 +19,10 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-25 · Safari : feuilles et bulles qui ne s'ouvraient pas (boîte réduite
-          à une bande — hauteur fit-content calculée sur la base flexible 0 du corps) ;
-          corrigé (`.mbody{flex:1 1 auto}`, `-webkit-fit-content`), vérifié sous WebKit
-          1440 et iPhone. EN COURS : liens sur le domaine unique, ouverture dans l'app,
-          préparation Capacitor, fin de GitHub Pages, environnement des sessions — tout
-          est décrit dans docs/REPRISE.md (« FOLIO-REPRISE-LIENS »).
+DERNIER   2026-10-25 · Liens sur le domaine unique www.folioflashcard.online
+          (src/adresse.js), manifeste qui prend les liens, GitHub Pages réduit à une
+          redirection, une seule porte pour les liens entrants (prête pour Capacitor,
+          docs/CAPACITOR.md), carte de passage iPhone, hook de démarrage des sessions.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.
