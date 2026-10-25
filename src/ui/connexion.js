@@ -22,6 +22,7 @@ import { dueCount, simpleMode, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
 import { consumeHash, logout, maybeTour } from './onboarding.js';
 import { norm } from './quiz.js';
+import { cartePassage, lierPassage } from './passage.js';
 
 /* ---------- sélection multiple ----------
    `sel` est nul hors du mode ; sinon c'est l'ensemble des cartes cochées.
@@ -650,6 +651,7 @@ export function loginView() {
     <img class="logo" src="icons/icon-192.png" alt="">
     <div class="lt">Folio</div>
     <div class="lsub">Tes cours, reliés en livres.</div>
+    ${cartePassage()}
     <div class="seg lseg" id="lmode">
       <button data-lm="in" class="${up || carte ? '' : 'on'}">Connexion</button>
       <button data-lm="up" class="${up ? 'on' : ''}">Créer un compte</button>
@@ -676,6 +678,7 @@ export function loginView() {
     const b = e.target.closest('[data-lm]'); if (!b) return;
     setLoginMode(b.dataset.lm); loginView();
   };
+  lierPassage();
   if (carte) return bindCarte();
   const em = document.getElementById('em'), pw = document.getElementById('pw'),
         err = document.getElementById('le'), btn = document.getElementById('go');

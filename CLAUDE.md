@@ -51,7 +51,11 @@ l'air de marcher ».
     `sessionStorage` (`folio.rejoindre`, `folio.defi`, `folio.club`) —,
     `lienApresRole()` depuis `accueil()`, et `traiterLienEntrant(url)` pour un
     lien reçu app ouverte : c'est là que se branche `appUrlOpen` de Capacitor ;
-    ne jamais ajouter un consommateur de lien ailleurs), et trois morceaux chargés à la demande, l'espace professeur,
+    ne jamais ajouter un consommateur de lien ailleurs), `ui/passage.js` (la
+    **carte de passage** de l'écran de connexion : dans un navigateur — pas
+    l'app installée —, si un de ces trois codes attend, le code en gros, un
+    bouton « Copier » et où le coller dans l'app ; c'est ce qu'a un iPhone, où
+    une PWA n'intercepte jamais un lien, en attendant Capacitor), et trois morceaux chargés à la demande, l'espace professeur,
     l'écran d'une partie en direct et le journal de lecture — voir plus bas).
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
     HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout, sauf
