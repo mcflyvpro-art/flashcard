@@ -19,20 +19,17 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-25 · statistiques refaites, avec une logique qui tient quoi qu'on fasse :
-          chaque révision garde son contexte du moment (matière, livre, écart, heure de
-          lecture même hors ligne) — changer la matière d'un livre, le fusionner, le
-          supprimer, le recréer depuis un partage ne réécrit plus le passé ; ce qu'on
-          sait se lit sur les cartes d'aujourd'hui. Corrigé en route : le journal ne lisait
-          que les 1 000 premières révisions de l'année (plafond PostgREST), le moteur FSRS
-          aussi (le rejeu pouvait faire reculer des cartes), le compteur du jour plafonnait
-          à 1 000, une séance hors ligne comptait le jour de l'envoi, les morceaux chargés à
-          la demande ne s'ouvraient jamais hors ligne (service worker, Vary: Origin). Un
-          devoir, un partage, un envoi arrivent dans la matière du même nom (créée sinon).
-          Journal refait PC (tableau de bord à deux colonnes) et téléphone. Preuves : 324
-          tests unitaires dont 25 nouveaux, `journal.sql` 18/18 en base, 22 parcours e2e
-          verts dont 2 nouveaux (`journal`) et `hors-ligne` qui compte 50 pages hors ligne
-          puis 50 (pas 100) au retour, advisors sans nouvelle alerte, budget JS 117,3 Ko.
+DERNIER   2026-10-25 · design PC propre, plus du téléphone étiré : un gabarit unique pour
+          toutes les pages (même largeur, titre au même endroit — Réglages, Courrier et le
+          Cercle n'étaient plus centrés en colonne étroite) ; Réglages en deux colonnes,
+          Ma classe en « à faire » | « mes classes » ; les bulles « ? » et les menus
+          (celui d'un livre, celui d'une classe) s'accrochent à leur bouton comme sur un
+          bureau, les formulaires deviennent des boîtes de dialogue sans poignée ; une
+          feuille qui se redessine ne rejoue plus son entrée (elle tressautait chaque
+          seconde). Avant : statistiques refaites (journal par contexte, fonction
+          journal(), 1 000 lignes, hors ligne), journal refait. Preuves : 324 tests
+          unitaires, 22 parcours e2e verts (dont l'espace prof à 1440 px qui ouvre ses
+          menus accrochés), captures 1440/390 relues, budget JS 117,8 Ko.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

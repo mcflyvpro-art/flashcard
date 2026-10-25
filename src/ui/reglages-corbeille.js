@@ -191,12 +191,8 @@ export function settingsView() {
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Réglages</div></div>
-      ${settingsRevisionHtml()}
-      ${settingsAffichageHtml()}
-      ${settingsMatieresHtml()}
-      ${settingsCompteHtml()}
-      ${settingsDonneesHtml()}
-      ${settingsQuitterHtml()}
+      <div class="rg-grille">${[settingsRevisionHtml, settingsAffichageHtml, settingsMatieresHtml,
+        settingsCompteHtml, settingsDonneesHtml, settingsQuitterHtml].map(f => `<section class="rg">${f()}</section>`).join('')}</div>
     </div>`;
   const g = document.getElementById('pGoal'), c = document.getElementById('pCap');
   g.addEventListener('input', () => {
@@ -265,7 +261,7 @@ export function mailView() {
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
-      <div class="top"><div class="hero">Boîte de réception</div></div>
+      <div class="top"><div class="hero">Courrier</div></div>
       ${!l ? `<div class="empty">${svg(I.mail)}<p>${mailbox.err ? 'Boîte indisponible' : 'Chargement…'}</p></div>`
         : !l.length ? `<div class="empty">${svg(I.mail)}<p><b>Aucun message</b></p></div>`
         : `<div class="slist">${l.map(it => `

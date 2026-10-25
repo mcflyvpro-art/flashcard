@@ -32,12 +32,13 @@ async function telephone(browser, store) {
   await connecter(page);
   const cdp = await ctx.newCDPSession(page);
   const touche = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
-  /* `pas` mouvements de 16 ms : peu de pas, un geste vif ; beaucoup, un geste lent */
-  page.glisser = async (de, a, { pas = 14, pendant } = {}) => {
-    await touche('touchStart', de, 420);
-    for (let k = 1; k <= pas; k++) { await touche('touchMove', de + (a - de) * k / pas, 420); await page.waitForTimeout(16); }
+  /* `pas` mouvements de 16 ms : peu de pas, un geste vif ; beaucoup, un geste lent. À la hauteur
+     d'un titre de section, jamais d'un champ : un doigt posé sur un champ y déplace le curseur */
+  page.glisser = async (de, a, { pas = 14, pendant, y = 140 } = {}) => {
+    await touche('touchStart', de, y);
+    for (let k = 1; k <= pas; k++) { await touche('touchMove', de + (a - de) * k / pas, y); await page.waitForTimeout(16); }
     if (pendant) await pendant();
-    await touche('touchEnd', a, 420);
+    await touche('touchEnd', a, y);
     await page.waitForTimeout(450);
   };
   return page;

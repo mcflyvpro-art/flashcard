@@ -500,6 +500,9 @@ button.pf-kpi:active{transform:scale(.98)}
   /* une boîte de dialogue au milieu de l'écran, pas un tiroir de téléphone */
   .menu.pf-s{inset:0;margin:auto;height:fit-content;max-width:560px;max-height:min(86vh,880px)}
   .menu.pf-s.large{max-width:760px}
+  /* une courte liste d'actions s'accroche à son bouton (menus-a.js, placerSurPC) */
+  .menu.pf-s.pop{inset:auto;margin:0;height:auto;max-width:340px}
+  .menu.pf-s.pop .pf-sh{padding:10px 12px 6px}
   /* une fiche (élève, devoir) se lit à côté de la liste, qu'on garde sous les yeux */
   .menu.pf-s.pf-tiroir{top:12px;bottom:12px;right:12px;left:auto;width:min(480px,calc(100vw - 24px));height:auto;max-width:none;
     max-height:none;margin:0;border-radius:20px;animation:pftir .38s var(--e)}

@@ -620,6 +620,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   max-height:min(78vh,calc(100svh - 96px));display:flex;flex-direction:column;
   overflow:hidden;animation:up .5s var(--e)}
 @keyframes up{from{opacity:0;transform:translateY(60px)}}
+.menu.deja,.scrim.deja,.menu.deja.dlg,.menu.deja.pop{animation:none}
 .mtop{flex:none;position:relative;display:flex;align-items:center;justify-content:center;padding:11px 7px 5px}
 .mgrip{width:34px;height:4px;border-radius:3px;background:var(--hair)}
 .mx{position:absolute;right:8px;top:8px;width:30px;height:30px;border-radius:11px;
@@ -808,10 +809,37 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   :root{--rail:236px;--gut:48px;--wide:1120px}
   body{font-size:15px}
 
-  /* une feuille devient une boîte de dialogue, au milieu de la page */
+  /* une feuille devient une boîte de dialogue, au milieu de la page —
+     ou, légère, un petit menu accroché à son bouton (menus-a.js,
+     placerSurPC) : jamais un tiroir de téléphone avec sa poignée */
   .menu{left:var(--rail);right:0;top:0;bottom:0;margin:auto;height:fit-content;
-    max-width:560px;max-height:min(82vh,860px)}
+    max-width:540px;max-height:min(82vh,860px);border-radius:18px}
   .menu.pv{max-height:min(72vh,760px)}
+  .menu .mgrip{display:none}
+  .menu .mtop{position:absolute;top:0;right:0;z-index:6;padding:0}
+  .menu .mx{top:12px;right:12px;width:32px;height:32px;border-radius:10px;background:transparent}
+  .menu .mx:hover{background:var(--surf)}
+  .menu.dlg{animation:dlgIn .22s var(--e)}
+  .menu.dlg .mbody{padding:16px 10px 12px}
+  .menu.dlg .mhd{padding-right:52px}
+  @keyframes dlgIn{from{opacity:0;transform:scale(.97)}}
+  .menu.pop{right:auto;bottom:auto;margin:0;width:max-content;min-width:240px;max-width:340px;
+    border-radius:14px;box-shadow:var(--s3),var(--edge);animation:popIn .14s ease-out}
+  .menu.pop:has(.htxt){width:320px}
+  .menu.pop .mtop{display:none}
+  .menu.pop .mbody{padding:6px}
+  .menu.pop .mhd{padding:8px 10px 6px;gap:10px}
+  .menu.pop .mhd > svg{width:17px;height:17px}
+  .menu.pop .mhd b{font-size:14.5px}
+  .menu.pop .htxt{padding:0 12px 10px;font-size:13.5px;line-height:1.5}
+  .menu.pop .mi{height:38px;padding:0 10px;border-radius:9px;font-size:14px;gap:11px}
+  .menu.pop .mi svg{width:17px;height:17px}
+  .menu.pop .mi:hover{background:var(--surf)}
+  .menu.pop .msep{margin:4px 8px}
+  @keyframes popIn{from{opacity:0;transform:translateY(-4px)}}
+  .scrim.pop{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+  .menu .mi:hover{background:var(--surf)}
+  .menu .jt-couleurs{grid-template-columns:repeat(6,44px);gap:12px}
 
   /* ---------- la barre latérale ----------
      Toutes les entrées ensemble, en haut ; les réglages et le compte en
@@ -944,8 +972,17 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   .rev .b{margin-top:4px}
 
   /* ---------- réglages, journal, cercle, courrier : une colonne lisible ---------- */
-  #app[data-view="settings"] > *,#app[data-view="mail"] > *,#app[data-view="trash"] > *{max-width:760px}
-  #app[data-view="commu"] > *{max-width:960px}
+  /* Toutes les pages de premier niveau ont la même largeur et le même
+     titre au même endroit (le gabarit unique, 2026-10-25) : plus de
+     colonne étroite centrée pour les réglages, le courrier ou le cercle —
+     c'est leur contenu qui se range en colonnes. */
+  .top{min-height:52px}
+  .rg-grille{columns:2;column-gap:28px}
+  .rg{break-inside:avoid;padding-bottom:26px}
+  .rg > .lbl:first-child{margin-top:0}
+  #app[data-view="mail"] .slist,#app[data-view="trash"] .slist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .el-grille{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:0 28px;align-items:start}
+  .el-grille > div > .el-h2:first-child{margin-top:0}
 
   /* ---------- connexion ---------- */
   .login{max-width:400px;margin-inline:auto}
@@ -1726,7 +1763,7 @@ body.touring .toast{display:none}
 .cc-pin::placeholder{color:var(--soft);opacity:.45}
 .cc-rep{min-height:19px;margin:0;font-size:13.5px;text-align:center;color:var(--soft)}
 .cc-rep.ko{color:var(--ko)}
-.cc-f .cta{margin:4px 16px 14px;width:auto}
+.cc-f .cta{margin:4px 16px 14px;width:calc(100% - 32px)}
 .cc-pinf .cta{margin:0}
 .cf-apercu{display:flex;align-items:center;gap:13px;margin:0 16px 14px;padding:14px;border-radius:16px;
   background:var(--k);color:#fff;background-image:linear-gradient(135deg,rgba(255,255,255,.12),rgba(0,0,0,.2))}
@@ -1764,7 +1801,7 @@ body.touring .toast{display:none}
   .cl-chip:hover{background:rgba(255,255,255,.24)}
 }
 @media (min-width:900px){
-  .cc-grille{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;align-items:start}
+  .cc-grille{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:28px;align-items:start}
   .cc-cote{position:sticky;top:24px}
   .cc-clubs{grid-template-columns:repeat(2,minmax(0,1fr))}
   .cc-actions{gap:12px}

@@ -121,12 +121,14 @@ export function mesClassesView() {
     <div class="page el-page" id="page">
       <div class="top"><div class="hero">${n === 1 ? 'Ma classe' : 'Mes classes'}</div></div>
       ${qui && nomConnu() ? `<p class="el-qui">${svg(I.user)}<b>${esc(qui)}</b>${compte && compte.gere ? '<i>carte élève</i>' : ''}</p>` : ''}
-      ${enDirectHtml((cercle.salles || []).filter(s => s.class_id))}
-      <h2 class="el-h2">À faire</h2>${devoirsHtml()}
-      ${defisClasseHtml()}
-      ${rejoindreHtml()}
-      <h2 class="el-h2">Mes classes</h2>${classesHtml()}
-      ${camaradesHtml()}
+      <div class="el-grille">
+        <div>${enDirectHtml((cercle.salles || []).filter(s => s.class_id))}
+          <h2 class="el-h2">À faire</h2>${devoirsHtml()}
+          ${defisClasseHtml()}</div>
+        <div><h2 class="el-h2">Mes classes</h2>${classesHtml()}
+          ${rejoindreHtml()}
+          ${camaradesHtml()}</div>
+      </div>
     </div>
     ${tabs('classes')}`;
   const f = document.getElementById('elform');

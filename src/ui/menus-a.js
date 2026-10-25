@@ -27,11 +27,31 @@ import { paintMenuRename } from './menus-c.js';
 import { installSheet } from './onboarding.js';
 import { timeAgo } from './reglages-corbeille.js';
 
-/* ---------- menu contextuel ---------- */
-export function openMenu(kind) { setMenu(kind); paintMenu(); }
+/* ---------- menu contextuel ----------
+   Sur ordinateur, une feuille n'est pas un tiroir de téléphone posé au
+   milieu de l'écran : une explication « ? » ou une courte liste d'actions
+   s'ouvre accrochée au bouton qui l'a demandée, comme un menu de bureau ;
+   un formulaire devient une boîte de dialogue, sans poignée ni geste de
+   glisser. Sur téléphone, rien ne change. Le bouton se retient au clic
+   (en capture, avant que son action n'ouvre la feuille) ; une feuille
+   ouverte depuis une autre garde l'ancre de la première. */
+const PC = matchMedia('(min-width: 900px)');
+let dernierClic = null, ancre = null;
+document.addEventListener('click', e => {
+  const el = e.target.closest && e.target.closest('button,[data-act],[data-help],[role="button"]');
+  dernierClic = el ? { el, t: Date.now() } : null;
+}, true);
+
+export function openMenu(kind) {
+  const recent = dernierClic && Date.now() - dernierClic.t < 800 ? dernierClic.el : null;
+  if (recent && !recent.closest('.menu')) ancre = recent;
+  else if (!menu) ancre = null;
+  setMenu(kind); paintMenu();
+}
 
 export function closeMenu() {
   const ouverte = !!menu;
+  ancre = null;
   setMenu(null);
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
   document.documentElement.classList.remove('sheet-open');
@@ -62,10 +82,40 @@ export function mountMenu(w) {
     box.setAttribute('role', 'dialog');
     box.setAttribute('aria-modal', 'true');
     box.appendChild(body);
-    bindSheetDrag(box, body);
+    if (!PC.matches) bindSheetDrag(box, body);
   }
+  if (redessin) w.querySelectorAll('.scrim,.menu').forEach(n => n.classList.add('deja'));
+  redessin = false;
   document.body.append(...w.childNodes);
+  if (box) placerSurPC(box);
   paintMedia();               // l'aperçu d'image de la feuille d'édition
+}
+
+/* Une feuille légère (rien à remplir, pas de nuancier à parcourir)
+   s'accroche à son bouton : dessous, ou dessus s'il y a plus de place, et
+   si elle est plus longue que l'espace, c'est elle qui défile — comme un
+   menu de bureau. Jamais hors de l'écran ni sous la barre latérale. */
+function placerSurPC(box) {
+  if (!PC.matches) return;
+  box.classList.add('dlg');
+  const leger = !box.querySelector('input,textarea,select,.jt-grille,.jt-couleurs,.seg,.rng,canvas,svg.qr');
+  if (!leger || !ancre || !ancre.isConnected) return;
+  const r = ancre.getBoundingClientRect();
+  if (!r.width && !r.height) return;
+  box.classList.replace('dlg', 'pop');
+  const scrim = document.querySelector('.scrim'); if (scrim) scrim.classList.add('pop');
+  const m = 12, w = box.offsetWidth, h = box.offsetHeight;
+  const dessous = innerHeight - r.bottom - 8 - m, dessus = r.top - 8 - m;
+  const enBas = h <= dessous || dessous >= dessus;
+  const place = enBas ? dessous : dessus;
+  box.style.maxHeight = Math.max(160, place) + 'px';
+  // la barre latérale borne le menu à gauche — pas quand elle est posée en haut (html.nav-haut)
+  const rail = document.getElementById('rail'), rr = rail && rail.getBoundingClientRect();
+  const bord = rr && rr.height > rr.width ? rr.right : 0;
+  const x = Math.max(bord + m, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - m));
+  const y = enBas ? r.bottom + 8 : Math.max(m, r.top - 8 - Math.min(h, place));
+  box.style.left = Math.round(x) + 'px';
+  box.style.top = Math.round(y) + 'px';
 }
 
 /* Tirer la feuille vers le bas la ferme, comme partout ailleurs sur un
@@ -208,7 +258,13 @@ function paintMenuDeck(w) {
   mountMenu(w);
 }
 
+/* Une feuille déjà ouverte qui se redessine (un compte à rebours, une
+   réponse qui arrive) ne rejoue pas son entrée : elle sautait à chaque
+   rafraîchissement, et ne tenait jamais en place sous le pointeur. */
+let redessin = false;
+
 export function paintMenu() {
+  redessin = !!document.querySelector('.menu');
   document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
   document.documentElement.classList.remove('sheet-open');
   const w = document.createElement('div');
