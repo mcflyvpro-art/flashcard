@@ -1,8 +1,8 @@
 import { I } from '../icones.js';
 import {
-  adm, auth, blocks, board, duels, iAmMod, lib, mailbox,
+  adm, auth, blocks, board, cercle, duels, iAmMod, mailbox,
   menu, mods, myRole, ref, reportOn, reportWhy,
-  scope, setAccounts, setAnimate, setAsks, setBlocks,
+  setAccounts, setAnimate, setAsks, setBlocks,
   setFriends, setIAmMod, setMates, setMates2, setMyRole, setReportOn, setReportWhy,
   setSchool, view
 } from '../data/etat.js';
@@ -15,7 +15,10 @@ import { toast } from '../ui/import-cartes.js';
 import { closeMenu, paintMenu } from '../ui/menus-a.js';
 import { allerAccueil } from '../ui/prof-porte.js';
 import { consumeRejoindre } from '../ui/eleve-classes.js';
-import { friendsPull, libPull, mailPull } from './reglages-corbeille.js';
+import { friendsPull, mailPull } from './reglages-corbeille.js';
+import { sallesPull } from './cercle.js';
+import { consumeClub } from '../ui/cercle-feuilles.js';
+import { consumeDefi } from '../ui/direct-porte.js';
 import { timeAgo } from '../ui/reglages-corbeille.js';
 
 /* ---------- classement ----------
@@ -24,14 +27,14 @@ import { timeAgo } from '../ui/reglages-corbeille.js';
    erreurs. On compare un volume de travail, pas un contenu. */
 export async function boardPull(bg) {
   try {
-    board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range, gid: scope }) || [];
+    board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range, gid: null }) || [];
     board.err = 0;
   } catch (e) { board.err = 1; }
   const sig = JSON.stringify(board.rows) + ':' + board.err;
   const same = bg && sig === board.sig;        // rien de neuf : on ne fait pas clignoter l'écran
   board.sig = sig;
   if (same) return;
-  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { setAnimate(false); render(); }
+  if (/^(commu|friends)$/.test(view.name)) { setAnimate(false); render(); }
 }
 
 export async function blocksPull() {
@@ -46,9 +49,9 @@ export async function blockUser(id, who) {
     setBlocks(null); await blocksPull();
     /* Ce que la personne avait posé doit disparaître tout de suite : la
        base ne le rend déjà plus, mais l'écran garde sa dernière copie. */
-    lib.list = null; duels.list = null; mailbox.list = null; board.rows = null;
+    duels.list = null; mailbox.list = null; board.rows = null; cercle.salles = null;
     setFriends(null); setMates(null); setAsks(null);
-    friendsPull(); libPull(); duelsPull(); mailPull(); boardPull();
+    friendsPull(); duelsPull(); mailPull(); boardPull(); sallesPull();
     toast(I.lock, (who ? shortWho(who) : 'Ce compte') + ' est bloqué');
   } catch (e) { toast(I.x, 'Blocage impossible'); }
   render();
@@ -59,7 +62,7 @@ export async function unblockUser(id) {
     await api('/rest/v1/blocks?blocked_id=eq.' + encodeURIComponent(id), 'DELETE',
       null, { Prefer: 'return=minimal' });
     setBlocks(null); await blocksPull();
-    lib.list = null; duels.list = null; board.rows = null;
+    duels.list = null; board.rows = null;
     toast(I.check, 'Compte débloqué');
   } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
   paintMenu(); render();
@@ -155,6 +158,13 @@ export async function accueil() {
   /* Un lien ou un QR « rejoindre » attendait (ouvert avant la connexion, ou
      à l'instant) : il passe avant l'écran d'arrivée habituel. */
   if (consumeRejoindre()) return;
+  /* De même un lien de partie en direct (« ?defi= ») ou d'invitation dans
+     un club (« ?club= ») : on y va avant tout le reste. */
+  if (await consumeDefi(true)) return;
+  if (consumeClub(true)) return;
+  /* Un compte personnel peut avoir rejoint la classe d'un professeur : il
+     faut le savoir pour lui montrer l'onglet « Classe ». */
+  if (!isPupil() && !isProf() && myRole !== 'ref' && myRole !== 'admin') eleveClassesPull();
   if (view.name !== 'home') return;              // l'utilisateur est déjà parti ailleurs
   if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
   if (isProf()) return allerAccueil();

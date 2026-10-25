@@ -58,9 +58,7 @@ function ctaButton(d) {
 }
 
 function deckHeadMeta(d) {
-  const due = !simpleMode() && dueCount(d);
-  return `${due ? `<b></b><span>${svg(I.play)}${due} à revoir</span>` : ''}
-        ${d.hidden ? `<b></b><span>${svg(I.eyeoff)}Masqué</span>` : ''}`;
+  return d.hidden ? `<span>${svg(I.eyeoff)}Masqué</span>` : '';
 }
 
 function findButton(d) {
@@ -71,8 +69,8 @@ function findButton(d) {
 
 function selectButton(d) {
   if (!d.cards.length) return '';
-  return `<button class="pick ${sel ? 'on' : ''}" data-act="selmode">${
-        svg(sel ? I.check : I.pick)}${sel ? 'Terminer' : 'Sélectionner'}</button>`;
+  return `<button class="pick ico ${sel ? 'on' : ''}" data-act="selmode" aria-label="${sel ? 'Terminer la sélection' : 'Sélectionner'}"
+        title="${sel ? 'Terminer' : 'Sélectionner'}">${svg(sel ? I.check : I.pick)}</button>`;
 }
 
 const countLabel = (shown, d) => shown.length === d.cards.length ? d.cards.length : shown.length + ' / ' + d.cards.length;
@@ -209,8 +207,7 @@ export function deckView() {
     <div class="head" style="${sty(s)}">
       <div class="t" id="dn" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(d.name)}</div>
       <div class="s">
-        <span>${svg(I.tag)}${esc(s.name)}</span><b></b>
-        <span>${svg(I.card)}${plur(d.cards.length, 'page')}</span>
+        ${d.subject ? `<span>${svg(I.tag)}${esc(s.name)}</span>` : ''}
         ${deckHeadMeta(d)}
       </div>
     </div>
@@ -714,6 +711,12 @@ export function loginView() {
    moteur, ce que « ratées » veut dire, ce que « rapide » enchaîne.
    Tout ce qui se devine au premier coup d'œil n'a pas de pastille. */
 export const HELP = {
+  classement: ['Classement',
+    'Les pages lues par toi et tes amis : ces sept derniers jours, ces trente derniers jours ou depuis toujours.'],
+  classementClub: ['Classement du club', 'Les pages lues par chaque membre ces sept derniers jours.'],
+  modes: ['En direct ou à son rythme',
+    'En direct : tout le monde joue en même temps avec un code à six chiffres, et voit le classement après chaque question.' +
+    '\n\nÀ son rythme : un QCM de dix questions, les mêmes pour tous. Chacun le joue quand il veut, une seule fois.'],
   simple: ['Mode simple',
     'Le moteur estime, pour chaque page, le jour où tu serais sur le point de l’oublier, et te ' +
     'la redonne juste avant.\n\nL’éteindre rend l’app manuelle — les pages défilent dans ' +

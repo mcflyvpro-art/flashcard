@@ -2,107 +2,13 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
-import {
-  auth, board, db, duels, findQ, groupTab, groups, lib, quiz, scope, setAnimate, setFindQ,
-  stats, study
-} from '../data/etat.js';
+import { db, findQ, quiz, setAnimate, setFindQ, stats, study } from '../data/etat.js';
 import { render } from './bibliotheque.js';
-import { groupsPull } from '../core/bilan-devoirs.js';
 import { STATE, cstate, plain } from './carte-media.js';
-import { boardPull } from '../core/classement.js';
-import { PALETTE, esc, live, plur, scopeName, shortWho, sty, subj } from '../core/coeur-sync.js';
-import { myScore, rankOf } from './defis.js';
-import { duelsPull } from '../core/defis.js';
+import { PALETTE, esc, live, sty, subj } from '../core/coeur-sync.js';
 import { toast } from './import-cartes.js';
 import { mountMenu } from './menus-a.js';
 import { norm } from './quiz.js';
-import { timeAgo } from './reglages-corbeille.js';
-import { libPull } from '../core/reglages-corbeille.js';
-
-/* ---------- l'écran du groupe ---------- */
-const GTABS = { lib: 'Bibliothèque', duel: 'Défis', board: 'Classement' };
-
-export const BRANGE = { 7: '7 jours', 30: '30 jours', 365: 'Toujours' };
-
-/* Une seule barre gouverne les trois onglets : ce qu'on lit et ce qu'on
-   publie vont au même endroit. Sans club, elle n'a rien à demander et
-   ne s'affiche pas. */
-function scopeBar() {
-  if (!groups || !groups.length) return '';
-  return `<div class="pills" id="gScope">
-    <button class="p${scope === null ? ' on' : ''}" data-scope="">Mes lecteurs</button>
-    ${groups.map(g => `<button class="p${scope === g.id ? ' on' : ''}"
-      data-scope="${esc(g.id)}">${esc(g.name)}</button>`).join('')}</div>`;
-}
-
-const inScope = x => (x.group_id || null) === scope;
-
-export function groupView() {
-  $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
-      <h1>${esc(scopeName())}</h1></div>
-    <div class="page">
-      ${scopeBar()}
-      <div class="seg" id="gTabs">${Object.entries(GTABS).map(([k, n]) =>
-        `<button class="${groupTab === k ? 'on' : ''}" data-gtab="${k}">${n}</button>`).join('')}</div>
-      ${groupTab === 'lib' ? libPane() : groupTab === 'duel' ? duelPane() : boardPane()}
-    </div>`;
-}
-
-function libPane() {
-  const l = lib.list && lib.list.filter(inScope);
-  return !l ? `<div class="empty">${svg(I.book)}<p>${lib.err ? 'Bibliothèque indisponible' : 'Chargement…'}</p></div>`
-    : !l.length ? `<div class="empty">${svg(I.book)}<p><b>Étagère vide</b>${
-        scope ? 'Personne n’a encore posé de livre dans ce club.' : 'Prête un livre depuis son menu Partager.'}</p></div>`
-    : `<div class="slist">${l.map(it => `
-        <button class="sr flat" data-lib="${esc(it.deck_id)}">${svg(I.book)}
-          <span class="ml2"><span class="n">${esc(it.name)}</span>
-            <span class="sub">${esc(shortWho(it.who) || 'Un compte')}${
-              it.subject ? ' · ' + esc(it.subject) : ''} · ${plur(it.n, 'page')}</span></span>
-          <span class="c">${timeAgo(it.updated_at)}</span>${svg(I.arrow)}</button>`).join('')}</div>`;
-}
-
-function duelPane() {
-  const l = duels.list && duels.list.filter(inScope);
-  const mk = `<button class="cta ghost" data-act="duelnew">${svg(I.flame)}Lancer un défi</button>`;
-  if (!l) return `${mk}<div class="empty">${svg(I.flame)}<p>${duels.err ? 'Défis indisponibles' : 'Chargement…'}</p></div>`;
-  if (!l.length) return `${mk}<div class="empty">${svg(I.flame)}<p><b>Aucun défi</b>Dix questions, les mêmes pour tous.</p></div>`;
-  return `${mk}<div class="slist">${l.map(du => {
-    const me = myScore(du.id), r = rankOf(du.id);
-    const pos = me ? r.findIndex(s => s.user_id === auth.uid) + 1 : 0;
-    return `<button class="sr flat" data-duel="${esc(du.id)}">${svg(I.flame)}
-      <span class="ml2"><span class="n">${esc(du.name)}</span>
-        <span class="sub">${esc(shortWho(du.who) || 'Un compte')} · ${plur(du.total, 'question')}${
-          r.length ? ' · ' + plur(r.length, 'joueur') : ''}</span></span>
-      <span class="c">${me ? `<b class="dsc">${me.score}/${du.total}</b> ${pos === 1 ? '🥇' : pos + 'ᵉ'}`
-        : '<span class="dnew">à jouer</span>'}</span>${svg(I.arrow)}</button>`;
-  }).join('')}</div>`;
-}
-
-function boardPane() {
-  const r = board.rows;
-  const seg = `<div class="seg" id="bRange">${Object.entries(BRANGE).map(([k, n]) =>
-    `<button class="${board.range === +k ? 'on' : ''}" data-brange="${k}">${n}</button>`).join('')}</div>`;
-  if (!r) return `${seg}<div class="empty">${svg(I.trophy)}<p>${board.err ? 'Classement indisponible' : 'Chargement…'}</p></div>`;
-  if (!r.length) return `${seg}<div class="empty">${svg(I.trophy)}<p><b>Personne n’a révisé</b>sur cette période.</p></div>`;
-  const top = r[0].n || 1;
-  const MED = ['🥇', '🥈', '🥉'];
-  return `${seg}<div class="rows">${r.map((x, i) => `
-    <div class="bdr ${x.uid === auth.uid ? 'me' : ''}">
-      <span class="bdp">${MED[i] || (i + 1)}</span>
-      <span class="bdn"><b>${esc(shortWho(x.who) || 'Compte')}</b>
-        <i>${plur(+x.n, 'page')} · ${Math.round(x.ok / (x.n || 1) * 100)} % juste · ${plur(+x.jours, 'jour')}</i>
-        <em style="width:${Math.max(4, Math.round(x.n / top * 100))}%"></em></span>
-    </div>`).join('')}</div>
-`;
-}
-
-export function groupPull() {
-  if (!groups) groupsPull();                  // sans eux, la barre de portée n'a rien à proposer
-  if (groupTab === 'lib' && !lib.list) libPull();
-  if (groupTab === 'duel' && !duels.list) duelsPull();
-  if (groupTab === 'board' && !board.rows) boardPull();
-}
 
 /* ══════════ statistiques ══════════
    Tout se calcule à partir de la table des révisions : une ligne par
@@ -333,7 +239,7 @@ export function lostOnLeave() {
 export function statsView() {
   if (!stats.rows) {
     $.innerHTML = `<div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
-      <div class="page"><div class="top"><div class="hero">Journal de lecture</div></div>
+      <div class="page"><div class="top"><div class="hero">Journal</div></div>
       <div class="empty">${svg(I.chart)}<p>${stats.err ? 'Statistiques indisponibles' : 'Chargement…'}</p></div></div>`;
     return;
   }
@@ -354,20 +260,20 @@ export function statsView() {
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
-      <div class="top"><div class="hero">Journal de lecture</div></div>
+      <div class="top"><div class="hero">Journal</div></div>
       <div class="seg" id="stRange">
         ${[[7, '7 jours'], [30, '30 jours'], [0, 'Tout']].map(([v, l]) =>
           `<button data-strange="${v}" class="${stats.range === v ? 'on' : ''}">${l}</button>`).join('')}
       </div>
 
       <div class="tiles st4">
-        <div class="st"><b>${S.n}</b><span>pages lues</span></div>
-        <div class="st"><b>${pct}%</b><span>de réussite</span></div>
-        <div class="st"><b>${Math.round(S.ms / 60000)}</b><span>minutes</span></div>
-        <div class="st"><b>${(S.per / 1000).toFixed(1).replace('.', ',')}s</b><span>par page</span></div>
+        <div class="st" title="Pages lues">${svg(I.book)}<b>${S.n}</b></div>
+        <div class="st" title="Réponses justes">${svg(I.check)}<b>${pct} %</b></div>
+        <div class="st" title="Temps de lecture">${svg(I.clock)}<b>${Math.round(S.ms / 60000)} min</b></div>
+        <div class="st" title="Temps moyen par page">${svg(I.card)}<b>${(S.per / 1000).toFixed(1).replace('.', ',')} s</b></div>
       </div>
 
-      <div class="lbl"><span>Assiduité</span><span>${S.streak ? S.streak + ' jour' + (S.streak > 1 ? 's' : '') + ' d’affilée' : ''}</span></div>
+      <div class="lbl"><span>Assiduité</span><span>${S.streak ? `${svg(I.flame)}${S.streak}` : ''}</span></div>
       <div class="card2">
         <div class="heat">${cols.map(col => `<div class="hc">${col.map(k => {
           const v = S.byDay.get(k);
@@ -380,10 +286,10 @@ export function statsView() {
       <div class="lbl"><span>Ces sept jours</span></div>
       <div class="card2">${weekBars(S)}</div>
 
-      <div class="lbl"><span>Où en sont tes livres</span><span>${prog.length || ''}</span></div>
+      <div class="lbl"><span>Livres</span><span>${prog.length || ''}</span></div>
       <div class="card2">
         ${prog.length ? prog.map(p => `<div class="bkline">
-          <span class="bkn">${esc(p.d.name)}<i>${p.k.mature} sue${p.k.mature > 1 ? 's' : ''} sur ${p.n}</i></span>
+          <span class="bkn">${esc(p.d.name)}<i title="Pages sues">${p.k.mature}/${p.n}</i></span>
           <span class="mix sm">${['new', 'learn', 'young', 'mature'].filter(x => p.k[x])
             .map(x => `<i class="${x}" style="flex:${p.k[x]}"></i>`).join('')}</span>
         </div>`).join('') + `<div class="bkkey">${['new', 'learn', 'young', 'mature']
@@ -391,7 +297,7 @@ export function statsView() {
           : '<div class="note">Aucun livre pour l’instant.</div>'}
       </div>
 
-      ${S.subjects.length ? `<div class="lbl"><span>Temps par matière</span></div>
+      ${S.subjects.length ? `<div class="lbl"><span>Matières</span></div>
       <div class="card2">
         ${S.subjects.map(x => `<div class="brow"><span class="bl">${esc(x.k)}</span>
           <span class="bt"><i style="width:${Math.round(x.p * 100)}%;background:${
@@ -399,7 +305,7 @@ export function statsView() {
           <span class="bv">${x.v >= 60000 ? Math.round(x.v / 60000) + ' min' : Math.round(x.v / 1000) + ' s'}</span></div>`).join('')}
       </div>` : ''}
 
-      ${S.worst.length ? `<div class="lbl"><span>Pages les plus ratées</span><span>${S.worst.length}</span></div>
+      ${S.worst.length ? `<div class="lbl"><span>Les plus ratées</span><span>${S.worst.length}</span></div>
       <div class="slist">
         ${S.worst.map(([id, fails]) => {
           const e = idx.get(id);

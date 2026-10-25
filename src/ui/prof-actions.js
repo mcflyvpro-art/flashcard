@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I } from '../icones.js';
 import { shuffle } from '../file.js';
-import { auth, me, menu, online, prefs, prof, setAnimate, view } from '../data/etat.js';
+import { auth, me, menu, online, prefs, prof, setAnimate, view, visuels } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
 import {
@@ -22,6 +22,9 @@ import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { classeOuverte } from './prof-accueil.js';
 import { apercuListe, baseApp, devoirOuvert, imprimerCartes, listeLivres } from './prof-feuilles.js';
 import { resetComp } from './creation.js';
+import { ouvrirDefi } from './defi-nouveau.js';
+import { choisirJetonClasse, surVisuels } from '../core/visuels.js';
+import { emblemeDe, rangCouleur } from '../jeton.js';
 
 /* ══════════ ce que font les boutons de l'espace professeur ══════════
    Chaque bouton porte `data-pf="action"` (et `data-id`, `data-v`) ; un seul
@@ -329,6 +332,9 @@ function actions() {
     message: () => ouvrir('message'),
     'message-go': messageGo,
     actions: () => ouvrir('actions'),
+    blason: () => ouvrir('blason'),
+    'blason-emb': k => { const v = visuels['c:' + cid()] || {}; choisirJetonClasse(cid(), k, rangCouleur(cid(), v.teinte)); paintMenu(); },
+    'blason-teinte': i => { const v = visuels['c:' + cid()] || {}; choisirJetonClasse(cid(), emblemeDe(cid(), v.cle), +i); paintMenu(); },
     reglages: () => { closeMenu(); prof.tab = 'reglages'; if (!prof.exclus) exclusPull(cid()); repeindre(); },
     'r-ouvert': () => reglages({ ouvert: !c().ouvert }),
     'r-validation': () => reglages({ validation: !c().validation }),
@@ -382,6 +388,9 @@ function actions() {
       if (arme(b, '?') && await ecrire('prof_del_work', { aid: prof.work }, 'Devoir retiré')) { closeMenu(); prof.semaine = null; relire(); }
     },
     donner: () => { prof.comp = null; ouvrir('donner'); },
+    /* Une partie en direct pour la classe ouverte (Kahoot, en classe) : l'écran
+       du défi, cette classe déjà choisie ; la salle se projette ensuite. */
+    direct: () => { const c = classeOuverte(); if (c) ouvrirDefi({ ou: 'classe:' + c.id, mode: 'direct', retour: { name: 'profclasse', id: c.id } }); },
     livre: id => { const d = deck(id); if (d) donnerLivre(d); },
     'livre-neuf': () => { prof.comp = compNeuf(); closeMenu(); resetComp({ cours: true, pour: 'devoir' }); go('import'); },
     cible: id => { const s = prof.comp.cibles; s.has(id) ? s.delete(id) : s.add(id); paintMenu(); },
@@ -389,6 +398,10 @@ function actions() {
     'donner-go': donnerGo
   };
 }
+
+/* Le blason d'une classe vient d'arriver (ou de changer) : ce qui se teinte
+   à sa couleur dans l'espace se repeint, sans jamais couper une saisie. */
+surVisuels(ch => { if (ch.some(k => k[0] === 'c') && /^prof/.test(view.name)) repeindre(); });
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-pf]');

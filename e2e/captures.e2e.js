@@ -83,7 +83,7 @@ for (const ecran of LARGEURS) {
     if (ecran.width < 900) await page.getByRole('button', { name: 'Retour' }).first().click();
 
     // onglets en bas sur téléphone, barre latérale sur ordinateur
-    await page.getByRole('button', { name: /^Le cercle( des lecteurs)?$/ }).first().click();
+    await page.getByRole('button', { name: /^(Le )?[Cc]ercle( des lecteurs)?$/ }).first().click();
     await verifier('cercle-des-lecteurs');
 
     expect(vus).toHaveLength(12);

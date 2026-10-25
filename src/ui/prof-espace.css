@@ -89,11 +89,10 @@ svg.qr{display:block;width:100%;height:auto;stroke:none}
 .pf-chip{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:11px;background:var(--surf);
   font-size:11.5px;font-weight:700;color:var(--ink2);font-variant-numeric:var(--tab)}
 .pf-chip svg{width:13px;height:13px}
-.pf-k{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;flex:none;background:var(--k);color:#fff;
-  font-style:normal;font-size:13.5px;font-weight:800;letter-spacing:-.2px}
-.pf-k.grand{width:54px;height:54px;border-radius:15px;font-size:18px}
-.pf-av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;font-style:normal;
-  background:color-mix(in srgb,var(--k) 15%,var(--card));color:var(--k);font-size:12px;font-weight:800}
+.pf-blason{position:relative;flex:none;border-radius:16px}
+.pf-blason > svg{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;padding:4px;border-radius:50%;
+  background:var(--card);color:var(--ink2);box-shadow:var(--edge)}
+.pf-pick{margin-bottom:16px}
 .pf-num{display:flex;align-items:baseline;flex-wrap:wrap;gap:1px;font-variant-numeric:var(--tab);min-width:0}
 .pf-num b{font-size:14.5px;font-weight:750}
 .pf-num i{font-style:normal;font-size:12px;color:var(--soft)}
@@ -292,7 +291,7 @@ button.pf-kpi:active{transform:scale(.98)}
   .pf-cha > .pf-btn.pri{flex:1}
   .pf-cha > .pf-btn:not(.pri){width:42px;padding:0}
   .pf-cha > .pf-btn:not(.pri) span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-  .pf-ch .pf-k.grand{width:46px;height:46px;font-size:16px}
+  .pf-ch .jt.lg{--s:46px}
   .pf-cht h1{font-size:24px}
   .pf-tabs button{padding:0 10px}
 }
@@ -483,7 +482,7 @@ button.pf-kpi:active{transform:scale(.98)}
 .pf-sh > i{font-style:normal;font-size:13px;color:var(--soft)}
 .pf-sh-av{display:flex;align-items:center;gap:11px;min-width:0}
 .pf-sh-av > span{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
-.pf-sh-av .pf-av{width:44px;height:44px;font-size:15px}
+.pf-sh-av .jt{--s:44px}
 .pf-sb{padding:2px 20px 20px}
 .pf-sb > .mi{margin:0 -13px;width:calc(100% + 26px)}
 .pf-sf{position:sticky;bottom:0;z-index:2;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px;

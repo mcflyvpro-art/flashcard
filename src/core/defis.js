@@ -1,11 +1,11 @@
 import { I } from '../icones.js';
 import { shuffle } from '../file.js';
 import {
-  auth, duelRun, duels, me, prefs, scope, setAnimate, setDuelRun, setGroupTab, view
+  auth, cercle, duelRun, duels, me, prefs, setAnimate, setDuelRun, view
 } from '../data/etat.js';
 import { go, render } from '../ui/bibliotheque.js';
 import { plain } from '../ui/carte-media.js';
-import { api, plur, scopeName } from './coeur-sync.js';
+import { api, plur } from './coeur-sync.js';
 import { toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu } from '../ui/menus-a.js';
 
@@ -24,25 +24,29 @@ export async function duelsPull() {
     ]);
     duels.list = ds || []; duels.scores = sc || []; duels.err = 0;
   } catch (e) { duels.err = 1; }
-  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { setAnimate(false); render(); }
+  if (/^(commu|friends|club|classes)$/.test(view.name)) { setAnimate(false); render(); }
 }
 
-export async function duelMake(d) {
+/* Un défi « à son rythme » : à mes amis (ni club ni classe), à un club, ou
+   à une classe (professeur). Renvoie vrai s'il est lancé. */
+export async function duelMake(d, ou = {}) {
   const uniq = [];
   for (const c of d.cards) {
     const b = plain(c.b).trim();
     if (b && !uniq.some(x => x[1] === b)) uniq.push([plain(c.f).trim(), b]);
   }
-  if (uniq.length < 4) { closeMenu(); return toast(I.x, 'Il faut 4 réponses différentes'); }
+  if (uniq.length < 4) { closeMenu(); toast(I.x, 'Il faut 4 réponses différentes'); return false; }
   const cards = shuffle(uniq.slice()).slice(0, DUELQ);
   closeMenu();
   try {
     await api('/rest/v1/duels', 'POST',
       [{ deck_id: d.id, owner: auth.uid, who: prefs.name || (me && me.handle) || 'Compte',
-         name: d.name, total: cards.length, cards, group_id: scope }], { Prefer: 'return=minimal' });
-    duels.list = null; setGroupTab('duel'); go('group'); duelsPull();
-    toast(I.flame, 'Défi lancé chez ' + scopeName() + ' — ' + plur(cards.length, 'question'));
-  } catch (e) { toast(I.x, 'Défi impossible'); }
+         name: d.name, total: cards.length, cards, group_id: ou.club || null, class_id: ou.classe || null }],
+      { Prefer: 'return=minimal' });
+    duels.list = null; duelsPull();
+    toast(I.flame, 'Défi lancé — ' + plur(cards.length, 'question'));
+    return true;
+  } catch (e) { toast(I.x, 'Défi impossible'); return false; }
 }
 
 
@@ -60,8 +64,9 @@ export async function duelEnd() {
   setDuelRun(null);
   duels.scores = (duels.scores || []).filter(s => !(s.duel_id === row.duel_id && s.user_id === auth.uid));
   duels.scores.push(row);
-  duels.open = r.id; setGroupTab('duel');
-  go('group'); openMenu('duelitem');
+  duels.open = r.id;
+  const ret = cercle.retour || { name: 'commu' };
+  go(ret.name, ret.id); openMenu('duelitem');
   try {
     await api('/rest/v1/duel_scores', 'POST', [row],
       { Prefer: 'resolution=merge-duplicates,return=minimal' });

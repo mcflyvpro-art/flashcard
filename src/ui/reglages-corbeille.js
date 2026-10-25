@@ -6,7 +6,7 @@ import {
   accounts, auth, blocks, compte, db, iAmMod, mailbox, mods, myRole, online, prefs, ref,
   setSubjColor, setSubjEdit, setSubjName, shared, trash, vers
 } from '../data/etat.js';
-import { go, render } from './bibliotheque.js';
+import { render } from './bibliotheque.js';
 import { fsrsDR, plain } from './carte-media.js';
 import { atSchool, isAdmin } from './classement.js';
 import {
@@ -15,7 +15,7 @@ import {
 } from '../core/coeur-sync.js';
 import { KEEP, snapVersion } from '../core/reglages-corbeille.js';
 import { hlp } from './connexion.js';
-import { applyFont, importPayload, savePrefs, toast } from './import-cartes.js';
+import { applyFont, savePrefs, toast } from './import-cartes.js';
 import { closeMenu, openMenu } from './menus-a.js';
 import { installed } from './onboarding.js';
 import { norm } from './quiz.js';
@@ -130,7 +130,9 @@ function settingsCompteHtml() {
         : `<button class="sr flat" data-act="rename">${svg(I.user)}
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>`}
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="commu">${svg(I.user)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="commu">${svg(I.users)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
+        ${myRole === 'eleve' && !carteEleve() && !atSchool() ? `<button class="sr flat" data-act="classes">${svg(I.school)}
+          <span class="n">Rejoindre la classe d’un professeur</span><span class="c">avec son code</span>${svg(I.arrow)}</button>` : ''}
         ${carteEleve() ? '' : `<button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>`}
       </div>${carteEleve() ? `<p class="note">${svg(I.key)}Carte élève : un nouveau code se demande à ton professeur.</p>` : ''}`;
 }
@@ -320,15 +322,4 @@ export function sharedView() {
           <span class="a">${esc(plain(cf(c)))}</span>${svg(I.arrow)}<span class="b">${esc(plain(cb(c)))}</span>
           </div>`).join('')}</div>`}
     </div>`;
-}
-
-export function libAdd(it) {
-  /* les identifiants de matière sont propres à chaque compte : on
-     rattache par le nom quand il existe déjà ici, sinon sans matière */
-  const s = db.subjects.find(x => x.name.toLowerCase() === String(it.subject || '').toLowerCase());
-  const n = (it.cards || []).length;
-  const d = importPayload({ name: it.name, subject: s ? s.id : '', cards: it.cards }, true);
-  closeMenu();
-  if (d) go('deck', d.id);
-  toast(I.check, plur(n, 'page') + ' ajoutée' + (n > 1 ? 's' : ''));
 }

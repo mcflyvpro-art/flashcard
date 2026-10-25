@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
-import { prof, setMenu } from '../data/etat.js';
+import { prof, setMenu, visuels } from '../data/etat.js';
 import {
   CREATION, codeComplet, dansJours, echeance, etatDevoir, etatEleve, etatInscriptions, formatCode, grilleMois, iso,
   auJour, jourCourt, jourLong, lienCarte, lienRejoindre, lireListeEleves, messageStatut, MOIS, pc, tonReussite
@@ -8,6 +8,8 @@ import {
 import { qrSvg } from '../qr.js';
 import { esc, live, plur } from '../core/coeur-sync.js';
 import { avatar, btn, chargement, classeOuverte, couleur, pastilleClasse, pill } from './prof-accueil.js';
+import { grilleCouleurs, grilleEmblemes } from './jeton.js';
+import { emblemeDe, rangCouleur } from '../jeton.js';
 import { ETATS } from './prof-classe.js';
 import { mountMenu } from './menus-a.js';
 import { timeAgo } from './reglages-corbeille.js';
@@ -314,7 +316,7 @@ function rejoindre(w) {
   feuille(w, '', '<b>Rejoindre une classe</b>', 'Avec le code collègue donné par son créateur', `
     <label class="pf-fl">Code collègue<input id="pfcode" class="pf-codein" data-pfin="f.code" value="${esc(prof.f.code || '')}"
       placeholder="XXXX-XXXX" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
-    ${a ? `<div class="pf-li pf-ap">${pastilleClasse({ id: a.class_id, name: a.nom })}<span class="pf-lit"><b>${esc(a.nom)}</b><i>${
+    ${a ? `<div class="pf-li pf-ap"><i class="jt groupe lg vide">${svg(I.school)}</i><span class="pf-lit"><b>${esc(a.nom)}</b><i>${
       [a.niveau, a.prof, a.etab].filter(Boolean).map(esc).join(' · ')}</i></span></div>` : ''}
     ${r ? `<p class="pf-alerte">${svg(I.warn)}<span><b>${esc(r.titre)}</b>${r.texte ? ' ' + esc(r.texte) : ''}</span></p>` : ''}`,
     a ? btn('rejoindre-go', I.check, 'Rejoindre l’équipe', 'pri lg')
@@ -357,7 +359,19 @@ export function imprimerCartes(l, c) {
   window.print();
 }
 
+/* ---------- l'emblème d'une classe ----------
+   Choisi par qui la gère, vu par ses élèves (« Mes classes ») : une icône
+   et une couleur, jamais un sigle tiré du nom (« CPGE ECP1 » donnait « CE1 »). */
+function blasonFeuille(w) {
+  const c = classeOuverte(); if (!c) return setMenu(null);
+  const v = visuels['c:' + c.id] || {};
+  feuille(w, '', `<span class="pf-sh-av">${pastilleClasse(c)}<b>${esc(c.name)}</b></span>`, '', `
+    <div class="pf-pick">${grilleEmblemes(emblemeDe(c.id, v.cle), 'data-pf="blason-emb" data-id')}</div>
+    <div class="pf-pick">${grilleCouleurs(rangCouleur(c.id, v.teinte), 'data-pf="blason-teinte" data-id')}</div>`, '');
+}
+
 const FEUILLES = {
+  blason: blasonFeuille,
   creer, inviter, tableau, eleve: eleveFiche, retirer, nommer, message, devoir: devoirFeuille,
   donner: w => (prof.comp && prof.comp.cartes ? donnerDetails(w) : choixLivre(w)),
   actions, supprimer, cartes, rejoindre

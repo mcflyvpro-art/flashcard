@@ -16,7 +16,7 @@ test('inscription, un livre de 10 pages, une séance, des chiffres justes', asyn
   expect(store.users).toHaveLength(1);
 
   await creerLivre(page, 'Capitales', 10);
-  await expect(page.getByText('10 à revoir')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Lire 10' })).toBeVisible();   // les 10 pages sont à lire
 
   // 10 pages vues : 7 sues du premier coup, 3 ratées (« Encore »)...
   await page.getByRole('button', { name: 'Lire 10' }).click();
@@ -42,10 +42,10 @@ test('inscription, un livre de 10 pages, une séance, des chiffres justes', asyn
   const journal = page.locator('main');
   // le journal se charge depuis le serveur (statsPull) : il montre « ······ » le temps d'arriver
   // ouvert juste après la séance : la file part, puis le journal se relit tout seul
-  await expect(journal).toContainText(/13\s*pages lues/i, { timeout: 10000 });
-  await expect(journal).toContainText(/77%\s*de réussite/i);        // 10 réussites sur 13 réponses
-  await expect(journal).toContainText(/1\s*jour d’affilée/i);
-  await expect(journal).toContainText(/0 sue sur 10/i);
+  await expect(journal.locator('.st[title="Pages lues"]')).toHaveText('13', { timeout: 10000 });
+  await expect(journal.locator('.st[title="Réponses justes"]')).toHaveText('77 %');   // 10 réussites sur 13 réponses
+  await expect(journal.locator('.lbl').first()).toContainText('1');                 // un jour d'affilée
+  await expect(journal.locator('.bkn i[title="Pages sues"]').first()).toHaveText('0/10');
   await expect(page.getByRole('button', { name: /^1 Pays \d+ Capitale \d+$/ })).toHaveCount(3);
 
   // et ce qui est parti au serveur raconte la même chose
@@ -91,7 +91,7 @@ test('écran unique : écrire, coller, et « Créer » prend aussi la liste en a
 
   await page.getByRole('button', { name: 'Créer le livre' }).click();
   await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
-  await expect(page.locator('main')).toContainText('3 pages');
+  await expect(page.locator('main .lbl').first()).toContainText('3');
 });
 
 /* C'est <body> qui défile, pas la fenêtre : le window.scrollTo(0, 0) de go()

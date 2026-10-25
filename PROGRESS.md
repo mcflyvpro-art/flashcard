@@ -19,7 +19,20 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-24 (soir) · un livre ouvert depuis le bas de la bibliothèque arrivait au
+DERNIER   2026-10-25 · le cercle refait : des amis, des clubs (emblème, couleur, devise,
+          classement de la semaine, membres, invitation par code ou QR) et des défis —
+          à son rythme, ou EN DIRECT façon Kahoot (code à 6 chiffres, hôte projeté,
+          joueurs au téléphone, points calculés en base, podium) ; « Mes classes » sort
+          du cercle pour un onglet Classe réservé à qui en a une. Jetons d'identité :
+          initiales ou figure choisie pour une personne, emblème pour une classe ou un
+          club, plus jamais de sigle tiré du nom (« CPGE ECP1 » → « CE1 »), mêmes
+          couleurs et mêmes initiales sur tous les écrans. Moins de texte partout
+          (icônes + chiffres, pastilles « ? »), onglets du bas en icônes, mode zen
+          retiré. Preuves : 299 tests unitaires, 19 parcours e2e verts dont 3 nouveaux
+          (`cercle` : club, partie à trois, jeton vu par un ami), SQL en base
+          `defis_direct.sql` 44/44 et `jetons.sql` 23/23, advisors sans nouvelle alerte,
+          budget JS 115,2 Ko au démarrage, captures 1440/390 relues.
+          2026-10-24 (soir) · un livre ouvert depuis le bas de la bibliothèque arrivait au
           milieu de sa page : c'est <body> qui défile, window.scrollTo ne faisait rien ;
           render() replace le défilement (e2e `eleve-b2c`, 390 et 1440 px).
           2026-10-24 · refonte visuelle de toute l'app, PC et téléphone (aucune fonction

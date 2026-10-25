@@ -12,13 +12,15 @@
 // (`eq`, `is.null`, `not.is.null`, `lt`, `gte`, alias de `select`, `Range`
 // + `Content-Range`, `Prefer: resolution=merge-duplicates`, le `rev` des
 // paquets — M03). Les fonctions des classes (espace professeur, « Mes
-// classes ») sont rejouées à part, dans faux-classes.js.
+// classes ») sont rejouées à part, dans faux-classes.js ; celles du cercle
+// (amis, clubs, parties en direct) dans faux-cercle.js.
 //
 // `store` est un objet ordinaire : deux pages branchées sur le même store
 // sont deux appareils du même compte (M07.T4).
 
 import { randomUUID } from 'node:crypto';
 import { rpcClasses } from './faux-classes.js';
+import { rpcCercle } from './faux-cercle.js';
 
 const CARD_COLS = { f: 'front', b: 'back', st: 'state', sp: 'step', S: 'stability', D: 'difficulty',
   F: 'trace2', d: 'due', lr: 'last_review', i: 'interval_days', n: 'reviews_count', l: 'lapses' };
@@ -161,7 +163,7 @@ function rest(store, req, url, path, body) {
   const name = path.replace('/rest/v1/', '');
   const prefer = req.headers().prefer || '';
   if (name === 'rpc/sync_deck_cards') return syncDeckCards(store, body, user);
-  if (name.startsWith('rpc/')) return rpcClasses(store, name.slice(4), body, user) || [200, []];
+  if (name.startsWith('rpc/')) return rpcClasses(store, name.slice(4), body, user) || rpcCercle(store, name.slice(4), body, user) || [200, []];
   const m = req.method();
   if (m === 'GET') return lit(store, name, url, req, user);
   if (m === 'POST') return ecrit(store, name, body, prefer, user);

@@ -15,7 +15,7 @@ import './ui/reglages-corbeille.js';
 import './ui/defis.js';
 import './ui/classement.js';
 import './ui/etablissement.js';
-import './ui/bilan-devoirs.js';
+import './ui/cercle.js';
 import './ui/ecran-groupe.js';
 import './ui/menus-a.js';
 import './ui/menus-b.js';

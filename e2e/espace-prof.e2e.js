@@ -117,10 +117,9 @@ for (const largeur of [390, 1440]) {
     await voir(page, '14-accueil', largeur);
 
     // l'élève admis trouve le devoir
-    // (un compte personnel arrive sur sa bibliothèque : ses classes sont dans le cercle)
+    // (un compte personnel arrive sur sa bibliothèque ; une fois dans une classe, l'onglet « Classe » apparaît)
     await eleve.reload();
-    await eleve.getByRole('button', { name: 'Le cercle des lecteurs' }).click();
-    await eleve.getByRole('button', { name: /^Classes/ }).click();
+    await eleve.getByRole('button', { name: 'Classe', exact: true }).click();
     await expect(eleve.getByText('Verbes irréguliers')).toBeVisible({ timeout: 10000 });
     await voir(eleve, '15-eleve-devoir', 390, largeur);
     expect(erreurs, 'erreurs JavaScript côté professeur').toEqual([]);

@@ -1,6 +1,6 @@
 import {
-  DEFPREFS, auth, bases, conflicts, db, demo, dirty, flushAgain, flushTimer, flushing, gone, groups, mailbox,
-  menu, online, outbox, prefs, refreshing, scope, setAnimate, setAuth, setBases, setDirty, setFlushAgain,
+  DEFPREFS, auth, bases, conflicts, db, demo, dirty, flushAgain, flushTimer, flushing, gone, mailbox,
+  menu, online, outbox, prefs, refreshing, setAnimate, setAuth, setBases, setDirty, setFlushAgain,
   setFlushTimer, setFlushing, setGone, setOnlineState, setOutbox, setPrefs, setRefreshing,
   study, trash, undos, view
 } from '../data/etat.js';
@@ -78,12 +78,6 @@ export const subj = id => {
 };
 
 export const sty = s => `--c:${s.c};--ci:${s.ci};--d:${s.d}`;
-
-/* ---------- état ---------- */
-export const scopeName = () => {
-  const g = (groups || []).find(x => x.id === scope);
-  return g ? g.name : 'Mes lecteurs';
-};
 
 /* ---------- annuler ----------
    Avant toute action qui écrase ou efface, on photographie les paquets

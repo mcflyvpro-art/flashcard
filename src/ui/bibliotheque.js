@@ -3,24 +3,27 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
-  DECKPAGE, accounts, adm, animate, asks, auth, db, demo, dirty, filter, liveAt,
+  DECKPAGE, accounts, adm, animate, asks, auth, compte, db, demo, dirty, eleve, filter, liveAt, me,
   liveSoon, liveT, mailbox, menu, myRole, online, pageDir, pagerEnd, peek, prefs,
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
   setPageDir, setPagerEnd, setPreviewOf, setView, stats, view
 } from '../data/etat.js';
-import {
-  boardView, commuPull, commuView, duelsView, friendsView, groupsView, libraryView
-} from './bilan-devoirs.js';
+import { commuPull, commuView, friendsView } from './cercle.js';
+import { clubPull, clubView } from './club.js';
+import { defiView } from './defi-nouveau.js';
+import { directView } from './direct-porte.js';
+import { avatar } from './jeton.js';
+import { sallesPull } from '../core/cercle.js';
 import { STATE, cstate, paintMedia } from './carte-media.js';
 import {
-  adminView, atSchool, isProf, modView, refView
+  adminView, atSchool, isProf, isPupil, modView, refView
 } from './classement.js';
 import { accountsPull, admPull, boardPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { deckView, legalView, loginView, selOff } from './connexion.js';
 import { duelView } from './defis.js';
 import { duelsPull } from '../core/defis.js';
-import { findView, groupView, statsView } from './ecran-groupe.js';
+import { findView, statsView } from './ecran-groupe.js';
 import { statsPull } from '../core/ecran-groupe.js';
 import { mesClassesView } from './eleve-classes.js';
 import { eleveClassesPull } from '../core/eleve-classes.js';
@@ -34,7 +37,7 @@ import { importView } from './creation.js';
 import {
   mailView, settingsView, sharedView, trashView
 } from './reglages-corbeille.js';
-import { libPull, mailPull } from '../core/reglages-corbeille.js';
+import { mailPull } from '../core/reglages-corbeille.js';
 import { loadResume, studyView } from './revision.js';
 
 /* ---------- synchronisation vivante ----------
@@ -45,17 +48,18 @@ import { loadResume, studyView } from './revision.js';
    jour rapprochée pour que son effet se voie tout de suite. */
 const LIVEMS = 15000;
 
-const LIVEV = /^(stats|commu|board|duels|library|friends|groups|group)$/;
+const LIVEV = /^(stats|commu|friends|club)$/;
 
 function livePull(force) {
   if (!auth || demo || document.hidden || !LIVEV.test(view.name)) return;
   if (!force && Date.now() - liveAt < 4000) return;
   setLiveAt(Date.now());
   if (view.name === 'stats') statsPull(1);
+  else if (view.name === 'club') { clubPull(view.id); }
   else {
     boardPull(1);
-    if (view.name === 'duels') duelsPull();
-    if (view.name === 'library') libPull();
+    sallesPull();
+    if (view.name === 'commu') duelsPull();
   }
 }
 
@@ -96,13 +100,12 @@ function placerDefilement() {
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
-              group: groupView, shared: sharedView, duel: duelView, legal: legalView, mod: modView,
+              shared: sharedView, duel: duelView, legal: legalView, mod: modView,
               classes: mesClassesView,
               prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
               ref: refView,
               admin: adminView,
-              commu: commuView, friends: friendsView, groups: groupsView,
-              duels: duelsView, library: libraryView, board: boardView };
+              commu: commuView, friends: friendsView, club: clubView, defi: defiView, direct: directView };
   $.classList.remove('fade');
   if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
   (v[view.name] || home)();
@@ -138,7 +141,7 @@ function railOn() {
   if (view.name === 'mail') return 'mail';
   if (view.name === 'stats') return 'stats';
   if (/^(classes|prof|ref$|admin$)/.test(view.name)) return 'classes';
-  if (/commu|friends|groups|duels|library|board|shared/.test(view.name)) return 'commu';
+  if (/^(commu|friends|club|defi|direct|shared)$/.test(view.name)) return 'commu';
   return 'home';
 }
 
@@ -164,11 +167,24 @@ function railNavBoulot(on, classeNom) {
       ${ent('settings', I.gear, 'Réglages')}
     </nav>
     <div class="sp"></div>
-    <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
+    ${moiRail()}`;
 }
 
-/* Tout élève peut rejoindre une classe : l'entrée est là pour tous. */
-const railHasClasses = () => myRole === 'eleve' || isProf() || atSchool();
+/* Moi, en bas de la barre : mon jeton et mon nom (pas mon e-mail) ; un appui
+   ouvre « Mon jeton ». */
+export const monIdent = () => (me && me.handle) || (compte && compte.nom) || (me && me.name) || prefs.name
+  || String(auth.email || '').split('@')[0];
+const monNomRail = () => (compte && compte.nom) || (me && me.handle ? '@' + me.handle : (me && me.name) || prefs.name || 'Mon profil');
+const moiRail = () => `<button class="who" data-cc="moi">${avatar(auth.uid, monIdent(), 'sm')}<span>${esc(monNomRail())}</span></button>`;
+
+/* « Classe » n'existe que pour qui en a une : un élève inscrit par son
+   établissement ou par carte, un professeur, ou un compte personnel qui a
+   rejoint la classe d'un professeur (ou attend d'y être admis). Un compte
+   tout B2C n'a ni l'onglet ni l'entrée : il rejoint une classe par le lien
+   ou le QR du professeur, ou depuis les Réglages. */
+export const aUneClasse = () => isPupil() || isProf() || atSchool()
+  || (eleve.classes || []).some(c => c.statut === 'inscrit' || c.statut === 'attente');
+const railHasClasses = aUneClasse;
 
 function railNavHome(on, classeNom) {
   const ent = (k, ic, nom, badge) => railEntry(on, k, ic, nom, badge);
@@ -178,19 +194,19 @@ function railNavHome(on, classeNom) {
       ${ent('home', I.layers, 'Livres')}
       ${ent('stats', I.chart, 'Journal')}
       ${railHasClasses() ? ent('classes', I.school, classeNom) : ''}
-      ${ent('commu', I.user, 'Le cercle', (asks || []).length)}
+      ${ent('commu', I.users, 'Cercle', (asks || []).length)}
       ${ent('mail', I.mail, 'Courrier', railMailBadge())}
     </nav>
     <div class="sp"></div>
     <nav>${ent('settings', I.gear, 'Réglages')}</nav>
-    <div class="who">${svg(I.user)}<span>${esc(prefs.name || auth.email)}</span></div>`;
+    ${moiRail()}`;
 }
 
-function railClickClasses() {
+export function allerClasses() {
   if (myRole === 'admin') { if (!accounts) accountsPull(); if (!adm.orgs) admPull(); return go('admin'); }
   if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
   if (isProf()) return allerAccueil();
-  eleveClassesPull(); return go('classes');
+  eleveClassesPull(); sallesPull(); duelsPull(); return go('classes');
 }
 
 function railClick(e) {
@@ -198,7 +214,7 @@ function railClick(e) {
   if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
   if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
   if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
-  if (b.dataset.r === 'classes') return railClickClasses();
+  if (b.dataset.r === 'classes') return allerClasses();
   go(b.dataset.r === 'settings' ? 'settings' : 'home');
 }
 
@@ -215,8 +231,8 @@ function paintRail() {
      barre horizontale — la page de gestion prend alors toute la largeur au
      lieu de vivre dans les trois quarts restants. */
   const boulot = (atSchool() && myRole !== 'eleve') || isProf();
-  const sig = on + '\u0000' + (prefs.name || auth.email) + '\u0000' + mailbox.n
-            + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v');
+  const sig = on + '\u0000' + monNomRail() + '\u0000' + mailbox.n
+            + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v') + '\u0000' + aUneClasse() + (asks || []).length;
   if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
   if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
   r.dataset.sig = sig;
@@ -227,17 +243,20 @@ function paintRail() {
   r.onclick = railClick;
 }
 
-/* Deux écrans de premier niveau, donc deux onglets et un balayage entre
-   les deux. C'est la seule navigation horizontale de l'app : partout
-   ailleurs on entre et on ressort par la flèche. */
-export const tabs = on => `<div class="tabs">
-  <div class="sl" style="transform:translateX(${on === 'commu' ? 74 : 0}px)"></div>
-  <button class="${on === 'home' ? 'on' : ''}" data-act="tab-home" aria-label="Ma bibliothèque"
-    aria-current="${on === 'home' ? 'page' : 'false'}">${svg(I.layers)}</button>
-  <button class="${on === 'commu' ? 'on' : ''}" data-act="tab-commu" aria-label="Le cercle des lecteurs"
-    aria-current="${on === 'commu' ? 'page' : 'false'}">${svg(I.user)}${
-      (asks || []).length ? `<i class="icb">${(asks || []).length}</i>` : ''}</button>
-</div>`;
+/* Les écrans de premier niveau, en onglets nommés : Livres, Classe (pour
+   qui en a une), Cercle. C'est la seule navigation horizontale de l'app :
+   partout ailleurs on entre et on ressort par la flèche. */
+export const tabs = on => {
+  const l = [['home', I.layers, 'Livres'], ...(aUneClasse() && !isProf() ? [['classes', I.school, 'Classe']] : []),
+    ['commu', I.users, 'Cercle']];
+  const i = Math.max(0, l.findIndex(t => t[0] === on)), n = (asks || []).length;
+  return `<nav class="tabs" aria-label="Navigation principale">
+  <div class="sl" style="transform:translateX(${i * 74}px)"></div>
+  ${l.map(([k, ic, nom]) => `<button class="${on === k ? 'on' : ''}" data-act="tab-${k}" aria-label="${nom}"
+    aria-current="${on === k ? 'page' : 'false'}">${svg(ic)}${
+      k === 'commu' && n ? `<i class="icb">${n}</i>` : ''}</button>`).join('')}
+</nav>`;
+};
 
 /* balayage horizontal entre « Mes paquets » et « Communauté » */
 export function bindPager() {
@@ -321,10 +340,10 @@ const tile = (d, i) => {
   data-id="${d.id}" data-pin="${d.pinned ? 1 : 0}"
   style="${sty(subj(d.subject))};--i:${i}">
   <i class="spine" aria-hidden="true"></i>
-  ${due ? `<i class="due">${due}</i>` : ''}
+  ${due ? `<i class="due" title="À lire aujourd’hui">${due}</i>` : ''}
   ${d.pinned ? `<i class="pind">${svg(I.pin)}</i>` : ''}
   <span class="n">${esc(d.name)}</span>
-  <span class="m">${svg(d.hidden ? I.eyeoff : I.card)}${plur(d.cards.length, 'page')}</span>
+  <span class="m" title="${plur(d.cards.length, 'page')}">${svg(d.hidden ? I.eyeoff : I.card)}${d.cards.length}</span>
   ${p ? `<i class="tbar"><b style="width:${p}%"></b></i>` : ''}
 </button>`;
 };
@@ -339,9 +358,9 @@ const listRow = (d, i) => {
     ${reorder ? `<i class="grip">${svg(I.grip)}</i>` : `<i class="ldot"></i>`}
     <button class="lmain" data-go="${d.id}" data-peek="${d.id}">
       <span class="n">${esc(d.name)}${d.pinned ? svg(I.pin) : ''}</span>
-      <span class="s">${plur(d.cards.length, 'page')}${p ? ' · ' + p + ' % mûres' : ''}</span>
+      <span class="s" title="${plur(d.cards.length, 'page')}">${svg(I.card)}${d.cards.length}${p ? ` · ${p} %` : ''}</span>
     </button>
-    ${due ? `<i class="ldue">${due}</i>` : ''}
+    ${due ? `<i class="ldue" title="À lire aujourd’hui">${due}</i>` : ''}
   </div>`;
 };
 
@@ -408,7 +427,7 @@ function sortRow(list) {
 
 function deckList(list) {
   if (!list.length) {
-    return `<div class="empty">${svg(I.layers)}<p><b>Ta bibliothèque est vide</b>Appuie sur + pour écrire ton premier livre.</p></div>`;
+    return `<div class="empty">${svg(I.layers)}<p><b>Ta bibliothèque est vide</b></p></div>`;
   }
   const sorted = sortDecks(list);
   return prefs.list
@@ -419,7 +438,7 @@ function deckList(list) {
 function marathonBanner() {
   if (simpleMode() || !allDue()) return '';
   return `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
-    <span>Lecture du jour</span><i>${allDue()} pages dues, toutes matières</i></button>`;
+    <span>Lecture du jour</span><i class="mdue" title="Pages à lire, toutes matières">${allDue()}</i></button>`;
 }
 
 function homeFab() {

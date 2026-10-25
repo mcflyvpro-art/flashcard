@@ -35,16 +35,26 @@ l'air de marcher ».
   - `src/app.js` — **point d'entrée seulement** (27 lignes) : importe
     `src/core/coeur-sync.js` puis les 18 modules de `src/ui/`, chacun pour
     ses effets de bord (les autres modules y arrivent par leurs imports :
-    `ui/creation.js`, `ui/eleve-classes.js`, `ui/prof-porte.js`, et l'espace
-    professeur, chargé à la demande — voir plus bas).
+    `ui/creation.js`, `ui/eleve-classes.js`, `ui/prof-porte.js`, `ui/club.js`,
+    `ui/cercle-feuilles.js`, `ui/defi-nouveau.js`, `ui/direct-porte.js`,
+    `ui/jeton.js`, et deux morceaux chargés à la demande, l'espace professeur
+    et l'écran d'une partie en direct — voir plus bas).
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
     HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout, sauf
     l'envoi des préférences dans `ui/import-cartes.js`, plus ancien, à sortir).
-    `coeur-sync.js` (774 lignes — `api()`, auth, sync, undo, palette) et neuf
+    `coeur-sync.js` (768 lignes — `api()`, auth, sync, undo, palette) et onze
     modules, un par domaine : `classement.js` (rôle, établissement, accueil
-    selon le métier), `defis.js`, `bilan-devoirs.js` (les groupes/clubs),
+    selon le métier), `defis.js` (les défis « à son rythme »), `cercle.js`
+    (clubs et salles en direct : lire, créer, rejoindre, inviter — tout par
+    des fonctions de la base, jamais `groups`/`group_members` à la main ;
+    refuse hors ligne), `direct.js` (la boucle d'une partie en direct :
+    `salle_etat` relu chaque seconde, réponses, avancer — chargé avec l'écran
+    de la partie), `visuels.js` (les jetons d'identité : cache local
+    `folio.visuels.<uid>`, `visuels()` demandé une fois par session et par
+    identifiant, regroupé par écran ; la réponse ne repeint que les jetons
+    concernés, `surVisuels()` prévient qui en dépend),
     `ecran-groupe.js` (`statsPull`), `reglages-corbeille.js` (corbeille, amis,
-    courrier, versions, étagère), `menus-c.js` (les quelques écritures posées
+    courrier, versions), `menus-c.js` (les quelques écritures posées
     à même le gestionnaire de clics), `carte-media.js` (upload média + rejeu
     FSRS depuis l'historique serveur), `espace-prof.js` (toutes les fonctions
     `prof_*` de l'espace professeur : lectures, `ecrire()` qui refuse hors
@@ -58,7 +68,7 @@ l'air de marcher ».
     (`ui/classement.js` ↔ `core/classement.js`, etc.) : `bibliotheque.js`,
     `carte-media.js`, `import-cartes.js`, `connexion.js`,
     `reglages-corbeille.js`, `defis.js`, `classement.js`, `etablissement.js`,
-    `bilan-devoirs.js`, `ecran-groupe.js`, `menus-a.js`, `menus-b.js`,
+    `cercle.js`, `ecran-groupe.js`, `menus-a.js`, `menus-b.js`,
     `menus-c.js`, `revision.js`, `quiz.js`, `interactions.js`,
     `raccourcis.js` (raccourcis clavier pendant une révision, et les
     raccourcis d'ouverture `?go=…` — extrait d'`interactions.js` sur M06.T6,
@@ -66,7 +76,7 @@ l'air de marcher ».
     `onboarding.js`. `ui/etablissement.js` ne porte plus que la console du
     référent. Plus, depuis le 2026-10-24 : `creation.js` (l'**écran unique de
     création** d'un livre, sorti de `quiz.js` : titre et matière, puis les
-    méthodes en onglets — Écrire, Coller, Fichier, Photo, Depuis un cours,
+    méthodes en onglets — Écrire, Coller, Fichier, Photo, Cours (l'IA),
     `comp.mode` — dont seule la choisie s'affiche, et une liste de pages
     commune à toutes ; photo, fichier et IA versent du texte tabulé dans une
     zone de vérification avant l'ajout, « Créer » prend aussi les pages en
@@ -87,9 +97,39 @@ l'air de marcher ».
     avec le reste. **Rien d'autre ne doit importer `ui/prof-*.js`
     directement** — passer par `prof-porte.js` (`allerAccueil`, `donnerLivre`,
     `rejoindreCollegue`, les trois vues, `paintMenuProf`), sinon le morceau
-    retombe dans le démarrage. Aucun fichier, `core/` ou `ui/`, ne dépasse
-    800 lignes (les plus gros : `core/coeur-sync.js` 774, `onboarding.js`
-    772, `connexion.js` 741).
+    retombe dans le démarrage.
+
+    **Le cercle** (refait le 2026-10-24) : des amis, des clubs, des défis —
+    rien d'autre. `cercle.js` (l'écran « Cercle » : moi et mon jeton, « Lancer
+    un défi », « Entrer un code », ce qui se joue en direct, les défis, mes
+    clubs ; à côté le classement des amis et les amis ; et la page « Amis »),
+    `club.js` (la page d'un club : bannière à son emblème et sa couleur,
+    défis, classement de la semaine, membres ; trois onglets sur téléphone,
+    tout d'un coup sur PC), `cercle-feuilles.js` (toutes ses feuilles — code
+    d'une partie, créer/personnaliser/rejoindre/inviter un club, un membre,
+    « Mon jeton » — une seule entrée `cc` dans la table des menus, laquelle
+    dans `cercle.feuille`, un seul écouteur `[data-cc]` ; `consumeClub()` pour
+    `?club=CODE`), `defi-nouveau.js` (« Nouveau défi » : avec qui — un club,
+    une classe pour un prof, les amis, une salle ouverte —, quel livre,
+    comment : en direct ou à son rythme). « Mes classes » n'est plus dans le
+    cercle : onglet **Classe** à part, seulement pour qui en a une
+    (`aUneClasse()` de `bibliotheque.js` — élève à carte ou d'établissement,
+    professeur, ou compte personnel admis ou en attente dans une classe).
+    **Une partie en direct** (façon Kahoot) : `direct-porte.js` (au
+    démarrage : `ouvrirDirect`, `consumeDefi()` pour `?defi=PIN`) charge à la
+    demande `direct-ecran.js` + `direct.css` (hôte projeté : code, QR,
+    joueurs, énoncé, répartition, podium ; joueur au téléphone : quatre gros
+    boutons couleur + forme). **Rien d'autre ne doit importer
+    `ui/direct-ecran.js`** — passer par `direct-porte.js`.
+    **Les jetons d'identité** : `jeton.js` dessine le visage de chacun, le
+    même sur tous les écrans — `avatar(id, ident, taille)` (un rond : les
+    initiales ou la figure choisie ; `ident` = le pseudo s'il y en a un,
+    sinon le nom, pour qu'une personne ait les mêmes initiales partout),
+    `blason(classeId)` et `blasonClub(club)` (un carré arrondi et un
+    emblème — jamais un sigle tiré du nom), plus les grilles de choix.
+
+    Aucun fichier, `core/` ou `ui/`, ne dépasse 800 lignes (les plus gros :
+    `onboarding.js` 770, `core/coeur-sync.js` 768, `connexion.js` 744).
 
     Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
     a d'abord suivi les anciennes sections `/* ---------- nom ---------- */`
@@ -140,12 +180,15 @@ l'air de marcher ».
   - `src/doublons.js` — déduplication (M04.T4) : même recto ET même verso dans un même paquet, on garde la carte la plus avancée et on additionne les rechutes ; branchée sur « Vérifier ma bibliothèque » — pur et testé (`test/doublons.test.js`)
   - `src/sauvegarde.js` — export/import intégral de la bibliothèque (M04.T6) : format `folio-bibliotheque` v1, état d'apprentissage compris, sans `rev` ni marques d'écran ; restauré sous les mêmes identifiants sur le même compte, de nouveaux sur un autre (RLS) ; branché sur la feuille Sauvegarde (`backupData`/`backupRestore`, `src/core/reglages-corbeille.js`) — pur et testé (`test/export.test.js`)
   - `src/normaliser.js` — `norm()` (casse, espaces, apostrophes, ponctuation finale), sans aucune dépendance : lue par le noyau (`doublons.js`) et par les écrans (`ui/quiz.js` la réexporte)
-  - `src/classe.js` — les règles d'une classe (2026-10-24) : forme d'un code (8 caractères, alphabet sans 0/O/1/I/L), lien `?rejoindre=`, texte de chaque statut d'inscription renvoyé par la base, état d'un élève, tris/recherche (sans accents), synthèses de classe et d'accueil, « à traiter », échéances sans décalage de fuseau, lecture d'une liste d'élèves collée (`lireListeEleves`, « NOM Prénom » ou « Prénom NOM »), nom propre (`nomPropre`), sigle de classe (`sigleClasse`), carte de connexion (`emailCarte`, `lienCarte`, `lireCarte`) — pur et testé (`test/classe.test.js`, 48 tests dont 4 fuseaux), employé par l'espace prof et « Mes classes »
+  - `src/classe.js` — les règles d'une classe (2026-10-24) : forme d'un code (8 caractères, alphabet sans 0/O/1/I/L), lien `?rejoindre=`, texte de chaque statut d'inscription renvoyé par la base, état d'un élève, tris/recherche (sans accents), synthèses de classe et d'accueil, « à traiter », échéances sans décalage de fuseau, lecture d'une liste d'élèves collée (`lireListeEleves`, « NOM Prénom » ou « Prénom NOM »), nom propre (`nomPropre`), carte de connexion (`emailCarte`, `lienCarte`, `lireCarte`) — pur et testé (`test/classe.test.js`, 45 tests dont 4 fuseaux), employé par l'espace prof et « Mes classes ». Le sigle de classe et les teintes de classe d'avant sont partis le 2026-10-25 au profit des jetons (`src/jeton.js`)
+  - `src/jeton.js` — les jetons d'identité (2026-10-25) : 12 couleurs (chacune ≥ 4,5:1 avec du blanc, vérifié), 20 emblèmes (classes, clubs), 38 figures (émojis, pour les personnes), le hachage stable qui tire un jeton par défaut de l'identifiant, les initiales (première lettre du premier et du dernier mot, jamais un chiffre en tête) — pur et testé (`test/jeton.test.js`). Rien n'est inventé à partir du nom : « CPGE ECP1 » donnait « CE1 » avec l'ancien sigle
+  - `src/defi.js` — les règles d'un défi en direct : jeux (QCM, vrai ou faux, réponse écrite), durées, nombre de questions, fabrication des questions depuis un livre, code à 6 chiffres et lien `?defi=`, statuts de la base, phase et chrono (décalage d'horloge compensé), places et podium — pur et testé (`test/defi.test.js`)
+  - `src/club.js` — un club : nom (2–40), devise (≤ 90), code d'invitation lisible et lien `?club=`, classements (places partagées, barre relative, ma ligne), médailles — pur et testé (`test/club.test.js`)
   - `src/qr.js` — encodeur QR sans bibliothèque (octets, niveau M, versions 1–10, `qrSvg()`), pour projeter le code d'une classe et imprimer les cartes de connexion — pur et testé (`test/qr.test.js` ; relu 10/10 par le décodeur d'OpenCV le 2026-10-24). Le SVG porte ses couleurs : `svg.qr{stroke:none}` (sinon le trait que l'app donne à tout SVG grossit les modules)
-  - `src/app.css` — ~2 100 lignes ; l'espace professeur a la sienne, `src/ui/prof-espace.css` (~620 lignes, préfixe `pf-`, chargée avec son morceau) ; l'écran élève « Mes classes » est dans `app.css` (préfixe `el-`). **Charte visuelle (refaite le 2026-10-24)**, sobre et la même partout : jetons dans `:root` (`--bg` #F6F5F1, `--bg2`, `--ink` #1D1C19, `--ink2`, `--soft`, `--card` blanc, `--hair`/`--line` pour les filets, `--edge` = filet intérieur de 1 px, `--ring` = halo gris du focus) ; titres en sans-serif (le serif reste réservé au texte des pages lues), surfaces blanches cernées d'un filet, ombres à peine visibles ; la couleur d'une matière (`--d`) ne vit plus qu'en liseré, pastille ou badge, jamais en aplat de carte. **Aucun contour noir** : `:focus` n'a pas d'outline, `:focus-visible` un trait gris clair (clavier seulement), les champs n'en ont pas du tout — c'est leur cadre qui s'éclaire (`:focus-within` + `--ring`). Sur ordinateur (≥ 900 px) : barre latérale de 236 px (entrées groupées en haut, Réglages et compte en bas), contenu centré à 1 120 px (1 240 ≥ 1 500 px), feuilles en boîtes de dialogue centrées, mises en page à deux colonnes (livre, création, bilan) ; une barre qui ne porte qu'un retour à l'accueil est masquée, la barre latérale y mène déjà
+  - `src/app.css` — ~2 400 lignes ; l'espace professeur a la sienne, `src/ui/prof-espace.css` (~620 lignes, préfixe `pf-`, chargée avec son morceau), la partie en direct aussi (`src/ui/direct.css`, préfixe `dx-`) ; l'écran élève « Mes classes » est dans `app.css` (préfixe `el-`), le cercle aussi (`cc-`, `cl-` pour un club, `dn-` pour « Nouveau défi », `jt` pour les jetons). **Le moins de texte possible** (demandé le 2026-10-25) : des icônes et des chiffres plutôt que des phrases, aucun sous-titre explicatif sous un titre ou une carte, onglets du bas en icônes seules ; une explication vraiment nécessaire va dans une pastille « ? » (`hlp(clé)` et la table `HELP` de `ui/connexion.js`) ou un `title`, jamais en paragraphe sous l'élément. **Charte visuelle (refaite le 2026-10-24)**, sobre et la même partout : jetons dans `:root` (`--bg` #F6F5F1, `--bg2`, `--ink` #1D1C19, `--ink2`, `--soft`, `--card` blanc, `--hair`/`--line` pour les filets, `--edge` = filet intérieur de 1 px, `--ring` = halo gris du focus) ; titres en sans-serif (le serif reste réservé au texte des pages lues), surfaces blanches cernées d'un filet, ombres à peine visibles ; la couleur d'une matière (`--d`) ne vit plus qu'en liseré, pastille ou badge, jamais en aplat de carte. **Aucun contour noir** : `:focus` n'a pas d'outline, `:focus-visible` un trait gris clair (clavier seulement), les champs n'en ont pas du tout — c'est leur cadre qui s'éclaire (`:focus-within` + `--ring`). Sur ordinateur (≥ 900 px) : barre latérale de 236 px (entrées groupées en haut, Réglages et compte en bas), contenu centré à 1 120 px (1 240 ≥ 1 500 px), feuilles en boîtes de dialogue centrées, mises en page à deux colonnes (livre, création, bilan) ; une barre qui ne porte qu'un retour à l'accueil est masquée, la barre latérale y mène déjà. Plus de mode zen (retiré le 2026-10-25)
   - `src/sw.js` — modèle du service worker ; `vite.config.js` le fabrique au build
   - `public/` — fsrs.wasm, manifeste, icônes
-  - `e2e/` — parcours de bout en bout Playwright (M07), nommés `*.e2e.js` pour que vitest ne les ramasse pas ; `playwright.config.js` construit puis sert le build de production (`vite preview`, port 4173), téléphone 390 px. Première fois sur une machine : `npx playwright install chromium`. Les parcours parlent à un **faux Supabase en mémoire** (`e2e/faux-supabase.js`, branché par `page.route`) : jamais à la vraie base, faute de préproduction (M13.T4) — il émule seulement ce que l'app emploie (auth, filtres PostgREST, `Range`, `rev` des paquets, `sync_deck_cards`, un cloisonnement par `user_id` des tables personnelles pour que deux comptes ne voient pas les livres l'un de l'autre) ; les fonctions des classes sont rejouées dans `e2e/faux-classes.js` (créer une classe, comptes à carte, salle d'attente, devoirs ; `faireProfesseur(store, email, nom)` pose le rôle) ; la RLS et le SQL se testent en base. Un compte sans rôle déclaré reçoit de `my_role` une réponse vide (la vraie dit « eleve ») : la visite guidée ne s'invite pas dans les parcours. `store.online = false` simule une coupure ; deux pages sur le même store = deux appareils du même compte, deux **contextes** (`browser.newContext`) = deux personnes. Gestes communs dans `e2e/aide.js`. Les captures de référence de `captures.e2e.js` (comparées seulement sur Mac) ont été retirées avec la refonte visuelle du 2026-10-24 : le premier `npx playwright test captures` lancé sur un Mac les réécrit (il échoue une fois en signalant les images manquantes) ; les regarder, puis les committer
+  - `e2e/` — parcours de bout en bout Playwright (M07), nommés `*.e2e.js` pour que vitest ne les ramasse pas ; `playwright.config.js` construit puis sert le build de production (`vite preview`, port 4173), téléphone 390 px. Première fois sur une machine : `npx playwright install chromium`. Les parcours parlent à un **faux Supabase en mémoire** (`e2e/faux-supabase.js`, branché par `page.route`) : jamais à la vraie base, faute de préproduction (M13.T4) — il émule seulement ce que l'app emploie (auth, filtres PostgREST, `Range`, `rev` des paquets, `sync_deck_cards`, un cloisonnement par `user_id` des tables personnelles pour que deux comptes ne voient pas les livres l'un de l'autre) ; les fonctions des classes sont rejouées dans `e2e/faux-classes.js` (créer une classe, comptes à carte, salle d'attente, devoirs ; `faireProfesseur(store, email, nom)` pose le rôle), celles du cercle dans `e2e/faux-cercle.js` (amis, classement, clubs, salles en direct avec le même calcul des points, jetons ; `store.lectureMs` raccourcit les 3 s de lecture ; `semerCompte`, `semerPseudo`, `semerAmis`, `semerLectures`, `semerClub`, `semerJeton`) ; la RLS et le SQL se testent en base. Un compte sans rôle déclaré reçoit de `my_role` une réponse vide (la vraie dit « eleve ») : la visite guidée ne s'invite pas dans les parcours. `store.online = false` simule une coupure ; deux pages sur le même store = deux appareils du même compte, deux **contextes** (`browser.newContext`) = deux personnes. Gestes communs dans `e2e/aide.js`. Les captures de référence de `captures.e2e.js` (comparées seulement sur Mac) ont été retirées avec la refonte visuelle du 2026-10-24 : le premier `npx playwright test captures` lancé sur un Mac les réécrit (il échoue une fois en signalant les images manquantes) ; les regarder, puis les committer
   - `fsrs.wasm` — crate Rust `fsrs` 6.6.2 compilé (recette : `tools/BUILD-FSRS.md`). Ne jamais réécrire les formules à la main.
 - **Vérification de types, en douceur** (`tsconfig.json`, M06.T8) : `tsc`
   relit le JS existant (`allowJs` + `checkJs`) sans qu'on ait besoin de
@@ -170,7 +213,9 @@ l'air de marcher ».
   - **Rejoindre une classe** (`20261024113815`, matrice des droits en tête du fichier) : uniquement par `class_preview(code)` / `class_join(code)` (l'ancienne `join_class` y renvoie). Elles **renvoient un statut au lieu de lever** quand l'essai doit être compté (une exception annulerait la ligne de `class_join_attempts`, et la limite de 10 codes faux/h ne verrait rien). Frontière d'établissement, salle d'attente (`class_requests`), exclusion (`class_bans`), places, durée, code changeable : tout est vérifié en base. L'élève ne lit plus la ligne `classes` (donc jamais le code).
   - **Avancement des devoirs** : calculé par le déclencheur `avancement_devoir` sur `reviews` (cartes `a:<devoir>:<rang>`), jamais écrit par l'app (plus aucune politique d'écriture sur `assignment_progress`).
   - **Comptes à carte** (`20261024125435`) : un professeur crée les comptes de ses élèves depuis une liste (`prof_creer_eleves`, 60 par appel, homonymes signalés) ; chacun a un identifiant `prenom.nom` (e-mail technique `identifiant@eleves.folio.invalid`, jamais affiché) et un code secret de 8 caractères qui est son mot de passe GoTrue, montré une seule fois (jamais stocké en clair ; `prof_nouvelles_cartes` en refait un et déconnecte l'ancien). Table `comptes_geres` (RLS : chacun ne lit que sa ligne). Le nom « Prénom NOM » d'un élève à carte ou d'établissement est **verrouillé en base** (déclencheur `lock_identite_scolaire`) : seul son professeur le corrige (`prof_nommer_eleve`). Un compte personnel qui rejoint une classe donne son vrai prénom et son nom (`class_join(code, prénom, nom)`, statut `nom` sinon). `mon_compte()` dit à l'app si le compte est géré.
-  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `classes_securisees.sql` (56 cas) et `identite_eleve.sql` (22 cas).
+  - **Clubs et parties en direct** (`20261024232855`, `20261024233015`) : un club se crée, se rejoint (code, 10 faux/h, 100 membres) et se gère par fonctions (`club_creer`, `join_group`, `club_membres`, `club_nouveau_code`, `mes_clubs`) ; un élève de classe n'en crée ni n'en rejoint. Une partie : `salle_ouvrir`, `salle_rejoindre` (statuts : ok, format, inconnu, trop, classe, club, exclu…), `salle_etat` (jsonb : ce que chacun a le droit de voir — jamais la bonne réponse avant la correction), `salle_repondre` (points calculés en base : 500 à 1 000 selon la vitesse depuis que CE joueur a vu les choix, + 50 par bonne réponse d'affilée), `salle_avancer` (idempotent, double clic sans effet), `salle_exclure`, `salle_fermer`, `salles_ouvertes`, `salles_terminees` ; purge quotidienne (`purge-salles-quotidienne`). Nom d'un joueur : « Prénom NOM » dans une salle de sa classe, « Prénom N. » pour un élève ailleurs, le pseudo sinon.
+  - **Jetons d'identité** (`20261025111500`, correctif `20261025113100`) : `profiles.figure`/`teinte` et `classes.embleme`/`teinte` (clés `^[a-z]{2,16}$`, rang 0–11, contraintes CHECK). Une seule porte de lecture, `visuels(personnes, classes)` (200 et 100 au plus), qui ne rend un choix qu'à qui partage quelque chose (amis même en demande, club, classe — camarades, professeurs, salle d'attente —, partie en direct, référent de l'établissement) ; `mon_jeton(cle, rang)` pour soi (un élève à carte aussi : son nom reste verrouillé) ; `prof_jeton_classe(cid, cle, rang)` pour qui gère la classe. `voit_personne`/`voit_classe` sont internes : **révoquer aussi `authenticated`** (les privilèges par défaut de Supabase le lui donnent, révoquer PUBLIC et anon n'y touche pas).
+  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas) et `jetons.sql` (23 cas).
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
 - **Hébergement : deux cibles, un seul build.** Vercel est l'hébergement réel
   (domaine racine). GitHub Pages (`.github/workflows/pages.yml`, indépendant

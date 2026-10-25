@@ -184,8 +184,6 @@ export function studyView() {
       <button class="ic" data-act="deck" aria-label="Retour">${svg(I.back)}</button>
       <h1>${esc(study.name || (d ? d.name : ''))}</h1>
       ${n}
-      <button class="ic ${prefs.zen ? 'solid' : ''}" data-act="zen"
-        aria-label="Mode sans distraction">${svg(I.zen)}</button>
       <button class="ic ${study.rev ? 'solid' : ''}" data-act="swap" aria-label="Inverser le sens">${svg(I.swap)}</button>
       <button class="ic" data-act="restart" aria-label="Mélanger">${svg(I.shuffle)}</button>
     </div>`;
@@ -213,7 +211,7 @@ export function studyView() {
     return;
   }
   $.innerHTML = bar(`<span class="num">${Math.min(study.i + 1, study.queue.length)}/${study.queue.length}</span>`)
-    + `<div class="study${study.mode === 'mcq' ? ' mcq' : ''}${prefs.zen ? ' zen' : ''}">
+    + `<div class="study${study.mode === 'mcq' ? ' mcq' : ''}">
       <div class="prog"><i id="pg" style="width:0%"></i></div>
       ${study.mode === 'mcq'
         ? `<div class="qcard" id="stack" style="${sty(s)}"></div>`

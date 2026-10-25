@@ -375,31 +375,3 @@ export function grilleMois(annee, mois) {
   for (let j = 1; j <= n; j++) cases.push(iso(new Date(annee, mois, j, 12)));
   return cases;
 }
-
-/* ---------- les visages ---------- */
-export function initiales(nom) {
-  const mots = String(nom || '').trim().split(/[\s.\-_]+/).filter(Boolean);
-  if (!mots.length) return '?';
-  return (mots[0][0] + (mots.length > 1 ? mots[mots.length - 1][0] : '')).toUpperCase();
-}
-
-/* Le sigle d'une classe, pour sa pastille. Ses initiales ne disent rien
-   (« 2nde 4 » donnerait « 24 ») : on garde le chiffre d'un mot qui
-   commence par un chiffre, l'initiale d'un mot et les chiffres qui le
-   terminent (« S2 »), et un point entre deux nombres. « 2nde 4 » → « 2·4 »,
-   « 1ère S2 » → « 1S2 », « Tle G3 » → « TG3 », « 6e B » → « 6B ». */
-export function sigleClasse(nom) {
-  const mots = String(nom || '').trim().split(/[\s_]+/).filter(Boolean);
-  if (!mots.length) return '?';
-  const parts = mots.map(m => (/^\d/.test(m) ? m.match(/^\d+/)[0] : m[0].toUpperCase() + (m.slice(1).match(/\d+$/) || [''])[0]));
-  const s = parts.reduce((a, p) => a + (/\d$/.test(a) && /^\d/.test(p) ? '·' : '') + p, '');
-  return s.length > 4 ? s.slice(0, 4) : s;
-}
-
-/* Une teinte stable par personne (huit possibles) : on reconnaît un élève
-   à sa pastille d'un écran à l'autre, sans rien stocker. */
-export function teinte(id) {
-  let h = 0;
-  for (const c of String(id || '')) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return h % 8;
-}

@@ -73,8 +73,6 @@ export let mailOpen = null;         // id de l'e-mail affiché dans sa feuille d
 
 export let sendMsg = '';            // message en cours de frappe dans la feuille d'envoi
 
-export let lib = { list: null, err: 0, open: null };      // l'étagère commune du groupe
-
 export let duels = { list: null, scores: null, err: 0, open: null };
 
 export let board = { rows: null, err: 0, range: 7 };
@@ -83,21 +81,41 @@ export let shared = null;            // paquet ouvert par un lien de consultatio
 
 export let duelRun = null;           // défi en cours de partie
 
-export let groupTab = 'lib';         // onglet courant de la bibliothèque du groupe
-
-/* Où l'on regarde, et donc où l'on publie. null = mes lecteurs (les amis
-   acceptés), sinon l'identifiant d'un club. La base sait déjà cloisonner
-   — library.group_id et duels.group_id existent, et leurs règles de
-   lecture s'appuient dessus — mais rien ne les renseignait : tout partait
-   donc avec group_id nul, c'est-à-dire à tous les amis, sans qu'on ait
-   jamais eu le choix. */
-export let scope = null;
-
 export let mates = null, asks = null;   // amis acceptés, demandes reçues
 
 export let me = null;                   // mon profil public : pseudo
 
-export let groups = null, groupOf = null;  // mes groupes, et celui qu'on regarde
+/* Le cercle des lecteurs (refait le 2026-10-24) : des amis, des clubs, des
+   défis. Ce que ses écrans ont lu et ce qu'on y a choisi ; remis à zéro
+   avec la session (resetSession). */
+export const cercleNeuf = () => ({
+  clubs: null, err: 0,         // mes_clubs() : mes clubs, avec membres, pages et rang
+  salles: null,                // salles_ouvertes() : les parties en direct où j'ai ma place
+  club: null, onglet: 'defis', // le club ouvert, et son onglet
+  membres: {}, terminees: {},  // club_membres(), salles_terminees(), par club
+  feuille: null,               // la feuille ouverte (entrée `cc` de la table des menus)
+  form: null,                  // brouillon de création ou de personnalisation d'un club
+  code: '', reponse: null, envoi: false,  // saisie d'un code (salle ou club)
+  membre: null,                // le membre dont on ouvre la fiche
+  retour: null                 // où revenir après un défi à son rythme : { name, id }
+});
+export let cercle = cercleNeuf();
+
+/* L'écran « Nouveau défi » : où, sur quel livre, quel jeu, comment. */
+export const defiNeuf = () => ({ ou: null, livre: null, jeu: 'qcm', mode: 'direct', n: 10, duree: 20,
+  q: '', envoi: false });
+export let defi = defiNeuf();
+
+/* La partie en direct suivie par cet écran (hôte ou joueur). */
+export const directNeuf = () => ({ id: null, etat: null, dec: 0, sig: '', err: 0, choix: null, texte: '',
+  envoi: false, retour: null });
+export let direct = directNeuf();
+
+/* Les jetons d'identité choisis (src/jeton.js) tels que visuels() les a
+   rendus : { 'p:<personne>': { cle, teinte }, 'c:<classe>': { cle, teinte } }.
+   Gardés sur l'appareil pour s'afficher hors ligne, relus une fois par
+   session (core/visuels.js). */
+export let visuels = {};
 
 export let addQ = '';                   // pseudo en cours de frappe
 
@@ -107,7 +125,7 @@ export let undos = [];
 
 export const DEFPREFS = { goal: 30, cap: 20, order: 'random', fresh: true, sound: false,
                    font: 1, tol: 'normal', name: '', simple: false, simpleAt: 0, fast: false,
-                   sort: 'manual', list: false, zen: false,
+                   sort: 'manual', list: false,
                    /* FSRS : rétention visée, paramètres du modèle, intervalle
                       plafond. `w` vide = les paramètres par défaut du moteur. */
                    dr: 0.9, w: null, maxIvl: 36500, wAt: 0, wN: 0 };
@@ -401,18 +419,17 @@ export const setFriends = v => friends = v;
 export const setSendTo = v => sendTo = v;
 export const setMailOpen = v => mailOpen = v;
 export const setSendMsg = v => sendMsg = v;
-export const setLib = v => lib = v;
 export const setDuels = v => duels = v;
 export const setBoard = v => board = v;
 export const setShared = v => shared = v;
 export const setDuelRun = v => duelRun = v;
-export const setGroupTab = v => groupTab = v;
-export const setScope = v => scope = v;
 export const setMates = v => mates = v;
 export const setAsks = v => asks = v;
 export const setMe = v => me = v;
-export const setGroups = v => groups = v;
-export const setGroupOf = v => groupOf = v;
+export const setCercle = v => cercle = v;
+export const setVisuels = v => visuels = v;
+export const setDefi = v => defi = v;
+export const setDirect = v => direct = v;
 export const setAddQ = v => addQ = v;
 export const setMateOpen = v => mateOpen = v;
 export const setUndos = v => undos = v;

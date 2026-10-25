@@ -2,25 +2,24 @@
 import { I, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import {
-  auth, cardEdit, conflicts, db, duels, fnr, friends, groupOf, groups, helpKey, lib,
+  auth, cardEdit, conflicts, db, duels, fnr, friends, helpKey,
   mailOpen, mailbox, mateOpen, mateProf, mates, me, menu, prefs, previewOf, quiz, recorder,
   sel, sendMsg, sendTo, setMenu, setSendMsg, setSplitSize, splitSize, study, vers, view
 } from '../data/etat.js';
 import { SORTS } from './bibliotheque.js';
-import { initial } from './bilan-devoirs.js';
+import { avatar } from './jeton.js';
 import {
   LANGS, memLine, mimg, nextIn, plain
 } from './carte-media.js';
-import { deck, esc, metaOf, noDetect, plur, scopeName, shortWho, subj } from '../core/coeur-sync.js';
+import { deck, esc, metaOf, noDetect, plur, shortWho, subj } from '../core/coeur-sync.js';
 import { HELP } from './connexion.js';
 import { myScore, rankOf } from './defis.js';
-import { DUELQ } from '../core/defis.js';
 import {
   backlog, dueCount, fnrNote, fnrScan, simpleMode
 } from './import-cartes.js';
 import { mountMenu } from './menus-a.js';
 import { helpSheet } from './onboarding.js';
-import { cb, cf, timeAgo } from './reglages-corbeille.js';
+import { timeAgo } from './reglages-corbeille.js';
 import { VERSN } from '../core/reglages-corbeille.js';
 
 export function paintMenuCard(w) {
@@ -285,12 +284,7 @@ export function paintMenuSharepick(w) {
         <button class="mi" data-mact="rolink">${svg(I.link)}${m.tok ? 'Copier le lien de consultation' : 'Créer un lien de consultation'}</button>
         ${m.tok ? `<button class="mi warn" data-mact="roff">${svg(I.eyeoff)}Révoquer le lien</button>` : ''}
         <div class="msep"></div>
-        ${m.pub ? `<button class="mi" data-mact="publish">${svg(I.book)}Mettre à jour sur l’étagère
-                     <span class="tail">${esc(scopeName())}</span></button>
-                   <button class="mi warn" data-mact="unpublish">${svg(I.x)}Retirer de l’étagère</button>`
-          : `<button class="mi" data-mact="publish">${svg(I.book)}Poser sur l’étagère
-               <span class="tail">${esc(scopeName())}</span></button>`}
-        <button class="mi" data-mact="duelnew2">${svg(I.flame)}Lancer un défi<span class="tail">${Math.min(DUELQ, d.cards.length)}</span></button>
+        <button class="mi" data-mact="duelnew2">${svg(I.bolt)}Lancer un défi sur ce livre<span class="tail">en direct ou à son rythme</span></button>
         <div class="msep"></div>
         <button class="mi" data-mact="copylink">${svg(I.down)}Lien hors ligne (tout le livre)</button>
       </div>`;
@@ -313,53 +307,20 @@ export function paintMenuHandle(w) {
     return;
 }
 
-export function paintMenuNewgroup(w) {
-  const join = menu === 'joingroup';
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${join ? 'Rejoindre un club' : 'Créer un club'}</b>
-          </span></div>
-        <div class="fld addf"><input id="gq" type="text"
-          placeholder="${join ? 'Code du club' : 'Nom du club'}" autocomplete="off"
-          spellcheck="false" ${join ? 'autocapitalize="characters"' : ''}
-          aria-label="${join ? 'Code du club' : 'Nom du club'}"></div>
-        <button class="mi" data-mact="${join ? 'dojoin' : 'domake'}" style="justify-content:center;font-weight:700">
-          ${svg(join ? I.link : I.plus)}${join ? 'Rejoindre' : 'Créer'}</button>
-      </div>`;
-    mountMenu(w);
-    setTimeout(() => { const i = document.getElementById('gq'); if (i) i.focus(); }, 80);
-    return;
-}
-
 export function paintMenuMate(w) {
   const f = (mates || []).find(x => x.id === mateOpen);
     if (!f) { setMenu(null); return; }
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mhd"><i class="av">${esc(initial(f.handle || f.name))}</i>
+        <div class="mhd">${avatar(f.id, f.name || f.handle)}
           <span class="mhx"><b>${esc(f.name || '')}</b><i>@${esc(f.handle || '')}</i></span></div>
         <button class="mi" data-mact="mateprof">${svg(I.chart)}Son journal de lecture</button>
+        <button class="mi" data-mact="matedefi">${svg(I.bolt)}Défier mes amis</button>
         <button class="mi" data-mact="matesend">${svg(I.share)}Lui prêter un livre</button>
         <button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes lecteurs</span></button>
         <div class="msep"></div>
         <button class="mi" data-mact="matereport">${svg(I.warn)}<span>Signaler ce compte</span></button>
         <button class="mi warn" data-mact="mateblock">${svg(I.lock)}<span>Bloquer</span></button>
-      </div>`;
-    mountMenu(w);
-    return;
-}
-
-export function paintMenuGroupitem(w) {
-  const g = (groups || []).find(x => x.id === groupOf);
-    if (!g) { setMenu(null); return; }
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${esc(g.name)}</b>
-          <i>${g.owner === auth.uid ? 'tu l’as créé' : 'tu en fais partie'}</i></span></div>
-        <button class="mi" data-mact="gcode">${svg(I.copy)}Code d’invitation
-          <span class="tail">${esc(g.code)}</span></button>
-        <button class="mi warn" data-mact="gleave">${svg(I.exit)}<span>${
-          g.owner === auth.uid ? 'Supprimer le club' : 'Quitter le club'}</span></button>
       </div>`;
     mountMenu(w);
     return;
@@ -426,30 +387,6 @@ export function paintMenuConflict(w) {
     return;
 }
 
-export function paintMenuLibitem(w) {
-  const it = (lib.list || []).find(x => x.deck_id === lib.open);
-    if (!it) { setMenu(null); return; }
-    const mine = it.user_id === auth.uid;
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.book)}
-          <span class="mhx"><b>${esc(it.name)}</b>
-            <i>${esc(noDetect(shortWho(it.who) || 'Un compte'))}${it.subject ? ' · ' + esc(it.subject) : ''}
-              · ${plur(it.n, 'page')} · ${timeAgo(it.updated_at)}</i></span>
-        </div>
-        <div class="mscroll">${(it.cards || []).slice(0, 60).map(c => `<div class="pr">
-          <span class="a">${esc(cf(c))}</span>${svg(I.arrow)}<span class="b">${esc(cb(c))}</span></div>`).join('')}</div>
-        <button class="mi" data-mact="libadd" style="justify-content:center;font-weight:700">
-          ${svg(I.plus)}Ajouter à ma bibliothèque</button>
-        ${mine ? `<button class="mi warn" data-mact="libdrop">${svg(I.trash)}<span>Retirer de l’étagère</span></button>`
-          : `<div class="msep"></div>
-             <button class="mi" data-mact="libreport">${svg(I.warn)}<span>Signaler ce livre</span></button>
-             <button class="mi warn" data-mact="libblock">${svg(I.lock)}<span>Bloquer ce compte</span></button>`}
-      </div>`;
-    mountMenu(w);
-    return;
-}
-
 export function paintMenuDuelitem(w) {
   const du = (duels.list || []).find(x => x.id === duels.open);
     if (!du) { setMenu(null); return; }
@@ -471,20 +408,6 @@ export function paintMenuDuelitem(w) {
           : `<button class="mi" data-mact="duelgo" style="justify-content:center;font-weight:700">
               ${svg(I.play)}Jouer les ${du.total} questions</button>`}
         ${mine ? `<button class="mi warn" data-mact="dueldrop">${svg(I.trash)}<span>Supprimer le défi</span></button>` : ''}
-      </div>`;
-    mountMenu(w);
-    return;
-}
-
-export function paintMenuDuelnew(w) {
-  const list = db.decks.filter(x => x.cards.length >= 4);
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mi" style="font-weight:750">${svg(I.flame)}Défier le groupe</div>
-        <div class="mscroll">${list.length ? list.map(x => `
-          <button class="mi" data-dnew="${esc(x.id)}"><i class="tri" style="--c:${subj(x.subject).d}"></i>
-            ${esc(x.name)}<span class="tail">${x.cards.length}</span></button>`).join('')
-          : '<div class="note">Il faut un livre d’au moins 4 pages.</div>'}</div>
       </div>`;
     mountMenu(w);
     return;
@@ -523,7 +446,7 @@ export function paintMenuLend(w) {
     const mine = db.decks.filter(x => x.cards.length);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mhd"><i class="av">${esc(initial(f.handle || f.name))}</i>
+        <div class="mhd">${avatar(f.id, f.name || f.handle)}
           <span class="mhx"><b>Prêter à ${esc(shortWho(f.name || f.handle))}</b>
             <i>choisis un livre</i></span></div>
         <div class="mscroll">${mine.length
@@ -539,30 +462,22 @@ export function paintMenuLend(w) {
 export function paintMenuMateprof(w) {
   const f = (mates || []).find(x => x.id === mateOpen);
     if (!f) { setMenu(null); return; }
-    const r = mateProf.row, l = mateProf.lib;
+    const r = mateProf.row;
     const pctok = r && +r.n ? Math.round(r.ok / r.n * 100) : 0;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mhd"><i class="av">${esc(initial(f.handle || f.name))}</i>
+        <div class="mhd">${avatar(f.id, f.name || f.handle)}
           <span class="mhx"><b>${esc(f.name || '')}</b><i>@${esc(f.handle || '')}</i></span></div>
         <div class="seg" style="margin:0 12px 10px">
           ${[[7, '7 jours'], [30, '30 jours'], [0, 'Tout']].map(([v, lab]) =>
             `<button data-mrange="${v}" class="${mateProf.range === v ? 'on' : ''}">${lab}</button>`).join('')}
         </div>
         ${mateProf.load && !r ? `` : `
-          <div class="tiles st4" style="margin:0 12px 12px">
+          <div class="tiles st3" style="margin:0 12px 12px">
             <div class="st"><b>${r ? +r.n : 0}</b><span>pages lues</span></div>
             <div class="st"><b>${pctok}%</b><span>de réussite</span></div>
             <div class="st"><b>${r ? +r.jours : 0}</b><span>jours de lecture</span></div>
-            <div class="st"><b>${l ? l.length : 0}</b><span>livres partagés</span></div>
           </div>`}
-        <div class="msep"></div>
-        <div class="mi" style="font-weight:750">${svg(I.book)}Ses livres dans la bibliothèque</div>
-        <div class="mscroll">${l === null ? ``
-          : l.length ? l.map(x => `<div class="mi">
-              <i class="tri" style="--c:var(--soft)"></i>${esc(x.name)}
-              <span class="tail">${plur(+x.n, 'page')}</span></div>`).join('')
-          : `<div class="note">Il n’a rien partagé pour l’instant.</div>`}</div>
       </div>`;
     mountMenu(w);
     return;

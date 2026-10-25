@@ -18,12 +18,17 @@ export function messageErreur(e) {
   try { return JSON.parse(t).message || t; } catch (x) { return t; }   // pas du JSON : le texte tel quel
 }
 
+const enClasse = () => (eleve.classes || []).some(c => c.statut === 'inscrit' || c.statut === 'attente');
+
 export async function eleveClassesPull() {
   const r = await Promise.allSettled([rpc('eleve_classes'), rpc('eleve_devoirs')]);
+  const avant = enClasse();
   eleve.classes = r[0].status === 'fulfilled' ? r[0].value || [] : eleve.classes || [];
   eleve.devoirs = r[1].status === 'fulfilled' ? r[1].value || [] : eleve.devoirs || [];
   eleve.err = r.some(x => x.status === 'rejected') ? 1 : 0;
-  if (view.name === 'classes' || view.name === 'commu') { setAnimate(false); render(); }
+  /* Admis dans une classe (ou sorti) : l'onglet « Classe » apparaît (ou
+     s'en va) sur l'écran d'accueil aussi, pas seulement dans le cercle. */
+  if (view.name === 'classes' || view.name === 'commu' || (view.name === 'home' && avant !== enClasse())) { setAnimate(false); render(); }
 }
 
 /** @returns {Promise<any>} la fiche (statut, nom, prof…) ou `null` */

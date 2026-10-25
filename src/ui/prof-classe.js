@@ -33,10 +33,11 @@ function enteteClasse(c) {
   const ins = etatInscriptions(c);
   const actions = c.archivee ? btn('desarchiver', I.redo, 'Désarchiver')
     : `${c.gere ? btn('inviter', I.plus, 'Ajouter des élèves', 'pri') : ''}
-       ${btn('donner', I.card, 'Devoir')}${btn('message', I.mail2, 'Message')}
+       ${btn('direct', I.bolt, 'Défi en direct')}${btn('donner', I.card, 'Devoir')}${btn('message', I.mail2, 'Message')}
        ${btn('actions', I.more, '', 'ic', 'aria-label="Plus d’actions" title="Plus d’actions"')}`;
   return `<header class="pf-ch" style="--k:${couleur(c.id)}">
-    ${pastilleClasse(c, true)}
+    ${c.gere ? `<button class="pf-blason" data-pf="blason" aria-label="Emblème de la classe">${pastilleClasse(c, true)}${svg(I.pen)}</button>`
+      : pastilleClasse(c, true)}
     <div class="pf-cht"><h1>${esc(c.name)}</h1>
       <p>${metaClasse(c)}${metaClasse(c) ? ' · ' : ''}${esc(c.annee_scolaire || '')}</p>
       <div class="pf-chips">${pill(ins.ouvert ? 'ok' : c.archivee ? 'neutre' : 'am', ins.t)}

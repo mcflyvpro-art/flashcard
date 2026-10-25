@@ -2,15 +2,15 @@
 import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import {
-  DECKPAGE, DEFPREFS, asks, auth, bip, board, db, demo, duels, filter, friends,
-  groupTab, groups, lib, mates, me, mediaCache, menu, myRole, peek, prefs, quiz, scope, setAccOpen,
+  DECKPAGE, DEFPREFS, asks, auth, bip, board, cercle, cercleNeuf, db, defiNeuf, demo, directNeuf, duels,
+  filter, friends, mates, me, mediaCache, menu, myRole, peek, prefs, quiz, setAccOpen,
   setAccounts, setAddQ, setAdm, setAnimate, setAsks, setBip, setBlocks, setBoard,
-  setCardEdit, setComp, setCompte, setConflicts, setDb, setDeckOpen, setDeckQ,
+  setCardEdit, setCercle, setComp, setCompte, setConflicts, setDb, setDeckOpen, setDeckQ, setDefi, setDirect,
   setDeckShow, setDemo, setDirty, setDuelRun, setDuels, setEleve, setFilter, setFindQ, setFriends,
-  setGone, setGroupOf, setGroupTab, setGroups, setIAmMod, setLeaving, setLib, setLoginMode,
+  setGone, setIAmMod, setLeaving, setLoginMode,
   setMailOpen, setMailbox, setMateOpen, setMateProf, setMates, setMates2, setMe,
   setMenu, setMods, setMyRole, setPeek, setPrefs, setPreviewOf, setProf,
-  setQuiz, setRef, setReorder, setReportOn, setReportWhy, setSchool, setScope,
+  setQuiz, setRef, setReorder, setReportOn, setReportWhy, setSchool,
   setSel, setSendMsg, setSendTo, setShared, setStats, setStudy, setSubjEdit,
   setTour, setTourPoll, setTourSave, setTrash, setUndos, setVers, setView,
   eleveNeuf, profNeuf, study, tour, tourPoll, tourSave, view
@@ -28,6 +28,7 @@ import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { startQuiz } from './quiz.js';
 import { resetComp } from './creation.js';
 import { openShared } from '../core/reglages-corbeille.js';
+import { oublierVisuels } from '../core/visuels.js';
 import { startStudy } from './revision.js';
 
 /* ---------- lien d'injection ---------- */
@@ -70,13 +71,13 @@ export function resetSession() {
 
   /* le cercle : qui l'on est, qui l'on connaît, ce qu'on partage */
   setMe(null); setFriends(null); setMates(null); setAsks(null);
-  setGroups(null); setGroupOf(null); setScope(null); setGroupTab('lib');
-  setLib({ list: null, err: 0, open: null });
+  setCercle(cercleNeuf()); setDefi(defiNeuf()); setDirect(directNeuf());
+  oublierVisuels();
   setDuels({ list: null, scores: null, err: 0, open: null });
   setBoard({ rows: null, err: 0, range: 7 });
   setBlocks(null);
   setMailbox({ n: 0, list: null, err: 0 });
-  setMateOpen(null); setMateProf({ id: null, range: 7, row: null, lib: null, load: 0 });
+  setMateOpen(null); setMateProf({ id: null, range: 7, row: null, load: 0 });
   setSendTo(null); setSendMsg(''); setMailOpen(null); setAddQ('');
 
   /* le rôle et ce qu'il ouvre */
@@ -246,21 +247,19 @@ const CHAPTERS = [
       text: 'Un livre supprimé attend trente jours ici. Et la dernière action reste annulable.' }
   ] },
   { id: 'commu', name: 'Le cercle des lecteurs', icon: 'user', steps: [
-    { go: nav('home'), sel: '.tabs button:last-child', pass: 1, tap: 'Touche le deuxième onglet', wait: 450,
-      done: () => view.name === 'commu', title: 'Le deuxième onglet',
-      text: 'Tout ce qui te relie aux autres est rangé là. Tu peux aussi glisser l’écran vers la gauche.' },
-    { go: nav('commu'), sel: '.mecard', title: 'Ton pseudo',
+    { go: nav('home'), sel: '.tabs button:last-child', pass: 1, tap: 'Touche « Cercle »', wait: 450,
+      done: () => view.name === 'commu', title: 'Le cercle',
+      text: 'Tes amis, tes clubs, tes défis. Tu peux aussi glisser l’écran vers la gauche.' },
+    { go: nav('commu'), sel: '.cc-moi', title: 'Ton pseudo',
       text: 'C’est ce que tes amis taperont pour t’ajouter. Personne ne voit ton adresse e-mail.' },
-    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(1)', title: 'Les lecteurs',
-      text: 'Tu entres son pseudo, il accepte, et vous partagez bibliothèque, défis et classement.' },
-    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(2)', title: 'Les clubs',
-      text: 'Une classe, un binôme. Tu crées, tu donnes le code, et tout le club voit la même bibliothèque.' },
-    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(3)', title: 'Les défis',
-      text: 'Dix questions tirées d’un livre, les mêmes pour tout le monde, un seul essai chacun.' },
-    { go: nav('commu'), sel: '.ctiles .ctile:nth-child(4)', title: 'La bibliothèque',
-      text: 'Les livres que tes lecteurs ont prêtés. Tu en copies un chez toi d’un geste.' },
-    { go: nav('commu'), sel: '.rows', title: 'Le classement',
-      text: 'Le nombre de pages lues par chacun, et rien d’autre : ni tes livres, ni tes erreurs.' }
+    { go: nav('commu'), sel: '.cc-act.pri', title: 'Lancer un défi',
+      text: 'Un livre, un jeu, et c’est parti : en direct avec un code à 6 chiffres, ou chacun à son rythme.' },
+    { go: nav('commu'), sel: '.cc-act:not(.pri)', title: 'Entrer un code',
+      text: 'Quelqu’un a lancé une partie en direct ? Tape son code et tu joues depuis ton téléphone.' },
+    { go: nav('commu'), sel: '.cc-clubs', title: 'Les clubs',
+      text: 'Ta bande : un emblème, une couleur, un classement et des défis entre vous. Tu crées, tu donnes le code.' },
+    { go: nav('commu'), sel: '.cc-rank', title: 'Le classement des amis',
+      text: 'Le nombre de pages lues par chacun cette semaine, et rien d’autre : ni tes livres, ni tes erreurs.' }
   ] },
   { id: 'fin', name: 'Pour finir', icon: 'chart', steps: [
     { go: nav('settings'), sel: '[data-act="stats"]', title: 'Ton journal',
@@ -279,8 +278,8 @@ export function startTour(chapId) {
   if (tour) return;
   const steps = tourSteps(chapId);
   if (!steps.length) return;
-  setTourSave({ db, prefs, view, study, quiz, filter, peek, groupTab, scope,
-               me, mates, asks, friends, groups, duels, lib, board });
+  setTourSave({ db, prefs, view, study, quiz, filter, peek,
+               me, mates, asks, friends, cercle, duels, board });
   setDemo(true);
   closeMenu(); selOff();
   setDb(demoDB());
@@ -289,13 +288,11 @@ export function startTour(chapId) {
   setMates([{ id: 'f1', handle: 'thibault', name: 'Thibault', status: 'ok', sens: 'envoyee' },
            { id: 'f2', handle: 'ibti', name: 'Ibti', status: 'ok', sens: 'recue' }]);
   setAsks([]); setFriends(mates.slice());
-  setGroups([{ id: 'g1', name: 'Prépa D1', code: 'K7PQR', owner: 'demo' }]);
+  setCercle({ ...cercleNeuf(), salles: [], clubs: [{ id: 'g1', nom: 'Prépa D1', code: 'K7PQR2XM', chef: true,
+    embleme: 'chouette', teinte: 0, devise: 'On lit la nuit', membres: 4, pages: 412, mes_pages: 92, mon_rang: 2, en_direct: null }] });
   setDuels({ list: [{ id: 'du1', owner: 'f1', who: 'thibault', name: 'Droit civil',
                      total: 10, cards: [], created_at: new Date(Date.now() - 3600e3).toISOString() }],
             scores: [], err: 0, open: null });
-  setLib({ list: [{ deck_id: 'lx', user_id: 'f1', who: 'thibault', name: 'Droit civil — définitions',
-                   subject: 'Droit', n: 64, cards: [], updated_at: new Date(Date.now() - 2 * DAY).toISOString() }],
-          err: 0, open: null });
   setBoard({ rows: [{ uid: 'f1', who: 'Thibault', handle: 'thibault', n: 185, ok: 127, jours: 5 },
                    { uid: auth.uid, who: 'Léa', handle: 'lea', n: 92, ok: 70, jours: 4 },
                    { uid: 'f2', who: 'Ibti', handle: 'ibti', n: 31, ok: 28, jours: 2 }],
@@ -357,9 +354,9 @@ function endTour(done) {
   setDemo(false);
   if (sv) {
     setDb(sv.db); setPrefs(sv.prefs); setView(sv.view); setStudy(sv.study); setQuiz(sv.quiz);
-    setFilter(sv.filter); setPeek(sv.peek); setGroupTab(sv.groupTab); setScope(sv.scope);
+    setFilter(sv.filter); setPeek(sv.peek);
     setMe(sv.me); setMates(sv.mates); setAsks(sv.asks); setFriends(sv.friends);
-    setGroups(sv.groups); setDuels(sv.duels); setLib(sv.lib); setBoard(sv.board);
+    setCercle(sv.cercle); setDuels(sv.duels); setBoard(sv.board);
   }
   closeMenu();
   if (!prefs.tuto) { prefs.tuto = 1; savePrefs(); }

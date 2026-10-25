@@ -3,9 +3,10 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { prefs, prof } from '../data/etat.js';
 import {
-  JOURS, MOIS, aTraiter, auJour, echeance, etatInscriptions, grilleMois, initiales, iso, sigleClasse,
-  jourLong, parJour, rangerClasses, syntheseAccueil, teinte, tonReussite
+  JOURS, MOIS, aTraiter, auJour, echeance, etatInscriptions, grilleMois, iso,
+  jourLong, parJour, rangerClasses, syntheseAccueil, tonReussite
 } from '../classe.js';
+import { avatar as jeton, blason, couleurClasse } from './jeton.js';
 import { esc, plur } from '../core/coeur-sync.js';
 
 /* ══════════ l'espace professeur : l'accueil ══════════
@@ -18,15 +19,11 @@ import { esc, plur } from '../core/coeur-sync.js';
    clic ; sur téléphone elle disparaît et l'accueil fait office de liste. */
 
 /* ---------- les briques ---------- */
-// La couleur d'une classe : stable, choisie parmi huit teintes sourdes.
-const TEINTES = ['#7A4B34', '#3F7D55', '#2F5D8A', '#8A3F6B', '#9A6512', '#3E6E6E', '#5E4E8A', '#A8483C'];
-export const couleur = id => TEINTES[teinte(id)];
-
-export const pastilleClasse = (c, grand) =>
-  `<i class="pf-k${grand ? ' grand' : ''}" style="--k:${couleur(c.id)}">${esc(sigleClasse(c.name))}</i>`;
-
-export const avatar = (id, nom) =>
-  `<i class="pf-av" style="--k:${couleur(id)}">${esc(initiales(nom))}</i>`;
+// Les jetons de ui/jeton.js : le blason d'une classe (son emblème, jamais un
+// sigle tiré du nom), sa couleur pour ce qui s'y rapporte, le visage d'un élève.
+export const couleur = id => couleurClasse(id);
+export const pastilleClasse = (c, grand) => blason(c.id, grand ? 'lg' : '');
+export const avatar = (id, nom) => jeton(id, nom, 'sm');
 
 export const pill = (k, t) => `<span class="pf-pill ${k}"><i></i>${esc(t)}</span>`;
 

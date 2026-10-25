@@ -44,7 +44,7 @@ export async function creerLivre(page, titre = 'Capitales', n = 10) {
   await expect(page.getByText('Pays ' + n, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Créer' }).click();
   await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
-  await expect(page.locator('main')).toContainText(`${n} pages`);
+  await expect(page.locator('main .lbl').first()).toContainText(String(n));   // le compte de pages, en tête de la liste
 }
 
 /* Retourne la page affichée et lui donne une note (« Encore », « Difficile »,

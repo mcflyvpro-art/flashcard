@@ -1,8 +1,8 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
 import {
-  auth, cardEdit, db, dirty, duels, fnr, friends, gone, groupOf, groups,
-  leaving, lib, mailOpen, mailbox, mateOpen, mateProf, mates,
+  auth, cardEdit, db, dirty, duels, fnr, friends, gone,
+  leaving, mailOpen, mailbox, mateOpen, mateProf, mates,
   menu, prefs, previewOf, quiz, recKey, recorder, ref, reportOn, sel, sendTo,
   setAnimate, setDeckOpen, setDeckQ, setLeaving,
   setPendingGrade, setQuiz, setRecKey, setReorder, setReportWhy, setSel, setSendMsg,
@@ -10,7 +10,6 @@ import {
   subjEdit, subjName, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
-import { joinGroup, leaveGroup, makeGroup } from '../core/bilan-devoirs.js';
 import {
   REC, enc, pickFile, recStart, recStop, upErr
 } from './carte-media.js';
@@ -26,7 +25,8 @@ import {
 } from '../core/coeur-sync.js';
 import { PWMIN } from './connexion.js';
 import { duelStart } from './defis.js';
-import { duelDrop, duelMake } from '../core/defis.js';
+import { duelDrop } from '../core/defis.js';
+import { ouvrirDefi } from './defi-nouveau.js';
 import {
   cloneDeck, fnrApply, mergeDecks, savePrefs, splitDeck, spreadBacklog, toast
 } from './import-cartes.js';
@@ -34,13 +34,13 @@ import { feuilleTap } from './interactions.js';
 import { closeMenu, mountMenu, openMenu, paintMenu } from './menus-a.js';
 import { changePassword, deleteAccount, mateProfPull } from '../core/menus-c.js';
 import { copyLink, doPrompt, logout, startTour } from './onboarding.js';
-import { libAdd, versRestore } from './reglages-corbeille.js';
+import { versRestore } from './reglages-corbeille.js';
 import {
-  addMail, backupData, backupRestore, delMail, dropFriend, libRemove
+  addMail, backupData, backupRestore, delMail, dropFriend
 } from '../core/reglages-corbeille.js';
 import { readBackup } from '../sauvegarde.js';
 import {
-  friendsPull, libPublish, revokeShare, saveHandle, sendDeck, shareLink, verifRepair, versPull
+  friendsPull, revokeShare, saveHandle, sendDeck, shareLink, verifRepair, versPull
 } from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
 
@@ -69,8 +69,6 @@ export function paintMenuRename(w) {
     setTimeout(() => { const f = document.getElementById('fld'); if (f) f.focus(); }, 60);
     return;
 }
-
-function clickDnew(a, b) { const t = deck(b.dataset.dnew); if (t) duelMake(t); }
 
 function clickCopy(a, b) {
   const url = b.dataset.copy;
@@ -145,13 +143,6 @@ function clickRblock() { const r = reportOn; if (r && r.user) return blockUser(r
 
 /* Le signalement emporte une copie : ce qu'on voit à l'écran est ce qui
    part, et effacer ensuite ne l'efface pas. */
-function clickLibReportBlock(a) {
-  const it = (lib.list || []).find(x => x.deck_id === lib.open); if (!it) return;
-  if (a === 'libblock') return blockUser(it.user_id, it.who);
-  return openReport('library', it.deck_id, it.user_id, it.name,
-    { nom: it.name, qui: it.who, matiere: it.subject, cartes: (it.cards || []).slice(0, 40) });
-}
-
 function clickMailReportBlock(a) {
   const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen); if (!it) return;
   if (a === 'mailblock') return blockUser(it.from_user, it.from_name);
@@ -478,9 +469,9 @@ async function clickRolink(a, b, d) {
 }
 
 async function clickRoff(a, b, d) { if (!d) return; closeMenu(); await revokeShare(d); return toast(I.check, 'Lien coupé'); }
-function clickPublish(a, b, d) { if (d) libPublish(d); }
-function clickUnpublish(a, b, d) { if (d) libRemove(d); }
-function clickDuelnew2(a, b, d) { if (d) duelMake(d); }
+/* « Lancer un défi » depuis un livre : l'écran du défi, ce livre déjà choisi. */
+function clickDuelnew2(a, b, d) { if (!d) return; closeMenu(); ouvrirDefi({ livre: d.id, retour: { name: 'deck', id: d.id } }); }
+const clickMatedefi = () => { closeMenu(); ouvrirDefi({ ou: 'amis', mode: 'rythme', retour: { name: view.name, id: view.id } }); };
 function clickVersopen(a, b, d) { if (!d) return; openMenu('vers'); return versPull(d.id); }
 
 async function clickSavehandle() {
@@ -488,30 +479,12 @@ async function clickSavehandle() {
   if (await saveHandle(i ? i.value : '')) { closeMenu(); setAnimate(false); render(); }
 }
 
-const clickDomake = () => { const i = document.getElementById('gq'); return makeGroup(i ? i.value : ''); };
-const clickDojoin = () => { const i = document.getElementById('gq'); return joinGroup(i ? i.value : ''); };
-
-function clickGcode() {
-  const g = (groups || []).find(x => x.id === groupOf); if (!g) return;
-  const txt = g.code;
-  if (navigator.share) partager({ text: `Rejoins « ${g.name} » sur Folio avec le code ${txt}` });
-  else navigator.clipboard.writeText(txt).then(() => toast(I.check, 'Code copié'), () => {});
-}
-
-const clickGleave = () => leaveGroup(groupOf);
 const clickMatedrop = () => dropFriend(mateOpen);
 const clickMatesend = () => { setSendMsg(''); return openMenu('lend'); };
 const clickMateprof = () => { mateProfPull(mateOpen); return openMenu('mateprof'); };
 const clickCfmine = () => solveConflict('mine');
 const clickCftheirs = () => solveConflict('theirs');
 const clickCfboth = () => solveConflict('both');
-function clickLibadd() { const it = (lib.list || []).find(x => x.deck_id === lib.open); if (it) libAdd(it); }
-
-function clickLibdrop() {
-  const it = (lib.list || []).find(x => x.deck_id === lib.open); const t = it && deck(it.deck_id);
-  if (t) libRemove(t);
-}
-
 function clickDuelgo() { const du = (duels.list || []).find(x => x.id === duels.open); if (du) duelStart(du); }
 const clickDueldrop = () => duelDrop(duels.open);
 
@@ -563,7 +536,6 @@ function clickDel(a, b, d) {
    rien en pratique puisqu'un bouton ne porte jamais deux attributs de la
    liste à la fois, mais autant rester fidèle. */
 const CLICK_RULES = [
-  [(a, b) => b.dataset.dnew !== undefined, clickDnew],
   [(a, b) => b.dataset.copy !== undefined, clickCopy],
   [(a, b) => b.dataset.vers !== undefined, clickVers],
   [(a, b) => b.dataset.chap !== undefined, clickChap],
@@ -586,7 +558,6 @@ const CLICK_RULES = [
   [(a, b) => b.dataset.setrole !== undefined, clickSetrole],
   [a => a === 'rsend', clickRsend],
   [a => a === 'rblock', clickRblock],
-  [a => a === 'libreport' || a === 'libblock', clickLibReportBlock],
   [a => a === 'mailreport' || a === 'mailblock', clickMailReportBlock],
   [a => a === 'matereport' || a === 'mateblock', clickMateReportBlock],
   [a => a === 'refsave', clickRefsave],
@@ -636,23 +607,16 @@ const CLICK_RULES = [
   [a => a === 'sharepick', clickPkShare],
   [a => a === 'rolink', clickRolink],
   [a => a === 'roff', clickRoff],
-  [a => a === 'publish', clickPublish],
-  [a => a === 'unpublish', clickUnpublish],
   [a => a === 'duelnew2', clickDuelnew2],
   [a => a === 'versopen', clickVersopen],
   [a => a === 'savehandle', clickSavehandle],
-  [a => a === 'domake', clickDomake],
-  [a => a === 'dojoin', clickDojoin],
-  [a => a === 'gcode', clickGcode],
-  [a => a === 'gleave', clickGleave],
   [a => a === 'matedrop', clickMatedrop],
   [a => a === 'matesend', clickMatesend],
+  [a => a === 'matedefi', clickMatedefi],
   [a => a === 'mateprof', clickMateprof],
   [a => a === 'cfmine', clickCfmine],
   [a => a === 'cftheirs', clickCftheirs],
   [a => a === 'cfboth', clickCfboth],
-  [a => a === 'libadd', clickLibadd],
-  [a => a === 'libdrop', clickLibdrop],
   [a => a === 'duelgo', clickDuelgo],
   [a => a === 'dueldrop', clickDueldrop],
   [a => a === 'copylink', clickCopylink],
@@ -668,7 +632,7 @@ const CLICK_RULES = [
    tout bouton de feuille portant un `data-` absent de la liste restait
    muet. Il attrape maintenant les boutons, comme celui de la page. */
 document.addEventListener('click', async e => {
-  const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-dnew],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-setrole]');
+  const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-setrole]');
   if (!b) return;
   if (feuilleTap(b)) return;
   const a = b.dataset.mact;

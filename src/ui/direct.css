@@ -1,0 +1,211 @@
+/* ══════════ une partie en direct (chargée avec son écran) ══════════
+   Deux publics. L'hôte projette : tout est grand, lisible du fond de la
+   salle, le code en premier. Les joueurs tapent sur leur téléphone : quatre
+   gros boutons de couleur, chacun avec sa forme (triangle, losange, rond,
+   carré) pour qui distingue mal les couleurs. */
+.dx{--c0:#C9443A;--c1:#2F68B8;--c2:#C28A14;--c3:#2D8654;--vf0:#2D8654;--vf1:#C9443A;
+  display:flex;flex-direction:column;gap:18px;min-height:calc(100svh - 40px);padding-bottom:12px}
+.dx-reseau{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;
+  background:rgba(181,71,58,.1);color:var(--ko);font-size:13.5px;font-weight:650}
+.dx-reseau svg{width:17px;height:17px}
+
+.dx-tete{display:flex;align-items:center;gap:12px;min-height:44px}
+.dx-x{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--surf);color:var(--ink2);flex:none}
+.dx-x svg{width:18px;height:18px}
+.dx-x.arme{background:var(--ko);color:#fff}
+.dx-titre{flex:1;min-width:0;display:flex;flex-direction:column}
+.dx-titre b{font-size:16px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dx-titre i{font-style:normal;font-size:12.5px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dx-num,.dx-repondu{flex:none;font-size:13.5px;color:var(--soft);font-variant-numeric:tabular-nums}
+.dx-num b,.dx-repondu b{color:var(--ink);font-size:15px}
+.dx-repondu{display:inline-flex;align-items:center;gap:5px}
+.dx-repondu svg{width:16px;height:16px}
+.dx-k{display:flex;align-items:center;justify-content:center;gap:6px;margin:0;font-size:14px;color:var(--soft);text-align:center;line-height:1.45}
+.dx-k svg{width:16px;height:16px;flex:none}
+.dx-k b{color:var(--ink)}
+
+.dx-pied{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;
+  position:sticky;bottom:calc(10px + env(safe-area-inset-bottom));padding:10px;border-radius:18px;
+  background:rgba(246,245,241,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--edge)}
+.dx-pied > span{font-size:14px;color:var(--soft);padding-left:6px}
+.dx-pied .cta{width:auto;padding:0 22px;flex:none}
+
+/* ---------- la salle d'attente de l'hôte ---------- */
+.dx-lobby{display:flex;flex-direction:column;gap:18px}
+.dx-entrer,.dx-salle{background:var(--card);box-shadow:var(--edge);border-radius:20px;padding:20px}
+.dx-entrer{display:flex;flex-direction:column;align-items:center;gap:12px}
+.dx-pin{font-size:54px;font-weight:800;letter-spacing:6px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dx-qr{width:168px;padding:6px;border-radius:12px;background:#fff;box-shadow:var(--edge)}
+.dx-qr svg{display:block;width:100%;height:auto;stroke:none}
+.dx-n{display:flex;align-items:center;gap:10px;color:var(--soft);margin-bottom:14px}
+.dx-n svg{width:24px;height:24px}
+.dx-n b{font-size:30px;color:var(--ink);font-variant-numeric:tabular-nums}
+.dx-chips{display:flex;flex-wrap:wrap;gap:8px}
+.dx-chip{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 13px;border-radius:999px;
+  background:var(--bg2);font-size:14.5px;font-weight:600;animation:dxin .35s var(--sp) both}
+.dx-chip svg{width:14px;height:14px;color:var(--soft);opacity:0;transition:opacity .15s}
+.dx-chips.petit .dx-chip{height:32px;font-size:13px}
+.dx-chip.moi{background:var(--ink);color:#fff}
+@keyframes dxin{from{transform:scale(.6);opacity:0}}
+/* « on attend » : trois points qui respirent, sans un mot */
+.dx-attente{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0;min-height:16px}
+.dx-attente span{width:10px;height:10px;border-radius:50%;background:var(--ink2);opacity:.25;animation:dxpt 1.2s ease-in-out infinite}
+.dx-attente span:nth-child(2){animation-delay:.2s} .dx-attente span:nth-child(3){animation-delay:.4s}
+@keyframes dxpt{50%{opacity:.9;transform:translateY(-3px)}}
+.dx-salle .dx-attente{justify-content:flex-start}
+.dx-chip .jt{margin-left:-7px}
+.dx-bilan{display:inline-flex;align-items:center;gap:6px;color:var(--soft)}
+.dx-bilan svg{width:17px;height:17px;color:var(--ok)}
+.dx-bilan b{color:var(--ink);font-size:16px}
+
+/* ---------- une question ---------- */
+.dx-scene{display:flex;flex-direction:column;align-items:stretch;gap:16px;flex:1}
+.dx-enonce{margin:0;text-align:center;font-family:var(--serif);font-size:clamp(24px,6vw,34px);font-weight:700;
+  line-height:1.2;letter-spacing:-.3px;overflow-wrap:anywhere}
+.dx-enonce.petit{font-size:clamp(18px,4.4vw,24px);color:var(--ink2)}
+.dx-lecture{display:flex;flex-direction:column;align-items:center;gap:4px;margin:10px 0}
+.dx-lecture span{font-size:68px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;animation:dxin .9s var(--e) infinite}
+.dx-lecture i{font-style:normal;color:var(--soft)}
+.dx[data-phase="lecture"] .dx-jeu{display:none}
+.dx:not([data-phase="lecture"]) .dx-lecture{display:none}
+.dx-jeu{display:flex;flex-direction:column;gap:14px}
+.dx-chrono{align-self:center;width:62px;height:62px;border-radius:50%;display:grid;place-items:center;
+  background:var(--ink);color:#fff;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.dx-chrono.petit{width:46px;height:46px;font-size:18px}
+.dx-temps{height:6px;border-radius:3px;background:var(--surf);overflow:hidden}
+.dx-temps em{display:block;height:100%;border-radius:3px;background:var(--ink);transform-origin:left center}
+.dx-ecrit-h{display:flex;align-items:center;justify-content:center;gap:9px;margin:0;font-size:17px;color:var(--soft)}
+.dx-ecrit-h svg{width:20px;height:20px}
+
+.dx-choix{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dx-c{position:relative;display:flex;align-items:center;gap:12px;min-height:96px;padding:14px 16px;border-radius:16px;
+  color:#fff;text-align:left;font-size:17px;font-weight:650;line-height:1.25;overflow-wrap:anywhere;
+  transition:transform .12s var(--sp),opacity .2s,filter .2s;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18)}
+.dx-c span{flex:1;min-width:0}
+.dx-c.c0{background:var(--c0)} .dx-c.c1{background:var(--c1)} .dx-c.c2{background:var(--c2)} .dx-c.c3{background:var(--c3)}
+.dx-c.vf0{background:var(--vf0)} .dx-c.vf1{background:var(--vf1)}
+.dx-c.vf0,.dx-c.vf1{justify-content:center;font-size:22px;min-height:120px}
+.dx-c.vf0 span,.dx-c.vf1 span{flex:none}
+.dx-c > svg{width:26px;height:26px;flex:none;stroke-width:2.6}
+.dx-forme{width:24px;height:24px;flex:none;opacity:.9}
+.dx-c:active{transform:scale(.97)}
+.dx-c[tabindex="-1"]{cursor:default}
+.dx-c[tabindex="-1"]:active{transform:none}
+.dx-c.mien{outline:4px solid var(--ink);outline-offset:2px}
+.dx-prop{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px;border-radius:16px;
+  background:var(--card);box-shadow:var(--edge);text-align:center}
+.dx-prop i{font-style:normal;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--soft)}
+.dx-prop b{font-size:22px;font-weight:700;overflow-wrap:anywhere}
+
+/* ---------- la correction ---------- */
+.dx-corr{display:flex;flex-direction:column;gap:18px}
+.dx-barres{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px;align-items:end}
+.dx-b{display:flex;flex-direction:column;gap:6px;min-width:0;opacity:.45}
+.dx-b.bonne{opacity:1}
+.dx-b-h{height:150px;display:flex;align-items:flex-end;border-radius:12px;background:var(--surf);overflow:hidden}
+.dx-b-h em{display:block;width:100%;min-height:6px;border-radius:12px 12px 0 0;transition:height .6s var(--e)}
+.dx-b.c0 em{background:var(--c0)} .dx-b.c1 em{background:var(--c1)} .dx-b.c2 em{background:var(--c2)} .dx-b.c3 em{background:var(--c3)}
+.dx-b.vf0 em{background:var(--vf0)} .dx-b.vf1 em{background:var(--vf1)}
+.dx-b > b{font-size:20px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}
+.dx-b > span{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+.dx-b > span svg{width:16px;height:16px;flex:none}
+.dx-b.c0 .dx-forme{color:var(--c0)} .dx-b.c1 .dx-forme{color:var(--c1)} .dx-b.c2 .dx-forme{color:var(--c2)} .dx-b.c3 .dx-forme{color:var(--c3)}
+.dx-sol{display:flex;align-items:center;justify-content:center;gap:10px;padding:18px;border-radius:16px;
+  background:color-mix(in srgb,var(--ok) 12%,var(--card));font-size:24px}
+.dx-sol svg{width:26px;height:26px;color:var(--ok)}
+.dx-cl{background:var(--card);box-shadow:var(--edge);border-radius:18px;padding:16px}
+.dx-cl h3{margin:0 0 10px;color:var(--soft)}
+.dx-cl h3 svg{width:20px;height:20px}
+.dx-top{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.dx-top li{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;animation:dxin .4s var(--e) both}
+.dx-top li:nth-child(2){animation-delay:.05s} .dx-top li:nth-child(3){animation-delay:.1s}
+.dx-top li:nth-child(4){animation-delay:.15s} .dx-top li:nth-child(5){animation-delay:.2s}
+.dx-top li.moi{background:color-mix(in srgb,var(--ok) 9%,var(--card))}
+.dx-pl{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--bg2);
+  font-size:13px;font-weight:800}
+.dx-top li:first-child .dx-pl{background:#C28A14;color:#fff}
+.dx-top b{flex:1;min-width:0;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dx-top em{font-style:normal;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* ---------- le podium ---------- */
+.dx-bravo{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0 0;font-size:26px;font-weight:750;letter-spacing:-.4px}
+.dx-bravo svg{width:28px;height:28px;color:#C28A14}
+.dx-podium{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:10px;align-items:end;
+  max-width:calc(var(--n,3) * 186px);width:100%;margin:8px auto 0}
+.dx-marche{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-align:center;animation:dxmonte .7s var(--e) both}
+.dx-marche.m1{animation-delay:.5s} .dx-marche.m2{animation-delay:.25s}
+@keyframes dxmonte{from{opacity:0;transform:translateY(30px)}}
+.dx-marche b{max-width:100%;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dx-marche em{font-style:normal;font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}
+.dx-socle{width:100%;display:grid;place-items:start center;padding-top:10px;border-radius:14px 14px 4px 4px;
+  color:#fff;font-size:28px;font-weight:800;background:var(--ink2)}
+.dx-marche.m1 .dx-socle{height:150px;background:#C28A14}
+.dx-marche.m2 .dx-socle{height:110px;background:#8C8A84}
+.dx-marche.m3 .dx-socle{height:80px;background:#A26B3D}
+.dx-reste{max-width:560px;width:100%;margin:6px auto 0}
+
+/* ---------- un joueur ---------- */
+.dx-j{display:flex;flex-direction:column;align-items:stretch;gap:14px;flex:1;text-align:center}
+.dx-j h2{margin:0;font-size:24px;font-weight:750;letter-spacing:-.4px}
+.dx-j-attente,.dx-j-envoye{justify-content:center;align-items:center}
+.dx-ok{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#fff;animation:dxin .45s var(--sp) both}
+.dx-ok svg{width:42px;height:42px;stroke-width:2.6}
+.dx-ok.petit{width:64px;height:64px}
+.dx-ok.petit svg{width:30px;height:30px}
+.dx-moi{display:inline-block;margin:0;padding:8px 16px;border-radius:999px;background:var(--ink);color:#fff;font-weight:650}
+.dx-j-envoye .dx-temps{align-self:stretch}
+.dx-j-q .dx-enonce{font-size:clamp(20px,5.4vw,28px)}
+.dx-ecrit{display:flex;flex-direction:column;gap:10px}
+.dx-ecrit input{height:58px;padding:0 16px;border-radius:14px;background:var(--card);box-shadow:var(--edge);
+  font-size:20px;font-weight:600;text-align:center;transition:box-shadow .15s}
+.dx-ecrit input:focus{box-shadow:var(--edge),var(--ring)}
+.dx-verdict{justify-content:center;align-items:center;border-radius:24px;padding:28px 18px;color:#fff;animation:dxin .4s var(--sp) both}
+.dx-verdict.juste{background:var(--c3)}
+.dx-verdict.faux{background:var(--c0)}
+.dx-verdict.tard{background:var(--ink2)}
+.dx-v-ic{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;align-self:center;background:rgba(255,255,255,.18)}
+.dx-j:not(.dx-verdict) .dx-v-ic{background:var(--surf);color:var(--ink2)}
+.dx-v-ic svg{width:38px;height:38px;stroke-width:2.6}
+.dx-pts{margin:0;font-size:40px;font-weight:800;font-variant-numeric:tabular-nums}
+.dx-serie{display:inline-flex;align-items:center;gap:6px;margin:0;align-self:center;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.18);font-weight:650}
+.dx-serie svg{width:17px;height:17px}
+.dx-sol-j{display:flex;align-items:center;justify-content:center;gap:8px;margin:0;font-size:20px}
+.dx-sol-j svg{width:22px;height:22px;flex:none;opacity:.85}
+.dx-score{display:flex;justify-content:center;gap:12px;margin-top:6px}
+.dx-score span{display:flex;flex-direction:column;align-items:center;min-width:96px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.16);font-size:12.5px}
+.dx-score b{font-size:22px;font-variant-numeric:tabular-nums}
+.dx-j-fin{justify-content:flex-start}
+.dx-j-fin .cta{margin-top:auto}
+
+@media (hover:hover){
+  .dx-chip:hover svg{opacity:1}
+  .dx-c:not([tabindex="-1"]):hover{filter:brightness(1.07)}
+}
+
+/* Sur téléphone, les quatre réponses prennent tout l'écran, comme une
+   manette : on tape sans viser. */
+@media (max-width:899px){
+  .dx.joueur .dx-j-q .dx-jeu{flex:1}
+  .dx.joueur .dx-j-q .dx-choix{flex:1;grid-auto-rows:minmax(110px,1fr)}
+}
+
+/* ---------- sur ordinateur : l'écran que l'on projette ---------- */
+@media (min-width:900px){
+  .dx{min-height:calc(100vh - 96px)}
+  .dx.hote .dx-lobby{display:grid;grid-template-columns:minmax(0,460px) minmax(0,1fr);gap:24px;align-items:start}
+  .dx.hote .dx-entrer{padding:28px;position:sticky;top:24px}
+  .dx.hote .dx-pin{font-size:clamp(56px,5.4vw,80px)}
+  .dx.hote .dx-qr{width:220px}
+  .dx.hote .dx-salle{min-height:360px;padding:24px}
+  .dx.hote .dx-chip{height:46px;padding:0 18px;font-size:17px}
+  .dx.hote .dx-enonce{font-size:clamp(30px,3.2vw,48px);max-width:1000px;margin:0 auto}
+  .dx.hote .dx-enonce.petit{font-size:24px}
+  .dx.hote .dx-c{min-height:120px;font-size:22px;padding:18px 22px}
+  .dx.hote .dx-forme{width:30px;height:30px}
+  .dx.hote .dx-chrono{width:84px;height:84px;font-size:32px}
+  .dx.hote .dx-lecture span{font-size:110px}
+  .dx.hote .dx-corr{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}
+  .dx.hote .dx-b-h{height:240px}
+  .dx.joueur .dx-j{max-width:640px;width:100%;margin:0 auto}
+  .dx.joueur .dx-choix{max-width:640px;margin:0 auto;width:100%}
+}

@@ -1,14 +1,14 @@
 import { I } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import {
-  asks, auth, db, friends, lib, mailbox, mates, me, menu, prefs, scope, sendMsg,
+  asks, auth, db, friends, mailbox, mates, me, menu, prefs, sendMsg,
   setAnimate, setAsks, setFriends, setMailOpen, setMates, setMe, setSendMsg,
   setSendTo, setShared, setVerif, setVers, setView, trash, verif, vers, view
 } from '../data/etat.js';
 import { go, render } from '../ui/bibliotheque.js';
 import { fsrsW, plain } from '../ui/carte-media.js';
 import {
-  api, deck, metaOf, plur, pull, pushSubject, pushUndo, save, saveDeck, scopeName, setMeta, subj, uid
+  api, deck, metaOf, plur, pull, pushSubject, pushUndo, save, saveDeck, setMeta, uid
 } from './coeur-sync.js';
 import { scanLibrary, repairLibrary } from '../reparation.js';
 import { countDuplicates, dedupeLibrary } from '../doublons.js';
@@ -297,44 +297,6 @@ export async function openShared(tok) {
     setShared(r ? { tok, st: 'ok', d: r } : { tok, st: 'gone' });
   } catch (e) { setShared({ tok, st: 'err' }); }
   if (view.name === 'shared') render();
-}
-
-/* ---------- bibliothèque commune ----------
-   Publier, c'est poser une copie sur l'étagère du groupe : le paquet
-   d'origine continue de vivre de son côté, et republier remplace la copie
-   par la version du jour. Chacun ne peut retirer que ses propres paquets. */
-export async function libPull() {
-  try {
-    lib.list = await api('/rest/v1/library?select=deck_id,user_id,who,name,subject,cards,n,group_id,updated_at'
-      + '&order=updated_at.desc&limit=100') || [];
-    lib.err = 0;
-  } catch (e) { lib.err = 1; }
-  if (/^(commu|friends|groups|duels|library|board|group)$/.test(view.name)) { setAnimate(false); render(); }
-}
-
-export async function libPublish(d) {
-  closeMenu();
-  const where = scopeName();
-  const row = { deck_id: d.id, user_id: auth.uid, who: prefs.name || (me && me.handle) || 'Compte',
-                name: d.name, subject: d.subject ? subj(d.subject).name : '',
-                n: d.cards.length, cards: d.cards.map(c => [plain(c.f), plain(c.b)]),
-                group_id: scope, updated_at: new Date().toISOString() };
-  try {
-    await api('/rest/v1/library', 'POST', [row], { Prefer: 'resolution=merge-duplicates,return=minimal' });
-    setMeta(d, { pub: 1 });
-    lib.list = null; libPull();
-    toast(I.book, 'Sur l’étagère · ' + where);
-  } catch (e) { toast(I.x, 'Publication impossible'); }
-}
-
-export async function libRemove(d) {
-  closeMenu();
-  setMeta(d, { pub: 0 });
-  lib.list = (lib.list || []).filter(x => x.deck_id !== d.id);
-  render();
-  try { await api('/rest/v1/library?deck_id=eq.' + encodeURIComponent(d.id), 'DELETE', null, { Prefer: 'return=minimal' }); }
-  catch (e) { /* retiré localement de l'étagère ; au pire il faudra republier-puis-retirer pour la copie serveur */ }
-  toast(I.check, 'Retiré de la bibliothèque');
 }
 
 /* ---------- vérifier ma bibliothèque (M04.T2) ----------

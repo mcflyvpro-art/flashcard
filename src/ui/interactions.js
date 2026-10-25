@@ -3,22 +3,19 @@ import { $ } from '../racine.js';
 import { I } from '../icones.js';
 import { shuffle } from '../file.js';
 import {
-  accounts, adm, board, comp, deckOpen, duels, friends, groups, leaving,
-  lib, mailbox, mods, myRole, online, peek, prefs, quiz, ref,
-  reorder, sel, setAccOpen, setAddQ, setAnimate, setCardEdit,
-  setDeckOpen, setDeckQ, setDuelRun, setFilter, setFindQ, setGroupOf, setGroupTab,
+  accounts, adm, board, cercle, comp, deckOpen, duels, friends, leaving,
+  mailbox, mods, online, peek, prefs, quiz, ref,
+  reorder, sel, setAccOpen, setAnimate, setCardEdit,
+  setDeckOpen, setDeckQ, setDuelRun, setFilter, setFindQ,
   setHelpKey, setLeaving, setLegalBack, setLegalTab, setMateOpen, setMates2,
-  setPeek, setPendingGrade, setQuiz, setReorder, setScope, setSel, setShared,
+  setPeek, setPendingGrade, setQuiz, setReorder, setSel, setShared,
   setStudy, shared, stats, study, trash, view
 } from '../data/etat.js';
-import { go, render } from './bibliotheque.js';
-import { commuPull, doAdd } from './bilan-devoirs.js';
-import { groupsPull } from '../core/bilan-devoirs.js';
+import { allerClasses, go, render } from './bibliotheque.js';
+import { commuPull, doAdd } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
 import { fsrsTune } from '../core/carte-media.js';
-import {
-  atSchool, isProf, isPupil, lireClass, lireNew
-} from './classement.js';
+import { isPupil, lireClass, lireNew } from './classement.js';
 import {
   accountsPull, admPull, blocksPull, boardPull, matesPull, modAct,
   modPull, refDo, refPeople, refPull, refTeam
@@ -26,10 +23,8 @@ import {
 import { deck, doUndo, flush, pending, plur, pushUndo, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
 import { selBar } from './connexion.js';
 import { duelPick } from './defis.js';
-import { duelsPull } from '../core/defis.js';
-import { exportStats, groupPull, lostOnLeave } from './ecran-groupe.js';
+import { exportStats, lostOnLeave } from './ecran-groupe.js';
 import { statsPull } from '../core/ecran-groupe.js';
-import { eleveClassesPull } from '../core/eleve-classes.js';
 import {
   beep, dueCount, importPayload, savePrefs, toast
 } from './import-cartes.js';
@@ -42,7 +37,7 @@ import {
 import { resetComp } from './creation.js';
 import { cb, cf, openSubject } from './reglages-corbeille.js';
 import {
-  answerFriend, askFriend, friendsPull, libPull, mailPull, openMail,
+  answerFriend, askFriend, friendsPull, mailPull, openMail,
   trashPull, trashPurge, trashRestore, verifScan
 } from '../core/reglages-corbeille.js';
 import {
@@ -135,20 +130,9 @@ function tapLegal(a, ds) {
 const tapYes = (a, ds) => answerFriend(ds.yes, true);
 const tapNo = (a, ds) => answerFriend(ds.no, false);
 function tapMate(a, ds) { setMateOpen(ds.mate); return openMenu('mate'); }
-function tapGroup(a, ds) { setGroupOf(ds.group); return openMenu('groupitem'); }
 const tapMail = (a, ds) => openMail(+ds.mail);
 const tapDpick = (a, ds) => duelPick(+ds.dpick);
-function tapLib(a, ds) { lib.open = ds.lib; return openMenu('libitem'); }
 function tapDuel(a, ds) { duels.open = ds.duel; return openMenu('duelitem'); }
-function tapGtab(a, ds) { setGroupTab(ds.gtab); groupPull(); setAnimate(false); return render(); }
-
-/* changer de portée, c'est changer de public : le classement se
-   recalcule côté base, la bibliothèque et les défis se refiltrent ici */
-function tapScope(a, ds) {
-  setScope(ds.scope || null);
-  board.rows = null; setAnimate(false); render();
-  return boardPull();
-}
 
 function tapBrange(a, ds) { board.range = +ds.brange; board.rows = null; setAnimate(false); render(); return boardPull(); }
 
@@ -253,10 +237,7 @@ function tapSndSay(a, ds, b) {
 const tapHome = () => go('home');
 const tapCommu = () => { commuPull(); return go('commu'); };
 const tapFriends = () => { if (!friends) friendsPull(); return go('friends'); };
-const tapGroups = () => { if (!groups) groupsPull(); return go('groups'); };
-const tapDuels = () => { if (!duels.list) duelsPull(); return go('duels'); };
-const tapLibrary = () => { if (!lib.list) libPull(); return go('library'); };
-const tapBoard = () => { if (!board.rows) boardPull(); return go('board'); };
+const tapFriendsBoard = () => { if (!board.rows) boardPull(); return tapFriends(); };
 const tapDoadd = () => doAdd();
 
 /* Le pseudo scolaire vient de l'établissement : la base renverse déjà
@@ -264,8 +245,6 @@ const tapDoadd = () => doAdd();
 const tapHandle = () => isPupil() ? toast(I.lock, 'Ton pseudo est celui de ton établissement')
                                    : openMenu('handle');
 
-const tapNewgroup = () => { setAddQ(''); return openMenu('newgroup'); };
-const tapJoingroup = () => { setAddQ(''); return openMenu('joingroup'); };
 
 /* un quiz se lance depuis un paquet : en sortir, c'est y revenir */
 function tapQuitquiz() {
@@ -288,11 +267,10 @@ const tapMcqMatch = a => startStudy(view.id, false, null, { mode: a });
    menu « … » le connaissait et le bouton ne faisait rien. */
 const tapSharepick = () => { if (!friends) friendsPull(); return openMenu('sharepick'); };
 const tapStats = () => { stats.rows = null; statsPull(); return go('stats'); };
-const tapGroupScreen = () => { groupPull(); return go('group'); };
 const tapHelpTuto = () => openMenu('tuto');
 const tapInstall = () => openInstall();
-const tapDuelnew = () => openMenu('duelnew');
-const tapDuelquit = () => { setDuelRun(null); return go('group'); };
+/* quitter un défi à son rythme : revenir d'où on l'avait ouvert */
+const tapDuelquit = () => { setDuelRun(null); const r = cercle.retour || { name: 'commu' }; return go(r.name, r.id); };
 
 function tapAddshared() {
   const sd = shared && shared.d; if (!sd) return;
@@ -332,7 +310,6 @@ function tapDeckfind() {
   setAnimate(false); return render();
 }
 
-const tapZen = () => { prefs.zen = !prefs.zen; savePrefs(); setAnimate(false); return render(); };
 const tapSortpick = () => openMenu('sortpick');
 const tapListview = () => { prefs.list = !prefs.list; savePrefs(); setAnimate(false); return render(); };
 
@@ -360,11 +337,7 @@ const tapBlocked = () => { blocksPull().then(() => paintMenu()); return openMenu
 /* Trois publics, trois écrans derrière le même bouton : le référent gère
    son établissement, le professeur ses classes, l'élève — scolaire ou
    non — ses devoirs et les classes qu'il a rejointes. */
-function tapClasses() {
-  if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
-  if (isProf()) return allerAccueil();
-  eleveClassesPull(); return go('classes');
-}
+const tapClasses = () => allerClasses();
 
 const tapRef = () => { refPull(); return go('ref'); };
 const tapRefnew = () => { ref.form = { role: 'eleve' }; return openMenu('refnew'); };
@@ -535,13 +508,9 @@ const CLICK_RULES = [
   [(a, ds) => ds.yes !== undefined, tapYes],
   [(a, ds) => ds.no !== undefined, tapNo],
   [(a, ds) => ds.mate !== undefined, tapMate],
-  [(a, ds) => ds.group !== undefined, tapGroup],
   [(a, ds) => ds.mail !== undefined, tapMail],
   [(a, ds) => ds.dpick !== undefined, tapDpick],
-  [(a, ds) => ds.lib !== undefined, tapLib],
   [(a, ds) => ds.duel !== undefined, tapDuel],
-  [(a, ds) => ds.gtab !== undefined, tapGtab],
-  [(a, ds) => ds.scope !== undefined, tapScope],
   [(a, ds) => ds.brange !== undefined, tapBrange],
   [(a, ds) => ds.pkc !== undefined && sel, tapPkc],
   [(a, ds) => ds.trr !== undefined, tapTrr],
@@ -571,15 +540,9 @@ const CLICK_RULES = [
   [(a, ds, b) => b.dataset.snd !== undefined || b.dataset.say !== undefined, tapSndSay],
   [a => a === 'home' || a === 'tab-home', tapHome],
   [a => a === 'tab-commu' || a === 'commu', tapCommu],
-  [a => a === 'friends', tapFriends],
-  [a => a === 'groups', tapGroups],
-  [a => a === 'duels', tapDuels],
-  [a => a === 'library', tapLibrary],
-  [a => a === 'board', tapBoard],
+  [a => a === 'friends', tapFriendsBoard],
   [a => a === 'doadd', tapDoadd],
   [a => a === 'handle', tapHandle],
-  [a => a === 'newgroup', tapNewgroup],
-  [a => a === 'joingroup', tapJoingroup],
   [a => a === 'quitquiz', tapQuitquiz],
   [a => a === 'peek', tapPeek],
   [a => a === 'marathon', tapMarathon],
@@ -587,17 +550,14 @@ const CLICK_RULES = [
   [a => a === 'mcq' || a === 'match', tapMcqMatch],
   [a => a === 'sharepick', tapSharepick],
   [a => a === 'goalinfo' || a === 'stats', tapStats],
-  [a => a === 'group', tapGroupScreen],
   [a => a === 'help', tapHelpTuto],
   [a => a === 'install', tapInstall],
-  [a => a === 'duelnew', tapDuelnew],
   [a => a === 'duelquit', tapDuelquit],
   [a => a === 'addshared', tapAddshared],
   [a => a === 'expstats', tapExpstats],
   [a => a === 'replay', tapReplay],
   [a => a === 'find', tapFind],
   [a => a === 'deckfind', tapDeckfind],
-  [a => a === 'zen', tapZen],
   [a => a === 'sortpick', tapSortpick],
   [a => a === 'listview', tapListview],
   [a => a === 'reorder', tapReorder],
@@ -607,7 +567,7 @@ const CLICK_RULES = [
   [a => a === 'mod', tapMod],
   [a => a === 'admin', tapAdmin],
   [a => a === 'blocked', tapBlocked],
-  [a => a === 'classes', tapClasses],
+  [a => a === 'classes' || a === 'tab-classes', tapClasses],
   [a => a === 'ref', tapRef],
   [a => a === 'refnew', tapRefnew],
   [a => a === 'refnewclass', tapRefnewclass],
@@ -660,7 +620,7 @@ const CLICK_RULES = [
 ];
 
 $.addEventListener('click', e => {
-  const b = e.target.closest('button,[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-lib],[data-duel],[data-gtab],[data-scope],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-group],[data-legal],[data-modact],[data-account]');
+  const b = e.target.closest('button,[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-duel],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-legal],[data-modact],[data-account]');
   if (!b) return;
   const ds = b.dataset;
   if (feuilleTap(b)) return;

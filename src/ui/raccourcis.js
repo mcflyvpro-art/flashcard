@@ -4,7 +4,7 @@ import {
   mailbox, menu, pendingGrade, prefs, setPendingGrade, stats, study, view
 } from '../data/etat.js';
 import { allDue, go } from './bibliotheque.js';
-import { commuPull } from './bilan-devoirs.js';
+import { commuPull } from './cercle.js';
 import { canUndo, doUndo } from '../core/coeur-sync.js';
 import { statsPull } from '../core/ecran-groupe.js';
 import { toast } from './import-cartes.js';

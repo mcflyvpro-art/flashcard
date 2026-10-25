@@ -6,9 +6,9 @@ import { afterEach, describe, it, expect } from 'vitest';
 import {
   ALPHABET, CREATION, DUREES, aTraiter, codeComplet, codeDepuisTexte, dansJours, echeance, emailCarte,
   erreurPlaces, etatDevoir, etatDevoirEleve, etatEleve, etatInscriptions, filtrerEleves, finTexte,
-  formatCode, grilleMois, initiales, sigleClasse, iso, jourCourt, jourLong, joursEntre, lienCarte, lienRejoindre,
+  formatCode, grilleMois, iso, jourCourt, jourLong, joursEntre, lienCarte, lienRejoindre,
   lireCarte, lireListeEleves, messageStatut, nomPropre, nomValide, normCode, normIdentifiant, parJour,
-  rangerClasses, syntheseAccueil, syntheseClasse, teinte, tonReussite, trierEleves
+  rangerClasses, syntheseAccueil, syntheseClasse, tonReussite, trierEleves
 } from '../src/classe.js';
 
 describe('le code d’une classe', () => {
@@ -298,26 +298,3 @@ describe('la carte de connexion', () => {
   });
 });
 
-describe('les visages', () => {
-  it('sigle d’une classe : chiffres et lettres qui la désignent', () => {
-    expect(sigleClasse('2nde 4')).toBe('2·4');
-    expect(sigleClasse('1ère S2')).toBe('1S2');
-    expect(sigleClasse('Tle G3')).toBe('TG3');
-    expect(sigleClasse('6e B')).toBe('6B');
-    expect(sigleClasse('anglais')).toBe('A');
-    expect(sigleClasse('Atelier théâtre du jeudi soir')).toBe('ATDJ');
-    expect(sigleClasse('  ')).toBe('?');
-  });
-
-  it('initiales du premier et du dernier mot', () => {
-    expect(initiales('Alice Martin')).toBe('AM');
-    expect(initiales('jean-pierre dupont')).toBe('JD');
-    expect(initiales('zoé')).toBe('Z');
-    expect(initiales('')).toBe('?');
-  });
-  it('une teinte stable, parmi huit', () => {
-    expect(teinte('abc')).toBe(teinte('abc'));
-    for (const id of ['a', 'b', 'c', 'd', 'uuid-1', '']) expect(teinte(id)).toBeGreaterThanOrEqual(0);
-    expect(new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'].map(teinte)).size).toBeGreaterThan(3);
-  });
-});

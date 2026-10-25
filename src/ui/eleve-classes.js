@@ -2,12 +2,14 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { atSchool, isProf, isPupil } from './classement.js';
-import { auth, compte, db, eleve, mates2, online, setAnimate, setMenu, view } from '../data/etat.js';
-import { go, render } from './bibliotheque.js';
+import { auth, cercle, compte, db, duels, eleve, mates2, online, setAnimate, setMenu, view } from '../data/etat.js';
+import { go, render, tabs } from './bibliotheque.js';
+import { defiLigne, enDirectHtml, parDefi } from './cercle.js';
 import {
-  codeComplet, codeDepuisTexte, echeance, etatDevoirEleve, formatCode, initiales, iso, jourCourt,
-  messageStatut, nomPropre, nomValide, normCode, sigleClasse, teinte
+  codeComplet, codeDepuisTexte, echeance, etatDevoirEleve, formatCode, iso, jourCourt,
+  messageStatut, nomPropre, nomValide, normCode
 } from '../classe.js';
+import { avatar, blason, couleurClasse } from './jeton.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
   annulerDemande, apercuCode, cartesDevoir, eleveClassesPull, messageErreur, quitterClasse, rejoindreCode
@@ -23,10 +25,11 @@ import { rejoindreCollegue } from './prof-porte.js';
    n'est pas un pseudo : c'est celui du compte à carte ou de l'établissement,
    ou, pour un compte personnel, son vrai prénom et son vrai nom. */
 
-const TEINTES = ['#7A4B34', '#3F7D55', '#2F5D8A', '#8A3F6B', '#9A6512', '#3E6E6E', '#5E4E8A', '#A8483C'];
-const coul = id => TEINTES[teinte(id)];
-const pastille = (id, nom) => `<i class="el-k" style="--k:${coul(id)}">${esc(sigleClasse(nom))}</i>`;
-const personne = (id, nom) => `<i class="el-k rond" style="--k:${coul(id)}">${esc(initiales(nom))}</i>`;
+/* Le blason d'une classe (ui/jeton.js) : avant d'y être entré, on ne le
+   connaît pas encore — une icône neutre plutôt qu'un emblème qui changerait
+   une fois dedans. */
+const pastille = id => blason(id);
+const neutre = () => `<i class="jt groupe vide">${svg(I.school)}</i>`;
 
 /* Un compte à carte ou d'établissement a déjà son nom : on ne le redemande pas. */
 const nomConnu = () => !!(compte && compte.gere) || atSchool();
@@ -38,7 +41,7 @@ function rejoindreHtml() {
     const demander = !nomConnu();
     const ok = !demander || (nomValide(eleve.prenom) && nomValide(eleve.nom));
     return `<div class="el-carte el-apercu">
-      <div class="el-ap-h">${pastille(a.class_id, a.nom)}<span><b>${esc(a.nom)}</b><i>${
+      <div class="el-ap-h">${neutre()}<span><b>${esc(a.nom)}</b><i>${
         [a.niveau, a.prof, a.etab].filter(Boolean).map(esc).join(' · ')}</i></span></div>
       ${a.validation ? `<p class="el-note">${svg(I.lock)}Ton professeur validera ta demande.</p>` : ''}
       ${demander ? `<div class="el-noms">
@@ -55,8 +58,7 @@ function rejoindreHtml() {
     <div class="el-code"><input id="elcode" data-elin="code" value="${esc(eleve.code)}" placeholder="XXXX-XXXX"
       inputmode="text" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="40" enterkeyhint="go">
       <button class="el-btn pri" data-el="apercu" id="elok" ${codeComplet(eleve.code) && !eleve.envoi ? '' : 'disabled'}>OK</button></div>
-    ${r ? `<p class="el-rep ${r.ton}"><b>${esc(r.titre)}</b>${r.texte ? ' ' + esc(r.texte) : ''}</p>`
-      : `<p class="el-note">Le code est au tableau, ou sur le lien envoyé par ton professeur.</p>`}
+    ${r ? `<p class="el-rep ${r.ton}"><b>${esc(r.titre)}</b>${r.texte ? ' ' + esc(r.texte) : ''}</p>` : ''}
   </form>`;
 }
 
@@ -71,7 +73,7 @@ function devoirsHtml() {
   return `${afaire.length ? `<div class="el-list">${afaire.map(d => {
       const e = etatDevoirEleve(d, auj);
       return `<button class="el-dv ${e.k}" data-el="devoir" data-id="${esc(d.id)}">
-        <i class="el-dot" style="--k:${coul(d.class_id)}"></i>
+        <i class="el-dot" style="--k:${couleurClasse(d.class_id)}"></i>
         <span class="el-dvt"><b>${esc(d.nom)}</b><i>${esc(d.classe)} · ${plur(d.n, 'carte')}${d.due ? ' · ' + esc(echeance(d.due, auj)) : ''}</i></span>
         <em class="el-pill ${e.k}">${esc(e.t)}</em>${svg(I.arrow)}</button>`;
     }).join('')}</div>` : `<p class="el-vide">${svg(I.check)}Tout est rendu.</p>`}
@@ -83,39 +85,50 @@ function classesHtml() {
   const l = eleve.classes;
   if (!l) return '';
   const ins = l.filter(c => c.statut === 'inscrit'), att = l.filter(c => c.statut === 'attente');
-  return `${att.map(c => `<div class="el-cl attente">${pastille(c.class_id, c.nom)}
+  return `${att.map(c => `<div class="el-cl attente">${pastille(c.class_id)}
       <span class="el-clt"><b>${esc(c.nom)}</b><i>En attente de ${esc(c.prof || 'ton professeur')}</i></span>
       <button class="el-btn sm" data-el="annuler" data-id="${esc(c.class_id)}">Annuler</button></div>`).join('')}
-    ${ins.map(c => `<button class="el-cl" data-el="classe" data-id="${esc(c.class_id)}">${pastille(c.class_id, c.nom)}
+    ${ins.map(c => `<button class="el-cl" data-el="classe" data-id="${esc(c.class_id)}">${pastille(c.class_id)}
       <span class="el-clt"><b>${esc(c.nom)}</b><i>${[c.prof, c.matieres].filter(Boolean).map(esc).join(' · ') || esc(c.etab)}</i></span>
       ${c.a_faire ? `<em class="el-badge">${c.a_faire}</em>` : ''}${svg(I.arrow)}</button>`).join('')}
     ${!l.length ? '<p class="el-vide">Tu n’es dans aucune classe.</p>' : ''}`;
 }
 
-function camaradesHtml() {
+export function camaradesHtml() {
   const l = mates2 || [];
   if (!isPupil() || !l.length) return '';
   return `<h2 class="el-h2">Camarades <span>${l.length}</span></h2><div class="el-list">${l.map(m => `<div class="el-cl">
-    ${personne(m.id, m.name)}<span class="el-clt"><b>${esc(m.name)}</b></span>
+    ${avatar(m.id, m.handle || m.name)}<span class="el-clt"><b>${esc(m.name)}</b></span>
     ${m.lien === 'ok' ? `<button class="camo" data-mate="${esc(m.id)}" aria-label="Voir">${svg(I.arrow)}</button>`
       : m.lien ? '<span class="camw">demandé</span>'
       : `<button class="camadd" data-camadd="${esc(m.id)}" data-camn="${esc(m.handle || '')}" aria-label="Ajouter ${esc(m.name)}">${svg(I.plus)}</button>`}
   </div>`).join('')}</div>`;
 }
 
+/* Les défis que le professeur a lancés pour la classe, à son rythme : ils
+   vivent ici, avec la classe, plus dans le cercle. */
+function defisClasseHtml() {
+  const l = parDefi((duels.list || []).filter(d => d.class_id));
+  if (!l.length) return '';
+  return `<h2 class="el-h2">Défis de la classe</h2><div class="cc-list">${l.map(d => defiLigne(d, false)).join('')}</div>`;
+}
+
 export function mesClassesView() {
   if (isProf()) return go('prof');
   const qui = compte && compte.nom ? compte.nom : '';
+  const n = (eleve.classes || []).filter(c => c.statut === 'inscrit').length;
   $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button>
-      <h1>Mes classes</h1></div>
-    <div class="page el-page">
+    <div class="page el-page" id="page">
+      <div class="top"><div class="hero">${n === 1 ? 'Ma classe' : 'Mes classes'}</div></div>
       ${qui && nomConnu() ? `<p class="el-qui">${svg(I.user)}<b>${esc(qui)}</b>${compte && compte.gere ? '<i>carte élève</i>' : ''}</p>` : ''}
+      ${enDirectHtml((cercle.salles || []).filter(s => s.class_id))}
       <h2 class="el-h2">À faire</h2>${devoirsHtml()}
+      ${defisClasseHtml()}
       ${rejoindreHtml()}
       <h2 class="el-h2">Mes classes</h2>${classesHtml()}
       ${camaradesHtml()}
-    </div>`;
+    </div>
+    ${tabs('classes')}`;
   const f = document.getElementById('elform');
   if (f) f.onsubmit = e => { e.preventDefault(); apercu(); };
 }
@@ -186,7 +199,7 @@ export function paintMenuEleve(w) {
   const c = (eleve.classes || []).find(x => x.class_id === eleve.open);
   if (!c) { setMenu(null); return; }
   w.innerHTML = `<div class="scrim" data-mact="close"></div><div class="menu">
-    <div class="mhd">${pastille(c.class_id, c.nom)}<span class="mhx"><b>${esc(c.nom)}</b><i>${esc(c.etab || 'Hors établissement')}</i></span></div>
+    <div class="mhd">${pastille(c.class_id)}<span class="mhx"><b>${esc(c.nom)}</b><i>${esc(c.etab || 'Hors établissement')}</i></span></div>
     <div class="el-fiche">
       ${c.prof ? `<p>${svg(I.user)}<b>${esc(c.prof)}</b></p>` : ''}
       ${c.matieres ? `<p>${svg(I.book)}${esc(c.matieres)}</p>` : ''}

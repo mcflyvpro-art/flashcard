@@ -7,19 +7,14 @@ import { paintMenu } from '../ui/menus-a.js';
 export async function mateProfPull(id) {
   const seq = setMateProfSeq(mateProfSeq + 1), range = mateProf.range;
   mateProf.load = 1;
-  if (mateProf.id !== id) setMateProf({ id, range, row: null, lib: null, load: 1 });
-  let row = null, lib = null;
+  if (mateProf.id !== id) setMateProf({ id, range, row: null, load: 1 });
+  let row = null;
   try {
     const rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: range }) || [];
     row = rows.find(x => x.uid === id) || { n: 0, ok: 0, jours: 0 };
   } catch (e) { /* fiche non-critique : elle s'affiche simplement sans ce chiffre */ }
-  try {
-    lib = await api('/rest/v1/library?select=deck_id,name,subject,n,updated_at'
-      + `&user_id=eq.${id}&order=updated_at.desc&limit=20`) || [];
-  } catch (e) { /* idem : la bibliothèque partagée reste vide plutôt que de bloquer la fiche */ }
   if (seq !== mateProfSeq) return;        // une demande plus récente est déjà en vol
   if (row) mateProf.row = row;
-  if (lib) mateProf.lib = lib;
   mateProf.load = 0;
   if (menu === 'mateprof') paintMenu();
 }

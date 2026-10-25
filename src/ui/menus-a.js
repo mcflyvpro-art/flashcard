@@ -6,7 +6,8 @@ import {
 } from '../data/etat.js';
 import { ANOMALY_FAMILIES } from '../reparation.js';
 import { render } from './bibliotheque.js';
-import { initial } from './bilan-devoirs.js';
+import { avatar } from './jeton.js';
+import { paintMenuCercle } from './cercle-feuilles.js';
 import { paintMedia } from './carte-media.js';
 import { accountSheet, blockedSheet, reportSheet } from './classement.js';
 import { ROLENOM, refService, refTeam } from '../core/classement.js';
@@ -15,10 +16,10 @@ import { paintMenuEleve } from './eleve-classes.js';
 import { paintMenuProf } from './prof-porte.js';
 import { CYCLES } from './etablissement.js';
 import {
-  paintMenuCard, paintMenuConflict, paintMenuDeckset, paintMenuDuelitem, paintMenuDuelnew,
-  paintMenuFnr, paintMenuGroupitem, paintMenuHandle, paintMenuHelp, paintMenuLeave,
-  paintMenuLend, paintMenuLibitem, paintMenuMailitem, paintMenuMate, paintMenuMateprof,
-  paintMenuMerge, paintMenuMove, paintMenuNewgroup, paintMenuPreview, paintMenuSendfriend,
+  paintMenuCard, paintMenuConflict, paintMenuDeckset, paintMenuDuelitem,
+  paintMenuFnr, paintMenuHandle, paintMenuHelp, paintMenuLeave,
+  paintMenuLend, paintMenuMailitem, paintMenuMate, paintMenuMateprof,
+  paintMenuMerge, paintMenuMove, paintMenuPreview, paintMenuSendfriend,
   paintMenuSharepick, paintMenuSimple, paintMenuSortpick, paintMenuSplit, paintMenuTuto,
   paintMenuVers
 } from './menus-b.js';
@@ -139,6 +140,7 @@ function menuPainter(m) {
        entrée ; laquelle est ouverte se lit dans `prof.feuille`. */
     pf: paintMenuProf,
     el: paintMenuEleve,
+    cc: paintMenuCercle,
     /* ---------- les feuilles du référent ---------- */
     refwho: paintMenuRefwho,
     refcls: paintMenuRefcls,
@@ -158,16 +160,12 @@ function menuPainter(m) {
     preview: paintMenuPreview,
     sharepick: paintMenuSharepick,
     handle: paintMenuHandle,
-    newgroup: paintMenuNewgroup, joingroup: paintMenuNewgroup,
     mate: paintMenuMate,
-    groupitem: paintMenuGroupitem,
     tuto: paintMenuTuto,
     help: paintMenuHelp,
     vers: paintMenuVers,
     conflict: paintMenuConflict,
-    libitem: paintMenuLibitem,
     duelitem: paintMenuDuelitem,
-    duelnew: paintMenuDuelnew,
     sendfriend: paintMenuSendfriend,
     /* Prêter un livre : on part de l'ami, pas du livre. La feuille montre
        toute la bibliothèque personnelle ; le livre choisi part aussitôt
@@ -251,7 +249,7 @@ function paintMenuRefwho(w) {
     const eleve = g.role === 'eleve';
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu pv">
-        <div class="mhd"><i class="av">${esc(initial(g.name))}</i>
+        <div class="mhd">${avatar(g.id, g.name)}
           <span class="mhx"><b>${esc(g.name)}</b>
             <i>@${esc(g.handle || '')} · ${esc(ROLENOM[g.role] || g.role)}${
               g.jamais ? ' · jamais venu' : ' · vu ' + timeAgo(g.derniere)}</i></span></div>

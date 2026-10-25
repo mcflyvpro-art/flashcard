@@ -28,7 +28,7 @@ const MODES = [
   { id: 'coller', icon: 'rows', nom: 'Coller', aide: 'Une page par ligne : le mot, puis une tabulation, un tiret ou « = », puis la réponse.' },
   { id: 'fichier', icon: 'file', nom: 'Fichier', aide: 'Un PDF de cours, ou un tableau : CSV, texte, export Anki ou Quizlet.' },
   { id: 'photo', icon: 'image', nom: 'Photo', aide: 'Une ou plusieurs pages de cours, prises sur le moment ou choisies dans la galerie.' },
-  { id: 'ia', icon: 'spark', nom: 'Depuis un cours', aide: 'Colle un passage de ton cours : les questions et leurs réponses sont écrites pour toi.' }
+  { id: 'ia', icon: 'spark', nom: 'Cours', aide: 'Colle un passage de ton cours : les questions et leurs réponses sont écrites pour toi.' }
 ];
 
 /* Les pages en attente dans la zone de vérification : « Créer » les prend
@@ -54,7 +54,7 @@ function identiteHtml() {
 
 const ongletsHtml = mode => `<div class="cr-tabs" role="tablist" aria-label="Façon de créer les pages">
     ${MODES.map(m => `<button role="tab" class="${m.id === mode ? 'on' : ''}" data-cmode="${m.id}"
-      aria-selected="${m.id === mode}">${svg(I[m.icon])}<span>${m.nom}</span></button>`).join('')}
+      aria-selected="${m.id === mode}" title="${m.aide}">${svg(I[m.icon])}<span>${m.nom}</span></button>`).join('')}
   </div>`;
 
 function ecrireHtml(s) {
@@ -82,8 +82,8 @@ const PLACE = {
 function lotHtml(mode) {
   const vide = !comp.text.trim() && (mode === 'fichier' || mode === 'photo');
   return `
-    ${mode === 'fichier' ? depotHtml('aipdf', I.file, 'Choisir un fichier', 'PDF, CSV, TSV, texte, export Anki ou Quizlet') : ''}
-    ${mode === 'photo' ? depotHtml('aishot', I.image, 'Prendre ou choisir des photos', 'Plusieurs à la fois si tu veux') : ''}
+    ${mode === 'fichier' ? depotHtml('aipdf', I.file, 'Choisir un fichier', 'PDF · CSV · Anki · Quizlet') : ''}
+    ${mode === 'photo' ? depotHtml('aishot', I.image, 'Prendre ou choisir des photos', '') : ''}
     <div class="cr-lot" id="lot" ${vide ? 'hidden' : ''}>
       ${mode === 'fichier' || mode === 'photo' ? '<div class="cr-sous">À vérifier avant d’ajouter</div>' : ''}
       <div class="cr-ta"><textarea id="tx" placeholder="${PLACE[mode]}" aria-label="Pages à ajouter"
@@ -109,7 +109,7 @@ export function importView() {
   const t = view.id ? deck(view.id) : null;
   const s = subj(t ? t.subject : comp.subject);
   if (comp.edit >= 0) comp.mode = 'ecrire';
-  const mode = comp.mode || 'ecrire', m = MODES.find(x => x.id === mode);
+  const mode = comp.mode || 'ecrire';
   enAttente = null;
   $.innerHTML = `
     <div class="bar">
@@ -122,7 +122,6 @@ export function importView() {
         ${t ? '' : identiteHtml()}
         ${ongletsHtml(mode)}
         <section class="cr-panel" role="tabpanel">
-          <p class="cr-aide">${m.aide}</p>
           ${mode === 'ecrire' ? ecrireHtml(s) : lotHtml(mode)}
         </section>
       </div>

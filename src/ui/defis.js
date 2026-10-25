@@ -3,12 +3,11 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { shuffle } from '../file.js';
 import {
-  auth, duelRun, duels, setAnimate, setDuelRun, setView
+  auth, cercle, duelRun, duels, setAnimate, setDuelRun, setView
 } from '../data/etat.js';
-import { render } from './bibliotheque.js';
+import { go, render } from './bibliotheque.js';
 import { esc } from '../core/coeur-sync.js';
 import { duelEnd } from '../core/defis.js';
-import { groupView } from './ecran-groupe.js';
 import { beep, toast } from './import-cartes.js';
 import { closeMenu } from './menus-a.js';
 
@@ -54,7 +53,7 @@ export function duelPick(k) {
 
 export function duelView() {
   const r = duelRun;
-  if (!r) { setView({ name: 'group' }); return groupView(); }
+  if (!r) { const ret = cercle.retour || { name: 'commu' }; return go(ret.name, ret.id); }
   const c = r.cards[r.i], good = c[1];
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="duelquit" aria-label="Abandonner">${svg(I.x)}</button>

@@ -5,7 +5,7 @@ import {
   accOpen, accounts, adm, auth, blocks, compte, mods, myRole, ref,
   reportOn, reportWhy, school, setMenu, setReportOn, setReportWhy
 } from '../data/etat.js';
-import { initial } from './bilan-devoirs.js';
+import { avatar } from './jeton.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
   joursDici, refCls, refEtab, refGens
@@ -196,7 +196,7 @@ export function accountSheet(w) {
   const moi = a.id === auth.uid;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
-      <div class="mhd"><i class="av">${esc(initial(a.handle || a.name || a.email))}</i>
+      <div class="mhd">${avatar(a.id, a.name || a.handle || '')}
         <span class="mhx"><b>${esc(a.name || a.handle || a.email)}</b>
           <i>${esc(a.email)}${a.handle ? ' · @' + esc(a.handle) : ''}</i></span></div>
       <div class="msep"></div>
