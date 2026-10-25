@@ -168,13 +168,27 @@ l'air de marcher ».
     `ui/direct-ecran.js`** — passer par `direct-porte.js`.
     **Les jetons d'identité** : `jeton.js` dessine le visage de chacun, le
     même sur tous les écrans — `avatar(id, ident, taille)` (un rond : les
-    initiales ou la figure choisie ; `ident` = le pseudo s'il y en a un,
-    sinon le nom, pour qu'une personne ait les mêmes initiales partout),
-    `blason(classeId)` et `blasonClub(club)` (un carré arrondi et un
-    emblème — jamais un sigle tiré du nom), plus les grilles de choix.
+    initiales ou l'avatar dessiné, `.jt.vis` + `svg.visage` — jamais `.av`,
+    classe plus ancienne des pastilles d'initiales ; `ident` = le pseudo s'il
+    y en a un, sinon le nom, pour qu'une personne ait les mêmes initiales
+    partout), `blason(classeId)` et `blasonClub(club)` (un carré arrondi et
+    un emblème — jamais un sigle tiré du nom), `medailleHtml(place)` (une
+    médaille dessinée pour les trois premiers d'un classement), plus les
+    grilles de choix (`grilleTrait` : chaque valeur d'un trait dessinée sur
+    l'avatar en cours). **Plus un seul émoji dans l'app** (2026-10-25) : un
+    émoji change d'un téléphone à l'autre et ne se personnalise pas ; les
+    icônes viennent de `src/icones.js` (dont les 20 emblèmes, tracés de
+    Lucide, licence ISC), les visages de `src/avatar.js`. L'éditeur
+    (« Mon jeton », `cercle-feuilles.js`) : au hasard, initiales, puis un
+    onglet par trait et le fond (la couleur du jeton).
 
     Aucun fichier, `core/` ou `ui/`, ne dépasse 800 lignes (les plus gros :
-    `core/coeur-sync.js` 774, `onboarding.js` 770, `connexion.js` 753).
+    `core/coeur-sync.js` 789, `onboarding.js` 773, `revision.js` 733).
+    **Les textes du cadre** (conditions, confidentialité, mentions) sont
+    chargés à la demande par `legalView()` (`ui/connexion.js`, qui ne garde
+    que leurs titres, `LEGAL_TITRES`) depuis `ui/legal-textes.js` ; l'éditeur
+    et son contact, encore entre ⟦crochets⟧, vivent dans `src/editeur.js`
+    (sans dépendance), vérifiés dès le démarrage.
 
     Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
     a d'abord suivi les anciennes sections `/* ---------- nom ---------- */`
@@ -226,7 +240,8 @@ l'air de marcher ».
   - `src/sauvegarde.js` — export/import intégral de la bibliothèque (M04.T6) : format `folio-bibliotheque` v1, état d'apprentissage compris, sans `rev` ni marques d'écran ; restauré sous les mêmes identifiants sur le même compte, de nouveaux sur un autre (RLS) ; branché sur la feuille Sauvegarde (`backupData`/`backupRestore`, `src/core/reglages-corbeille.js`) — pur et testé (`test/export.test.js`)
   - `src/normaliser.js` — `norm()` (casse, espaces, apostrophes, ponctuation finale), sans aucune dépendance : lue par le noyau (`doublons.js`) et par les écrans (`ui/quiz.js` la réexporte)
   - `src/classe.js` — les règles d'une classe (2026-10-24) : forme d'un code (8 caractères, alphabet sans 0/O/1/I/L), lien `?rejoindre=`, texte de chaque statut d'inscription renvoyé par la base, état d'un élève, tris/recherche (sans accents), synthèses de classe et d'accueil, « à traiter », échéances sans décalage de fuseau, lecture d'une liste d'élèves collée (`lireListeEleves`, « NOM Prénom » ou « Prénom NOM »), nom propre (`nomPropre`), carte de connexion (`emailCarte`, `lienCarte`, `lireCarte`) — pur et testé (`test/classe.test.js`, 45 tests dont 4 fuseaux), employé par l'espace prof et « Mes classes ». Le sigle de classe et les teintes de classe d'avant sont partis le 2026-10-25 au profit des jetons (`src/jeton.js`)
-  - `src/jeton.js` — les jetons d'identité (2026-10-25) : 12 couleurs (chacune ≥ 4,5:1 avec du blanc, vérifié), 20 emblèmes (classes, clubs), 38 figures (émojis, pour les personnes), le hachage stable qui tire un jeton par défaut de l'identifiant, les initiales (première lettre du premier et du dernier mot, jamais un chiffre en tête) — pur et testé (`test/jeton.test.js`). Rien n'est inventé à partir du nom : « CPGE ECP1 » donnait « CE1 » avec l'ancien sigle
+  - `src/jeton.js` — les jetons d'identité (2026-10-25) : 12 couleurs (chacune ≥ 4,5:1 avec du blanc, vérifié), 20 emblèmes (classes, clubs), le hachage stable qui tire un jeton par défaut de l'identifiant, les initiales (première lettre du premier et du dernier mot, jamais un chiffre en tête) — pur et testé (`test/jeton.test.js`). Rien n'est inventé à partir du nom : « CPGE ECP1 » donnait « CE1 » avec l'ancien sigle. Les 38 figures en émojis sont parties le 2026-10-25 : une personne a un avatar (`jetonPersonne` rend `avatar`, via `avatarDeCle`)
+  - `src/avatar.js` — les avatars (2026-10-25) : un visage en SVG composé de sept traits (peau 6, coiffure 10, cheveux 8, yeux 5, bouche 5, accessoire 6, haut 8) sur la couleur du jeton. **Aucune migration** : il s'écrit dans `profiles.figure` déjà là, « av » + une lettre par trait (`ecrireAvatar`/`lireAvatar`, `^av[a-z]{7}$`, que `mon_jeton` et `visuels` acceptent tels quels) ; une ancienne figure (« renard ») donne l'avatar tiré de son nom, le même partout. Listes fermées, ni photo ni texte libre (des mineurs). Pur et testé (`test/avatar.test.js`)
   - `src/defi.js` — les règles d'un défi en direct : jeux (QCM, vrai ou faux, réponse écrite), durées, nombre de questions, fabrication des questions depuis un livre, code à 6 chiffres et lien `?defi=`, statuts de la base, phase et chrono (décalage d'horloge compensé), places et podium — pur et testé (`test/defi.test.js`)
   - `src/journal.js` — le journal de lecture (2026-10-25), deux questions jamais mélangées : **ce que tu as fait** se lit dans le journal des révisions, où chaque ligne garde son contexte du moment (matière, livre, écart) — supprimer, fusionner, scinder, renommer un livre ou changer sa matière ne réécrit jamais le passé ; **ce que tu sais** se lit sur les cartes d'aujourd'hui (`savoir` : âges, maîtrise, rappel estimé FSRS, échéances). Une matière se reconnaît à son NOM (`cleNom`, sans casse ni accents) : un identifiant disparu garde le nom qu'il avait, deux matières du même nom n'en font qu'une. `PALIERS` (écarts 1/3/14/90 j) est passé à la base, qui ne fait que compter ; `rassembler` réunit la réponse de `journal()` et les révisions locales sans double compte (`connus`) ; jours en chaînes « AAAA-MM-JJ » dans le fuseau de l'appareil. `etatCarte` (l'âge d'une carte) y vit ; `cstate` de `ui/carte-media.js` en est l'équivalent historique. Pur et testé (`test/journal.test.js`, dont le scénario « 3 h de droit → changement de matière → fusion → suppression → recréation depuis un partage en anglais »)
   - `src/matieres.js` — une matière qui arrive d'un autre compte (devoir, lien, envoi à un ami) : retrouvée par son nom, créée sinon (identifiant libre, couleur la moins employée) ; sans nom, un identifiant n'est gardé que s'il existe ici (lien de sauvegarde du même compte). Pur et testé (`test/matieres.test.js`)

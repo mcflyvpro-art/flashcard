@@ -6,13 +6,16 @@
    L'ancien sigle de classe abrégeait le nom (« CPGE ECP1 » donnait « CE1 »,
    qu'on lit comme une classe de primaire) : plus aucun texte n'est inventé.
    Une classe ou un club montre un emblème (une icône), une personne ses
-   initiales ou la figure qu'elle a choisie ; le nom complet est toujours
+   initiales ou l'avatar qu'elle s'est composé ; le nom complet est toujours
    écrit à côté. Chacun choisit dans des listes fermées — jamais de photo
    (des élèves mineurs, rien à modérer), jamais de texte libre — et, tant
    qu'il n'a rien choisi, son identifiant tire un jeton stable.
 
    La base ne connaît que des clés (`^[a-z]{2,16}$`) et un rang de couleur
-   (0–11) : c'est ici qu'ils prennent un sens. */
+   (0–11) : c'est ici qu'ils prennent un sens. Depuis le 2026-10-25, la
+   figure d'une personne est un avatar dessiné (src/avatar.js) et non plus un
+   émoji ; les anciennes clés donnent un avatar tiré de leur nom. */
+import { avatarDeCle } from './avatar.js';
 
 // Douze couleurs sombres et sourdes, distinctes deux à deux : chacune garde un
 // contraste d'au moins 4,5:1 avec du blanc (WCAG AA), vérifié par les tests.
@@ -25,18 +28,6 @@ export const EMBLEMES = {
   etincelle: 'spark', ampoule: 'bulb', fusee: 'rocket', couronne: 'crown', eclair: 'bolt',
   etoile: 'star', chouette: 'owl', globe: 'globe', fiole: 'flask', musique: 'music',
   palette: 'palette', feuille: 'leaf', coeur: 'heart', atome: 'atom', sigma: 'sigma'
-};
-
-// Figure d'une personne, à la place de ses initiales. Des émojis courants
-// (Unicode 11 au plus) : ils s'affichent en couleur sur tous les téléphones
-// et ordinateurs d'aujourd'hui, sans une image à télécharger.
-export const FIGURES = {
-  renard: '🦊', chat: '🐱', chien: '🐶', panda: '🐼', koala: '🐨', lion: '🦁', tigre: '🐯',
-  ours: '🐻', lapin: '🐰', hibou: '🦉', pingouin: '🐧', grenouille: '🐸', singe: '🐵',
-  licorne: '🦄', dragon: '🐲', tortue: '🐢', dauphin: '🐬', pieuvre: '🐙', abeille: '🐝',
-  papillon: '🦋', fusee: '🚀', etoile: '🌟', eclair: '⚡', feu: '🔥', arcenciel: '🌈',
-  fleur: '🌸', cactus: '🌵', ballon: '⚽', guitare: '🎸', manette: '🎮', palette: '🎨',
-  couronne: '👑', diamant: '💎', lune: '🌙', robot: '🤖', alien: '👽', fantome: '👻', pizza: '🍕'
 };
 
 /* Le même nombre pour le même identifiant, sur tous les appareils : c'est
@@ -56,7 +47,8 @@ export const couleurDe = (id, t) => COULEURS[rangCouleur(id, t)];
 export const teinte = t => COULEURS[rangValide(t) ? +t : 0];
 
 export const emblemeValide = k => Object.prototype.hasOwnProperty.call(EMBLEMES, k);
-export const figureValide = k => Object.prototype.hasOwnProperty.call(FIGURES, k);
+// une clé de figure telle que la base l'accepte (un avatar, ou une figure d'avant)
+export const figureValide = k => typeof k === 'string' && /^[a-z]{2,16}$/.test(k);
 export const embleme = k => (emblemeValide(k) ? k : 'livre');
 
 // emblème choisi, sinon celui que tire l'identifiant (un autre nombre que la
@@ -81,10 +73,11 @@ export function initiales(nom) {
 }
 
 /* Ce qu'il faut pour dessiner le jeton d'une personne : `v` est ce qu'elle a
-   choisi ({ figure, teinte }), absent tant qu'on ne le sait pas. */
+   choisi ({ figure, teinte }), absent tant qu'on ne le sait pas. Sa figure
+   est un avatar (src/avatar.js) ; sans figure, ses initiales. */
 export function jetonPersonne(id, nom, v) {
   const f = v && figureValide(v.figure) ? v.figure : null;
-  return { couleur: couleurDe(id, v && v.teinte), figure: f ? FIGURES[f] : null, texte: initiales(nom) };
+  return { couleur: couleurDe(id, v && v.teinte), avatar: avatarDeCle(f), texte: initiales(nom) };
 }
 
 // … et celui d'une classe ou d'un club ({ embleme, teinte })

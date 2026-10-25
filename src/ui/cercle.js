@@ -11,7 +11,7 @@ import { esc, shortWho } from '../core/coeur-sync.js';
 import { clubsPull, profilPull, sallesPull } from '../core/cercle.js';
 import { toast } from './import-cartes.js';
 import { classement, medaille } from '../club.js';
-import { avatar, blasonClub, iconeEmbleme } from './jeton.js';
+import { avatar, blasonClub, iconeEmbleme, medailleHtml } from './jeton.js';
 import { hlp } from './connexion.js';
 import { placeTexte } from '../defi.js';
 import { myScore, rankOf } from './defis.js';
@@ -111,7 +111,7 @@ export function defiLigne(du, avecOu = true) {
     <i class="cc-defi-i">${svg(I.flame)}</i>
     <span class="cc-defi-t"><b>${esc(du.name)}</b>${infos([['user', shortWho(du.who) || 'Un ami'], avecOu ? ['users', ouDefi(du)] : null,
       ['card', du.total, 'Questions'], r.length ? ['play', r.length, 'Joueurs'] : null])}</span>
-    ${m ? `<em class="cc-score"><b>${m.score}/${du.total}</b>${medaille(pos) || placeTexte(pos)}</em>`
+    ${m ? `<em class="cc-score"><b>${m.score}/${du.total}</b>${medaille(pos) ? medailleHtml(pos) : placeTexte(pos)}</em>`
       : `<em class="cc-ajouer">${svg(I.play)}Jouer</em>`}</button>`;
 }
 
@@ -159,7 +159,7 @@ function clubsHtml() {
 export const ident = (pseudo, nom) => pseudo || nom || '';
 
 export function rangLigne(r, nom, sous) {
-  return `<button class="cc-rk${r.moi ? ' moi' : ''}" data-lecteur="${esc(r.uid || r.user_id)}"><span class="cc-pl">${medaille(r.place) || r.place}</span>
+  return `<button class="cc-rk${r.moi ? ' moi' : ''}" data-lecteur="${esc(r.uid || r.user_id)}"><span class="cc-pl">${medailleHtml(r.place)}</span>
     ${avatar(r.uid || r.user_id, ident(r.handle || r.pseudo, nom), 'sm')}
     <span class="cc-rk-t"><b>${esc(nom)}${r.moi ? ' <small>toi</small>' : ''}</b>
       ${sous ? (Array.isArray(sous) ? infos(sous) : `<i>${esc(sous)}</i>`) : ''}<span class="cc-bar"><em style="width:${r.part}%"></em></span></span>

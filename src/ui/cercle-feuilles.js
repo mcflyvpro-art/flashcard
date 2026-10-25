@@ -8,10 +8,11 @@ import {
   clubsPull, creerClub, exclureMembre, modifierClub, nouveauCodeClub, quitterClub, rejoindreClub, rejoindreSalle
 } from '../core/cercle.js';
 import { codeClubDepuisTexte, codeClubLisible, deviseValide, lienClub, nomClubValide } from '../club.js';
-import { COULEURS, embleme, rangCouleur, teinte } from '../jeton.js';
+import { COULEURS, couleurDe, embleme, rangCouleur, teinte } from '../jeton.js';
+import { avatarDe, avatarDeCle, ecrireAvatar } from '../avatar.js';
 import { choisirMonJeton } from '../core/visuels.js';
 import { messageSalle, pinComplet, pinDepuisTexte, pinLisible } from '../defi.js';
-import { avatar, blasonClub, grilleCouleurs, grilleEmblemes, grilleFigures, iconeEmbleme } from './jeton.js';
+import { avatar, blasonClub, grilleCouleurs, grilleEmblemes, grilleTrait, iconeEmbleme } from './jeton.js';
 import { isPupil } from './classement.js';
 import { clubOuvert, clubPull } from './club.js';
 import { ouvrirProfil } from './cercle.js';
@@ -151,19 +152,33 @@ function feuilleMembre() {
 }
 
 /* ---------- mon jeton ----------
-   Ma figure (ou mes initiales) et ma couleur, chacune d'un appui : le jeton
-   change aussitôt partout à l'écran, la base suit. Le pseudo s'édite à part
-   (un élève de classe n'en a pas : son nom est celui que tient son professeur). */
+   Mon avatar (ou mes initiales) et ma couleur : un visage dessiné qu'on
+   compose trait par trait (src/avatar.js), chaque choix montré sur le visage
+   lui-même, d'un appui. Le jeton change aussitôt partout à l'écran, la base
+   suit. Le pseudo s'édite à part (un élève de classe n'en a pas : son nom est
+   celui que tient son professeur). */
 const monNom = () => (compte && compte.nom) || (me && (me.handle || me.name)) || '?';
 const monChoix = () => visuels['p:' + auth.uid] || {};
+const maTeinte = () => { const v = monChoix(); return v.teinte != null ? v.teinte : rangCouleur(auth.uid); };
+// l'avatar qu'on modifie : le sien, ou, la première fois, celui que tire son identifiant
+const monAvatar = () => avatarDeCle(monChoix().cle) || avatarDe(auth.uid);
+const ONGLETS_AV = { coiffure: 'Coiffure', cheveux: 'Cheveux', peau: 'Peau', yeux: 'Yeux', bouche: 'Bouche',
+  accessoire: 'Accessoire', haut: 'Haut', fond: 'Fond' };
 
 function feuilleMoi() {
-  const v = monChoix(), eleve = isPupil();
+  const v = monChoix(), eleve = isPupil(), trait = cercle.trait || 'coiffure';
   return coque(`<div class="jt-apercu">${avatar(auth.uid, monIdent(), 'xl')}
       ${eleve ? `<b>${esc(monNom())}</b>` : `<button class="jt-pseudo" data-act="handle">${
         me && me.handle ? '@' + esc(me.handle) : 'Choisis ton pseudo'}${svg(I.pen)}</button>`}</div>
-    <div class="cf-pick">${grilleFigures(v.cle || null, 'data-cc="fig" data-id')}</div>
-    <div class="cf-pick">${grilleCouleurs(v.teinte != null ? v.teinte : rangCouleur(auth.uid), 'data-cc="couleur" data-id')}</div>`);
+    <div class="av-barre">
+      <button class="av-b" data-cc="av-hasard">${svg(I.shuffle)}Au hasard</button>
+      <button class="av-b${v.cle ? '' : ' on'}" data-cc="av-init" aria-pressed="${!v.cle}"><b>Aa</b>Initiales</button>
+    </div>
+    <div class="av-traits" role="tablist">${Object.entries(ONGLETS_AV).map(([k, n]) =>
+      `<button role="tab" class="${trait === k ? 'on' : ''}" aria-selected="${trait === k}" data-cc="av-trait" data-id="${k}">${n}</button>`).join('')}</div>
+    <div class="cf-pick">${trait === 'fond'
+      ? grilleCouleurs(maTeinte(), 'data-cc="couleur" data-id')
+      : grilleTrait(monAvatar(), trait, couleurDe(auth.uid, maTeinte()), 'data-cc="av" data-id', !!v.cle)}</div>`);
 }
 
 const FEUILLES = { moi: feuilleMoi, pin: feuillePin, 'club-form': feuilleForm, 'club-code': feuilleCode, 'club-inviter': feuilleInviter,
@@ -275,7 +290,14 @@ const ACTIONS = {
     const ap = document.getElementById('cfap'); if (ap) ap.style.setProperty('--k', teinte(i));
   },
   moi: () => ouvrir('moi'),
-  fig: k => { const v = monChoix(); choisirMonJeton(k || null, v.teinte != null ? v.teinte : null); peindre(); },
+  'av-trait': k => { cercle.trait = k; peindre(); },
+  av: id => {
+    const [trait, k] = String(id).split(':'), a = monAvatar();
+    a[trait] = +k;
+    choisirMonJeton(ecrireAvatar(a), maTeinte()); peindre();
+  },
+  'av-hasard': () => { choisirMonJeton(ecrireAvatar(avatarDe(Math.random())), maTeinte()); peindre(); },
+  'av-init': () => { choisirMonJeton(null, maTeinte()); peindre(); },
   couleur: i => { choisirMonJeton(monChoix().cle || null, +i); peindre(); },
   'form-ok': () => validerForm()
 };

@@ -100,7 +100,8 @@ export const cercleNeuf = () => ({
   retour: null,                // où revenir après un défi à son rythme : { name, id }
   profils: {},                 // profil_lecteur(), par personne (2026-10-25)
   profilClub: null,            // le club d'où l'on a ouvert un profil (gestes du chef)
-  profilRetour: null           // où ramène le « Retour » d'un profil : { name, id }
+  profilRetour: null,          // où ramène le « Retour » d'un profil : { name, id }
+  trait: 'coiffure'            // l'onglet ouvert de l'éditeur d'avatar (« Mon jeton »)
 });
 export let cercle = cercleNeuf();
 

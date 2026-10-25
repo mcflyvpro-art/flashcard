@@ -19,23 +19,21 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-25 · Liens sur le domaine unique www.folioflashcard.online
-          (src/adresse.js), manifeste qui prend les liens, GitHub Pages réduit à une
-          redirection, une seule porte pour les liens entrants (prête pour Capacitor,
-          docs/CAPACITOR.md), carte de passage iPhone, hook de démarrage des sessions.
-          Et : animations qui ne se rejouent plus, partout (élève, prof, téléphone,
-          PC) : seule une vraie arrivée s'anime, une fois (ui/mouvement.js : .fade à un
-          changement d'écran, .neuf pour un élément à clé data-k qui apparaît) ; une
-          feuille redessinée (jour d'un devoir, case cochée) garde son défilement, son
-          champ actif et son point d'entrée, glisse à sa nouvelle hauteur, et repart en
-          glissant à la fermeture ; barre du bas, glissière, barres de progression, toasts
-          et chrono ne repartent plus de zéro ; double appui sur un bouton de feuille sans
-          effet ; fiche d'un devoir de nouveau en tiroir sur PC. Entrées raccourcies
-          (0,2-0,4 s). Preuves : e2e/animations.e2e.js (3 parcours, échouent sur l'ancien
-          code), 28 parcours e2e verts (le défi en direct a échoué une fois : ses joueurs
-          répondent au hasard, 1 chance sur 32 de tout rater — à rendre déterministe),
-          324 tests. BUDGET JS AU DÉMARRAGE : 120,0 Ko / 120 après fusion de main — plus
-          aucune marge, la prochaine ligne de code au démarrage le fera échouer.
+DERNIER   2026-10-25 · Réglé comme Anki, sans curseur : rétention 90 %, journée à 4 h,
+          20 neuves par jour et par livre (« Lire +20 »), équilibreur de charge d'Anki
+          (fsrs.js equilibrer), entretien automatique (réparation + doublons, plus de
+          bouton) ; réglages du moteur et « Vérifier ma bibliothèque » retirés. Courrier
+          refait (boîte + page d'une lettre, ui/courrier.js), profil d'un lecteur
+          (profil_lecteur, ui/profil.js), page d'une classe pour l'élève (eleve_classe,
+          ui/classe-eleve.js), livre sur PC : seule la liste défile, recherche au
+          téléphone sans saut, heures du journal corrigées. Plus un seul émoji : avatars
+          dessinés et personnalisables (src/avatar.js, sans migration), médailles et
+          emblèmes en icônes Lucide. Liens sur le domaine unique (src/adresse.js), une
+          porte pour les liens entrants (prête pour Capacitor), carte de passage iPhone.
+          Textes juridiques chargés à la demande : démarrage 115,8 Ko / 120 (il était à
+          120,0). Preuves : 350 tests, e2e verts (courrier, profil, classe-eleve,
+          temoin…), supabase/tests/profil.sql et classe_eleve.sql verts. Le défi en
+          direct échoue parfois (joueurs au hasard) — à rendre déterministe.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

@@ -4,7 +4,8 @@ import { I, svg } from '../icones.js';
 import { auth, cercle, duels, view } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
 import { clubsPull, membresPull, sallesPull, termineesPull } from '../core/cercle.js';
-import { classement, codeClubLisible, medaille } from '../club.js';
+import { classement, codeClubLisible } from '../club.js';
+import { medailleHtml } from './jeton.js';
 import { teinte } from '../jeton.js';
 import { hlp } from './connexion.js';
 import { JEUX, placeTexte } from '../defi.js';
@@ -57,7 +58,7 @@ function defisPane(g) {
       <div class="cl-partie"><i class="cc-defi-i">${svg(I.podium)}</i>
         <span class="cl-partie-t"><b>${esc(p.titre)}</b>${infos([['bolt', JEUX[p.jeu] ? JEUX[p.jeu].nom : ''], ['play', p.joueurs, 'Joueurs'],
           ['clock', p.fini_at ? timeAgo(p.fini_at) : '']])}
-          <span class="cl-podium">${(p.podium || []).map((x, i) => `<span>${medaille(i + 1)} ${esc(x.nom)} <small>${x.score}</small></span>`).join('')}</span></span>
+          <span class="cl-podium">${(p.podium || []).map((x, i) => `<span>${medailleHtml(i + 1)} ${esc(x.nom)} <small>${x.score}</small></span>`).join('')}</span></span>
         ${p.moi ? `<em class="cc-score"><b>${placeTexte(p.moi.place)}</b>${p.moi.score} pts</em>` : ''}</div>`).join('')}</div>` : ''}
   </section>`;
 }

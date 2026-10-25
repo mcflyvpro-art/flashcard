@@ -3,10 +3,12 @@ import { I, svg } from '../icones.js';
 import { visuels } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
 import { voir } from '../core/visuels.js';
-import { COULEURS, EMBLEMES, FIGURES, embleme, jetonGroupe, jetonPersonne } from '../jeton.js';
+import { COULEURS, EMBLEMES, embleme, jetonGroupe, jetonPersonne } from '../jeton.js';
+import { TRAITS, avatarSvg } from '../avatar.js';
+import { medaille } from '../club.js';
 
 /* ══════════ les jetons : un seul dessin, partout ══════════
-   Une personne : un rond, ses initiales ou sa figure. Une classe ou un
+   Une personne : un rond, ses initiales ou son avatar (src/avatar.js). Une classe ou un
    club : un carré arrondi et son emblème — la forme dit d'un coup d'œil
    s'il s'agit de quelqu'un ou d'un groupe. Même fonction sur tous les
    écrans (cercle, club, espace prof, « Mes classes », partie en direct,
@@ -17,8 +19,8 @@ const TAILLE = /^(xs|sm|lg|xl)$/;
 
 function personneHtml(id, nom, v, taille) {
   const j = jetonPersonne(id, nom, v && { figure: v.cle, teinte: v.teinte });
-  return `<i class="jt${taille ? ' ' + taille : ''}${j.figure ? ' fig' : ''}" data-jt="p:${esc(id || '')}"
-    data-nom="${esc(nom || '')}" style="--k:${j.couleur}" aria-hidden="true">${j.figure || esc(j.texte)}</i>`;
+  return `<i class="jt${taille ? ' ' + taille : ''}${j.avatar ? ' vis' : ''}" data-jt="p:${esc(id || '')}"
+    data-nom="${esc(nom || '')}" style="--k:${j.couleur}" aria-hidden="true">${j.avatar ? avatarSvg(j.avatar) : esc(j.texte)}</i>`;
 }
 
 function groupeHtml(id, v, taille, k) {
@@ -57,10 +59,24 @@ export function repeindreJetons(cles) {
   }
 }
 
-/* ---------- les grilles de choix (feuilles « Mon jeton », emblème d'une classe) ---------- */
-export const grilleFigures = (sel, attr) => `<div class="jt-grille">
-  <button class="jt-choix aa${sel ? '' : ' on'}" ${attr}="" aria-label="Mes initiales">Aa</button>
-  ${Object.entries(FIGURES).map(([k, f]) => `<button class="jt-choix${sel === k ? ' on' : ''}" ${attr}="${k}" aria-label="${k}">${f}</button>`).join('')}</div>`;
+/* Une médaille dessinée pour les trois premiers d'un classement (or, argent,
+   bronze), le rang en chiffre sinon — plus d'émoji, qui changeait d'un
+   téléphone à l'autre. */
+export const medailleHtml = p => (medaille(p)
+  ? `<span class="med m${p}" role="img" aria-label="${p === 1 ? '1er' : p + 'e'}">${svg(I.medaille)}<b>${p}</b></span>` : String(p));
+
+/* ---------- l'avatar : un aperçu par choix ----------
+   Chaque trait se choisit en voyant le visage qu'il donnerait : la grille
+   d'un trait dessine l'avatar en cours avec chacune des valeurs. */
+export function grilleTrait(a, trait, teinteK, attr, choisi = true) {
+  return `<div class="jt-grille av-grille">${TRAITS[trait].map((nom, k) => {
+    const on = choisi && a[trait] === k;
+    return `<button class="jt-choix av-choix${on ? ' on' : ''}" ${attr}="${trait}:${k}" aria-label="${esc(nom)}" aria-pressed="${on}">
+      <i class="jt vis" style="--k:${teinteK}">${avatarSvg({ ...a, [trait]: k })}</i></button>`;
+  }).join('')}</div>`;
+}
+
+/* ---------- les grilles de choix (emblème d'une classe ou d'un club, couleurs) ---------- */
 
 export const grilleEmblemes = (sel, attr) => `<div class="jt-grille">${Object.keys(EMBLEMES).map(k =>
   `<button class="jt-choix emb${sel === k ? ' on' : ''}" ${attr}="${k}" aria-label="${k}">${iconeEmbleme(k)}</button>`).join('')}</div>`;

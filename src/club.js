@@ -44,7 +44,8 @@ export function classement(rows, cle = 'n', moi = null) {
   });
 }
 
-export const medaille = p => ['', '🥇', '🥈', '🥉'][p] || '';
+// une médaille pour les trois premiers (1 or, 2 argent, 3 bronze), 0 sinon : l'écran la dessine
+export const medaille = p => (p >= 1 && p <= 3 ? p : 0);
 
 export const pourcent = (ok, n) => n ? Math.round(ok / n * 100) : 0;
 

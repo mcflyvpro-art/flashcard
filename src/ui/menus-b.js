@@ -6,7 +6,7 @@ import {
   sel, sendMsg, sendTo, setMenu, setSendMsg, setSplitSize, splitSize, study, vers, view
 } from '../data/etat.js';
 import { SORTS } from './bibliotheque.js';
-import { avatar } from './jeton.js';
+import { avatar, medailleHtml } from './jeton.js';
 import {
   LANGS, memLine, mimg, nextIn, plain
 } from './carte-media.js';
@@ -311,7 +311,6 @@ export function paintMenuDuelitem(w) {
   const du = (duels.list || []).find(x => x.id === duels.open);
     if (!du) { setMenu(null); return; }
     const r = rankOf(du.id), me = myScore(du.id), mine = du.owner === auth.uid;
-    const MED = ['🥇', '🥈', '🥉'];
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.flame)}
@@ -320,7 +319,7 @@ export function paintMenuDuelitem(w) {
               · ${timeAgo(du.created_at)}</i></span>
         </div>
         <div class="mscroll">${r.length ? r.map((sc, i) => `<div class="bdr ${sc.user_id === auth.uid ? 'me' : ''}">
-            <span class="bdp">${MED[i] || (i + 1)}</span>
+            <span class="bdp">${medailleHtml(i + 1)}</span>
             <span class="bdn"><b>${esc(shortWho(sc.who) || 'Compte')}</b>
               <i>${sc.score}/${du.total} · ${Math.round(sc.ms / 1000)} s</i></span></div>`).join('')
           : '<div class="note">Personne n’a encore joué.</div>'}</div>

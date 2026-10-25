@@ -29,8 +29,9 @@ describe('un classement', () => {
     expect(l.map(r => r.part)).toEqual([100, 33, 33, 0]);
   });
   it('médailles, pourcentages et rang en toutes lettres', () => {
-    expect(medaille(1)).toBe('🥇');
-    expect(medaille(4)).toBe('');
+    expect([1, 2, 3].map(medaille)).toEqual([1, 2, 3]);         // or, argent, bronze : l'écran la dessine
+    expect(medaille(4)).toBe(0);
+    expect(medaille(0)).toBe(0);
     expect(pourcent(3, 4)).toBe(75);
     expect(pourcent(0, 0)).toBe(0);
     expect(rangTexte(1, 12)).toBe('1er sur 12');

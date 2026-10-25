@@ -1594,8 +1594,15 @@ body.touring .toast{display:none}
 .jt{--s:40px;flex:none;width:var(--s);height:var(--s);border-radius:50%;display:grid;place-items:center;
   background:var(--k,var(--ink2));color:#fff;font-style:normal;font-weight:700;font-size:calc(var(--s) * .38);
   line-height:1;letter-spacing:0;user-select:none;-webkit-user-select:none;overflow:hidden}
-.jt.fig{font-size:calc(var(--s) * .58);font-weight:400}
 .jt.groupe{border-radius:calc(var(--s) * .3)}
+.jt.vis{background:color-mix(in srgb,var(--k) 30%,#fff)}
+.jt.vis svg.visage{width:100%;height:100%;display:block;stroke:none;fill:none}
+/* les médailles des trois premiers (ui/jeton.js, medailleHtml) */
+.med{position:relative;display:inline-block;width:22px;height:24px;flex:none;vertical-align:middle;color:var(--mc)}
+.med svg{width:100%;height:100%;display:block}
+.med b{position:absolute;left:0;right:0;top:9.5px;text-align:center;font-size:9.5px;font-weight:800;line-height:1;color:#fff}
+.med.m1{--mc:#D8A42C} .med.m2{--mc:#A3ACB6} .med.m3{--mc:#B97A47}
+
 .jt.groupe svg{width:56%;height:56%;color:#fff;stroke-width:1.9}
 .jt.xs{--s:24px} .jt.sm{--s:30px} .jt.lg{--s:54px} .jt.xl{--s:84px}
 .jt.vide{background:var(--surf);color:var(--ink2)}
@@ -1848,6 +1855,21 @@ body.touring .toast{display:none}
 .cf-champs input{height:46px;padding:0 14px;border-radius:12px;background:var(--bg);box-shadow:var(--edge);font-size:15.5px}
 .cf-champs input:focus{box-shadow:var(--edge),var(--ring)}
 .cf-pick{margin:0 16px 16px}
+/* l'éditeur d'avatar (feuille « Mon jeton ») : chaque choix dessiné sur son visage */
+.av-barre{display:flex;justify-content:center;gap:8px;padding:0 16px 12px}
+.av-b{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:18px;background:var(--surf);
+  font-size:13.5px;font-weight:650;color:var(--ink2)}
+.av-b svg{width:16px;height:16px}
+.av-b b{font-weight:800}
+.av-b.on{background:var(--ink);color:#fff}
+.av-traits{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 16px 12px;-webkit-overflow-scrolling:touch}
+.av-traits::-webkit-scrollbar{display:none}
+.av-traits button{flex:none;height:34px;padding:0 13px;border-radius:17px;background:var(--surf);font-size:13.5px;font-weight:650;color:var(--ink2)}
+.av-traits button.on{background:var(--ink);color:#fff}
+.av-grille{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:10px}
+.av-choix{padding:5px;border-radius:50%;background:none}
+.av-choix .jt{--s:100%;width:100%;height:auto;aspect-ratio:1}
+.av-choix.on{background:none;transform:none;box-shadow:0 0 0 3px var(--card),0 0 0 5px var(--ink)}
 .jt-apercu{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 16px 18px}
 .jt-apercu b{font-size:17px;font-weight:650}
 .jt-pseudo{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:18px;background:var(--surf);

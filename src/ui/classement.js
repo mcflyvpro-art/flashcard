@@ -178,7 +178,7 @@ export function adminView() {
                    <span class="c2">Effectifs</span><span class="c3">Comptes venus</span>
                    <span class="c4">Usage réel</span><span class="c5">Coût IA</span></div>
                  ${o.map(ligneOrg).join('')}</div>`}
-           <div class="note" style="padding:6px 0 0">⚠ Le plafond d’IA est encore global à tous
+           <div class="note" style="padding:6px 0 0">${svg(I.warn)} Le plafond d’IA est encore global à tous
              les comptes (AI_BUDGET_USD), et non par établissement : un seul lycée actif l’épuise
              et la fonctionnalité s’éteint pour tout le monde. À remplacer avant la première vente.</div>`
          : `<div class="note" style="padding:0 0 12px">L’éditeur gère des accès. Il ne voit ni les

@@ -121,7 +121,7 @@ test('défi en direct : un hôte, deux joueurs, un code, un podium', async ({ pa
   expect(store.ce.reponses).toHaveLength(10);                      // 5 questions × 2 joueurs, une réponse chacun
 });
 
-test('mon jeton : une figure et une couleur, le même visage chez un ami', async ({ page, browser }) => {
+test('mon jeton : un avatar et une couleur, le même visage chez un ami', async ({ page, browser }) => {
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
@@ -135,18 +135,24 @@ test('mon jeton : une figure et une couleur, le même visage chez un ami', async
   await versCercle(page);
   await expect(page.locator('.cc-moi .jt')).toHaveText('L');          // par défaut : ses initiales
   await page.locator('.cc-moi').click();
-  await page.locator('[data-cc="fig"][data-id="renard"]').click();
+  // un avatar composé trait par trait (2026-10-25 : plus d'émoji) : une coiffure bouclée, puis le fond
+  await page.locator('[data-cc="av-trait"][data-id="coiffure"]').click();
+  await page.locator('[data-cc="av"][data-id="coiffure:3"]').click();
+  await page.locator('[data-cc="av-trait"][data-id="fond"]').click();
   await page.locator('[data-cc="couleur"][data-id="3"]').click();
-  await expect(page.locator('.jt-apercu .jt')).toHaveText('🦊');
-  await expect(page.locator('.cc-moi .jt')).toHaveText('🦊');         // sur la page derrière, sans la redessiner
+  await expect(page.locator('.jt-apercu .jt svg.visage')).toBeVisible();
+  await expect(page.locator('.cc-moi .jt svg.visage')).toBeVisible();     // sur la page derrière, sans la redessiner
   await page.keyboard.press('Escape');
-  await expect.poll(() => (store.jetons || {})['p:' + store.users[0].id]).toEqual({ cle: 'renard', teinte: 3 });
+  await expect.poll(() => ((store.jetons || {})['p:' + store.users[0].id] || {}).teinte).toBe(3);
+  const cle = store.jetons['p:' + store.users[0].id].cle;
+  expect(cle).toMatch(/^av[a-z]{7}$/);
+  expect(cle[3]).toBe('d');                                          // la coiffure n° 3 : bouclée
 
   // chez Tom : la même figure, la même couleur, dans le classement et les amis
   const tom = await telephone(browser, store);
   await connecter(tom, 'tom@exemple.fr').catch(() => {});
   await versCercle(tom);
   const chezTom = tom.locator(`.cc-rank [data-jt="p:${store.users[0].id}"]`);
-  await expect(chezTom).toHaveText('🦊', { timeout: 10000 });
+  await expect(chezTom.locator('svg.visage')).toBeVisible({ timeout: 10000 });
   await expect(chezTom).toHaveAttribute('style', /#A8483C/);
 });

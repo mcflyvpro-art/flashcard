@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  COULEURS, EMBLEMES, FIGURES, contraste, couleurDe, embleme, emblemeDe, emblemeValide, figureValide,
+  COULEURS, EMBLEMES, contraste, couleurDe, embleme, emblemeDe, emblemeValide, figureValide,
   hachage, initiales, jetonGroupe, jetonPersonne, rangCouleur, teinte
 } from '../src/jeton.js';
 import { I } from '../src/icones.js';
@@ -16,17 +16,17 @@ describe('jetons : les listes fermées', () => {
   });
 
   it('chaque clé passe la contrainte de la base et chaque emblème a son icône', () => {
-    for (const k of [...Object.keys(EMBLEMES), ...Object.keys(FIGURES)]) expect(k).toMatch(/^[a-z]{2,16}$/);
+    for (const k of Object.keys(EMBLEMES)) expect(k).toMatch(/^[a-z]{2,16}$/);
     for (const icone of Object.values(EMBLEMES)) expect(I[icone]).toBeTruthy();
-    expect(new Set(Object.values(FIGURES)).size).toBe(Object.keys(FIGURES).length);
   });
 
   it('refuse toute clé inconnue, même héritée', () => {
     expect(emblemeValide('livre')).toBe(true);
     expect(emblemeValide('toString')).toBe(false);
-    expect(figureValide('renard')).toBe(true);
-    expect(figureValide('constructor')).toBe(false);
+    expect(figureValide('avbcaedab')).toBe(true);           // un avatar
+    expect(figureValide('renard')).toBe(true);              // une figure d'avant les avatars
     expect(figureValide('<img>')).toBe(false);
+    expect(figureValide('Pas Une Clé')).toBe(false);
     expect(embleme('licorne')).toBe('livre');
   });
 });
@@ -82,11 +82,14 @@ describe('jetons : des initiales qui ne trompent pas', () => {
 });
 
 describe('jetons : ce qu’on dessine', () => {
-  it('une personne : sa figure si elle en a choisi une, sinon ses initiales', () => {
-    expect(jetonPersonne('u1', 'Léa Martin')).toEqual({ couleur: couleurDe('u1'), figure: null, texte: 'LM' });
-    expect(jetonPersonne('u1', 'Léa Martin', { figure: 'renard', teinte: 2 }))
-      .toEqual({ couleur: COULEURS[2], figure: '🦊', texte: 'LM' });
-    expect(jetonPersonne('u1', 'Léa', { figure: 'piège', teinte: 99 }).figure).toBeNull();
+  it('une personne : son avatar si elle en a composé un, sinon ses initiales', () => {
+    expect(jetonPersonne('u1', 'Léa Martin')).toEqual({ couleur: couleurDe('u1'), avatar: null, texte: 'LM' });
+    const j = jetonPersonne('u1', 'Léa Martin', { figure: 'avbcaedab', teinte: 2 });
+    expect(j.couleur).toBe(COULEURS[2]);
+    expect(j.avatar).toEqual({ peau: 1, coiffure: 2, cheveux: 0, yeux: 4, bouche: 3, accessoire: 0, haut: 1 });
+    // une figure d'avant les avatars (un émoji) devient un avatar tiré de son nom, le même partout
+    expect(jetonPersonne('u1', 'Léa', { figure: 'renard' }).avatar).toEqual(jetonPersonne('u9', 'Zoé', { figure: 'renard' }).avatar);
+    expect(jetonPersonne('u1', 'Léa', { figure: 'piège', teinte: 99 }).avatar).toBeNull();
   });
 
   it('une classe ou un club : un emblème, jamais un sigle tiré du nom', () => {
