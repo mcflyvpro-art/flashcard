@@ -701,11 +701,20 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   gap:0;padding:0 6px 40px}
 .login .logo{width:78px;height:78px;border-radius:22px;box-shadow:var(--s2)}
 .login .lt{margin:16px 0 30px;font-weight:800;font-size:27px;letter-spacing:-.9px}
+.passage{width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px 12px;
+  margin:0 0 18px;padding:14px 14px 12px 16px;background:var(--card);box-shadow:var(--edge);border-radius:14px}
+.passage > svg{width:22px;height:22px;color:var(--ink2)}
+.passage b{font-size:24px;font-weight:750;letter-spacing:1.5px;font-variant-numeric:tabular-nums}
+.passage button{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;
+  background:var(--bg2);font-weight:650;font-size:14px}
+.passage button svg{width:16px;height:16px}
+.passage i{grid-column:1 / -1;font-style:normal;font-size:12.5px;font-weight:600;color:var(--soft)}
 .lf{width:100%;display:flex;flex-direction:column;gap:10px}
 /* l'écran de connexion s'anime à l'arrivée, pas quand on passe de
    « Se connecter » à « Créer un compte » */
 .fade .login .logo{animation:anneau .4s var(--e) both}
 .fade .login .lt{animation:rise .3s var(--e) .05s both}
+.fade .passage{animation:rise .3s var(--e) .07s both}
 .fade .lf{animation:rise .3s var(--e) .09s both}
 .lrow{display:flex;align-items:center;gap:12px;background:var(--card);box-shadow:var(--edge);
   border-radius:13px;padding:0 8px 0 16px;height:54px;transition:box-shadow .2s}
