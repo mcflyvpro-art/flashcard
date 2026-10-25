@@ -1,5 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
+import { SITE } from '../adresse.js';
 import {
   auth, cardEdit, db, dirty, duels, fnr, friends, gone,
   leaving, mailOpen, mailbox, mateOpen, mateProf, mates,
@@ -343,7 +344,7 @@ function clickSubjdel(a, b) {
 
 function clickBackup() {
   closeMenu();
-  const url = location.origin + location.pathname + '#i=' + enc(db.decks.map(x =>
+  const url = SITE + '#i=' + enc(db.decks.map(x =>
     ({ key: x.key || x.id, name: x.name, subject: x.subject, sn: x.subject ? subj(x.subject).name : '', cards: x.cards.map(c => [c.f, c.b]) })));
   if (navigator.share) partager({ url });
   else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Sauvegarde copiée'));
@@ -499,7 +500,7 @@ const clickDueldrop = () => duelDrop(duels.open);
 
 function clickCopylink(a, b, d) {
   closeMenu();
-  const url = location.origin + location.pathname + '#i=' +
+  const url = SITE + '#i=' +
     enc({ name: d.name, subject: d.subject, sn: d.subject ? subj(d.subject).name : '', cards: d.cards.map(c => [c.f, c.b]) });
   if (navigator.share) partager({ url });
   else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Lien copié'));

@@ -1,4 +1,5 @@
 import { I } from '../icones.js';
+import { SITE } from '../adresse.js';
 import { DAY } from '../fsrs.js';
 import {
   asks, auth, db, friends, mailbox, mates, me, menu, prefs, sendMsg,
@@ -278,7 +279,7 @@ export async function shareLink(d) {
       [{ token: tok, deck_id: d.id, user_id: auth.uid, mode: 'ro' }], { Prefer: 'return=minimal' });
     setMeta(d, { tok });
   }
-  return location.origin + location.pathname + '#s=' + tok;
+  return SITE + '#s=' + tok;
 }
 
 export async function revokeShare(d) {

@@ -1,5 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
+import { SITE } from '../adresse.js';
 import { auth, cercle, compte, friends, me, menu, setAnimate, setMenu, view, visuels } from '../data/etat.js';
 import { go, monIdent, render } from './bibliotheque.js';
 import { esc } from '../core/coeur-sync.js';
@@ -109,7 +110,7 @@ async function entrerCode() {
 /* ---------- inviter ---------- */
 function feuilleInviter() {
   const g = clubOuvert(); if (!g) { setMenu(null); return ''; }
-  const lien = lienClub(location.origin + location.pathname, g.code);
+  const lien = lienClub(SITE, g.code);
   return coque(`${tete(blasonClub(g, 'sm'), esc(g.nom))}
     <div class="cf-invit"><div class="cf-qr" id="cfqr" data-lien="${esc(lien)}" data-titre="${esc('Rejoindre ' + g.nom)}"></div>
       <div class="cf-code"><b>${esc(codeClubLisible(g.code))}</b></div></div>
@@ -195,7 +196,7 @@ function copier(t, ok) {
 
 function partagerClub() {
   const g = clubOuvert(); if (!g) return;
-  const url = lienClub(location.origin + location.pathname, g.code);
+  const url = lienClub(SITE, g.code);
   const text = `Rejoins « ${g.nom} » sur Folio : code ${codeClubLisible(g.code)}`;
   if (navigator.share) navigator.share({ title: g.nom, text, url }).catch(() => {});   // annulé par l'utilisateur : rien à dire
   else copier(url, 'Lien copié');

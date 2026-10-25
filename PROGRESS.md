@@ -31,6 +31,10 @@ DERNIER   2026-10-25 · animations qui ne se rejouent plus, partout (élève, pr
           code), 27 parcours e2e verts (le défi en direct au 2e essai : ses joueurs
           répondent au hasard, 1 chance sur 32 de tout rater — à rendre déterministe),
           324 tests, budget JS 119,5 Ko / 120 (plus de marge : 0,5 Ko).
+          Avant : Safari, feuilles et bulles qui ne s'ouvraient pas (`.mbody{flex:1 1
+          auto}`, `-webkit-fit-content`). EN COURS : liens sur le domaine unique, ouverture
+          dans l'app, préparation Capacitor, fin de GitHub Pages, environnement des
+          sessions — tout est décrit dans docs/REPRISE.md (« FOLIO-REPRISE-LIENS »).
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

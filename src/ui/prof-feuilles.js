@@ -1,5 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
+import { SITE } from '../adresse.js';
 import { prof, setMenu, visuels } from '../data/etat.js';
 import {
   CREATION, codeComplet, dansJours, echeance, etatDevoir, etatEleve, etatInscriptions, formatCode, grilleMois, iso,
@@ -19,7 +20,7 @@ import { timeAgo } from './reglages-corbeille.js';
    est ouverte se lit dans `prof.feuille`, et ce qu'on y tape dans `prof.f`
    — ainsi une feuille repeinte (un chiffre qui arrive) garde la saisie. */
 
-export const baseApp = () => location.origin + import.meta.env.BASE_URL;
+export const baseApp = () => SITE;
 
 /* `data-etape` : la feuille « Donner un devoir » a deux étapes (le livre,
    puis le reste) — passer de l'une à l'autre fond le contenu, redessiner la
