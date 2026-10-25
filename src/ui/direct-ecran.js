@@ -2,6 +2,7 @@
 import './direct.css';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
+import { SITE } from '../adresse.js';
 import { direct, view } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { esc } from '../core/coeur-sync.js';
@@ -96,7 +97,7 @@ function podiumHtml(top) {
 /* ══════════ l'hôte ══════════ */
 function hoteAttente(e) {
   const l = e.liste || [];
-  const lien = lienDefi(location.origin + location.pathname, e.pin);
+  const lien = lienDefi(SITE, e.pin);
   return `${tete(e)}
     <div class="dx-lobby">
       <section class="dx-entrer">

@@ -1,5 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, SWIPE, svg } from '../icones.js';
+import { SITE } from '../adresse.js';
 import { DAY } from '../fsrs.js';
 import {
   DECKPAGE, DEFPREFS, asks, auth, bip, board, cercle, cercleNeuf, db, defiNeuf, demo, directNeuf, duels,
@@ -591,7 +592,7 @@ export function maybeAskInstall() {
 export function openInstall() { openMenu('install'); }
 
 export async function copyLink() {
-  const url = location.origin + location.pathname;
+  const url = SITE;
   try {
     await navigator.clipboard.writeText(url);
     toast(I.check, 'Lien copié');
