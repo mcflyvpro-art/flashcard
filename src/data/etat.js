@@ -188,8 +188,6 @@ export let liveT = 0, liveAt = 0, liveSoon = 0;
 
 export let pageDir = 0;
 
-export let pagerEnd = null;
-
 export let sel = null;
 
 export let legalTab = 'cgu';
@@ -455,7 +453,6 @@ export const setLiveT = v => liveT = v;
 export const setLiveAt = v => liveAt = v;
 export const setLiveSoon = v => liveSoon = v;
 export const setPageDir = v => pageDir = v;
-export const setPagerEnd = v => pagerEnd = v;
 export const setSel = v => sel = v;
 export const setLegalTab = v => legalTab = v;
 export const setLegalBack = v => legalBack = v;

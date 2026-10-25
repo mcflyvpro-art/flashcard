@@ -189,7 +189,7 @@ export function commuView() {
   const eleve = isPupil();
   $.innerHTML = `
     <div class="page cc" id="page">
-      <div class="top"><div class="hero">Cercle</div></div>
+      <div class="top"><div class="hero">Cercle des lecteurs</div></div>
       <div class="cc-grille">
         <div class="cc-main">
           ${moiHtml(eleve)}

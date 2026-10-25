@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { atSchool, isProf, isPupil } from './classement.js';
 import { auth, cercle, compte, db, duels, eleve, mates2, online, setAnimate, setMenu, view } from '../data/etat.js';
-import { go, render, tabs } from './bibliotheque.js';
+import { bindPager, go, render, tabs } from './bibliotheque.js';
 import { defiLigne, enDirectHtml, parDefi } from './cercle.js';
 import {
   codeComplet, codeDepuisTexte, echeance, etatDevoirEleve, formatCode, iso, jourCourt,
@@ -131,6 +131,7 @@ export function mesClassesView() {
     ${tabs('classes')}`;
   const f = document.getElementById('elform');
   if (f) f.onsubmit = e => { e.preventDefault(); apercu(); };
+  bindPager();
 }
 
 /* ---------- les gestes ---------- */

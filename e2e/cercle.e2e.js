@@ -18,7 +18,7 @@ async function telephone(browser, store) {
   return page;
 }
 
-const versCercle = page => page.getByRole('button', { name: /^(Le )?[Cc]ercle$/ }).first().click();
+const versCercle = page => page.getByRole('button', { name: /^(Le )?[Cc]ercle( des lecteurs)?$/ }).first().click();
 
 test('un club : on le crée, on le personnalise, un ami entre avec son code', async ({ page, browser }) => {
   const store = nouveauStore();

@@ -200,7 +200,7 @@ export function deckView() {
   const rest = shown.length - part.length;
   $.innerHTML = `
     <div class="bar">
-      <button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
+      <button class="ic" data-act="deckback" aria-label="Retour">${svg(I.back)}</button>
       <div style="flex:1"></div>
       <button class="ic" data-act="menu" aria-label="Menu du livre">${svg(I.more)}</button>
     </div>

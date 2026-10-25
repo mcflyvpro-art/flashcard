@@ -66,6 +66,12 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 @keyframes inR{from{opacity:0;transform:translateX(48px)}}
 @keyframes inL{from{opacity:0;transform:translateX(-48px)}}
 #page{touch-action:pan-y}
+/* l'onglet voisin pendant un balayage (balayage.js) : une couche fixe qui
+   ne déborde jamais de l'écran, la page dedans à sa place de défilement */
+.balai{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1;contain:strict}
+.balai-v{position:absolute;inset:0;background:var(--bg);will-change:transform}
+.balai-app{position:absolute;min-height:100svh;display:flex;flex-direction:column}
+.balai-app .page{transition:none}
 
 .top{display:flex;align-items:flex-end;gap:10px;margin:14px 1px 20px}
 /* le titre cède la place aux boutons plutôt que de les pousser dehors ;
@@ -227,7 +233,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .lbl > span:first-child{margin-right:auto}
 .page > .lbl:first-of-type,.top + .lbl{margin-top:0}
 .rows{padding-bottom:34px}
-#app[data-view="home"] .page,#app[data-view="commu"] .page{padding-bottom:74px}
+#app[data-view="home"] .page,#app[data-view="commu"] .page,
+.balai-app[data-view="home"] .page,.balai-app[data-view="commu"] .page{padding-bottom:74px}
 .row{display:flex;align-items:center;gap:6px;background:var(--card);box-shadow:var(--edge);
   border-radius:12px;padding:10px 8px 10px 14px;margin-bottom:6px;
   transition:box-shadow .3s,transform .3s var(--sp)}

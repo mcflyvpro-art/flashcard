@@ -4,15 +4,16 @@ import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
   DECKPAGE, accounts, adm, animate, asks, auth, compte, db, demo, dirty, eleve, filter, liveAt, me,
-  liveSoon, liveT, mailbox, menu, myRole, online, pageDir, pagerEnd, peek, prefs,
+  liveSoon, liveT, mailbox, menu, myRole, online, pageDir, peek, prefs,
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
-  setPageDir, setPagerEnd, setPreviewOf, setView, stats, view
+  setPageDir, setPreviewOf, setView, stats, view
 } from '../data/etat.js';
 import { commuPull, commuView, friendsView } from './cercle.js';
 import { clubPull, clubView } from './club.js';
 import { defiView } from './defi-nouveau.js';
 import { directView } from './direct-porte.js';
 import { avatar } from './jeton.js';
+import { bindPager } from './balayage.js';
 import { sallesPull } from '../core/cercle.js';
 import { STATE, cstate, paintMedia } from './carte-media.js';
 import {
@@ -86,9 +87,11 @@ window.addEventListener('focus', () => livePull(true));
    propre page. Chaque nouvel écran repart donc d'en haut, quel que soit le
    chemin qui y mène — sauf le retour sur une liste de premier niveau, qui
    retrouve l'endroit où on l'avait quittée, comme dans une app native. */
-const RETROUVE = /^(home|commu)$/;
+const RETROUVE = /^(home|classes|commu)$/;
 const positions = new Map();
 let ecranAvant = '';
+// où reprendra un onglet, pour le montrer déjà à sa place pendant un balayage
+export const defilementDe = name => RETROUVE.test(name) ? positions.get(name + ':') || 0 : 0;
 function placerDefilement() {
   const k = view.name + ':' + (view.id || '');
   if (k === ecranAvant) return;
@@ -128,11 +131,21 @@ export function render() {
   dropBoot();
 }
 
-export function go(name, id, dir) {
+/* D'où l'on a ouvert un livre : son « Retour » y ramène. Un devoir ouvert
+   depuis « Ma classe » revenait sur la bibliothèque ; un livre ouvert
+   depuis le journal ou une recherche aussi. Seuls les écrans d'où l'on
+   choisit un livre comptent : la révision, le quiz ou la création en
+   reviennent par le livre lui-même, sans changer l'origine. */
+const ORIGINES = /^(home|classes|commu|club|friends|stats|mail|find)$/;
+let origineLivre = { name: 'home', id: null };
+export const retourLivre = () => origineLivre;
+
+export function go(name, id, dir, calme) {
+  if (name === 'deck' && ORIGINES.test(view.name)) origineLivre = { name: view.name, id: view.id };
   closeMenu();
   if (name !== 'run') stopTimer();
   if (name !== 'deck' || id !== view.id) { selOff(); setDeckQ(''); setDeckOpen(false); setDeckShow(DECKPAGE); }
-  setPageDir(dir || 0); setView({ name, id }); setAnimate(!dir);
+  setPageDir(dir || 0); setView({ name, id }); setAnimate(!dir && !calme);
   render();
 }
 
@@ -194,7 +207,7 @@ function railNavHome(on, classeNom) {
       ${ent('home', I.layers, 'Livres')}
       ${ent('stats', I.chart, 'Journal')}
       ${railHasClasses() ? ent('classes', I.school, classeNom) : ''}
-      ${ent('commu', I.users, 'Cercle', (asks || []).length)}
+      ${ent('commu', I.users, 'Cercle des lecteurs', (asks || []).length)}
       ${ent('mail', I.mail, 'Courrier', railMailBadge())}
     </nav>
     <div class="sp"></div>
@@ -246,9 +259,20 @@ function paintRail() {
 /* Les écrans de premier niveau, en onglets nommés : Livres, Classe (pour
    qui en a une), Cercle. C'est la seule navigation horizontale de l'app :
    partout ailleurs on entre et on ressort par la flèche. */
+const ONGLETS = { home: [I.layers, 'Livres'], classes: [I.school, 'Classe'], commu: [I.users, 'Cercle des lecteurs'] };
+export const ordreOnglets = () => ['home', ...(aUneClasse() && !isProf() ? ['classes'] : []), 'commu'];
+export const vueOnglet = k => ({ home, classes: mesClassesView, commu: commuView })[k];
+
+/* Ouvrir un onglet déjà glissé à l'écran : mêmes lectures que son bouton,
+   mais sans fondu — la page est là, il ne reste qu'à la rendre vraie. */
+export function allerOnglet(k) {
+  if (k === 'commu') commuPull();
+  if (k === 'classes') { eleveClassesPull(); sallesPull(); duelsPull(); }
+  go(k, null, 0, true);
+}
+
 export const tabs = on => {
-  const l = [['home', I.layers, 'Livres'], ...(aUneClasse() && !isProf() ? [['classes', I.school, 'Classe']] : []),
-    ['commu', I.users, 'Cercle']];
+  const l = ordreOnglets().map(k => [k, ...ONGLETS[k]]);
   const i = Math.max(0, l.findIndex(t => t[0] === on)), n = (asks || []).length;
   return `<nav class="tabs" aria-label="Navigation principale">
   <div class="sl" style="transform:translateX(${i * 74}px)"></div>
@@ -258,71 +282,9 @@ export const tabs = on => {
 </nav>`;
 };
 
-/* balayage horizontal entre « Mes paquets » et « Communauté » */
-export function bindPager() {
-  if (reorder) return;   // le rangement fige la page : plus rien d'autre ne bouge
-  const pg = document.getElementById('page'); if (!pg) return;
-  const home = view.name === 'home';
-  let x0 = 0, y0 = 0, dx = 0, on = false, lock = 0, t0 = 0, raf = 0, pid = -1;
-  const draw = () => {
-    raf = 0;
-    if (!on) return;
-    const edge = home ? dx > 0 : dx < 0;
-    pg.style.transform = `translate3d(${(edge ? dx * .26 : dx).toFixed(1)}px,0,0)`;
-  };
-  const reset = () => {
-    if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    pg.style.transition = ''; pg.style.transform = '';
-  };
-  /* Une bande de pastilles défile toute seule : tant qu'elle a de quoi
-     défiler du côté où va le doigt, c'est elle qui prend le geste. Une
-     fois au bout, le geste redevient un changement d'écran — avant, poser
-     le doigt dessus annulait le balayage pour de bon. */
-  let strip = null;
-  pg.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'mouse' && e.button) return;
-    if (e.target.closest('.rng,.seg')) return;
-    strip = e.target.closest('.pills,.heat,.mixwrap');
-    on = true; lock = 0; dx = 0; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); pid = e.pointerId;
-    pg.style.transition = 'none';
-  });
-  pg.addEventListener('pointermove', e => {
-    if (!on || e.pointerId !== pid) return;
-    const ax = e.clientX - x0, ay = e.clientY - y0;
-    if (!lock) {
-      if (Math.abs(ax) < 9 && Math.abs(ay) < 9) return;
-      lock = Math.abs(ax) > Math.abs(ay) * 1.3 ? 1 : -1;
-      if (lock < 0) { on = false; reset(); return; }
-      if (strip) {
-        const room = ax > 0 ? strip.scrollLeft
-                            : strip.scrollWidth - strip.clientWidth - strip.scrollLeft;
-        if (room > 1) { on = false; reset(); return; }
-      }
-    }
-    dx = ax;
-    if (!raf) raf = requestAnimationFrame(draw);
-  });
-  const end = () => {
-    if (!on) return; on = false;
-    if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    pg.style.transition = '';
-    const v = Math.abs(dx) / Math.max(1, Date.now() - t0);
-    const far = Math.abs(dx) > innerWidth * .28 || (v > .55 && Math.abs(dx) > 40);
-    const go2 = far && (home ? dx < 0 : dx > 0);
-    pg.style.transform = '';
-    if (go2) { if (home) { commuPull(); go('commu', null, 1); } else go('home', null, -1); }
-  };
-  /* le doigt finit souvent sa course hors de la page : sans écouter la
-     fenêtre, le balayage restait suspendu à mi-chemin. La page est
-     redessinée à chaque écran, la fenêtre non : on retire l'écoute
-     précédente avant d'en poser une nouvelle. */
-  pg.addEventListener('pointerup', end);
-  pg.addEventListener('pointercancel', end);
-  if (pagerEnd) { removeEventListener('pointerup', pagerEnd); removeEventListener('pointercancel', pagerEnd); }
-  setPagerEnd(end);
-  addEventListener('pointerup', pagerEnd);
-  addEventListener('pointercancel', pagerEnd);
-}
+/* Le balayage entre onglets vit à part (balayage.js) ; les écrans qui
+   l'appellent passent toujours par ici. */
+export { bindPager };
 
 export const pills = (active, list, act) => `<div class="pills">
   <button class="p ${active === '' ? 'on' : ''}" data-${act}="">Tout</button>

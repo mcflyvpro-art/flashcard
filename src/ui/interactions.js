@@ -11,7 +11,7 @@ import {
   setPeek, setPendingGrade, setQuiz, setReorder, setSel, setShared,
   setStudy, shared, stats, study, trash, view
 } from '../data/etat.js';
-import { allerClasses, go, render } from './bibliotheque.js';
+import { allerClasses, go, render, retourLivre } from './bibliotheque.js';
 import { commuPull, doAdd } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
 import { fsrsTune } from '../core/carte-media.js';
@@ -235,6 +235,8 @@ function tapSndSay(a, ds, b) {
 }
 
 const tapHome = () => go('home');
+// le « Retour » d'un livre : là d'où on l'a ouvert (« Ma classe » pour un devoir)
+const tapDeckback = () => { const o = retourLivre(); return o.name === 'classes' ? allerClasses() : go(o.name, o.id); };
 const tapCommu = () => { commuPull(); return go('commu'); };
 const tapFriends = () => { if (!friends) friendsPull(); return go('friends'); };
 const tapFriendsBoard = () => { if (!board.rows) boardPull(); return tapFriends(); };
@@ -539,6 +541,7 @@ const CLICK_RULES = [
   [(a, ds, b) => b.dataset.mt, tapMt],
   [(a, ds, b) => b.dataset.snd !== undefined || b.dataset.say !== undefined, tapSndSay],
   [a => a === 'home' || a === 'tab-home', tapHome],
+  [a => a === 'deckback', tapDeckback],
   [a => a === 'tab-commu' || a === 'commu', tapCommu],
   [a => a === 'friends', tapFriendsBoard],
   [a => a === 'doadd', tapDoadd],

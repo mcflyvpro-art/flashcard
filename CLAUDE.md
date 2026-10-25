@@ -37,7 +37,7 @@ l'air de marcher ».
     ses effets de bord (les autres modules y arrivent par leurs imports :
     `ui/creation.js`, `ui/eleve-classes.js`, `ui/prof-porte.js`, `ui/club.js`,
     `ui/cercle-feuilles.js`, `ui/defi-nouveau.js`, `ui/direct-porte.js`,
-    `ui/jeton.js`, et deux morceaux chargés à la demande, l'espace professeur
+    `ui/jeton.js`, `ui/balayage.js`, et deux morceaux chargés à la demande, l'espace professeur
     et l'écran d'une partie en direct — voir plus bas).
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
     HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout, sauf
@@ -74,7 +74,17 @@ l'air de marcher ».
     raccourcis d'ouverture `?go=…` — extrait d'`interactions.js` sur M06.T6,
     qui frôlait la limite de lignes une fois ses tables de dispatch posées),
     `onboarding.js`. `ui/etablissement.js` ne porte plus que la console du
-    référent. Plus, depuis le 2026-10-24 : `creation.js` (l'**écran unique de
+    référent. **Navigation au téléphone** (2026-10-25) : `balayage.js` fait
+    glisser d'un onglet à l'autre (Livres ↔ Classe ↔ Cercle des lecteurs,
+    l'ordre de `ordreOnglets()` dans `bibliotheque.js`, le même que la barre)
+    comme une app native — la voisine est rendue par sa vraie fonction d'écran
+    (`vueOnglet(k)`, dont on intercepte le `$.innerHTML = …` : la page en cours
+    ne quitte jamais le document) dans une couche fixe `.balai`, à sa position
+    de défilement (`defilementDe`), puis `allerOnglet(k)` l'ouvre sans fondu.
+    Souris ou fenêtre ≥ 900 px : rien ne glisse. Le « Retour » d'un livre
+    ramène là d'où on l'a ouvert (`retourLivre()`, posé par `go('deck', …)`
+    depuis l'accueil, la classe, le cercle, le journal, le courrier ou la
+    recherche). Plus, depuis le 2026-10-24 : `creation.js` (l'**écran unique de
     création** d'un livre, sorti de `quiz.js` : titre et matière, puis les
     méthodes en onglets — Écrire, Coller, Fichier, Photo, Cours (l'IA),
     `comp.mode` — dont seule la choisie s'affiche, et une liste de pages
@@ -100,7 +110,7 @@ l'air de marcher ».
     retombe dans le démarrage.
 
     **Le cercle** (refait le 2026-10-24) : des amis, des clubs, des défis —
-    rien d'autre. `cercle.js` (l'écran « Cercle » : moi et mon jeton, « Lancer
+    rien d'autre. `cercle.js` (l’écran « Cercle des lecteurs » : moi et mon jeton, « Lancer
     un défi », « Entrer un code », ce qui se joue en direct, les défis, mes
     clubs ; à côté le classement des amis et les amis ; et la page « Amis »),
     `club.js` (la page d'un club : bannière à son emblème et sa couleur,
@@ -166,7 +176,7 @@ l'air de marcher ».
     imports — et toute constante lue par une fonction doit être déclarée
     avant le premier appel à cette fonction dans le fichier, pas seulement
     avant son usage syntaxique.
-  - `src/data/etat.js` — tout l'état mutable de l'app (110 variables : `db`,
+  - `src/data/etat.js` — tout l'état mutable de l'app (106 variables : `db`,
     `view`, `study`, `animate`, `mediaCache`...), une liaison vive ES
     (`export let`) par variable et un « setter » générique par variable pour
     la réaffectation (`setDb`, `setView`...) — lire ses champs reste direct (`db.decks.push`),
