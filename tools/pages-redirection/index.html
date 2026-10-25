@@ -2,23 +2,69 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Folio a déménagé</title>
 <link rel="canonical" href="https://www.folioflashcard.online/">
 <script>
   /* L'ancienne adresse (GitHub Pages, sous /flashcard/) renvoie vers le
      domaine de l'app en gardant ce qui compte dans un lien : le code d'une
-     classe, d'une partie, d'un club (?…) ou un livre partagé (#…). */
-  location.replace('https://www.folioflashcard.online/' + location.search + location.hash);
+     classe, d'une partie, d'un club (?…) ou un livre partagé (#…).
+
+     Sauf depuis l'icône d'écran d'accueil installée ici : une app installée
+     ne peut pas changer d'adresse (sur iPhone, la redirection l'ouvrait dans
+     Safari, sans session — c'était « l'app est cassée »). Elle montre alors
+     la nouvelle adresse et comment réinstaller l'app depuis elle. Ce fichier
+     et 404.html sont identiques : 404.html sert les chemins profonds, donc
+     rien ici ne dépend d'un chemin relatif. */
+  var SITE = 'https://www.folioflashcard.online/';
+  var CIBLE = SITE + location.search + location.hash;
+  var INSTALLEE = navigator.standalone === true
+    || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if (!INSTALLEE) location.replace(CIBLE);
 </script>
 <style>
-  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#F6F5F1;color:#1D1C19;
-    font:600 16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-  a{color:inherit}
+  :root{--bg:#F6F5F1;--ink:#1D1C19;--soft:#77746C;--card:#fff;--hair:rgba(29,28,25,.09)}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:var(--bg);color:var(--ink);
+    font:500 16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  main{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
+  img{width:76px;height:76px;border-radius:18px;box-shadow:0 1px 0 var(--hair),0 6px 18px rgba(29,28,25,.08)}
+  h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-.4px}
+  .adr{font-size:17px;font-weight:700;padding:10px 14px;border-radius:12px;background:var(--card);box-shadow:inset 0 0 0 1px var(--hair)}
+  a.go{display:flex;align-items:center;justify-content:center;width:100%;height:52px;border-radius:15px;background:var(--ink);color:#fff;
+    font-weight:700;font-size:16px;text-decoration:none}
+  ol{width:100%;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;border-radius:16px;background:var(--card);
+    box-shadow:inset 0 0 0 1px var(--hair);text-align:left}
+  li{display:flex;align-items:center;gap:12px;padding:13px 14px;border-top:1px solid var(--hair);font-size:15px}
+  li:first-child{border-top:0}
+  li b{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--bg);font-size:13px}
+  li svg{width:18px;height:18px;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  p{margin:0;font-size:14px;color:var(--soft)}
+  .android{display:none}
+  html.and .ios{display:none} html.and .android{display:flex}
 </style>
 </head>
 <body>
-  <a href="https://www.folioflashcard.online/">www.folioflashcard.online</a>
+<main>
+  <img src="https://www.folioflashcard.online/icons/icon-180.png" alt="" onerror="this.remove()">
+  <h1>Folio a déménagé</h1>
+  <div class="adr">www.folioflashcard.online</div>
+  <a class="go" id="go" href="https://www.folioflashcard.online/" target="_blank" rel="noopener">Ouvrir Folio</a>
+  <ol>
+    <li class="ios"><b>1</b><span>Ouvre-la dans Safari</span></li>
+    <li class="ios"><b>2</b><span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>
+      Partager → « Sur l’écran d’accueil »</span></li>
+    <li class="android"><b>1</b><span>Ouvre-la dans Chrome</span></li>
+    <li class="android"><b>2</b><span>Menu ⋮ → « Installer l’application »</span></li>
+    <li><b>3</b><span>Supprime cette icône-ci</span></li>
+  </ol>
+  <p>Tes livres sont sur ton compte : reconnecte-toi, rien n’est perdu.</p>
+</main>
+<script>
+  document.getElementById('go').href = CIBLE;
+  if (navigator.standalone === undefined) document.documentElement.className = 'and';
+</script>
 </body>
 </html>

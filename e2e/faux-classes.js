@@ -33,6 +33,14 @@ export function faireProfesseur(store, email, nom) {
   return u.id;
 }
 
+/* Un compte personnel tel que la vraie base le voit (my_role répond
+   « eleve ») — sans cet appel, un compte de test garde la réponse vide. */
+export function faireEleve(store, email) {
+  const u = store.users.find(x => x.email === email);
+  modele(store).roles[u.id] = 'eleve';
+  return u.id;
+}
+
 const classeDe = (m, cid) => m.classes.find(c => c.id === cid);
 const membresDe = (m, cid) => m.membres.filter(x => x.cid === cid);
 const nomDe = (m, uid, store) => m.noms[uid] || (store.users.find(u => u.id === uid) || {}).email || 'Élève';

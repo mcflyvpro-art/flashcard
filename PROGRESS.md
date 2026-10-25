@@ -19,7 +19,13 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-25 · Réglé comme Anki, sans curseur : rétention 90 %, journée à 4 h,
+DERNIER   2026-10-25 (soir) · « Ma classe » rendue à tout compte personnel (onglet
+          au téléphone, entrée sur PC : c'est là qu'on tape le code du professeur ;
+          la refonte du cercle l'avait réservée à qui avait déjà une classe —
+          e2e classe-eleve, échoue sur l'ancien code). L'icône installée sur
+          l'ancienne adresse GitHub Pages ne bascule plus dans Safari : elle montre
+          la nouvelle adresse et comment réinstaller l'app (tools/pages-redirection).
+          Avant : Réglé comme Anki, sans curseur : rétention 90 %, journée à 4 h,
           20 neuves par jour et par livre (« Lire +20 »), équilibreur de charge d'Anki
           (fsrs.js equilibrer), entretien automatique (réparation + doublons, plus de
           bouton) ; réglages du moteur et « Vérifier ma bibliothèque » retirés. Courrier

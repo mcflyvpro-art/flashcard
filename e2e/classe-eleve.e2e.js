@@ -5,7 +5,7 @@
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerAmis, semerCompte, semerPseudo } from './faux-cercle.js';
-import { faireProfesseur, rpcClasses } from './faux-classes.js';
+import { faireEleve, faireProfesseur, rpcClasses } from './faux-classes.js';
 import { connecter } from './aide.js';
 
 test('ma classe : son professeur, ses élèves, ses devoirs, un camarade', async ({ page }) => {
@@ -51,4 +51,29 @@ test('ma classe : son professeur, ses élèves, ses devoirs, un camarade', async
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'classe');
   await page.getByRole('button', { name: 'Retour' }).first().click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'classes');
+});
+
+// Un compte personnel sans classe garde l'onglet « Classe » : c'est là qu'il
+// tape le code que son professeur lui donne. La refonte du cercle l'avait
+// réservé à qui avait déjà une classe — il avait disparu des téléphones.
+test('un compte personnel sans classe : l’onglet Classe, et le code du professeur', async ({ page }) => {
+  const store = nouveauStore();
+  const lea = semerCompte(store, 'lea@exemple.fr');
+  const prof = semerCompte(store, 'prof@exemple.fr');
+  faireEleve(store, 'lea@exemple.fr');
+  // la visite guidée déjà faite : elle s'invite sinon chez un compte « eleve »
+  store.tables.prefs = [{ id: lea, user_id: lea, data: { tuto: 1 } }];
+  faireProfesseur(store, 'prof@exemple.fr', 'M. Durand');
+  rpcClasses(store, 'prof_creer_classe', { nom: '1re C', niveau: '1re', matiere: 'Histoire' }, { id: prof });
+  const code = store.cl.classes[0].code;
+
+  await brancher(page, store);
+  await connecter(page);
+  await expect(page.locator('.tabs button')).toHaveCount(3, { timeout: 10000 });
+  await page.getByRole('button', { name: 'Classe', exact: true }).click();
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'classes');
+  await page.locator('#elcode').fill(code);
+  await page.locator('#elok').click();
+  await expect(page.locator('.el-apercu')).toContainText('1re C');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });

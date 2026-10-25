@@ -147,9 +147,16 @@ l'air de marcher ».
     `?club=CODE`), `defi-nouveau.js` (« Nouveau défi » : avec qui — un club,
     une classe pour un prof, les amis, une salle ouverte —, quel livre,
     comment : en direct ou à son rythme). « Mes classes » n'est plus dans le
-    cercle : onglet **Classe** à part, seulement pour qui en a une
-    (`aUneClasse()` de `bibliotheque.js` — élève à carte ou d'établissement,
-    professeur, ou compte personnel admis ou en attente dans une classe).
+    cercle : onglet **Classe** à part (`montreClasse()` de `bibliotheque.js`),
+    pour qui en a une (`aUneClasse()` — élève à carte ou d'établissement,
+    professeur, ou compte personnel admis ou en attente dans une classe) **et
+    pour tout compte personnel** (`myRole === 'eleve'`), qui y tape le code de
+    son professeur — le réserver à qui avait déjà une classe l'avait fait
+    disparaître des téléphones (rendu le 2026-10-25) ; ni référent ni
+    administrateur. Un professeur a son espace à la place. Dans les parcours,
+    un compte sans rôle déclaré n'est pas « eleve » (le faux `my_role` répond
+    vide) : `faireEleve(store, email)` de `e2e/faux-classes.js` le déclare,
+    et un `prefs` `{ tuto: 1 }` écarte la visite guidée.
     **Le profil d'un lecteur** (2026-10-25) : toucher un ami, une ligne de
     classement (`rangLigne`, `data-lecteur`), une demande d'ami ou un membre
     de club ouvre son profil (vue `profil`, `ouvrirProfil(id, { club })` de
@@ -300,9 +307,19 @@ l'air de marcher ».
   `src/ui/onboarding.js` — ne jamais y coder un chemin en dur).
   **GitHub Pages ne publie plus l'app** (depuis le 2026-10-25) :
   `.github/workflows/pages.yml` (sans build) y dépose `tools/pages-redirection/`
-  — `index.html` et `404.html` qui renvoient vers `SITE` en gardant `?…` et
-  `#…`, et un `sw.js` qui vide les caches et désinscrit l'ancien service
-  worker des téléphones qui l'avaient. On pourra désactiver Pages (Settings →
+  — `index.html` et `404.html` (identiques) qui renvoient vers `SITE` en
+  gardant `?…` et `#…`, et un `sw.js` qui vide les caches et désinscrit
+  l'ancien service worker des téléphones qui l'avaient. **Sauf ouverts
+  depuis une icône d'écran d'accueil installée sur l'ancienne adresse**
+  (`navigator.standalone` ou `display-mode: standalone`) : une app installée
+  ne change pas d'origine — sur iPhone la redirection l'ouvrait dans Safari,
+  sans session (« le PWA est cassé », 2026-10-25) — ; la page montre alors
+  la nouvelle adresse, « Ouvrir Folio » et comment réinstaller l'app depuis
+  elle (Safari : Partager → Sur l'écran d'accueil ; Chrome : Installer
+  l'application), puis supprimer l'ancienne icône. Les journaux le
+  confirment : l'origine `mcflyvpro-art.github.io` parlait encore à la base
+  jusqu'à la redirection (domaine du `referer` dans `edge_logs`, jamais
+  autre chose). On pourra désactiver Pages (Settings →
   Pages) une fois les anciens liens oubliés. Le contrôle qualité `ci.yml` a
   deux jobs : `check` (lint, tests, build) et `e2e` (les parcours Playwright,
   ~2 min 20, M07.T7) ; il lit `vars.VITE_SUPABASE_URL` /
