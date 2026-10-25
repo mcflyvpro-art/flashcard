@@ -755,8 +755,10 @@ window.addEventListener('online', flush);
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(); else flush(); });
 
 /* En développement, pas de service worker : il servirait l'ancien code
-   depuis son cache à chaque rechargement. */
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+   depuis son cache à chaque rechargement. Sous Capacitor non plus : l'app
+   est embarquée dans le binaire, un cache par-dessus servirait une version
+   périmée après une mise à jour du magasin (docs/CAPACITOR.md). */
+if (import.meta.env.PROD && 'serviceWorker' in navigator && !window.Capacitor) {
   navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js')
     .catch(e => console.warn('Folio : service worker non enregistré, pas de hors-ligne', e && e.message));
   /* Recharger seulement si un service worker tenait déjà la page : c'est

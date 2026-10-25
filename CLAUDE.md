@@ -284,6 +284,11 @@ l'air de marcher ».
   `vars.VITE_SUPABASE_ANON_KEY` (Settings → Secrets and variables → Actions →
   onglet **Variables**, pas Secrets : la clé anon est publique par nature),
   mêmes valeurs que `.env.local`.
+- **Capacitor (à venir, pas installé)** : tout ce qui est prêt et tout ce qui
+  reste (`appId`, `webDir: 'dist'`, liens universels iOS et App Links
+  Android, `appUrlOpen` → `traiterLienEntrant`, session, Supabase Auth) est
+  dans `docs/CAPACITOR.md` — le lire avant d'y toucher. Le service worker ne
+  s'enregistre pas sous Capacitor (`window.Capacitor`, `ui/onboarding.js`).
 
 ## Règles non négociables
 
