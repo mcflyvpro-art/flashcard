@@ -628,7 +628,12 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   transition:background .2s,transform .2s var(--sp)}
 .mx svg{width:15px;height:15px;stroke-width:2.4}
 .mx:active{transform:scale(.88);background:var(--surf2)}
-.mbody{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+/* `flex:1 1 auto`, pas `flex:1` : une feuille prend la hauteur de son
+   contenu (fit-content), et les Safari d'avant 2025 calculaient cette
+   hauteur sur la base flexible du corps — 0 avec `flex:1` —, si bien que
+   la boîte se réduisait à une bande où ne restait que le champ focalisé :
+   « rien ne s'ouvre ». min-height:0 la laisse rétrécir sous max-height. */
+.mbody{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;padding:2px 7px 7px}
 .mi{display:flex;align-items:center;gap:13px;width:100%;height:50px;padding:0 14px;
   border-radius:12px;font-weight:600;font-size:15.5px;letter-spacing:-.2px;
@@ -812,7 +817,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   /* une feuille devient une boîte de dialogue, au milieu de la page —
      ou, légère, un petit menu accroché à son bouton (menus-a.js,
      placerSurPC) : jamais un tiroir de téléphone avec sa poignée */
-  .menu{left:var(--rail);right:0;top:0;bottom:0;margin:auto;height:fit-content;
+  .menu{left:var(--rail);right:0;top:0;bottom:0;margin:auto;height:-webkit-fit-content;height:fit-content;
     max-width:540px;max-height:min(82vh,860px);border-radius:18px}
   .menu.pv{max-height:min(72vh,760px)}
   .menu .mgrip{display:none}

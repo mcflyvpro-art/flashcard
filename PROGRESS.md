@@ -19,17 +19,12 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-25 · design PC propre, plus du téléphone étiré : un gabarit unique pour
-          toutes les pages (même largeur, titre au même endroit — Réglages, Courrier et le
-          Cercle n'étaient plus centrés en colonne étroite) ; Réglages en deux colonnes,
-          Ma classe en « à faire » | « mes classes » ; les bulles « ? » et les menus
-          (celui d'un livre, celui d'une classe) s'accrochent à leur bouton comme sur un
-          bureau, les formulaires deviennent des boîtes de dialogue sans poignée ; une
-          feuille qui se redessine ne rejoue plus son entrée (elle tressautait chaque
-          seconde). Avant : statistiques refaites (journal par contexte, fonction
-          journal(), 1 000 lignes, hors ligne), journal refait. Preuves : 324 tests
-          unitaires, 22 parcours e2e verts (dont l'espace prof à 1440 px qui ouvre ses
-          menus accrochés), captures 1440/390 relues, budget JS 117,8 Ko.
+DERNIER   2026-10-25 · Safari : feuilles et bulles qui ne s'ouvraient pas (boîte réduite
+          à une bande — hauteur fit-content calculée sur la base flexible 0 du corps) ;
+          corrigé (`.mbody{flex:1 1 auto}`, `-webkit-fit-content`), vérifié sous WebKit
+          1440 et iPhone. EN COURS : liens sur le domaine unique, ouverture dans l'app,
+          préparation Capacitor, fin de GitHub Pages, environnement des sessions — tout
+          est décrit dans docs/REPRISE.md (« FOLIO-REPRISE-LIENS »).
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

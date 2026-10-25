@@ -186,6 +186,9 @@ export async function brancher(cible, store) {
     const path = url.pathname;
     let body;
     try { body = req.postDataJSON(); } catch { body = null; } // pas de corps (GET, DELETE)
+    if (body == null && req.postDataBuffer()) {                  // WebKit ne rend parfois le corps qu'en octets
+      try { body = JSON.parse(req.postDataBuffer().toString('utf8')); } catch { body = null; }
+    }
     const [status, json, headers] = path.startsWith('/auth/v1/') ? auth(store, path, url, body || {})
       : path.startsWith('/rest/v1/') ? rest(store, req, url, path, body)
       : [404, {}];

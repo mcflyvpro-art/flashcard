@@ -498,7 +498,7 @@ button.pf-kpi:active{transform:scale(.98)}
 }
 @media (min-width:900px){
   /* une boîte de dialogue au milieu de l'écran, pas un tiroir de téléphone */
-  .menu.pf-s{inset:0;margin:auto;height:fit-content;max-width:560px;max-height:min(86vh,880px)}
+  .menu.pf-s{inset:0;margin:auto;height:-webkit-fit-content;height:fit-content;max-width:560px;max-height:min(86vh,880px)}
   .menu.pf-s.large{max-width:760px}
   /* une courte liste d'actions s'accroche à son bouton (menus-a.js, placerSurPC) */
   .menu.pf-s.pop{inset:auto;margin:0;height:auto;max-width:340px}
