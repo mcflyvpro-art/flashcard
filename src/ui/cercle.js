@@ -2,13 +2,14 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import {
-  addQ, asks, auth, board, cercle, compte, duels, friends, mates, mates2, me, school, setAddQ, setAnimate, view
+  addQ, asks, auth, board, cercle, compte, duels, friends, mates, mates2, me, school, setAddQ, setAnimate, setMateOpen, view
 } from '../data/etat.js';
-import { bindPager, monIdent, render, tabs } from './bibliotheque.js';
+import { bindPager, go, monIdent, render, tabs } from './bibliotheque.js';
 import { isPupil } from './classement.js';
 import { boardPull, schoolPull } from '../core/classement.js';
 import { esc, shortWho } from '../core/coeur-sync.js';
-import { clubsPull, sallesPull } from '../core/cercle.js';
+import { clubsPull, profilPull, sallesPull } from '../core/cercle.js';
+import { toast } from './import-cartes.js';
 import { classement, medaille } from '../club.js';
 import { avatar, blasonClub, iconeEmbleme } from './jeton.js';
 import { hlp } from './connexion.js';
@@ -158,12 +159,36 @@ function clubsHtml() {
 export const ident = (pseudo, nom) => pseudo || nom || '';
 
 export function rangLigne(r, nom, sous) {
-  return `<div class="cc-rk${r.moi ? ' moi' : ''}"><span class="cc-pl">${medaille(r.place) || r.place}</span>
+  return `<button class="cc-rk${r.moi ? ' moi' : ''}" data-lecteur="${esc(r.uid || r.user_id)}"><span class="cc-pl">${medaille(r.place) || r.place}</span>
     ${avatar(r.uid || r.user_id, ident(r.handle || r.pseudo, nom), 'sm')}
     <span class="cc-rk-t"><b>${esc(nom)}${r.moi ? ' <small>toi</small>' : ''}</b>
       ${sous ? (Array.isArray(sous) ? infos(sous) : `<i>${esc(sous)}</i>`) : ''}<span class="cc-bar"><em style="width:${r.part}%"></em></span></span>
-    <span class="cc-rk-n">${r.n != null ? r.n : r.pages}</span></div>`;
+    <span class="cc-rk-n">${r.n != null ? r.n : r.pages}</span></button>`;
 }
+
+/* ---------- la porte du profil d'un lecteur ----------
+   Toucher quelqu'un (un ami, une ligne de classement, un membre de club)
+   ouvre son profil : ui/profil.js et sa feuille de style, chargés à la
+   demande. Rien d'autre ne doit importer ui/profil.js. */
+let profilMorceau = null;
+export function ouvrirProfil(id, o = {}) {
+  if (!id) return;
+  cercle.profilClub = o.club || null;
+  cercle.profilRetour = { name: view.name, id: view.id };
+  setMateOpen(id);                   // les gestes d'ami (défier, prêter, retirer) lisent mateOpen
+  profilPull(id);
+  go('profil', id);
+}
+export function profilView() {
+  if (profilMorceau) return profilMorceau.profilEcran();
+  $.innerHTML = `<div class="page cc"><div class="cc-load"></div></div>`;
+  import('./profil.js').then(m => { profilMorceau = m; if (view.name === 'profil') render(); })
+    .catch(() => toast(I.x, 'Le profil n’a pas pu s’ouvrir : vérifie ta connexion'));
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-lecteur]');
+  if (b) ouvrirProfil(b.dataset.lecteur);
+});
 
 function classementCourt() {
   if (!board.rows) return `<div class="cc-load"></div>`;
@@ -218,8 +243,8 @@ function demandesHtml() {
   const a = asks || [];
   if (!a.length) return '';
   return `<section class="cc-sec"><h2 class="cc-h">Demandes <span>${a.length}</span></h2>
-    <div class="cc-list">${a.map(f => `<div class="cc-ligne">${avatar(f.id, f.handle || f.name)}
-      <span class="cc-ligne-t"><b>${esc(f.name || '')}</b><i>@${esc(f.handle || '')}</i></span>
+    <div class="cc-list">${a.map(f => `<div class="cc-ligne"><button class="cc-qui" data-lecteur="${esc(f.id)}">${avatar(f.id, f.handle || f.name)}
+      <span class="cc-ligne-t"><b>${esc(f.name || '')}</b><i>@${esc(f.handle || '')}</i></span></button>
       <button class="cc-rond ok" data-yes="${esc(f.id)}" aria-label="Accepter">${svg(I.check)}</button>
       <button class="cc-rond" data-no="${esc(f.id)}" aria-label="Refuser">${svg(I.x)}</button></div>`).join('')}</div></section>`;
 }

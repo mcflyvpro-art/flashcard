@@ -144,6 +144,16 @@ l'air de marcher ».
     cercle : onglet **Classe** à part, seulement pour qui en a une
     (`aUneClasse()` de `bibliotheque.js` — élève à carte ou d'établissement,
     professeur, ou compte personnel admis ou en attente dans une classe).
+    **Le profil d'un lecteur** (2026-10-25) : toucher un ami, une ligne de
+    classement (`rangLigne`, `data-lecteur`), une demande d'ami ou un membre
+    de club ouvre son profil (vue `profil`, `ouvrirProfil(id, { club })` de
+    `cercle.js`, qui charge à la demande `profil.js` + `profil.css`, préfixe
+    `lp-` — rien d'autre ne doit importer `ui/profil.js`) : son jeton, son
+    nom, son pseudo, depuis quand il lit, ami ou non, les clubs en commun ;
+    et, pour soi, un ami ou un membre d'un même club, ses chiffres (série et
+    record, pages sur 7 et 30 jours, justes, cinq semaines en calendrier, ses
+    trois matières, son heure, ses livres) ; les gestes d'ami (défier, prêter,
+    retirer), « Retirer du club » pour le chef, signaler, bloquer.
     **Une partie en direct** (façon Kahoot) : `direct-porte.js` (au
     démarrage : `ouvrirDirect`, `consumeDefi()` pour `?defi=PIN`) charge à la
     demande `direct-ecran.js` + `direct.css` (hôte projeté : code, QR,
@@ -247,7 +257,8 @@ l'air de marcher ».
   - **Clubs et parties en direct** (`20261024232855`, `20261024233015`) : un club se crée, se rejoint (code, 10 faux/h, 100 membres) et se gère par fonctions (`club_creer`, `join_group`, `club_membres`, `club_nouveau_code`, `mes_clubs`) ; un élève de classe n'en crée ni n'en rejoint. Une partie : `salle_ouvrir`, `salle_rejoindre` (statuts : ok, format, inconnu, trop, classe, club, exclu…), `salle_etat` (jsonb : ce que chacun a le droit de voir — jamais la bonne réponse avant la correction), `salle_repondre` (points calculés en base : 500 à 1 000 selon la vitesse depuis que CE joueur a vu les choix, + 50 par bonne réponse d'affilée), `salle_avancer` (idempotent, double clic sans effet), `salle_exclure`, `salle_fermer`, `salles_ouvertes`, `salles_terminees` ; purge quotidienne (`purge-salles-quotidienne`). Nom d'un joueur : « Prénom NOM » dans une salle de sa classe, « Prénom N. » pour un élève ailleurs, le pseudo sinon.
   - **Jetons d'identité** (`20261025111500`, correctif `20261025113100`) : `profiles.figure`/`teinte` et `classes.embleme`/`teinte` (clés `^[a-z]{2,16}$`, rang 0–11, contraintes CHECK). Une seule porte de lecture, `visuels(personnes, classes)` (200 et 100 au plus), qui ne rend un choix qu'à qui partage quelque chose (amis même en demande, club, classe — camarades, professeurs, salle d'attente —, partie en direct, référent de l'établissement) ; `mon_jeton(cle, rang)` pour soi (un élève à carte aussi : son nom reste verrouillé) ; `prof_jeton_classe(cid, cle, rang)` pour qui gère la classe. `voit_personne`/`voit_classe` sont internes : **révoquer aussi `authenticated`** (les privilèges par défaut de Supabase le lui donnent, révoquer PUBLIC et anon n'y touche pas).
   - **Journal des révisions** (`20261025170855`) : chaque ligne de `reviews` porte sa photographie — `subject`, `subject_name`, `deck_name`, `ecart` (jours depuis la lecture précédente de la page, -1 la première fois) — et son `created_at` est l'heure de la lecture, envoyée par l'app (hors ligne compris), pas celle de l'envoi. Le déclencheur `contexte_revision` complète ce qu'une app ancienne n'envoie pas (depuis le paquet et le journal), sans jamais remplacer ce que l'app a dit, et ramène une date future à maintenant. **Ne jamais réécrire ces colonnes après coup.** Les statistiques passent par `journal(p_depuis, p_tz, p_bornes, p_locaux)` (security invoker, jsonb : `jours` regroupés par jour/matière/livre/palier, `heures`, `matieres` et `livres` = noms du moment, `toujours`, `connus`). `shared_deck` rend aussi `subject_name`, `mail.subject_name` voyage avec un livre envoyé : c'est le nom qui voyage, jamais l'identifiant.
-  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas) et `journal.sql` (18 cas).
+  - **Profil d'un lecteur** (`20261025200000`) : `profil_lecteur(u, p_tz)` (jsonb) — statut `ok` (soi, ami accepté, membre d'un même club : décomptes et noms de matières, jamais un livre ni une carte), `prive` (quelqu'un qu'on voit déjà par `voit_personne` — camarade, professeur, joueur, demande en attente : nom, pseudo, ancienneté, clubs en commun, pas de chiffres), `inconnu` (personne d'autre, ou un blocage dans un sens ou l'autre).
+  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas), `journal.sql` (18 cas) et `profil.sql` (19 cas).
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
 - **Hébergement : une seule cible, Vercel, un seul domaine :
   `https://www.folioflashcard.online/`** (projet Vercel `flashcard`, équipe
@@ -348,7 +359,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, sauvegarde, entretien… cumulés) JS ≤ 56, CSS ≤ 22 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, sauvegarde, entretien… cumulés) JS ≤ 56, CSS ≤ 22 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans

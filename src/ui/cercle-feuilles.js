@@ -14,6 +14,7 @@ import { messageSalle, pinComplet, pinDepuisTexte, pinLisible } from '../defi.js
 import { avatar, blasonClub, grilleCouleurs, grilleEmblemes, grilleFigures, iconeEmbleme } from './jeton.js';
 import { isPupil } from './classement.js';
 import { clubOuvert, clubPull } from './club.js';
+import { ouvrirProfil } from './cercle.js';
 import { ACTIONS_DEFI, ouvrirDefi } from './defi-nouveau.js';
 import { ouvrirDirect } from './direct-porte.js';
 import { toast } from './import-cartes.js';
@@ -253,7 +254,8 @@ const ACTIONS = {
     if (!arme(b, g.chef ? 'Confirmer : supprimer pour tous' : 'Confirmer : quitter')) return;
     return quitterClub(g.id, g.chef);
   },
-  membre: id => { cercle.membre = id; ouvrir('membre'); },
+  // toucher un membre ouvre son profil ; le chef y retrouve « Retirer du club »
+  membre: id => { const g = clubOuvert(); cercle.membre = id; ouvrirProfil(id, { club: g && g.id }); },
   'membre-ami': async () => {
     const g = clubOuvert(), m = g && (cercle.membres[g.id] || []).find(x => x.user_id === cercle.membre);
     if (m && m.pseudo && await askFriend(m.pseudo)) closeMenu();

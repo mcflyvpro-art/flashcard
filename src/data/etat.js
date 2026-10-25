@@ -97,7 +97,10 @@ export const cercleNeuf = () => ({
   form: null,                  // brouillon de création ou de personnalisation d'un club
   code: '', reponse: null, envoi: false,  // saisie d'un code (salle ou club)
   membre: null,                // le membre dont on ouvre la fiche
-  retour: null                 // où revenir après un défi à son rythme : { name, id }
+  retour: null,                // où revenir après un défi à son rythme : { name, id }
+  profils: {},                 // profil_lecteur(), par personne (2026-10-25)
+  profilClub: null,            // le club d'où l'on a ouvert un profil (gestes du chef)
+  profilRetour: null           // où ramène le « Retour » d'un profil : { name, id }
 });
 export let cercle = cercleNeuf();
 

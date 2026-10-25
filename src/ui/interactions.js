@@ -7,12 +7,12 @@ import {
   mailbox, mods, online, peek, prefs, quiz, ref,
   reorder, sel, setAccOpen, setAnimate, setCardEdit,
   setDeckOpen, setDeckQ, setDuelRun, setFilter, setFindQ,
-  setHelpKey, setLeaving, setLegalBack, setLegalTab, setMateOpen, setMates2,
+  setHelpKey, setLeaving, setLegalBack, setLegalTab, setMates2,
   setPeek, setPendingGrade, setQuiz, setReorder, setSel, setShared,
   setStudy, shared, study, trash, view
 } from '../data/etat.js';
 import { allerClasses, go, render, retourLivre } from './bibliotheque.js';
-import { commuPull, doAdd } from './cercle.js';
+import { commuPull, doAdd, ouvrirProfil } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
 import { isPupil, lireClass, lireNew } from './classement.js';
 import {
@@ -128,7 +128,8 @@ function tapLegal(a, ds) {
 
 const tapYes = (a, ds) => answerFriend(ds.yes, true);
 const tapNo = (a, ds) => answerFriend(ds.no, false);
-function tapMate(a, ds) { setMateOpen(ds.mate); return openMenu('mate'); }
+/* toucher un ami ouvre son profil (ses gestes d'ami y sont, en bas) */
+const tapMate = (a, ds) => ouvrirProfil(ds.mate);
 const tapMail = (a, ds) => openMail(+ds.mail);
 const tapDpick = (a, ds) => duelPick(+ds.dpick);
 function tapDuel(a, ds) { duels.open = ds.duel; return openMenu('duelitem'); }

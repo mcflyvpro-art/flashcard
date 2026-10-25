@@ -46,6 +46,16 @@ export async function membresPull(club) {
   repeindre(/^club$/);
 }
 
+/* Le profil d'un lecteur (migration 20261025200000) : la base décide ce
+   qu'on a le droit d'en voir (« ok », « prive », « inconnu »). Le fuseau de
+   l'appareil, pour que « aujourd'hui » et l'heure préférée soient les siens. */
+export async function profilPull(id) {
+  const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return 'Europe/Paris'; } })();
+  try { cercle.profils[id] = await rpc('profil_lecteur', { u: id, p_tz: tz }) || { statut: 'inconnu' }; }
+  catch (e) { cercle.profils[id] = cercle.profils[id] || { statut: 'erreur' }; }
+  repeindre(/^profil$/);
+}
+
 export async function termineesPull(club, classe) {
   const k = club || 'classe:' + classe;
   try { cercle.terminees[k] = await rpc('salles_terminees', { club: club || null, classe: classe || null }) || []; }

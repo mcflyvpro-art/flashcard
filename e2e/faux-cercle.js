@@ -216,11 +216,47 @@ function terminees(store, m, b, uid) {
     });
 }
 
+/* ---------- le profil d'un lecteur (20261025200000) ----------
+   Les mêmes trois statuts qu'en base : complet pour soi, un ami ou un membre
+   d'un même club, réduit pour une demande en attente, « inconnu » sinon. Les
+   chiffres exacts (fuseau, séries) se prouvent dans supabase/tests/profil.sql. */
+const jourDe = t => new Date(t).toISOString().slice(0, 10);
+function serieEtRecord(jours) {
+  let serie = 0, record = 0, cours = 0;
+  for (let i = 0; i < jours.length; i++) { cours = jours[i] ? cours + 1 : 0; record = Math.max(record, cours); }
+  for (let i = jours.length - (jours[jours.length - 1] ? 1 : 2); i >= 0 && jours[i]; i--) serie++;
+  return { serie, record };
+}
+function profilDe(store, moi, u) {
+  const p = profil(store, u);
+  const lien = tab(store, 'friends').find(f => (f.user_id === moi && f.friend_id === u) || (f.user_id === u && f.friend_id === moi));
+  const ami = !!lien && lien.status === 'ok';
+  const clubs = tab(store, 'groups').filter(g => u !== moi && membre(store, g.id, moi) && membre(store, g.id, u));
+  const complet = u === moi || ami || clubs.length > 0;
+  if (!complet && !lien) return { statut: 'inconnu' };
+  const base = { statut: complet ? 'ok' : 'prive', moi: u === moi, nom: p.name || nomDe(store, u), pseudo: p.handle || '',
+    depuis: '2026-09-01', ami, clubs: clubs.map(g => ({ id: g.id, nom: g.name, embleme: g.embleme, teinte: g.teinte })) };
+  if (!complet) return base;
+  const l = tab(store, 'reviews').filter(r => r.user_id === u), age = r => Date.now() - Date.parse(r.created_at || 0);
+  const jours = Array.from({ length: 35 }, (_, i) => {
+    const d = jourDe(Date.now() - (34 - i) * 864e5);
+    return l.filter(r => jourDe(r.created_at) === d).length;
+  });
+  const mois = l.filter(r => age(r) < 30 * 864e5), noms = {};
+  for (const r of l) if (r.subject_name) noms[r.subject_name] = (noms[r.subject_name] || 0) + 1;
+  return { ...base, ...serieEtRecord(jours), jours, toujours: l.length, mois: mois.length,
+    semaine: l.filter(r => age(r) < 7 * 864e5).length,
+    justes: mois.length ? Math.round(100 * mois.filter(r => r.correct).length / mois.length) : null,
+    matieres: Object.entries(noms).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([nom, n]) => ({ nom, n })),
+    heure: l.length ? new Date(l[0].created_at).getHours() : null, livres: new Set(mois.map(r => r.deck_id)).size };
+}
+
 /* Rend [statut, corps] pour une fonction connue, `null` sinon. */
 export function rpcCercle(store, nom, b, user) {
   const m = modele(store), uid = user.id, c = b || {};
   const f = {
     my_friends: () => mesAmis(store, uid),
+    profil_lecteur: () => profilDe(store, uid, c.u),
     find_user: () => tab(store, 'profiles').filter(p => p.handle && p.handle === String(c.q || '').toLowerCase())
       .map(p => ({ id: p.id, handle: p.handle, name: p.name || p.handle })),
     leaderboard: () => classement(store, uid, c.days),
