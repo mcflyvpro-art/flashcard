@@ -15,6 +15,10 @@ playwright-report/
 .playwright-mcp/
 test-results/
 coverage/
+# scripts de revue visuelle et leurs captures (CLAUDE.md, « Commandes utiles »)
+e2e/zz-*.e2e.js
+undefined/
+zz-*/
 *.log
 
 # système et éditeurs
