@@ -113,7 +113,13 @@ l'air de marcher ».
     « Coller » d'un livre ouvre l'onglet Coller : `resetComp({ mode: 'coller' })`),
     `eleve-classes.js` (l'écran élève
     « Mes classes », téléphone d'abord ; `consumeRejoindre()` pour les liens et
-    QR `?rejoindre=CODE`, repris par `accueil()` une fois le rôle connu) et
+    QR `?rejoindre=CODE`, repris par `accueil()` une fois le rôle connu ; et la
+    **porte de la page d'une classe** : toucher sa classe — `ouvrirClasse(id)`,
+    vue `classe` — charge à la demande `classe-eleve.js` + `classe-eleve.css`,
+    préfixe `ec-` : nom, établissement, effectif, matières, date d'entrée, les
+    devoirs et défis de cette classe, ses professeurs, ses élèves (un camarade
+    ouvre son profil), « Quitter la classe » ; rien d'autre ne doit importer
+    `ui/classe-eleve.js` — l'ancienne feuille `el` n'existe plus) et
     l'**espace professeur**, PC et téléphone : `prof-accueil.js` (tableau de
     bord, agenda, barre latérale ≥ 1100 px), `prof-classe.js` (une classe, 5
     onglets), `prof-feuilles.js` (toutes ses feuilles, une seule entrée `pf`
@@ -258,7 +264,8 @@ l'air de marcher ».
   - **Jetons d'identité** (`20261025111500`, correctif `20261025113100`) : `profiles.figure`/`teinte` et `classes.embleme`/`teinte` (clés `^[a-z]{2,16}$`, rang 0–11, contraintes CHECK). Une seule porte de lecture, `visuels(personnes, classes)` (200 et 100 au plus), qui ne rend un choix qu'à qui partage quelque chose (amis même en demande, club, classe — camarades, professeurs, salle d'attente —, partie en direct, référent de l'établissement) ; `mon_jeton(cle, rang)` pour soi (un élève à carte aussi : son nom reste verrouillé) ; `prof_jeton_classe(cid, cle, rang)` pour qui gère la classe. `voit_personne`/`voit_classe` sont internes : **révoquer aussi `authenticated`** (les privilèges par défaut de Supabase le lui donnent, révoquer PUBLIC et anon n'y touche pas).
   - **Journal des révisions** (`20261025170855`) : chaque ligne de `reviews` porte sa photographie — `subject`, `subject_name`, `deck_name`, `ecart` (jours depuis la lecture précédente de la page, -1 la première fois) — et son `created_at` est l'heure de la lecture, envoyée par l'app (hors ligne compris), pas celle de l'envoi. Le déclencheur `contexte_revision` complète ce qu'une app ancienne n'envoie pas (depuis le paquet et le journal), sans jamais remplacer ce que l'app a dit, et ramène une date future à maintenant. **Ne jamais réécrire ces colonnes après coup.** Les statistiques passent par `journal(p_depuis, p_tz, p_bornes, p_locaux)` (security invoker, jsonb : `jours` regroupés par jour/matière/livre/palier, `heures`, `matieres` et `livres` = noms du moment, `toujours`, `connus`). `shared_deck` rend aussi `subject_name`, `mail.subject_name` voyage avec un livre envoyé : c'est le nom qui voyage, jamais l'identifiant.
   - **Profil d'un lecteur** (`20261025200000`) : `profil_lecteur(u, p_tz)` (jsonb) — statut `ok` (soi, ami accepté, membre d'un même club : décomptes et noms de matières, jamais un livre ni une carte), `prive` (quelqu'un qu'on voit déjà par `voit_personne` — camarade, professeur, joueur, demande en attente : nom, pseudo, ancienneté, clubs en commun, pas de chiffres), `inconnu` (personne d'autre, ou un blocage dans un sens ou l'autre).
-  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas), `journal.sql` (18 cas) et `profil.sql` (19 cas).
+  - **Page d'une classe, côté élève** (`20261025210000`) : `eleve_classe(cid)` (jsonb) — `inscrit` (un élève de la classe : nom, niveau, établissement, date d'entrée, `peut_quitter`, `profs` avec leur matière et le principal, `eleves` sous leur nom de classe avec le lien d'amitié de chacun, jamais un compte bloqué, jamais le code), `attente` (salle d'attente : nom de la classe seulement), `inconnue` (personne d'autre, ou classe archivée).
+  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas), `journal.sql` (18 cas), `profil.sql` (19 cas) et `classe_eleve.sql` (12 cas).
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
 - **Hébergement : une seule cible, Vercel, un seul domaine :
   `https://www.folioflashcard.online/`** (projet Vercel `flashcard`, équipe
@@ -359,7 +366,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, sauvegarde, entretien… cumulés) JS ≤ 56, CSS ≤ 22 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, sauvegarde, entretien… cumulés) JS ≤ 56, CSS ≤ 22 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans

@@ -158,6 +158,25 @@ function eleveClasses(store, m, uid) {
   ];
 }
 
+/* La page d'une classe (20261025210000) : la même forme qu'en base. Qui voit
+   quoi (blocages, salle d'attente, inconnus) se prouve dans
+   supabase/tests/classe_eleve.sql. */
+function eleveClasse(store, m, uid, cid) {
+  const c = classeDe(m, cid);
+  if (!c) return { statut: 'inconnue' };
+  if (!m.membres.some(x => x.cid === cid && x.uid === uid)) {
+    return m.demandes.some(x => x.cid === cid && x.uid === uid)
+      ? { statut: 'attente', id: c.id, nom: c.name, niveau: c.niveau, etab: '' } : { statut: 'inconnue' };
+  }
+  const amis = store.tables.friends || [];
+  const lien = id => (amis.find(f => (f.user_id === uid && f.friend_id === id) || (f.friend_id === uid && f.user_id === id)) || {}).status || '';
+  const eleves = membresDe(m, cid).map(x => ({ id: x.uid, nom: nomDe(m, x.uid, store), pseudo: '', moi: x.uid === uid, ami: lien(x.uid) }))
+    .sort((a, b) => (b.moi - a.moi) || a.nom.localeCompare(b.nom));
+  return { statut: 'inscrit', id: c.id, nom: c.name, niveau: c.niveau, etab: '', peut_quitter: true,
+    depuis: new Date().toISOString(), eleves,
+    profs: [{ id: c.owner, nom: nomDe(m, c.owner, store), matiere: c.matiere || '', principal: true }] };
+}
+
 function eleveDevoirs(store, m, uid) {
   const mes = new Set(m.membres.filter(x => x.uid === uid).map(x => x.cid));
   return m.devoirs.filter(d => mes.has(d.cid)).map(d => {
@@ -245,6 +264,7 @@ function fonctions(store, m, uid) {
     class_join: b => rejoindre(store, m, b, uid),
     eleve_classes: () => eleveClasses(store, m, uid),
     eleve_devoirs: () => eleveDevoirs(store, m, uid),
+    eleve_classe: b => eleveClasse(store, m, uid, b.cid),
     eleve_ouvrir_devoir: b => {
       const d = m.devoirs.find(x => x.id === b.aid);
       if (!d) return [];

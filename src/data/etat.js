@@ -301,7 +301,8 @@ export let compte = null;                  // { gere, nom, identifiant } | null
    (code tapé, lien, ou QR projeté au tableau). */
 export const eleveNeuf = () => ({
   classes: null, devoirs: null, err: 0,
-  code: '', apercu: null, prenom: '', nom: '', reponse: null, envoi: false
+  code: '', apercu: null, prenom: '', nom: '', reponse: null, envoi: false,
+  fiches: {}                   // eleve_classe() par classe : la page d'une classe (2026-10-25)
 });
 export let eleve = eleveNeuf();
 

@@ -12,7 +12,6 @@ import { paintMedia } from './carte-media.js';
 import { accountSheet, blockedSheet, reportSheet } from './classement.js';
 import { ROLENOM, refService, refTeam } from '../core/classement.js';
 import { COLORS, PALETTE, canUndo, deck, esc, plur, subj, undoLabel } from '../core/coeur-sync.js';
-import { paintMenuEleve } from './eleve-classes.js';
 import { paintMenuProf } from './prof-porte.js';
 import { CYCLES } from './etablissement.js';
 import {
@@ -297,7 +296,6 @@ function menuPainter(m) {
     /* Toutes les feuilles de l'espace professeur passent par une seule
        entrée ; laquelle est ouverte se lit dans `prof.feuille`. */
     pf: paintMenuProf,
-    el: paintMenuEleve,
     cc: paintMenuCercle,
     /* ---------- les feuilles du référent ---------- */
     refwho: paintMenuRefwho,

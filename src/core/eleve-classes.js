@@ -31,6 +31,14 @@ export async function eleveClassesPull() {
   if (view.name === 'classes' || view.name === 'commu' || (view.name === 'home' && avant !== enClasse())) { setAnimate(false); render(); }
 }
 
+/* La page d'une classe (migration 20261025210000) : ses professeurs, ses
+   élèves et le lien d'amitié avec chacun ; la base décide ce qui se voit. */
+export async function classePull(cid) {
+  try { eleve.fiches[cid] = await rpc('eleve_classe', { cid }) || { statut: 'inconnue' }; }
+  catch (e) { eleve.fiches[cid] = eleve.fiches[cid] || { statut: 'erreur' }; }
+  if (view.name === 'classe') { setAnimate(false); render(); }
+}
+
 /** @returns {Promise<any>} la fiche (statut, nom, prof…) ou `null` */
 export async function apercuCode(code) {
   const [r] = await rpc('class_preview', { join_code: code }) || [];

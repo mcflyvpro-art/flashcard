@@ -2,20 +2,20 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { atSchool, isProf, isPupil } from './classement.js';
-import { auth, cercle, compte, db, duels, eleve, mates2, online, setAnimate, setMenu, view } from '../data/etat.js';
+import { auth, cercle, compte, db, duels, eleve, mates2, online, setAnimate, view } from '../data/etat.js';
 import { bindPager, go, render, tabs } from './bibliotheque.js';
 import { defiLigne, enDirectHtml, parDefi } from './cercle.js';
 import {
-  codeComplet, codeDepuisTexte, echeance, etatDevoirEleve, formatCode, iso, jourCourt,
+  codeComplet, codeDepuisTexte, echeance, etatDevoirEleve, formatCode, iso,
   messageStatut, nomPropre, nomValide, normCode
 } from '../classe.js';
 import { avatar, blason, couleurClasse } from './jeton.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
-  annulerDemande, apercuCode, cartesDevoir, eleveClassesPull, messageErreur, quitterClasse, rejoindreCode
+  annulerDemande, apercuCode, cartesDevoir, classePull, eleveClassesPull, messageErreur, quitterClasse, rejoindreCode
 } from '../core/eleve-classes.js';
 import { importPayload, toast } from './import-cartes.js';
-import { closeMenu, mountMenu, openMenu } from './menus-a.js';
+import { closeMenu } from './menus-a.js';
 import { rejoindreCollegue } from './prof-porte.js';
 
 /* ══════════ « Mes classes », côté élève (téléphone d'abord) ══════════
@@ -63,6 +63,14 @@ function rejoindreHtml() {
 }
 
 /* ---------- les devoirs ---------- */
+export function devoirLigne(d, auj) {
+  const e = etatDevoirEleve(d, auj);
+  return `<button class="el-dv ${e.k}" data-el="devoir" data-id="${esc(d.id)}">
+        <i class="el-dot" style="--k:${couleurClasse(d.class_id)}"></i>
+        <span class="el-dvt"><b>${esc(d.nom)}</b><i>${esc(d.classe)} · ${plur(d.n, 'carte')}${d.due ? ' · ' + esc(echeance(d.due, auj)) : ''}</i></span>
+        <em class="el-pill ${e.k}">${esc(e.t)}</em>${svg(I.arrow)}</button>`;
+}
+
 function devoirsHtml() {
   const l = eleve.devoirs;
   if (!l) return `<div class="el-carte el-load"></div>`;
@@ -70,13 +78,8 @@ function devoirsHtml() {
   const afaire = l.filter(d => d.etat !== 'rendu');
   const rendus = l.length - afaire.length;
   if (!l.length) return `<p class="el-vide">${svg(I.check)}Aucun devoir pour l’instant.</p>`;
-  return `${afaire.length ? `<div class="el-list">${afaire.map(d => {
-      const e = etatDevoirEleve(d, auj);
-      return `<button class="el-dv ${e.k}" data-el="devoir" data-id="${esc(d.id)}">
-        <i class="el-dot" style="--k:${couleurClasse(d.class_id)}"></i>
-        <span class="el-dvt"><b>${esc(d.nom)}</b><i>${esc(d.classe)} · ${plur(d.n, 'carte')}${d.due ? ' · ' + esc(echeance(d.due, auj)) : ''}</i></span>
-        <em class="el-pill ${e.k}">${esc(e.t)}</em>${svg(I.arrow)}</button>`;
-    }).join('')}</div>` : `<p class="el-vide">${svg(I.check)}Tout est rendu.</p>`}
+  return `${afaire.length ? `<div class="el-list">${afaire.map(d => devoirLigne(d, auj)).join('')}</div>`
+      : `<p class="el-vide">${svg(I.check)}Tout est rendu.</p>`}
     ${rendus ? `<p class="el-note">${plur(rendus, 'devoir')} rendu${rendus > 1 ? 's' : ''}.</p>` : ''}`;
 }
 
@@ -197,29 +200,13 @@ async function ouvrirDevoir(aid) {
 
 function repeint() { if (view.name === 'classes') { setAnimate(false); render(); } }
 
-/* La feuille d'une classe. */
-export function paintMenuEleve(w) {
-  const c = (eleve.classes || []).find(x => x.class_id === eleve.open);
-  if (!c) { setMenu(null); return; }
-  w.innerHTML = `<div class="scrim" data-mact="close"></div><div class="menu">
-    <div class="mhd">${pastille(c.class_id)}<span class="mhx"><b>${esc(c.nom)}</b><i>${esc(c.etab || 'Hors établissement')}</i></span></div>
-    <div class="el-fiche">
-      ${c.prof ? `<p>${svg(I.user)}<b>${esc(c.prof)}</b></p>` : ''}
-      ${c.matieres ? `<p>${svg(I.book)}${esc(c.matieres)}</p>` : ''}
-      <p>${svg(I.users)}${plur(c.effectif, 'élève')}</p>
-      <p>${svg(I.clock)}Inscrit le ${esc(jourCourt(String(c.depuis).slice(0, 10)))}</p></div>
-    ${c.peut_quitter ? `<button class="mi warn" data-el="quitter" data-id="${esc(c.class_id)}">${svg(I.exit)}<span>Quitter la classe</span></button>`
-      : `<p class="el-note pad">C’est ton établissement qui t’a inscrit : lui seul peut t’en retirer.</p>`}
-  </div>`;
-  mountMenu(w);
-}
-
 const ACTIONS = {
   apercu: () => apercu(),
   'annuler-apercu': () => { eleve.apercu = null; eleve.reponse = null; repeint(); },
   rejoindre,
   devoir: id => ouvrirDevoir(id),
-  classe: id => { eleve.open = id; openMenu('el'); },
+  // toucher sa classe ouvre sa page (ui/classe-eleve.js, chargé à la demande)
+  classe: id => ouvrirClasse(id),
   annuler: async id => {
     try { await annulerDemande(id); toast(I.check, 'Demande annulée'); } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
     eleveClassesPull();
@@ -260,6 +247,23 @@ document.addEventListener('input', e => {
   if (p) p.innerHTML = ok ? 'Tu apparaîtras comme <b>' + esc(nomPropre(eleve.prenom, eleve.nom)) + '</b>'
     : 'Ton vrai prénom et ton vrai nom : ton professeur doit te reconnaître.';
 });
+
+/* ---------- la porte de la page d'une classe ----------
+   La page vit dans ui/classe-eleve.js, chargée à la demande avec sa feuille
+   de style. Rien d'autre ne doit importer ui/classe-eleve.js. */
+let classeMorceau = null;
+export function ouvrirClasse(id) {
+  if (!id) return;
+  eleve.open = id;
+  classePull(id);
+  go('classe', id);
+}
+export function classeEleveView() {
+  if (classeMorceau) return classeMorceau.classeEcran();
+  $.innerHTML = `<div class="page el-page"><div class="el-carte el-load"></div></div>`;
+  import('./classe-eleve.js').then(m => { classeMorceau = m; if (view.name === 'classe') render(); })
+    .catch(() => toast(I.x, 'La classe n’a pas pu s’ouvrir : vérifie ta connexion'));
+}
 
 /* « ?rejoindre=CODE » : le lien envoyé par le professeur, ou le QR projeté.
    Sans session, le code attend la connexion (sessionStorage) ; avec, on

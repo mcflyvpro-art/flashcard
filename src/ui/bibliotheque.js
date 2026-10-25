@@ -27,7 +27,7 @@ import { duelView } from './defis.js';
 import { duelsPull } from '../core/defis.js';
 import { findView, statsView } from './ecran-groupe.js';
 import { statsPull } from '../core/ecran-groupe.js';
-import { mesClassesView } from './eleve-classes.js';
+import { classeEleveView, mesClassesView } from './eleve-classes.js';
 import { eleveClassesPull } from '../core/eleve-classes.js';
 import { allerAccueil, profAccueilView, profAgendaView, profClasseView } from './prof-porte.js';
 import {
@@ -105,7 +105,7 @@ export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, lettre: lettreView, stats: statsView, find: findView,
               shared: sharedView, duel: duelView, legal: legalView, mod: modView,
-              classes: mesClassesView,
+              classes: mesClassesView, classe: classeEleveView,
               prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
               ref: refView,
               admin: adminView,
@@ -141,7 +141,7 @@ export function render() {
    depuis le journal ou une recherche aussi. Seuls les écrans d'où l'on
    choisit un livre comptent : la révision, le quiz ou la création en
    reviennent par le livre lui-même, sans changer l'origine. */
-const ORIGINES = /^(home|classes|commu|club|friends|stats|mail|lettre|find)$/;
+const ORIGINES = /^(home|classes|classe|commu|club|friends|stats|mail|lettre|find)$/;
 let origineLivre = { name: 'home', id: null };
 export const retourLivre = () => origineLivre;
 
@@ -158,7 +158,7 @@ function railOn() {
   if (view.name === 'settings') return 'settings';
   if (view.name === 'mail' || view.name === 'lettre') return 'mail';
   if (view.name === 'stats') return 'stats';
-  if (/^(classes|prof|ref$|admin$)/.test(view.name)) return 'classes';
+  if (/^(classes|classe$|prof|ref$|admin$)/.test(view.name)) return 'classes';
   if (/^(commu|friends|club|defi|direct|shared)$/.test(view.name)) return 'commu';
   return 'home';
 }
