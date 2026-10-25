@@ -23,6 +23,10 @@
   --ring:0 0 0 3px rgba(29,28,25,.09);
   --e:cubic-bezier(.22,1,.36,1);
   --sp:cubic-bezier(.34,1.32,.5,1);
+  /* la courbe des feuilles d'iOS : part vite, se pose sans rebond */
+  --ios:cubic-bezier(.32,.72,0,1);
+  /* ce qui s'en va accélère et disparaît : jamais plus long que l'entrée */
+  --out:cubic-bezier(.4,0,1,1);
   --pad:20px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -42,13 +46,24 @@ input,textarea{font:inherit;color:inherit;border:0;outline:none;background:none;
 svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 #app{min-height:100svh;display:flex;flex-direction:column;
   padding:max(10px,env(safe-area-inset-top)) var(--pad) calc(12px + env(safe-area-inset-bottom))}
-.fade > *{animation:rise .5s var(--e) both}
-.fade > *:nth-child(2){animation-delay:.03s}
-.fade > *:nth-child(3){animation-delay:.06s}
-.fade > *:nth-child(4){animation-delay:.09s}
-@keyframes rise{from{opacity:0;transform:translateY(12px)}}
-@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}}
+/* ---------- le mouvement (ui/mouvement.js) ----------
+   Ne s'anime que ce qui arrive. .fade n'est posée sur la racine qu'à
+   l'arrivée d'un écran, pour un peu plus d'une demi-seconde ; .neuf, que
+   sur un élément à clé (data-k) qui n'était pas à l'écran. Un redessin du
+   même écran ne rejoue donc rien, et un redessin pendant l'entrée la
+   prolonge au même point : --retard est l'âge de l'entrée, en négatif.
+   Des entrées courtes et discrètes — un fondu, six pixels, moins d'un
+   tiers de seconde —, un échelonnement plafonné : une liste de cent
+   livres n'arrive pas plus lentement qu'une liste de six. */
+.fade > *{animation:rise .3s var(--e) both;animation-delay:var(--retard,0ms)}
+/* la barre du bas et le bouton flottant ne font pas partie de la page qui
+   arrive : ils restent en place d'un écran à l'autre (.neuf s'ils apparaissent) */
+.fade > .tabs,.fade > .fab{animation:none}
+.tabs.neuf,.fab.neuf{animation:fadein .24s var(--e) both}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}}
 @keyframes fadein{from{opacity:0}}
+@keyframes fadeout{to{opacity:0}}
 
 /* ---------- barres ---------- */
 .bar{display:flex;align-items:center;gap:8px;min-height:46px;flex:none}
@@ -121,7 +136,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   background:var(--card);color:var(--ink);box-shadow:var(--edge),var(--s1);overflow:hidden;
   transition:transform .2s var(--e),box-shadow .2s var(--e),opacity .3s}
 .tile .spine{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--d);pointer-events:none}
-.fade .tile{animation:pop .45s var(--e) both;animation-delay:calc(var(--i) * 25ms)}
+.fade .tile{animation:pop .3s var(--e) both;animation-delay:calc(var(--retard,0ms) + min(var(--i,0),11) * 16ms)}
 .tile:active{transform:scale(.98)}
 .tile .pind{position:absolute;bottom:14px;right:14px;z-index:2;color:var(--soft);display:grid;place-items:center}
 .tile .pind svg{width:13px;height:13px;stroke-width:2.2}
@@ -146,7 +161,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .lrow{display:flex;align-items:center;gap:10px;background:var(--card);box-shadow:var(--edge);
   border-radius:12px;border-left:4px solid var(--d);padding:11px 14px;margin-bottom:6px;
   transition:box-shadow .3s,transform .3s var(--sp)}
-.fade .lrow{animation:pop .5s var(--e) both;animation-delay:calc(var(--i) * 14ms)}
+.fade .lrow{animation:pop .3s var(--e) both;animation-delay:calc(var(--retard,0ms) + min(var(--i,0),11) * 16ms)}
 .lrow.mute{opacity:.5}
 .lrow .ldot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--d)}
 .lrow .lmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
@@ -188,7 +203,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .tabs button.on{color:var(--bg)}
 .tabs svg{width:21px;height:21px;stroke-width:2}
 .tabs .sl{position:absolute;top:5px;left:5px;width:74px;height:46px;border-radius:15px;
-  background:var(--ink);transition:transform .46s var(--sp)}
+  background:var(--ink);transition:transform .34s var(--e)}
 .tabs .icb{position:absolute;top:4px;right:14px;min-width:16px;height:16px;padding:0 4px;
   border-radius:8px;background:var(--ko);color:#fff;font-size:10.5px;font-weight:800;
   line-height:16px;text-align:center;font-style:normal}
@@ -198,19 +213,18 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   width:56px;height:56px;border-radius:20px;background:var(--ink);color:var(--bg);
   display:grid;place-items:center;box-shadow:var(--s3);z-index:20;
   transition:transform .38s var(--sp)}
-.fade .fab{animation:pop .55s var(--e) .12s both}
 .fab:active{transform:scale(.85)}
 .fab svg{width:23px;height:23px;stroke-width:2.3}
 /* le rond vert qui valide le rangement : même place que le bouton
    d'ajout qu'il remplace, rond plutôt que pilule puisqu'il ne porte
    qu'une icône, et vert pour se distinguer de tout le reste, éteint */
-.fab.fabok{border-radius:50%;background:var(--ok);animation:fabin .3s var(--sp) both}
-@keyframes fabin{from{opacity:0;transform:scale(.5) rotate(-30deg)}}
+.fab.fabok{border-radius:50%;background:var(--ok)}
+.fab.fabok.neuf{animation:fabin .26s var(--e) both}
+@keyframes fabin{from{opacity:0;transform:scale(.7)}}
 
 /* ---------- fiche paquet ---------- */
 .head{position:relative;padding:2px 2px 0 16px;margin-bottom:18px;color:var(--ink);
   border-left:4px solid var(--d)}
-.fade .head{animation:rise .4s var(--e) both}
 .head .t{position:relative;z-index:1;font-weight:750;font-size:26px;
   line-height:1.18;letter-spacing:-.6px;min-height:31px;outline:none}
 .head .t:focus{opacity:.5}
@@ -238,7 +252,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .row{display:flex;align-items:center;gap:6px;background:var(--card);box-shadow:var(--edge);
   border-radius:12px;padding:10px 8px 10px 14px;margin-bottom:6px;
   transition:box-shadow .3s,transform .3s var(--sp)}
-.fade .row{animation:pop .5s var(--e) both;animation-delay:calc(var(--i) * 14ms)}
+.fade .row{animation:pop .3s var(--e) both;animation-delay:calc(var(--retard,0ms) + min(var(--i,0),11) * 16ms)}
 .row:focus-within{box-shadow:inset 0 0 0 1px rgba(29,28,25,.22),var(--ring)}
 .row .fl{flex:1;min-width:0;position:relative}
 .row input{width:100%;padding:2px 0;font-weight:600;font-size:15px;letter-spacing:-.15px}
@@ -296,7 +310,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .row .ck:active{transform:scale(.85)}
 .selb{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
   z-index:39;display:flex;align-items:center;gap:10px;padding:9px 10px 9px 8px;
-  background:var(--card);border-radius:16px;box-shadow:var(--edge),var(--s3);animation:up .42s var(--e)}
+  background:var(--card);border-radius:16px;box-shadow:var(--edge),var(--s3)}
+.selb.neuf{animation:monte .3s var(--ios) both}
+@keyframes monte{from{opacity:0;transform:translateY(16px)}}
 .sbl{padding:8px 12px;border-radius:13px;background:var(--surf);color:var(--ink);
   font-weight:730;font-size:13.5px;letter-spacing:-.2px;display:flex;align-items:center;gap:6px}
 .sbl svg{width:14px;height:14px;stroke-width:2.6}
@@ -368,7 +384,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .acts{display:flex;gap:11px;padding:2px 0 2px;flex:none}
 .act{flex:1;height:58px;border-radius:16px;display:grid;place-items:center;
   background:var(--card);box-shadow:var(--edge);transition:transform .3s var(--sp),box-shadow .3s}
-.fade .act{animation:pop .4s var(--e) both}
+.fade .act{animation:pop .3s var(--e) both;animation-delay:var(--retard,0ms)}
 .act:active{transform:scale(.94);box-shadow:var(--s2)}
 .act svg{width:25px;height:25px;stroke-width:2.5}
 .act.no{color:var(--ko)} .act.yes{color:var(--ok)}
@@ -379,7 +395,10 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 
 /* ---------- écran de fin ---------- */
 .done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px}
-.ring{position:relative;width:172px;height:172px;animation:pop .6s var(--sp) both}
+.ring{position:relative;width:172px;height:172px}
+/* le bilan d'une séance arrive une fois (data-k) ; redessiné, il ne rejoue rien */
+.neuf .ring{animation:anneau .4s var(--e) both}
+@keyframes anneau{from{opacity:0;transform:scale(.96)}}
 .ring svg{position:absolute;inset:0;width:172px;height:172px;transform:rotate(-90deg)}
 .ring circle{fill:none;stroke-width:9;stroke-linecap:round}
 .ring .bgc{stroke:var(--surf2)}
@@ -390,7 +409,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .ring .v{font-weight:800;font-size:44px;letter-spacing:-2px;line-height:1;
   font-variant-numeric:tabular-nums}
 .ring .u{font-size:13.5px;font-weight:700;color:var(--soft);font-variant-numeric:tabular-nums}
-.done .b{display:flex;gap:11px;animation:rise .5s var(--e) .24s both}
+.done .b{display:flex;gap:11px}
+.done.neuf .b{animation:rise .3s var(--e) .16s both}
 .done .b button{height:50px;padding:0 22px;border-radius:13px;display:flex;align-items:center;
   gap:9px;font-weight:650;font-size:15px;background:var(--card);box-shadow:var(--edge);
   transition:transform .3s var(--sp)}
@@ -404,7 +424,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   padding:10px 0 24px}
 .rev::-webkit-scrollbar{display:none}
 .rev .ring{flex:none}
-.rev .b{display:flex;gap:9px;width:100%;animation:rise .5s var(--e) .2s both}
+.rev .b{display:flex;gap:9px;width:100%}
+.rev.neuf .b{animation:rise .3s var(--e) .16s both}
 .rev .b button{flex:1;height:48px;border-radius:13px;display:flex;align-items:center;
   justify-content:center;gap:8px;font-weight:650;font-size:14.5px;letter-spacing:-.2px;
   background:var(--card);box-shadow:var(--edge);transition:transform .3s var(--sp)}
@@ -413,7 +434,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .rev .b svg{width:17px;height:17px;stroke-width:2.2}
 .rev .lbl{width:100%;margin:0 2px -8px}
 
-.tiles{display:flex;gap:8px;width:100%;animation:rise .5s var(--e) .1s both}
+.tiles{display:flex;gap:8px;width:100%}
+.rev.neuf .tiles{animation:rise .3s var(--e) .06s both}
 .st{flex:1;min-width:0;background:var(--card);box-shadow:var(--edge);border-radius:14px;
   padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:2px}
 .st b{font-weight:800;font-size:21px;letter-spacing:-.7px;font-variant-numeric:tabular-nums}
@@ -427,13 +449,14 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
    son écran. */
 .card2{background:var(--card);box-shadow:var(--edge);border-radius:14px;padding:14px 16px}
 
-.strip{display:flex;gap:3px;width:100%;height:9px;animation:rise .5s var(--e) .14s both}
+.strip{display:flex;gap:3px;width:100%;height:9px}
+.rev.neuf .strip{animation:rise .3s var(--e) .09s both}
 .strip i{flex:1;min-width:3px;border-radius:3px;background:var(--ok);opacity:.85}
 .strip i.n{background:var(--ko)}
 
 .hist{display:flex;align-items:flex-end;gap:6px;width:100%;height:62px;
-  padding-bottom:1px;border-bottom:1px solid var(--hair);
-  animation:rise .5s var(--e) .18s both}
+  padding-bottom:1px;border-bottom:1px solid var(--hair)}
+.rev.neuf .hist{animation:rise .3s var(--e) .12s both}
 .hb{flex:1;max-width:46px;height:100%;display:flex;align-items:flex-end}
 .hb i{width:100%;min-height:5px;border-radius:8px 8px 3px 3px;background:var(--surf2);
   transition:height .7s var(--e)}
@@ -441,7 +464,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 
 .miss{display:flex;flex-direction:column;gap:8px;width:100%}
 .mr{background:var(--card);box-shadow:var(--edge);border-radius:14px;padding:12px 15px;
-  display:flex;flex-direction:column;gap:5px;animation:pop .45s var(--e) both}
+  display:flex;flex-direction:column;gap:5px}
+.rev.neuf .mr{animation:pop .3s var(--e) .16s both}
 .mr .q{font-weight:750;letter-spacing:-.25px;font-size:15.5px}
 .mr .w,.mr .g{display:flex;align-items:flex-start;gap:7px;font-size:14.5px;font-weight:600;line-height:1.42}
 .mr .w{color:var(--soft);text-decoration:line-through;text-decoration-color:rgba(196,86,107,.5)}
@@ -454,13 +478,15 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   gap:22px;padding:14px 0 18px;min-height:0}
 .ask{font-weight:800;font-size:clamp(28px,8.2vw,48px);line-height:1.14;letter-spacing:-1.3px;
   text-align:center;transition:color .34s var(--e),transform .45s var(--sp)}
-.fade .ask{animation:rise .42s var(--e) both}
+/* une question neuve arrive (data-k sur .qz) ; la même, redessinée après
+   la réponse, reste immobile */
+.qz.neuf .ask{animation:rise .26s var(--e) both}
 .ask.good{color:var(--ok);transform:scale(1.05)}
 .ask.bad{color:var(--ko)}
 .sol{display:flex;align-items:center;gap:10px;padding:12px 20px;border-radius:18px;
   background:rgba(62,143,98,.11);color:var(--ok);font-weight:750;
   font-size:clamp(19px,5.2vw,27px);letter-spacing:-.5px;text-align:center}
-.fade .sol{animation:pop .5s var(--sp) both}
+.sol.neuf{animation:pop .26s var(--e) both}
 .sol svg{width:20px;height:20px;stroke-width:2.6;flex:none}
 .ans{width:100%;border-radius:14px;background:var(--card);box-shadow:var(--edge);
   padding:19px 22px;font-size:19px;font-weight:700;text-align:center;letter-spacing:-.3px;
@@ -504,7 +530,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .cr-tabs button.on{background:var(--card);color:var(--ink);box-shadow:var(--s1),var(--edge)}
 .cr-tabs button span{max-width:100%}
 
-.cr-panel{display:flex;flex-direction:column;gap:12px;animation:rise .25s var(--e) both}
+.cr-panel{display:flex;flex-direction:column;gap:12px}
+/* l'onglet qu'on vient de choisir (data-k), pas chaque page ajoutée */
+.cr-panel.neuf{animation:fadein .18s var(--e) both}
 .cr-aide{margin:2px 4px 0;font-size:14px;line-height:1.45;color:var(--soft)}
 
 .cr-comp{background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:6px;
@@ -590,6 +618,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .dc{display:flex;align-items:center;gap:8px;background:var(--card);box-shadow:var(--edge);
   border-radius:12px;padding:9px 6px 9px 14px;cursor:pointer;
   transition:box-shadow .15s,transform .2s var(--sp)}
+/* la page qu'on vient d'ajouter se pose en tête de liste ; les autres ne bougent pas */
+.dc.neuf{animation:pop .24s var(--e) both}
 .dc:active{transform:scale(.99)}
 .dc.on{background:color-mix(in srgb,var(--ink) 3%,var(--card));box-shadow:inset 0 0 0 1.5px rgba(29,28,25,.3)}
 .dc .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
@@ -609,7 +639,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 
 /* ---------- menu ---------- */
 .scrim{position:fixed;inset:0;background:rgba(27,24,29,.3);z-index:40;
-  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);animation:fadein .32s var(--e)}
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);animation:fadein .28s var(--e)}
 /* La feuille elle-même ne défile plus jamais : elle a une hauteur
    plafonnée et c'est .mbody, en dessous de la poignée, qui prend le
    débordement. overscroll-behavior:contain empêche un swipe qui
@@ -618,9 +648,16 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .menu{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
   z-index:41;background:var(--card);border-radius:20px;box-shadow:var(--s3);
   max-height:min(78vh,calc(100svh - 96px));display:flex;flex-direction:column;
-  overflow:hidden;animation:up .5s var(--e)}
-@keyframes up{from{opacity:0;transform:translateY(60px)}}
-.menu.deja,.scrim.deja,.menu.deja.dlg,.menu.deja.pop{animation:none}
+  overflow:hidden;animation:up .38s var(--ios)}
+/* elle monte du bas de l'écran, entière, comme une feuille d'iOS */
+@keyframes up{from{transform:translateY(calc(100% + 24px))}}
+/* Une feuille redessinée ne rejoue pas son entrée (menus-a.js, poser) —
+   quelle que soit sa forme : tiroir, tableau, boîte, menu accroché. */
+.menu.deja,.scrim.deja{animation:none !important}
+/* celle qui s'en va ne retient plus aucun geste : la page est déjà là */
+.menu.sort,.scrim.sort{pointer-events:none}
+/* une étape à l'autre dans la même feuille : seul le contenu change */
+.mbody.change{animation:fadein .2s var(--e) both}
 .mtop{flex:none;position:relative;display:flex;align-items:center;justify-content:center;padding:11px 7px 5px}
 .mgrip{width:34px;height:4px;border-radius:3px;background:var(--hair)}
 .mx{position:absolute;right:8px;top:8px;width:30px;height:30px;border-radius:11px;
@@ -661,22 +698,24 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 
 /* ---------- connexion ---------- */
 .login{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:0;padding:0 6px 40px;animation:rise .55s var(--e) both}
-.login .logo{width:78px;height:78px;border-radius:22px;box-shadow:var(--s2);
-  animation:pop .7s var(--sp) both}
-.login .lt{margin:16px 0 30px;font-weight:800;font-size:27px;letter-spacing:-.9px;
-  animation:rise .55s var(--e) .08s both}
+  gap:0;padding:0 6px 40px}
+.login .logo{width:78px;height:78px;border-radius:22px;box-shadow:var(--s2)}
+.login .lt{margin:16px 0 30px;font-weight:800;font-size:27px;letter-spacing:-.9px}
 .passage{width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px 12px;
-  margin:0 0 18px;padding:14px 14px 12px 16px;background:var(--card);box-shadow:var(--edge);border-radius:14px;
-  animation:rise .55s var(--e) .1s both}
+  margin:0 0 18px;padding:14px 14px 12px 16px;background:var(--card);box-shadow:var(--edge);border-radius:14px}
 .passage > svg{width:22px;height:22px;color:var(--ink2)}
 .passage b{font-size:24px;font-weight:750;letter-spacing:1.5px;font-variant-numeric:tabular-nums}
 .passage button{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;
   background:var(--bg2);font-weight:650;font-size:14px}
 .passage button svg{width:16px;height:16px}
 .passage i{grid-column:1 / -1;font-style:normal;font-size:12.5px;font-weight:600;color:var(--soft)}
-.lf{width:100%;display:flex;flex-direction:column;gap:10px;
-  animation:rise .55s var(--e) .14s both}
+.lf{width:100%;display:flex;flex-direction:column;gap:10px}
+/* l'écran de connexion s'anime à l'arrivée, pas quand on passe de
+   « Se connecter » à « Créer un compte » */
+.fade .login .logo{animation:anneau .4s var(--e) both}
+.fade .login .lt{animation:rise .3s var(--e) .05s both}
+.fade .passage{animation:rise .3s var(--e) .07s both}
+.fade .lf{animation:rise .3s var(--e) .09s both}
 .lrow{display:flex;align-items:center;gap:12px;background:var(--card);box-shadow:var(--edge);
   border-radius:13px;padding:0 8px 0 16px;height:54px;transition:box-shadow .2s}
 .lrow:focus-within{box-shadow:inset 0 0 0 1px rgba(29,28,25,.24),var(--ring)}
@@ -696,7 +735,6 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .sr{display:flex;align-items:center;gap:12px;background:var(--card);box-shadow:var(--edge);
   border-radius:13px;padding:14px 15px;text-align:left;
   transition:transform .3s var(--sp),box-shadow .3s}
-.fade .sr{animation:pop .45s var(--e) both}
 .sr:active{transform:scale(.98)}
 .sr > i{width:16px;height:16px;border-radius:50%;flex:none;background:var(--d);
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
@@ -801,7 +839,11 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   transform:translateX(-50%);background:var(--ink);color:var(--bg);
   display:flex;align-items:center;gap:9px;padding:12px 18px;border-radius:16px;
   font-weight:700;font-size:15px;z-index:60;box-shadow:var(--s3);
-  font-variant-numeric:tabular-nums;animation:tin .45s var(--sp)}
+  font-variant-numeric:tabular-nums;animation:tin .26s var(--e) both}
+/* un autre message dans le même toast : le texte change, le toast ne bouge pas */
+.toast.maj > *{animation:fadein .16s var(--e) both}
+.toast.sort{animation:tout .18s var(--out) forwards;pointer-events:none}
+@keyframes tout{to{opacity:0;transform:translate(-50%,4px)}}
 .toast svg{width:17px;height:17px;stroke-width:2.4}
 /* « Annuler » posé dans le toast : la dernière action reste rattrapable
    quelques secondes sans quitter l'écran où on l'a faite */
@@ -810,8 +852,11 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   font-weight:780;font-size:14px;letter-spacing:-.2px}
 .tun:active{background:rgba(255,255,255,.26)}
 .tun svg{width:15px;height:15px}
-@keyframes tin{from{opacity:0;transform:translate(-50%,16px) scale(.88)}}
-@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.1s !important}}
+@keyframes tin{from{opacity:0;transform:translate(-50%,10px)}}
+/* Mouvement réduit : plus aucune entrée ni boucle (un sablier qui tournait
+   en .01 ms à l'infini clignotait au hasard), des transitions à peine là. */
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;
+  animation-delay:0s !important;animation-iteration-count:1 !important;transition-duration:.1s !important}}
 
 /* ══════════════════════════════════════════════════════════════
    Desktop — rail latéral, contenu cadré, mises en page à deux colonnes
@@ -833,10 +878,10 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   .menu .mtop{position:absolute;top:0;right:0;z-index:6;padding:0}
   .menu .mx{top:12px;right:12px;width:32px;height:32px;border-radius:10px;background:transparent}
   .menu .mx:hover{background:var(--surf)}
-  .menu.dlg{animation:dlgIn .22s var(--e)}
+  .menu.dlg{animation:dlgIn .2s var(--e)}
   .menu.dlg .mbody{padding:16px 10px 12px}
   .menu.dlg .mhd{padding-right:52px}
-  @keyframes dlgIn{from{opacity:0;transform:scale(.97)}}
+  @keyframes dlgIn{from{opacity:0;transform:translateY(6px) scale(.985)}}
   .menu.pop{right:auto;bottom:auto;margin:0;width:max-content;min-width:240px;max-width:340px;
     border-radius:14px;box-shadow:var(--s3),var(--edge);animation:popIn .14s ease-out}
   .menu.pop:has(.htxt){width:320px}
@@ -1076,7 +1121,6 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .resume,.marathon{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;
   border-radius:14px;background:var(--card);box-shadow:var(--edge);margin-bottom:14px;text-align:left;
   transition:transform .26s var(--sp),box-shadow .26s}
-.fade .resume,.fade .marathon{animation:pop .5s var(--e) both}
 /* Il se retrouvait souvent juste au-dessus du bouton rond, du même noir :
    deux taches identiques qu'on confond. Reliure fauve, encre claire. */
 .marathon{margin:0 0 16px;background:var(--ink);color:#fff;box-shadow:none}
@@ -1257,7 +1301,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   border-radius:18px;background:var(--card);color:var(--ink);box-shadow:var(--edge),var(--s1);
   display:grid;place-items:center;align-content:center;gap:12px;text-align:center;overflow:hidden}
 .qcard::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:var(--d,var(--line))}
-.fade .qcard{animation:pop .45s var(--e) both}
+.qcard.neuf{animation:pop .26s var(--e) both}
 .qcard span{font-family:var(--serif);font-weight:700;font-size:clamp(20px,5.4vw,30px);
   line-height:1.24;letter-spacing:-.2px}
 .qcard .snds{position:absolute;right:11px;bottom:11px;gap:7px}
@@ -1327,7 +1371,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   font-variant-numeric:tabular-nums;
   max-width:min(560px,100%);margin:0 auto;padding:0 14px;text-align:center;
   white-space:normal;overflow-wrap:break-word;line-height:1.5}
-.fade .hmask{animation:rise .3s var(--e) both}
+.qz.neuf .hmask{animation:rise .26s var(--e) both}
 .arow{display:flex;gap:8px;align-items:stretch}
 .arow .ans{flex:1;min-width:0;width:auto}
 .ai.mic{width:56px;height:auto}
@@ -1428,8 +1472,9 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,[contenteditable
    pile sur son bouton principal : « Envoi impossible » recouvrait
    « Enregistrer », au point qu'on croyait lire le bouton. Feuille
    ouverte, le message passe en haut. */
-.toast.up{animation:tdown .45s var(--sp)}
-@keyframes tdown{from{opacity:0;transform:translate(-50%,-14px) scale(.97)}}
+.toast.up{animation-name:tdown}
+.toast.up.sort{animation-name:tout}
+@keyframes tdown{from{opacity:0;transform:translate(-50%,-10px)}}
 
 /* Le contenu défilait derrière l'heure et la batterie : sur iPhone la
    barre d'état est transparente et rien ne la doublait. Un bandeau de la
@@ -2326,7 +2371,7 @@ html.nav-haut .menu{left:0}
 .el-rep.ok{background:color-mix(in srgb,var(--ok) 12%,transparent)}
 .el-rep.attente{background:color-mix(in srgb,#A0640F 12%,transparent)}
 .el-rep.ko{background:color-mix(in srgb,var(--ko) 11%,transparent)}
-.el-apercu{animation:pop .4s var(--sp) both}
+.el-apercu.neuf{animation:pop .26s var(--e) both}
 .el-ap-h{display:flex;align-items:center;gap:12px}
 .el-ap-h span{display:flex;flex-direction:column;min-width:0}
 .el-ap-h b{font-size:18px;font-weight:780;letter-spacing:-.4px}

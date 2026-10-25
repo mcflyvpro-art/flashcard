@@ -33,7 +33,7 @@ import {
   cloneDeck, fnrApply, mergeDecks, savePrefs, splitDeck, spreadBacklog, toast
 } from './import-cartes.js';
 import { feuilleTap } from './interactions.js';
-import { closeMenu, mountMenu, openMenu, paintMenu } from './menus-a.js';
+import { closeMenu, mountMenu, openMenu, paintMenu, vientDOuvrir } from './menus-a.js';
 import { changePassword, deleteAccount, mateProfPull } from '../core/menus-c.js';
 import { copyLink, doPrompt, logout, startTour } from './onboarding.js';
 import { versRestore } from './reglages-corbeille.js';
@@ -136,7 +136,7 @@ function clickCt(a, b, d) {
   return paintMenu();
 }
 
-const clickClose = () => closeMenu();
+const clickClose = (a, b) => { if (!(b.classList.contains('scrim') && vientDOuvrir())) closeMenu(); };
 function clickWhy(a, b) { setReportWhy(b.dataset.why); return paintMenu(); }
 const clickUnblock = (a, b) => unblockUser(b.dataset.unblock);
 const clickSetrole = (a, b) => setRole(b.dataset.who, b.dataset.setrole);

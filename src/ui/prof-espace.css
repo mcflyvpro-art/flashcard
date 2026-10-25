@@ -143,6 +143,7 @@ button.pf-kpi{transition:transform .15s var(--sp),background .15s}
 button.pf-kpi:active{transform:scale(.98)}
 .pf-2{display:grid;gap:14px;margin-bottom:14px}
 @media (min-width:980px){.pf-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pf-corps.neuf{animation:fadein .18s var(--e) both}   /* un autre onglet, une seule fois (data-k) */
 .pf-panel{min-width:0;padding:14px 16px 16px;border-radius:16px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
 .pf-panel h2,.pf-sec h2{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px;font-weight:750;color:var(--ink2)}
 .pf-sec{margin-top:24px}
@@ -395,7 +396,9 @@ button.pf-kpi:active{transform:scale(.98)}
 }
 .pf-bulk{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));z-index:35;transform:translateX(-50%);
   display:flex;align-items:center;gap:6px;max-width:calc(100vw - 24px);padding:7px 7px 7px 16px;border-radius:16px;
-  overflow-x:auto;scrollbar-width:none;background:var(--ink);color:var(--bg);box-shadow:var(--s3);animation:pfbulk .3s var(--e)}
+  overflow-x:auto;scrollbar-width:none;background:var(--ink);color:var(--bg);box-shadow:var(--s3)}
+/* elle arrive avec la première case cochée, pas avec chacune (data-k) */
+.pf-bulk.neuf{animation:pfbulk .3s var(--ios) both}
 @keyframes pfbulk{from{opacity:0;transform:translate(-50%,16px)}}
 .pf-bulk > b{margin-right:6px;font-size:13.5px;white-space:nowrap}
 .pf-bulk .pf-btn{background:rgba(255,255,255,.1);box-shadow:none;color:var(--bg)}
@@ -505,10 +508,13 @@ button.pf-kpi:active{transform:scale(.98)}
   .menu.pf-s.pop .pf-sh{padding:10px 12px 6px}
   /* une fiche (élève, devoir) se lit à côté de la liste, qu'on garde sous les yeux */
   .menu.pf-s.pf-tiroir{top:12px;bottom:12px;right:12px;left:auto;width:min(480px,calc(100vw - 24px));height:auto;max-width:none;
-    max-height:none;margin:0;border-radius:20px;animation:pftir .38s var(--e)}
-  @keyframes pftir{from{opacity:0;transform:translateX(40px)}}
+    max-height:none;margin:0;border-radius:20px;animation:pftir .3s var(--ios)}
+  @keyframes pftir{from{opacity:0;transform:translateX(32px)}}
+  /* le tiroir prend toute la hauteur : ses actions restent collées en bas, pas sous le texte */
+  .menu.pf-s.pf-tiroir .mbody{display:flex;flex-direction:column}
+  .menu.pf-s.pf-tiroir .pf-sb{flex:1 0 auto}
 }
-.menu.pf-s.pf-tableau{inset:0;width:auto;height:auto;max-width:none;max-height:none;margin:0;border-radius:0;background:var(--bg);animation:fadein .3s var(--e)}
+.menu.pf-s.pf-tableau{inset:0;width:auto;height:auto;max-width:none;max-height:none;margin:0;border-radius:0;background:var(--bg);animation:fadein .24s var(--e)}
 .pf-mini{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
 @media (min-width:480px){.pf-mini{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .pf-mini > span{display:flex;flex-direction:column;padding:9px 11px;border-radius:11px;background:var(--bg)}

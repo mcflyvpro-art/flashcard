@@ -23,6 +23,19 @@ DERNIER   2026-10-25 · Liens sur le domaine unique www.folioflashcard.online
           (src/adresse.js), manifeste qui prend les liens, GitHub Pages réduit à une
           redirection, une seule porte pour les liens entrants (prête pour Capacitor,
           docs/CAPACITOR.md), carte de passage iPhone, hook de démarrage des sessions.
+          Et : animations qui ne se rejouent plus, partout (élève, prof, téléphone,
+          PC) : seule une vraie arrivée s'anime, une fois (ui/mouvement.js : .fade à un
+          changement d'écran, .neuf pour un élément à clé data-k qui apparaît) ; une
+          feuille redessinée (jour d'un devoir, case cochée) garde son défilement, son
+          champ actif et son point d'entrée, glisse à sa nouvelle hauteur, et repart en
+          glissant à la fermeture ; barre du bas, glissière, barres de progression, toasts
+          et chrono ne repartent plus de zéro ; double appui sur un bouton de feuille sans
+          effet ; fiche d'un devoir de nouveau en tiroir sur PC. Entrées raccourcies
+          (0,2-0,4 s). Preuves : e2e/animations.e2e.js (3 parcours, échouent sur l'ancien
+          code), 28 parcours e2e verts (le défi en direct a échoué une fois : ses joueurs
+          répondent au hasard, 1 chance sur 32 de tout rater — à rendre déterministe),
+          324 tests. BUDGET JS AU DÉMARRAGE : 120,0 Ko / 120 après fusion de main — plus
+          aucune marge, la prochaine ligne de code au démarrage le fera échouer.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

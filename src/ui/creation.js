@@ -121,7 +121,7 @@ export function importView() {
       <div class="cr-main">
         ${t ? '' : identiteHtml()}
         ${ongletsHtml(mode)}
-        <section class="cr-panel" role="tabpanel">
+        <section class="cr-panel" role="tabpanel" data-k="cr:${mode}">
           ${mode === 'ecrire' ? ecrireHtml(s) : lotHtml(mode)}
         </section>
       </div>
@@ -337,7 +337,7 @@ function bindOk(t) {
 
 function paintDraft() {
   const l = document.getElementById('dlist'); if (!l) return;
-  l.innerHTML = comp.cards.length ? comp.cards.map((c, i) => `<div class="dc ${i === comp.edit ? 'on' : ''}" data-ed="${i}">
+  l.innerHTML = comp.cards.length ? comp.cards.map((c, i) => `<div class="dc ${i === comp.edit ? 'on' : ''}" data-ed="${i}" data-k="dc:${esc(c.f)}|${esc(c.b)}">
       <div class="tx"><b>${esc(c.f) || '—'}</b><span>${esc(c.b) || '—'}</span></div>
       <button class="x" data-dl="${i}" aria-label="Retirer la page">${svg(I.x)}</button>
     </div>`).reverse().join('')

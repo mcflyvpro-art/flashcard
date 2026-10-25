@@ -35,7 +35,7 @@ export function selBar(d) {
   const n = ids.length;
   const all = n === d.cards.length;
   const anyOn = ids.some(i => !d.cards.find(c => c.id === i).x);
-  return `<div class="selb">
+  return `<div class="selb" data-k="selb">
     <button class="sbl" data-act="selall">${svg(all ? I.x : I.check)}${all ? 'Aucune' : 'Tout'}</button>
     <span class="sbn">${n ? n + ' carte' + (n > 1 ? 's' : '') : 'Aucune carte'}</span>
     <div class="sba">

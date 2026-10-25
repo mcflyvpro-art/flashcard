@@ -16,6 +16,7 @@ import {
 } from '../core/coeur-sync.js';
 import { beep, bumpToday, simpleMode, toast } from './import-cartes.js';
 import { norm } from './quiz.js';
+import { avancer } from './mouvement.js';
 import { noterLocale } from '../core/ecran-groupe.js';
 
 /* ---------- révision ---------- */
@@ -153,7 +154,7 @@ export function review(o) {
   ];
   if (o.forced) tiles.splice(1, 0, [o.forced, 'forcées']);
   if (o.hints) tiles.push([o.hints, 'indices']);
-  return `<div class="rev">
+  return `<div class="rev" data-k="bilan">
     ${ring(o.ok, o.total)}
     <div class="tiles">
       ${tiles.map(([v, l]) => `<div class="st"><b>${v}</b><span>${l}</span></div>`).join('')}
@@ -208,19 +209,19 @@ export function studyView() {
         <div class="prog"><i id="pg" style="width:0%"></i></div>
         <div class="mwrap" id="mwrap" style="${sty(s)}">${matchBody()}</div>
       </div>`;
-    requestAnimationFrame(() => { const p = document.getElementById('pg'); if (p) p.style.width = pct() + '%'; });
+    avancer(study, document.getElementById('pg'), pct());
     return;
   }
   $.innerHTML = bar(`<span class="num">${Math.min(study.i + 1, study.queue.length)}/${study.queue.length}</span>`)
     + `<div class="study${study.mode === 'mcq' ? ' mcq' : ''}">
       <div class="prog"><i id="pg" style="width:0%"></i></div>
       ${study.mode === 'mcq'
-        ? `<div class="qcard" id="stack" style="${sty(s)}"></div>`
+        ? `<div class="qcard" id="stack" data-k="qcm" style="${sty(s)}"></div>`
         : `<div class="stage"><div class="stack" id="stack" style="${sty(s)}"></div></div>`}
       <div id="foot"></div>
     </div>`;
   paintQ();
-  requestAnimationFrame(() => { const p = document.getElementById('pg'); if (p) p.style.width = pct() + '%'; });
+  avancer(study, document.getElementById('pg'), pct());
 }
 
 const pct = () => study.total ? Math.round(study.ok / study.total * 100) : 0;
@@ -723,7 +724,7 @@ export function commit(ok, rating) {
   saveResume();
   if (study.i >= study.queue.length) return studyView();
   paintQ();
-  const p = document.getElementById('pg'); if (p) p.style.width = pct() + '%';
+  avancer(study, document.getElementById('pg'), pct());
   const n = document.querySelector('.bar .num');
   if (n) n.textContent = `${study.i + 1}/${study.queue.length}`;
 }

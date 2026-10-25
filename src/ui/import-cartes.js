@@ -318,26 +318,46 @@ export function beep(good, force) {
   } catch (e) { /* Web Audio indisponible ou bloquée : le bip est un bonus, pas une nécessité */ }
 }
 
-/* ---------- toast ---------- */
+/* ---------- toast ----------
+   Un seul message à la fois, qui ne rejoue pas son entrée : dix appuis
+   sur « Synchroniser » laissaient dix toasts surgir l'un après l'autre.
+   Le même message déjà affiché reste en place et dure un peu plus ; un
+   autre remplace le texte sur place. Il s'en va en fondu, sans clignoter. */
 export function toast(icon, text, undo) {
-  clearTimeout(tt); document.querySelectorAll('.toast').forEach(n => n.remove());
-  const n = document.createElement('div'); n.className = 'toast';
-  n.setAttribute('role', 'status'); n.setAttribute('aria-live', 'polite');
-  n.innerHTML = svg(icon) + (text ? `<span>${esc(text)}</span>` : '')
+  clearTimeout(tt);
+  const html = svg(icon) + (text ? `<span>${esc(text)}</span>` : '')
     + (undo ? `<button class="tun">${svg(I.redo)}Annuler</button>` : '');
+  let n = document.querySelector('.toast:not(.sort)');
+  if (!n) {
+    n = document.createElement('div'); n.className = 'toast';
+    n.setAttribute('role', 'status'); n.setAttribute('aria-live', 'polite');
+  }
+  if (n.dataset.html !== html) {
+    const remplace = n.isConnected;
+    n.innerHTML = html; n.dataset.html = html;
+    if (remplace) { n.classList.remove('maj'); void n.offsetWidth; n.classList.add('maj'); }
+  }
   if (undo) n.querySelector('.tun').onclick = () => { n.remove(); doUndo(); };
   /* Il se pose au-dessus de ce qui occupe déjà le bas — barre de
      sélection, ou rien. Sauf si une feuille est ouverte : là il passe en
      haut, sinon il se met pile sur son bouton principal et on croit lire
      le bouton (« Envoi impossible » à la place d'« Enregistrer »). */
-  if (document.querySelector('.menu')) {
-    n.classList.add('up');
-    n.style.top = 'calc(12px + env(safe-area-inset-top))';
-    n.style.bottom = 'auto';
-  } else if (document.querySelector('.selb')) n.style.bottom = 'calc(84px + env(safe-area-inset-bottom))';
-  else if (document.querySelector('.tabs')) n.style.bottom = 'calc(80px + env(safe-area-inset-bottom))';
-  else n.style.bottom = 'calc(22px + env(safe-area-inset-bottom))';
-  document.body.appendChild(n); setTt(setTimeout(() => n.remove(), undo ? 5200 : 1600));
+  const haut = !!document.querySelector('.menu:not(.sort)');
+  n.classList.toggle('up', haut);
+  n.style.top = haut ? 'calc(12px + env(safe-area-inset-top))' : '';
+  n.style.bottom = haut ? 'auto'
+    : document.querySelector('.selb') ? 'calc(84px + env(safe-area-inset-bottom))'
+    : document.querySelector('.tabs') ? 'calc(80px + env(safe-area-inset-bottom))'
+    : 'calc(22px + env(safe-area-inset-bottom))';
+  if (!n.isConnected) document.body.appendChild(n);
+  setTt(setTimeout(() => partir(n), undo ? 5200 : 1600));
+}
+
+function partir(n) {
+  n.classList.add('sort');
+  const fin = () => n.remove();
+  n.addEventListener('animationend', fin, { once: true });
+  setTimeout(fin, 400);              // sans animation (mouvement réduit), il part quand même
 }
 
 /* ---------- rendu ---------- */

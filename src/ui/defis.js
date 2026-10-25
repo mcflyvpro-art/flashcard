@@ -61,7 +61,7 @@ export function duelView() {
       <span class="num">${r.i + 1}/${r.cards.length}</span></div>
     <div class="page">
       <div class="dbar"><i style="width:${Math.round(r.i / r.cards.length * 100)}%"></i></div>
-      <div class="qcard"><span>${esc(c[0])}</span></div>
+      <div class="qcard" data-k="duel:${r.i}"><span>${esc(c[0])}</span></div>
       <div class="opts">${r.opts.map((o, k) => {
         const cl = r.pick == null ? '' : o === good ? ' ok' : (r.pick === k ? ' ko' : ' dim');
         return `<button class="op${cl}" data-dpick="${k}">${esc(o)}</button>`;

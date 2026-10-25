@@ -6,7 +6,7 @@ import { render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
 import { esc, live, sty, subj } from '../core/coeur-sync.js';
 import { toast } from './import-cartes.js';
-import { mountMenu } from './menus-a.js';
+import { mountMenu, retirerFeuilles, sortirFeuilles } from './menus-a.js';
 import { norm } from './quiz.js';
 
 /* ══════════ le journal de lecture : la porte ══════════
@@ -123,7 +123,7 @@ export function lostOnLeave() {
    elle-même et rend la main au code qui l'a ouverte. Laisser le champ
    vide prend tout le document. */
 export function askPages(done) {
-  document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
+  retirerFeuilles();
   const w = document.createElement('div');
   w.innerHTML = `<div class="scrim" id="pgx"></div>
     <div class="menu">
@@ -137,7 +137,8 @@ export function askPages(done) {
     </div>`;
   mountMenu(w);
   const inp = document.getElementById('pgin');
-  const close = () => document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
+  // sortirFeuilles rend aussi le défilement à la page (html.sheet-open, oublié ici avant)
+  const close = () => sortirFeuilles();
   const go2 = () => { const v = inp.value.trim(); close(); done(v); };
   document.getElementById('pgok').onclick = go2;
   document.getElementById('pgx').onclick = close;

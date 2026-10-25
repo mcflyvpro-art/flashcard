@@ -22,9 +22,14 @@ import { timeAgo } from './reglages-corbeille.js';
 
 export const baseApp = () => SITE;
 
+/* `data-etape` : la feuille « Donner un devoir » a deux étapes (le livre,
+   puis le reste) — passer de l'une à l'autre fond le contenu, redessiner la
+   même ne fait rien bouger (menus-a.js, poser). */
+const etape = () => prof.feuille + (prof.feuille === 'donner' && prof.comp && prof.comp.cartes ? ':details' : '');
+
 function feuille(w, cls, titre, sous, corps, pied) {
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
-    <div class="menu pf-s ${cls || ''}">
+    <div class="menu pf-s ${cls || ''}" data-etape="${etape()}">
       <div class="pf-sh">${titre}${sous ? `<i>${sous}</i>` : ''}</div>
       <div class="pf-sb">${corps}</div>
       ${pied ? `<div class="pf-sf">${pied}</div>` : ''}
