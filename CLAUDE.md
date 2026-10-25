@@ -247,26 +247,33 @@ l'air de marcher ».
   - **Journal des révisions** (`20261025170855`) : chaque ligne de `reviews` porte sa photographie — `subject`, `subject_name`, `deck_name`, `ecart` (jours depuis la lecture précédente de la page, -1 la première fois) — et son `created_at` est l'heure de la lecture, envoyée par l'app (hors ligne compris), pas celle de l'envoi. Le déclencheur `contexte_revision` complète ce qu'une app ancienne n'envoie pas (depuis le paquet et le journal), sans jamais remplacer ce que l'app a dit, et ramène une date future à maintenant. **Ne jamais réécrire ces colonnes après coup.** Les statistiques passent par `journal(p_depuis, p_tz, p_bornes, p_locaux)` (security invoker, jsonb : `jours` regroupés par jour/matière/livre/palier, `heures`, `matieres` et `livres` = noms du moment, `toujours`, `connus`). `shared_deck` rend aussi `subject_name`, `mail.subject_name` voyage avec un livre envoyé : c'est le nom qui voyage, jamais l'identifiant.
   - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas) et `journal.sql` (18 cas).
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
-- **Hébergement : deux cibles, un seul build.** Vercel est l'hébergement réel
-  (domaine racine). GitHub Pages (`.github/workflows/pages.yml`, indépendant
-  du contrôle qualité `ci.yml` — qui a deux jobs : `check` (lint, tests, build) et `e2e` (les parcours Playwright, ~2 min 20, M07.T7) — un avertissement de lint n'empêche pas de
-  voir l'app tourner) sert à tester depuis GitHub, à l'URL
-  `https://mcflyvpro-art.github.io/flashcard/` — un dépôt de projet, donc
-  sous un sous-dossier, pas à la racine du domaine comme Vercel. `vite.config.js`
-  pose le bon `base` (`/flashcard/` seulement quand la variable d'environnement
-  `GITHUB_PAGES=true`, posée uniquement par ce workflow) et le propage au
-  service worker (`src/sw.js`, marqueur `__BASE__`) et à l'enregistrement
-  du service worker (`import.meta.env.BASE_URL` dans `src/ui/onboarding.js`) — ne
-  jamais réintroduire un chemin `/xxx` codé en dur dans ces deux endroits.
-  Réglage à faire une fois, à la main, dans le dépôt GitHub : Settings →
-  Pages → Source → **GitHub Actions** (pas « Deploy from a branch »).
-  Deuxième réglage, oublié à la création du workflow et qui a fait échouer
-  chaque déploiement Pages en silence jusqu'au 2026-09-20 (`vite build`
-  refuse de partir sans `VITE_SUPABASE_URL`) : `ci.yml` et `pages.yml` lisent
-  `vars.VITE_SUPABASE_URL` / `vars.VITE_SUPABASE_ANON_KEY` — à poser une fois
-  dans Settings → Secrets and variables → Actions → onglet **Variables**
-  (pas Secrets : la clé anon est publique par nature, voir plus haut).
-  Mêmes valeurs que `.env.local`.
+- **Hébergement : une seule cible, Vercel, un seul domaine :
+  `https://www.folioflashcard.online/`** (projet Vercel `flashcard`, équipe
+  `massam-17-s-projects` ; l'apex `folioflashcard.online` redirige en 308 vers
+  `www` ; l'alias `flashcard-roan-chi.vercel.app` reste servi, ne PAS le
+  rediriger : qui y aurait installé l'app perdrait ses écritures pas encore
+  envoyées, le stockage local étant propre à chaque origine). Vercel déploie
+  `main`. **Tout lien qui sort de l'app** (partage, QR, invitation, carte de
+  connexion) se fabrique sur `SITE` (`src/adresse.js`, sans dépendance),
+  jamais sur `location.origin` : une préversion ou Capacitor
+  (`capacitor://localhost`) propageraient sinon leur adresse, et une PWA
+  installée n'intercepte que les liens de son origine. Le manifeste déclare
+  `id`/`start_url`/`scope` à `/`, `launch_handler` (`navigate-existing`) et
+  `handle_links: preferred`. L'app est servie à la racine (`base: '/'` dans
+  `vite.config.js`, propagé au service worker par le marqueur `__BASE__` de
+  `src/sw.js` et à son enregistrement par `import.meta.env.BASE_URL` dans
+  `src/ui/onboarding.js` — ne jamais y coder un chemin en dur).
+  **GitHub Pages ne publie plus l'app** (depuis le 2026-10-25) :
+  `.github/workflows/pages.yml` (sans build) y dépose `tools/pages-redirection/`
+  — `index.html` et `404.html` qui renvoient vers `SITE` en gardant `?…` et
+  `#…`, et un `sw.js` qui vide les caches et désinscrit l'ancien service
+  worker des téléphones qui l'avaient. On pourra désactiver Pages (Settings →
+  Pages) une fois les anciens liens oubliés. Le contrôle qualité `ci.yml` a
+  deux jobs : `check` (lint, tests, build) et `e2e` (les parcours Playwright,
+  ~2 min 20, M07.T7) ; il lit `vars.VITE_SUPABASE_URL` /
+  `vars.VITE_SUPABASE_ANON_KEY` (Settings → Secrets and variables → Actions →
+  onglet **Variables**, pas Secrets : la clé anon est publique par nature),
+  mêmes valeurs que `.env.local`.
 
 ## Règles non négociables
 

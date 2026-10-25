@@ -30,6 +30,11 @@ export default [
     files: ['*.config.js', 'tools/**/*.js'],
     languageOptions: { sourceType: 'module', globals: globals.node }
   },
+  /* le service worker qui désinscrit l'ancienne app de GitHub Pages */
+  {
+    files: ['tools/pages-redirection/sw.js'],
+    languageOptions: { sourceType: 'script', globals: globals.serviceworker }
+  },
   /* M07 : un parcours tourne dans Node, mais les fonctions passées à
      page.evaluate() s'exécutent dans la page — les deux jeux de globales. */
   {
