@@ -6,9 +6,9 @@ import { join, relative } from 'node:path';
 /* Fabrique sw.js à partir de src/sw.js : empreinte du build et liste des
    fichiers à mettre en cache pour le hors-ligne.
    `base` (le chemin de base Vite, toujours terminé par `/`) est préfixé à
-   chaque entrée : sur Vercel l'app est servie à la racine (`base` = `/`),
-   mais GitHub Pages la sert sous `/flashcard/` — sans ce préfixe, le
-   service worker irait mettre en cache des chemins qui n'existent pas. */
+   chaque entrée. Il vaut `/` depuis la fin de GitHub Pages (qui servait
+   l'app sous `/flashcard/`) ; on le garde en paramètre pour qu'une
+   publication sous un sous-dossier reste possible sans rien casser. */
 function serviceWorker(base) {
   return {
     name: 'folio-service-worker',
@@ -43,11 +43,11 @@ export default defineConfig(({ mode }) => {
   for (const k of ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']) {
     if (!env[k]) throw new Error(`${k} manquant : copier .env.example en .env.local (ou le définir dans Vercel)`);
   }
-  /* Vercel sert l'app à la racine du domaine ; GitHub Pages la sert sous
-     /flashcard/ (un dépôt de projet, pas un user.github.io). Le workflow
-     Pages seul pose GITHUB_PAGES=true — Vercel et le développement local
-     ne le voient jamais. */
-  const base = process.env.GITHUB_PAGES === 'true' ? '/flashcard/' : '/';
+  /* L'app est servie à la racine de son domaine, et nulle part ailleurs :
+     GitHub Pages (sous /flashcard/) ne fait plus que rediriger
+     (tools/pages-redirection/), et Capacitor sert lui aussi depuis la
+     racine de son WebView. */
+  const base = '/';
   return {
     base,
     plugins: [serviceWorker(base)],

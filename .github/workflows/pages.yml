@@ -1,11 +1,15 @@
 name: Pages
 
-# Déploiement de test sur GitHub Pages, indépendant du contrôle qualité
-# (CI) : un avertissement de lint ne doit pas empêcher de voir l'app tourner.
-# Vercel reste l'hébergement réel ; ceci sert à tester depuis GitHub.
+# L'app ne se publie plus sur GitHub Pages : elle vit sur
+# https://www.folioflashcard.online/ (Vercel). Ce déploiement ne sert qu'à
+# faire suivre les anciens liens (https://mcflyvpro-art.github.io/flashcard/…)
+# vers le domaine, code de classe, de partie ou livre partagé compris, et à
+# désinscrire l'ancien service worker des téléphones qui l'avaient en cache.
+# Pas de build : trois fichiers statiques, tools/pages-redirection/.
 on:
   push:
     branches: [main]
+    paths: ['tools/pages-redirection/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -18,34 +22,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-      VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
-      # sert à vite.config.js pour poser le bon chemin de base (/flashcard/) :
-      # GitHub Pages sert un dépôt de projet sous un sous-dossier, pas à la
-      # racine du domaine comme Vercel.
-      GITHUB_PAGES: 'true'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: tools/pages-redirection
       - id: deployment
         uses: actions/deploy-pages@v4
