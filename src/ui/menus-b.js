@@ -2,7 +2,7 @@
 import { I, svg } from '../icones.js';
 import {
   auth, cardEdit, conflicts, db, duels, fnr, friends, helpKey,
-  mailOpen, mailbox, mateOpen, mateProf, mates, me, prefs, previewOf, quiz, recorder,
+  mateOpen, mateProf, mates, me, prefs, previewOf, quiz, recorder,
   sel, sendMsg, sendTo, setMenu, setSendMsg, setSplitSize, splitSize, study, vers, view
 } from '../data/etat.js';
 import { SORTS } from './bibliotheque.js';
@@ -398,31 +398,6 @@ export function paintMenuMateprof(w) {
             <div class="st"><b>${pctok}%</b><span>de réussite</span></div>
             <div class="st"><b>${r ? +r.jours : 0}</b><span>jours de lecture</span></div>
           </div>`}
-      </div>`;
-    mountMenu(w);
-    return;
-}
-
-export function paintMenuMailitem(w) {
-  const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen);
-    if (!it) { setMenu(null); return; }
-    const n = (it.cards || []).length;
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.mail)}
-          <span class="mhx"><b>${esc(it.deck_name)}</b>
-            <i>${esc(noDetect(it.from_name || 'Un ami'))} · ${plur(n, 'page')} · ${timeAgo(it.created_at)}</i>
-          </span>
-        </div>
-        ${it.message ? `<div class="mmsg">${svg(I.quote)}<p>${esc(it.message)}</p></div>` : ''}
-        <div class="mscroll">${(it.cards || []).slice(0, 60).map(c => `<div class="pr">
-          <span class="a">${esc(c[0])}</span>${svg(I.arrow)}<span class="b">${esc(c[1])}</span></div>`).join('')}</div>
-        <button class="mi" data-mact="addmail" style="justify-content:center;font-weight:700">
-          ${svg(it.added_at ? I.check : I.plus)}${it.added_at ? 'Déjà dans ma bibliothèque · Ajouter à nouveau' : 'Ajouter à ma bibliothèque'}</button>
-        <button class="mi warn" data-mact="delmail">${svg(I.trash)}<span>Supprimer</span></button>
-        ${it.from_user && it.from_user !== auth.uid ? `<div class="msep"></div>
-          <button class="mi" data-mact="mailreport">${svg(I.warn)}<span>Signaler cet envoi</span></button>
-          <button class="mi warn" data-mact="mailblock">${svg(I.lock)}<span>Bloquer l’expéditeur</span></button>` : ''}
       </div>`;
     mountMenu(w);
     return;

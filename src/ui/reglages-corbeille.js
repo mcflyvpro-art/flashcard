@@ -3,14 +3,14 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { DAY, MIN } from '../fsrs.js';
 import {
-  accounts, auth, blocks, compte, db, iAmMod, mailbox, mods, myRole, online, prefs, ref,
-  setSubjColor, setSubjEdit, setSubjName, shared, trash, vers
+  accounts, auth, blocks, compte, db, iAmMod, mods, myRole, online, prefs, ref,
+  setSubjColor, setSubjEdit, setSubjName, shared, trash, vers, view
 } from '../data/etat.js';
 import { render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
 import { atSchool, isAdmin } from './classement.js';
 import {
-  COLORS, PALETTE, canUndo, deck, esc, pending, plur, pushUndo, saveDeck, shortWho,
+  COLORS, PALETTE, canUndo, deck, esc, pending, plur, pushUndo, saveDeck,
   subj, sty, uid, undoLabel
 } from '../core/coeur-sync.js';
 import { KEEP, snapVersion } from '../core/reglages-corbeille.js';
@@ -213,27 +213,21 @@ export function timeAgo(iso) {
   return j < 31 ? j + ' j' : Math.round(j / 30) + ' mois';
 }
 
-export function mailView() {
-  const l = mailbox.list;
-  $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
-    <div class="page">
-      <div class="top"><div class="hero">Courrier</div></div>
-      ${!l ? `<div class="empty">${svg(I.mail)}<p>${mailbox.err ? 'Boîte indisponible' : 'Chargement…'}</p></div>`
-        : !l.length ? `<div class="empty">${svg(I.mail)}<p><b>Aucun message</b></p></div>`
-        : `<div class="slist">${l.map(it => `
-          <button class="sr flat mlrow ${!it.read_at ? 'unread' : ''}" data-mail="${it.id}">
-            ${it.read_at ? svg(I.mail) : '<i class="mdot"></i>'}
-            <span class="ml2">
-              <span class="n">${esc(shortWho(it.from_name) || 'Un ami')} → ${esc(it.deck_name)}</span>
-              <span class="sub">${it.message
-                ? `« ${esc(it.message)} »`
-                : plur((it.cards || []).length, 'page')}</span>
-            </span>
-            <span class="c">${timeAgo(it.created_at)}</span>${svg(I.arrow)}
-          </button>`).join('')}</div>`}
-    </div>`;
+/* ---------- la porte du courrier ----------
+   La boîte et les lettres vivent dans ui/courrier.js, chargé à la demande
+   avec sa feuille de style (le démarrage n'a pas de marge, tools/budget.js).
+   Rien d'autre ne doit importer ui/courrier.js. */
+let courrier = null;
+function attendreCourrier() {
+  $.innerHTML = `<div class="page"><div class="top"><div class="hero">Courrier</div></div>
+    <div class="empty">${svg(I.mail)}<p>Chargement…</p></div></div>`;
+  import('./courrier.js').then(m => {
+    courrier = m;
+    if (view.name === 'mail' || view.name === 'lettre') render();
+  }).catch(() => toast(I.x, 'Le courrier n’a pas pu s’ouvrir : vérifie ta connexion'));
 }
+export const mailView = () => (courrier ? courrier.boiteView() : attendreCourrier());
+export const lettreView = () => (courrier ? courrier.lettreView() : attendreCourrier());
 
 export const cf = c => Array.isArray(c) ? c[0] : ((c && c.f) || '');
 

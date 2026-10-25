@@ -37,7 +37,7 @@ import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { quizView, stopTimer } from './quiz.js';
 import { importView } from './creation.js';
 import {
-  mailView, settingsView, sharedView, trashView
+  lettreView, mailView, settingsView, sharedView, trashView
 } from './reglages-corbeille.js';
 import { mailPull } from '../core/reglages-corbeille.js';
 import { loadResume, studyView } from './revision.js';
@@ -88,7 +88,7 @@ window.addEventListener('focus', () => livePull(true));
    propre page. Chaque nouvel écran repart donc d'en haut, quel que soit le
    chemin qui y mène — sauf le retour sur une liste de premier niveau, qui
    retrouve l'endroit où on l'avait quittée, comme dans une app native. */
-const RETROUVE = /^(home|classes|commu)$/;
+const RETROUVE = /^(home|classes|commu|mail)$/;
 const positions = new Map();
 let ecranAvant = '';
 // où reprendra un onglet, pour le montrer déjà à sa place pendant un balayage
@@ -103,7 +103,7 @@ function placerDefilement() {
 
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
-              run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, stats: statsView, find: findView,
+              run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, lettre: lettreView, stats: statsView, find: findView,
               shared: sharedView, duel: duelView, legal: legalView, mod: modView,
               classes: mesClassesView,
               prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
@@ -141,7 +141,7 @@ export function render() {
    depuis le journal ou une recherche aussi. Seuls les écrans d'où l'on
    choisit un livre comptent : la révision, le quiz ou la création en
    reviennent par le livre lui-même, sans changer l'origine. */
-const ORIGINES = /^(home|classes|commu|club|friends|stats|mail|find)$/;
+const ORIGINES = /^(home|classes|commu|club|friends|stats|mail|lettre|find)$/;
 let origineLivre = { name: 'home', id: null };
 export const retourLivre = () => origineLivre;
 
@@ -156,7 +156,7 @@ export function go(name, id, dir, calme) {
 
 function railOn() {
   if (view.name === 'settings') return 'settings';
-  if (view.name === 'mail') return 'mail';
+  if (view.name === 'mail' || view.name === 'lettre') return 'mail';
   if (view.name === 'stats') return 'stats';
   if (/^(classes|prof|ref$|admin$)/.test(view.name)) return 'classes';
   if (/^(commu|friends|club|defi|direct|shared)$/.test(view.name)) return 'commu';

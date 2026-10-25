@@ -18,11 +18,19 @@
 // personne ne charge ensemble (un élève n'ouvre jamais l'espace prof) : il
 // passe de 30 à 40 Ko (JS) et de 12 à 16 Ko (CSS), pour garder la même
 // marge par morceau ; le démarrage, lui, garde ses 120 Ko.
+//
+// 2026-10-25 (bis) : le démarrage n'avait plus un octet de marge ; la
+// sauvegarde, l'entretien de la bibliothèque (réparation, doublons) et le
+// courrier refait sortent en morceaux à la demande, et la page d'une classe
+// et le profil d'un lecteur suivent le même chemin. Le plafond « à la
+// demande » passe de 40 à 56 Ko (JS) et de 16 à 22 Ko (CSS) — toujours la
+// même marge par morceau, et toujours personne qui les charge tous ; le
+// démarrage garde ses 120 Ko (115 aujourd'hui).
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 40 * 1024, cssDemande: 16 * 1024 };
+const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 56 * 1024, cssDemande: 22 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande' };
 const dir = 'dist/assets';
 const html = readFileSync('dist/index.html', 'utf8');

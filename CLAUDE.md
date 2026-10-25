@@ -83,8 +83,8 @@ l'air de marcher ».
     même noms de fichier que leur pendant `core/` quand les deux existent
     (`ui/classement.js` ↔ `core/classement.js`, etc.) : `bibliotheque.js`,
     `carte-media.js`, `import-cartes.js`, `connexion.js`,
-    `reglages-corbeille.js`, `defis.js`, `classement.js`, `etablissement.js`,
-    `cercle.js`, `ecran-groupe.js` (recherche, et la **porte du journal** :
+    `defis.js`, `classement.js`, `etablissement.js`,
+    `cercle.js`, `reglages-corbeille.js` (réglages, corbeille, et la **porte du courrier** : `mailView`/`lettreView` chargent à la demande `courrier.js` + `courrier.css`, préfixe `co-` — la boîte, et la page d'une lettre, vue `lettre` : l'expéditeur et son jeton, la date, le message mis en avant, le livre avec sa matière et ses pages, lisibles avant de l'ajouter ; rien d'autre ne doit importer `ui/courrier.js`), `ecran-groupe.js` (recherche, et la **porte du journal** :
     `statsView`/`exportStats` chargent à la demande `journal-ecran.js` +
     `journal.css`, préfixe `jr-` — rien d'autre ne doit importer
     `ui/journal-ecran.js`), `menus-a.js`, `menus-b.js`,
@@ -348,7 +348,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof + direct + journal, cumulés) JS ≤ 40, CSS ≤ 16 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, sauvegarde, entretien… cumulés) JS ≤ 56, CSS ≤ 22 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans

@@ -1,0 +1,82 @@
+/* ══════════ le courrier (préfixe co-, chargé avec ui/courrier.js) ══════════ */
+
+/* ---------- la boîte ---------- */
+.co-nb{min-width:24px;height:24px;padding:0 8px;border-radius:12px;background:var(--ko);color:#fff;
+  display:inline-grid;place-items:center;font-size:12.5px;font-weight:800}
+.co-boite{display:flex;flex-direction:column;gap:8px}
+.co-ligne{position:relative;display:flex;align-items:flex-start;gap:13px;width:100%;text-align:left;
+  padding:14px 16px;border-radius:16px;background:var(--card);box-shadow:var(--edge),var(--s1);
+  transition:box-shadow .2s var(--e),transform .2s var(--e)}
+.co-ligne:active{transform:scale(.99)}
+@media (hover:hover){.co-ligne:hover{box-shadow:inset 0 0 0 1px rgba(29,28,25,.18),var(--s2)}}
+.co-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.co-h{display:flex;align-items:baseline;gap:8px}
+.co-h b{flex:1;min-width:0;font-size:15px;font-weight:650;letter-spacing:-.2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-h time{flex:none;font-size:12.5px;font-weight:600;color:var(--soft)}
+.co-livre{display:flex;align-items:center;gap:7px;font-size:14.5px;font-weight:600;color:var(--ink2);min-width:0}
+.co-livre svg{width:15px;height:15px;flex:none;color:var(--soft)}
+.co-livre span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-s{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;font-weight:600;color:var(--soft)}
+.co-extrait{flex-basis:100%;min-width:0;font-style:italic;font-weight:550;color:var(--ink2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-ligne.neuf .co-h b{font-weight:800}
+.co-ligne.neuf .co-livre{color:var(--ink)}
+.co-point{position:absolute;top:18px;right:16px;width:9px;height:9px;border-radius:50%;background:var(--ko)}
+.co-ligne.neuf .co-h time{margin-right:18px}
+
+/* la matière : une pastille à sa couleur, jamais un aplat */
+.co-mat{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 8px;border-radius:11px;
+  background:var(--surf);color:var(--ink2);font-size:12px;font-weight:700;max-width:100%}
+.co-mat i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--d,var(--soft))}
+
+/* ---------- une lettre ---------- */
+.co-page{display:flex;flex-direction:column;gap:22px;padding-bottom:28px}
+.co-lettre{display:flex;flex-direction:column;gap:16px;padding:20px 18px 16px;border-radius:20px;
+  background:var(--card);box-shadow:var(--edge),var(--s2)}
+.co-de{display:flex;align-items:center;gap:14px}
+.co-de > div{min-width:0;display:flex;flex-direction:column;gap:1px}
+.co-de b{font-size:18px;font-weight:750;letter-spacing:-.3px}
+.co-de span{font-size:14px;font-weight:550;color:var(--ink2)}
+.co-de time{font-size:12.5px;font-weight:600;color:var(--soft)}
+.co-mot{margin:0;padding:14px 16px 14px 18px;border-radius:4px 16px 16px 16px;background:var(--bg2);
+  font-family:var(--serif);font-size:17px;line-height:1.5;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.co-colis{display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;
+  background:var(--bg);box-shadow:var(--edge)}
+.co-couv{flex:none;width:46px;height:58px;border-radius:5px 9px 9px 5px;display:grid;place-items:center;
+  background:var(--card);box-shadow:inset 4px 0 0 var(--d,var(--ink2)),var(--edge),var(--s1);color:var(--d,var(--ink2))}
+.co-couv svg{width:22px;height:22px}
+.co-titre{min-width:0;display:flex;flex-direction:column;gap:6px}
+.co-titre b{font-size:17px;font-weight:750;letter-spacing:-.3px;overflow-wrap:anywhere}
+.co-titre > span{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
+.co-n{font-size:13px;font-weight:650;color:var(--soft)}
+.co-actions{display:flex;flex-direction:column;gap:8px}
+.co-actions .cta{margin:0;gap:9px}
+.co-actions .cta svg{width:18px;height:18px}
+.co-actions .cta span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.co-note{display:flex;align-items:center;gap:7px;margin:0;font-size:13px;font-weight:600;color:var(--soft)}
+.co-note svg{width:15px;height:15px;color:var(--ok)}
+.co-pied{display:flex;flex-wrap:wrap;gap:4px;margin:0 -6px -4px;padding-top:10px;border-top:1px solid var(--hair)}
+.co-pied button{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-radius:9px;
+  font-size:13px;font-weight:650;color:var(--soft)}
+.co-pied button svg{width:15px;height:15px}
+.co-pied button:first-child{color:var(--ko)}
+@media (hover:hover){.co-pied button:hover{background:var(--surf)}}
+
+.co-pages .lbl{margin-top:0}
+.co-liste{list-style:none;margin:0;padding:0;border-radius:16px;background:var(--card);box-shadow:var(--edge);overflow:hidden}
+.co-liste li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:12px 16px;
+  border-top:1px solid var(--hair);font-size:14.5px;line-height:1.35}
+.co-liste li:first-child{border-top:0}
+.co-liste .a{font-weight:650;overflow-wrap:anywhere}
+.co-liste .b{color:var(--ink2);overflow-wrap:anywhere}
+.co-plus{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:46px;margin-top:8px;
+  border-radius:13px;background:var(--surf);font-weight:650;font-size:14px;color:var(--ink2)}
+.co-plus svg{width:16px;height:16px}
+
+@media (min-width:900px){
+  .co-boite{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  /* la lettre à gauche, ses pages à droite — comme un livre ouvert */
+  .co-page{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);align-items:start;gap:40px}
+  .co-lettre{position:sticky;top:24px}
+}

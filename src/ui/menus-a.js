@@ -18,7 +18,7 @@ import { CYCLES } from './etablissement.js';
 import {
   paintMenuCard, paintMenuConflict, paintMenuDeckset, paintMenuDuelitem,
   paintMenuFnr, paintMenuHandle, paintMenuHelp, paintMenuLeave,
-  paintMenuLend, paintMenuMailitem, paintMenuMate, paintMenuMateprof,
+  paintMenuLend, paintMenuMate, paintMenuMateprof,
   paintMenuMerge, paintMenuMove, paintMenuPreview, paintMenuSendfriend,
   paintMenuSharepick, paintMenuSortpick, paintMenuSplit, paintMenuTuto,
   paintMenuVers
@@ -328,7 +328,6 @@ function menuPainter(m) {
        dans sa boîte aux lettres. */
     lend: paintMenuLend,
     mateprof: paintMenuMateprof,
-    mailitem: paintMenuMailitem,
     move: paintMenuMove,
     split: paintMenuSplit,
     rename: paintMenuRename, pwd: paintMenuRename, delacc: paintMenuRename

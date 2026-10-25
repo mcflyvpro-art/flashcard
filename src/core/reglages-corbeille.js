@@ -13,7 +13,7 @@ import {
 } from './coeur-sync.js';
 import { deDevoir } from '../file.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
-import { closeMenu, openMenu, paintMenu } from '../ui/menus-a.js';
+import { closeMenu, paintMenu } from '../ui/menus-a.js';
 import { norm } from '../ui/quiz.js';
 
 /* ---------- corbeille ----------
@@ -176,7 +176,7 @@ export async function mailPull() {
 export async function openMail(id) {
   setMailOpen(id);
   const it = mailbox.list && mailbox.list.find(x => x.id === id);
-  openMenu('mailitem');
+  go('lettre', id);
   if (it && !it.read_at) {
     it.read_at = new Date().toISOString();
     mailbox.n = mailbox.list.filter(r => !r.read_at).length;
@@ -200,7 +200,8 @@ export async function addMail(it) {
 export async function delMail(id) {
   mailbox.list = mailbox.list.filter(x => x.id !== id);
   mailbox.n = mailbox.list.filter(r => !r.read_at).length;
-  closeMenu(); render();
+  closeMenu();
+  if (view.name === 'lettre') go('mail'); else render();
   try { await api(`/rest/v1/mail?id=eq.${id}`, 'DELETE', null, { Prefer: 'return=minimal' }); }
   catch (e) { /* la boîte de réception locale l'a déjà retiré ; au pire il réapparaît au prochain mailPull() */ }
 }
