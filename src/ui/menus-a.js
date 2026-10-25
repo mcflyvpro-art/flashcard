@@ -7,6 +7,7 @@ import {
 import { ANOMALY_FAMILIES } from '../reparation.js';
 import { render } from './bibliotheque.js';
 import { avatar } from './jeton.js';
+import { sansMouvement } from './mouvement.js';
 import { paintMenuCercle } from './cercle-feuilles.js';
 import { paintMedia } from './carte-media.js';
 import { accountSheet, blockedSheet, reportSheet } from './classement.js';
@@ -53,8 +54,7 @@ export function closeMenu() {
   const ouverte = !!menu;
   ancre = null;
   setMenu(null);
-  document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
-  document.documentElement.classList.remove('sheet-open');
+  sortirFeuilles();
   /* L'espace professeur ne repeint pas la page sous une feuille ouverte
      (ce serait la repeindre elle aussi) : il attend ce signal. */
   if (ouverte) document.dispatchEvent(new Event('feuille-fermee'));
@@ -84,11 +84,116 @@ export function mountMenu(w) {
     box.appendChild(body);
     if (!PC.matches) bindSheetDrag(box, body);
   }
-  if (redessin) w.querySelectorAll('.scrim,.menu').forEach(n => n.classList.add('deja'));
-  redessin = false;
+  const scrim = w.querySelector('.scrim');
+  const vue = avant; avant = null;
+  if (box) box.dataset.feuille = (menu || '') + ':' + (box.dataset.etape || '');
   document.body.append(...w.childNodes);
   if (box) placerSurPC(box);
+  if (box) poser(box, scrim, vue);
   paintMedia();               // l'aperçu d'image de la feuille d'édition
+}
+
+/* ---------- entrée, redessin et sortie d'une feuille ----------
+   Une feuille déjà ouverte qui se redessine (un jour choisi dans un
+   calendrier, une case cochée, un compte à rebours) est un nœud neuf : elle
+   rejouait son entrée, remontait en haut de son contenu et perdait le
+   curseur. Elle reprend désormais exactement où on la voyait : même point
+   de son entrée si celle-ci jouait encore, même défilement, même champ
+   actif ; si sa hauteur change, elle y glisse au lieu de sauter, et si on
+   passe d'une étape à l'autre (choisir le livre, puis le reste), seul le
+   contenu fond de l'une à l'autre. Elle s'en va comme elle est venue,
+   depuis là où elle en est, sans bloquer un geste pendant ce temps. */
+const ENTREE = 420;                    // l'entrée la plus longue (app.css, prof-espace.css)
+const DEFILANTS = '.mscroll,.pf-table,.pf-noms,.pf-list,.slist,.dlist';
+let ouverteA = -1e9, avant = null;
+
+/* Un double appui sur le bouton qui ouvre une feuille : le second tombe sur
+   le voile tout juste posé et la refermait aussitôt — elle clignotait.
+   Le voile n'écoute qu'une fois la feuille vraiment là. */
+export const vientDOuvrir = () => performance.now() - ouverteA < 350;
+
+function photo(box) {
+  const body = box.querySelector('.mbody'), a = document.activeElement;
+  const defile = [...box.querySelectorAll(DEFILANTS)].map(n => n.scrollTop);
+  const champ = a && box.contains(a) && a.id && 'selectionStart' in a
+    ? { id: a.id, de: a.selectionStart, a: a.selectionEnd } : null;
+  return { feuille: box.dataset.feuille, h: box.getBoundingClientRect().height,
+    haut: body ? body.scrollTop : 0, defile, champ };
+}
+
+function poser(box, scrim, vue) {
+  const t = performance.now();
+  if (!vue) { ouverteA = t; return; }
+  const age = t - ouverteA;
+  for (const n of [box, scrim]) {
+    if (!n) continue;
+    if (age < ENTREE && !sansMouvement()) n.style.animationDelay = -Math.round(age) + 'ms';
+    else n.classList.add('deja');
+  }
+  const body = box.querySelector('.mbody');
+  const meme = vue.feuille === box.dataset.feuille;
+  if (meme) {
+    if (body) body.scrollTop = vue.haut;
+    box.querySelectorAll(DEFILANTS).forEach((n, i) => { if (vue.defile[i]) n.scrollTop = vue.defile[i]; });
+    const c = vue.champ && document.getElementById(vue.champ.id);
+    if (c && box.contains(c) && document.activeElement !== c) {
+      c.focus({ preventScroll: true });
+      try { c.setSelectionRange(vue.champ.de, vue.champ.a); } catch (e) { /* un champ sans curseur (nombre, date) : le focus suffit */ }
+    }
+  } else if (body && !sansMouvement()) body.classList.add('change');
+  glisserHauteur(box, vue.h);
+}
+
+function glisserHauteur(box, h0) {
+  if (sansMouvement() || box.classList.contains('pop') || box.classList.contains('pf-tableau')) return;
+  const h1 = box.getBoundingClientRect().height;
+  if (Math.abs(h1 - h0) < 2) return;
+  box.style.height = h0 + 'px';
+  void box.offsetHeight;
+  box.style.transition = 'height .26s var(--ios)';
+  box.style.height = h1 + 'px';
+  const fin = e => {
+    if (e && (e.target !== box || e.propertyName !== 'height')) return;
+    box.removeEventListener('transitionend', fin);
+    if (box.style.height === h1 + 'px') { box.style.height = ''; box.style.transition = ''; }
+  };
+  box.addEventListener('transitionend', fin);
+  setTimeout(fin, 360);
+}
+
+/* Où va une feuille qui se ferme : par où elle est arrivée. */
+function sortie(n) {
+  if (n.classList.contains('scrim') || n.classList.contains('pf-tableau')) return [{ opacity: 0 }, 200];
+  if (n.classList.contains('pop')) return [{ opacity: 0 }, 110];
+  if (n.classList.contains('pf-tiroir')) return [{ opacity: 0, transform: 'translateX(24px)' }, 190];
+  if (n.classList.contains('dlg')) return [{ opacity: 0, transform: 'scale(.98)' }, 150];
+  return [{ transform: 'translateY(calc(100% + 24px))' }, 240];
+}
+
+export function sortirFeuilles() {
+  document.documentElement.classList.remove('sheet-open');
+  for (const n of document.querySelectorAll('.scrim:not(.sort),.menu:not(.sort)')) {
+    /* tirée vers le bas au doigt, elle est déjà partie : on ne la refait pas revenir */
+    if (sansMouvement() || n.style.transform || n.style.opacity) { n.remove(); continue; }
+    const cs = getComputedStyle(n), de = { opacity: cs.opacity, transform: cs.transform };
+    n.classList.add('sort', 'deja');
+    n.style.animationDelay = '';
+    n.removeAttribute('role'); n.removeAttribute('aria-modal');
+    n.setAttribute('aria-hidden', 'true'); n.inert = true;
+    n.querySelectorAll('[id]').forEach(x => x.removeAttribute('id'));
+    const [vers, ms] = sortie(n);
+    const fin = () => n.remove();
+    try {
+      n.animate([de, vers], { duration: ms, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' }).onfinish = fin;
+    } catch (e) { fin(); }             // sans animations web : elle s'en va d'un coup, comme avant
+    setTimeout(fin, ms + 120);
+  }
+}
+
+/* Plus rien d'ouvert, tout de suite : une autre feuille arrive. */
+export function retirerFeuilles() {
+  document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
+  document.documentElement.classList.remove('sheet-open');
 }
 
 /* Une feuille légère (rien à remplir, pas de nuancier à parcourir)
@@ -98,7 +203,11 @@ export function mountMenu(w) {
 function placerSurPC(box) {
   if (!PC.matches) return;
   box.classList.add('dlg');
-  const leger = !box.querySelector('input,textarea,select,.jt-grille,.jt-couleurs,.seg,.rng,canvas,svg.qr');
+  /* une fiche en tiroir, un tableau, une grande feuille ou un calendrier ne
+     s'accrochent jamais : la fiche d'un devoir finissait en petit menu sous
+     sa ligne, coupée en bas, le calendrier caché sous ses boutons */
+  const leger = !box.matches('.pf-tiroir,.pf-tableau,.large')
+    && !box.querySelector('input,textarea,select,.jt-grille,.jt-couleurs,.seg,.rng,canvas,svg.qr,.pf-cal');
   if (!leger || !ancre || !ancre.isConnected) return;
   const r = ancre.getBoundingClientRect();
   if (!r.width && !r.height) return;
@@ -258,19 +367,15 @@ function paintMenuDeck(w) {
   mountMenu(w);
 }
 
-/* Une feuille déjà ouverte qui se redessine (un compte à rebours, une
-   réponse qui arrive) ne rejoue pas son entrée : elle sautait à chaque
-   rafraîchissement, et ne tenait jamais en place sous le pointeur. */
-let redessin = false;
-
 export function paintMenu() {
-  redessin = !!document.querySelector('.menu');
-  document.querySelectorAll('.scrim,.menu').forEach(n => n.remove());
-  document.documentElement.classList.remove('sheet-open');
+  const ouverte = document.querySelector('.menu:not(.sort)');
+  avant = ouverte ? photo(ouverte) : null;
+  retirerFeuilles();
   const w = document.createElement('div');
   const painter = menuPainter(menu);
-  if (painter) return painter(w);
-  return paintMenuDeck(w);
+  /* une feuille qui renonce à se remonter (ses données ont disparu) ne
+     laisse pas sa photo à la prochaine, qui s'ouvrirait sans entrée */
+  try { return painter ? painter(w) : paintMenuDeck(w); } finally { avant = null; }
 }
 
 function paintMenuSubject(w) {

@@ -14,6 +14,7 @@ import { defiView } from './defi-nouveau.js';
 import { directView } from './direct-porte.js';
 import { avatar } from './jeton.js';
 import { bindPager } from './balayage.js';
+import { entreeEcran, glissiereAvant, glisserOnglet } from './mouvement.js';
 import { sallesPull } from '../core/cercle.js';
 import { STATE, cstate, paintMedia } from './carte-media.js';
 import {
@@ -109,15 +110,19 @@ export function render() {
               ref: refView,
               admin: adminView,
               commu: commuView, friends: friendsView, club: clubView, defi: defiView, direct: directView };
-  $.classList.remove('fade');
-  if (animate) void $.offsetWidth;             // force un vrai redémarrage si elle était déjà là
+  /* Seul un vrai changement d'écran s'anime (mouvement.js) : redemander
+     l'écran où l'on est — un onglet touché dix fois, une réponse qui
+     arrive, une case cochée — ne rejoue rien. */
+  const change = view.name + ':' + (view.id || '') !== ecranAvant;
+  const glissiere = glissiereAvant();
   (v[view.name] || home)();
   $.dataset.view = view.name;
   placerDefilement();
   applyFont();
   paintRail();
   paintMedia($);                               // les images posées sans adresse la reçoivent ici
-  if (animate) $.classList.add('fade');
+  entreeEcran(change ? (animate ? 'arrivee' : 'calme') : 'redessin');
+  glisserOnglet(glissiere);
   if (pageDir) {
     const pg = document.getElementById('page');
     if (pg) pg.classList.add(pageDir < 0 ? 'in-right' : 'in-left');
@@ -244,11 +249,18 @@ function paintRail() {
      barre horizontale — la page de gestion prend alors toute la largeur au
      lieu de vivre dans les trois quarts restants. */
   const boulot = (atSchool() && myRole !== 'eleve') || isProf();
-  const sig = on + '\u0000' + monNomRail() + '\u0000' + mailbox.n
+  const base = monNomRail() + '\u0000' + mailbox.n
             + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v') + '\u0000' + aUneClasse() + (asks || []).length;
-  if (r && r.dataset.sig === sig) return;      // rien n'a changé : on ne redessine pas
+  if (r && r.dataset.sig === on + '\u0000' + base) return;      // rien n'a changé : on ne redessine pas
+  /* seule l'entrée allumée change : on la déplace sur place, son fond glisse
+     de l'une à l'autre au lieu que toute la barre soit refaite */
+  if (r && r.dataset.base === base) {
+    r.querySelectorAll('nav [data-r]').forEach(b => b.classList.toggle('on', b.dataset.r === on));
+    r.dataset.sig = on + '\u0000' + base;
+    return;
+  }
   if (!r) { r = document.createElement('aside'); r.id = 'rail'; document.body.appendChild(r); }
-  r.dataset.sig = sig;
+  r.dataset.sig = on + '\u0000' + base; r.dataset.base = base;
   r.className = boulot ? 'haut' : '';
   document.documentElement.classList.toggle('nav-haut', boulot);
   const classeNom = railClasseNom();
@@ -274,7 +286,7 @@ export function allerOnglet(k) {
 export const tabs = on => {
   const l = ordreOnglets().map(k => [k, ...ONGLETS[k]]);
   const i = Math.max(0, l.findIndex(t => t[0] === on)), n = (asks || []).length;
-  return `<nav class="tabs" aria-label="Navigation principale">
+  return `<nav class="tabs" data-k="tabs" aria-label="Navigation principale">
   <div class="sl" style="transform:translateX(${i * 74}px)"></div>
   ${l.map(([k, ic, nom]) => `<button class="${on === k ? 'on' : ''}" data-act="tab-${k}" aria-label="${nom}"
     aria-current="${on === k ? 'page' : 'false'}">${svg(ic)}${
@@ -405,8 +417,8 @@ function marathonBanner() {
 
 function homeFab() {
   return reorder
-    ? `<button class="fab fabok" data-act="reorder" aria-label="Valider l’ordre">${svg(I.check)}</button>`
-    : `<button class="fab" data-act="new" aria-label="Nouveau livre">${svg(I.plus)}<span>Nouveau livre</span></button>`;
+    ? `<button class="fab fabok" data-k="fab-ok" data-act="reorder" aria-label="Valider l’ordre">${svg(I.check)}</button>`
+    : `<button class="fab" data-k="fab" data-act="new" aria-label="Nouveau livre">${svg(I.plus)}<span>Nouveau livre</span></button>`;
 }
 
 function home() {

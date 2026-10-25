@@ -106,7 +106,7 @@ function hoteAttente(e) {
       </section>
       <section class="dx-salle">
         <div class="dx-n">${svg(I.users)}<b>${e.joueurs}</b></div>
-        ${l.length ? `<div class="dx-chips">${l.map(p => `<button class="dx-chip" data-dx="exclure" data-id="${esc(p.id)}"
+        ${l.length ? `<div class="dx-chips">${l.map(p => `<button class="dx-chip" data-dx="exclure" data-id="${esc(p.id)}" data-k="dxj:${esc(p.id)}"
             title="Retirer ${esc(p.nom)}">${avatar(p.id, p.nom, 'xs')}${esc(p.nom)}${svg(I.x)}</button>`).join('')}</div>`
           : `<p class="dx-attente"><span></span><span></span><span></span></p>`}
       </section>
@@ -170,7 +170,7 @@ function joueurAttente(e) {
       <div class="dx-ok">${svg(I.check)}</div>
       <p class="dx-moi">${esc(e.moi ? e.moi.nom : '')}</p>
       <p class="dx-attente"><span></span><span></span><span></span></p>
-      ${l.length ? `<div class="dx-chips petit">${l.map(p => `<span class="dx-chip">${esc(p.nom)}</span>`).join('')}</div>` : ''}
+      ${l.length ? `<div class="dx-chips petit">${l.map(p => `<span class="dx-chip" data-k="dxj:${esc(p.id || p.nom)}">${esc(p.nom)}</span>`).join('')}</div>` : ''}
     </div>`;
 }
 
@@ -255,7 +255,10 @@ export function directEcran() {
   const e = direct.etat;
   const actif = !!document.activeElement && document.activeElement.id === 'dxtx';
   const ph = e ? phase(e, Date.now(), direct.dec) : 'absent';
-  $.innerHTML = `<div class="dx ${e && e.hote ? 'hote' : 'joueur'}" data-etat="${e ? e.etat : ''}" data-phase="${ph}">${
+  /* la clé change avec l'étape de la partie (attente, question n, correction n…) :
+     ce qui arrive avec elle s'anime une fois, pas à chaque réponse qui tombe */
+  $.innerHTML = `<div class="dx ${e && e.hote ? 'hote' : 'joueur'}" data-etat="${e ? e.etat : ''}" data-phase="${ph}"
+    data-k="dx:${e ? e.etat + ':' + e.rang : ''}">${
     reseau()}${corpsEcran(e)}</div>`;
   brancherEcrit(actif, ph);
   lancerTic();

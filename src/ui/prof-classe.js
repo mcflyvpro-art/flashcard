@@ -97,7 +97,7 @@ function barreSelection() {
   const n = prof.sel.size;
   if (!n) return '';
   const cartes = (prof.roster || []).filter(m => prof.sel.has(m.user_id) && m.carte).length;
-  return `<div class="pf-bulk" role="toolbar" aria-label="Élèves sélectionnés">
+  return `<div class="pf-bulk" data-k="pf-bulk" role="toolbar" aria-label="Élèves sélectionnés">
     <b>${plur(n, 'élève')}</b>
     ${btn('sel-message', I.mail2, 'Écrire')}
     ${cartes ? btn('sel-cartes', I.key, `Nouvelles cartes (${cartes})`) : ''}
@@ -310,7 +310,7 @@ export function profClasseView() {
     ${enteteClasse(c)}
     ${kpisClasse(c, s)}
     ${onglets(c)}
-    <section class="pf-corps" role="tabpanel">${(ONGLETS[prof.tab] || elevesOnglet)(c)}</section>
+    <section class="pf-corps" role="tabpanel" data-k="pftab:${esc(c.id)}:${prof.tab}">${(ONGLETS[prof.tab] || elevesOnglet)(c)}</section>
   </main></div>`;
 }
 

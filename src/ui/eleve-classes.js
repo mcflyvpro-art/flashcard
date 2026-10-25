@@ -40,7 +40,7 @@ function rejoindreHtml() {
   if (a) {
     const demander = !nomConnu();
     const ok = !demander || (nomValide(eleve.prenom) && nomValide(eleve.nom));
-    return `<div class="el-carte el-apercu">
+    return `<div class="el-carte el-apercu" data-k="apercu">
       <div class="el-ap-h">${neutre()}<span><b>${esc(a.nom)}</b><i>${
         [a.niveau, a.prof, a.etab].filter(Boolean).map(esc).join(' · ')}</i></span></div>
       ${a.validation ? `<p class="el-note">${svg(I.lock)}Ton professeur validera ta demande.</p>` : ''}

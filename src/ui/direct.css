@@ -42,11 +42,13 @@
 .dx-n b{font-size:30px;color:var(--ink);font-variant-numeric:tabular-nums}
 .dx-chips{display:flex;flex-wrap:wrap;gap:8px}
 .dx-chip{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 13px;border-radius:999px;
-  background:var(--bg2);font-size:14.5px;font-weight:600;animation:dxin .35s var(--sp) both}
+  background:var(--bg2);font-size:14.5px;font-weight:600}
+/* un joueur qui entre (data-k) : les autres ne bougent pas */
+.dx-chip.neuf{animation:dxin .3s var(--sp) both}
 .dx-chip svg{width:14px;height:14px;color:var(--soft);opacity:0;transition:opacity .15s}
 .dx-chips.petit .dx-chip{height:32px;font-size:13px}
 .dx-chip.moi{background:var(--ink);color:#fff}
-@keyframes dxin{from{transform:scale(.6);opacity:0}}
+@keyframes dxin{from{transform:scale(.8);opacity:0}}
 /* « on attend » : trois points qui respirent, sans un mot */
 .dx-attente{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0;min-height:16px}
 .dx-attente span{width:10px;height:10px;border-radius:50%;background:var(--ink2);opacity:.25;animation:dxpt 1.2s ease-in-out infinite}
@@ -117,9 +119,10 @@
 .dx-cl h3{margin:0 0 10px;color:var(--soft)}
 .dx-cl h3 svg{width:20px;height:20px}
 .dx-top{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
-.dx-top li{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;animation:dxin .4s var(--e) both}
-.dx-top li:nth-child(2){animation-delay:.05s} .dx-top li:nth-child(3){animation-delay:.1s}
-.dx-top li:nth-child(4){animation-delay:.15s} .dx-top li:nth-child(5){animation-delay:.2s}
+.dx-top li{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px}
+.dx.neuf .dx-top li{animation:dxin .4s var(--e) both}
+.dx.neuf .dx-top li:nth-child(2){animation-delay:.05s} .dx.neuf .dx-top li:nth-child(3){animation-delay:.1s}
+.dx.neuf .dx-top li:nth-child(4){animation-delay:.15s} .dx.neuf .dx-top li:nth-child(5){animation-delay:.2s}
 .dx-top li.moi{background:color-mix(in srgb,var(--ok) 9%,var(--card))}
 .dx-pl{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--bg2);
   font-size:13px;font-weight:800}
@@ -132,8 +135,9 @@
 .dx-bravo svg{width:28px;height:28px;color:#C28A14}
 .dx-podium{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:10px;align-items:end;
   max-width:calc(var(--n,3) * 186px);width:100%;margin:8px auto 0}
-.dx-marche{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-align:center;animation:dxmonte .7s var(--e) both}
-.dx-marche.m1{animation-delay:.5s} .dx-marche.m2{animation-delay:.25s}
+.dx-marche{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;text-align:center}
+.dx.neuf .dx-marche{animation:dxmonte .7s var(--e) both}
+.dx.neuf .dx-marche.m1{animation-delay:.5s} .dx.neuf .dx-marche.m2{animation-delay:.25s}
 @keyframes dxmonte{from{opacity:0;transform:translateY(30px)}}
 .dx-marche b{max-width:100%;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dx-marche em{font-style:normal;font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}
@@ -148,7 +152,8 @@
 .dx-j{display:flex;flex-direction:column;align-items:stretch;gap:14px;flex:1;text-align:center}
 .dx-j h2{margin:0;font-size:24px;font-weight:750;letter-spacing:-.4px}
 .dx-j-attente,.dx-j-envoye{justify-content:center;align-items:center}
-.dx-ok{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#fff;animation:dxin .45s var(--sp) both}
+.dx-ok{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#fff}
+.dx.neuf .dx-ok{animation:dxin .45s var(--sp) both}
 .dx-ok svg{width:42px;height:42px;stroke-width:2.6}
 .dx-ok.petit{width:64px;height:64px}
 .dx-ok.petit svg{width:30px;height:30px}
@@ -159,7 +164,8 @@
 .dx-ecrit input{height:58px;padding:0 16px;border-radius:14px;background:var(--card);box-shadow:var(--edge);
   font-size:20px;font-weight:600;text-align:center;transition:box-shadow .15s}
 .dx-ecrit input:focus{box-shadow:var(--edge),var(--ring)}
-.dx-verdict{justify-content:center;align-items:center;border-radius:24px;padding:28px 18px;color:#fff;animation:dxin .4s var(--sp) both}
+.dx-verdict{justify-content:center;align-items:center;border-radius:24px;padding:28px 18px;color:#fff}
+.dx.neuf .dx-verdict{animation:dxin .4s var(--sp) both}
 .dx-verdict.juste{background:var(--c3)}
 .dx-verdict.faux{background:var(--c0)}
 .dx-verdict.tard{background:var(--ink2)}

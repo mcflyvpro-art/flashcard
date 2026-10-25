@@ -19,17 +19,18 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-25 · design PC propre, plus du téléphone étiré : un gabarit unique pour
-          toutes les pages (même largeur, titre au même endroit — Réglages, Courrier et le
-          Cercle n'étaient plus centrés en colonne étroite) ; Réglages en deux colonnes,
-          Ma classe en « à faire » | « mes classes » ; les bulles « ? » et les menus
-          (celui d'un livre, celui d'une classe) s'accrochent à leur bouton comme sur un
-          bureau, les formulaires deviennent des boîtes de dialogue sans poignée ; une
-          feuille qui se redessine ne rejoue plus son entrée (elle tressautait chaque
-          seconde). Avant : statistiques refaites (journal par contexte, fonction
-          journal(), 1 000 lignes, hors ligne), journal refait. Preuves : 324 tests
-          unitaires, 22 parcours e2e verts (dont l'espace prof à 1440 px qui ouvre ses
-          menus accrochés), captures 1440/390 relues, budget JS 117,8 Ko.
+DERNIER   2026-10-25 · animations qui ne se rejouent plus, partout (élève, prof, téléphone,
+          PC) : seule une vraie arrivée s'anime, une fois (ui/mouvement.js : .fade à un
+          changement d'écran, .neuf pour un élément à clé data-k qui apparaît) ; une
+          feuille redessinée (jour d'un devoir, case cochée) garde son défilement, son
+          champ actif et son point d'entrée, glisse à sa nouvelle hauteur, et repart en
+          glissant à la fermeture ; barre du bas, glissière, barres de progression, toasts
+          et chrono ne repartent plus de zéro ; double appui sur un bouton de feuille sans
+          effet ; fiche d'un devoir de nouveau en tiroir sur PC. Entrées raccourcies
+          (0,2-0,4 s). Preuves : e2e/animations.e2e.js (3 parcours, échouent sur l'ancien
+          code), 27 parcours e2e verts (le défi en direct au 2e essai : ses joueurs
+          répondent au hasard, 1 chance sur 32 de tout rater — à rendre déterministe),
+          324 tests, budget JS 119,5 Ko / 120 (plus de marge : 0,5 Ko).
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

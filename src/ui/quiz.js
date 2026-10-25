@@ -13,6 +13,7 @@ import {
 import { DEFMETA, deck, esc, live, metaOf, pushHist } from '../core/coeur-sync.js';
 import { toast } from './import-cartes.js';
 import { fillRing, isBool, review } from './revision.js';
+import { avancer } from './mouvement.js';
 
 /* ---------- quiz ---------- */
 // norm vit dans src/normaliser.js (partagé avec le noyau, M04.T4) ; réexporté ici pour les écrans
@@ -208,13 +209,18 @@ export function dictate() {
   if (!asrRec) { setAsrOn(false); toast(I.x, 'Dictée indisponible'); render(); }
 }
 
+const tempsRestant = () => quiz.tFor === quiz.i && quiz.tEnd
+  ? Math.max(0, (quiz.tEnd - Date.now()) / (quiz.timer * 1000) * 100) : 100;
+
 export function stopTimer() { clearInterval(quizTick); setQuizTick(0); }
 
 function armTimer() {
   stopTimer();
   if (!quiz || quiz.state !== 'ask' || !quiz.timer) return;
   const span = quiz.timer * 1000;
-  quiz.tEnd = Date.now() + span;
+  /* l'écran se redessine parfois pendant la question (la dictée qui
+     s'allume) : le chrono continue, il ne repart pas de zéro */
+  if (quiz.tFor !== quiz.i || !quiz.tEnd) { quiz.tEnd = Date.now() + span; quiz.tFor = quiz.i; }
   setQuizTick(setInterval(() => {
     if (!quiz || quiz.state !== 'ask') return stopTimer();
     const left = Math.max(0, quiz.tEnd - Date.now());
@@ -302,20 +308,17 @@ export function quizView() {
   $.innerHTML = bar(`<span class="num">${quiz.i + 1}/${quiz.pool.length}</span>`)
     + `<div class="study">
       <div class="prog"><i id="pg" style="width:0%"></i></div>
-      ${quiz.timer ? `<div class="tbar"><i id="tmr" style="width:100%"></i></div>` : ''}
-      <div class="qz">
+      ${quiz.timer ? `<div class="tbar"><i id="tmr" style="width:${tempsRestant()}%"></i></div>` : ''}
+      <div class="qz" data-k="q:${esc(quiz.id)}:${quiz.i}">
         <div class="ask ${quiz.state}">${rt(q.f)}
           ${canSay ? `<button class="snd sm" data-qsay>${svg(I.sound)}</button>` : ''}</div>
         ${ask && quiz.hint ? `<div class="hmask">${esc(hintMask(q, quiz.hint))}</div>` : ''}
-        ${quiz.state === 'bad' ? `<div class="sol">${svg(I.check)}${q.a.map(rt).join('  ·  ')}</div>` : ''}
+        ${quiz.state === 'bad' ? `<div class="sol" data-k="sol:${esc(quiz.id)}:${quiz.i}">${svg(I.check)}${q.a.map(rt).join('  ·  ')}</div>` : ''}
       </div>
       ${qcm ? `<div class="opts qopts">${quizOptionsHtml(q, ask)}</div>` : quizTypedRowHtml(ask)}
       ${quizFooterHtml(qcm, ask)}
     </div>`;
-  requestAnimationFrame(() => {
-    const p = document.getElementById('pg');
-    if (p) p.style.width = Math.round(quiz.i / quiz.pool.length * 100) + '%';
-  });
+  avancer(quiz, document.getElementById('pg'), Math.round(quiz.i / quiz.pool.length * 100));
   const inp = document.getElementById('ans');
   if (inp) {
     inp.addEventListener('input', () => quiz.typed = inp.value);
