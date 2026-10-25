@@ -38,9 +38,8 @@ import { changePassword, deleteAccount, mateProfPull } from '../core/menus-c.js'
 import { copyLink, doPrompt, logout, startTour } from './onboarding.js';
 import { versRestore } from './reglages-corbeille.js';
 import {
-  addMail, backupData, backupRestore, delMail, dropFriend
+  addMail, backupData, backupRestore, delMail, dropFriend, lireSauvegarde
 } from '../core/reglages-corbeille.js';
-import { readBackup } from '../sauvegarde.js';
 import {
   friendsPull, revokeShare, saveHandle, sendDeck, shareLink, verifRepair, versPull
 } from '../core/reglages-corbeille.js';
@@ -352,9 +351,9 @@ function clickBackup() {
 
 /* M04.T6 : le fichier complet, état d'apprentissage compris — le lien
    ci-dessus ne garde que recto et verso. */
-function clickBackupFile() {
+async function clickBackupFile() {
   closeMenu();
-  const blob = new Blob([JSON.stringify(backupData())], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(await backupData())], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'folio-bibliotheque-' + new Date().toISOString().slice(0, 10) + '.json';
@@ -371,9 +370,9 @@ function clickBackupRestore() {
     const f = inp.files && inp.files[0]; if (!f) return;
     let txt;
     try { txt = await f.text(); } catch (e) { return toast(I.x, 'Fichier illisible'); }
-    const r = readBackup(txt);
+    const r = await lireSauvegarde(txt);
     if (!r.ok) return toast(I.x, r.error);
-    const done = backupRestore(r.data);
+    const done = await backupRestore(r.data);
     toast(I.check, plur(done.decks.length, 'paquet') + ' restauré' + (done.decks.length > 1 ? 's' : ''), true);
   };
   inp.click();

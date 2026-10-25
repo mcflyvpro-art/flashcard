@@ -13,7 +13,6 @@ import {
 } from './coeur-sync.js';
 import { scanLibrary, repairLibrary } from '../reparation.js';
 import { countDuplicates, dedupeLibrary } from '../doublons.js';
-import { exportLibrary, restoreLibrary } from '../sauvegarde.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from '../ui/menus-a.js';
 import { norm } from '../ui/quiz.js';
@@ -333,9 +332,22 @@ export function verifRepair() {
    chaque paquet restauré passe par saveDeck (donc la file hors ligne), et
    toute la restauration s'annule d'un geste (pushUndo, avec les
    identifiants tirés d'avance quand le fichier vient d'un autre compte). */
-export const backupData = () => exportLibrary(db, auth && auth.uid, Date.now());
+/* src/sauvegarde.js ne se charge qu'ici, à la demande : une sauvegarde se
+   fait rarement, et le démarrage n'a plus un octet de marge (tools/budget.js). */
+const sauvegarde = () => import('../sauvegarde.js');
 
-export function backupRestore(data) {
+export async function backupData() {
+  const { exportLibrary } = await sauvegarde();
+  return exportLibrary(db, auth && auth.uid, Date.now());
+}
+
+export async function lireSauvegarde(txt) {
+  const { readBackup } = await sauvegarde();
+  return readBackup(txt);
+}
+
+export async function backupRestore(data) {
+  const { restoreLibrary } = await sauvegarde();
   const owner = auth && auth.uid;
   const foreign = !!data.owner && data.owner !== owner;
   const ids = data.decks.map(d => (foreign ? uid() : d.id));
