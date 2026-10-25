@@ -143,7 +143,7 @@ function heures(a) {
   const max = Math.max(1, ...a.heures);
   return `<section class="jr-c">
     ${tete('Heure de lecture', `Surtout vers ${a.heure} h`)}
-    <div class="jr-h24">${a.heures.map((n, h) => `<i class="${h === a.heure ? 'top' : ''}" style="height:${n ? Math.max(6, Math.round(n / max * 100)) : 0}%"
+    <div class="jr-h24">${a.heures.map((n, h) => `<i class="${h === a.heure ? 'jr-pic' : ''}" style="height:${n ? Math.max(6, Math.round(n / max * 100)) : 0}%"
       title="${h} h · ${n} page${n > 1 ? 's' : ''}"></i>`).join('')}</div>
     <div class="jr-axe24"><span>0 h</span><span>6 h</span><span>12 h</span><span>18 h</span><span>24 h</span></div>
   </section>`;

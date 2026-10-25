@@ -56,7 +56,8 @@ test('inscription, un livre de 10 pages, une séance, des chiffres justes', asyn
   expect(store.tables.reviews.filter(r => !r.correct)).toHaveLength(3);
   expect(store.tables.cards).toHaveLength(10);
   expect(store.tables.cards.every(c => c.state === 2 && c.stability > 0)).toBe(true);
-  expect(store.tables.sessions).toHaveLength(1);
+  // la séance part après ses révisions : l'attendre, plutôt que la lire au vol
+  await expect.poll(() => (store.tables.sessions || []).length, { timeout: 10000 }).toBe(1);
   expect(store.tables.sessions[0].pct).toBe(0.7);            // fraction en base, pourcentage à l'écran
   expect(erreurs).toEqual([]);
 });
@@ -122,3 +123,64 @@ for (const [w, h] of [[390, 700], [1440, 700]]) {
     await expect(page.getByRole('button', { name: /Livre 12/ })).toBeInViewport();
   });
 }
+
+/* La recherche dans un livre, au téléphone (2026-10-25) : le champ
+   s'étirait sur tout l'écran quand la liste filtrée était courte, et chaque
+   lettre reconstruisait la page entière — le clavier sautait. Le champ doit
+   garder sa hauteur d'une ligne et rester le même élément : seule la liste
+   change. */
+test('chercher dans un livre : une ligne, le même champ, seule la liste bouge', async ({ page }) => {
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  semerLivre(store, 'lea@exemple.fr', 'Vocabulaire',
+    [...Array.from({ length: 30 }, (_, j) => ['mot ' + j, 'sens ' + j]), ['le calme', 'la calma']]);
+  await page.reload();
+  await page.getByRole('button', { name: /Vocabulaire/ }).click();
+  await page.getByRole('button', { name: 'Chercher dans ce livre' }).click();
+  const champ = page.getByRole('searchbox', { name: 'Chercher dans ce livre' });
+  await expect(champ).toBeFocused();
+  await page.evaluate(() => { document.getElementById('dq').dataset.temoin = 'là'; });
+  const h0 = (await champ.boundingBox()).height;
+  expect(h0).toBeLessThan(60);
+  await champ.pressSequentially('le ca', { delay: 60 });
+  await expect(page.locator('#dcount')).toHaveText('1 / 31');
+  await expect(page.locator('.rows .row')).toHaveCount(1);
+  await expect(champ).toBeFocused();
+  expect(await page.evaluate(() => document.getElementById('dq').dataset.temoin)).toBe('là');   // jamais recréé
+  expect((await champ.boundingBox()).height).toBe(h0);
+  await champ.pressSequentially('zz', { delay: 60 });
+  await expect(page.getByText('Aucune carte ne contient')).toBeVisible();
+  expect((await champ.boundingBox()).height).toBe(h0);
+  await champ.fill('');
+  await expect(page.locator('#dcount')).toHaveText('31');
+});
+
+/* Un gros livre sur ordinateur (2026-10-25) : la molette fait défiler les
+   pages, pas la page entière — le livre, « Lire » et la recherche restent
+   sous les yeux. Repeindre (suspendre une page) ne renvoie pas la liste en
+   haut. */
+test('sur ordinateur, seules les pages d’un gros livre défilent', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 800 });
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  semerLivre(store, 'lea@exemple.fr', 'Tutti', Array.from({ length: 200 }, (_, j) => ['parola ' + j, 'mot ' + j]));
+  await page.reload();
+  await page.getByRole('button', { name: /Tutti/ }).click();
+  const rows = page.locator('.rows');
+  await expect(rows.locator('.row').first()).toBeVisible();
+  await rows.hover();
+  await page.mouse.wheel(0, 2500);
+  await expect.poll(() => rows.evaluate(r => r.scrollTop)).toBeGreaterThan(1500);
+  expect(await page.evaluate(() => document.body.scrollTop)).toBe(0);
+  await expect(page.locator('.cta.read')).toBeInViewport();
+  await expect(page.getByRole('button', { name: 'Chercher dans ce livre' })).toBeInViewport();
+  const ligne = rows.locator('.row').filter({ has: page.locator('input[value="parola 40"]') });
+  await ligne.hover();
+  const avant = await rows.evaluate(r => r.scrollTop);
+  expect(avant).toBeGreaterThan(1000);
+  await ligne.locator('[data-sus]').click();
+  await expect(page.locator('.rows .row.off')).toHaveCount(1);
+  expect(Math.abs(await page.locator('.rows').evaluate(r => r.scrollTop) - avant)).toBeLessThan(40);
+});

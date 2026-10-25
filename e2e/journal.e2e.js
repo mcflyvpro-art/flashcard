@@ -34,6 +34,11 @@ test('changer la matière d’un livre puis le supprimer : son temps reste en Dr
   const droit = page.locator('.jr-mat', { hasText: 'Droit' });
   await expect(droit).toContainText('3 h');
   await expect(page.locator('[data-k="temps"] b')).toHaveText('3 h');
+  // l'heure la plus chargée repose sur la ligne de base, comme les autres
+  // (elle portait la classe « top » des barres de titre, et ses marges)
+  const pic = await page.locator('.jr-h24 .jr-pic').boundingBox();
+  const axe = await page.locator('.jr-h24').boundingBox();
+  expect(Math.abs(pic.y + pic.height - (axe.y + axe.height))).toBeLessThan(1);
 
   // le livre passe en Anglais, puis part à la corbeille (sur un autre appareil) : le passé ne bouge pas
   store.tables.decks.find(d => d.id === livre).subject = 'anglais';

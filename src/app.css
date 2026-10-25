@@ -762,7 +762,10 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   letter-spacing:-.15px;color:var(--ink)}
 .fld input::placeholder{color:var(--soft);opacity:.7}
 .fld input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
-.deckfld{margin:0 1px 10px}
+/* flex:none : posé seul dans la colonne de la page (#app est en flex), le
+   champ grandissait pour remplir l'écran dès que la liste filtrée était
+   courte — et changeait de hauteur à chaque lettre tapée */
+.deckfld{flex:none;margin:0 1px 10px}
 mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2px}
 
 /* aperçu du réglage de taille, juste sous le curseur */
@@ -971,6 +974,15 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   #app[data-view="deck"] .rows{grid-column:2;grid-row:3/-1}
   #app[data-view="deck"] > .deckfld + .rows{grid-row:4/-1}   /* recherche ouverte : la liste descend d'un cran */
   #app[data-view="deck"]{--deck:calc(var(--wide) + 40px)}
+  /* Seules les pages défilent (2026-10-25) : la page tient dans l'écran, le
+     livre reste à gauche, l'intitulé « Pages » et sa recherche restent en
+     haut, et la liste défile dans sa propre colonne. minmax(0,1fr) : sans
+     ce plancher à 0, la dernière rangée grandissait jusqu'à la hauteur de
+     mille pages et la page entière défilait de nouveau. */
+  #app[data-view="deck"]{height:100vh;min-height:0;overflow:hidden;padding-bottom:0;
+    grid-template-rows:auto auto auto auto auto minmax(0,1fr)}
+  #app[data-view="deck"] .rows{min-height:0;overflow-y:auto;overscroll-behavior:contain;
+    margin-inline:-6px;padding:2px 6px 48px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   .row{padding:9px 8px 9px 14px}
   /* les actions d'une page n'apparaissent qu'à son survol : la liste se lit
      comme un texte, pas comme un tableau de boutons */

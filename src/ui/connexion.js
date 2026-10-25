@@ -16,13 +16,14 @@ import {
 import { codeComplet, emailCarte, formatCode, lireCarte, normCode, normIdentifiant } from '../classe.js';
 import { accueil } from '../core/classement.js';
 import {
-  deck, esc, load, pending, plur, pull, pushUndo, resetPassword, saveDeck, signIn, signUp, sty, subj
+  deck, esc, load, pending, plur, pull, resetPassword, saveDeck, signIn, signUp, sty, subj
 } from '../core/coeur-sync.js';
 import { dueCount, simpleMode, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
 import { consumeHash, logout, maybeTour } from './onboarding.js';
 import { norm } from './quiz.js';
 import { cartePassage, lierPassage } from './passage.js';
+import { bindReorder } from './reordonner.js';
 
 /* ---------- sélection multiple ----------
    `sel` est nul hors du mode ; sinon c'est l'ensemble des cartes cochées.
@@ -115,15 +116,35 @@ function cardRow(c, i, nq) {
       </div>`;
 }
 
+/* Sur ordinateur, c'est la liste qui défile, pas la page (app.css) : elle
+   devient la racine de l'observation, sinon la marge d'avance de 400 px ne
+   jouerait qu'une fois « Plus… » déjà visible. */
+const listeDefile = rows => rows && getComputedStyle(rows).overflowY === 'auto';
+
 function bindInfiniteScroll() {
   const more = document.getElementById('more');
   if (!more) return;
+  const rows = more.closest('.rows');
   const io2 = new IntersectionObserver(es => {
     if (!es.some(e => e.isIntersecting)) return;
     io2.disconnect();
     setDeckShow(deckShow + DECKPAGE); setAnimate(false); render();
-  }, { rootMargin: '400px' });
+  }, { root: listeDefile(rows) ? rows : null, rootMargin: '400px' });
   io2.observe(more);
+}
+
+/* Repeindre le livre (une page suspendue, une page ajoutée, la suite de la
+   liste) reconstruit la liste : sur ordinateur, elle repartait en haut. On
+   garde sa position tant qu'on reste sur le même livre. */
+let listeVue = { id: null, top: 0 };
+function retenirListe(id) {
+  const rows = $.dataset.view === 'deck' && $.querySelector('.rows');
+  listeVue = { id: rows ? listeVue.id : null, top: rows ? rows.scrollTop : 0 };
+  if (listeVue.id !== id) listeVue = { id, top: 0 };
+}
+function rendreListe() {
+  const rows = $.querySelector('.rows');
+  if (rows && listeVue.top) rows.scrollTop = listeVue.top;
 }
 
 function bindDeckName(d) {
@@ -165,23 +186,63 @@ function bindCardInputs(d) {
   }));
 }
 
-function bindDeckSearchField() {
+/* Le filtre ne retire jamais de carte : il n'en montre qu'une partie. */
+const pagesMontrees = (d, nq) => nq
+  ? d.cards.filter(c => norm(plain(c.f)).includes(nq) || norm(plain(c.b)).includes(nq))
+  : d.cards;
+
+/* La liste des pages, seule : c'est elle, et elle seule, que la recherche
+   repeint. Un paquet de mille cartes, c'est quatre mille champs de saisie à
+   construire avant d'afficher quoi que ce soit : plusieurs secondes de
+   page blanche sur un téléphone. On en pose une page, le reste arrive
+   quand le bas de la liste approche. */
+function rowsHtml(shown, nq) {
+  const part = shown.slice(0, deckShow), rest = shown.length - part.length;
+  return `<div class="rows ${sel ? 'picking' : ''}">
+      ${!shown.length ? `<div class="note" style="padding:14px 4px">Aucune carte ne contient « ${esc(deckQ)} ».</div>` : ''}
+      ${part.map((c, i) => cardRow(c, i, nq)).join('')}
+      ${rest ? `<div class="more" id="more">${plur(rest, 'page')} de plus…</div>` : ''}
+      ${sel ? '' : `<div class="duo ghost">
+        <button data-act="add">${svg(I.plus)}Page</button>
+        <button data-act="paste">${svg(I.down)}Coller</button>
+      </div>`}
+    </div>`;
+}
+
+function bindRows(d, nq) {
+  bindInfiniteScroll();
+  bindCardInputs(d);
+  if (!nq) bindReorder(d);
+}
+
+/* Pendant la frappe, rien d'autre que la liste et le compteur ne bouge :
+   reconstruire toute la page à chaque lettre refermait le clavier sur
+   iPhone, et faisait sauter l'écran (le champ, recréé, reprenait le focus
+   en faisant défiler la page jusqu'à lui). La liste est remplacée d'un
+   bloc (pas seulement son contenu) : ses écouteurs de glisser-déposer
+   partent avec elle au lieu de s'empiler. */
+function repeindrePages(d) {
+  const rows = $.querySelector('.rows'); if (!rows) return;
+  const nq = norm(deckQ), shown = pagesMontrees(d, nq);
+  rows.outerHTML = rowsHtml(shown, nq);
+  const n = document.getElementById('dcount'); if (n) n.textContent = countLabel(shown, d);
+  const b = $.querySelector('[data-act="deckfind"]'); if (b) b.classList.toggle('on', !!deckQ);
+  bindRows(d, nq);
+}
+
+function bindDeckSearchField(d) {
   const dq = document.getElementById('dq');
   if (!dq) return;
   let dt = 0;
   dq.addEventListener('input', () => {
     setDeckQ(dq.value);
     clearTimeout(dt);
-    dt = setTimeout(() => {
-      /* on garde le champ vivant et on ne refait que la liste : sinon
-         le clavier se referme entre deux lettres */
-      const keep = document.activeElement === dq && dq.selectionStart;
-      setAnimate(false); render();
-      const again = document.getElementById('dq');
-      if (again && keep != null) { again.focus(); again.setSelectionRange(keep, keep); }
-    }, 160);
+    dt = setTimeout(() => repeindrePages(d), 120);
   });
-  if (!deckQ) setTimeout(() => dq.focus(), 50);
+  /* « Entrée » ferme le clavier : la liste filtrée reste, lisible en entier */
+  dq.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); dq.blur(); } });
+  /* tout de suite, dans le geste même : iOS n'ouvre le clavier que là */
+  if (!deckQ) dq.focus({ preventScroll: true });
 }
 
 export function deckView() {
@@ -191,14 +252,8 @@ export function deckView() {
      Tant qu'il est posé, la poignée disparaît — réordonner une liste
      filtrée écrirait des positions qui ne veulent rien dire. */
   const nq = norm(deckQ);
-  const shown = nq ? d.cards.filter(c => norm(plain(c.f)).includes(nq) || norm(plain(c.b)).includes(nq))
-                   : d.cards;
-  /* Un paquet de mille cartes, c'est quatre mille champs de saisie à
-     construire avant d'afficher quoi que ce soit : plusieurs secondes de
-     page blanche sur un téléphone. On en pose une page, le reste arrive
-     quand le bas de la liste approche. */
-  const part = shown.slice(0, deckShow);
-  const rest = shown.length - part.length;
+  const shown = pagesMontrees(d, nq);
+  retenirListe(d.id);
   $.innerHTML = `
     <div class="bar">
       <button class="ic" data-act="deckback" aria-label="Retour">${svg(I.back)}</button>
@@ -223,78 +278,14 @@ export function deckView() {
     <div class="lbl"><span>Pages</span>
       ${findButton(d)}
       ${selectButton(d)}
-      <span>${countLabel(shown, d)}</span></div>
+      <span id="dcount">${countLabel(shown, d)}</span></div>
     ${searchField()}
-    <div class="rows ${sel ? 'picking' : ''}">
-      ${!shown.length ? `<div class="note" style="padding:14px 4px">Aucune carte ne contient « ${esc(deckQ)} ».</div>` : ''}
-      ${part.map((c, i) => cardRow(c, i, nq)).join('')}
-      ${rest ? `<div class="more" id="more">${plur(rest, 'page')} de plus…</div>` : ''}
-      ${sel ? '' : `<div class="duo ghost">
-        <button data-act="add">${svg(I.plus)}Page</button>
-        <button data-act="paste">${svg(I.down)}Coller</button>
-      </div>`}
-    </div>
+    ${rowsHtml(shown, nq)}
     ${sel ? selBar(d) : ''}`;
-  bindInfiniteScroll();
   bindDeckName(d);
-  bindCardInputs(d);
-  if (!nq) bindReorder(d);
-  bindDeckSearchField();
-}
-
-/* ---------- réordonner par glisser-déposer ----------
-   Seule la poignée prend le doigt (touch-action:none) : partout ailleurs
-   la page défile normalement. Pendant le glissé rien n'est reconstruit —
-   les lignes se décalent par transform, une écriture par image — et
-   l'ordre n'est enregistré qu'au lâcher. */
-function bindReorder(d) {
-  const wrap = $.querySelector('.rows'); if (!wrap || sel) return;
-  let g = null;
-  const draw = () => {
-    g.raf = 0;
-    const { row, rows, from, step } = g;
-    row.style.transform = `translate3d(0,${g.dy}px,0)`;
-    g.to = Math.max(0, Math.min(rows.length - 1, from + Math.round(g.dy / step)));
-    rows.forEach((r, i) => {
-      if (r === row) return;
-      const shift = g.to > from && i > from && i <= g.to ? -step
-                  : g.to < from && i >= g.to && i < from ? step : 0;
-      r.style.transform = shift ? `translate3d(0,${shift}px,0)` : '';
-    });
-  };
-  wrap.addEventListener('pointerdown', e => {
-    const h = e.target.closest('.grip'); if (!h || g) return;
-    const rows = [...wrap.querySelectorAll('.row')];
-    const row = h.closest('.row'), from = rows.indexOf(row);
-    if (from < 0 || rows.length < 2) return;
-    g = { row, rows, from, to: from, dy: 0, raf: 0, y0: e.clientY,
-          step: rows[1].offsetTop - rows[0].offsetTop, pid: e.pointerId };
-    /* le doigt garde la poignée même s'il sort de la liste ; si la capture
-       est refusée (doigt déjà relâché), le glissé marche quand même, les
-       mouvements étant écoutés sur la liste elle-même */
-    try { h.setPointerCapture(e.pointerId); } catch (x) { /* voir le commentaire au-dessus */ }
-    row.classList.add('drag'); wrap.classList.add('dragging');
-    e.preventDefault();
-  });
-  wrap.addEventListener('pointermove', e => {
-    if (!g || e.pointerId !== g.pid) return;
-    g.dy = e.clientY - g.y0;
-    if (!g.raf) g.raf = requestAnimationFrame(draw);
-  });
-  const drop = e => {
-    if (!g || (e && e.pointerId !== g.pid)) return;
-    cancelAnimationFrame(g.raf);
-    const { from, to, rows, row } = g;
-    rows.forEach(r => r.style.transform = '');
-    row.classList.remove('drag'); wrap.classList.remove('dragging');
-    g = null;
-    if (from === to) return;
-    pushUndo('Ordre des cartes', [d.id]);
-    d.cards.splice(to, 0, d.cards.splice(from, 1)[0]);
-    saveDeck(d); render();
-  };
-  wrap.addEventListener('pointerup', drop);
-  wrap.addEventListener('pointercancel', drop);
+  bindRows(d, nq);
+  rendreListe();
+  bindDeckSearchField(d);
 }
 
 /* ---------- connexion ---------- */

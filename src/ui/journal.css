@@ -105,7 +105,9 @@
 .jr-h24{display:flex;align-items:flex-end;gap:2px;height:64px}
 .jr-h24 i{flex:1;min-height:2px;background:var(--surf2);border-radius:3px 3px 1px 1px}
 .jr-h24 i[style*="height:"]:not([style*="height:0%"]){background:color-mix(in srgb,var(--ink) 55%,transparent)}
-.jr-h24 i.top{background:var(--ink) !important}
+/* jr-pic et non « top » : .top est la barre de titre des pages (app.css), et
+   ses marges décollaient l'heure la plus chargée de la ligne de base */
+.jr-h24 i.jr-pic{background:var(--ink) !important}
 .jr-axe24{display:flex;justify-content:space-between;margin-top:6px;font-size:10.5px;font-weight:700;color:var(--soft)}
 
 .jr-mat{display:grid;grid-template-columns:10px minmax(0,1fr) 30% auto;align-items:center;gap:10px;padding:7px 0}
