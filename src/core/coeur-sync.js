@@ -10,7 +10,7 @@ import { $ } from '../racine.js';
 import { queueChip, render } from '../ui/bibliotheque.js';
 import { fsrsAuto, fsrsMigrate } from '../ui/carte-media.js';
 import { cerclePull } from './classement.js';
-import { statsPull } from './ecran-groupe.js';
+import { oublierLocale, statsPull } from './ecran-groupe.js';
 import { addDeck, freeName, toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu } from '../ui/menus-a.js';
 import { maybeAskInstall, resetSession } from '../ui/onboarding.js';
@@ -293,7 +293,7 @@ async function apiPage(path, from, to) {
   return { rows, total };
 }
 
-async function apiAll(path) {
+export async function apiAll(path) {
   const first = await apiPage(path, 0, PAGE - 1);
   if (first.total <= first.rows.length) return first.rows;
   const suite = [];
@@ -488,6 +488,7 @@ async function flushOutbox() {
       const st = e && e.status;
       if (st >= 400 && st < 500 && st !== 401 && st !== 403 && st !== 429) {
         console.error('Folio : ligne refusée par le serveur, abandonnée', path, row, e.message);
+        if (row && row.client_id) oublierLocale(row.client_id);     // elle n'arrivera jamais : le journal l'oublie
         outbox.shift(); save();
         continue;
       }
@@ -701,7 +702,7 @@ export async function pull() {
     apiAll(`/rest/v1/cards?select=${CARDS_SELECT}`),
     api('/rest/v1/sessions?select=deck_id,mode,pct,created_at&order=created_at.asc'),
     api('/rest/v1/prefs?select=*'),
-    api(`/rest/v1/reviews?select=id&created_at=gte.${midnight.toISOString()}`),
+    apiPage(`/rest/v1/reviews?select=id&created_at=gte.${midnight.toISOString()}`, 0, 0),   // le compte exact, pas 1 000 lignes au plus
     api('/rest/v1/decks?select=id&deleted_at=not.is.null'),
     api('/rest/v1/mail?select=id&read_at=is.null')
   ]);
@@ -711,9 +712,14 @@ export async function pull() {
   applyPulledPrefs(pf);
   upsertProfile();
   cerclePull();                 // rôle, coupures, classes : tout arrive ensemble
-  db.today = { d: +midnight, n: (today || []).length };
+  db.today = { d: +midnight, n: today ? today.total : 0 };
+  const avant = db.subjects;
   db.subjects = subs.map(x => ({ id: x.id, name: x.name, color: x.color, pos: x.pos }));
   db.decks = mergeDecks(decks, cardsByDeck);
+  // une matière créée hors ligne n'a pas atteint la base : tant qu'un livre s'en sert, on la garde et on la renvoie
+  for (const s of avant) {
+    if (!db.subjects.some(x => x.id === s.id) && db.decks.some(d => d.subject === s.id)) { db.subjects.push(s); pushSubject(s); }
+  }
   saveBases();
   db.hist = buildHist(sess);
   if (!db.subjects.length) await seedSubjects();

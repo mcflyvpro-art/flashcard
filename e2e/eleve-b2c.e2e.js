@@ -40,13 +40,16 @@ test('inscription, un livre de 10 pages, une séance, des chiffres justes', asyn
   // le compteur du jour, puis le journal de lecture
   await page.getByRole('button', { name: '13', exact: true }).click();
   const journal = page.locator('main');
-  // le journal se charge depuis le serveur (statsPull) : il montre « ······ » le temps d'arriver
-  // ouvert juste après la séance : la file part, puis le journal se relit tout seul
-  await expect(journal.locator('.st[title="Pages lues"]')).toHaveText('13', { timeout: 10000 });
-  await expect(journal.locator('.st[title="Réponses justes"]')).toHaveText('77 %');   // 10 réussites sur 13 réponses
-  await expect(journal.locator('.lbl').first()).toContainText('1');                 // un jour d'affilée
-  await expect(journal.locator('.bkn i[title="Pages sues"]').first()).toHaveText('0/10');
-  await expect(page.getByRole('button', { name: /^1 Pays \d+ Capitale \d+$/ })).toHaveCount(3);
+  // ouvert juste après la séance : les 13 lectures comptent tout de suite (l'appareil les garde
+  // tant que la base ne les a pas confirmées), puis la base les confirme sans double compte
+  await expect(journal.locator('[data-k="pages"] b')).toHaveText('13', { timeout: 10000 });
+  await expect(journal.locator('[data-k="justes"] b')).toHaveText('77 %');   // 10 réussites sur 13 réponses
+  await expect(journal.locator('[data-k="serie"] b')).toHaveText('1');       // un jour d'affilée
+  await expect(journal.locator('.jr-livre', { hasText: 'Capitales' })).toContainText('0 %');   // rien de « su » après une séance
+  const ages = await journal.locator('.jr-leg b').allTextContents();
+  expect(ages.map(Number).reduce((a, b) => a + b, 0)).toBe(10);                  // la mémoire compte les 10 pages, une fois chacune
+  await expect.poll(() => store.journal.filter(l => l.includes('rpc/journal')).length, { timeout: 10000 }).toBeGreaterThan(0);
+  await expect(journal.locator('[data-k="pages"] b')).toHaveText('13');
 
   // et ce qui est parti au serveur raconte la même chose
   await expect.poll(() => (store.tables.reviews || []).length, { timeout: 10000 }).toBe(13);

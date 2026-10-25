@@ -21,6 +21,7 @@
 import { randomUUID } from 'node:crypto';
 import { rpcClasses } from './faux-classes.js';
 import { rpcCercle } from './faux-cercle.js';
+import { contexteRevision, journalFaux } from './faux-journal.js';
 
 const CARD_COLS = { f: 'front', b: 'back', st: 'state', sp: 'step', S: 'stability', D: 'difficulty',
   F: 'trace2', d: 'due', lr: 'last_review', i: 'interval_days', n: 'reviews_count', l: 'lapses' };
@@ -116,6 +117,7 @@ function ecrit(store, name, body, prefer, user) {
     if (!r.created_at) r.created_at = new Date().toISOString();
     if (name === 'decks') r.rev = 1;
     const i = t.findIndex(x => cle(name, x) === cle(name, r));
+    if (name === 'reviews' && i < 0) contexteRevision(store, r);
     if (i >= 0) {
       if (!/merge-duplicates/.test(prefer)) return [409, { message: 'duplicate key' }];
       if (name === 'decks') r.rev = (t[i].rev || 0) + 1;
@@ -163,6 +165,7 @@ function rest(store, req, url, path, body) {
   const name = path.replace('/rest/v1/', '');
   const prefer = req.headers().prefer || '';
   if (name === 'rpc/sync_deck_cards') return syncDeckCards(store, body, user);
+  if (name === 'rpc/journal') return journalFaux(store, body || {}, user);
   if (name.startsWith('rpc/')) return rpcClasses(store, name.slice(4), body, user) || rpcCercle(store, name.slice(4), body, user) || [200, []];
   const m = req.method();
   if (m === 'GET') return lit(store, name, url, req, user);

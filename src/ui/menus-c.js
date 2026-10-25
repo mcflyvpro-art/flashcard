@@ -19,9 +19,10 @@ import {
   blockUser, refDo, refPeople, sendReport, setRole, unblockUser
 } from '../core/classement.js';
 import { lireClass, lireNew } from './classement.js';
+import { trouverParNom } from '../matieres.js';
 import {
   deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
-  setMeta, slugify, solveConflict
+  setMeta, slugify, solveConflict, subj
 } from '../core/coeur-sync.js';
 import { PWMIN } from './connexion.js';
 import { duelStart } from './defis.js';
@@ -305,9 +306,17 @@ function clickQuickMode(a) {
   return startStudy(view.id, false, null, { mode: a });
 }
 
+/* Deux matières du même nom (à la casse et aux accents près) seraient deux
+   pastilles identiques dans la bibliothèque, et une seule dans le journal :
+   on n'en crée pas une seconde, on ne renomme pas l'une comme l'autre. */
 function clickSubjok() {
   const name = (document.getElementById('sn').value || subjName).trim();
   if (!name) return;
+  const meme = trouverParNom(db.subjects, name);
+  if (meme && meme.id !== subjEdit) {
+    if (subjEdit) return toast(I.x, '« ' + meme.name + ' » existe déjà');
+    closeMenu(); return render();
+  }
   if (subjEdit) {
     const t = db.subjects.find(x => x.id === subjEdit);
     t.name = name; t.color = subjColor; pushSubject(t);
@@ -335,7 +344,7 @@ function clickSubjdel(a, b) {
 function clickBackup() {
   closeMenu();
   const url = location.origin + location.pathname + '#i=' + enc(db.decks.map(x =>
-    ({ key: x.key || x.id, name: x.name, subject: x.subject, cards: x.cards.map(c => [c.f, c.b]) })));
+    ({ key: x.key || x.id, name: x.name, subject: x.subject, sn: x.subject ? subj(x.subject).name : '', cards: x.cards.map(c => [c.f, c.b]) })));
   if (navigator.share) partager({ url });
   else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Sauvegarde copiée'));
 }
@@ -491,7 +500,7 @@ const clickDueldrop = () => duelDrop(duels.open);
 function clickCopylink(a, b, d) {
   closeMenu();
   const url = location.origin + location.pathname + '#i=' +
-    enc({ name: d.name, subject: d.subject, cards: d.cards.map(c => [c.f, c.b]) });
+    enc({ name: d.name, subject: d.subject, sn: d.subject ? subj(d.subject).name : '', cards: d.cards.map(c => [c.f, c.b]) });
   if (navigator.share) partager({ url });
   else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Lien copié'));
 }

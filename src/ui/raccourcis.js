@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I } from '../icones.js';
 import {
-  mailbox, menu, pendingGrade, prefs, setPendingGrade, stats, study, view
+  mailbox, menu, pendingGrade, prefs, setPendingGrade, study, view
 } from '../data/etat.js';
 import { allDue, go } from './bibliotheque.js';
 import { commuPull } from './cercle.js';
@@ -73,7 +73,7 @@ const GOTO = {
   new: () => { resetComp(); go('import'); },
   mail: () => { mailbox.list = null; mailPull(); go('mail'); },
   commu: () => { commuPull(); go('commu'); },
-  stats: () => { stats.rows = null; statsPull(); go('stats'); }
+  stats: () => { statsPull(); go('stats'); }
 };
 
 export function consumeGoto() {

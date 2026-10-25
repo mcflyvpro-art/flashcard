@@ -8,7 +8,7 @@ import {
 import { go, render } from '../ui/bibliotheque.js';
 import { fsrsW, plain } from '../ui/carte-media.js';
 import {
-  api, deck, metaOf, plur, pull, pushSubject, pushUndo, save, saveDeck, setMeta, uid
+  api, deck, metaOf, plur, pull, pushSubject, pushUndo, save, saveDeck, setMeta, subj, uid
 } from './coeur-sync.js';
 import { scanLibrary, repairLibrary } from '../reparation.js';
 import { countDuplicates, dedupeLibrary } from '../doublons.js';
@@ -154,7 +154,7 @@ export async function sendDeck(d, p) {
   try {
     await api('/rest/v1/mail', 'POST', [{
       from_user: auth.uid, to_user: p.id, from_name: prefs.name || (me && me.handle) || 'Compte',
-      deck_name: d.name, message: msg, cards
+      deck_name: d.name, subject_name: d.subject ? subj(d.subject).name.slice(0, 60) : null, message: msg, cards
     }], { Prefer: 'return=minimal' });
     toast(I.check, 'Envoyé à ' + (p.name || p.email));
   } catch (e) { toast(I.x, 'Envoi impossible'); }
@@ -166,7 +166,7 @@ export async function sendDeck(d, p) {
    pour que le petit repère au-dessus du gear reste à jour sans attendre. */
 export async function mailPull() {
   try {
-    const rows = await api('/rest/v1/mail?select=id,from_user,from_name,deck_name,message,cards,created_at,read_at,added_at&order=created_at.desc');
+    const rows = await api('/rest/v1/mail?select=id,from_user,from_name,deck_name,subject_name,message,cards,created_at,read_at,added_at&order=created_at.desc');
     mailbox.list = rows || [];
     mailbox.n = mailbox.list.filter(r => !r.read_at).length;
     mailbox.err = 0;
@@ -189,7 +189,7 @@ export async function openMail(id) {
 
 export async function addMail(it) {
   const n = (it.cards || []).length;
-  const d = importPayload({ name: it.deck_name, subject: '', cards: it.cards }, true);
+  const d = importPayload({ name: it.deck_name, subjectName: it.subject_name, cards: it.cards }, true);
   it.added_at = new Date().toISOString();
   closeMenu();
   if (d) go('deck', d.id);

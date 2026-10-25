@@ -19,16 +19,20 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-25 · navigation au téléphone : le « Retour » d'un livre ramène
-          là d'où on l'a ouvert (un devoir revenait sur la bibliothèque au lieu de
-          « Ma classe ») ; le balayage passe par les trois onglets dans l'ordre de la
-          barre (Livres, Classe, Cercle des lecteurs — il sautait la Classe) et devient
-          celui d'une app native : la voisine entre par le bord, déjà dessinée, sous le
-          doigt, l'indicateur d'onglet suit ; rien ne glisse sur ordinateur. « Le
-          cercle » s'appelle « Cercle des lecteurs ». Preuves : 299 tests unitaires,
-          20 parcours e2e verts dont 3 nouveaux (`navigation` : retour d'un devoir,
-          balayage au doigt par événements tactiles, souris sur PC), budget JS
-          116,3 Ko au démarrage.
+DERNIER   2026-10-25 · statistiques refaites, avec une logique qui tient quoi qu'on fasse :
+          chaque révision garde son contexte du moment (matière, livre, écart, heure de
+          lecture même hors ligne) — changer la matière d'un livre, le fusionner, le
+          supprimer, le recréer depuis un partage ne réécrit plus le passé ; ce qu'on
+          sait se lit sur les cartes d'aujourd'hui. Corrigé en route : le journal ne lisait
+          que les 1 000 premières révisions de l'année (plafond PostgREST), le moteur FSRS
+          aussi (le rejeu pouvait faire reculer des cartes), le compteur du jour plafonnait
+          à 1 000, une séance hors ligne comptait le jour de l'envoi, les morceaux chargés à
+          la demande ne s'ouvraient jamais hors ligne (service worker, Vary: Origin). Un
+          devoir, un partage, un envoi arrivent dans la matière du même nom (créée sinon).
+          Journal refait PC (tableau de bord à deux colonnes) et téléphone. Preuves : 324
+          tests unitaires dont 25 nouveaux, `journal.sql` 18/18 en base, 22 parcours e2e
+          verts dont 2 nouveaux (`journal`) et `hors-ligne` qui compte 50 pages hors ligne
+          puis 50 (pas 100) au retour, advisors sans nouvelle alerte, budget JS 117,3 Ko.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

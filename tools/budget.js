@@ -11,11 +11,18 @@
 // demande (aujourd'hui le seul espace professeur, ui/prof-porte.js, et sa
 // feuille de style) ne pèsent que chez qui les ouvre : ils ont leur propre
 // plafond, pour qu'ils ne grossissent pas non plus sans qu'on le décide.
+//
+// 2026-10-25 : le journal de lecture devient le troisième morceau (après
+// l'espace professeur et la partie en direct) — 4,8 Ko de JS et 2,5 Ko de
+// CSS à lui seul. Le plafond « à la demande » additionne les trois, que
+// personne ne charge ensemble (un élève n'ouvre jamais l'espace prof) : il
+// passe de 30 à 40 Ko (JS) et de 12 à 16 Ko (CSS), pour garder la même
+// marge par morceau ; le démarrage, lui, garde ses 120 Ko.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 30 * 1024, cssDemande: 12 * 1024 };
+const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 40 * 1024, cssDemande: 16 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande' };
 const dir = 'dist/assets';
 const html = readFileSync('dist/index.html', 'utf8');

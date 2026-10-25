@@ -17,13 +17,19 @@ self.addEventListener('activate', e => {
     .then(k => Promise.all(k.filter(x => x !== C).map(x => caches.delete(x))))
     .then(() => self.clients.claim()));
 });
-// réseau d'abord (l'app se met à jour toute seule), cache en secours hors ligne
+/* Réseau d'abord (l'app se met à jour toute seule), cache en secours hors
+   ligne. `ignoreVary` : le serveur répond « Vary: Origin », et un morceau
+   chargé à la demande (journal, espace professeur, partie en direct) est
+   demandé comme module, avec un en-tête Origin que la copie faite à
+   l'installation n'avait pas — le cache la refusait, rendait index.html à
+   la place, et le morceau ne s'ouvrait jamais hors ligne. */
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
     fetch(req)
       .then(r => { const c = r.clone(); caches.open(C).then(x => x.put(req, c)); return r; })
-      .catch(() => caches.match(req).then(hit => hit || caches.match(BASE + 'index.html')))
+      .catch(() => caches.match(req, { ignoreVary: true })
+        .then(hit => hit || caches.match(BASE + 'index.html', { ignoreVary: true })))
   );
 });

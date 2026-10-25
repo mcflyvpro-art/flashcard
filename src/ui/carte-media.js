@@ -468,14 +468,21 @@ export function preview(c, rating) {
    (test/revlog.test.js) : ici ne reste que ce qu'un module pur ne peut
    pas savoir — où vivent les fiches, et comment les écritures se
    propagent (file durable, sauvegarde). */
+/* Une page se reconnaît à son livre ET à son identifiant : le même livre
+   importé deux fois porte les mêmes identifiants de cartes, et leurs deux
+   histoires ne doivent pas se mêler. Et on ne rejoue une carte que si son
+   historique va jusqu'à sa dernière lecture connue : une révision encore
+   en attente d'envoi, ou une carte recopiée avec son état (fusion,
+   scission), ferait sinon reculer sa mémoire. */
 export function fsrsReplay(rows) {
-  const results = fsrsReplayAll(rows, fsrsCfg());
+  const results = fsrsReplayAll((rows || []).map(r => ({ ...r, card_id: r.deck_id + '|' + r.card_id })), fsrsCfg());
   const index = new Map();
-  for (const d of db.decks) for (const c of d.cards) index.set(c.id, [c, d]);
+  for (const d of db.decks) for (const c of d.cards) index.set(d.id + '|' + c.id, [c, d]);
   let done = 0;
   for (const [id, state] of results) {
     const hit = index.get(id); if (!hit) continue;
     const [c, d] = hit;
+    if (c.lr && state.lr < c.lr - 60e3) continue;
     c.S = state.S; c.D = state.D; c.F = state.F; c.lr = state.lr;
     c.st = state.st; delete c.sp;
     c.n = Math.max(c.n || 0, state.n);
@@ -558,7 +565,8 @@ export function fsrsOptimize(items) {
 export function fsrsAuto() {
   if (prefs.simple || !auth.uid) return;
   const age = Date.now() - (prefs.wAt || 0);
-  const grown = !prefs.wN || (stats.rows && stats.rows.length > prefs.wN * OPT_GROWTH);
+  const lues = stats.rep && stats.rep.toujours ? +stats.rep.toujours.n : 0;
+  const grown = !prefs.wN || lues > prefs.wN * OPT_GROWTH;
   if (prefs.wAt && age < OPT_EVERY && !grown) return;
   const idle = window.requestIdleCallback || (f => setTimeout(f, 4000));
   idle(() => { fsrsTune(false); }, { timeout: 15000 });

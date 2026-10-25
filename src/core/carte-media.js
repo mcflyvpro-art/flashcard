@@ -1,5 +1,5 @@
 import { auth, comp, optRunning, prefs, setOptRunning, view } from '../data/etat.js';
-import { SB, api, deck, refreshToken, uid } from './coeur-sync.js';
+import { SB, apiAll, deck, refreshToken, uid } from './coeur-sync.js';
 import { savePrefs } from '../ui/import-cartes.js';
 import { fsrsItems, fsrsOptimize, fsrsReplay } from '../ui/carte-media.js';
 
@@ -49,17 +49,14 @@ export async function upload(file) {
 const OPT_MIN_REVIEWS = 400;
 
 /* L'historique complet, sans la fenêtre d'un an des statistiques : le
-   moteur apprend sur tout ce qu'on lui a donné depuis le début. */
-async function histPull() {
-  const out = [];
-  for (let page = 0; page < 20; page++) {
-    const rows = await api('/rest/v1/reviews?select=card_id,rating,created_at'
-      + `&rating=not.is.null&order=created_at.asc&limit=10000&offset=${page * 10000}`);
-    if (!rows || !rows.length) break;
-    out.push(...rows);
-    if (rows.length < 10000) break;
-  }
-  return out;
+   moteur apprend sur tout ce qu'on lui a donné depuis le début. Lu page à
+   page (apiAll) : l'ancienne lecture demandait 10 000 lignes, PostgREST
+   n'en rendait que 1 000, et la boucle s'arrêtait là — le moteur ne voyait
+   que le début de l'historique, et le rejeu redonnait à une carte l'état
+   qu'elle avait des mois plus tôt. */
+function histPull() {
+  return apiAll('/rest/v1/reviews?select=deck_id,card_id,rating,created_at'
+    + '&rating=not.is.null&order=created_at.asc,id.asc');
 }
 
 export async function fsrsTune(force) {

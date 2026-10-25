@@ -5,7 +5,7 @@ import { DAY } from '../fsrs.js';
 import { buildQueue, shuffle } from '../file.js';
 import {
   auth, db, demo, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
-  stats, study, tour
+  study, tour
 } from '../data/etat.js';
 import { go, liveBump } from './bibliotheque.js';
 import {
@@ -16,6 +16,7 @@ import {
 } from '../core/coeur-sync.js';
 import { beep, bumpToday, simpleMode, toast } from './import-cartes.js';
 import { norm } from './quiz.js';
+import { noterLocale } from '../core/ecran-groupe.js';
 
 /* ---------- révision ---------- */
 function studySource(id) {
@@ -642,12 +643,23 @@ function applyGrade(c, ok, r) {
   else grade(c, r);
 }
 
-function scoreRow(id, d, r, ok, ms, rv) {
+/* Une révision est un fait, écrit une fois avec son contexte du moment
+   (src/journal.js) : l'heure où on l'a faite — pas celle de l'envoi, qui
+   peut venir des heures plus tard après une coupure —, la matière et le
+   livre d'alors, et l'écart depuis la lecture précédente de cette page,
+   lu sur la carte elle-même : il la suit quand une fusion la recopie sous
+   un autre identifiant. Sans date de lecture sur la carte, la base le
+   retrouve dans le journal. */
+function scoreRow(id, d, r, ok, ms, rv, ecart) {
+  const s = d && d.subject ? subj(d.subject) : null;
   return {
     client_id: uid(),                       // rejouable sans doublon
     user_id: auth.uid, deck_id: d ? d.id : null, card_id: id,
     mode: study.simple ? 'simple' : (study.mode || 'study'),
-    rating: study.simple ? null : r, correct: !!ok, ms: Math.min(ms, 600000), reversed: !!rv
+    rating: study.simple ? null : r, correct: !!ok, ms: Math.min(ms, 600000), reversed: !!rv,
+    created_at: new Date().toISOString(),
+    subject: d ? d.subject || '' : '', subject_name: s && s.id ? s.name : null,
+    deck_name: d ? d.name : null, ecart
   };
 }
 
@@ -671,16 +683,17 @@ function scoreCard(id, ok, rating) {
   const rv = !isTF(c) && (study.dirs ? study.dirs[id] : study.rev);
   const ms = Date.now() - (study.tq || Date.now());
   study.tq = Date.now();
+  const ecart = c.lr ? Math.floor(Math.max(0, Date.now() - c.lr) / DAY) : null;
   applyGrade(c, ok, r);
   if (d) { dirty[d.id] = 1; save(); scheduleFlush(); }
-  const row = scoreRow(id, d, r, ok, ms, rv);
+  const row = scoreRow(id, d, r, ok, ms, rv, ecart);
   /* Sans paquet identifié, la ligne serait refusée par la base (deck_id
      est un uuid) : mieux vaut ne pas l'inscrire que boucher la file. */
   if (d) enqueue('/rest/v1/reviews', row);
   /* La ligne rejoint aussi le journal local : le Journal et le classement
      comptent la page à la seconde où elle est jouée, sans attendre le
      prochain aller-retour avec le serveur. */
-  if (stats.rows) stats.rows.push(Object.assign({ created_at: new Date().toISOString() }, row));
+  if (d) noterLocale(row);
   liveBump();
   bumpToday();
   /* Le son dit la note, pas le verdict : « Difficile » compte comme su

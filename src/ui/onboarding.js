@@ -95,7 +95,7 @@ export function resetSession() {
 
   /* les écrans en cours */
   setView({ name: 'login' }); setMenu(null); setStudy(null); setQuiz(null);
-  setStats({ rows: null, err: 0, range: 30 });
+  setStats({ rep: null, locaux: [], uid: null, err: 0, range: 30, sig: '' });
   setShared(null); setDuelRun(null); setPreviewOf(null); setLeaving(null);
   setFilter(''); setPeek(false); setSel(null); setReorder(false);
   setFindQ(''); setDeckQ(''); setDeckOpen(false); setDeckShow(DECKPAGE);

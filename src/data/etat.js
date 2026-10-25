@@ -47,7 +47,7 @@ export let splitSize = 12;
    (chargé seulement à l'ouverture de l'écran, comme la corbeille) */
 export let mailbox = { n: 0, list: null, err: 0 };
 
-export let stats = { rows: null, err: 0, range: 30 };
+export let stats = { rep: null, locaux: [], uid: null, err: 0, range: 30, sig: '' };
 
 export let reorder = false;          // l'accueil est en cours de réorganisation
 

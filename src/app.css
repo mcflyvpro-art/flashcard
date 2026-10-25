@@ -422,41 +422,10 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .st > svg{width:18px;height:18px;color:var(--soft);margin-bottom:3px}
 .lbl span > svg{width:14px;height:14px;vertical-align:-2px;margin-right:3px;color:#C9803A}
 
-/* ══════════ statistiques ══════════ */
-.tiles.st4{flex-wrap:wrap;animation:none}
-.tiles.st4 .st{flex:1 1 calc(50% - 4px);min-width:calc(50% - 4px)}
+/* ══════════ surfaces de tableau (console, établissement) ══════════
+   Le journal de lecture a sa propre feuille (ui/journal.css), chargée avec
+   son écran. */
 .card2{background:var(--card);box-shadow:var(--edge);border-radius:14px;padding:14px 16px}
-/* sur cet écran les sections s'enchaînent : chaque intitulé a besoin
-   d'air au-dessus, sinon il colle au bloc précédent */
-#app[data-view="stats"] .lbl{margin-top:24px}
-#app[data-view="stats"] .slist{gap:8px}
-
-/* calendrier d'assiduité : une colonne par semaine, une case par jour */
-.heat{display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-.heat::-webkit-scrollbar{display:none}
-.hc{display:flex;flex-direction:column;gap:3px;flex:none}
-.hc i{width:13px;height:13px;border-radius:4px;background:var(--surf)}
-.hc i.l1{background:color-mix(in srgb,var(--ok) 26%,var(--surf))}
-.hc i.l2{background:color-mix(in srgb,var(--ok) 48%,var(--surf))}
-.hc i.l3{background:color-mix(in srgb,var(--ok) 72%,var(--surf))}
-.hc i.l4{background:var(--ok)}
-.heatk{display:flex;justify-content:space-between;margin-top:8px;font-size:11.5px;
-  font-weight:650;color:var(--soft)}
-
-/* barres comparées : rétention, progression, temps par matière */
-.brow{display:flex;align-items:center;gap:10px;padding:5px 0}
-.brow .bl{flex:0 0 46%;min-width:0;font-size:13px;font-weight:650;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.brow .bt{flex:1;min-width:0;height:8px;border-radius:5px;background:var(--surf);overflow:hidden}
-.brow .bt i{display:block;height:100%;border-radius:5px;background:var(--ink);
-  transition:width .5s var(--e)}
-.brow .bv{flex:none;min-width:44px;text-align:right;font-size:12.5px;font-weight:750;
-  color:var(--soft);font-variant-numeric:tabular-nums}
-
-/* cartes les plus ratées : le nombre d'échecs porte l'information */
-.wrow .wn{flex:none;min-width:26px;height:26px;padding:0 6px;border-radius:9px;
-  background:rgba(196,86,107,.13);color:var(--ko);display:grid;place-items:center;
-  font-style:normal;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums}
 
 .strip{display:flex;gap:3px;width:100%;height:9px;animation:rise .5s var(--e) .14s both}
 .strip i{flex:1;min-width:3px;border-radius:3px;background:var(--ok);opacity:.85}
@@ -976,7 +945,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 
   /* ---------- réglages, journal, cercle, courrier : une colonne lisible ---------- */
   #app[data-view="settings"] > *,#app[data-view="mail"] > *,#app[data-view="trash"] > *{max-width:760px}
-  #app[data-view="stats"] > *,#app[data-view="commu"] > *{max-width:960px}
+  #app[data-view="commu"] > *{max-width:960px}
 
   /* ---------- connexion ---------- */
   .login{max-width:400px;margin-inline:auto}
@@ -1924,7 +1893,6 @@ body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
   -webkit-touch-callout:default}
 /* la période, au-dessus des chiffres, avait l'air posée dessus */
-#app[data-view="stats"] .seg{margin-bottom:14px}
 /* le champ d'ajout d'un lecteur touchait la flèche de retour */
 #app[data-view="friends"] .addf{margin-top:10px}
 /* la feuille défile verticalement et rien d'autre : pas de pincement,
@@ -1961,35 +1929,6 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 #boot.off{opacity:0;transform:scale(1.04);pointer-events:none}
 .mg.warn{color:var(--ko)}
 .mg.warn svg{color:var(--ko)}
-
-/* ══════════ journal : sept jours, et l'état de chaque livre ══════════ */
-/* Trois lignes empilées : le chiffre, la piste, le jour. La barre se
-   mesure dans la piste — avant, elle partageait sa hauteur avec le
-   chiffre et le jour, et le calcul de proportion se faisait écraser par
-   le reste : deux journées très différentes finissaient de même taille. */
-.week{display:flex;align-items:stretch;gap:7px;height:132px}
-.wd{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%}
-.wd b{flex:none;min-height:14px;font-size:12px;font-weight:800;color:var(--ink2);
-  font-variant-numeric:tabular-nums}
-.wd u{flex:1;min-height:0;position:relative;width:100%;text-decoration:none}
-.wd i{position:absolute;left:0;right:0;bottom:0;border-radius:7px 7px 3px 3px;
-  background:var(--ok);animation:grow .55s var(--e) both}
-.wd i.nil{height:3px !important;background:var(--surf2)}
-@keyframes grow{from{height:3px;opacity:.4}}
-.wd span{flex:none;font-size:11px;font-weight:750;color:var(--soft)}
-/* légende des couleurs, sous l'état des livres */
-.bkkey{display:flex;flex-wrap:wrap;gap:6px 14px;padding-top:10px;margin-top:4px;
-  border-top:1px solid var(--hair);font-size:12px;font-weight:650;color:var(--soft)}
-.bkkey span{display:flex;align-items:center;gap:6px}
-.bkkey i{width:8px;height:8px;border-radius:50%;flex:none}
-.bkkey i.new{background:#4A7FBE} .bkkey i.learn{background:#D4842E}
-.bkkey i.young{background:#4C9862} .bkkey i.mature{background:var(--ink)}
-.bkline{display:flex;align-items:center;gap:12px;padding:7px 0}
-.bkn{flex:1;min-width:0;font-size:14.5px;font-weight:700;letter-spacing:-.2px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bkn i{display:block;font-style:normal;font-size:12px;font-weight:650;color:var(--soft);
-  margin-top:2px}
-.mix.sm{flex:none;width:104px;height:7px}
 
 /* ---------- l'écran d'accueil ----------
    Trois pas numérotés, et le vrai glyphe de partage d'iOS posé dans la

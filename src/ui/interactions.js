@@ -9,7 +9,7 @@ import {
   setDeckOpen, setDeckQ, setDuelRun, setFilter, setFindQ,
   setHelpKey, setLeaving, setLegalBack, setLegalTab, setMateOpen, setMates2,
   setPeek, setPendingGrade, setQuiz, setReorder, setSel, setShared,
-  setStudy, shared, stats, study, trash, view
+  setStudy, shared, study, trash, view
 } from '../data/etat.js';
 import { allerClasses, go, render, retourLivre } from './bibliotheque.js';
 import { commuPull, doAdd } from './cercle.js';
@@ -268,7 +268,7 @@ const tapMcqMatch = a => startStudy(view.id, false, null, { mode: a });
 /* Partager est posé sur l'écran du livre : sans cette ligne, seul le
    menu « … » le connaissait et le bouton ne faisait rien. */
 const tapSharepick = () => { if (!friends) friendsPull(); return openMenu('sharepick'); };
-const tapStats = () => { stats.rows = null; statsPull(); return go('stats'); };
+const tapStats = () => { statsPull(); return go('stats'); };
 const tapHelpTuto = () => openMenu('tuto');
 const tapInstall = () => openInstall();
 /* quitter un défi à son rythme : revenir d'où on l'avait ouvert */
@@ -277,7 +277,7 @@ const tapDuelquit = () => { setDuelRun(null); const r = cercle.retour || { name:
 function tapAddshared() {
   const sd = shared && shared.d; if (!sd) return;
   const cards = (sd.cards || []).map(c => [cf(c), cb(c)]);
-  const nd = importPayload({ name: sd.name, subject: '', cards }, true);
+  const nd = importPayload({ name: sd.name, subjectName: sd.subject_name, cards }, true);
   setShared(null);
   if (nd) go('deck', nd.id); else go('home');
   return toast(I.check, plur(cards.length, 'page') + ' ajoutée' + (cards.length > 1 ? 's' : ''));

@@ -6,7 +6,7 @@ import {
   DECKPAGE, accounts, adm, animate, asks, auth, compte, db, demo, dirty, eleve, filter, liveAt, me,
   liveSoon, liveT, mailbox, menu, myRole, online, pageDir, peek, prefs,
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
-  setPageDir, setPreviewOf, setView, stats, view
+  setPageDir, setPreviewOf, setView, view
 } from '../data/etat.js';
 import { commuPull, commuView, friendsView } from './cercle.js';
 import { clubPull, clubView } from './club.js';
@@ -225,7 +225,7 @@ export function allerClasses() {
 function railClick(e) {
   const b = e.target.closest('[data-r]'); if (!b) return;
   if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
-  if (b.dataset.r === 'stats') { stats.rows = null; statsPull(); return go('stats'); }
+  if (b.dataset.r === 'stats') { statsPull(); return go('stats'); }
   if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
   if (b.dataset.r === 'classes') return allerClasses();
   go(b.dataset.r === 'settings' ? 'settings' : 'home');

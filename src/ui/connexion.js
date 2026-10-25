@@ -736,6 +736,15 @@ export const HELP = {
     'tienne sur tes révisions passées : à quelle vitesse tu oublies, ce qui te résiste, ce ' +
     'qui tient tout seul.\n\nIl le fait de lui-même dès que tu as assez d’historique, et ' +
     'recommence de temps en temps. Ce bouton force le calcul tout de suite.'],
+  jMatieres: ['Temps par matière',
+    'Chaque minute reste dans la matière où tu l’as passée. Changer la matière d’un livre, le fusionner ou le ' +
+    'supprimer ne réécrit pas le passé : seules les lectures suivantes vont ailleurs.'],
+  jRappel: ['Rappel estimé',
+    'La chance, d’après le moteur, que tu te souviennes en ce moment d’une page déjà lue. Elle baisse chaque jour ' +
+    'sans lecture et remonte à chaque révision.'],
+  jFidele: ['Après une pause',
+    'Tes réponses justes quand tu reviens sur une page après quelques jours, quelques semaines ou quelques mois : ' +
+    'c’est là qu’on voit ce qui tient vraiment.'],
   fast: ['Mode rapide',
     'Une bonne réponse enchaîne toute seule sur la suivante, au quiz comme en QCM et en vrai/faux. ' +
     'Sans lui, la correction reste à l’écran jusqu’à ce que tu appuies sur Suivant.']

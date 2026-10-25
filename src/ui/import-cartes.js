@@ -11,6 +11,7 @@ import {
 } from '../core/coeur-sync.js';
 import { norm } from './quiz.js';
 import { snapVersion } from '../core/reglages-corbeille.js';
+import { matiereLocale } from '../core/matieres.js';
 
 /* ---------- génération de cartes ----------
    La clé Anthropic n'est jamais ici. app.js est servi par GitHub Pages, donc
@@ -273,18 +274,24 @@ export function fnrApply(d) {
    est un nom que trois comptes sur trois utilisent, et l'écraser ferait
    disparaître des cartes et toute leur progression sans un mot. D'où le
    second argument : « celui-ci arrive de l'extérieur, mets-le à côté ». */
+/* `subjectName` (ou `sn` dans un lien) : le nom de la matière du livre
+   chez celui qui l'envoie — c'est lui qui voyage, jamais l'identifiant
+   (src/matieres.js). Sans nom, un identifiant n'est gardé que s'il existe
+   ici (un lien de sauvegarde du même compte). */
 export function importPayload(p, fresh) {
   let last = null;
   for (const k of (Array.isArray(p) ? p : [p])) {
     const cards = (k.cards || []).map(c => Array.isArray(c) ? { f: c[0], b: c[1] } : c).filter(c => c && c.f);
     if (!cards.length) continue;
+    const nom = k.subjectName || k.sn;
+    const subject = matiereLocale(nom ? { nom } : { id: k.subject });
     const ex = fresh ? null : db.decks.find(d => d.name === k.name);
     if (ex) {
       snapVersion(ex, 'avant réimport');
-      ex.subject = k.subject || ex.subject;      // sans matière à l'import : on garde la sienne
+      ex.subject = subject || ex.subject;        // sans matière à l'import : on garde la sienne
       ex.cards = cards.map(c => ({ id: c.id || uid(), f: c.f, b: c.b }));
       last = ex; dirty[ex.id] = 1;
-    } else last = addDeck(fresh ? freeName((k.name || 'Paquet').trim() || 'Paquet') : k.name, cards, k.subject);
+    } else last = addDeck(fresh ? freeName((k.name || 'Paquet').trim() || 'Paquet') : k.name, cards, subject);
   }
   save(); flush(); return last;
 }
