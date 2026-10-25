@@ -61,8 +61,8 @@ const isStr = v => typeof v === 'string';
 /* Lit le texte d'un fichier : rend { ok: true, data } ou { ok: false,
    error } avec un message lisible. Ne juge que la forme du fichier, pas
    la santé des cartes : une sauvegarde doit rendre ce qu'elle contient,
-   même une carte malade — « Vérifier ma bibliothèque » (M04.T2) est là
-   pour la suite. */
+   même une carte malade — l'entretien automatique de la bibliothèque
+   (M04.T2, entretienAuto) la réparera ensuite. */
 export function readBackup(text) {
   let data;
   try { data = JSON.parse(text); } catch (e) { return { ok: false, error: 'Fichier illisible (pas du JSON)' }; }

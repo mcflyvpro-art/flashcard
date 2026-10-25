@@ -1,9 +1,8 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
-import { DAY } from '../fsrs.js';
 import {
   auth, cardEdit, conflicts, db, duels, fnr, friends, helpKey,
-  mailOpen, mailbox, mateOpen, mateProf, mates, me, menu, prefs, previewOf, quiz, recorder,
+  mailOpen, mailbox, mateOpen, mateProf, mates, me, prefs, previewOf, quiz, recorder,
   sel, sendMsg, sendTo, setMenu, setSendMsg, setSplitSize, splitSize, study, vers, view
 } from '../data/etat.js';
 import { SORTS } from './bibliotheque.js';
@@ -15,7 +14,7 @@ import { deck, esc, metaOf, noDetect, plur, shortWho, subj } from '../core/coeur
 import { HELP } from './connexion.js';
 import { myScore, rankOf } from './defis.js';
 import {
-  backlog, dueCount, fnrNote, fnrScan, simpleMode
+  dueCount, fnrNote, fnrScan, simpleMode
 } from './import-cartes.js';
 import { mountMenu } from './menus-a.js';
 import { helpSheet } from './onboarding.js';
@@ -86,85 +85,6 @@ export function paintMenuDeckset(w) {
             ${[[0, 'Aucun'], [5, '5 s'], [10, '10 s'], [20, '20 s']].map(([v, l]) =>
               `<button data-tm="${v}" class="${m.timer === v ? 'on' : ''}">${l}</button>`).join('')}
           </div></div>
-      </div>`;
-    mountMenu(w);
-    return;
-}
-
-function corpsModeSimpleOn(bloc) {
-  return [
-      bloc('Ce qui s’arrête', [
-        `Les échéances. Plus aucune carte n’arrive à date : les pastilles de rappel sur les
-         paquets et le marathon toutes matières disparaissent.`,
-        `Les quatre boutons <b>Encore · Difficile · Correct · Facile</b> disparaissent. Il ne
-         reste que le balayage : à droite je sais, à gauche je ne sais pas.`,
-        `La mémoire ne bouge plus. Une page revue en mode simple garde exactement la
-         stabilité et la difficulté qu’elle avait — réviser en mode simple n’apprend rien
-         au moteur.`,
-        `La barre de maturité et les pastilles d’état ne s’affichent plus.`,
-        `Le tri « Urgentes » disparaît : il n’y a plus de date pour trier.`
-      ]),
-      bloc('Ce qui est conservé', [
-        `<b>Rien n’est effacé.</b> Stabilité, difficulté, échéance et historique de
-         révisions restent écrits dans chaque page et t’attendent.`,
-        `La récitation, l’objectif du jour, le résumé de fin de session, les courbes, les
-         matières, les pages mises de côté et les sauvegardes fonctionnent à l’identique.`,
-        `Les pages ratées continuent d’être comptées : le tri « Ratées » et les pages
-         coriaces restent justes.`
-      ]),
-      bloc('Quand tu rallumeras le moteur', [
-        `Il repartira exactement où il s’est arrêté, sans rien réapprendre.`,
-        `Les cartes dont la date sera passée entre-temps seront <b>étalées automatiquement</b>
-         sur plusieurs jours, à hauteur de ton objectif, pour t’éviter un rattrapage massif
-         le même jour.`,
-        `Les cartes jamais notées avant la bascule repartiront comme des cartes neuves.`
-      ]),
-      bloc('Bon à savoir', [
-        `Le réglage appartient à ton compte : il suit sur tous tes appareils.`,
-        `Une session en cours est abandonnée par la bascule, pour qu’aucune carte ne soit
-         validée dans un mode et enregistrée dans l’autre.`,
-        `Tu peux revenir en arrière à tout moment, ici même.`
-      ])
-  ].join('');
-}
-
-function corpsModeSimpleOff(bloc, n, per, j, since) {
-  return [
-      bloc('Ce qui revient', [
-        `Les quatre boutons de notation, les échéances, les pastilles de rappel, la barre de
-         maturité et le marathon.`,
-        `Le calcul de la prochaine date : le moteur estime pour chaque page ta probabilité
-         de t’en souvenir, puis la programme au jour où elle tombe sur ta rétention visée.
-         Plus la page est solide, plus il attend ; plus elle résiste, plus il resserre.`
-      ]),
-      bloc('Où en est ta progression', [
-        `Le moteur reprend au point exact où il s’était arrêté${since ? ` il y a ${since} jour${since > 1 ? 's' : ''}` : ''}.
-         Aucune donnée n’a été perdue pendant le mode simple.`,
-        n ? `<b>${n > 1 ? `${n} pages ont dépassé leur échéance.` : `Une page a dépassé son échéance.`}</b> ${n > per
-              ? `Elles seront réparties sur ${j} jour${j > 1 ? 's' : ''}, environ ${per} par jour,
-                 les plus anciennes d’abord.`
-              : n > 1 ? `Elles seront à revoir dès la prochaine session.`
-                      : `Elle sera à revoir dès la prochaine session.`}`
-          : `Aucune carte en retard : la reprise se fera au fil de l’eau.`,
-        `Les cartes vues en mode simple n’ont pas progressé. Celles qui n’avaient jamais été
-         notées repartent comme des cartes neuves.`
-      ])
-  ].join('');
-}
-
-export function paintMenuSimple(w) {
-  const on = menu === 'simple';
-    const n = backlog(), per = Math.max(5, prefs.goal || 30), j = Math.max(1, Math.ceil(n / per));
-    const ago = prefs.simpleAt ? Date.now() - prefs.simpleAt : 0;
-    const since = ago >= DAY ? Math.round(ago / DAY) : 0;
-    const bloc = (t, items) => `<div class="pvh">${t}</div><ul class="pvl">${items.map(x => `<li>${x}</li>`).join('')}</ul>`;
-    const body = on ? corpsModeSimpleOn(bloc) : corpsModeSimpleOff(bloc, n, per, j, since);
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu pv">
-        <div class="mi" style="font-weight:750">${svg(on ? I.swap : I.brain)}${on ? 'Passer en mode simple' : 'Rallumer le moteur'}</div>
-        <div class="pvb">${body}</div>
-        <button class="mi" data-mact="do-${on ? 'simple' : 'engine'}"
-          style="justify-content:center;font-weight:700">${svg(I.check)}<span>${on ? 'Passer en mode simple' : 'Rallumer le moteur'}</span></button>
       </div>`;
     mountMenu(w);
     return;

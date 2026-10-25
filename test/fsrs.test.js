@@ -251,3 +251,35 @@ describe('FSRS-7 (34 paramètres)', () => {
     expect(f7curve(W7, t, m)).toBeCloseTo(0.9, 2);
   });
 });
+
+/* L'équilibreur de charge d'Anki (24.11+) : dans la fourchette du flou, le
+   jour vide l'emporte, et l'aperçu reste ce qui sera appliqué. */
+import { equilibrer, fuzzBornes, EQUILIBRE_MAX } from '../src/fsrs.js';
+
+describe('équilibreur de charge', () => {
+  it('un jour vide pèse 1, un jour chargé presque rien', () => {
+    const charge = j => (j === 9 ? 0 : 40);
+    for (const rnd of [0.01, 0.2, 0.5, 0.8, 0.99]) expect(equilibrer(7, 11, charge, rnd)).toBe(9);
+  });
+  it('à charge égale, le tirage reste dans la fourchette', () => {
+    const [lo, hi] = fuzzBornes(10, 36500);
+    for (let k = 0; k < 50; k++) {
+      const j = equilibrer(lo, hi, () => 3, k / 50);
+      expect(j).toBeGreaterThanOrEqual(lo);
+      expect(j).toBeLessThanOrEqual(hi);
+    }
+  });
+  it('les quatre boutons disent ce qui sera appliqué, et restent ordonnés', () => {
+    const c = { id: 'eq', st: 2, S: 12, D: 5, F: 12, lr: NOW - 12 * DAY, n: 4, i: 12, d: NOW };
+    const cfg = { ...CFG, charge: j => (j % 3 ? 25 : 2) };
+    const a = fsrsStates(c, NOW, cfg), b = fsrsStates(c, NOW, cfg);
+    expect(a.map(x => x.ivl)).toEqual(b.map(x => x.ivl));
+    for (let g = 2; g < 4; g++) if (a[g - 1].st === 2) expect(a[g].ivl).toBeGreaterThan(a[g - 1].ivl);
+  });
+  it('au-delà de 90 jours, le flou ordinaire', () => {
+    const c = { id: 'loin', st: 2, S: 400, D: 5, F: 400, lr: NOW - 300 * DAY, n: 9, i: 300, d: NOW };
+    const sans = fsrsPlan(c, 2, NOW, CFG, true), avec = fsrsPlan(c, 2, NOW, { ...CFG, charge: () => 99 }, true);
+    expect(sans.ivl).toBeGreaterThan(EQUILIBRE_MAX);
+    expect(avec.ivl).toBe(sans.ivl);
+  });
+});

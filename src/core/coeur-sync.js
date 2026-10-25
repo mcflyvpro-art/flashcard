@@ -9,6 +9,8 @@ import { mergeDeck } from '../fusion.js';
 import { $ } from '../racine.js';
 import { queueChip, render } from '../ui/bibliotheque.js';
 import { fsrsAuto, fsrsMigrate } from '../ui/carte-media.js';
+import { rallumerMoteur } from '../ui/menus-c.js';
+import { entretienAuto } from './reglages-corbeille.js';
 import { cerclePull } from './classement.js';
 import { oublierLocale, statsPull } from './ecran-groupe.js';
 import { addDeck, freeName, toast } from '../ui/import-cartes.js';
@@ -728,7 +730,20 @@ export async function pull() {
      bibliothèque déjà travaillée. */
   fsrsMigrate();
   fsrsAuto();                            // le moteur se règle tout seul, au calme
+  rallumerMoteur();                      // plus de mode simple (2026-10-25) : le moteur reprend
+  entretenir();
   save();
+}
+
+/* La bibliothèque s'entretient seule, une fois par ouverture et au calme
+   (core/reglages-corbeille.js, entretienAuto) : plus de bouton « Vérifier ». */
+let entretenue = false;
+function entretenir() {
+  if (entretenue) return;
+  entretenue = true;
+  const idle = window.requestIdleCallback || (f => setTimeout(f, 5000));
+  idle(() => entretienAuto().catch(e => console.warn('Folio : entretien de la bibliothèque impossible', e && e.message)),
+    { timeout: 20000 });
 }
 
 async function seedSubjects() {

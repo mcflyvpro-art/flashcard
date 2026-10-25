@@ -11,6 +11,7 @@ import {
 } from '../core/coeur-sync.js';
 import { fsrsTune } from '../core/carte-media.js';
 import { norm } from './quiz.js';
+import { debutJour, estNeuve } from '../file.js';
 
 /* ---------- rendu du contenu d'une carte ----------
    Sous-ensemble volontairement étroit : ce qu'on écrit vraiment sur une fiche.
@@ -381,11 +382,35 @@ export function markDups(cards, target) {
    compte, et ce que l'app en fait. */
 export const fsrsW = () => (prefs.w && (prefs.w.length === 34 || prefs.w.length === 21)) ? prefs.w : W6;
 
-export const fsrsDR = () => cl(prefs.dr || 0.9, 0.7, 0.99);
+/* La rétention visée et l'intervalle plafond sont figés sur les réglages
+   d'Anki (90 %, 36 500 jours) : plus de curseur (2026-10-25). Un élève doit
+   arriver sur un moteur qui marche, pas sur un réglage à comprendre ; les
+   valeurs posées autrefois par le curseur sont ignorées. Seuls les
+   paramètres du modèle (`w`) suivent l'élève, réoptimisés tout seuls
+   (fsrsAuto). */
+export const RETENTION = 0.9;
+export const fsrsDR = () => RETENTION;
 
-const fsrsMax = () => Math.max(1, prefs.maxIvl || 36500);
+const fsrsMax = () => 36500;
 
-const fsrsCfg = () => ({ w: fsrsW(), dr: fsrsDR(), maxIvl: fsrsMax() });
+/* La charge des jours à venir, pour l'équilibreur de charge (src/fsrs.js) :
+   combien de pages en révision tombent chaque jour, toute la bibliothèque
+   confondue (Anki compte par préréglage ; ici il n'y en a qu'un). Gardée
+   un instant : les quatre boutons d'une page la demandent ensemble. */
+let charge = null;
+function chargeDes(now) {
+  if (charge && now - charge.at < 1500) return charge.f;
+  const t0 = debutJour(now), par = new Map();
+  for (const d of db.decks) for (const c of d.cards) {
+    if (c.x || c.st !== 2 || !c.d) continue;
+    const j = Math.round((debutJour(c.d) - t0) / DAY);
+    if (j > 0 && j <= 100) par.set(j, (par.get(j) || 0) + 1);
+  }
+  charge = { at: now, f: j => par.get(j) || 0 };
+  return charge.f;
+}
+
+const fsrsCfg = now => ({ w: fsrsW(), dr: fsrsDR(), maxIvl: fsrsMax(), charge: chargeDes(now || Date.now()) });
 
 /* Probabilité de se rappeler la fiche à l'instant t : c'est la grandeur
    que FSRS optimise, et celle qui décide de l'échéance. */
@@ -398,7 +423,7 @@ function recall(c, at) {
 /* Les quatre boutons, calculés ensemble : l'aperçu affiché et ce qui sera
    réellement appliqué sortent du même calcul, donc ils ne peuvent pas
    diverger. */
-const etats = (c, now) => fsrsStates(c, now || Date.now(), fsrsCfg());
+const etats = (c, now) => fsrsStates(c, now || Date.now(), fsrsCfg(now));
 
 export const cstate = c => {
   if (c.x) return 'susp';
@@ -415,6 +440,10 @@ export const STATE = { new: 'À lire', learn: 'En cours', young: 'Relue',
 export function grade(c, rating) {
   const now = Date.now();
   const p = etats(c, now)[cl(rating | 0, 0, 3)];
+  /* l'heure de la première lecture : le quota de pages neuves du jour se
+     compte là-dessus (src/file.js, `neuvesPermises`) */
+  if (estNeuve(c)) c.fl = now;
+  charge = null;                     // une page vient de changer de jour
   if (rating === 0 && (c.st === 2 || (c.i || 0) >= 1)) c.l = (c.l || 0) + 1;
   c.S = p.S; c.D = p.D; c.F = p.F;
   c.st = p.st; if (p.sp == null) delete c.sp; else c.sp = p.sp;
@@ -577,8 +606,8 @@ export function fsrsAuto() {
    convertit avec le pont officiel du crate (`sm2State`, src/fsrs.js).
    Rien n'est perdu — une fiche qui revenait dans 30 jours revient toujours
    dans 30 jours — et le moteur prend la suite à partir de là. C'est un
-   point de départ approximatif : « Régler le moteur sur moi » rejoue
-   ensuite l'historique réel, ce que ce pont ne sait pas faire. */
+   point de départ approximatif : la réoptimisation automatique (fsrsAuto)
+   rejoue ensuite l'historique réel, ce que ce pont ne sait pas faire. */
 function fsrsSeed(c) {
   if (c.S || !c.n) return false;
   const ivl = +c.i || 0;

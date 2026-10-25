@@ -4,15 +4,14 @@ import { DAY } from '../fsrs.js';
 import {
   asks, auth, db, friends, mailbox, mates, me, menu, prefs, sendMsg,
   setAnimate, setAsks, setFriends, setMailOpen, setMates, setMe, setSendMsg,
-  setSendTo, setShared, setVerif, setVers, setView, trash, verif, vers, view
+  setSendTo, setShared, setVers, setView, trash, vers, view
 } from '../data/etat.js';
 import { go, render } from '../ui/bibliotheque.js';
 import { fsrsW, plain } from '../ui/carte-media.js';
 import {
   api, deck, metaOf, plur, pull, pushSubject, pushUndo, save, saveDeck, setMeta, subj, uid
 } from './coeur-sync.js';
-import { scanLibrary, repairLibrary } from '../reparation.js';
-import { countDuplicates, dedupeLibrary } from '../doublons.js';
+import { deDevoir } from '../file.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from '../ui/menus-a.js';
 import { norm } from '../ui/quiz.js';
@@ -299,31 +298,25 @@ export async function openShared(tok) {
   if (view.name === 'shared') render();
 }
 
-/* ---------- vérifier ma bibliothèque (M04.T2) ----------
-   Les 12 invariants (src/invariants.js) et les 8 familles de réparation
-   (src/reparation.js) sont purs et testés ; ces deux fonctions ne font
-   que les brancher sur la bibliothèque réelle et la sauvegarde. */
-export function verifScan() {
-  const { tally, cards } = scanLibrary(db.decks);
-  setVerif({ tally, cards, dups: countDuplicates(db.decks), busy: false, done: null });
-  if (menu === 'verif') paintMenu();
-}
-
-export function verifRepair() {
-  if (verif.busy || !verif.tally) return;
-  setVerif({ ...verif, busy: true });
-  if (menu === 'verif') paintMenu();
-  pushUndo('Réparation de la bibliothèque', db.decks.map(d => d.id));
-  const { dropped, touched } = repairLibrary(db.decks, { w: fsrsW() }, uid, Date.now());
-  // M04.T4 : les doublons après la réparation — une carte réparée peut en devenir un
-  const dd = dedupeLibrary(db.decks);
-  const all = new Set([...touched, ...dd.touched]);
-  for (const d of all) saveDeck(d);
-  const { tally, cards } = scanLibrary(db.decks);
-  setVerif({ tally, cards, dups: countDuplicates(db.decks), busy: false,
-    done: { dropped, merged: dd.removed, touched: all.size } });
-  render();
-  if (menu === 'verif') paintMenu();
+/* ---------- l'entretien de la bibliothèque (M04.T2, M04.T4) ----------
+   Ce qu'on demandait autrefois à « Vérifier ma bibliothèque » se fait seul,
+   sans rien demander ni afficher (2026-10-25), au calme après le démarrage :
+   les 12 invariants (src/invariants.js), les 8 familles de réparation
+   (src/reparation.js) et les doublons d'un même livre (src/doublons.js),
+   purs et testés, chargés à la demande (le démarrage n'a plus de marge).
+   Les doublons ne se retirent pas d'un devoir : chaque page y compte pour
+   l'avancement que voit le professeur. Rien n'est envoyé si rien n'a bougé. */
+export async function entretienAuto() {
+  if (!auth || !db.decks.length) return 0;
+  const [{ repairLibrary, scanLibrary }, { dedupeLibrary }] =
+    await Promise.all([import('../reparation.js'), import('../doublons.js')]);
+  const abimees = scanLibrary(db.decks).cards;
+  const { touched } = abimees ? repairLibrary(db.decks, { w: fsrsW() }, uid, Date.now()) : { touched: [] };
+  const dd = dedupeLibrary(db.decks.filter(d => !deDevoir(d.cards)));
+  const tous = new Set([...touched, ...dd.touched]);
+  for (const d of tous) saveDeck(d);
+  if (tous.size && view.name === 'deck') render();
+  return tous.size;
 }
 
 /* ---------- sauvegarde intégrale (M04.T6) ----------

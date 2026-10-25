@@ -7,7 +7,7 @@ import {
   setSubjColor, setSubjEdit, setSubjName, shared, trash, vers
 } from '../data/etat.js';
 import { render } from './bibliotheque.js';
-import { fsrsDR, plain } from './carte-media.js';
+import { plain } from './carte-media.js';
 import { atSchool, isAdmin } from './classement.js';
 import {
   COLORS, PALETTE, canUndo, deck, esc, pending, plur, pushUndo, saveDeck, shortWho,
@@ -35,52 +35,26 @@ export function openSubject(id) {
   openMenu('subject');
 }
 
+/* La révision n'a plus de réglage du moteur (2026-10-25) : rétention, quota
+   de pages neuves, ordre, mode simple, « Régler le moteur » — tout est figé
+   sur les réglages d'Anki, qui marchent pour tout le monde, et le moteur se
+   règle seul sur l'historique (fsrsAuto). Ne restent que l'objectif, le sens
+   des pages et le mode rapide des exercices. */
 function settingsRevisionHtml() {
   return `
       <div class="lbl"><span>Révision</span></div>
       <div class="slist">
-        <div class="srw"><button class="sr flat" data-act="tglsimple">${svg(I.brain)}
-          <span class="n">Mode simple</span>
-          <span class="tgl ${prefs.simple ? 'on' : ''}"></span></button>${hlp('simple')}</div>
         <div class="sr flat col">
           <div class="srh">${svg(I.target)}<span class="n">Objectif du jour</span>
             <span class="c">${prefs.goal} pages</span></div>
           <input class="rng" id="pGoal" type="range" min="5" max="200" step="5" value="${prefs.goal}"
             aria-label="Objectif du jour"></div>
-        ${prefs.simple ? '' : `<div class="sr flat col">
-          <div class="srh">${svg(I.plus)}<span class="n">Nouvelles pages par séance</span>
-            <span class="c">${prefs.cap || 'sans limite'}</span></div>
-          <input class="rng" id="pCap" type="range" min="0" max="100" step="5" value="${prefs.cap}"
-            aria-label="Nouvelles pages par séance"></div>
-        <div class="sr flat col">
-          <div class="srh">${svg(I.brain)}<span class="n">Rétention visée</span>
-            <span class="c">${Math.round(fsrsDR() * 100)} %</span>${hlp('dr')}</div>
-          <input class="rng" id="pDr" type="range" min="70" max="97" step="1"
-            value="${Math.round(fsrsDR() * 100)}" aria-label="Rétention visée"></div>`}
-        <div class="sr flat col">
-          <div class="srh">${svg(I.shuffle)}<span class="n">Ordre des pages</span>${hlp('order')}</div>
-          <div class="seg" id="pOrder">
-            ${[['random', 'Aléatoire'],
-['deck', 'Du livre'], ['worst', 'Ratées'], ['due', 'Urgentes']]
-              .filter(([v]) => !(prefs.simple && v === 'due'))
-              .map(([v, l]) => `<button data-ord="${v}" class="${prefs.order === v ? 'on' : ''}">${l}</button>`).join('')}
-          </div>
-        </div>
-        <button class="sr flat" data-act="tglfresh">${svg(I.card)}
-          <span class="n">Nouvelles pages d’abord</span>
-          <span class="tgl ${prefs.fresh ? 'on' : ''}"></span></button>
         <button class="sr flat" data-act="tglboth">${svg(I.swap)}
           <span class="n">Mélanger les deux sens</span>
           <span class="tgl ${prefs.both ? 'on' : ''}"></span></button>
         <div class="srw"><button class="sr flat" data-act="tglfast">${svg(I.skip)}
           <span class="n">Mode rapide</span>
           <span class="tgl ${prefs.fast ? 'on' : ''}"></span></button>${hlp('fast')}</div>
-        ${prefs.simple ? '' : `<div class="srw"><button class="sr flat" data-act="replay">${svg(I.chart)}
-          <span class="n">Régler le moteur sur moi</span>
-          <span class="c">${prefs.wAt
-            ? (prefs.wN ? prefs.wN.toLocaleString('fr-FR') + ' révisions' : 'réglé')
-            : 'réglages d’origine'}</span>
-          ${svg(I.arrow)}</button>${hlp('tune')}</div>`}
       </div>`;
 }
 
@@ -159,8 +133,6 @@ function settingsDonneesHtml() {
           <span class="n">Annuler ${esc(undoLabel().toLowerCase())}</span></button>` : ''}
         <button class="sr flat" data-act="trash">${svg(I.trash)}<span class="n">Corbeille</span>
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="verif">${svg(I.check)}
-          <span class="n">Vérifier ma bibliothèque</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="help">${svg(I.bulb)}<span class="n">Aide</span>
           <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
@@ -194,30 +166,15 @@ export function settingsView() {
       <div class="rg-grille">${[settingsRevisionHtml, settingsAffichageHtml, settingsMatieresHtml,
         settingsCompteHtml, settingsDonneesHtml, settingsQuitterHtml].map(f => `<section class="rg">${f()}</section>`).join('')}</div>
     </div>`;
-  const g = document.getElementById('pGoal'), c = document.getElementById('pCap');
+  const g = document.getElementById('pGoal');
   g.addEventListener('input', () => {
     prefs.goal = +g.value; savePrefs();
     g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' pages';
-  });
-  if (c) c.addEventListener('input', () => {
-    prefs.cap = +c.value; savePrefs();
-    c.closest('.sr').querySelector('.c').textContent = prefs.cap || 'sans limite';
-  });
-  /* Le seul bouton de réglage du moteur : viser plus haut, c'est plus de
-     révisions ; viser plus bas, c'est en oublier davantage. */
-  const dr = document.getElementById('pDr');
-  if (dr) dr.addEventListener('input', () => {
-    prefs.dr = +dr.value / 100; savePrefs();
-    dr.closest('.sr').querySelector('.c').textContent = dr.value + ' %';
   });
   const fo = document.getElementById('pFont');
   if (fo) fo.addEventListener('input', () => {
     prefs.font = +fo.value / 100; savePrefs(); applyFont();
     fo.closest('.sr').querySelector('.c').textContent = fo.value + ' %';
-  });
-  document.getElementById('pOrder').addEventListener('click', e => {
-    const b = e.target.closest('[data-ord]'); if (!b) return;
-    prefs.order = b.dataset.ord; savePrefs(); render();
   });
 }
 

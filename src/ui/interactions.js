@@ -14,7 +14,6 @@ import {
 import { allerClasses, go, render, retourLivre } from './bibliotheque.js';
 import { commuPull, doAdd } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
-import { fsrsTune } from '../core/carte-media.js';
 import { isPupil, lireClass, lireNew } from './classement.js';
 import {
   accountsPull, admPull, blocksPull, boardPull, matesPull, modAct,
@@ -38,7 +37,7 @@ import { resetComp } from './creation.js';
 import { cb, cf, openSubject } from './reglages-corbeille.js';
 import {
   answerFriend, askFriend, friendsPull, mailPull, openMail,
-  trashPull, trashPurge, trashRestore, verifScan
+  trashPull, trashPurge, trashRestore
 } from '../core/reglages-corbeille.js';
 import {
   answerTF, cardOf, cardOrigin, commit, fling, isTF, loadResume, paintQ, pickMCQ, pickMatch,
@@ -285,25 +284,6 @@ function tapAddshared() {
 
 const tapExpstats = () => exportStats();
 
-/* Rejoue tout l'historique de révision dans le moteur : chaque fiche
-   retrouve la stabilité et la difficulté qu'elle aurait si FSRS l'avait
-   suivie depuis sa toute première lecture. */
-function tapReplay() {
-  toast(I.chart, 'Lecture de ton historique…');
-  (async () => {
-    try {
-      const before = prefs.wAt || 0;
-      const n = await fsrsTune(true);
-      setAnimate(false); render();
-      const tuned = (prefs.wAt || 0) !== before;
-      toast(n || tuned ? I.check : I.x,
-        !n && !tuned ? 'Pas encore assez d’historique noté'
-        : tuned ? 'Moteur réglé sur ton historique' + (n ? ' · ' + plur(n, 'page') + ' à jour' : '')
-        : plur(n, 'page') + ' recalculée' + (n > 1 ? 's' : '') + ' sur ton historique');
-    } catch (e) { toast(I.x, 'Historique indisponible'); }
-  })();
-}
-
 const tapFind = () => { setFindQ(''); return go('find'); };
 
 function tapDeckfind() {
@@ -356,7 +336,6 @@ const tapBackup2 = () => openMenu('backup');
 const tapUndo2 = () => { doUndo(); };
 const tapMailScreen = () => { mailbox.list = null; mailPull(); return go('mail'); };
 const tapTrash = () => { trash.list = null; trashPull(); return go('trash'); };
-const tapVerif = () => { verifScan(); return openMenu('verif'); };
 
 /* ---- sélection multiple ---- */
 const tapSelmode = () => { setSel(sel ? null : new Set()); return render(); };
@@ -389,8 +368,6 @@ function tapSeldel() {
 }
 
 const tapLogout = () => logout();
-const tapTglsimple = () => openMenu(prefs.simple ? 'engine' : 'simple');
-const tapTglfresh = () => { prefs.fresh = !prefs.fresh; savePrefs(); return render(); };
 const tapTglboth = () => { prefs.both = !prefs.both; savePrefs(); return render(); };
 const tapTglfast = () => { prefs.fast = !prefs.fast; savePrefs(); return render(); };
 const tapTglsound = () => { prefs.sound = !prefs.sound; savePrefs(); render(); if (prefs.sound) beep(true); };
@@ -413,7 +390,9 @@ function tapStudy() {
   return startStudy(view.id, false, null, { only: dueCount(d) ? 'due' : null, both: prefs.both });
 }
 
-const tapStudyall = () => { closeMenu(); return startStudy(view.id, false, null, {}); };
+/* le quota du jour est atteint et des pages neuves attendent : vingt de plus */
+const tapStudyplus = () => startStudy(view.id, false, null, { only: 'due', plus: 20, both: prefs.both });
+const tapStudyall = () => { closeMenu(); return startStudy(view.id, false, null, { tout: true }); };
 const tapStudyleech = () => { closeMenu(); return startStudy(view.id, false, null, { only: 'leech' }); };
 const tapQuizdeck = () => startQuiz(view.id);
 
@@ -558,7 +537,6 @@ const CLICK_RULES = [
   [a => a === 'duelquit', tapDuelquit],
   [a => a === 'addshared', tapAddshared],
   [a => a === 'expstats', tapExpstats],
-  [a => a === 'replay', tapReplay],
   [a => a === 'find', tapFind],
   [a => a === 'deckfind', tapDeckfind],
   [a => a === 'sortpick', tapSortpick],
@@ -579,15 +557,12 @@ const CLICK_RULES = [
   [a => a === 'undo2', tapUndo2],
   [a => a === 'mail', tapMailScreen],
   [a => a === 'trash', tapTrash],
-  [a => a === 'verif', tapVerif],
   [a => a === 'selmode', tapSelmode],
   [a => a === 'selall', tapSelall],
   [a => a === 'selmove', tapSelmove],
   [a => a === 'selsus', tapSelsus],
   [a => a === 'seldel', tapSeldel],
   [a => a === 'logout', tapLogout],
-  [a => a === 'tglsimple', tapTglsimple],
-  [a => a === 'tglfresh', tapTglfresh],
   [a => a === 'tglboth', tapTglboth],
   [a => a === 'tglfast', tapTglfast],
   [a => a === 'tglsound', tapTglsound],
@@ -600,6 +575,7 @@ const CLICK_RULES = [
   [a => a === 'deck', tapDeckAction],
   [a => a === 'menu', tapMenu],
   [a => a === 'study', tapStudy],
+  [a => a === 'studyplus', tapStudyplus],
   [a => a === 'studyall', tapStudyall],
   [a => a === 'studyleech', tapStudyleech],
   [a => a === 'quizdeck', tapQuizdeck],

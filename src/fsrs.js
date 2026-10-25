@@ -222,13 +222,45 @@ export function fuzzSeed(c, g) {
   for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619); }
   return ((h >>> 0) % 100000) / 100000;
 }
-export function fuzzIvl(ivl, maxIvl, rnd) {
-  if (ivl < 2.5) return ivl;
+/* La fourchette du flou, en jours entiers : [lo, hi]. */
+export function fuzzBornes(ivl, maxIvl) {
   let delta = 1;
   for (const [a, b, f] of FUZZ) delta += f * Math.max(Math.min(ivl, b) - a, 0);
-  let lo = Math.max(2, Math.round(ivl - delta)), hi = Math.min(Math.round(ivl + delta), maxIvl);
-  lo = Math.min(lo, hi);
+  const hi = Math.min(Math.round(ivl + delta), maxIvl);
+  return [Math.min(Math.max(2, Math.round(ivl - delta)), hi), hi];
+}
+export function fuzzIvl(ivl, maxIvl, rnd) {
+  if (ivl < 2.5) return ivl;
+  const [lo, hi] = fuzzBornes(ivl, maxIvl);
   return Math.min(Math.round(rnd * (hi - lo + 1) + lo), maxIvl);
+}
+
+/* ---------- l'équilibreur de charge d'Anki (24.11+, actif par défaut) ----------
+   Plutôt qu'un jour tiré au hasard dans la fourchette du flou, Anki choisit
+   le jour selon ce qui y est déjà prévu : un jour vide pèse 1, un jour où
+   `n` pages attendent pèse (1/n)^2,15 × (1/j)^3 (rslib/src/scheduler/states/
+   load_balancer.rs) — les journées s'égalisent au lieu de s'empiler. Seulement
+   jusqu'à 90 jours ; au-delà, le flou ordinaire. `charge(j)` : le nombre de
+   pages dues dans `j` jours (la page notée exclue) ; `rnd` : le même tirage
+   dérivé de la fiche que le flou, pour que l'aperçu sur les boutons dise
+   toujours la vérité. */
+export const EQUILIBRE_MAX = 90;
+export function equilibrer(lo, hi, charge, rnd) {
+  const poids = [];
+  for (let j = lo; j <= hi; j++) {
+    const n = charge(j);
+    poids.push(n > 0 ? Math.pow(1 / n, 2.15) * Math.pow(1 / j, 3) : 1);
+  }
+  let r = rnd * poids.reduce((a, b) => a + b, 0);
+  for (let k = 0; k < poids.length; k++) { r -= poids[k]; if (r < 0) return lo + k; }
+  return hi;
+}
+
+function flouOuEquilibre(ivl, maxIvl, rnd, charge) {
+  if (ivl < 2.5) return ivl;
+  const [lo, hi] = fuzzBornes(ivl, maxIvl);
+  if (!charge || ivl > EQUILIBRE_MAX || lo > EQUILIBRE_MAX) return fuzzIvl(ivl, maxIvl, rnd);
+  return Math.min(equilibrer(lo, hi, charge, rnd), maxIvl);
 }
 
 /* ---------- la machine d'états, port de py-fsrs ---------- */
@@ -264,8 +296,8 @@ const memoryState = (c, since, g, w) => c.S
   ? fsrsStep(w, { S: c.S, D: c.D || 5, F: c.F || c.S }, since, g)
   : fsrsInit(w, g);
 
-const withFuzz = (c, g, rawDays, st, maxIvl, fuzzy) =>
-  (rawDays != null && fuzzy !== false && st === 2) ? fuzzIvl(rawDays, maxIvl, fuzzSeed(c, g)) : rawDays;
+const withFuzz = (c, g, rawDays, st, maxIvl, fuzzy, charge) =>
+  (rawDays != null && fuzzy !== false && st === 2) ? flouOuEquilibre(rawDays, maxIvl, fuzzSeed(c, g), charge) : rawDays;
 
 /* rating de l'app : 0 encore · 1 difficile · 2 correct · 3 facile
    FSRS attend 1..4 — la conversion se fait ici, et nulle part ailleurs. */
@@ -279,7 +311,7 @@ export function fsrsPlan(c, rating, now, cfg, fuzzy) {
     ? stepLearning(initSt, initSp, g, S, w, m, dr, maxIvl)
     : stepReview(initSt, g, w, m, dr, maxIvl);
   const { st, sp = initSp, mins = null, days: rawDays = null } = step;
-  const days = withFuzz(c, g, rawDays, st, maxIvl, fuzzy);
+  const days = withFuzz(c, g, rawDays, st, maxIvl, fuzzy, cfg.charge);
   return { S: m.S, D: m.D, F: m.F, st, sp, ivl: days || 0,
            d: now + (days != null ? days * DAY : mins * MIN) };
 }

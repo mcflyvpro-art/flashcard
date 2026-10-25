@@ -204,12 +204,6 @@ export let cardEdit = null;
 
 export let vers = { list: null, err: 0, of: null };
 
-/* M04.T2 : tally = compte par famille (src/reparation.js) une fois
-   scanné, null avant le premier passage ; dups = doublons (M04.T4) ;
-   done = résumé de la dernière réparation (dropped, merged, touched),
-   affiché une fois puis remis à null au scan suivant. */
-export let verif = { tally: null, cards: 0, dups: 0, busy: false, done: null };
-
 /* ══════════ signaler, bloquer ══════════
    Des mineurs, du contenu écrit librement, et jusqu'ici aucun moyen de
    dire « ça ne va pas » ni de couper le contact. C'était le dernier vrai
@@ -464,7 +458,6 @@ export const setSubjColor = v => subjColor = v;
 export const setSubjName = v => subjName = v;
 export const setCardEdit = v => cardEdit = v;
 export const setVers = v => vers = v;
-export const setVerif = v => verif = v;
 export const setBlocks = v => blocks = v;
 export const setReportOn = v => reportOn = v;
 export const setReportWhy = v => reportWhy = v;

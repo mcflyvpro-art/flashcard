@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
-import { isDue } from '../file.js';
+import { aLire } from '../file.js';
 import {
   actx, auth, booted, db, dirty, fnr, gone, prefs, prefsTimer, setActx, setBooted,
   setPrefsTimer, setTt, tt
@@ -83,7 +83,9 @@ export async function aiFromFile(file, hint, pages) {
   return aiCall({ op: pdf ? 'pdf' : 'ocr', mime, data, hint: hint || '', pages: pages || '' });
 }
 
-export const dueCount = d => d.cards.filter(c => isDue(c, Date.now())).length;
+/* Ce qu'annonce le bouton « Lire » : les pages dues déjà commencées, plus les
+   neuves dans la limite du quota du jour (20 par livre, comme Anki). */
+export const dueCount = d => aLire(d.cards, Date.now());
 
 /* ---------- mode simple ----------
    Le moteur est coupé : plus d'échéance, plus de note, on swipe et c'est tout.

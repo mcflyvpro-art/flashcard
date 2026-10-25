@@ -7,7 +7,7 @@ import {
   menu, prefs, previewOf, quiz, recKey, recorder, ref, reportOn, sel, sendTo,
   setAnimate, setDeckOpen, setDeckQ, setLeaving,
   setPendingGrade, setQuiz, setRecKey, setReorder, setReportWhy, setSel, setSendMsg,
-  setSendTo, setSplitSize, setStudy, setSubjColor, setView, splitSize, study, subjColor,
+  setSendTo, setSplitSize, setStudy, setSubjColor, splitSize, study, demo, subjColor,
   subjEdit, subjName, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
@@ -41,7 +41,7 @@ import {
   addMail, backupData, backupRestore, delMail, dropFriend, lireSauvegarde
 } from '../core/reglages-corbeille.js';
 import {
-  friendsPull, revokeShare, saveHandle, sendDeck, shareLink, verifRepair, versPull
+  friendsPull, revokeShare, saveHandle, sendDeck, shareLink, versPull
 } from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
 
@@ -298,7 +298,7 @@ function clickColor(a, b) { setSubjColor(b.dataset.color); return paintMenu(); }
 
 function clickStudyAll(a) {
   closeMenu();
-  return startStudy(view.id, false, null, a === 'studyleech' ? { only: 'leech' } : {});
+  return startStudy(view.id, false, null, a === 'studyleech' ? { only: 'leech' } : { tout: true });
 }
 
 function clickQuickMode(a) {
@@ -584,9 +584,6 @@ const CLICK_RULES = [
   [a => a === 'rec-stop', clickRecStop],
   [a => a && a.startsWith('med-'), clickMedField],
   [a => a === 'deckset', () => { closeMenu(); return openMenu('deckset'); }],
-  [a => a === 'do-simple', () => setSimple(true)],
-  [a => a === 'do-engine', () => setSimple(false)],
-  [a => a === 'do-verif-repair', () => verifRepair()],
   [a => a === 'do-rename', clickDoRename],
   [a => a === 'do-pwd', clickDoPwd],
   [a => a === 'do-delacc', clickDoDelacc],
@@ -651,19 +648,18 @@ document.addEventListener('click', async e => {
   }
 });
 
-/* Bascule du moteur. Une seule porte d'entrée, pour que rien ne traverse
-   la frontière : la file en cours, la note en attente et la reprise
-   sauvegardée appartiennent au mode qui les a créées. */
-function setSimple(on) {
-  closeMenu();
-  setStudy(null); setPendingGrade(null);
+/* Le mode simple n'est plus proposé (2026-10-25) : la révision est figée
+   sur le moteur, réglé comme Anki. Un compte qui l'avait gardé allumé
+   retrouve le moteur au démarrage, une fois : l'arriéré est étalé sur ses
+   prochains jours, la reprise sauvegardée (qui appartenait à l'autre mode)
+   part. Jamais pendant une séance : pas de bascule à chaud. */
+export function rallumerMoteur() {
+  if (!prefs.simple || study || demo) return;
+  setPendingGrade(null);
   try { localStorage.removeItem('cartes.resume.' + auth.uid); } catch (e) { /* stockage indisponible : rien à nettoyer alors */ }
-  const days = (!on && prefs.simple) ? spreadBacklog() : 0;   // rallumage : on étale l'arriéré
-  prefs.simple = !!on;
-  prefs.simpleAt = on ? Date.now() : 0;
+  const days = spreadBacklog();
+  prefs.simple = false;
+  prefs.simpleAt = 0;
   save(); savePrefs();
-  if (view.name === 'study') setView({ name: 'home' });
-  render();
-  toast(on ? I.swap : I.brain, on ? 'Mode simple'
-    : days > 1 ? `Moteur rallumé · rattrapage sur ${days} jours` : 'Moteur rallumé');
+  if (days > 1) toast(I.brain, `Moteur rallumé · rattrapage sur ${days} jours`);
 }

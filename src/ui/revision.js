@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
-import { buildQueue, shuffle } from '../file.js';
+import { buildQueue, garderNeuves, neuvesPermises, shuffle } from '../file.js';
 import {
   auth, db, demo, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
   study, tour
@@ -28,18 +28,21 @@ function studySource(id) {
   return d ? { cards: d.cards, name: d.name } : null;
 }
 
-function studyIds(cards, subset, o, sm) {
+function studyIds(id, cards, subset, o, sm) {
   if (subset && subset.length) {
     const keep = new Set(subset);
     return cards.filter(c => keep.has(c.id)).map(c => c.id);
   }
-  /* un ordre demandé par l'appelant (le bouton mélanger) l'emporte sur
-     la préférence, dans les deux modes */
-  return buildQueue(cards, sm
-    ? { order: o.order || (prefs.order === 'due' ? 'random' : prefs.order), cap: 0,
-        fresh: prefs.fresh, only: o.only === 'leech' ? 'leech' : '' }
-    : { ...o, order: o.order || prefs.order, fresh: prefs.fresh,
-        cap: o.cap != null ? o.cap : prefs.cap }, Date.now()).map(c => c.id);
+  const now = Date.now();
+  if (sm) return buildQueue(cards, { order: o.order || 'random', only: o.only === 'leech' ? 'leech' : '' }, now).map(c => c.id);
+  /* Le quota de pages neuves d'Anki, 20 par livre et par jour (aucun pour un
+     devoir) ; en marathon, chaque livre garde le sien. « +20 » (o.plus) est
+     le « augmenter la limite du jour » d'Anki ; « Tout lire » n'en a pas. */
+  const marathon = id === 'all';
+  const reste = k => neuvesPermises(marathon ? (deck(k) || { cards: [] }).cards : cards, now) + (o.plus || 0);
+  const permises = o.tout ? cards : garderNeuves(cards, reste, marathon ? c => c._d : undefined);
+  /* l'ordre d'Anki, sauf si l'appelant en demande un (le bouton mélanger) */
+  return buildQueue(permises, { ...o, order: o.order || 'anki', cap: 0 }, now).map(c => c.id);
 }
 
 /* Le QCM a besoin d'au moins deux réponses distinctes pour avoir un sens ;
@@ -62,7 +65,7 @@ export function startStudy(id, rev, subset, opt) {
   const sm = simpleMode();          // figé pour toute la session : pas de bascule à chaud
   const src = studySource(id);
   if (!src) return;
-  let ids = studyIds(src.cards, subset, o, sm);
+  let ids = studyIds(id, src.cards, subset, o, sm);
   if (!ids.length) { toast(I.check, 'Rien à revoir ici'); return; }
   const dm = id === 'all' ? DEFMETA : metaOf(deck(id));
   const mode = o.mode || '';

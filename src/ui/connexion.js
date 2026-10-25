@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
-import { isLeech } from '../file.js';
+import { estNeuve, isLeech } from '../file.js';
 import {
   auth, db, deckOpen, DECKPAGE, deckQ, deckShow, dirty, legalBack, legalTab, loginBusy, loginMode,
   prof, sel, setAnimate, setDb, setDeckQ, setDeckShow, setLoginBusy, setLoginMode, setSel,
@@ -56,6 +56,10 @@ function ctaButton(d) {
         ${svg(I.share)}Donner ce devoir</button>`;
   }
   const due = !simpleMode() && dueCount(d);
+  /* rien de dû, mais des pages neuves au-delà du quota du jour : « +20 » */
+  if (!due && !simpleMode() && d.cards.some(c => !c.x && estNeuve(c))) {
+    return `<button class="cta read" data-act="studyplus">${svg(I.play)}Lire <b>+20</b></button>`;
+  }
   return `<button class="cta read" data-act="study">${svg(I.play)}Lire${due ? ` <b>${due}</b>` : ''}</button>`;
 }
 
@@ -701,8 +705,8 @@ export function loginView() {
 /* ---------- petites explications ----------
    Les paragraphes posés sous chaque réglage se lisaient comme une notice
    et noyaient les réglages eux-mêmes. Ne reste qu'une pastille « ? », et
-   seulement là où le nom ne suffit pas : ce qu'on perd en éteignant le
-   moteur, ce que « ratées » veut dire, ce que « rapide » enchaîne.
+   seulement là où le nom ne suffit pas : ce que « rapide » enchaîne, ce
+   que le journal mesure.
    Tout ce qui se devine au premier coup d'œil n'a pas de pastille. */
 export const HELP = {
   classement: ['Classement',
@@ -711,25 +715,6 @@ export const HELP = {
   modes: ['En direct ou à son rythme',
     'En direct : tout le monde joue en même temps avec un code à six chiffres, et voit le classement après chaque question.' +
     '\n\nÀ son rythme : un QCM de dix questions, les mêmes pour tous. Chacun le joue quand il veut, une seule fois.'],
-  simple: ['Mode simple',
-    'Le moteur estime, pour chaque page, le jour où tu serais sur le point de l’oublier, et te ' +
-    'la redonne juste avant.\n\nL’éteindre rend l’app manuelle — les pages défilent dans ' +
-    'l’ordre choisi, tu balaies à droite si tu sais, à gauche sinon. Ta progression reste ' +
-    'enregistrée et repart où elle en était dès que tu le rallumes.'],
-  dr: ['Rétention visée',
-    'La part de tes pages que tu veux encore savoir au moment où elles reviennent.\n\n' +
-    'À 90 %, une page sur dix t’échappe au retour : c’est le réglage conseillé, celui qui ' +
-    'demande le moins de révisions pour ce que tu retiens.\n\nViser plus haut fait revenir ' +
-    'les pages plus souvent et coûte beaucoup plus de travail pour peu de mémoire en plus. ' +
-    'Viser plus bas allège les journées mais laisse filer davantage.'],
-  order: ['Ordre des cartes',
-    'Aléatoire : mélangées à chaque séance.\nDu livre : l’ordre dans lequel tu les as écrites.\n' +
-    'Ratées : celles que tu manques le plus souvent d’abord.\nUrgentes : les plus en retard d’abord.'],
-  tune: ['Régler le moteur sur moi',
-    'Les réglages d’origine décrivent une mémoire moyenne. Le moteur peut apprendre la ' +
-    'tienne sur tes révisions passées : à quelle vitesse tu oublies, ce qui te résiste, ce ' +
-    'qui tient tout seul.\n\nIl le fait de lui-même dès que tu as assez d’historique, et ' +
-    'recommence de temps en temps. Ce bouton force le calcul tout de suite.'],
   jMatieres: ['Temps par matière',
     'Chaque minute reste dans la matière où tu l’as passée. Changer la matière d’un livre, le fusionner ou le ' +
     'supprimer ne réécrit pas le passé : seules les lectures suivantes vont ailleurs.'],

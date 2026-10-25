@@ -184,3 +184,30 @@ test('sur ordinateur, seules les pages d’un gros livre défilent', async ({ pa
   await expect(page.locator('.rows .row.off')).toHaveCount(1);
   expect(Math.abs(await page.locator('.rows').evaluate(r => r.scrollTop) - avant)).toBeLessThan(40);
 });
+
+/* Réglé comme Anki (2026-10-25) : 20 pages neuves par jour et par livre,
+   « +20 » pour aller plus loin, et plus aucun réglage du moteur à
+   comprendre dans les Réglages. */
+test('un livre de 30 pages neuves : 20 aujourd’hui, « +20 » pour la suite, des réglages sans moteur', async ({ page }) => {
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  semerLivre(store, 'lea@exemple.fr', 'Verbes', Array.from({ length: 30 }, (_, j) => ['verbe ' + j, 'sens ' + j]));
+  await page.reload();
+  await page.getByRole('button', { name: /Verbes/ }).click();
+  await page.getByRole('button', { name: 'Lire 20' }).click();
+  await expect(page.getByText('1/20')).toBeVisible();
+  for (let k = 0; k < 20; k++) await noter(page, 'Facile');
+  await page.getByRole('button', { name: 'Fin' }).click();
+  await page.getByRole('button', { name: 'Lire +20' }).click();
+  await expect(page.getByText('1/10')).toBeVisible();          // les 10 qui restaient
+  await noter(page, 'Facile');
+  await page.getByRole('button', { name: 'Retour' }).first().click();     // quitter la séance
+  await page.getByRole('button', { name: 'Retour' }).first().click();     // quitter le livre
+  await page.getByRole('button', { name: 'Réglages' }).click();
+  const reglages = page.locator('main');
+  await expect(reglages).toContainText('Objectif du jour');
+  for (const parti of ['Rétention', 'Nouvelles pages par séance', 'Régler le moteur', 'Vérifier ma bibliothèque', 'Mode simple', 'Ordre des pages']) {
+    await expect(reglages).not.toContainText(parti);
+  }
+});

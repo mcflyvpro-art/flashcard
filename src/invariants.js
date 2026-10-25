@@ -4,7 +4,8 @@
    confiance sans vérification défensive éparpillée partout où une carte
    est lue. M04 : cette liste sert à la fois de documentation exécutable
    (elle dit noir sur blanc ce qu'est une carte saine), à l'écran
-   « Vérifier ma bibliothèque » (M04.T2, qui détecte et répare) et à la
+   l'entretien automatique de la bibliothèque (M04.T2, qui détecte et répare,
+   `entretienAuto` dans core/reglages-corbeille.js) et à la
    contrainte CHECK posée en base (M04.T3, sur les champs qu'une requête
    SQL peut voir).
 
