@@ -162,16 +162,18 @@ en capture (390 et 1440 px) et les tests verts.
 - [x] T2.10 L'encadré noir final en **bleu-rose** comme le haut (plus de vert).
 - [x] T2.11 Quitter la démo, revenir d'une page publique, se déconnecter : **retour à la page d'accueil** ; `/connexion` seulement quand on veut se connecter.
 - [x] T2.12 **/connexion** (et /inscription, /carte-eleve), **/essayer**, **/demande-demo** refaites dans le style du site, « magnifiques ».
-- [ ] T2.13 Vérifs (check, e2e, Lighthouse, captures, préversion Vercel), docs, push branche + `main`.
+- [x] T2.13 Vérifs (check, e2e, Lighthouse, captures, préversion Vercel), docs, push branche + `main`.
 
-Où en est T2.13 (2026-10-26 au soir) : `npm run check` vert, e2e 69
-parcours verts (un intermittent dans `espace-prof.e2e.js`, la feuille
-« J'ai un code » d'un élève, rattrapé par la reprise de Playwright : 12 sur
-12 sur `main`, 34 sur 36 sur la branche, aucun lien trouvé avec ce tour),
-Lighthouse **100 / 100 / 100 / 100** au téléphone et sur ordinateur (le
-filtre `drop-shadow` posé sur la pile animée coûtait 2 points : retiré),
-captures à 390, 768, 1024 et 1440 px relues. Restent : la préversion
-Vercel, puis `main`.
+Fait le 2026-10-26 au soir : `npm run check` vert, e2e 69 parcours verts
+(un intermittent dans `espace-prof.e2e.js`, la feuille « J'ai un code »
+d'un élève, rattrapé par la reprise de Playwright : 12 sur 12 sur `main`,
+34 sur 36 sur la branche, aucun lien trouvé avec ce tour), Lighthouse
+**100 / 100 / 100 / 100** au téléphone et sur ordinateur (le filtre
+`drop-shadow` posé sur la pile animée coûtait 2 points : retiré), captures
+à 390, 768, 1024 et 1440 px relues ; la préversion Vercel vérifiée dans un
+vrai navigateur, CSP comprise (la pile, le graphique, « Retour » de
+`/essayer` vers le site, `/connexion`), toutes les adresses de l'app en
+200, le logo dans le cache du service worker.
 
 ## Ce qui reste à décider (l'utilisateur)
 
