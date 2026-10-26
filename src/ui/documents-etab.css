@@ -1,0 +1,13 @@
+/* Les documents du contrat d'un établissement (ui/documents-etab.js, préfixe dc-). */
+.dc-doc{max-width:820px;margin:0 auto;padding:40px 48px;background:#fff;color:#1D1C19;border-radius:12px;box-shadow:var(--edge);
+  font-size:14px;line-height:1.6}
+.dc-doc h2{margin:0 0 16px;font-size:22px}
+.dc-doc h3{margin:22px 0 6px;font-size:15px}
+.dc-doc p{margin:0 0 8px}
+.dc-parties{padding:12px 16px;border-radius:8px;background:#F6F5F1}
+.dc-table{width:100%;border-collapse:collapse;margin:10px 0 6px;font-size:13px}
+.dc-table th,.dc-table td{padding:8px 10px;border:1px solid #E4E1DA;text-align:left;vertical-align:top}
+.dc-table thead th{background:#F6F5F1}
+.dc-fiche th{width:28%;background:#F6F5F1}
+.dc-pied{margin-top:20px;color:#55524B;font-size:12.5px}
+@media (max-width:640px){.dc-doc{padding:22px 18px}}

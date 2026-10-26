@@ -108,6 +108,15 @@ export function changeLe(jusqua, maintenant = new Date(), tz = undefined) {
   return 'Nouveau code le ' + t.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: tz });
 }
 
+/* Le mot de passe provisoire d'un professeur que le référent inscrit lui-même
+   (ref_new_account) : douze caractères sans ceux qu'on confond (0/O, 1/l/I),
+   en trois groupes pour se dicter. `alea` rend un nombre dans [0, 1). */
+const ALPHA_MDP = 'abcdefghjkmnpqrstuvwxyz23456789';
+export function motDePasseProvisoire(alea = Math.random) {
+  const t = Array.from({ length: 12 }, () => ALPHA_MDP[Math.floor(alea() * ALPHA_MDP.length)]).join('');
+  return `${t.slice(0, 4)}-${t.slice(4, 8)}-${t.slice(8)}`;
+}
+
 /* Les cycles d'une classe (la base range les classes par cycle, niveau_rang). */
 export const CYCLES = { college: 'Collège', lycee_gt: 'Lycée général', lycee_techno: 'Lycée technologique',
   lycee_pro: 'Lycée professionnel', cpge: 'CPGE', sup: 'Supérieur' };
@@ -142,7 +151,9 @@ export const aRelancer = (o, auj = iso(new Date())) => !!o.relance && o.relance 
 export const nouvelleDemande = o => o.source === 'demande' && (o.statut || 'prospect') === 'prospect' && !o.notes;
 
 /* Une licence qui demande une décision : finie, pleine ou bientôt finie. */
-const licenceAlerte = (o, auj) => !!o.licence_fin && o.statut !== 'perdu' && etatLicence(o, auj).k !== 'ok';
+// une place par élève et par professeur (20261026130000) : une licence pleine l'est aussi de professeurs
+const licenceAlerte = (o, auj) => !!o.licence_fin && o.statut !== 'perdu'
+  && etatLicence({ ...o, eleves: (+o.eleves || 0) + (+o.profs || 0) }, auj).k !== 'ok';
 
 export function compterEtapes(orgs) {
   const n = { tous: orgs.length };

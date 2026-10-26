@@ -96,7 +96,7 @@ de connexion et sous le formulaire de démo) : le **Lycée Démo Folio**,
 établissement fictif, où l'on entre comme élève (Léa MARTIN, 2nde B et le
 groupe Spé maths, trois devoirs), professeur (Marc DURAND, ses classes, son
 groupe, le code de l'établissement) ou référent (Claire ROUX, les codes, la
-licence de démo, les classes, les élèves, les professeurs, le journal). C'est
+licence et ses factures, les classes, les élèves, les professeurs, le journal). C'est
 la vraie app, au téléphone comme sur ordinateur, et tout s'y fait : donner
 un devoir, le lire en tant qu'élève, écrire à la classe, créer une classe,
 regarder son journal ou le classement des amis. Rien n'est créé en base,
@@ -109,17 +109,38 @@ faire une idée.
 
 ### 4.3 Licence
 
-**Passer en licence** : nombre de places, date de fin. Étape : **Client**.
-Proposition de prix : 3 € HT par élève et par an, 300 € HT minimum ;
-professeurs et référents gratuits. Un établissement public paie sur bon de
-commande et reçoit ses factures par **Chorus Pro** (obligatoire pour le
-secteur public). Le contrat comprend un **contrat de sous-traitance** RGPD
-(art. 28) : l'établissement est responsable du traitement, Folio
-sous-traitant.
+**Passer en licence** : nombre de places, date de fin, prix annuel. Étape :
+**Client**. Proposition de prix : 3 € HT par place et par an, 300 € HT
+minimum. **Une place par élève ET par professeur** (décidé le 2026-10-26 :
+« même licence peu importe ») ; le référent n'en prend pas. Un établissement
+public paie sur bon de commande et reçoit ses factures par **Chorus Pro**
+(obligatoire pour le secteur public). Le contrat comprend des **conditions
+générales de vente** et un **contrat de sous-traitance** RGPD (art. 28) :
+l'établissement est responsable du traitement, Folio sous-traitant ; le
+référent les lit et les imprime dans son onglet Licence, avec la fiche à
+reporter dans le registre des traitements de son établissement.
 
-- **Places** : un élève entré prend une place ; licence pleine → le code
-  dit « l'établissement n'a plus de place » ; le référent le voit et sait
-  quoi faire.
+- **Places** : un élève ou un professeur entré prend une place — par le
+  code, par un compte que le référent ouvre lui-même (« Ajouter un
+  professeur »), par une carte élève ; licence pleine → le code dit
+  « l'établissement n'a plus de place » ; le référent le voit et sait quoi
+  faire : demander des places (onglet Licence → « Des places ») ou retirer
+  les comptes partis.
+- **D'une année à l'autre** : un élève qui quitte le lycée, un professeur
+  muté — le référent le **retire de l'établissement** (sa fiche → « Retirer
+  de l'établissement ») : sa place se libère ; son compte et ses livres
+  restent, à lui.
+- **Factures** : tu les émets depuis la fiche de l'établissement
+  (Facturation → « Émettre une facture » : la ligne de la licence est
+  proposée à son prix). Elles sont numérotées sans trou (F-2026-0001…),
+  portent toutes les mentions obligatoires et ne se modifient plus jamais :
+  une erreur se corrige par un **avoir** (A-2026-0001…). Tu marques
+  « Déposée sur Chorus Pro » puis « Payée ». Le référent voit chacune dans
+  son onglet Licence, avec ce qui reste à régler, et l'imprime ou la garde
+  en PDF.
+- **Échanges** : le référent t'écrit depuis son onglet Licence (des places,
+  le renouvellement, une facture, une question) ; tu vois « message » dans ta
+  liste et tu réponds dans la fiche.
 - **Fin de licence** : les codes ne font plus entrer personne. Rien n'est
   supprimé.
 - Un prospect ou une démo jamais ouverte s'efface (son contact avec) ; un
@@ -150,6 +171,10 @@ dans un recoin de sa console, avec l'explication.
 | lancer une démo, passer en licence | toi | la fiche |
 | renvoyer un code référent | toi | la fiche |
 | distribuer, changer le code élève ou professeur, choisir son rythme | référent | Mon établissement → Accueil |
+| voir sa licence, ses factures, écrire à Folio, lire le contrat | référent | Mon établissement → Licence |
+| ajouter un professeur, retirer un compte parti | référent | Mon établissement → Professeurs / Élèves |
+| émettre une facture, un avoir, répondre à un établissement | toi | la fiche → Facturation |
+| ton identité de vendeur (SIRET, TVA, IBAN) | toi | Administration → Entreprise |
 | créer, renommer une classe | référent | Mon établissement → Classes |
 | corriger un nom, changer un élève de classe | référent | Mon établissement → Élèves |
 | choisir ses classes, former un groupe | professeur | son espace |
@@ -166,8 +191,21 @@ coûts. Le suivi commercial (budget, notes) n'est lisible que par toi.
 
 - **Mentions légales** : remplacer les ⟦crochets⟧ (éditeur, contact,
   hébergeur) — `src/editeur.js` et `src/ui/legal-textes.js`.
-- **Prix B2B** : 3 € HT par élève et par an est une proposition.
-- **Contrat de sous-traitance** : à faire relire par un juriste avant la
-  première vente.
+- **Prix B2B** : 3 € HT par place et par an est une proposition.
+- **Ton entreprise** (Administration → Entreprise) : raison sociale et
+  forme (« EI » pour un entrepreneur individuel), adresse, SIRET,
+  immatriculation, IBAN. Sans elle, aucune facture ne part.
+- **La TVA** : un établissement public ne récupère pas la TVA ; en
+  **franchise en base** (art. 293 B du CGI, le régime d'une
+  micro-entreprise sous son plafond de chiffre d'affaires), tes factures sont
+  hors TVA et ton prix est le plus bas possible pour eux. C'est le statut
+  le plus intéressant pour commencer ; au-delà du plafond, passe en
+  « Assujetti » (20 %). À valider avec un comptable : les plafonds bougent.
+- **Chorus Pro** : crée ton compte fournisseur (chorus-pro.gouv.fr) et
+  dépose-y chaque facture d'un établissement public (le PDF imprimé depuis
+  la pièce) ; la facturation électronique entre entreprises deviendra
+  obligatoire pour les petites entreprises en septembre 2027.
+- **Conditions générales de vente et contrat de sous-traitance** : à faire
+  relire par un juriste avant la première vente.
 - **Offre payante B2C** : à décider au moment de Capacitor (achats
   intégrés Apple et Google).

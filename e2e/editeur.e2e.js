@@ -64,7 +64,7 @@ test.describe('sur ordinateur', () => {
     // le référent a utilisé son code : la prochaine étape est la licence
     org.codes.ref = null;
     await page.locator('#ef-notes').fill('Démo lancée, rappeler fin novembre.');
-    await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+    await page.locator('#edfiche').getByRole('button', { name: 'Enregistrer', exact: true }).click();
     await expect(page.locator('#edlicence')).toBeVisible();
     await page.locator('#lp-pl').fill('450');
     await page.locator('#lp-prix').fill('1350');
@@ -107,6 +107,72 @@ test.describe('sur ordinateur', () => {
     await page.locator('[data-adm="role"][data-id="prof"]').click();
     await expect.poll(() => store.cl.roles[tuteur]).toBe('prof');
     await expect(page.locator('[data-adm="role"].on')).toHaveText('Professeur');
+  });
+
+  test('facturer : l’entreprise, les coordonnées du client, une facture à son adresse, payée, un avoir ; un message', async ({ page }) => {
+    const store = nouveauStore();
+    editeurEtProspect(store);
+    const zola = store.et.orgs.find(o => o.nom === 'Lycée Zola');
+    zola.suivi.prix_euros = 2700;
+    store.et.echanges = [{ id: 1, org_id: zola.id, de: 'etab', auteur: null, sujet: 'places', message: 'Cinquante places de plus ?',
+      cree: new Date().toISOString(), lu: null }];
+    await brancher(page, store);
+    await entrer(page);
+    await expect(page.locator('.ed-ligne', { hasText: 'Lycée Zola' })).toContainText('message');
+
+    // pas de facture sans l'identité du vendeur
+    await page.locator('#rail [data-r="adm:entreprise"]').click();
+    await expect(page).toHaveURL(/\/admin\/entreprise$/);
+    await page.locator('#ev-raison_sociale').fill('Folio');
+    await page.locator('#ev-forme').fill('EI');
+    await page.locator('#ev-adresse').fill('1 rue des Livres');
+    await page.locator('#ev-code_postal').fill('30000');
+    await page.locator('#ev-ville').fill('Nîmes');
+    await page.locator('#ev-siret').fill('912 345 678 00011');
+    await page.locator('#ev-iban').fill('FR76 3000 6000 0112 3456 7890 189');
+    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect.poll(() => store.et.vendeur && store.et.vendeur.siret).toBe('91234567800011');
+
+    await page.locator('#rail [data-r="adm:suivi"]').click();
+    await page.locator('.ed-ligne', { hasText: 'Lycée Zola' }).click();
+    // le message lu en ouvrant la fiche, puis la réponse
+    await expect(page.locator('.ed-msg.eux')).toContainText('Cinquante places');
+    await page.locator('#edrmsg').fill('C’est fait, la facture suit.');
+    await page.locator('#edrepondre').getByRole('button', { name: 'Répondre' }).click();
+    await expect(page.locator('.ed-msg.moi')).toContainText('la facture suit');
+    expect(store.et.echanges.every(e => e.de === 'folio' || e.lu)).toBe(true);
+    await expect(page.locator('.ed-ligne', { hasText: 'Lycée Zola' })).not.toContainText('message');
+
+    // les coordonnées du client manquent : le formulaire est ouvert
+    await page.locator('#ec-nom').fill('Lycée Émile Zola');
+    await page.locator('#ec-adresse').fill('2 rue Neuve');
+    await page.locator('#ec-ville').fill('Aix');
+    await page.locator('#edclient').getByRole('button', { name: 'Enregistrer' }).click();
+    await expect.poll(() => zola.facturation && zola.facturation.ville).toBe('Aix');
+
+    // la facture : la licence proposée à son prix, l'aperçu, puis sa page à elle
+    await page.locator('#edemettre summary').click();
+    await expect(page.locator('#fl-pu-0')).toHaveValue('2700');
+    await expect(page.locator('#edapercu')).toContainText('2 700,00');
+    await page.getByRole('button', { name: 'Émettre' }).click();
+    await expect(page).toHaveURL(/\/admin\/factures\/[0-9a-f-]+$/);
+    const an = new Date().getFullYear();
+    await expect(page.locator('.fa-feuille')).toContainText(`F-${an}-0001`);
+    await expect(page.locator('.fa-feuille')).toContainText('Lycée Émile Zola');
+    await expect(page.locator('.fa-feuille')).toContainText('IBAN FR7630006000011234567890189');
+    await page.locator('[data-adm="payee"]').click();
+    await expect(page.locator('[data-adm="payee"]')).toContainText('Payée le');
+    const avoir = page.locator('[data-adm="avoir"]');
+    await avoir.click();
+    await expect(avoir).toContainText('Sûr ?');
+    await avoir.click();
+    await expect(page.locator('.fa-feuille')).toContainText(`A-${an}-0001`);
+    await expect(page.locator('.fa-feuille')).toContainText(`Sur la facture F-${an}-0001`);
+    expect(store.et.factures.map(f => f.total_ttc)).toEqual([270000, -270000]);
+    await page.locator('[data-adm="piece-fin"]').click();
+    await expect(page.locator('.ed-piece')).toHaveCount(2);
+    const facture = page.locator('.ed-piece').filter({ has: page.getByText(`F-${an}-0001`, { exact: true }) });
+    await expect(facture).toContainText('Annulée par avoir');
   });
 });
 

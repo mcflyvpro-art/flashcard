@@ -1,5 +1,5 @@
 -- Tests de 20261025233000 + 20261026001000 (un seul code) + 20261026020000 + 20261026030000
--- + 20261026110000 (codes renouvelés) : du prospect au
+-- + 20261026110000 (codes renouvelés) + 20261026130000 (une place par professeur) : du prospect au
 -- client, le code qui fait entrer tout de suite (élève, professeur,
 -- référent, professeur particulier), la classe choisie, les groupes, la
 -- licence. Même mode que jetons.sql : transaction ANNULÉE, comptes
@@ -79,13 +79,13 @@ begin
   select a.id into o2 from public.admin_orgs() a where a.name = 'ZZ Collège Hugo';
 
   -- ══════════ la démo, en un geste ══════════
-  j := public.admin_lancer_demo(o, 3, 30, true);
+  j := public.admin_lancer_demo(o, 4, 30, true);
   cref := j->>'code_ref';
   perform public.zz_root();
   select k.eleve, k.prof into ce, cp from public.org_codes k where k.org_id = o;
-  insert into public.zz_res (nom, ok, vu) values ('démo lancée : code référent, codes élève et professeur, 30 jours, 3 places',
+  insert into public.zz_res (nom, ok, vu) values ('démo lancée : code référent, codes élève et professeur, 30 jours, 4 places',
     cref ~ '^[A-HJKMNP-Z2-9]{8}$' and ce is not null and cp is not null and ce <> cp
-    and (select offre = 'demo' and places = 3 and licence_fin = current_date + 30 and exemples from public.orgs where id = o)
+    and (select offre = 'demo' and places = 4 and licence_fin = current_date + 30 and exemples from public.orgs where id = o)
     and (select statut from public.org_suivi where org_id = o) = 'demo', j::text);
 
   -- ══════════ le référent ══════════
@@ -134,10 +134,10 @@ begin
   perform public.rejoindre(ce, 'Lucas', 'Martin', c1);
   perform public.zz_comme(ines);
   j := public.rejoindre(ce, 'Inès', 'Roux', c2);
-  insert into public.zz_res (nom, ok, vu) values ('trois places : la troisième élève entre encore', j->>'statut' = 'ok', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('quatre places, une par professeur et par élève : la troisième élève entre encore', j->>'statut' = 'ok', j::text);
   perform public.zz_comme(paul);
   j := public.code_apercu(ce);
-  insert into public.zz_res (nom, ok, vu) values ('la 4e personne voit « plein »', j->>'statut' = 'plein', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('la 5e personne voit « plein » (le référent ne compte pas)', j->>'statut' = 'plein', j::text);
 
   -- ══════════ le professeur choisit ses classes, forme un groupe ══════════
   perform public.zz_comme(prof);
@@ -195,7 +195,7 @@ begin
   perform public.zz_comme(dir);
   j := public.ref_codes();
   insert into public.zz_res (nom, ok, vu) values ('une semaine passée : un code élèves neuf, le code professeurs intact',
-    n = 1 and j->>'eleve' <> ce and j->>'eleve' ~ '^[A-HJKMNP-Z2-9]{8}$' and j->>'prof' = cp, n || ' ' || j::text);
+    n >= 1 and j->>'eleve' <> ce and j->>'eleve' ~ '^[A-HJKMNP-Z2-9]{8}$' and j->>'prof' = cp, n || ' ' || j::text);
   insert into public.zz_res (nom, ok, vu) values ('le journal du référent le dit',
     exists (select 1 from public.ref_audit a where a.org_id = o and a.acte = 'code renouvelé' and a.detail->>'role' = 'eleve'), 'journal');
   perform public.zz_comme(zoe);

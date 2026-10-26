@@ -5,15 +5,16 @@ import { SITE } from '../adresse.js';
 import { ref, setAnimate, view } from '../data/etat.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
-  PAGE, refAgir, refCharger, refCreerCartes, refEquipePull, refJournalPull, refNouveauCode, refPersonnesPull,
-  refProfsPull, refRythme, refServicePull
+  PAGE, refAgir, refAjouterProf, refCharger, refCreerCartes, refEquipePull, refJournalPull, refNouveauCode, refPersonnesPull,
+  refProfsPull, refRetirer, refRythme, refServicePull
 } from '../core/referent.js';
-import { formatCode, lienCarte, lienRejoindre, lireListeEleves, nomValide } from '../classe.js';
-import { changeLe, cycleDe, etatLicence, NIVEAUX, RYTHMES } from '../etablissement.js';
+import { formatCode, lienCarte, lienRejoindre, lireListeEleves, nomPropre, nomValide } from '../classe.js';
+import { changeLe, cycleDe, etatLicence, motDePasseProvisoire, NIVEAUX, RYTHMES } from '../etablissement.js';
 import { render } from './bibliotheque.js';
 import { avatar } from './jeton.js';
 import { toast } from './import-cartes.js';
 import { timeAgo } from './reglages-corbeille.js';
+import { ACTIONS_LICENCE, FORMULAIRES_LICENCE, licence as ongletLicence, poserLicence } from './ref-licence.js';
 import './ref-console.css';
 
 /* ══════════ la console du référent (2026-10-26) ══════════
@@ -27,7 +28,9 @@ const PC = () => matchMedia('(min-width: 900px)').matches;
 const repeint = () => { if (view.name === 'ref') { setAnimate(false); render(); } };
 const kc = (n, lab, cls) => `<div class="rf-kc ${cls || ''}"><b>${n ?? '—'}</b><span>${lab}</span></div>`;
 const vide = (ic, t) => `<div class="rf-vide">${svg(ic)}<p>${t}</p></div>`;
-const licence = c => etatLicence({ offre: c.offre, places: c.places, eleves: c.eleves, licence_fin: c.licence_fin });
+// une place par élève et par professeur (20261026130000) ; le référent n'en prend pas
+const licence = c => etatLicence({ offre: c.offre, places: c.places, eleves: (+c.eleves || 0) + (+c.profs || 0),
+  licence_fin: c.licence_fin });
 const jusque = l => (l.k === 'echue' ? 'finie le ' + l.fin : l.fin === 'sans fin' ? 'sans fin' : 'jusqu’au ' + l.fin);
 
 /* ---------- l'en-tête : l'établissement et sa licence ---------- */
@@ -68,12 +71,12 @@ function tuilesCodes(c) {
 function tuileLicence(c) {
   const l = licence(c);
   const alerte = { echue: 'La licence a pris fin : les codes ne font plus entrer personne. Écris à Folio pour la renouveler.',
-    pleine: 'Toutes les places sont prises : un nouvel élève ne pourra pas entrer. Écris à Folio pour en ajouter.',
+    pleine: 'Toutes les places sont prises : personne ne peut plus entrer. Demande des places dans l’onglet Licence.',
     bientot: `La licence finit dans ${l.jours} jour${l.jours > 1 ? 's' : ''}.` }[l.k];
   return `<div class="rf-tuile rf-licence">
       <div class="rf-tl">${l.offre}<span>${jusque(l)}</span></div>
       <div class="rf-barre"><i style="width:${l.pc}%"></i></div>
-      <div class="rf-tl-p"><b>${l.places}</b> élèves${l.libre != null ? ` · ${l.libre} place${l.libre > 1 ? 's' : ''} libre${l.libre > 1 ? 's' : ''}` : ''}</div>
+      <div class="rf-tl-p" title="Une place par élève et par professeur"><b>${l.places}</b> places${l.libre != null ? ` · ${l.libre} libre${l.libre > 1 ? 's' : ''}` : ''}</div>
       ${alerte ? `<p class="rf-alerte ${l.k}">${svg(I.warn)}${alerte}</p>` : ''}
     </div>`;
 }
@@ -197,8 +200,36 @@ function liste() {
 }
 
 function personnes() {
-  return `<div class="rf-maitre"><div class="rf-liste">${filtres()}${liste()}</div>
-    <div class="rf-detail">${ref.who ? detailPersonne(ref.who) : vide(I.user, ref.role === 'prof' ? 'Choisis un professeur' : 'Choisis un élève')}</div></div>`;
+  const prof = ref.role === 'prof';
+  const detail = ref.who ? detailPersonne(ref.who) : prof && ref.nouveauProf ? nouveauProf()
+    : vide(I.user, prof ? 'Choisis un professeur' : 'Choisis un élève');
+  return `<div class="rf-maitre"><div class="rf-liste">
+      ${prof ? `<button class="rf-b pri rf-ajouter" data-rf="nouveau-prof">${svg(I.plus)}Ajouter un professeur</button>` : ''}
+      ${filtres()}${liste()}</div>
+    <div class="rf-detail">${detail}</div></div>`;
+}
+
+/* Un professeur arrivé en cours d'année : le code professeurs suffit d'ordinaire ;
+   ici, le référent ouvre lui-même son compte. Il prend une place de la licence. */
+function nouveauProf() {
+  const n = ref.nouveauProf;
+  if (n.fait) {
+    return `<div class="rf-fiche"><h2 class="rf-h2">Compte ouvert</h2>
+        <div class="rf-mdp"><span>${esc(n.adresse)}</span><b>${esc(n.pw)}</b>
+          <button class="rf-b sm" data-rf="copier-mdp">${svg(I.copy)}Copier</button></div>
+        <p class="rf-rien" title="Le mot de passe n’est gardé nulle part">À donner à ${esc(n.nom)} : il le change dans ses réglages.</p>
+        <button class="rf-b" data-rf="nouveau-prof">${svg(I.plus)}Un autre</button></div>`;
+  }
+  return `<div class="rf-fiche"><h2 class="rf-h2">Ajouter un professeur</h2>
+      <form id="rfprof" class="rf-grille-f" autocomplete="off">
+        <label class="rf-ch"><span>Prénom</span><input id="rfpprenom" maxlength="40" spellcheck="false"></label>
+        <label class="rf-ch"><span>Nom</span><input id="rfpnom" maxlength="40" spellcheck="false"></label>
+        <label class="rf-ch rf-ch-email"><span>Adresse e-mail</span><input id="rfpmail" type="email" maxlength="200" spellcheck="false"
+          autocapitalize="none"></label>
+        <label class="rf-ch rf-ch-email"><span>Mot de passe provisoire</span><input id="rfppw" value="${esc(n.pw)}" minlength="10"
+          maxlength="72" spellcheck="false" autocapitalize="none"></label>
+        <button class="rf-b pri" type="submit">${svg(I.check)}Ouvrir le compte</button>
+      </form></div>`;
 }
 
 function detailPersonne(g) {
@@ -225,6 +256,8 @@ function detailPersonne(g) {
             autocapitalize="none" aria-label="Nouveau mot de passe">
           <button class="rf-b" type="submit">${svg(I.key)}Remplacer</button>
         </form>`}
+      <button class="rf-b ko large rf-retirer" data-rf="retirer" title="Il quitte ses classes ; son compte et ses livres restent">
+        ${svg(I.exit)}<span>Retirer de l’établissement</span></button>
     </div>`;
 }
 
@@ -320,7 +353,7 @@ function projection() {
     </div>`;
 }
 
-const CORPS = { accueil, classes, eleves: personnes, profs: personnes, journal, cartes };
+const CORPS = { accueil, classes, eleves: personnes, profs: personnes, licence: ongletLicence, journal, cartes };
 
 /* Chaque ouverture repart de l'accueil et relit tout (refPull, au retour
    d'ailleurs, remet `charge` à faux) : on n'y retrouve jamais une liste
@@ -358,6 +391,8 @@ function poserOnglet(k, sans = false) {
   }
   if (k === 'classes' && !ref.profsListe) refProfsPull();
   if (k === 'journal') { ref.trace = null; refJournalPull(); }
+  if (k === 'licence') { ref.licence = null; poserLicence(null); }
+  if (k === 'profs') ref.nouveauProf = null;
 }
 
 function poserClasse(id) {
@@ -373,6 +408,7 @@ function ouvrirClasse(id) { poserClasse(id); repeint(); }
 function poserAdresse(k, id) {
   poserOnglet(CORPS[k] ? k : 'accueil');
   if (ref.tab === 'classes' && id) poserClasse(id);
+  if (ref.tab === 'licence' && id) poserLicence(id);
 }
 export function allerA(k, id) { poserAdresse(k, id); repeint(); }
 
@@ -394,7 +430,26 @@ async function changer(quel, b) {
   await refNouveauCode(quel);
 }
 
+/* Le hasard d'un mot de passe : celui du système, pas Math.random. */
+const alea = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+
+async function retirer(_, b) {
+  if (!ref.who) return;
+  if (b.dataset.arme !== '1') { b.dataset.arme = '1'; b.querySelector('span').textContent = 'Sûr ? Sa place se libère'; return; }
+  if (await refRetirer(ref.who.id)) { ref.who = null; repeint(); }
+}
+
+async function copierMdp() {
+  const n = ref.nouveauProf || {};
+  try { await navigator.clipboard.writeText(`${n.adresse} · ${n.pw}`); toast(I.check, 'Copié'); }
+  catch (e) { toast(I.x, 'Copie impossible : recopie-le'); }
+}
+
 const ACTIONS = {
+  ...ACTIONS_LICENCE,
+  'nouveau-prof': () => { ref.who = null; ref.nouveauProf = { pw: motDePasseProvisoire(alea) }; repeint(); },
+  retirer,
+  'copier-mdp': copierMdp,
   onglet: k => ouvrirOnglet(k),
   aller: k => (k === 'sans-classe' ? ouvrirOnglet('eleves', true) : ouvrirOnglet(k)),
   classe: ouvrirClasse,
@@ -435,6 +490,15 @@ document.addEventListener('keydown', e => {
 const val = id => (document.getElementById(id) || {}).value || '';
 
 const FORMULAIRES = {
+  ...FORMULAIRES_LICENCE,
+  rfprof: async () => {
+    const prenom = val('rfpprenom').trim(), nom = val('rfpnom').trim(), adresse = val('rfpmail').trim().toLowerCase(), pw = val('rfppw').trim();
+    if (!nomValide(prenom) || !nomValide(nom)) return toast(I.x, 'Le prénom et le nom');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(adresse)) return toast(I.x, 'Une adresse e-mail');
+    if (pw.length < 10) return toast(I.x, 'Au moins dix caractères');
+    const qui = nomPropre(prenom, nom);
+    if (await refAjouterProf(adresse, qui, pw)) { ref.nouveauProf = { fait: true, adresse, pw, nom: qui }; repeint(); }
+  },
   rfnouvelle: async () => {
     const nom = val('rfcnom').trim(), niveau = val('rfcniv');
     if (!nom) return;
@@ -510,6 +574,8 @@ document.addEventListener('change', e => {
 
 let attente = 0;
 document.addEventListener('input', e => {
+  // le message à Folio survit à un repeint (le tableau se relit après chaque geste)
+  if (e.target.id === 'rfemsg') { ref.brouillon = e.target.value; return; }
   if (e.target.id !== 'rfq' || view.name !== 'ref') return;
   ref.q = e.target.value;
   clearTimeout(attente);

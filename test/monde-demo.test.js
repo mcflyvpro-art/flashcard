@@ -17,6 +17,23 @@ function client(store, uid) {
 const monde = () => semerMonde(nouveauStore());
 
 describe('le Lycée Démo Folio', () => {
+  it('Claire : sa licence (une place par élève et par professeur), deux factures, un échange, un professeur ajouté puis retiré', () => {
+    const store = monde(), claire = client(store, COMPTES.ref);
+    const l = claire.rpc('licence_tableau');
+    expect(l).toMatchObject({ offre: 'etablissement', places: 300, prises: 23, eleves: 20, profs: 3, prix: 900 });
+    expect(l.factures.map(f => f.numero.slice(-4))).toEqual(['0002', '0001']);
+    expect(l.factures[0]).not.toHaveProperty('lignes');
+    expect(claire.rpc('facture', { fid: l.factures[1].id }).lignes[0].total_ht).toBe(75000);
+    expect(l.echanges.filter(e => e.de === 'folio' && !e.lu)).toHaveLength(1);
+    const anne = claire.rpc('ref_new_account', { adresse: 'anne.leroy@demo.folio.invalid', nom: 'Anne LEROY', pseudo: '', qrole: 'prof',
+      cid: null, pw: 'abcd-efgh-jkmn' });
+    expect(claire.rpc('licence_tableau').prises).toBe(24);
+    claire.rpc('ref_retirer', { cible: anne });
+    expect(claire.rpc('licence_tableau').prises).toBe(23);
+    claire.rpc('ref_ecrire', { sujet: 'renouvellement', message: 'Nous renouvelons pour l’an prochain.' });
+    expect(claire.rpc('licence_tableau').echanges).toHaveLength(4);
+  });
+
   it('le même monde à chaque fois, sous des identifiants qu’on sait effacer', () => {
     const a = monde(), b = monde();
     expect(a.users.map(u => u.id)).toEqual(b.users.map(u => u.id));
@@ -76,7 +93,7 @@ describe('le Lycée Démo Folio', () => {
 
   it('Claire : les codes, la licence de démo, vingt élèves, trois professeurs, une classe créée', () => {
     const claire = client(monde(), COMPTES.ref);
-    expect(claire.rpc('ref_codes')).toMatchObject({ eleve: ETAB.codeEleves, prof: ETAB.codeProfs, offre: 'demo', eleves: 20, profs: 3 });
+    expect(claire.rpc('ref_codes')).toMatchObject({ eleve: ETAB.codeEleves, prof: ETAB.codeProfs, offre: 'etablissement', eleves: 20, profs: 3 });
     expect(claire.rpc('ref_personnes', { qrole: 'eleve', lim: 60, off: 0 })).toHaveLength(20);
     const c = claire.rpc('ref_codes');                                   // renouvelés il y a trois jours, chaque semaine
     expect(c.rythme).toBe('semaine');

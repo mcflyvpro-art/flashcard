@@ -11,6 +11,7 @@
 // professeurs particuliers.
 import { uuid as randomUUID } from './uuid.js';
 import { modele } from './classes.js';
+import { fonctionsFacturation } from './facturation.js';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const tire = () => Array.from({ length: 8 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
@@ -53,7 +54,7 @@ export function semerEtablissement(store, o = {}) {
   return { org, classes: ids };
 }
 
-const orgDe = (et, uid) => et.orgs.find(o => o.id === et.membres[uid]);
+export const orgDe = (et, uid) => et.orgs.find(o => o.id === et.membres[uid]);
 const homeDe = (m, oid, uid) => m.membres.map(x => m.classes.find(c => c.id === x.cid && x.uid === uid))
   .find(c => c && c.org === oid && (c.genre || 'classe') === 'classe');
 
@@ -67,6 +68,11 @@ function duCode(et, k) {
 }
 const profDuCode = (et, k) => Object.keys(et.codesProfs).find(uid => et.codesProfs[uid] === k) || null;
 
+/* Une place par élève et par professeur (20261026130000) ; le référent n'en prend pas. */
+export const placesPrises = (et, m, o) =>
+  Object.keys(et.membres).filter(u => et.membres[u] === o.id && ['eleve', 'prof'].includes(m.roles[u] || 'eleve')).length;
+export const placesLibres = (et, m, o) => (o.places == null ? null : Math.max(0, o.places - placesPrises(et, m, o)));
+
 function verdictEtab(store, et, m, o, quel, uid) {
   const role = m.roles[uid] || 'eleve';
   if (o.fin && o.fin < auj()) return 'licence';
@@ -75,8 +81,7 @@ function verdictEtab(store, et, m, o, quel, uid) {
   if (m.comptes[uid]) return 'gere';
   if (quel === 'eleve' && role !== 'eleve') return 'role';
   if (quel !== 'eleve' && !['eleve', 'prof'].includes(role)) return 'role';
-  const eleves = Object.keys(et.membres).filter(u => et.membres[u] === o.id && (m.roles[u] || 'eleve') === 'eleve').length;
-  if (quel === 'eleve' && o.places != null && eleves >= o.places) return 'plein';
+  if (quel !== 'ref' && placesLibres(et, m, o) === 0) return 'plein';
   return 'ok';
 }
 
@@ -161,17 +166,17 @@ function monEcole(et, m, uid) {
 /* ---------- la console du référent ----------
    Les services (qui enseigne quoi, où) vivent dans `et.services` ; le
    journal dans la table `ref_audit`, que l'app lit en REST. */
-const erreur = m => { throw new Error(m); };
+export const erreur = m => { throw new Error(m); };
 const estEleve = (m, u) => (m.roles[u] || 'eleve') === 'eleve';
-const membresOrg = (et, o) => Object.keys(et.membres).filter(u => et.membres[u] === o.id);
+export const membresOrg = (et, o) => Object.keys(et.membres).filter(u => et.membres[u] === o.id);
 const effectif = (m, cid) => m.membres.filter(x => x.cid === cid).length;
 
-function tracer(store, cible, acte, detail) {
+export function tracer(store, cible, acte, detail) {
   (store.tables.ref_audit = store.tables.ref_audit || [])
     .unshift({ acte, cible, detail: detail || {}, created_at: new Date().toISOString() });
 }
 
-function referent(et, m, uid) {
+export function referent(et, m, uid) {
   const o = orgDe(et, uid);
   if (!o || m.roles[uid] !== 'ref') erreur('Réservé au référent de l’établissement');
   return o;
@@ -341,6 +346,7 @@ function fonctionsAdmin(store, et, m, uid) {
     admin_code_ref: b => { const o = org(b.org); o.codes.ref = tire(); o.codes.refFin = dansJours(30); return { code_ref: o.codes.ref }; },
     admin_supprimer_etab: b => { const o = org(b.org);
       if (membresOrg(et, o).length) erreur('Des comptes existent dans cet établissement');
+      if ((et.factures || []).some(f => f.org_id === o.id)) erreur('Il a été facturé : ses factures se gardent dix ans');
       et.orgs = et.orgs.filter(x => x.id !== o.id); return null; }
   };
 }
@@ -413,6 +419,7 @@ export function fonctionsEtab(store, m, uid) {
     },
     ...fonctionsRef(store, et, m, uid),
     ...fonctionsProf(store, et, m, uid),
-    ...fonctionsAdmin(store, et, m, uid)
+    ...fonctionsAdmin(store, et, m, uid),
+    ...fonctionsFacturation(store, et, m, uid)
   };
 }

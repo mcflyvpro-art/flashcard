@@ -177,11 +177,11 @@ function semerLectures(store, uid, n, rand) {
 /* ---------- tout le monde ---------- */
 export function semerMonde(store, graine = 2026) {
   const rand = hasard(graine), m = modele(store), et = etab(store), now = Date.now();
-  const org = { id: ID(900), nom: ETAB.nom, ville: ETAB.ville, kind: 'lycee', uai: '0301234K', offre: 'demo', places: 300,
-    fin: dansJours(45), exemples: false, codes: { eleve: ETAB.codeEleves, prof: ETAB.codeProfs, ref: null, refFin: null,
+  const org = { id: ID(900), nom: ETAB.nom, ville: ETAB.ville, kind: 'lycee', uai: '0301234K', offre: 'etablissement', places: 300,
+    fin: finAnnee(now), exemples: false, codes: { eleve: ETAB.codeEleves, prof: ETAB.codeProfs, ref: null, refFin: null,
       eleveAu: iso(now - 3 * JOUR), profAu: iso(now - 3 * JOUR) }, rythme: 'semaine',
-    suivi: { statut: 'demo', source: 'editeur', contact_nom: 'Claire ROUX', contact_fonction: 'Proviseure adjointe',
-      contact_email: '', contact_tel: '', eleves_estimes: 280, budget_euros: null, prix_euros: 3, besoins: [], message: '',
+    suivi: { statut: 'client', source: 'editeur', contact_nom: 'Claire ROUX', contact_fonction: 'Proviseure adjointe',
+      contact_email: '', contact_tel: '', eleves_estimes: 280, budget_euros: null, prix_euros: 900, besoins: [], message: '',
       notes: '', relance: null }, cree: iso(now - 20 * JOUR) };
   et.orgs.push(org);
   const profils = tab(store, 'profiles'), jetons = store.jetons = store.jetons || {};
@@ -281,5 +281,49 @@ export function semerMonde(store, graine = 2026) {
   trace(3, 'code renouvelé', { role: 'eleve', rythme: 'semaine' });
   trace(3, 'code renouvelé', { role: 'prof', rythme: 'semaine' });
   trace(3, 'élève déplacé', { avant: '2nde A', apres: '2nde B' });
+  semerLicence(store, et, org, now, trace);
   return store;
+}
+
+/* ---------- la licence : un client, deux factures, un échange ---------- */
+/* Le 31 août qui suit : la fin de l'année scolaire. */
+function finAnnee(now) {
+  const d = new Date(now);
+  return `${d.getFullYear() + (d.getMonth() >= 6 ? 1 : 0)}-08-31`;
+}
+
+/* Le vendeur de la démo est un exemple, et le dit : ce ne sont pas les vraies
+   coordonnées de l'éditeur (qu'il remplit dans sa console). */
+const VENDEUR = { raison_sociale: 'Folio', forme: 'EI', adresse: '1 rue des Exemples', code_postal: '30000', ville: 'Nîmes',
+  siret: '98765432100015', immatriculation: 'Document de démonstration', tva_intracom: '', iban: '', bic: '',
+  email: 'contact@demo.folio.invalid', regime_tva: 'franchise', taux_tva: 20, delai_jours: 30 };
+
+function semerLicence(store, et, org, now, trace) {
+  const jour = n => iso(now - n * JOUR).slice(0, 10), an = new Date(now).getFullYear();
+  org.facturation = { nom: 'Lycée Démo Folio', adresse: '12 avenue Jean-Jaurès', code_postal: '30900', ville: 'Nîmes',
+    siret: '19301234500016', service: 'FOLIO-LYC', engagement: 'BC-' + an + '-0412', email: 'intendance@demo.folio.invalid' };
+  et.vendeur = { ...VENDEUR };
+  const client = { ...org.facturation, uai: org.uai };
+  const piece = (n, il, objet, lignes, paye) => {
+    const ht = lignes.reduce((a, [, q, pu]) => a + q * pu, 0);
+    return { id: ID(n), org_id: org.id, numero: `F-${an}-${String(n - 800).padStart(4, '0')}`, genre: 'facture', origine: null,
+      emise_le: jour(il), echeance: jour(il - 30), periode_debut: jour(il), periode_fin: org.fin, objet,
+      lignes: lignes.map(([libelle, quantite, prix_ht]) => ({ libelle, quantite, prix_ht, total_ht: quantite * prix_ht })),
+      total_ht: ht, tva: 0, total_ttc: ht, taux_tva: 0, mention_tva: 'TVA non applicable, art. 293 B du CGI',
+      vendeur: { ...VENDEUR }, client, engagement: org.facturation.engagement, deposee_le: jour(il - 1), payee_le: paye ? jour(paye) : null };
+  };
+  et.factures = [
+    piece(801, 55, 'Licence annuelle', [['Licence Folio — 250 places (élèves et professeurs)', 1, 75000]], 28),
+    piece(802, 6, 'Places supplémentaires', [['50 places supplémentaires', 50, 300]], null)
+  ];
+  et.compteurs = { ['F' + an]: 2 };
+  const msg = (id, il, de, sujet, message, lu) => ({ id, org_id: org.id, de, auteur: de === 'etab' ? COMPTES.ref : null, sujet, message,
+    cree: iso(now - il * JOUR), lu: lu ? iso(now - (il - 0.5) * JOUR) : null });
+  et.echanges = [
+    msg(1, 8, 'etab', 'places', 'Bonjour, une classe de plus ouvre après les vacances : pouvez-vous ajouter 50 places ?', true),
+    msg(2, 7, 'folio', 'places', 'C’est fait : 50 places de plus dès aujourd’hui. La facture suit, à déposer sur Chorus Pro.', true),
+    msg(3, 6, 'folio', 'facture', `Voici la facture F-${an}-0002 (150 € HT), à régler sous trente jours.`, false)
+  ];
+  trace(55, 'facture émise', { numero: `F-${an}-0001` });
+  trace(6, 'facture émise', { numero: `F-${an}-0002` });
 }

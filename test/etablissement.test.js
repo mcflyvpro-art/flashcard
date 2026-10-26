@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   aRelancer, BESOINS, bienvenue, bilanSuivi, changeLe, compterEtapes, courrielReferent, cycleDe, ETAPES, etatLicence, filtrerSuivi,
-  lienCourriel, messageDemande, messageEtab, NIVEAUX, nouvelleDemande, ORDRE_ETAPES, prochainPas, renouvellement, ROLES_CODE, RYTHMES, trierSuivi, uaiValide
+  lienCourriel, messageDemande, messageEtab, motDePasseProvisoire, NIVEAUX, nouvelleDemande, ORDRE_ETAPES, prochainPas, renouvellement, ROLES_CODE, RYTHMES, trierSuivi, uaiValide
 } from '../src/etablissement.js';
 
 describe('messageEtab — la réponse de la base, en clair', () => {
@@ -76,6 +76,19 @@ describe('le rythme des codes — quand un code change de lui-même', () => {
     expect(changeLe('2026-10-26T20:00:00Z', lundi, 'Europe/Paris')).toBe('Nouveau code cette nuit');
     expect(changeLe('2026-10-20T20:00:00Z', lundi, 'Europe/Paris')).toBe('Nouveau code cette nuit');   // échu : au prochain passage
     expect(changeLe(undefined, lundi)).toBe('');
+  });
+});
+
+describe('motDePasseProvisoire — pour un professeur inscrit par le référent', () => {
+  it('douze caractères lisibles en trois groupes, plus de dix comme le demande la base', () => {
+    const m = motDePasseProvisoire();
+    expect(m).toMatch(/^[a-km-np-z2-9]{4}-[a-km-np-z2-9]{4}-[a-km-np-z2-9]{4}$/);
+    expect(m.length).toBeGreaterThanOrEqual(10);
+  });
+  it('ni 0, ni O, ni 1, ni l, ni i', () => {
+    let k = 0;
+    const tous = Array.from({ length: 31 }, () => motDePasseProvisoire(() => (k++ % 31) / 31)).join('');
+    expect(tous).not.toMatch(/[0o1li]/);
   });
 });
 

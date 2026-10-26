@@ -264,7 +264,9 @@ export let accounts = null;
    'nouveau') ; `copen`, `cq`, `crole` : le compte ouvert et le filtre des
    comptes. */
 export const admNeuf = () => ({ charge: false, orgs: null, etat: null, err: 0, tab: 'suivi',
-            etape: 'tous', q: '', open: null, copen: null, cq: '', crole: '' });
+            etape: 'tous', q: '', open: null, copen: null, cq: '', crole: '',
+            // la facturation (20261026130000) : l'identité du vendeur, la licence ouverte, la pièce ouverte
+            vendeur: null, licence: null, facture: null, fid: null, attente: {} });
 export let adm = admNeuf();
 
 /* ══════════ rôles, classes, devoirs ══════════
@@ -335,6 +337,8 @@ export const refNeuf = () => ({ tab: 'accueil', board: null, err: 0, charge: fal
             who: null, service: null, trace: null,
             // licence et codes (migration 20261026001000), projection, cartes élève
             codes: null, projo: '', cartes: null,
+            // le tableau de la licence, la pièce ouverte, le professeur qu'on vient d'ouvrir (20261026130000)
+            licence: null, facture: null, nouveauProf: null, doc: '', sujet: 'question', brouillon: '',
             // l'onglet que demande une adresse, posé à la première ouverture (ui/routeur.js)
             cible: null });
 export let ref = refNeuf();
