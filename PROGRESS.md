@@ -19,9 +19,16 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-26 · EN COURS : la page d'accueil publique (site vitrine à `/`, l'app
-          passe à `/app`) — tout est dans docs/LANDING.md, FICHIER DE REPRISE : le lire
-          en entier et faire la première case non cochée.
+DERNIER   2026-10-26 · La page d'accueil publique : le site à `/` (index.html, src/site/),
+          l'app à `/app` (app.html) ; un aiguillage en tête de page envoie dans l'app
+          qui a une session, l'icône installée ou un lien de l'app (QR imprimés
+          compris). B2C, Folio Campus (B2B), tarifs Folio / Folio+ (mensuel ou annuel,
+          prix à valider) / Campus, tableau comparatif, FAQ, SEO (JSON-LD, robots,
+          sitemap, image de partage), logo redessiné en vrai SVG (tools/logo.py),
+          emplacements vidéo avec les vrais écrans en affiche (tools/affiches.js).
+          Reste à l'utilisateur : valider les prix, déposer les vidéos, décider des
+          icônes PNG de l'app. Tout est dans docs/LANDING.md (fichier de reprise).
+          Preuves : npm run check vert, e2e/site.e2e.js 6/6, e2e complets verts.
           Avant : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
           code » en base (20261026001000) et la feuille « J'ai un code » ; B2C sans onglet
           Classe ; la console du référent refaite pour l'ordinateur (ui/ref-console.js, à

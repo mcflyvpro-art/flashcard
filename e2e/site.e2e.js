@@ -45,6 +45,10 @@ test('les boutons ouvrent l’app au bon endroit, sans laisser « ?go= » dans l
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'decouvrir', { timeout: 10000 });
   await expect(page.getByText('Lycée Démo Folio')).toBeVisible();
 
+  await page.goto('./');
+  await page.locator('#campus').getByRole('link', { name: 'Essayer en professeur' }).click();
+  await expect(page.getByText('Bonjour, Marc')).toBeVisible({ timeout: 10000 });
+
   await page.goto('./app?go=demo');
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'demande', { timeout: 10000 });
 

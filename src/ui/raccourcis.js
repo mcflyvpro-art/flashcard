@@ -82,10 +82,17 @@ const GOTO = {
    et les textes du cadre. Sans session seulement — la page d'accueil envoie
    déjà dans l'app qui en a une. Rend l'écran à ouvrir, ou rien. */
 const legal = k => () => { setLegalTab(k); setLegalBack('login'); return 'legal'; };
+/* « Essayer en professeur » : la démo s'ouvre déjà dans ce rôle (ui/demo.js,
+   le module que « Essayer sans compte » charge de toute façon). */
+const essai = role => () => {
+  import('./demo.js').then(m => m.lancer(role))
+    .catch(() => { /* même module que decouvrirView, qui dit déjà l'échec à l'écran */ });
+  return 'decouvrir';
+};
 const PORTES = {
   inscription: () => { setLoginMode('up'); return 'login'; },
   carte: () => { setLoginMode('carte'); return 'login'; },
-  essai: () => 'decouvrir',
+  essai: () => 'decouvrir', 'essai-prof': essai('prof'), 'essai-ref': essai('ref'),
   demo: () => 'demande',
   cgu: legal('cgu'), vie: legal('vie'), mentions: legal('mentions')
 };

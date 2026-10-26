@@ -7,7 +7,7 @@
 :root{
   color-scheme:light;
   --papier:#F7F5F0; --papier2:#EFECE4; --papier3:#E6E2D8;
-  --encre:#1D1C19; --encre2:#4B4842; --doux:#7A766E;
+  --encre:#1D1C19; --encre2:#4B4842; --doux:#6B675F;
   --carte:#FFFFFF; --filet:rgba(29,28,25,.09); --filet2:rgba(29,28,25,.15);
   --vert:#3F7D55; --bleu:#2F5D8A; --prune:#8A3F6B; --brique:#A8483C; --ocre:#9A6512; --canard:#2E7A86;
   --nuit:#1B1A18; --nuit2:#262421; --creme:#F3EEE3; --creme2:#CFC8BA;
@@ -209,7 +209,16 @@ button{font:inherit;color:inherit}
 .js .rv{opacity:0;transform:translateY(28px);animation:secours .01s 3s forwards}
 .js .rv.vu{opacity:1;transform:none;animation:none;transition:opacity 1s var(--e),transform 1s var(--e)}
 .pret .rv:not(.vu){animation:none}
-@keyframes secours{to{opacity:1;transform:none}}
+@keyframes secours{to{opacity:1;transform:none;scale:1}}
+/* même filet pour ce qui attend l'arrivée de son bloc (lignes du tableau,
+   classes du schéma, courbe) ; site.js présent, il n'a plus d'objet */
+.js .comparatif tbody tr,.js .schema .classe,.js .courbe .avec-fond,.js .courbe .etiq-sans,.js .courbe .etiq-avec,
+.js .courbe .rappels circle{animation:secours .01s 3s forwards}
+.js .courbe .avec{animation:secours-trait .01s 3s forwards}
+.js .courbe .sans{animation:secours-coupe .01s 3s forwards}
+@keyframes secours-trait{to{stroke-dashoffset:0}}
+@keyframes secours-coupe{to{clip-path:inset(0)}}
+.pret .comparatif:not(.vu) tbody tr,.pret .schema:not(.vu) .classe,.pret .courbe:not(.vu) *{animation:none}
 
 /* ---------- le moteur ---------- */
 .moteur{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(36px,6vw,84px);align-items:center;padding-top:clamp(84px,12vw,150px)}
@@ -228,7 +237,7 @@ button{font:inherit;color:inherit}
 .avec{fill:none;stroke:var(--vert);stroke-width:3.6;stroke-linejoin:round;stroke-linecap:round}
 .avec-fond{fill:url(#sous-courbe)}
 .rappels circle{fill:#FFF;stroke:var(--vert);stroke-width:3.2;transform-box:fill-box;transform-origin:center}
-.etiq-sans{font:800 15px var(--sans);fill:#A39E94}
+.etiq-sans{font:800 15px var(--sans);fill:#7A766E}
 .etiq-avec{font:800 15px var(--sans);fill:var(--vert)}
 .js .courbe .avec{stroke-dasharray:1;stroke-dashoffset:1}
 .js .courbe .sans{clip-path:inset(0 100% 0 0)}
@@ -526,7 +535,7 @@ button{font:inherit;color:inherit}
 .code-champ{width:100%;height:66px;padding:0 14px;border:0;border-radius:18px;background:var(--papier);box-shadow:inset 0 0 0 1.5px var(--filet2);
   font:800 26px/1 var(--mono);letter-spacing:.16em;text-align:center;text-transform:uppercase;color:var(--encre);transition:box-shadow .2s}
 .code-champ:focus{box-shadow:inset 0 0 0 1.5px var(--filet2),0 0 0 4px rgba(29,28,25,.09)}
-.code-champ::placeholder{color:#C3BEB4}
+.code-champ::placeholder{color:#857F75}
 .code-erreur{min-height:20px;color:var(--brique);font-weight:650;font-size:14px}
 .code-carte{justify-content:center;margin-top:4px;color:var(--encre2);font-weight:650}
 .secoue{animation:secoue .4s var(--e)}

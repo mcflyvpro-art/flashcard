@@ -45,7 +45,7 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
 | Service worker | met en cache `/app` (la coquille de l'app) et `/` ; hors ligne, une navigation retombe sur `/app` | une app installée doit s'ouvrir hors ligne |
 | Manifeste | `start_url: /app`, `id: /` inchangé, `scope: /` inchangé, raccourcis en `/app?go=…` | l'identité de l'app installée ne change pas |
 | Liens fabriqués sur `SITE` | inchangés (`/?rejoindre=…` etc.) | l'aiguillage les fait suivre ; rien d'imprimé ne casse |
-| Portes de l'écran de connexion | `?go=inscription`, `?go=carte`, `?go=essai` (essayer sans compte), `?go=demo` (demander une démo), `?go=cgu|vie|mentions` — sans session seulement, consommées par la porte des liens (`ui/liens-entrants.js` → `ui/raccourcis.js`) | les boutons de la page d'accueil ouvrent l'app au bon endroit |
+| Portes de l'écran de connexion | `?go=inscription`, `?go=carte`, `?go=essai` (essayer sans compte), `?go=essai-prof` / `?go=essai-ref` (la démo déjà dans ce rôle), `?go=demo` (demander une démo), `?go=cgu|vie|mentions` — sans session seulement, consommées par la porte des liens (`ui/liens-entrants.js` → `ui/raccourcis.js`) | les boutons de la page d'accueil ouvrent l'app au bon endroit |
 | Polices | celles du système (le `--serif` de l'app pour les grands titres) | zéro requête externe, zéro traceur (M11.T6), cohérent avec l'app |
 | Nom B2B | **Folio Campus** | court, va du collège à la prépa et à la fac |
 | Prix B2C (proposition, **à valider par l'utilisateur**) | Folio : 0 € · **Folio+ : 4,99 €/mois ou 29,99 €/an** (2,50 €/mois, −50 %) | annuel nettement plus avantageux, sous la barre des 30 € |

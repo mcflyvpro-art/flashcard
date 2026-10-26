@@ -61,7 +61,8 @@ l'air de marcher ».
     ouvrent l'écran de connexion au bon endroit par `?go=` sans session
     (`consumePorte`, `ui/raccourcis.js`, appelée par `ecranSansSession()` de
     `ui/liens-entrants.js`) : `inscription`, `carte`, `essai` (essayer sans
-    compte), `demo` (demander une démo), `cgu`, `vie`, `mentions`.
+    compte), `essai-prof` / `essai-ref` (la démo déjà dans ce rôle, `lancer()`
+    de `ui/demo.js`), `demo` (demander une démo), `cgu`, `vie`, `mentions`.
   - `src/app.js` — **point d'entrée seulement** (27 lignes) : importe
     `src/core/coeur-sync.js` puis les 18 modules de `src/ui/`, chacun pour
     ses effets de bord (les autres modules y arrivent par leurs imports :
