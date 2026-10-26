@@ -80,7 +80,8 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
   fenêtre « J'ai un code » (règles des codes importées de `src/classe.js`
   et `src/defi.js`, jamais réécrites). Aucun appel à la base.
 - `public/site/` — `logo.svg`, `icone.svg`, `og.jpg` (partage 1200×630),
-  `affiches/{pc,mobile,prof,referent}.webp` (19 à 51 Ko). **Exclu du cache
+  `affiches/{pc,mobile,prof,referent}.webp` (19 à 51 Ko) et leurs variantes
+  `-petit.webp` (moitié de la taille, 10 à 20 Ko, servies aux petits écrans par `srcset`). **Exclu du cache
   du service worker** (l'app hors ligne n'en a pas besoin).
 - `public/robots.txt`, `public/sitemap.xml`, `public/favicon.svg`.
 - `app.html` — l'app (l'ancien `index.html`), `noindex`.
@@ -124,8 +125,29 @@ toucher. Les quatre : `pc` (héros, ordinateur : une séance de révision),
 - [x] 7. Affiches des emplacements vidéo : captures de l'app réelle en mode démo (élève téléphone et PC, professeur, référent)
 - [x] 8. Image de partage `public/site/og.jpg` (1200×630, 76 Ko)
 - [x] 9. Textes passés au humanizer (aucun « — » ni « – » visible : vérifié par `test/site.test.js`)
-- [ ] 10. Vérifs : `npm run check`, e2e complets, Lighthouse (SEO 100, perf ≥ 90), écran 390 px et 1440 px
+- [x] 10. Vérifs : `npm run check` vert, e2e complets 60/60, Lighthouse **100 / 100 / 100 / 100** (performance, accessibilité, bonnes pratiques, SEO) au téléphone (FCP 1,1 s, LCP 1,4 s, CLS 0) comme sur ordinateur, écrans 390 px et 1440 px relus en capture, routage vérifié sur la préversion Vercel (`/`, `/app`, `/app/`, `sw.js`, CSP)
 - [ ] 11. CLAUDE.md (architecture : `/` = site, `/app` = app) et PROGRESS.md à jour, push branche + `main`
+
+## Ce qui reste à décider (l'utilisateur)
+
+- **Les prix** affichés sont une proposition : Folio+ 4,99 €/mois ou
+  29,99 €/an ; Campus 3 € HT/élève/an (300 € minimum, déjà dans
+  PARCOURS.md). Ils vivent dans `index.html` (cartes `.offre`, attributs
+  `data-an`/`data-mois`, tableau) **et** dans le JSON-LD du `<head>`.
+- **Les quotas IA** du tableau (Folio : 3 cours par mois ; Folio+ : 50 ; Campus :
+  pour les profs) ne sont **pas encore appliqués** côté serveur (M12.T2/T3) ;
+  aujourd'hui tout compte a les mêmes quotas (`supabase/functions/ai`).
+- **Le paiement** n'existe pas (M12) : « Passer à Folio+ » mène à la création
+  de compte.
+- **Le nom « Folio Campus »** pour l'offre établissement.
+- **Les icônes PNG de l'app** (`public/icons/`) viennent encore de l'ancienne
+  image ; les refaire depuis `public/site/icone.svg` change l'icône installée
+  chez tout le monde.
+- **Les vidéos** : à déposer (voir plus haut). Elles peuvent aussi se
+  tourner automatiquement dans la démo (Playwright sait filmer une page,
+  `recordVideo`, ffmpeg est déjà sur la machine) si l'utilisateur le veut.
+- En option : régler l'« URL du site » de Supabase Auth sur `/app` (les liens
+  des e-mails de connexion passent déjà par l'aiguillage, rien ne casse).
 
 ## Le logo
 

@@ -52,18 +52,22 @@ async function barreEtat(p) {
   });
 }
 
-async function webp(page, png, qualite) {
-  const b64 = await page.evaluate(async ({ src, q }) => {
+/* `echelle` < 1 : la même image, plus petite (la variante « -petit » que
+   la page sert aux petits écrans, srcset). */
+async function webp(page, png, qualite, echelle = 1) {
+  const b64 = await page.evaluate(async ({ src, q, k }) => {
     const img = new Image();
     img.src = 'data:image/png;base64,' + src;
     await img.decode();
-    const c = new OffscreenCanvas(img.width, img.height);
-    c.getContext('2d').drawImage(img, 0, 0);
+    const c = new OffscreenCanvas(Math.round(img.width * k), Math.round(img.height * k));
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(img, 0, 0, c.width, c.height);
     const octets = new Uint8Array(await (await c.convertToBlob({ type: 'image/webp', quality: q })).arrayBuffer());
     let s = '';
     for (let i = 0; i < octets.length; i += 0x8000) s += String.fromCharCode(...octets.subarray(i, i + 0x8000));
     return btoa(s);
-  }, { src: png.toString('base64'), q: qualite });
+  }, { src: png.toString('base64'), q: qualite, k: echelle });
   return Buffer.from(b64, 'base64');
 }
 
@@ -82,9 +86,11 @@ for (const a of AFFICHES) {
   await a.chemin(p);
   if (a.mobile) await barreEtat(p);
   await p.waitForTimeout(1400);
-  const image = await webp(p, await p.screenshot(), .84);
+  const png = await p.screenshot();
+  const image = await webp(p, png, .84), petite = await webp(p, png, .84, .5);
   writeFileSync(SORTIE + a.nom + '.webp', image);
-  console.log(a.nom + '.webp', Math.round(image.length / 1024) + ' Ko');
+  writeFileSync(SORTIE + a.nom + '-petit.webp', petite);
+  console.log(a.nom + '.webp', Math.round(image.length / 1024) + ' Ko,', '-petit', Math.round(petite.length / 1024) + ' Ko');
   await ctx.close();
 }
 /* L'image de partage (Open Graph, 1200 × 630) : le logo, le titre, et les

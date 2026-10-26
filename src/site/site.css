@@ -189,7 +189,7 @@ button{font:inherit;color:inherit}
   box-shadow:var(--ombre2);translate:0 calc((1 - var(--p)) * 90px);animation:flotte 6s ease-in-out infinite alternate}
 .notes span{padding:9px 11px;border-radius:10px;font:700 12.5px/1 var(--sans);color:#FFF;animation:appui 8s var(--e) infinite}
 .n0{background:#B5473A}
-.n1{background:#B07A1E;animation-delay:2s!important}
+.n1{background:#9A6512;animation-delay:2s!important}
 .n2{background:var(--vert);animation-delay:4s!important}
 .n3{background:var(--bleu);animation-delay:6s!important}
 @keyframes appui{0%,4%,100%{transform:none;box-shadow:none}2%{transform:scale(.9)}6%{transform:scale(1.06);box-shadow:0 0 0 4px rgba(29,28,25,.08)}12%{transform:none}}
