@@ -190,8 +190,8 @@ la ligne d'un défi dans le Cercle des lecteurs, dont le bouton « Jouer »
 - [x] T3.2 Le logo dans l'app : la barre latérale, les en-têtes du téléphone, l'écran d'ouverture, les icônes installées.
 - [x] T3.3 La charte affinée, la même partout (typographie, espacements, cartes, boutons), dans le budget de poids : titres de page dans la serif du site (Charter avant Palatino), signet de la matière sur la fiche lue, fond de l'ouverture et du manifeste = celui de l'app (#F6F5F1) ; CSS au démarrage 23,6/25 Ko.
 - [x] T3.4 Les défauts corrigés, un par un (dont le bouton « Jouer » d'un défi : marge rendue ET triangle dimensionné, il n'avait pas de taille). Les liserés de gauche (livre, ligne, classe) restent : ce sont ceux des fiches de la page d'accueil ; seul le bandeau du haut de la fiche lue est devenu un signet.
-- [ ] T3.5 Les affiches de la page d'accueil et l'image de partage refaites avec les nouveaux écrans.
-- [ ] T3.6 Vérifs (check, e2e, Lighthouse, captures), docs, push branche + `main`.
+- [x] T3.5 Les affiches de la page d'accueil et l'image de partage refaites avec les nouveaux écrans (et les captures du manifeste, `public/shots/`, qui montraient encore « Mes paquets »). `tools/affiches.js` photographie à 10 h (horloge de Playwright), la souris écartée ; l'affiche élève montre la page de sa classe, celle de l'ordinateur une fiche de « La cellule ».
+- [x] T3.6 Vérifs (check, e2e, Lighthouse, captures), docs, push branche + `main` : 431 tests, e2e 69/69 (trois parcours attendaient « Bonjour, Marc » et échouaient chaque soir : ils acceptent « Bonsoir »), Lighthouse 100×4 (téléphone et ordinateur).
 
 Défauts relevés (T3.1), sur 79 captures (`e2e/zz-visuels.e2e.js`, non
 versionné : élève, professeur et référent dans la démo, l'éditeur sur la

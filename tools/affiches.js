@@ -20,7 +20,7 @@ const AFFICHES = [
   { nom: 'pc', role: 'eleve', fenetre: { width: 1152, height: 720 }, densite: 1.25,
     async chemin(p) {
       await p.locator('aside, nav, .rail').getByText('Livres', { exact: true }).first().click();
-      await p.getByText(/Dates d.histoire/).first().click();
+      await p.getByText('La cellule', { exact: true }).first().click();
       await p.locator('[data-act="study"]:visible').first().click();
       await p.waitForTimeout(900);
       await p.keyboard.press('Space');               // la fiche retournée : la réponse et les quatre boutons
@@ -30,6 +30,7 @@ const AFFICHES = [
   { nom: 'eleve', role: 'eleve', fenetre: { width: 1280, height: 800 }, densite: 1.125,
     async chemin(p) {
       await p.locator('aside, nav, .rail').getByText('Mes classes', { exact: true }).first().click();
+      await p.locator('[data-el="classe"]:visible').first().click();   // sa classe : devoirs, professeurs, camarades
       await p.waitForTimeout(600);
     } },
   { nom: 'prof', role: 'prof', fenetre: { width: 1280, height: 800 }, densite: 1.125,
@@ -103,6 +104,7 @@ async function ouvrir(a) {
   // ni le bandeau de la démo ni un message passager sur une affiche
   await p.addStyleTag({ content: '.dm-bandeau,.toast{display:none!important}' });
   await a.chemin(p);
+  if (!a.mobile) await p.mouse.move(0, 0);   // rien de survolé sur l'image
   return { ctx, p };
 }
 
