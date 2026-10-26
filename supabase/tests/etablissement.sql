@@ -1,4 +1,5 @@
--- Tests de 20261025233000 + 20261026001000 (un seul code) + 20261026020000 + 20261026030000 : du prospect au
+-- Tests de 20261025233000 + 20261026001000 (un seul code) + 20261026020000 + 20261026030000
+-- + 20261026110000 (codes renouvelés) : du prospect au
 -- client, le code qui fait entrer tout de suite (élève, professeur,
 -- référent, professeur particulier), la classe choisie, les groupes, la
 -- licence. Même mode que jetons.sql : transaction ANNULÉE, comptes
@@ -175,6 +176,38 @@ begin
   select count(*) into n from public.ref_classes() x where x.genre = 'groupe';
   insert into public.zz_res (nom, ok, vu) values ('il voit aussi les groupes des professeurs', n = 1, n::text);
 
+  -- ══════════ les codes se renouvellent seuls (20261026110000) ══════════
+  insert into public.zz_res (nom, ok, vu) values ('chaque semaine par défaut : le code dit jusqu''à quand il vit',
+    j->>'rythme' = 'semaine' and (j->>'eleve_jusqua')::timestamptz between now() + interval '6 days 23 hours' and now() + interval '7 days 1 hour', j::text);
+  s := public.zz_leve('select public.ref_rythme(''jamais'')');
+  insert into public.zz_res (nom, ok, vu) values ('« jamais » n''est pas un rythme', s like '%Chaque semaine%', s);
+  perform public.ref_rythme('mois');
+  j := public.ref_codes();
+  insert into public.zz_res (nom, ok, vu) values ('le référent choisit chaque mois',
+    j->>'rythme' = 'mois' and (j->>'prof_jusqua')::timestamptz > now() + interval '27 days', j::text);
+  perform public.ref_rythme('semaine');
+  perform public.zz_comme(paul);
+  s := public.zz_leve('select public.ref_rythme(''mois'')');
+  insert into public.zz_res (nom, ok, vu) values ('un autre compte ne règle pas le rythme', s like '%Réservé au référent%', s);
+  perform public.zz_root();
+  update public.org_codes set eleve_au = now() - interval '8 days' where org_id = o;
+  n := public.renouveler_codes();
+  perform public.zz_comme(dir);
+  j := public.ref_codes();
+  insert into public.zz_res (nom, ok, vu) values ('une semaine passée : un code élèves neuf, le code professeurs intact',
+    n = 1 and j->>'eleve' <> ce and j->>'eleve' ~ '^[A-HJKMNP-Z2-9]{8}$' and j->>'prof' = cp, n || ' ' || j::text);
+  insert into public.zz_res (nom, ok, vu) values ('le journal du référent le dit',
+    exists (select 1 from public.ref_audit a where a.org_id = o and a.acte = 'code renouvelé' and a.detail->>'role' = 'eleve'), 'journal');
+  perform public.zz_comme(zoe);
+  j := public.code_apercu(ce);
+  insert into public.zz_res (nom, ok, vu) values ('l''ancien code ne fait plus entrer', j->>'type' = 'classe' and j->'fiche'->>'statut' = 'inconnu', j::text);
+  perform public.zz_comme(dir);
+  ce := (public.ref_codes())->>'eleve';
+  perform public.zz_root();
+  n := public.renouveler_codes();
+  insert into public.zz_res (nom, ok, vu) values ('rien d''échu : rien ne change', n = 0, n::text);
+  perform public.zz_comme(dir);
+
   -- ══════════ la console : une ligne par personne (20261026020000) ══════════
   select count(*) into n from public.ref_personnes('', 'eleve');
   insert into public.zz_res (nom, ok, vu) values ('trois élèves, chacun une fois (Emma est aussi dans un groupe)',
@@ -285,7 +318,9 @@ begin
     not has_function_privilege('authenticated', 'public.code_unique()', 'execute')
     and not has_function_privilege('authenticated', 'public.prof_verdict(uuid)', 'execute')
     and not has_function_privilege('authenticated', 'public.poser_exemples(uuid, uuid)', 'execute')
-    and not has_function_privilege('authenticated', 'public.org_prefixe(text)', 'execute'), 'internes');
+    and not has_function_privilege('authenticated', 'public.org_prefixe(text)', 'execute')
+    and not has_function_privilege('authenticated', 'public.renouveler_codes()', 'execute')
+    and not has_function_privilege('anon', 'public.ref_rythme(text)', 'execute'), 'internes');
 end $$;
 
 select n, ok, nom, vu from public.zz_res order by n;

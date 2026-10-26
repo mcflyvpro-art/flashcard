@@ -67,6 +67,17 @@ select cron.schedule('purge-signalements-mensuelle', '32 3 1 * *',
 
 Vérifier ensuite que les deux tâches existent : `select * from cron.job;`.
 
+D'autres tâches se sont ajoutées depuis, chacune posée par sa migration
+(même garde `raise notice` sans pg_cron) :
+
+| tâche | quand (UTC) | ce qu'elle fait | migration |
+| --- | --- | --- | --- |
+| `renouveler-codes-quotidien` | `53 2 * * *` | `renouveler_codes()` : un code élèves ou professeurs neuf pour chaque établissement dont le code a fait son temps (`org_codes.rythme`, semaine par défaut), tracé au journal du référent | `20261026110000` |
+| `purge-salles-quotidienne` | `41 3 * * *` | `purge_salles()` : les parties en direct terminées | `20261024232855` |
+| `audit-double-ecriture-cards-quotidien` | `3 4 * * *` | voir plus bas | `20260918100000` |
+
+Le 2026-10-26, `cron.job` les contenait toutes les cinq, actives.
+
 **Incident découvert le 2026-10-16 (M04.T5)** : cette migration n'avait
 **jamais été appliquée en production**. Elle figurait dans le dépôt, mais
 pas dans `list_migrations` : ni `purge_corbeille()`, ni

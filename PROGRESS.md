@@ -33,7 +33,12 @@ DERNIER   2026-10-26 · La page d'accueil publique : le site à `/` (index.html,
           icônes PNG de l'app. Tout est dans docs/LANDING.md (fichier de reprise).
           Preuves : npm run check vert, e2e/site.e2e.js 6/6, e2e complets verts,
           Lighthouse 100/100/100/100 (téléphone et ordinateur).
-          Avant : Une adresse par écran et par espace (src/routes.js, ui/routeur.js) :
+          Avant : Les codes élèves et professeurs se renouvellent seuls, chaque
+          semaine par défaut (20261026110000 : rythme au choix du référent, tâche
+          pg_cron renouveler-codes-quotidien, trace au journal) ; la console dit
+          « Nouveau code le … » — etablissement.sql 72/72, e2e/referent.e2e.js 4/4.
+          Suite : licence et factures du référent.
+          Avant : une adresse par écran et par espace (src/routes.js, ui/routeur.js) :
           /eleve, /prof, /referent, /admin, /demo/<rôle> ; rafraîchir garde l'écran, le
           retour du navigateur revient à l'écran d'avant, une adresse ouverte sans session
           attend la connexion — e2e/adresses.e2e.js 4/4, test/routes.test.js 7/7. Le
@@ -43,8 +48,7 @@ DERNIER   2026-10-26 · La page d'accueil publique : le site à `/` (index.html,
           des parcours, sorti de e2e/) : tout s'écrit, d'un rôle à l'autre, rien ne part ;
           l'IA, les photos et les fichiers grisés — e2e/demo.e2e.js 3/3,
           test/monde-demo.test.js 6/6. Corrigé en chemin : la fiche d'un élève et « Ce qui
-          bloque » restaient en chargement chez un vrai professeur. Suite : licence et
-          factures du référent, codes renouvelés chaque semaine.
+          bloque » restaient en chargement chez un vrai professeur.
           Avant : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
           code » en base (20261026001000) et la feuille « J'ai un code » ; B2C sans onglet
           Classe ; la console du référent refaite pour l'ordinateur (ui/ref-console.js, à

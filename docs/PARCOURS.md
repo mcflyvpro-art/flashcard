@@ -13,7 +13,9 @@ corrige dans le même commit (CLAUDE.md, règle 0).
 - **Un élève d'établissement** a **un code**. Il le tape, donne son prénom
   et son nom, choisit sa classe dans la liste : il est dedans. Personne n'a
   rien à valider ; la sécurité est dans le code (8 caractères au hasard,
-  10 essais faux par heure, changeable à tout moment).
+  10 essais faux par heure, **renouvelé seul chaque semaine** — ou chaque
+  mois, chaque trimestre, au choix du référent —, changeable à tout moment ;
+  ceux qui sont entrés restent).
 - **Un professeur particulier** a lui aussi **un code** : ses élèves le
   tapent, choisissent une de ses classes, c'est fait.
 
@@ -147,7 +149,7 @@ dans un recoin de sa console, avec l'explication.
 | créer une fiche, noter un besoin, une relance | toi | idem → Nouvel établissement / la fiche |
 | lancer une démo, passer en licence | toi | la fiche |
 | renvoyer un code référent | toi | la fiche |
-| distribuer, changer le code élève ou professeur | référent | Mon établissement → Accueil |
+| distribuer, changer le code élève ou professeur, choisir son rythme | référent | Mon établissement → Accueil |
 | créer, renommer une classe | référent | Mon établissement → Classes |
 | corriger un nom, changer un élève de classe | référent | Mon établissement → Élèves |
 | choisir ses classes, former un groupe | professeur | son espace |

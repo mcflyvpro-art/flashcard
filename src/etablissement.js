@@ -85,6 +85,29 @@ export function etatLicence(l, auj = iso(new Date())) {
   };
 }
 
+/* Le rythme des codes (20261026110000). Un code élèves ou professeurs fait
+   entrer sans validation : toute sa sécurité tient dans le fait qu'il ne
+   traîne pas. Chaque semaine par défaut ; « jamais » n'existe pas. */
+export const RYTHMES = { semaine: 'Chaque semaine', mois: 'Chaque mois', trimestre: 'Chaque trimestre' };
+
+/* La tâche de la base passe chaque nuit à 02:53 UTC (`renouveler-codes-quotidien`) :
+   un code échu à `jusqua` change au premier passage qui suit. */
+export function renouvellement(jusqua) {
+  const d = new Date(jusqua || NaN);
+  if (isNaN(+d)) return null;
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 2, 53));
+  if (t < d) t.setUTCDate(t.getUTCDate() + 1);
+  return t;
+}
+
+/* Quand le code change, dit court : « cette nuit » à moins d'un jour, sinon le jour. */
+export function changeLe(jusqua, maintenant = new Date(), tz = undefined) {
+  const t = renouvellement(jusqua);
+  if (!t) return '';
+  if (+t - +maintenant < 864e5) return 'Nouveau code cette nuit';
+  return 'Nouveau code le ' + t.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: tz });
+}
+
 /* Les cycles d'une classe (la base range les classes par cycle, niveau_rang). */
 export const CYCLES = { college: 'Collège', lycee_gt: 'Lycée général', lycee_techno: 'Lycée technologique',
   lycee_pro: 'Lycée professionnel', cpge: 'CPGE', sup: 'Supérieur' };

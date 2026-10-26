@@ -178,7 +178,8 @@ function semerLectures(store, uid, n, rand) {
 export function semerMonde(store, graine = 2026) {
   const rand = hasard(graine), m = modele(store), et = etab(store), now = Date.now();
   const org = { id: ID(900), nom: ETAB.nom, ville: ETAB.ville, kind: 'lycee', uai: '0301234K', offre: 'demo', places: 300,
-    fin: dansJours(45), exemples: false, codes: { eleve: ETAB.codeEleves, prof: ETAB.codeProfs, ref: null, refFin: null },
+    fin: dansJours(45), exemples: false, codes: { eleve: ETAB.codeEleves, prof: ETAB.codeProfs, ref: null, refFin: null,
+      eleveAu: iso(now - 3 * JOUR), profAu: iso(now - 3 * JOUR) }, rythme: 'semaine',
     suivi: { statut: 'demo', source: 'editeur', contact_nom: 'Claire ROUX', contact_fonction: 'Proviseure adjointe',
       contact_email: '', contact_tel: '', eleves_estimes: 280, budget_euros: null, prix_euros: 3, besoins: [], message: '',
       notes: '', relance: null }, cree: iso(now - 20 * JOUR) };
@@ -275,6 +276,10 @@ export function semerMonde(store, graine = 2026) {
   const trace = (il, acte, detail) => tab(store, 'ref_audit').push({ acte, cible: null, detail, created_at: iso(now - il * JOUR) });
   trace(12, 'classe créée', { nom: 'Tle C' });
   trace(9, 'professeur entré avec le code', { nom: 'Julien PETIT' });
+  trace(10, 'code renouvelé', { role: 'eleve', rythme: 'semaine' });
+  trace(10, 'code renouvelé', { role: 'prof', rythme: 'semaine' });
+  trace(3, 'code renouvelé', { role: 'eleve', rythme: 'semaine' });
+  trace(3, 'code renouvelé', { role: 'prof', rythme: 'semaine' });
   trace(3, 'élève déplacé', { avant: '2nde A', apres: '2nde B' });
   return store;
 }

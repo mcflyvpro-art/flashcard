@@ -23,6 +23,12 @@ const nomPropre = (p, n) => {
 const auj = () => new Date().toISOString().slice(0, 10);
 const dansJours = n => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
 
+/* Le rythme des codes (20261026110000) : la date de fin d'un code, comme
+   ref_codes la rend. La tâche de nuit, elle, ne se rejoue pas : un parcours
+   ou une visite de la démo ne dure pas une semaine. */
+const DUREE = { semaine: 7, mois: 30, trimestre: 91 };
+const jusqua = (o, quel) => new Date(Date.parse(o.codes[quel + 'Au'] || o.cree) + DUREE[o.rythme || 'semaine'] * 864e5).toISOString();
+
 export function etab(store) {
   store.et = store.et || { orgs: [], membres: {}, codesProfs: {}, journal: [] };
   return store.et;
@@ -221,9 +227,15 @@ function fonctionsRef(store, et, m, uid) {
   return {
     ref_codes: () => { const o = referent(et, m, uid), gens = membresOrg(et, o);
       return { eleve: o.codes.eleve, prof: o.codes.prof, offre: o.offre, places: o.places, licence_fin: o.fin,
-        eleves: gens.filter(u => estEleve(m, u)).length, profs: gens.filter(u => m.roles[u] === 'prof').length }; },
-    ref_nouveau_code: b => { const o = referent(et, m, uid); o.codes[b.quel] = tire(); tracer(store, null, 'code changé', { role: b.quel });
+        eleves: gens.filter(u => estEleve(m, u)).length, profs: gens.filter(u => m.roles[u] === 'prof').length,
+        rythme: o.rythme || 'semaine', eleve_jusqua: jusqua(o, 'eleve'), prof_jusqua: jusqua(o, 'prof') }; },
+    ref_nouveau_code: b => { const o = referent(et, m, uid); o.codes[b.quel] = tire(); o.codes[b.quel + 'Au'] = new Date().toISOString();
+      tracer(store, null, 'code changé', { role: b.quel });
       return o.codes[b.quel]; },
+    ref_rythme: b => { const o = referent(et, m, uid);
+      if (!DUREE[b.p]) erreur('Chaque semaine, chaque mois ou chaque trimestre');
+      o.rythme = b.p; tracer(store, null, 'rythme des codes', { rythme: b.p });
+      return b.p; },
     ref_dashboard: () => tableau(et, m, uid),
     ref_classes: () => classesRef(et, m, uid),
     ref_personnes: b => personnes(store, et, m, uid, b),

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  aRelancer, BESOINS, bienvenue, bilanSuivi, compterEtapes, courrielReferent, cycleDe, ETAPES, etatLicence, filtrerSuivi,
-  lienCourriel, messageDemande, messageEtab, NIVEAUX, nouvelleDemande, ORDRE_ETAPES, prochainPas, ROLES_CODE, trierSuivi, uaiValide
+  aRelancer, BESOINS, bienvenue, bilanSuivi, changeLe, compterEtapes, courrielReferent, cycleDe, ETAPES, etatLicence, filtrerSuivi,
+  lienCourriel, messageDemande, messageEtab, NIVEAUX, nouvelleDemande, ORDRE_ETAPES, prochainPas, renouvellement, ROLES_CODE, RYTHMES, trierSuivi, uaiValide
 } from '../src/etablissement.js';
 
 describe('messageEtab — la réponse de la base, en clair', () => {
@@ -57,6 +57,25 @@ describe('etatLicence — où en est la licence', () => {
   });
   it('sans plafond ni fin : un simple décompte', () => {
     expect(etatLicence({ places: null, eleves: 1, licence_fin: null }, auj)).toMatchObject({ k: 'ok', places: '1 élève', fin: 'sans fin', libre: null });
+  });
+});
+
+describe('le rythme des codes — quand un code change de lui-même', () => {
+  it('trois rythmes, aucun « jamais »', () => {
+    expect(Object.keys(RYTHMES)).toEqual(['semaine', 'mois', 'trimestre']);
+  });
+  it('le premier passage de la tâche de nuit (02:53 UTC) après l’échéance', () => {
+    expect(renouvellement('2026-11-02T14:00:00Z').toISOString()).toBe('2026-11-03T02:53:00.000Z');
+    expect(renouvellement('2026-11-02T01:00:00Z').toISOString()).toBe('2026-11-02T02:53:00.000Z');
+    expect(renouvellement(null)).toBe(null);
+    expect(renouvellement('pas une date')).toBe(null);
+  });
+  it('dit le jour, ou « cette nuit » à moins d’un jour', () => {
+    const lundi = new Date('2026-10-26T15:00:00Z');
+    expect(changeLe('2026-11-02T14:00:00Z', lundi, 'Europe/Paris')).toBe('Nouveau code le mar. 3 nov.');
+    expect(changeLe('2026-10-26T20:00:00Z', lundi, 'Europe/Paris')).toBe('Nouveau code cette nuit');
+    expect(changeLe('2026-10-20T20:00:00Z', lundi, 'Europe/Paris')).toBe('Nouveau code cette nuit');   // échu : au prochain passage
+    expect(changeLe(undefined, lundi)).toBe('');
   });
 });
 
