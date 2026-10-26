@@ -17,7 +17,7 @@ import {
 import { upload } from '../core/carte-media.js';
 import { openReport } from './classement.js';
 import {
-  blockUser, sendReport, setRole, unblockUser
+  blockUser, sendReport, unblockUser
 } from '../core/classement.js';
 import { trouverParNom } from '../matieres.js';
 import {
@@ -136,7 +136,6 @@ function clickCt(a, b, d) {
 const clickClose = (a, b) => { if (!(b.classList.contains('scrim') && vientDOuvrir())) closeMenu(); };
 function clickWhy(a, b) { setReportWhy(b.dataset.why); return paintMenu(); }
 const clickUnblock = (a, b) => unblockUser(b.dataset.unblock);
-const clickSetrole = (a, b) => setRole(b.dataset.who, b.dataset.setrole);
 const clickRsend = () => sendReport();
 function clickRblock() { const r = reportOn; if (r && r.user) return blockUser(r.user, r.label); }
 
@@ -504,7 +503,6 @@ const CLICK_RULES = [
   [a => a === 'close', clickClose],
   [(a, b) => b.dataset.why !== undefined, clickWhy],
   [(a, b) => b.dataset.unblock !== undefined, clickUnblock],
-  [(a, b) => b.dataset.setrole !== undefined, clickSetrole],
   [a => a === 'rsend', clickRsend],
   [a => a === 'rblock', clickRblock],
   [a => a === 'mailreport' || a === 'mailblock', clickMailReportBlock],
@@ -571,7 +569,7 @@ const CLICK_RULES = [
    tout bouton de feuille portant un `data-` absent de la liste restait
    muet. Il attrape maintenant les boutons, comme celui de la page. */
 document.addEventListener('click', async e => {
-  const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-setrole]');
+  const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock]');
   if (!b) return;
   const a = b.dataset.mact;
   const d = deck(view.id);

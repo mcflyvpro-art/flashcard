@@ -267,6 +267,86 @@ function fonctionsRef(store, et, m, uid) {
   };
 }
 
+/* ---------- la console de l'éditeur ----------
+   Le suivi vit dans `org.suivi` (semé par semerEtablissement), la licence et
+   les codes sur l'établissement ; `admin_orgs` rend la ligne à plat, comme
+   la vraie fonction. */
+function editeur(m, uid) { if (m.roles[uid] !== 'admin') erreur('Réservé à l’éditeur'); }
+
+function ligneAdmin(store, et, m, o) {
+  const gens = membresOrg(et, o), venus = u => m.membres.some(x => x.uid === u && x.vu);
+  return { id: o.id, code: '', name: o.nom, kind: o.kind, ville: o.ville, uai: o.uai,
+    classes: classesOrg(m, o).length, eleves: gens.filter(u => estEleve(m, u)).length,
+    profs: gens.filter(u => m.roles[u] === 'prof').length, refs: gens.filter(u => m.roles[u] === 'ref').length,
+    devoirs: 0, actifs7: gens.filter(venus).length, actifs30: gens.filter(venus).length,
+    jamais_venus: gens.filter(u => !venus(u)).length, cents_mois: 0, cents_total: 0, ouvert: o.cree,
+    offre: o.offre, places: o.places, licence_fin: o.fin, code_ref: o.codes.ref, code_ref_fin: o.codes.ref ? o.codes.refFin : null,
+    code_eleve: o.codes.eleve, code_prof: o.codes.prof, ...o.suivi, suivi_maj: o.cree };
+}
+
+function enregistrer(store, et, m, uid, b) {
+  editeur(m, uid);
+  const f = b.fiche || {}, nom = String(f.nom || '').trim();
+  if (nom.length < 2) erreur('Un nom de 2 à 120 caractères');
+  const uai = String(f.uai || '').trim().toUpperCase();
+  if (uai && !/^[0-9]{7}[A-Z]$/.test(uai)) erreur('L’UAI s’écrit 7 chiffres et une lettre');
+  let o = b.org && et.orgs.find(x => x.id === b.org);
+  if (b.org && !o) erreur('Établissement inconnu');
+  if (!o) {
+    o = semerEtablissement(store, { nom, statut: 'prospect', fin: null, places: null }).org;
+    o.codes = { eleve: null, prof: null, ref: null };
+  }
+  const n = v => (v === '' || v == null ? null : +v);
+  Object.assign(o, { nom, kind: f.genre || 'lycee', ville: f.ville || '', uai });
+  Object.assign(o.suivi, { statut: f.statut || 'prospect', contact_nom: f.contact_nom || '', contact_fonction: f.contact_fonction || '',
+    contact_email: String(f.contact_email || '').toLowerCase(), contact_tel: f.contact_tel || '', eleves_estimes: n(f.eleves_estimes),
+    budget_euros: n(f.budget_euros), prix_euros: n(f.prix_euros), besoins: f.besoins || [], notes: f.notes || '', relance: f.relance || null });
+  return o.id;
+}
+
+function fonctionsAdmin(store, et, m, uid) {
+  const org = id => { editeur(m, uid); return et.orgs.find(x => x.id === id) || erreur('Établissement inconnu'); };
+  return {
+    admin_orgs: () => { editeur(m, uid); return et.orgs.map(o => ligneAdmin(store, et, m, o)); },
+    admin_etat: () => { editeur(m, uid);
+      return [{ comptes: store.users.length, hors_etab: store.users.filter(u => !et.membres[u.id]).length, orgs: et.orgs.length,
+        actifs7: 0, cents_mois: 0, signalements: 0, masques: 0 }]; },
+    admin_accounts: () => { editeur(m, uid);
+      return store.users.map(u => ({ id: u.id, email: u.email, handle: null, name: m.noms[u.id] || null, role: m.roles[u.id] || 'eleve',
+        cree: new Date().toISOString(), livres: 0, bloque: false })); },
+    set_role: b => { editeur(m, uid); if (b.cible === uid) erreur('On ne se retire pas son propre rôle'); m.roles[b.cible] = b.nouveau; return null; },
+    admin_etab_enregistrer: b => enregistrer(store, et, m, uid, b),
+    admin_lancer_demo: b => { const o = org(b.org);
+      Object.assign(o, { offre: 'demo', places: b.places, fin: dansJours(b.jours || 30), exemples: b.exemples !== false });
+      o.codes = { eleve: o.codes.eleve || tire(), prof: o.codes.prof || tire(), ref: tire(), refFin: dansJours(30) };
+      o.suivi.statut = 'demo';
+      return { code_ref: o.codes.ref, ref_fin: o.codes.refFin, fin: o.fin }; },
+    admin_licence: b => { const o = org(b.org);
+      Object.assign(o, { places: b.places, fin: b.fin, offre: b.offre });
+      o.codes.eleve = o.codes.eleve || tire(); o.codes.prof = o.codes.prof || tire();
+      if (b.offre === 'etablissement') o.suivi.statut = 'client';
+      return null; },
+    admin_code_ref: b => { const o = org(b.org); o.codes.ref = tire(); o.codes.refFin = dansJours(30); return { code_ref: o.codes.ref }; },
+    admin_supprimer_etab: b => { const o = org(b.org);
+      if (membresOrg(et, o).length) erreur('Des comptes existent dans cet établissement');
+      et.orgs = et.orgs.filter(x => x.id !== o.id); return null; }
+  };
+}
+
+/* La demande de démo du site, sans compte : mêmes refus que la base. */
+export function demanderDemoFaux(store, b) {
+  const et = etab(store), mel = String(b.email || '').trim().toLowerCase();
+  if (String(b.etab || '').trim().length < 2 || String(b.contact_nom || '').trim().length < 2) return 'champs';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mel)) return 'email';
+  if (et.orgs.some(o => o.suivi.source === 'demande' && o.suivi.contact_email === mel)) return 'deja';
+  const { org } = semerEtablissement(store, { nom: String(b.etab).trim(), ville: b.ville || '', statut: 'prospect', fin: null,
+    places: null, sansRef: true });
+  org.codes = { eleve: null, prof: null, ref: null };
+  Object.assign(org.suivi, { source: 'demande', contact_nom: b.contact_nom, contact_fonction: b.fonction || '', contact_email: mel,
+    contact_tel: b.tel || '', eleves_estimes: b.eleves, message: b.message || '' });
+  return 'ok';
+}
+
 /* La table des fonctions, construite à l'appel (elle lit `store`). */
 export function fonctionsEtab(store, m, uid) {
   const et = etab(store);
@@ -278,6 +358,7 @@ export function fonctionsEtab(store, m, uid) {
       if (!et.codesProfs[uid] || (b && b.nouveau)) et.codesProfs[uid] = tire();
       return et.codesProfs[uid];
     },
-    ...fonctionsRef(store, et, m, uid)
+    ...fonctionsRef(store, et, m, uid),
+    ...fonctionsAdmin(store, et, m, uid)
   };
 }

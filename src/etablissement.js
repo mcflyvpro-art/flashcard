@@ -5,7 +5,7 @@
    décide (migration 20261025233000) ; ici on ne fait que dire sa réponse
    avec des mots, et résumer une licence. docs/PARCOURS.md, § 4. */
 
-import { iso, joursEntre } from './classe.js';
+import { formatCode, iso, joursEntre } from './classe.js';
 
 export const ROLES_CODE = { eleve: 'Élève', prof: 'Professeur', ref: 'Référent' };
 
@@ -103,3 +103,100 @@ export function cycleDe(niveau) {
 }
 
 export const uaiValide = s => /^[0-9]{7}[A-Z]$/.test(String(s || '').trim().toUpperCase());
+
+/* ---------- le suivi commercial (console de l'éditeur, 2026-10-26) ----------
+   Du premier contact au client : ce qui presse, ce qu'on compte, et le
+   courriel qui transmet le code référent. La base garde la fiche
+   (org_suivi, admin_orgs) ; ici on ne fait que la lire. */
+export const ORDRE_ETAPES = ['prospect', 'demo', 'client', 'pause', 'perdu'];
+
+const plat = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+/* Une relance due : sa date est passée ou c'est aujourd'hui — sauf pour un établissement perdu. */
+export const aRelancer = (o, auj = iso(new Date())) => !!o.relance && o.relance <= auj && o.statut !== 'perdu';
+
+/* Une demande arrivée par le formulaire public, que personne n'a encore regardée (pas de note). */
+export const nouvelleDemande = o => o.source === 'demande' && (o.statut || 'prospect') === 'prospect' && !o.notes;
+
+/* Une licence qui demande une décision : finie, pleine ou bientôt finie. */
+const licenceAlerte = (o, auj) => !!o.licence_fin && o.statut !== 'perdu' && etatLicence(o, auj).k !== 'ok';
+
+export function compterEtapes(orgs) {
+  const n = { tous: orgs.length };
+  for (const k of ORDRE_ETAPES) n[k] = 0;
+  for (const o of orgs) n[o.statut || 'prospect'] = (n[o.statut || 'prospect'] || 0) + 1;
+  return n;
+}
+
+/* L'ordre de la liste : d'abord ce qui presse — une demande neuve, une
+   relance due, une licence qui finit —, puis par nom. */
+export function trierSuivi(orgs, auj = iso(new Date())) {
+  const poids = o => (nouvelleDemande(o) ? 0 : aRelancer(o, auj) ? 1 : licenceAlerte(o, auj) ? 2 : 3);
+  return [...orgs].sort((a, b) => poids(a) - poids(b) || String(a.name).localeCompare(String(b.name), 'fr'));
+}
+
+/* L'étape choisie et la recherche (nom, ville, UAI, contact), sans casse ni accent. */
+export function filtrerSuivi(orgs, etape = 'tous', q = '') {
+  const v = plat(q).trim();
+  return orgs.filter(o => (etape === 'tous' || (o.statut || 'prospect') === etape)
+    && (!v || [o.name, o.ville, o.uai, o.contact_nom, o.contact_email].some(x => plat(x).includes(v))));
+}
+
+/* Les chiffres du haut : ce qui tourne et ce qui attend. */
+export function bilanSuivi(orgs, auj = iso(new Date())) {
+  const vivants = orgs.filter(o => ['demo', 'client'].includes(o.statut));
+  return {
+    demos: orgs.filter(o => o.statut === 'demo').length,
+    clients: orgs.filter(o => o.statut === 'client').length,
+    eleves: vivants.reduce((n, o) => n + (+o.eleves || 0), 0),
+    revenu: orgs.filter(o => o.statut === 'client').reduce((n, o) => n + (+o.prix_euros || 0), 0),
+    relances: orgs.filter(o => aRelancer(o, auj)).length,
+    demandes: orgs.filter(nouvelleDemande).length
+  };
+}
+
+/* La prochaine chose à faire pour un établissement, selon où il en est. */
+export function prochainPas(o, auj = iso(new Date())) {
+  if (o.code_ref) return 'code';                       // un code référent attend d'être utilisé : le transmettre
+  if (o.statut === 'prospect' || !o.licence_fin) return 'demo';
+  if (o.statut === 'demo' || licenceAlerte(o, auj)) return 'licence';
+  return 'suivre';
+}
+
+/* Le courriel qui transmet le code référent, prêt à partir de la
+   messagerie de l'éditeur (un lien mailto:, rien ne passe par Folio). */
+export function courrielReferent({ etab, contact, code, fin, site }) {
+  const bonjour = contact ? `Bonjour ${contact},` : 'Bonjour,';
+  return {
+    sujet: `Folio · l’accès de ${etab}`,
+    corps: `${bonjour}
+
+Voici l’accès de ${etab} à Folio.
+
+1. Ouvrez ${site} sur un ordinateur et créez votre compte.
+2. Réglages → « J’ai un code » → ${formatCode(code)}
+
+Ce code ne sert qu’une fois${fin ? ` et vaut jusqu’au ${finFr(String(fin).slice(0, 10))}` : ''}. Vous trouverez ensuite dans votre console les codes à donner aux élèves et aux professeurs.
+
+Bonne découverte,
+`
+  };
+}
+
+export const lienCourriel = (email, c) =>
+  `mailto:${encodeURIComponent(email || '')}?subject=${encodeURIComponent(c.sujet)}&body=${encodeURIComponent(c.corps)}`;
+
+/* La réponse de demander_demo (le formulaire public, sans compte), en clair.
+   On vouvoie : c'est une direction, un professeur, un CPE qui écrit. */
+const DEMANDE = {
+  ok: ['ok', 'Merci, c’est noté', 'Nous vous écrivons sous deux jours ouvrés pour ouvrir votre démo.'],
+  deja: ['ok', 'Votre demande nous est déjà parvenue', 'Nous vous écrivons très vite.'],
+  email: ['ko', 'Cette adresse e-mail ne semble pas valide', ''],
+  champs: ['ko', 'Il manque le nom de l’établissement ou le vôtre', ''],
+  trop: ['ko', 'Beaucoup de demandes en ce moment', 'Réessayez dans une heure.']
+};
+export function messageDemande(statut) {
+  const [ton, titre, texte] = DEMANDE[statut] || ['ko', 'Envoi impossible', 'Vérifiez votre connexion et réessayez.'];
+  return { ton, titre, texte };
+}
+export const FONCTIONS = ['Direction', 'Professeur', 'CPE', 'Professeur documentaliste', 'Autre'];

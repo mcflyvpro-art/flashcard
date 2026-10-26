@@ -2,7 +2,7 @@ import { I } from '../icones.js';
 import {
   adm, auth, blocks, board, cercle, duels, iAmMod, mailbox,
   mods, myRole, ref, reportOn, reportWhy,
-  setAccounts, setAnimate, setAsks, setBlocks,
+  setAnimate, setAsks, setBlocks,
   setFriends, setIAmMod, setMates, setMates2, setMyRole, setReportOn, setReportWhy,
   setSchool, view
 } from '../data/etat.js';
@@ -105,39 +105,10 @@ export async function modAct(id, act) {
   render();
 }
 
-export async function accountsPull() {
-  try { setAccounts(await api('/rest/v1/rpc/admin_accounts', 'POST', {}) || []); }
-  catch (e) { setAccounts([]); }
-  if (view.name === 'admin') { setAnimate(false); render(); }
-}
-
-const ROLES = { eleve: 'Élève', prof: 'Professeur',
-                ref: 'Référent d’établissement', admin: 'Éditeur' };
-
-export async function setRole(id, role) {
-  closeMenu();
-  try {
-    await api('/rest/v1/rpc/set_role', 'POST', { cible: id, nouveau: role });
-    setAccounts(null); await accountsPull();
-    toast(I.check, ROLES[role] + ' · rôle enregistré');
-  } catch (e) {
-    const m = String((e && e.message) || '');
-    toast(I.x, /propre rôle/.test(m) ? 'On ne retire pas son propre rôle'
-      : /autoris/.test(m) ? 'Réservé aux administrateurs' : 'Changement impossible');
-  }
-  render();
-}
-
-export async function admPull() {
-  try {
-    const [o, e] = await Promise.all([
-      api('/rest/v1/rpc/admin_orgs', 'POST', {}),
-      api('/rest/v1/rpc/admin_etat', 'POST', {})
-    ]);
-    adm.orgs = o || []; adm.etat = (e || [])[0] || null;
-  } catch (x) { adm.orgs = adm.orgs || []; }
-  if (view.name === 'admin') { setAnimate(false); render(); }
-}
+/* La console de l'éditeur vit dans un morceau chargé à la demande
+   (ui/admin-console.js, core/admin.js) : ici, seulement de quoi la faire
+   relire à sa prochaine ouverture. */
+export function admPull() { adm.charge = false; }
 
 export async function schoolPull() {
   try {

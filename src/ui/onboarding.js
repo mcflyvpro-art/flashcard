@@ -4,7 +4,7 @@ import { SITE } from '../adresse.js';
 import { DAY } from '../fsrs.js';
 import {
   DECKPAGE, DEFPREFS, asks, auth, bip, board, cercle, cercleNeuf, db, defiNeuf, demo, directNeuf, duels,
-  filter, friends, mates, me, mediaCache, menu, myRole, peek, prefs, quiz, setAccOpen,
+  filter, friends, mates, me, mediaCache, menu, myRole, peek, prefs, quiz,
   setAccounts, setAddQ, setAdm, setAnimate, setAsks, setBip, setBlocks, setBoard,
   setCardEdit, setCercle, setComp, setCompte, setConflicts, setDb, setDeckOpen, setDeckQ, setDefi, setDirect,
   setDeckShow, setDemo, setDirty, setDuelRun, setDuels, setEleve, setFilter, setFindQ, setFriends,
@@ -88,7 +88,7 @@ export function resetSession() {
   setAdm(admNeuf());
   setRef(refNeuf());
   setMods({ list: null, err: 0, seen: 0 });
-  setAccounts(null); setAccOpen(null);
+  setAccounts(null);
   setReportOn(null); setReportWhy('');
 
   /* les écrans en cours */

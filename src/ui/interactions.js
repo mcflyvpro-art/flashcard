@@ -3,9 +3,9 @@ import { $ } from '../racine.js';
 import { I } from '../icones.js';
 import { shuffle } from '../file.js';
 import {
-  accounts, adm, board, cercle, comp, deckOpen, duels, friends, leaving,
+  board, cercle, comp, deckOpen, duels, friends, leaving,
   mailbox, mods, online, peek, prefs, quiz,
-  reorder, sel, setAccOpen, setAnimate, setCardEdit,
+  reorder, sel, setAnimate, setCardEdit,
   setDeckOpen, setDeckQ, setDuelRun, setFilter, setFindQ,
   setHelpKey, setLeaving, setLegalBack, setLegalTab, setMates2,
   setPeek, setPendingGrade, setQuiz, setReorder, setSel, setShared,
@@ -16,7 +16,7 @@ import { commuPull, doAdd, ouvrirProfil } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
 import { isPupil } from './classement.js';
 import {
-  accountsPull, admPull, blocksPull, boardPull, matesPull, modAct,
+  admPull, blocksPull, boardPull, matesPull, modAct,
   modPull, refPull
 } from '../core/classement.js';
 import { deck, doUndo, flush, pending, plur, pushUndo, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
@@ -54,7 +54,6 @@ function tapLeavingGuard(a) { setLeaving(a); return openMenu('leave'); }
 
 function tapHelp(a, ds) { setHelpKey(ds.help); return openMenu('help'); }
 const tapModact = (a, ds) => modAct(+ds.rid, ds.modact);
-function tapAccount(a, ds) { setAccOpen(ds.account); return openMenu('account'); }
 
 
 /* On doit pouvoir lire ces textes sans compte : le retour ramène donc
@@ -128,7 +127,6 @@ function tapSus(a, ds) {
 function tapCard(a, ds) { setCardEdit(ds.card); return openMenu('card'); }
 
 /* ---- la console du référent ---- */
-function tapAtab(a, ds) { adm.tab = ds.atab; setAnimate(false); return render(); }
 
 function tapCamadd(a, ds) {
   const n = ds.camn;
@@ -231,8 +229,9 @@ function tapResume() {
 
 const tapSettings = () => go('settings');
 const tapTolog = () => go('login');
+const tapDemande = () => go('demande');
 const tapMod = () => { if (!mods.list) modPull(); return go('mod'); };
-const tapAdmin = () => { if (!accounts) accountsPull(); if (!adm.orgs) admPull(); return go('admin'); };
+const tapAdmin = () => { admPull(); return go('admin'); };
 
 /* Le bouton vit dans les Réglages, donc il porte data-act : le
    gestionnaire était rangé avec ceux des feuilles, qui lisent data-mact.
@@ -405,7 +404,6 @@ const CLICK_RULES = [
   [a => /^(home|quitquiz|deck)$/.test(a || '') && lostOnLeave() && !leaving, tapLeavingGuard],
   [(a, ds) => ds.help !== undefined, tapHelp],
   [(a, ds) => ds.modact !== undefined, tapModact],
-  [(a, ds) => ds.account !== undefined, tapAccount],
   [(a, ds) => ds.legal !== undefined, tapLegal],
   [(a, ds) => ds.yes !== undefined, tapYes],
   [(a, ds) => ds.no !== undefined, tapNo],
@@ -428,7 +426,6 @@ const CLICK_RULES = [
   [(a, ds) => ds.rm, tapRm],
   [(a, ds) => ds.sus, tapSus],
   [(a, ds) => ds.card, tapCard],
-  [(a, ds) => ds.atab, tapAtab],
   [(a, ds) => ds.camadd, tapCamadd],
   [(a, ds, b) => b.dataset.tf !== undefined, tapTf],
   [(a, ds, b) => b.dataset.pick !== undefined, tapPick],
@@ -460,6 +457,7 @@ const CLICK_RULES = [
   [a => a === 'resume', tapResume],
   [a => a === 'settings', tapSettings],
   [a => a === 'tolog', tapTolog],
+  [a => a === 'demande', tapDemande],
   [a => a === 'mod', tapMod],
   [a => a === 'admin', tapAdmin],
   [a => a === 'blocked', tapBlocked],
@@ -512,7 +510,7 @@ const CLICK_RULES = [
 ];
 
 $.addEventListener('click', e => {
-  const b = e.target.closest('button,[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-duel],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-legal],[data-modact],[data-account]');
+  const b = e.target.closest('button,[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-duel],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-legal],[data-modact]');
   if (!b) return;
   const ds = b.dataset;
   const a = ds.act;

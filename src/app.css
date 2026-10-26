@@ -934,7 +934,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   #app > .fab,#app > .tabs{width:auto;max-width:none;margin:0}
   #app > .login{max-width:400px}
   /* sans session, pas de barre latérale : la page se centre sur tout l'écran */
-  #app[data-view="login"],#app[data-view="legal"]{padding-left:var(--gut)}
+  #app[data-view="login"],#app[data-view="legal"],#app[data-view="demande"]{padding-left:var(--gut)}
   .top [data-act="settings"],.top [data-act="mail"]{display:none}   /* la barre latérale les porte déjà */
   .hero{font-size:28px;letter-spacing:-.7px;margin:2px 1px 22px}
   .top{margin:2px 1px 22px;align-items:center;gap:8px}
@@ -2192,62 +2192,6 @@ body{height:100%;overflow-y:auto;overflow-x:hidden;
 .camadd svg,.camo svg{width:16px;height:16px;color:var(--ink2)}
 .camadd:active,.camo:active{transform:scale(.9)}
 .camw{flex:none;font-size:12px;color:var(--soft)}
-
-/* ══════════ la console de l'éditeur ══════════
-   Un outil de gestion : des tableaux denses, des colonnes alignées. La
-   console du référent a la sienne depuis le 2026-10-26 (ui/ref-console.css,
-   préfixe rf-, chargée à la demande) ; ne reste ici que ce que lit encore
-   celle de l'éditeur (ui/classement.js, adminView). */
-.dense{padding-bottom:44px}
-.dense .lbl{margin-top:18px}
-
-/* le tableau. Sur téléphone chaque ligne se replie en fiche ; en large elle
-   redevient une vraie ligne, colonnes alignées, en-tête compris. */
-.rtable{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
-.rrow{display:grid;grid-template-columns:1fr;gap:2px;text-align:left;
-  background:var(--card);box-shadow:var(--s1);border-radius:12px;padding:10px 13px;font-size:13px}
-.rrow.tete{display:none}
-.rrow > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.c1 b{font-weight:700;font-size:14px}
-.c1 i{font-style:normal;color:var(--soft);margin-left:6px;font-size:12px}
-.c2,.c4,.c5{color:var(--soft);font-size:12px}
-.rl{font-style:normal;font-size:11px;font-weight:700;border-radius:6px;padding:2px 6px;
-  background:var(--surf);color:var(--ink2)}
-.rl.prof{background:color-mix(in srgb,var(--leather) 15%,transparent);color:var(--leather)}
-.rl.ref,.rl.admin{background:var(--ink);color:var(--bg)}
-.rl.vide,.rl.jamais{background:color-mix(in srgb,var(--ko) 12%,transparent);color:var(--ko)}
-
-.kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
-.kc{background:var(--card);box-shadow:var(--s1);border-radius:16px;padding:12px 14px;
-  display:flex;flex-direction:column;gap:1px;text-align:left}
-.kc b{font-size:24px;font-weight:800;letter-spacing:-1px;line-height:1.1}
-.kc b em{font-style:normal;font-size:15px;font-weight:700;color:var(--soft)}
-.kc span{font-size:12px;color:var(--soft)}
-.kc.ko b,.kc b.ko{color:var(--ko)}
-.kc.am b,.kc b.am{color:var(--leather)}
-.kc b.ok{color:var(--ok)}
-button.kc{transition:transform .15s}
-button.kc:active{transform:scale(.97)}
-.duo.gros button{height:58px;font-size:15px;font-weight:700}
-.rtabs{display:flex;gap:2px;background:var(--surf);border-radius:12px;padding:3px;margin-bottom:16px}
-.otab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:36px;
-  border-radius:9px;font-size:13.5px;font-weight:700;color:var(--soft)}
-.otab.on{background:var(--card);color:var(--ink);box-shadow:var(--s1)}
-.otab em{font-style:normal;font-size:11px;font-weight:700;opacity:.65}
-@media (min-width:760px){
-  .kpi{grid-template-columns:repeat(4,1fr)}
-  .kpi.cinq{grid-template-columns:repeat(5,1fr)}
-  .kpi.six{grid-template-columns:repeat(6,1fr)}
-  .rtable{gap:2px}
-  .rrow{grid-template-columns:minmax(180px,1.4fr) minmax(150px,1.4fr) 110px minmax(120px,1fr) 140px;
-    gap:12px;align-items:center;border-radius:9px;padding:9px 14px}
-  .rrow.tete{display:grid;background:none;box-shadow:none;font-size:11px;font-weight:700;
-    color:var(--soft);text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px}
-}
-@media (hover:hover){
-  .rrow:not(.tete):hover{background:var(--surf)}
-  .otab:hover{color:var(--ink)}
-}
 
 /* ══════════ la barre du haut, pour les comptes d'établissement ══════════
    Un professeur, un référent et l'éditeur ne révisent pas : leur écran est

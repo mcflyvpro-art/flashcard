@@ -9,7 +9,7 @@ import { sansMouvement } from './mouvement.js';
 import { paintMenuCercle } from './cercle-feuilles.js';
 import { paintMenuCode } from './code-entree.js';
 import { paintMedia } from './carte-media.js';
-import { accountSheet, blockedSheet, reportSheet } from './classement.js';
+import { blockedSheet, reportSheet } from './classement.js';
 import { COLORS, PALETTE, canUndo, deck, esc, subj, undoLabel } from '../core/coeur-sync.js';
 import { paintMenuProf } from './prof-porte.js';
 import {
@@ -296,7 +296,6 @@ function menuPainter(m) {
     cc: paintMenuCercle,
     code: paintMenuCode,
     /* ---------- les feuilles du référent ---------- */
-    account: paintMenuAccount,
     report: paintMenuReport,
     blocked: paintMenuBlocked,
     backup: paintMenuBackup,
@@ -392,9 +391,6 @@ function paintMenuInstall(w) {
   return installSheet(w);
 }
 
-function paintMenuAccount(w) {
-  return accountSheet(w);
-}
 
 function paintMenuReport(w) {
   return reportSheet(w);

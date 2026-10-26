@@ -314,6 +314,17 @@ if (/⟦/.test(EDITEUR + CONTACT)) {
     + 'Voir EDITEUR et CONTACT dans src/editeur.js.');
 }
 
+/* « Demander une démo » : un établissement qui découvre Folio, sans compte
+   (ui/demande-demo.js et sa feuille, chargés à l'ouverture). */
+let demande = null;
+export function demandeView() {
+  if (demande) return demande.demandeEcran();
+  $.innerHTML = `<div class="bar"><button class="ic" data-act="tolog" aria-label="Retour">${svg(I.back)}</button></div>
+    <div class="page"><div class="empty">${svg(I.school)}</div></div>`;
+  import('./demande-demo.js').then(m => { demande = m; if (view.name === 'demande') render(); })
+    .catch(() => toast(I.x, 'Le formulaire n’a pas pu s’ouvrir : vérifie ta connexion'));
+}
+
 /* Les textes eux-mêmes se chargent à l'ouverture (ui/legal-textes.js). */
 let textes = null;
 export function legalView() {
@@ -506,6 +517,7 @@ export function loginView() {
       <button class="cta" id="go" type="submit">${up ? 'Créer le compte' : 'Se connecter'}${svg(I.arrow)}</button>
       ${up ? '' : `<button class="lnk" id="forgot" type="button">Mot de passe oublié</button>`}
     </form>`}
+    <button class="lnk ldemo" data-act="demande" type="button">${svg(I.school)}Un établissement ? Demander une démo</button>
     <div class="lleg">${Object.entries(LEGAL_TITRES).map(([k, t]) =>
       `<button data-legal="${k}">${esc(t)}</button>`).join('<i>·</i>')}</div>
   </div>`;

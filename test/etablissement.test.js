@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { BESOINS, bienvenue, cycleDe, ETAPES, etatLicence, messageEtab, NIVEAUX, ROLES_CODE, uaiValide } from '../src/etablissement.js';
+import {
+  aRelancer, BESOINS, bienvenue, bilanSuivi, compterEtapes, courrielReferent, cycleDe, ETAPES, etatLicence, filtrerSuivi,
+  lienCourriel, messageDemande, messageEtab, NIVEAUX, nouvelleDemande, ORDRE_ETAPES, prochainPas, ROLES_CODE, trierSuivi, uaiValide
+} from '../src/etablissement.js';
 
 describe('messageEtab — la réponse de la base, en clair', () => {
   it('chaque statut connu a un titre et un ton', () => {
@@ -81,5 +84,65 @@ describe('cycleDe — le cycle d’une classe d’après son niveau', () => {
   });
   it('chaque niveau proposé a son cycle, sauf « Autre »', () => {
     expect(NIVEAUX.filter(n => !cycleDe(n))).toEqual(['Autre']);
+  });
+});
+
+describe('le suivi commercial — ce qui presse, ce qu’on compte', () => {
+  const auj = '2026-10-26';
+  const orgs = [
+    { name: 'Lycée Zola', statut: 'client', eleves: 800, prix_euros: 2400, licence_fin: '2027-07-01', places: 900 },
+    { name: 'Collège Hugo', statut: 'prospect', source: 'demande', ville: 'Lyon', contact_nom: 'M. Péguy' },
+    { name: 'Lycée Camus', statut: 'demo', eleves: 40, places: 60, licence_fin: '2026-11-05', relance: '2026-10-26' },
+    { name: 'Lycée Aragon', statut: 'perdu', relance: '2026-01-01' },
+    { name: 'Lycée Baudelaire', statut: 'client', eleves: 300, prix_euros: 900, licence_fin: '2026-11-01', places: 400 }
+  ];
+  it('les étapes, dans l’ordre du chemin', () => {
+    expect(ORDRE_ETAPES).toEqual(Object.keys(ETAPES));
+    expect(compterEtapes(orgs)).toEqual({ tous: 5, prospect: 1, demo: 1, client: 2, pause: 0, perdu: 1 });
+  });
+  it('une relance due, jamais pour un perdu ; une demande neuve tant qu’on n’a rien noté', () => {
+    expect(aRelancer(orgs[2], auj)).toBe(true);
+    expect(aRelancer({ ...orgs[2], relance: '2026-10-27' }, auj)).toBe(false);
+    expect(aRelancer(orgs[3], auj)).toBe(false);
+    expect(nouvelleDemande(orgs[1])).toBe(true);
+    expect(nouvelleDemande({ ...orgs[1], notes: 'Appelé le 26' })).toBe(false);
+  });
+  it('la liste : la demande, la relance, la licence qui finit, puis par nom', () => {
+    expect(trierSuivi(orgs, auj).map(o => o.name)).toEqual(['Collège Hugo', 'Lycée Camus', 'Lycée Baudelaire', 'Lycée Aragon', 'Lycée Zola']);
+  });
+  it('filtrer par étape et chercher sans accent', () => {
+    expect(filtrerSuivi(orgs, 'client').length).toBe(2);
+    expect(filtrerSuivi(orgs, 'tous', 'peguy').map(o => o.name)).toEqual(['Collège Hugo']);
+    expect(filtrerSuivi(orgs, 'demo', 'lyon')).toEqual([]);
+  });
+  it('les chiffres du haut', () => {
+    expect(bilanSuivi(orgs, auj)).toEqual({ demos: 1, clients: 2, eleves: 1140, revenu: 3300, relances: 1, demandes: 1 });
+  });
+  it('le prochain pas : transmettre le code, lancer la démo, passer en licence, suivre', () => {
+    expect(prochainPas({ statut: 'demo', code_ref: 'ABCDEFGH' }, auj)).toBe('code');
+    expect(prochainPas(orgs[1], auj)).toBe('demo');
+    expect(prochainPas(orgs[2], auj)).toBe('licence');
+    expect(prochainPas(orgs[4], auj)).toBe('licence');            // client dont la licence finit dans 6 jours
+    expect(prochainPas(orgs[0], auj)).toBe('suivre');
+  });
+  it('le courriel du code référent : le code lisible, la date en clair, un lien mailto encodé', () => {
+    const c = courrielReferent({ etab: 'Lycée Camus', contact: 'Mme Roux', code: 'ABCD2345', fin: '2026-11-25T10:00:00Z',
+      site: 'https://www.folioflashcard.online/' });
+    expect(c.sujet).toBe('Folio · l’accès de Lycée Camus');
+    expect(c.corps).toContain('Bonjour Mme Roux,');
+    expect(c.corps).toContain('ABCD-2345');
+    expect(c.corps).toContain('jusqu’au 25/11/2026');
+    const l = lienCourriel('dir@camus.fr', c);
+    expect(l.startsWith('mailto:dir%40camus.fr?subject=Folio')).toBe(true);
+    expect(decodeURIComponent(l.split('body=')[1])).toBe(c.corps);
+  });
+});
+
+describe('messageDemande — le formulaire public', () => {
+  it('merci, déjà reçue, et chaque refus dit quoi corriger', () => {
+    expect(messageDemande('ok').ton).toBe('ok');
+    expect(messageDemande('deja').ton).toBe('ok');
+    for (const s of ['email', 'champs', 'trop']) expect(messageDemande(s).ton).toBe('ko');
+    expect(messageDemande('???').titre).toBe('Envoi impossible');
   });
 });

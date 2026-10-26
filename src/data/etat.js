@@ -253,19 +253,18 @@ export let mods = { list: null, err: 0, seen: 0 };
    elle-même qui appelle, et qui refuse qu'on se retire son propre rôle :
    sans cette garde, le dernier administrateur se verrouille dehors et
    plus personne ne peut rendre la main. */
-export let accounts = null, accOpen = null;
+export let accounts = null;
 
-/* L'éditeur ne gère pas un établissement : il les vend et les tient. Ce
-   qu'il regarde n'est donc ni une classe ni un élève, c'est une ligne par
-   établissement — combien de comptes ouverts, combien s'en servent
-   vraiment, et ce que l'IA coûte. L'écart entre « ouverts » et « venus »
-   est la seule chose qui dise si un déploiement a pris ou non, et c'est ce
-   qu'il faut lire en premier.
-
-   Pas de coloration, pas d'animation, deux tableaux : c'est un écran qu'on
-   ouvre pour décider, pas pour s'y attarder. */
-// `form` : la feuille « Nouvel établissement » ou « Licence » ; `cree` : le code référent à transmettre
-export const admNeuf = () => ({ orgs: null, etat: null, tab: 'orgs', form: null, cree: null });
+/* L'éditeur ne gère pas un établissement : il les vend et les tient. Sa
+   console (ui/admin-console.js, chargée à la demande, 2026-10-26) suit
+   chaque établissement du premier contact au client — la fiche, la démo en
+   un geste, la licence, le code référent à transmettre — et les comptes
+   (leur rôle, rien de leur contenu).
+   `etape`/`q` : le filtre du suivi ; `open` : l'établissement ouvert (ou
+   'nouveau') ; `copen`, `cq`, `crole` : le compte ouvert et le filtre des
+   comptes. */
+export const admNeuf = () => ({ charge: false, orgs: null, etat: null, err: 0, tab: 'suivi',
+            etape: 'tous', q: '', open: null, copen: null, cq: '', crole: '' });
 export let adm = admNeuf();
 
 /* ══════════ rôles, classes, devoirs ══════════
@@ -477,7 +476,6 @@ export const setReportWhy = v => reportWhy = v;
 export const setIAmMod = v => iAmMod = v;
 export const setMods = v => mods = v;
 export const setAccounts = v => accounts = v;
-export const setAccOpen = v => accOpen = v;
 export const setAdm = v => adm = v;
 export const setMyRole = v => myRole = v;
 export const setSchool = v => school = v;

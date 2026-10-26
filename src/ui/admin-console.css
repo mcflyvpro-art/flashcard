@@ -1,0 +1,130 @@
+/* ══════════ la console de l'éditeur (préfixe ed-, chargée avec ui/admin-console.js) ══════════
+   Jamais « ad- » : les bloqueurs de publicité masquent ces classes. */
+.ed .top{flex-wrap:wrap;row-gap:8px}
+
+/* ---------- les boutons ---------- */
+.ed-b{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 14px;flex:none;
+  border-radius:10px;background:var(--card);box-shadow:var(--edge);font-weight:650;font-size:13.5px;color:var(--ink);
+  text-decoration:none;white-space:nowrap}
+.ed-b svg{width:16px;height:16px}
+.ed-b:hover{background:var(--surf)}
+.ed-b.pri{background:var(--ink);color:#fff;box-shadow:none}
+.ed-b.pri:hover{background:#000}
+.ed-b.sm{height:30px;padding:0 10px;font-size:12.5px;border-radius:8px;margin-bottom:12px}
+.ed-b.ko{color:var(--ko)}
+.ed-b.discret{margin-top:22px;background:transparent;box-shadow:none;padding:0;height:auto;font-size:13px}
+.ed-b.discret[data-arme="1"]{padding:8px 12px;background:#F8E3DF;border-radius:9px}
+.ed-b:disabled{opacity:.4;cursor:default}
+.ed-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+/* ---------- les chiffres ---------- */
+.ed-chiffres{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin:0 0 18px}
+.ed-kc{display:flex;flex-direction:column;gap:2px;padding:11px 13px;border-radius:14px;background:var(--card);
+  box-shadow:var(--edge);text-align:left;min-width:0}
+.ed-kc b{font-size:20px;font-weight:800;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ed-kc span{font-size:12px;font-weight:650;color:var(--soft)}
+.ed-kc.chaud b{color:#B05A12}
+button.ed-kc:hover{background:var(--surf)}
+
+.ed-onglets{display:flex;gap:2px;margin:0 0 16px;border-bottom:1px solid var(--hair)}
+.ed-onglets button{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 14px;margin-bottom:-1px;
+  font-weight:650;font-size:14px;color:var(--soft);border-bottom:2px solid transparent}
+.ed-onglets button:hover{color:var(--ink)}
+.ed-onglets button.on{color:var(--ink);border-bottom-color:var(--ink)}
+.ed-onglets i{font-style:normal;font-size:12px;font-weight:700;padding:1px 7px;border-radius:9px;background:var(--surf)}
+
+/* ---------- liste à gauche, fiche à droite ---------- */
+.ed-maitre{display:grid;grid-template-columns:minmax(320px,.85fr) minmax(0,1.15fr);gap:16px;align-items:start}
+.ed-liste{display:flex;flex-direction:column;gap:2px;min-width:0;padding-bottom:28px}
+.ed-detail{position:sticky;top:20px;min-width:0;max-height:calc(100vh - 40px);overflow:auto;border-radius:18px}
+.ed-filtres{display:flex;flex-direction:column;gap:8px;margin:0 0 8px}
+.ed-puces{display:flex;flex-wrap:wrap;gap:6px}
+.ed-puces button{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:16px;
+  background:var(--surf);font-weight:650;font-size:13px;color:var(--ink2)}
+.ed-puces button.on{background:var(--ink);color:#fff}
+.ed-puces i{font-style:normal;font-size:11.5px;opacity:.7}
+.ed-ligne{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:9px 12px;border-radius:12px;text-align:left}
+button.ed-ligne:hover{background:var(--surf)}
+.ed-ligne.on{background:var(--card);box-shadow:var(--edge)}
+.ed-l1{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ed-l1 b{font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ed-l1 i{font-style:normal;font-size:12.5px;font-weight:600;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ed-l2{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.ed-et,.ed-dr,.ed-role{font-style:normal;padding:2px 8px;border-radius:8px;font-size:11.5px;font-weight:700;white-space:nowrap;
+  background:var(--surf2);color:var(--ink2)}
+.ed-et.demo{background:#E4EEF9;color:#2B5C8A}
+.ed-et.client{background:#E2F1E7;color:var(--ok)}
+.ed-et.pause{background:#F1EDE4;color:#7A6A44}
+.ed-et.perdu{background:transparent;color:var(--soft);box-shadow:inset 0 0 0 1px var(--line)}
+.ed-dr{background:transparent;padding:0;color:var(--soft);font-weight:650}
+.ed-dr.chaud{color:#B05A12}
+.ed-role.admin,.ed-role.ref{background:var(--ink);color:#fff}
+.ed-role.prof{background:#F1E7DF;color:var(--leather)}
+.ed-vide{display:flex;flex-direction:column;align-items:center;gap:8px;padding:48px 16px;color:var(--soft);text-align:center}
+.ed-vide svg{width:28px;height:28px;opacity:.6}
+.ed-vide p{margin:0;font-size:14px;font-weight:600}
+.ed-rien{margin:8px 2px;font-size:13px;font-weight:600;color:var(--soft)}
+
+/* ---------- la fiche ---------- */
+.ed-fiche{padding:18px 20px 22px;border-radius:18px;background:var(--card);box-shadow:var(--edge)}
+.ed-qui{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.ed-qui > div{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ed-qui > div > b{font-size:20px;font-weight:750;letter-spacing:-.3px;overflow-wrap:anywhere}
+.ed-qui > div > i{font-style:normal;font-size:13px;font-weight:600;color:var(--soft)}
+.ed-etape{flex:none}
+.ed-h2{margin:22px 2px 10px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--soft)}
+.ed-pas{display:block;margin:0 0 12px;padding:14px 16px;border-radius:14px;background:var(--bg);box-shadow:var(--edge)}
+.ed-pas-t{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
+.ed-pas-t svg{width:17px;height:17px}
+.ed-code{display:block;margin:10px 0 0;font:800 30px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:2px}
+.ed-ligne-f{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-top:10px}
+.ed-ligne-f .ed-ch{flex:1 1 120px}
+.ed-coche{display:flex;align-items:center;gap:7px;height:40px;font-size:13.5px;font-weight:600}
+.ed-tuile{margin:0 0 12px;padding:14px 16px;border-radius:14px;box-shadow:var(--edge)}
+.ed-tl{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-weight:750;font-size:15px}
+.ed-tl span{font-size:13px;font-weight:600;color:var(--soft)}
+.ed-barre{height:7px;margin:10px 0 8px;border-radius:4px;background:var(--surf2);overflow:hidden}
+.ed-barre i{display:block;height:100%;border-radius:4px;background:var(--ink)}
+.ed-tl-p{font-size:13px;font-weight:600;color:var(--ink2)}
+.ed-modif{margin-top:10px}
+.ed-modif summary{cursor:pointer;font-size:13px;font-weight:650;color:var(--soft)}
+.ed-usage{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:8px}
+.ed-usage .ed-kc{box-shadow:none;background:var(--surf);padding:8px 10px}
+.ed-usage .ed-kc b{font-size:16px}
+.ed-codes{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 2px 4px;font-size:13px;font-weight:600;color:var(--soft)}
+.ed-codes span{display:inline-flex;align-items:center;gap:6px}
+.ed-codes svg{width:15px;height:15px}
+.ed-codes code{font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink)}
+
+/* ---------- les champs ---------- */
+.ed input,.ed select,.ed textarea{min-width:0;height:40px;padding:0 12px;border:0;border-radius:10px;
+  background:var(--card);box-shadow:var(--edge);font:inherit;font-size:14px;color:var(--ink);outline:0}
+.ed textarea{height:auto;padding:10px 12px;line-height:1.5;resize:vertical;width:100%}
+.ed input[type="checkbox"]{width:17px;height:17px;padding:0;box-shadow:none;accent-color:var(--ink)}
+.ed input:focus,.ed select:focus,.ed textarea:focus{box-shadow:inset 0 0 0 1px rgba(29,28,25,.3),var(--ring)}
+.ed-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.ed-ch{display:flex;flex-direction:column;gap:5px;min-width:0}
+.ed-ch > span{font-size:12px;font-weight:650;color:var(--soft)}
+.ed-ch.large,.ed-besoins,.ed-form .ed-actions,.ed-message{grid-column:1 / -1}
+.ed-besoins{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0;padding:0;border:0}
+.ed-besoins legend{width:100%;margin-bottom:6px;padding:0;font-size:12px;font-weight:650;color:var(--soft)}
+.ed-besoins label{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:16px;
+  background:var(--surf);font-size:13px;font-weight:600;cursor:pointer}
+.ed-besoins label:has(input:checked){background:var(--ink);color:#fff}
+.ed-besoins input{position:absolute;opacity:0;pointer-events:none}
+.ed-message{display:flex;gap:8px;margin:0;padding:10px 12px;border-radius:11px;background:var(--bg);font-size:13.5px;line-height:1.45;color:var(--ink2)}
+.ed-message svg{width:16px;height:16px;flex:none;color:var(--soft)}
+.ed-seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:11px;background:var(--surf)}
+.ed-seg button{height:32px;padding:0 14px;border-radius:8px;font-weight:650;font-size:13px;color:var(--ink2)}
+.ed-seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--edge),var(--s1)}
+
+@media (max-width:1280px){.ed-chiffres{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:899px){
+  .ed-chiffres{display:flex;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding:0 16px 2px}
+  .ed-chiffres::-webkit-scrollbar{display:none}
+  .ed-kc{flex:none;min-width:112px}
+  .ed-form{grid-template-columns:minmax(0,1fr)}
+  .ed-usage{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ed-qui{flex-wrap:wrap}
+  .ed-fiche{padding:16px 14px 20px}
+}

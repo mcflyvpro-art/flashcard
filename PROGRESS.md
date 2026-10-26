@@ -24,10 +24,12 @@ DERNIER   2026-10-26 · EN COURS : parcours B2B/B2C (docs/PARCOURS.md). Fait : �
           Classe ; la console du référent refaite pour l'ordinateur (ui/ref-console.js, à
           la demande : codes + QR projeté, licence, à régler, classes, élèves, profs,
           journal, cartes élève cachées ; au téléphone les codes et la licence), sur
-          ref_personnes (20261026020000) — etablissement.sql 58/58, e2e/referent.e2e.js 4/4.
-          À faire : la console admin (PC), l'espace prof (ses classes, ses groupes, son
-          code), l'onboarding, la démo sans compte. Pas de Stripe (Capacitor, achats
-          Apple/Google).
+          ref_personnes (20261026020000) — etablissement.sql 58/58, e2e/referent.e2e.js 4/4 ;
+          la console de l'éditeur (ui/admin-console.js : suivi prospect → démo → client,
+          prochain pas, démo en un geste, code référent par courriel, licence, comptes) et
+          « Demander une démo » sans compte depuis la connexion — e2e/editeur.e2e.js 4/4.
+          À faire : l'espace prof (ses classes, ses groupes, son code), l'onboarding, la
+          démo sans compte. Pas de Stripe (Capacitor, achats Apple/Google).
           Avant : 2026-10-25 (soir) · « Ma classe » rendue à tout compte personnel (onglet
           au téléphone, entrée sur PC : c'est là qu'on tape le code du professeur ;
           la refonte du cercle l'avait réservée à qui avait déjà une classe —

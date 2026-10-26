@@ -2,11 +2,11 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import {
-  accOpen, accounts, adm, auth, blocks, compte, mods, myRole,
-  reportOn, reportWhy, school, setMenu, setReportOn, setReportWhy
+  blocks, compte, mods, myRole, reportOn, reportWhy, school, setAnimate, setMenu, setReportOn, setReportWhy, view
 } from '../data/etat.js';
-import { avatar } from './jeton.js';
-import { esc, plur } from '../core/coeur-sync.js';
+import { esc } from '../core/coeur-sync.js';
+import { render } from './bibliotheque.js';
+import { toast } from './import-cartes.js';
 import { joursDici } from './etablissement.js';
 import { openMenu, mountMenu } from './menus-a.js';
 import { cb, cf, timeAgo } from './reglages-corbeille.js';
@@ -117,95 +117,28 @@ export function modView() {
     </div>`;
 }
 
-const ROLES = { eleve: 'Élève', prof: 'Professeur',
-                ref: 'Référent d’établissement', admin: 'Éditeur' };
+/* ---------- la porte de la console de l'éditeur ----------
+   La console (2026-10-26) est un morceau chargé à la demande —
+   ui/admin-console.js, sa feuille admin-console.css (préfixe ed-) et
+   core/admin.js : personne d'autre ne la télécharge. Rien d'autre ne doit
+   importer ui/admin-console.js — passer par ici. */
+let consoleAdm = null, chargeAdm = null;
 
-const euros = c => (Math.round(+c || 0) / 100).toFixed(2).replace('.', ',') + ' €';
-
-export function adminView() {
-  const l = accounts, o = adm.orgs, e = adm.etat;
-  const par = r => (l || []).filter(x => x.role === r);
-  const onglet = (k, n) => `<button class="otab ${adm.tab === k ? 'on' : ''}" data-atab="${k}">${n}</button>`;
-  const kc = (v, lab, cls) => `<div class="kc ${cls || ''}"><b>${v}</b><span>${lab}</span></div>`;
-
-  const ligneOrg = x => {
-    const ouverts = (x.eleves || 0) + (x.profs || 0) + (x.refs || 0);
-    const venus = Math.max(0, ouverts - (x.jamais_venus || 0));
-    const pris = ouverts ? Math.round(venus / ouverts * 100) : 0;
-    return `<div class="rrow">
-      <span class="c1"><b>${esc(x.name)}</b><i>${esc(x.ville || '')}${
-        x.uai ? ' · ' + esc(x.uai) : ''}</i></span>
-      <span class="c2">${x.classes} classes · ${x.eleves} él. · ${x.profs} prof.</span>
-      <span class="c3">${venus} / ${ouverts} <em class="rl ${
-        pris < 25 ? 'jamais' : pris < 60 ? 'vide' : ''}">${pris} % venus</em></span>
-      <span class="c4">${x.actifs7} actifs 7 j · ${x.actifs30} sur 30 j</span>
-      <span class="c5">${euros(x.cents_mois)} ce mois${
-        +x.cents_total > +x.cents_mois ? ' · ' + euros(x.cents_total) + ' au total' : ''}</span>
-    </div>`;
-  };
-  const ligneCpt = a => `<button class="rrow" data-account="${esc(a.id)}">
-    <span class="c1"><b>${esc(a.name || a.handle || a.email)}</b><i>@${esc(a.handle || '')}</i></span>
-    <span class="c2">${esc(a.email)}</span>
-    <span class="c3"><em class="rl ${esc(a.role)}">${esc(ROLES[a.role] || a.role)}</em></span>
-    <span class="c4">${plur(+a.livres, 'livre')}</span>
-    <span class="c5">${a.bloque ? 'modère les signalements' : ''}</span></button>`;
-
-  $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button>
-      <h1>Administration</h1></div>
-    <div class="page dense">
-      ${!l ? `<div class="empty">${svg(I.build)}<p>Chargement…</p></div>`
-      : !l.length ? `<div class="empty">${svg(I.lock)}<p><b>Réservé à l’éditeur</b>
-          Ce compte n’a pas ce rôle.</p></div>`
-      : `${e ? `<div class="kpi six">
-           ${kc(e.orgs, 'établissements')}${kc(e.comptes, 'comptes')}
-           ${kc(e.hors_etab, 'hors établissement')}${kc(e.actifs7, 'actifs cette semaine')}
-           ${kc(euros(e.cents_mois), 'd’IA ce mois')}
-           ${kc(e.signalements, 'signalements', e.signalements ? 'ko' : '')}
-         </div>` : ''}
-         <div class="rtabs">${onglet('orgs', 'Établissements')}${onglet('cpt', 'Comptes')}</div>
-         ${adm.tab === 'orgs' ? `
-           <div class="note" style="padding:0 0 12px">L’écart entre comptes ouverts et comptes
-             venus dit si le déploiement a pris. En dessous de 25 %, l’établissement n’a pas
-             distribué le lien — c’est un problème de terrain, pas de produit.</div>
-           ${!o ? `<div class="card2"><div class="note">Chargement…</div></div>`
-             : !o.length ? `<div class="empty">${svg(I.build)}<p><b>Aucun établissement</b></p></div>`
-             : `<div class="rtable">
-                 <div class="rrow tete"><span class="c1">Établissement</span>
-                   <span class="c2">Effectifs</span><span class="c3">Comptes venus</span>
-                   <span class="c4">Usage réel</span><span class="c5">Coût IA</span></div>
-                 ${o.map(ligneOrg).join('')}</div>`}
-           <div class="note" style="padding:6px 0 0">${svg(I.warn)} Le plafond d’IA est encore global à tous
-             les comptes (AI_BUDGET_USD), et non par établissement : un seul lycée actif l’épuise
-             et la fonctionnalité s’éteint pour tout le monde. À remplacer avant la première vente.</div>`
-         : `<div class="note" style="padding:0 0 12px">L’éditeur gère des accès. Il ne voit ni les
-             fiches, ni la progression, ni le courrier de personne.</div>
-           ${['admin', 'ref', 'prof', 'eleve'].map(r => par(r).length ? `
-             <div class="lbl"><span>${esc(ROLES[r] || r)}${par(r).length > 1 ? 's' : ''}</span>
-               <span>${par(r).length}</span></div>
-             <div class="rtable">${par(r).map(ligneCpt).join('')}</div>` : '').join('')}`}`}
-    </div>`;
+function chargerAdmin() {
+  if (consoleAdm) return Promise.resolve(consoleAdm);
+  if (!chargeAdm) {
+    chargeAdm = import('./admin-console.js').then(m => (consoleAdm = m))
+      .catch(e => { chargeAdm = null; throw e; });
+  }
+  return chargeAdm;
 }
 
-export function accountSheet(w) {
-  const a = (accounts || []).find(x => x.id === accOpen);
-  if (!a) { setMenu(null); return; }
-  const moi = a.id === auth.uid;
-  w.innerHTML = `<div class="scrim" data-mact="close"></div>
-    <div class="menu">
-      <div class="mhd">${avatar(a.id, a.name || a.handle || '')}
-        <span class="mhx"><b>${esc(a.name || a.handle || a.email)}</b>
-          <i>${esc(a.email)}${a.handle ? ' · @' + esc(a.handle) : ''}</i></span></div>
-      <div class="msep"></div>
-      ${Object.entries(ROLES).map(([k, n]) => `
-        <button class="mi${a.role === k ? ' on' : ''}" data-setrole="${k}" data-who="${esc(a.id)}"
-          ${moi && k !== 'admin' ? 'disabled' : ''}>
-          ${svg(a.role === k ? I.check : I.arrow)}${n}
-          ${k === 'admin' ? '<span class="tail">instruit les signalements</span>' : ''}</button>`).join('')}
-      ${moi ? `<div class="note" style="padding:6px 18px 12px">C’est ton compte : tu ne peux pas
-        te retirer ton propre rôle, sinon plus personne ne pourrait rendre la main.</div>` : ''}
-    </div>`;
-  mountMenu(w);
+export function adminView() {
+  if (consoleAdm) return consoleAdm.consoleAdmin();
+  $.innerHTML = `<div class="page"><div class="top"><div class="hero">Administration</div></div>
+    <div class="empty">${svg(I.key)}</div></div>`;
+  chargerAdmin().then(() => { if (view.name === 'admin') { setAnimate(false); render(); } })
+    .catch(() => toast(I.x, 'La console n’a pas pu s’ouvrir : vérifie ta connexion'));
 }
 
 export const atSchool = () => !!(school && school.org_id);

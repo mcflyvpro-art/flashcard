@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
-  DECKPAGE, accounts, adm, animate, asks, auth, compte, db, demo, dirty, eleve, filter, liveAt, me,
+  DECKPAGE, animate, asks, auth, compte, db, demo, dirty, eleve, filter, liveAt, me,
   liveSoon, liveT, mailbox, menu, myRole, online, pageDir, peek, prefs,
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
   setPageDir, setPreviewOf, setView, view
@@ -19,9 +19,9 @@ import { sallesPull } from '../core/cercle.js';
 import { STATE, cstate, paintMedia } from './carte-media.js';
 import { adminView, atSchool, isProf, isPupil, modView } from './classement.js';
 import { refView } from './etablissement.js';
-import { accountsPull, admPull, boardPull, refPull } from '../core/classement.js';
+import { admPull, boardPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
-import { deckView, legalView, loginView, selOff } from './connexion.js';
+import { deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
 import { duelView } from './defis.js';
 import { duelsPull } from '../core/defis.js';
 import { findView, statsView } from './ecran-groupe.js';
@@ -103,7 +103,7 @@ function placerDefilement() {
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, lettre: lettreView, stats: statsView, find: findView,
-              shared: sharedView, duel: duelView, legal: legalView, mod: modView,
+              shared: sharedView, duel: duelView, legal: legalView, demande: demandeView, mod: modView,
               classes: mesClassesView, classe: classeEleveView,
               prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
               ref: refView,
@@ -220,7 +220,7 @@ function railNavHome(on, classeNom) {
 }
 
 export function allerClasses() {
-  if (myRole === 'admin') { if (!accounts) accountsPull(); if (!adm.orgs) admPull(); return go('admin'); }
+  if (myRole === 'admin') { admPull(); return go('admin'); }
   if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
   if (isProf()) return allerAccueil();
   eleveClassesPull(); sallesPull(); duelsPull(); return go('classes');

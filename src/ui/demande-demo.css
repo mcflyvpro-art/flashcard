@@ -1,0 +1,23 @@
+/* ══════════ « Demander une démo » (préfixe dd-, chargée avec ui/demande-demo.js) ══════════ */
+.dd{max-width:640px;margin-inline:auto;padding-bottom:36px}
+.dd-points{display:flex;flex-direction:column;gap:8px;margin:0 0 20px;padding:0;list-style:none}
+.dd-points li{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600;color:var(--ink2)}
+.dd-points svg{width:18px;height:18px;flex:none;color:var(--soft)}
+.dd-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:18px;border-radius:18px;
+  background:var(--card);box-shadow:var(--edge)}
+.dd-ch{display:flex;flex-direction:column;gap:5px;min-width:0}
+.dd-ch > span{font-size:12.5px;font-weight:650;color:var(--soft)}
+.dd-ch.large,.dd-rep,.dd-go{grid-column:1 / -1}
+.dd input,.dd select,.dd textarea{min-width:0;width:100%;height:44px;padding:0 12px;border:0;border-radius:11px;
+  background:var(--bg);box-shadow:var(--edge);font:inherit;font-size:16px;color:var(--ink);outline:0}
+.dd textarea{height:auto;padding:10px 12px;line-height:1.5;resize:vertical}
+.dd input:focus,.dd select:focus,.dd textarea:focus{box-shadow:inset 0 0 0 1px rgba(29,28,25,.3),var(--ring)}
+.dd-rep{display:flex;flex-direction:column;gap:2px;margin:0;padding:10px 12px;border-radius:11px;font-size:13.5px;line-height:1.4}
+.dd-rep.ko{background:#F8E3DF;color:var(--ko)}
+.dd-rep.ok{background:#E2F1E7;color:var(--ok)}
+.dd-merci{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 18px;border-radius:18px;
+  background:var(--card);box-shadow:var(--edge);text-align:center}
+.dd-merci > svg{width:34px;height:34px;color:var(--ok)}
+.dd-merci b{font-size:19px;font-weight:750}
+.dd-merci p{margin:0 0 10px;font-size:14.5px;color:var(--ink2)}
+@media (max-width:560px){.dd-form{grid-template-columns:minmax(0,1fr);padding:14px}}

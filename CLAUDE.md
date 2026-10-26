@@ -52,7 +52,7 @@ l'air de marcher ».
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
     HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout, sauf
     l'envoi des préférences dans `ui/import-cartes.js`, plus ancien, à sortir).
-    `coeur-sync.js` (~775 lignes — `api()`, auth, sync, undo, palette) et treize
+    `coeur-sync.js` (~775 lignes — `api()`, auth, sync, undo, palette) et quinze
     modules, un par domaine : `classement.js` (rôle, établissement, accueil
     selon le métier), `defis.js` (les défis « à son rythme »), `cercle.js`
     (clubs et salles en direct : lire, créer, rejoindre, inviter — tout par
@@ -80,7 +80,10 @@ l'air de marcher ».
     devoirs, `mon_compte`, `messageErreur`) et `referent.js` (la console du
     référent : toutes les fonctions `ref_*`, `refAgir()` qui refuse hors ligne
     et relit ce qui a bougé, `refProfsPull` à part de la recherche — chargé
-    avec la console). L'ancien `core/etablissement.js`
+    avec la console), `admin.js` (la console de l'éditeur : `admin_*` et
+    `set_role`, `admAgir()` qui refuse hors ligne et relit le suivi — chargé
+    avec elle) et `demande.js` (`demanderDemo`, la seule écriture sans
+    compte). L'ancien `core/etablissement.js`
     (console prof d'avant le 2026-10-24) n'existe plus.
   - `src/ui/` — les 18 écrans (rendu, DOM, `$.innerHTML`, menus, événements),
     même noms de fichier que leur pendant `core/` quand les deux existent
@@ -110,7 +113,26 @@ l'air de marcher ».
     les cartes élève, expliquées, imprimées avec leur QR. Au téléphone :
     les deux codes et la licence seulement. Chaque ouverture repart de
     l'accueil (`refPull` remet `ref.charge` à faux). L'ancienne console en
-    feuilles (`refwho`, `refcls`, `refnew`) n'existe plus. **Navigation au téléphone** (2026-10-25) : `balayage.js` fait
+    feuilles (`refwho`, `refcls`, `refnew`) n'existe plus. De même,
+    `ui/classement.js` est la **porte de la console de l'éditeur**
+    (2026-10-26) : `adminView` charge à la demande `admin-console.js` +
+    `admin-console.css` (préfixe `ed-` — **jamais `ad-`** : les bloqueurs de
+    publicité masquent ces classes) et `core/admin.js` ; rien d'autre ne doit
+    importer `ui/admin-console.js`. Deux onglets : **Établissements** — le
+    suivi, du prospect au client (puces d'étape, recherche, la liste triée
+    par ce qui presse : demande neuve, relance due, licence qui finit), et
+    la fiche d'un établissement : l'étape (changée sur place), le **prochain
+    pas** (`prochainPas` : lancer la démo en un geste, transmettre le code
+    référent — un lien `mailto:` au contact avec le message tout écrit, ou
+    copier —, passer en licence avec son prix), la licence et son usage, les
+    codes élèves/professeurs, la fiche complète (contact, besoins, budget,
+    relance, notes, message reçu), effacer un établissement sans comptes —
+    et **Comptes** (rôle de chacun, rien de son contenu). Les chiffres du
+    haut : demandes, relances, démos, clients, élèves, revenu annuel, IA,
+    signalements. PC d'abord, utilisable au téléphone (la liste, puis la
+    fiche). L'ancien tableau et la feuille `account` n'existent plus. Les
+    règles (tri, filtres, bilan, prochain pas, courriel) sont dans
+    `src/etablissement.js`. **Navigation au téléphone** (2026-10-25) : `balayage.js` fait
     glisser d'un onglet à l'autre (Livres ↔ Classe ↔ Cercle des lecteurs,
     l'ordre de `ordreOnglets()` dans `bibliotheque.js`, le même que la barre)
     comme une app native — la voisine est rendue par sa vraie fonction d'écran
@@ -184,7 +206,9 @@ l'air de marcher ».
     `code_apercu`, `rejoindre`, `my_school`, `prof_mon_code` et toutes les
     `ref_*` de la console, services dans `store.et.services`, journal dans la
     table `ref_audit` ; une exception d'une fausse fonction revient en 400 avec
-    son message, comme la vraie base) — parcours dans `e2e/referent.e2e.js`.
+    son message, comme la vraie base) — parcours dans `e2e/referent.e2e.js` ;
+    les `admin_*`, `set_role` et `demander_demo` (sans compte, comme la
+    vraie) aussi, parcours dans `e2e/editeur.e2e.js`.
     **Le profil d'un lecteur** (2026-10-25) : toucher un ami, une ligne de
     classement (`rangLigne`, `data-lecteur`), une demande d'ami ou un membre
     de club ouvre son profil (vue `profil`, `ouvrirProfil(id, { club })` de
@@ -223,7 +247,11 @@ l'air de marcher ».
     chargés à la demande par `legalView()` (`ui/connexion.js`, qui ne garde
     que leurs titres, `LEGAL_TITRES`) depuis `ui/legal-textes.js` ; l'éditeur
     et son contact, encore entre ⟦crochets⟧, vivent dans `src/editeur.js`
-    (sans dépendance), vérifiés dès le démarrage.
+    (sans dépendance), vérifiés dès le démarrage. **« Demander une démo »**
+    (lien discret de l'écran de connexion, vue `demande`, sans compte) :
+    `demandeView()` de `ui/connexion.js` charge `ui/demande-demo.js` +
+    `demande-demo.css` (préfixe `dd-`) ; la demande arrive chez l'éditeur,
+    étape Prospect (`messageDemande` dit la réponse de la base en clair).
 
     Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
     a d'abord suivi les anciennes sections `/* ---------- nom ---------- */`
@@ -428,7 +456,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, console du référent, sauvegarde, entretien… cumulés) JS ≤ 56, CSS ≤ 22 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans

@@ -64,7 +64,9 @@ ce qui sera payant reste à décider avec toi au moment de Capacitor.
 
 - Un établissement **demande une démo** (formulaire sans compte : nom de
   l'établissement, ville, contact, fonction, e-mail, nombre d'élèves,
-  message). La demande arrive dans ta console, étape **Prospect**.
+  message), depuis le lien « Un établissement ? Demander une démo » de
+  l'écran de connexion. La demande arrive dans ta console, étape
+  **Prospect**, en tête de liste et comptée dans « demandes ».
 - Ou tu crées toi-même la fiche après un salon, un appel : **Nouvel
   établissement**.
 - Sur la fiche : contact, besoins (devoirs, révision autonome, IA, défis…),
@@ -74,7 +76,9 @@ ce qui sera payant reste à décider avec toi au moment de Capacitor.
 
 **Lancer la démo**, en un geste : licence de 30 jours pour 60 élèves (à
 régler), des **classes d'exemple** (2nde A, 1re B, Tle C), et un **code
-référent** à envoyer au contact. Étape : **Démo**.
+référent** à envoyer au contact — « Écrire à … » ouvre ta messagerie avec
+le message tout écrit (le code, la marche à suivre, sa date de fin). Étape :
+**Démo**.
 
 Le référent tape son code : il est référent, les classes d'exemple sont là,
 il trouve dans sa console le code élève et le code professeur à distribuer

@@ -20,6 +20,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { rpcClasses } from './faux-classes.js';
+import { demanderDemoFaux } from './faux-etablissement.js';
 import { rpcCercle } from './faux-cercle.js';
 import { contexteRevision, journalFaux } from './faux-journal.js';
 
@@ -161,8 +162,9 @@ function syncDeckCards(store, body, user) {
 
 function rest(store, req, url, path, body) {
   const user = userOf(store, req);
-  if (!user) return [401, { message: 'JWT expired' }];
   const name = path.replace('/rest/v1/', '');
+  if (name === 'rpc/demander_demo') return [200, demanderDemoFaux(store, body || {})];   // ouverte à anon, comme la vraie
+  if (!user) return [401, { message: 'JWT expired' }];
   const prefer = req.headers().prefer || '';
   if (name === 'rpc/sync_deck_cards') return syncDeckCards(store, body, user);
   if (name === 'rpc/journal') return journalFaux(store, body || {}, user);
