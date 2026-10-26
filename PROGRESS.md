@@ -19,7 +19,13 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-25 (soir) · « Ma classe » rendue à tout compte personnel (onglet
+DERNIER   2026-10-26 · EN COURS : parcours B2B/B2C. Appliqué en base : licences et
+          codes d'établissement (20261025233000, etablissement.sql 40/40), règles pures
+          src/etablissement.js. L'utilisateur a demandé ensuite « un seul code » (l'élève
+          choisit sa classe, plus de validation une par une), suivi commercial, démo en
+          trois formes, consoles admin et référent refaites (PC) : migration v2 écrite,
+          en attente de sa confirmation ; pas de Stripe (Capacitor, achats Apple/Google).
+          Avant : 2026-10-25 (soir) · « Ma classe » rendue à tout compte personnel (onglet
           au téléphone, entrée sur PC : c'est là qu'on tape le code du professeur ;
           la refonte du cercle l'avait réservée à qui avait déjà une classe —
           e2e classe-eleve, échoue sur l'ancien code). L'icône installée sur

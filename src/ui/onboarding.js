@@ -14,7 +14,7 @@ import {
   setQuiz, setRef, setReorder, setReportOn, setReportWhy, setSchool,
   setSel, setSendMsg, setSendTo, setShared, setStats, setStudy, setSubjEdit,
   setTour, setTourPoll, setTourSave, setTrash, setUndos, setVers, setView,
-  eleveNeuf, profNeuf, study, tour, tourPoll, tourSave, view
+  admNeuf, eleveNeuf, profNeuf, refNeuf, study, tour, tourPoll, tourSave, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { dec, fsrsMigrate } from './carte-media.js';
@@ -85,11 +85,8 @@ export function resetSession() {
   setMyRole('eleve'); setIAmMod(false);
   setSchool(null); setCompte(null); setMates2(null);
   setProf(profNeuf()); setEleve(eleveNeuf());
-  setAdm({ orgs: null, etat: null, tab: 'orgs' });
-  setRef({ tab: 'etab', board: null, err: 0,
-          gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
-          classes: null, open: null, team: null,
-          who: null, service: null, form: null, trace: null });
+  setAdm(admNeuf());
+  setRef(refNeuf());
   setMods({ list: null, err: 0, seen: 0 });
   setAccounts(null); setAccOpen(null);
   setReportOn(null); setReportWhy('');

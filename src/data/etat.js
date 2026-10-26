@@ -264,7 +264,9 @@ export let accounts = null, accOpen = null;
 
    Pas de coloration, pas d'animation, deux tableaux : c'est un écran qu'on
    ouvre pour décider, pas pour s'y attarder. */
-export let adm = { orgs: null, etat: null, tab: 'orgs' };
+// `form` : la feuille « Nouvel établissement » ou « Licence » ; `cree` : le code référent à transmettre
+export const admNeuf = () => ({ orgs: null, etat: null, tab: 'orgs', form: null, cree: null });
+export let adm = admNeuf();
 
 /* ══════════ rôles, classes, devoirs ══════════
    Trois métiers dans la même app, et trois écrans différents. L'élève
@@ -303,7 +305,10 @@ export let compte = null;                  // { gere, nom, identifiant } | null
 export const eleveNeuf = () => ({
   classes: null, devoirs: null, err: 0,
   code: '', apercu: null, prenom: '', nom: '', reponse: null, envoi: false,
-  fiches: {}                   // eleve_classe() par classe : la page d'une classe (2026-10-25)
+  fiches: {},                  // eleve_classe() par classe : la page d'une classe (2026-10-25)
+  demandeEtab: null,           // sa demande à un établissement, en attente (ma_demande_etab)
+  // la feuille « J'ai un code » (ui/code-entree.js) : le code tapé, la réponse de la base, le formulaire
+  entree: { code: '', fiche: null, reponse: null, envoi: false, prenom: '', nom: '', classe: '' }
 });
 export let eleve = eleveNeuf();
 
@@ -325,10 +330,13 @@ export let mates2 = null;                  // ses camarades de classe
    Trois onglets, parce qu'il n'y a que trois questions : l'établissement
    (où en est-on ?), les comptes (qui, et comment le corriger ?), les
    classes (qui est où, et qui y enseigne ?). */
-export let ref = { tab: 'etab', board: null, err: 0,
+export const refNeuf = () => ({ tab: 'etab', board: null, err: 0,
             gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
             classes: null, open: null, team: null,
-            who: null, service: null, form: null, trace: null };
+            who: null, service: null, form: null, trace: null,
+            // licence, codes et demandes (migration 20261025233000) ; la classe choisie par demande
+            codes: null, demandes: null, qr: '', choix: {} });
+export let ref = refNeuf();
 
 /* ══════════ l'espace professeur ══════════
    Une fabrique plutôt qu'un objet : la déconnexion repart de la même forme
