@@ -4,6 +4,7 @@ import { render } from '../ui/bibliotheque.js';
 import { toast } from '../ui/import-cartes.js';
 import { api } from './coeur-sync.js';
 import { messageErreur } from './eleve-classes.js';
+import { nonLus } from '../facture.js';
 
 /* ══════════ la console du référent : ce qui part et ce qui revient ══════════
    Chargé avec la console (ui/ref-console.js, à la demande). Tout passe par
@@ -127,3 +128,41 @@ export async function refCreerCartes(cid, eleves) {
   try { return await rpc('prof_creer_eleves', { cid, eleves, forcer: false }) || []; }
   catch (e) { toast(I.x, messageErreur(e).slice(0, 120) || 'Impossible pour l’instant'); return null; }
 }
+
+/* ══════════ la licence (20261026130000) ══════════
+   Le tableau d'un coup (licence_tableau : places, prix, coordonnées de
+   facturation, factures, échanges) ; une pièce entière à part (facture),
+   quand on l'ouvre. Ouvrir le tableau, c'est avoir lu les réponses de Folio. */
+export async function refLicencePull() {
+  await lire('licence', 'licence_tableau', {}, false);
+  repeint();
+  if (online && ref.licence && nonLus(ref.licence.echanges, 'etab')) {
+    try { await rpc('echanges_lus', {}); }
+    catch (e) { /* lu ou non, le fil reste le même : on réessaiera à la prochaine ouverture */ }
+  }
+}
+
+export async function refFacturePull(fid) {
+  ref.facture = null;
+  try { ref.facture = await rpc('facture', { fid }); } catch (e) { ref.facture = false; }
+  repeint();
+}
+
+async function agirLicence(nom, args, bon) {
+  const r = await refAgir(nom, args, bon);
+  if (r) await Promise.allSettled([refLicencePull(), refCodesPull()]);
+  return r;
+}
+
+export const refFacturation = fiche => agirLicence('facturation_enregistrer', { fiche }, 'Coordonnées enregistrées');
+export const refEcrire = (sujet, message) => agirLicence('ref_ecrire', { sujet, message }, 'Envoyé à Folio');
+
+/* Sortir quelqu'un de l'établissement : sa place se libère (ref_retirer). */
+export const refRetirer = cible => agirLicence('ref_retirer', { cible }, 'Retiré : sa place est libre');
+
+/* Ouvrir le compte d'un professeur arrivé en cours d'année : il prend une
+   place. Le mot de passe provisoire n'est gardé nulle part : il s'affiche
+   une fois, pour être donné à l'intéressé. */
+export const refAjouterProf = (adresse, nom, pw) =>
+  agirLicence('ref_new_account', { adresse, nom, pseudo: '', qrole: 'prof', cid: null, pw }, null);
+

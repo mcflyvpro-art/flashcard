@@ -7,6 +7,7 @@ import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerCompte } from './faux-cercle.js';
 import { modele } from './faux-classes.js';
 import { etab, semerEtablissement } from './faux-etablissement.js';
+import { fonctionsFacturation } from '../src/base-locale/facturation.js';
 
 /* Un lycée en démo : le référent, une élève dans sa classe, un élève qui
    n'en a pas encore, un professeur. */
@@ -148,6 +149,110 @@ test.describe('sur ordinateur', () => {
 
     await page.getByRole('button', { name: 'Terminé' }).click();
     await expect(page.locator('.rf-code')).toHaveCount(2);
+  });
+});
+
+test.describe('la licence, sur ordinateur', () => {
+  test.use({ viewport: { width: 1360, height: 900 } });
+
+  /* Quatre places : Léa, Tom et Marc en prennent trois (le référent, aucune).
+     Une facture déjà émise par l'éditeur, par la base locale elle-même. */
+  function licence(store) {
+    const l = lycee(store), m = modele(store), et = etab(store);
+    Object.assign(l.org, { offre: 'etablissement', places: 4 });
+    l.org.suivi.prix_euros = 300;
+    l.org.facturation = { nom: 'Lycée Camus', adresse: '51 avenue Kennedy', code_postal: '30000', ville: 'Nîmes', siret: '',
+      service: '', engagement: 'BC-118', email: '' };
+    const editeur = semerCompte(store, 'editeur@folio.fr'); m.roles[editeur] = 'admin';
+    const f = fonctionsFacturation(store, et, m, editeur);
+    f.admin_vendeur_enregistrer({ fiche: { raison_sociale: 'Folio', forme: 'EI', adresse: '1 rue des Livres', code_postal: '30000',
+      ville: 'Nîmes', siret: '91234567800011', regime_tva: 'franchise', delai_jours: '30' } });
+    const piece = f.admin_facturer({ org: l.org.id, lignes: [{ libelle: 'Licence Folio — 4 places', quantite: 1, prix_ht: 30000 }] });
+    return { ...l, piece };
+  }
+
+  test('places, prix, facture imprimable à son adresse, coordonnées, échange, documents', async ({ page }) => {
+    const store = nouveauStore();
+    const { org, piece } = licence(store);
+    await brancher(page, store);
+    await entrerReferent(page);
+    await page.locator('#rail [data-r="ref:licence"]').click();
+    await expect(page).toHaveURL(/\/referent\/licence$/);
+    const places = page.locator('.rf-places');
+    await expect(places.locator('.rf-kc', { hasText: 'places' })).toContainText('4');
+    await expect(places.locator('.rf-kc', { hasText: 'professeurs' })).toContainText('1');   // un professeur prend une place
+    await expect(places.locator('.rf-kc', { hasText: 'libres' })).toContainText('1');
+    await expect(places).toContainText('300,00');
+
+    // une facture : à son adresse, imprimable, avec ses mentions ; rafraîchir la garde
+    await page.locator('.rf-piece').first().click();
+    await expect(page).toHaveURL(new RegExp(`/referent/licence/factures/${piece.id}$`));
+    const feuille = page.locator('.fa-feuille');
+    await expect(feuille).toContainText(piece.numero);
+    await expect(feuille).toContainText('TVA non applicable, art. 293 B du CGI');
+    await expect(feuille).toContainText('Bon de commande BC-118');
+    await expect(feuille).toContainText('40 €');
+    await page.reload();
+    await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
+    await expect(page.locator('.fa-feuille')).toContainText(piece.numero);
+    await page.locator('[data-rf="lic-retour"]').click();
+
+    // les coordonnées de facturation : un SIRET faux est signalé avant l'envoi
+    await page.locator('#rff-siret').fill('19300001500013');
+    await page.locator('#rffact').getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page.locator('.toast')).toContainText('SIRET');
+    await page.locator('#rff-siret').fill('193 012 345 00016');
+    await page.locator('#rff-service').fill('FOLIO');
+    await page.locator('#rffact').getByRole('button', { name: 'Enregistrer' }).click();
+    await expect.poll(() => org.facturation.siret).toBe('19301234500016');
+
+    // demander des places : le sujet est déjà choisi
+    await page.locator('[data-rf="lic-demander"][data-id="places"]').click();
+    await expect(page.locator('#rfesujet')).toHaveValue('places');
+    await page.locator('#rfemsg').fill('Il nous faut dix places de plus.');
+    await page.locator('#rfecrire').getByRole('button', { name: 'Envoyer' }).click();
+    await expect(page.locator('.rf-msg.moi')).toContainText('dix places');
+    expect(store.et.echanges[0]).toMatchObject({ de: 'etab', sujet: 'places' });
+
+    await page.locator('[data-rf="lic-doc"][data-id="dpa"]').click();
+    await expect(page.locator('.dc-doc')).toContainText('article 28');
+    await expect(page.locator('.dc-doc')).toContainText('Supabase');
+  });
+
+  test('un professeur ajouté prend la dernière place ; retiré, il la rend', async ({ page }) => {
+    const store = nouveauStore();
+    const { org } = licence(store);
+    await brancher(page, store);
+    await entrerReferent(page);
+    await page.locator('#rail [data-r="ref:profs"]').click();
+    await page.locator('[data-rf="nouveau-prof"]').click();
+    await expect(page.locator('#rfppw')).toHaveValue(/^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+    await page.locator('#rfpprenom').fill('anne');
+    await page.locator('#rfpnom').fill('leroy');
+    await page.locator('#rfpmail').fill('anne.leroy@lycee.fr');
+    await page.getByRole('button', { name: 'Ouvrir le compte' }).click();
+    await expect(page.locator('.rf-mdp')).toContainText('anne.leroy@lycee.fr');
+    const anne = store.users.find(u => u.email === 'anne.leroy@lycee.fr').id;
+    expect(store.et.membres[anne]).toBe(org.id);
+    expect(modele(store).noms[anne]).toBe('Anne LEROY');
+
+    // la licence est pleine : un autre ne passe pas
+    await page.locator('[data-rf="nouveau-prof"]').last().click();
+    await page.locator('#rfpprenom').fill('Paul');
+    await page.locator('#rfpnom').fill('Martin');
+    await page.locator('#rfpmail').fill('paul.martin@lycee.fr');
+    await page.getByRole('button', { name: 'Ouvrir le compte' }).click();
+    await expect(page.locator('.toast')).toContainText('Toutes les places');
+
+    // retirer Anne : deux appuis, sa place se libère, son compte reste
+    await page.locator('.rf-liste .rf-ligne', { hasText: 'Anne LEROY' }).click();
+    const retirer = page.locator('[data-rf="retirer"]');
+    await retirer.click();
+    await expect(retirer).toContainText('Sûr ?');
+    await retirer.click();
+    await expect.poll(() => store.et.membres[anne]).toBeUndefined();
+    expect(store.users.some(u => u.id === anne)).toBe(true);
+    await expect(page.locator('.rf-liste .rf-ligne', { hasText: 'Anne LEROY' })).toHaveCount(0);
   });
 });
 

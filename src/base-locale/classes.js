@@ -9,7 +9,7 @@
 // `avancement_devoir`, dans les révisions envoyées par l'app (cartes
 // « a:<devoir>:<rang> »).
 import { uuid as randomUUID } from './uuid.js';
-import { etab, fonctionsEtab } from './etablissement.js';
+import { etab, fonctionsEtab, placesLibres } from './etablissement.js';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const ANNEE = '2026-2027';
@@ -203,9 +203,13 @@ function rejoindre(store, m, b, uid) {
 
 /* Un compte à carte : identifiant « prenom.nom », mot de passe = code. */
 function creerEleves(store, m, b) {
-  const c = classeDe(m, b.cid);
+  const c = classeDe(m, b.cid), o = c.org && etab(store).orgs.find(x => x.id === c.org);
+  // les cartes s'arrêtent au plafond de la licence (20261026130000)
+  let libres = o ? placesLibres(etab(store), m, o) ?? Infinity : Infinity;
   return (b.eleves || []).map((e, i) => {
     if (!nomValide(e.prenom) || !nomValide(e.nom)) return { rang: i + 1, statut: 'invalide', user_id: null, nom: '', identifiant: null, code: null };
+    if (libres <= 0) return { rang: i + 1, statut: 'complet', user_id: null, nom: nomPropre(e.prenom, e.nom), identifiant: null, code: null };
+    libres--;
     const nom = nomPropre(e.prenom, e.nom);
     const base = sansAccent(`${e.prenom}.${e.nom}`).toLowerCase().replace(/[^a-z.]/g, '');
     let identifiant = base, k = 2;

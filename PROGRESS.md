@@ -18,12 +18,17 @@
 ```
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
-FAIT      45 / 148
-DERNIER   2026-10-26 · Les codes élèves et professeurs se renouvellent seuls, chaque
-          semaine par défaut (20261026110000 : rythme au choix du référent, tâche
-          pg_cron renouveler-codes-quotidien, trace au journal) ; la console dit
-          « Nouveau code le … » — etablissement.sql 72/72, e2e/referent.e2e.js 4/4.
-          Suite : licence et factures du référent.
+FAIT      46 / 148
+DERNIER   2026-10-26 · La licence du référent (20261026130000) : une place par élève
+          et par professeur (M14.T4), « Ajouter un professeur », « Retirer de
+          l'établissement » qui libère la place ; un onglet Licence (places, prix,
+          factures et avoirs à leur adresse, imprimables, coordonnées Chorus Pro,
+          échanges avec Folio, CGV, contrat de sous-traitance, fiche registre) ;
+          l'éditeur facture (numérotation sans trou, factures inaltérables, avoirs,
+          onglet Entreprise) — licence.sql 50/50, etablissement.sql 72/72,
+          test/facture.test.js 19/19, e2e referent 6/6 et editeur 5/5. Corrigé :
+          « 2 élèves en retard » ouvrait un filtre vide (élèves jamais connectés).
+          Avant : codes renouvelés seuls chaque semaine (20261026110000).
           Avant : une adresse par écran et par espace (src/routes.js, ui/routeur.js) :
           /eleve, /prof, /referent, /admin, /demo/<rôle> ; rafraîchir garde l'écran, le
           retour du navigateur revient à l'écran d'avant, une adresse ouverte sans session
@@ -255,11 +260,11 @@ But : ne plus jamais deviner pourquoi ça plante.
 
 But de phase : un lycée pilote utilise Folio une année entière sans incident.
 
-## M14 · Modèle multi-établissement [P1] 0/5
+## M14 · Modèle multi-établissement [P1] 1/5
 - [ ] M14.T1 · entité établissement avec code UAI — cible: unicité garantie — preuve: contrainte
 - [ ] M14.T2 · années scolaires et archivage — cible: passage d'année sans perte, 3 années conservées — preuve: test
 - [ ] M14.T3 · cloisonnement strict entre établissements — cible: 0 fuite sur 50 tentatives croisées — preuve: `npm test -- cloisonnement`
-- [ ] M14.T4 · quotas et licences par établissement — cible: dépassement bloqué côté serveur — preuve: test
+- [x] M14.T4 · quotas et licences par établissement — cible: dépassement bloqué côté serveur — preuve: test — `supabase/tests/licence.sql` 50/50 (cas 1-4 : le code, le compte ouvert par le référent et les cartes élève s'arrêtent au plafond ; une place par élève et par professeur), joué sur la base le 2026-10-26
 - [ ] M14.T5 · tableau de bord d'occupation (élèves actifs, cartes, stockage) — preuve: écran
 
 ## M15 · Rôles et permissions [P1] 0/6

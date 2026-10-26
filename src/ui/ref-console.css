@@ -154,6 +154,49 @@ button.rf-ligne:hover{background:var(--surf)}
 .rf-qr.grand{width:min(34vh,320px);height:min(34vh,320px)}
 .rf-projo-a{font-size:18px;font-weight:650;color:var(--ink2)}
 
+/* ---------- la licence (ui/ref-licence.js) ---------- */
+.rf-ltab{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.rf-ltab-g,.rf-ltab-d{display:flex;flex-direction:column;gap:12px;min-width:0}
+.rf-places .rf-chiffres{margin:4px 0 12px}
+.rf-barre.pleine i,.rf-barre.echue i{background:var(--ko)}
+.rf-prix{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;font-size:13px;font-weight:600;color:var(--soft)}
+.rf-prix span{display:inline-flex;align-items:center;gap:6px}
+.rf-prix b{font-size:16px;font-weight:800;color:var(--ink)}
+.rf-prix svg{width:16px;height:16px}
+.rf-du{color:var(--ko)}
+.rf-pieces{display:flex;flex-direction:column}
+.rf-piece{display:flex;align-items:center;gap:12px;width:100%;padding:10px 4px;border-top:1px solid var(--hair);text-align:left}
+.rf-piece:first-child{border-top:0}
+.rf-piece:hover{background:var(--surf)}
+.rf-piece > svg{width:16px;height:16px;flex:none;color:var(--soft)}
+.rf-montant{flex:none;font-weight:750;font-variant-numeric:tabular-nums}
+.rf-etat{flex:none;font-style:normal;padding:3px 9px;border-radius:8px;background:var(--surf2);font-size:11.5px;font-weight:700;color:var(--ink2);white-space:nowrap}
+.rf-etat.payee{background:#E3F0E6;color:var(--ok)}
+.rf-etat.retard{background:#F8E3DF;color:var(--ko)}
+.rf-etat.attente{background:#FBF1DC;color:#7A5A12}
+.rf-fil{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;margin:6px 0 12px;padding-right:2px}
+.rf-msg{max-width:88%;padding:9px 12px;border-radius:14px;background:var(--surf)}
+.rf-msg.moi{align-self:flex-end;background:#EDEBE5}
+.rf-msg.folio{align-self:flex-start;background:var(--card);box-shadow:var(--edge)}
+.rf-msg p{margin:3px 0 0;font-size:13.5px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.rf-msg-t{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;font-size:12px;color:var(--soft)}
+.rf-msg-t b{color:var(--ink);font-weight:700}
+.rf-msg-t em,.rf-msg-t i{font-style:normal}
+.rf-ecrire{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.rf-ecrire select{max-width:100%}
+.rf-grille-f{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
+.rf-ch{display:flex;flex-direction:column;gap:4px;min-width:0}
+.rf-ch span{font-size:12px;font-weight:650;color:var(--soft)}
+.rf-ch-nom,.rf-ch-adresse,.rf-ch-email{grid-column:1 / -1}
+.rf-grille-f > .rf-b{grid-column:1 / -1;justify-self:start}
+.rf-barre-piece{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.rf-barre-piece .rf-b.pri{margin-left:auto}
+.rf-ajouter{align-self:flex-start;margin:0 0 10px}
+.rf-mdp{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 14px;border-radius:12px;background:var(--surf)}
+.rf-mdp b{font:700 16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:1px}
+.rf-retirer[data-arme="1"]{background:#F8E3DF}
+@media (min-width:900px) and (max-width:1180px){.rf-ltab{grid-template-columns:minmax(0,1fr)}}
+
 /* ---------- au téléphone ---------- */
 .rf-tel{display:flex;flex-direction:column;gap:12px;padding-bottom:28px}
 .rf-tel .rf-code-v{font-size:28px}

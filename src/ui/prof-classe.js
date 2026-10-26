@@ -4,7 +4,7 @@ import { I, svg } from '../icones.js';
 import { prof } from '../data/etat.js';
 import { go } from './bibliotheque.js';
 import {
-  FILTRES, TRIS, etatDevoir, etatEleve, filtrerEleves, finTexte,
+  FILTRES, TRIS, correspond, etatDevoir, etatEleve, filtrerEleves, finTexte,
   formatCode, grilleMois, iso, auJour, jourCourt, MOIS, parJour, pc, syntheseClasse, tonReussite, trierEleves
 } from '../classe.js';
 import { esc, plur } from '../core/coeur-sync.js';
@@ -132,7 +132,7 @@ function elevesOnglet(c) {
   if (!r) return chargement();
   if (!r.length) return elevesVide(c);
   const vus = trierEleves(filtrerEleves(r, prof.q, prof.filtre), prof.tri);
-  const n = k => (k === 'tous' ? r.length : r.filter(m => etatEleve(m).k === k).length);
+  const n = k => r.filter(m => correspond(m, k)).length;
   const tous = vus.length && vus.every(m => prof.sel.has(m.user_id));
   return `<div class="pf-tool">
       <label class="pf-search">${svg(I.search)}<input id="pfq" type="search" placeholder="Rechercher un élève"

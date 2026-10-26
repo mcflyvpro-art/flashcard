@@ -187,8 +187,8 @@ const railMailBadge = () => mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0;
 /* Les pages d'un compte de gestion. `pc` : celles qui n'existent que sur
    ordinateur (la console du référent, au téléphone, n'a que ses codes). */
 const PAGES_REF = [['accueil', I.grid, 'Accueil'], ['classes', I.school, 'Classes', 1], ['eleves', I.users, 'Élèves', 1],
-  ['profs', I.user, 'Professeurs', 1], ['journal', I.clock, 'Historique', 1]];
-const PAGES_ADM = [['suivi', I.build, 'Établissements'], ['comptes', I.users, 'Comptes']];
+  ['profs', I.user, 'Professeurs', 1], ['licence', I.money, 'Licence', 1], ['journal', I.clock, 'Historique', 1]];
+const PAGES_ADM = [['suivi', I.build, 'Établissements'], ['comptes', I.users, 'Comptes'], ['entreprise', I.money, 'Entreprise']];
 
 const railCompte = () => String(iAmMod && mods.list ? mods.list.length : '');
 

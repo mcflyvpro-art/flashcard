@@ -22,6 +22,10 @@ describe('chemin — un écran, son adresse', () => {
     expect(chemin({ name: 'ref', sous: 'classes', id: 'k' }, 'ref')).toBe('/referent/classes/k');
     expect(chemin({ name: 'ref', sous: 'profs' }, 'ref')).toBe('/referent/professeurs');
     expect(chemin({ name: 'admin', sous: 'suivi', id: 'o' }, 'admin')).toBe('/admin/etablissements/o');
+    expect(chemin({ name: 'ref', sous: 'licence' }, 'ref')).toBe('/referent/licence');
+    expect(chemin({ name: 'ref', sous: 'licence', id: 'f1' }, 'ref')).toBe('/referent/licence/factures/f1');
+    expect(chemin({ name: 'admin', sous: 'entreprise' }, 'admin')).toBe('/admin/entreprise');
+    expect(chemin({ name: 'admin', sous: 'facture', id: 'f1' }, 'admin')).toBe('/admin/factures/f1');
     expect(chemin({ name: 'settings' }, 'admin')).toBe('/admin/reglages');
   });
   it('un écran d’un autre métier n’a pas d’adresse ici', () => {
@@ -53,6 +57,8 @@ describe('lireChemin — une adresse, son écran', () => {
     expect(lireChemin('/')).toEqual({ racine: true });
     expect(lireChemin('/prof')).toMatchObject({ role: 'prof', name: 'prof' });
     expect(lireChemin('/referent')).toMatchObject({ role: 'ref', name: 'ref', sous: 'accueil' });
+    expect(lireChemin('/referent/licence/factures/f1')).toMatchObject({ role: 'ref', name: 'ref', sous: 'licence', id: 'f1' });
+    expect(lireChemin('/admin/factures/f1')).toMatchObject({ role: 'admin', name: 'admin', sous: 'facture', id: 'f1' });
     expect(lireChemin('/eleve')).toMatchObject({ role: 'eleve', name: 'home' });
     expect(lireChemin('/demo/referent/classes')).toMatchObject({ role: 'ref', demo: true, sous: 'classes' });
     expect(lireChemin('/nimporte/quoi')).toBeNull();

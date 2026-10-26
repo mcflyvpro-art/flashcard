@@ -246,10 +246,23 @@ export const FILTRES = { tous: 'Tous', ko: 'En retard', jamais: 'Jamais connect�
    accent. (`norm` les garde exprès — au quiz, « été » n'est pas « ete ».) */
 const sansAccent = s => norm(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
 
+/* Un filtre retient tous les élèves qui ont ce qu'il dit, pas seulement ceux
+   dont c'est l'état le plus grave : un élève jamais connecté qui a un devoir
+   échu est aussi « en retard ». Sans cela, le tableau de bord annonçait
+   « 2 élèves en retard » et « Voir » ouvrait un filtre vide (2026-10-26) —
+   ils étaient rangés sous « Jamais connectés ». Les nombres de l'accueil
+   (prof_classes) comptent de la même façon. */
+export function correspond(m, filtre) {
+  if (!filtre || filtre === 'tous') return true;
+  if (filtre === 'ko') return (m.retard || 0) > 0;
+  if (filtre === 'jamais') return !!m.jamais;
+  return etatEleve(m).k === filtre;
+}
+
 export function filtrerEleves(l, q, filtre) {
   const v = sansAccent(q || '');
   return (l || []).filter(m => {
-    if (filtre && filtre !== 'tous' && etatEleve(m).k !== filtre) return false;
+    if (!correspond(m, filtre)) return false;
     return !v || sansAccent(m.who || '').includes(v) || sansAccent(m.handle || '').includes(v);
   });
 }

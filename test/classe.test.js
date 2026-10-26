@@ -5,7 +5,7 @@ import process from 'node:process';
 import { afterEach, describe, it, expect } from 'vitest';
 import {
   ALPHABET, CREATION, DUREES, aTraiter, codeComplet, codeDepuisTexte, dansJours, echeance, emailCarte,
-  erreurPlaces, etatDevoir, etatDevoirEleve, etatEleve, etatInscriptions, filtrerEleves, finTexte,
+  correspond, erreurPlaces, etatDevoir, etatDevoirEleve, etatEleve, etatInscriptions, filtrerEleves, finTexte,
   formatCode, grilleMois, iso, jourCourt, jourLong, joursEntre, lienCarte, lienRejoindre,
   lireCarte, lireListeEleves, messageStatut, nomPropre, nomValide, normCode, normIdentifiant, parJour,
   rangerClasses, syntheseAccueil, syntheseClasse, tonReussite, trierEleves
@@ -134,6 +134,13 @@ describe('trier et chercher', () => {
     expect(filtrerEleves(l, '', 'jamais').map(m => m.who)).toEqual(['adam']);
     expect(filtrerEleves(l, '', 'ko').map(m => m.who)).toEqual(['Émile']);
     expect(filtrerEleves(l, '', 'tous')).toHaveLength(4);
+  });
+  it('un élève jamais connecté qui a un devoir échu est aussi « en retard », comme au tableau de bord', () => {
+    const k = [eleve('Absent', { jamais: true, retard: 1, rendus: 0 }), eleve('Lent', { retard: 2, rendus: 1 }), eleve('Sage', { rendus: 3 })];
+    expect(etatEleve(k[0]).k).toBe('jamais');                                  // son état : le plus grave
+    expect(filtrerEleves(k, '', 'ko').map(m => m.who)).toEqual(['Absent', 'Lent']);
+    expect(filtrerEleves(k, '', 'jamais').map(m => m.who)).toEqual(['Absent']);
+    expect(k.filter(m => correspond(m, 'ko'))).toHaveLength(syntheseAccueil([{ retard: 2 }]).retard);
   });
 });
 

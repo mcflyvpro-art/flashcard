@@ -30,7 +30,7 @@ export async function admComptesPull() {
 }
 
 export async function admCharger() {
-  await Promise.allSettled([admOrgsPull(), admEtatPull(), admComptesPull()]);
+  await Promise.allSettled([admOrgsPull(), admEtatPull(), admComptesPull(), admAttentePull(), admVendeurPull()]);
 }
 
 /* Une écriture : le message de la base est montré tel quel (« Un nom de 2 à
@@ -54,3 +54,54 @@ export async function admRole(cible, nouveau) {
   if (r) await admComptesPull();
   return r;
 }
+
+/* ══════════ la facturation (20261026130000) ══════════
+   L'identité du vendeur (une seule ligne, l'éditeur), la licence d'un
+   établissement (le même tableau que voit son référent), ses pièces. Les
+   montants se calculent en base ; une facture émise ne bouge plus. */
+export async function admVendeurPull() {
+  try { adm.vendeur = await rpc('admin_vendeur') || {}; } catch (e) { adm.vendeur = {}; adm.err = 1; }
+  repeint();
+}
+
+export async function admAttentePull() {
+  try { adm.attente = Object.fromEntries((await rpc('admin_echanges_attente') || []).map(x => [x.org_id, x.n])); }
+  catch (e) { adm.attente = {}; }
+  repeint();
+}
+
+export async function admLicencePull(org) {
+  adm.licence = null;
+  try { adm.licence = { ...(await rpc('licence_tableau', { org })), org_id: org }; } catch (e) { adm.licence = false; }
+  repeint();
+  if (online && adm.attente[org]) {
+    try { await rpc('echanges_lus', { org }); delete adm.attente[org]; repeint(); }
+    catch (e) { /* le message reste marqué « à lire » : on réessaiera à la prochaine ouverture */ }
+  }
+}
+
+export async function admFacturePull(fid) {
+  adm.facture = null;
+  try { adm.facture = await rpc('facture', { fid }); } catch (e) { adm.facture = false; }
+  repeint();
+}
+
+async function agirFacture(nom, args, bon, org) {
+  const r = await admAgir(nom, args, bon);
+  if (r && org) await admLicencePull(org);
+  return r;
+}
+
+export const admVendeur = fiche => admAgir('admin_vendeur_enregistrer', { fiche }, 'Entreprise enregistrée').then(r => {
+  if (r) admVendeurPull();
+  return r;
+});
+export const admFacturer = (org, lignes, debut, fin, objet) =>
+  agirFacture('admin_facturer', { org, lignes, debut: debut || null, fin: fin || null, objet: objet || '' }, 'Facture émise', org);
+export const admAvoir = (org, fid, motif) => agirFacture('admin_avoir', { fid, motif: motif || '' }, 'Avoir émis', org);
+export const admDates = (org, fid, deposee, payee) =>
+  agirFacture('admin_facture_dates', { fid, deposee: deposee || null, payee: payee || null }, 'Enregistré', org);
+export const admRepondre = (org, message, sujet) => agirFacture('admin_repondre', { org, message, sujet }, 'Réponse envoyée', org);
+export const admFacturationClient = (org, fiche) =>
+  agirFacture('facturation_enregistrer', { fiche, org }, 'Coordonnées enregistrées', org);
+

@@ -93,7 +93,7 @@ test.describe('sur ordinateur', () => {
     await expect(page).toHaveURL(/\/referent$/);
 
     // sa barre ne porte que ses pages : ni livres, ni courrier, ni cercle
-    await expect(page.locator('#rail nav button')).toHaveText(['Accueil', 'Classes', 'Élèves', 'Professeurs', 'Historique', 'Réglages']);
+    await expect(page.locator('#rail nav button')).toHaveText(['Accueil', 'Classes', 'Élèves', 'Professeurs', 'Licence', 'Historique', 'Réglages']);
     await page.locator('#rail [data-r="ref:classes"]').click();
     await expect(page).toHaveURL(/\/referent\/classes$/);
     await page.reload();

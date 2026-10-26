@@ -70,12 +70,15 @@ export const ROUTES = [
   R('ref', 'eleves', { sous: 'eleves', espaces: REF }),
   R('ref', 'professeurs', { sous: 'profs', espaces: REF }),
   R('ref', 'licence', { sous: 'licence', espaces: REF }),
+  R('ref', 'licence/factures/:id', { sous: 'licence', espaces: REF }),
   R('ref', 'historique', { sous: 'journal', espaces: REF }),
   R('ref', 'cartes', { sous: 'cartes', espaces: REF }),
   R('admin', '', { sous: 'suivi', espaces: ADMIN }),
   R('admin', 'etablissements/:id', { sous: 'suivi', espaces: ADMIN }),
   R('admin', 'comptes', { sous: 'comptes', espaces: ADMIN }),
-  R('admin', 'comptes/:id', { sous: 'comptes', espaces: ADMIN })
+  R('admin', 'comptes/:id', { sous: 'comptes', espaces: ADMIN }),
+  R('admin', 'entreprise', { sous: 'entreprise', espaces: ADMIN }),
+  R('admin', 'factures/:id', { sous: 'facture', espaces: ADMIN })
 ];
 
 /* L'écran d'arrivée d'un espace, quand l'adresse n'en dit pas plus. */
