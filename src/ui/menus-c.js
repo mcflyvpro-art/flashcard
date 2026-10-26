@@ -4,7 +4,7 @@ import { SITE } from '../adresse.js';
 import {
   auth, cardEdit, db, dirty, duels, fnr, friends, gone,
   leaving, mailOpen, mailbox, mateOpen, mateProf, mates,
-  menu, prefs, previewOf, quiz, recKey, recorder, ref, reportOn, sel, sendTo,
+  menu, prefs, previewOf, quiz, recKey, recorder, reportOn, sel, sendTo,
   setAnimate, setDeckOpen, setDeckQ, setLeaving,
   setPendingGrade, setQuiz, setRecKey, setReorder, setReportWhy, setSel, setSendMsg,
   setSendTo, setSplitSize, setStudy, setSubjColor, splitSize, study, demo, subjColor,
@@ -17,9 +17,8 @@ import {
 import { upload } from '../core/carte-media.js';
 import { openReport } from './classement.js';
 import {
-  blockUser, refDo, refPeople, sendReport, setRole, unblockUser
+  blockUser, sendReport, setRole, unblockUser
 } from '../core/classement.js';
-import { lireClass, lireNew } from './classement.js';
 import { trouverParNom } from '../matieres.js';
 import {
   deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
@@ -32,7 +31,6 @@ import { ouvrirDefi } from './defi-nouveau.js';
 import {
   cloneDeck, fnrApply, mergeDecks, savePrefs, splitDeck, spreadBacklog, toast
 } from './import-cartes.js';
-import { feuilleTap } from './interactions.js';
 import { closeMenu, mountMenu, openMenu, paintMenu, vientDOuvrir } from './menus-a.js';
 import { changePassword, deleteAccount, mateProfPull } from '../core/menus-c.js';
 import { copyLink, doPrompt, logout, startTour } from './onboarding.js';
@@ -158,64 +156,6 @@ function clickMateReportBlock(a) {
     { pseudo: f.handle, nom: f.name });
 }
 
-
-/* ---- écritures du référent ---- */
-function clickRefsave() {
-  if (!ref.who) return;
-  const v = id => ((document.getElementById(id) || {}).value || '').trim();
-  return refDo('ref_update_account',
-    { cible: ref.who.id, nom: v('fnom'), pseudo: v('fpse'), adresse: v('fmel') },
-    'Identité enregistrée').then(() => { closeMenu(); render(); });
-}
-
-function clickRefpw() {
-  if (!ref.who) return;
-  const pw = ((document.getElementById('fpw') || {}).value || '').trim();
-  if (pw.length < 10) return toast(I.x, 'Au moins dix caractères');
-  return refDo('ref_set_password', { cible: ref.who.id, pw },
-    'Mot de passe refait · ' + pw).then(() => { ref.form = {}; paintMenu(); });
-}
-
-function clickRefclssave() {
-  const f = lireClass();
-  /* Le cycle ne se modifie pas ici — il n'y a pas de champ pour lui — mais
-     `ref_save_class` réécrit toute la ligne : le lui taire l'effacerait. */
-  const c = (ref.classes || []).find(x => x.id === ref.open) || {};
-  return refDo('ref_save_class',
-    { cid: ref.open, nom: f.nom, niveau: f.niv, cycle: c.cycle || '', filiere: f.fil,
-      prevu: f.pre ? +f.pre : null }, 'Classe enregistrée')
-    .then(() => { closeMenu(); render(); });
-}
-
-function clickRefclsdel() {
-  return refDo('ref_delete_class', { cid: ref.open }, 'Classe supprimée')
-    .then(r => { if (r !== null) { closeMenu(); render(); } });
-}
-
-function clickRefclsgens() {
-  ref.cls = ref.open; ref.tab = 'gens'; ref.role = ''; ref.q = '';
-  refPeople(true); closeMenu(); setAnimate(false); return render();
-}
-
-function clickRefdonew() {
-  const f = { ...(ref.form || {}), ...lireNew() };
-  ref.form = f;
-  if ((f.pw || '').length < 10) return toast(I.x, 'Au moins dix caractères');
-  return refDo('ref_new_account',
-    { adresse: f.mel || '', nom: f.nom || '', pseudo: f.pse || '',
-      qrole: f.role || 'eleve', cid: (f.role || 'eleve') === 'eleve' ? (f.cls || null) : null,
-      pw: f.pw || '' }, 'Compte ouvert · ' + (f.mel || ''))
-    .then(r => { if (r) { ref.form = {}; closeMenu(); render(); } });
-}
-
-function clickRefdonewclass() {
-  const f = { ...(ref.form || {}), ...lireClass() };
-  ref.form = f;
-  return refDo('ref_save_class',
-    { cid: null, nom: f.nom || '', niveau: f.niv || '', cycle: f.cyc || '',
-      filiere: f.fil || '', prevu: f.pre ? +f.pre : null }, 'Classe créée')
-    .then(r => { if (r) { ref.form = {}; closeMenu(); render(); } });
-}
 
 const clickInstcopy = () => copyLink();
 const clickInstgo = () => doPrompt();
@@ -569,13 +509,6 @@ const CLICK_RULES = [
   [a => a === 'rblock', clickRblock],
   [a => a === 'mailreport' || a === 'mailblock', clickMailReportBlock],
   [a => a === 'matereport' || a === 'mateblock', clickMateReportBlock],
-  [a => a === 'refsave', clickRefsave],
-  [a => a === 'refpw', clickRefpw],
-  [a => a === 'refclssave', clickRefclssave],
-  [a => a === 'refclsdel', clickRefclsdel],
-  [a => a === 'refclsgens', clickRefclsgens],
-  [a => a === 'refdonew', clickRefdonew],
-  [a => a === 'refdonewclass', clickRefdonewclass],
   [a => a === 'instcopy', clickInstcopy],
   [a => a === 'instgo', clickInstgo],
   [a => a === 'instlater', clickClose],
@@ -640,7 +573,6 @@ const CLICK_RULES = [
 document.addEventListener('click', async e => {
   const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock],[data-setrole]');
   if (!b) return;
-  if (feuilleTap(b)) return;
   const a = b.dataset.mact;
   const d = deck(view.id);
   for (const [test, run] of CLICK_RULES) {

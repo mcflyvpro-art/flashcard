@@ -152,6 +152,121 @@ function monEcole(et, m, uid) {
     role: m.roles[uid] || 'eleve' }];
 }
 
+/* ---------- la console du référent ----------
+   Les services (qui enseigne quoi, où) vivent dans `et.services` ; le
+   journal dans la table `ref_audit`, que l'app lit en REST. */
+const erreur = m => { throw new Error(m); };
+const estEleve = (m, u) => (m.roles[u] || 'eleve') === 'eleve';
+const membresOrg = (et, o) => Object.keys(et.membres).filter(u => et.membres[u] === o.id);
+const effectif = (m, cid) => m.membres.filter(x => x.cid === cid).length;
+
+function tracer(store, cible, acte, detail) {
+  (store.tables.ref_audit = store.tables.ref_audit || [])
+    .unshift({ acte, cible, detail: detail || {}, created_at: new Date().toISOString() });
+}
+
+function referent(et, m, uid) {
+  const o = orgDe(et, uid);
+  if (!o || m.roles[uid] !== 'ref') erreur('Réservé au référent de l’établissement');
+  return o;
+}
+
+function personne(store, et, m, o, u) {
+  const h = homeDe(m, o.id, u), user = store.users.find(x => x.id === u) || {};
+  const sv = (et.services || []).find(x => x.prof === u);
+  return { id: u, email: user.email, handle: null, name: m.noms[u] || user.email, role: m.roles[u] || 'eleve',
+    classe: h ? h.name : null, class_id: h ? h.id : null, matiere: sv ? sv.matiere : null,
+    derniere: m.membres.find(x => x.uid === u && x.vu)?.vu || null, jamais: !m.membres.some(x => x.uid === u && x.vu),
+    carte: !!m.comptes[u] };
+}
+
+function personnes(store, et, m, uid, b) {
+  const o = referent(et, m, uid), q = String(b.q || '').toLowerCase();
+  const l = membresOrg(et, o).map(u => personne(store, et, m, o, u))
+    .filter(g => !b.qrole || g.role === b.qrole)
+    .filter(g => !b.qclass || m.membres.some(x => x.uid === g.id && x.cid === b.qclass))
+    .filter(g => !b.sans_classe || (g.role === 'eleve' && !g.class_id))
+    .filter(g => !q || (g.name || '').toLowerCase().includes(q) || (g.email || '').includes(q))
+    .sort((a, c) => a.role.localeCompare(c.role) || a.name.localeCompare(c.name));
+  return l.slice(b.off || 0, (b.off || 0) + (b.lim || 60)).map(g => ({ ...g, total: l.length }));
+}
+
+function tableau(et, m, uid) {
+  const o = referent(et, m, uid), gens = membresOrg(et, o), cl = classesOrg(m, o), sv = (et.services || []);
+  const eleves = gens.filter(u => estEleve(m, u));
+  return [{ org_id: o.id, org: o.nom, kind: o.kind, ville: o.ville, uai: o.uai, classes: cl.length, eleves: eleves.length,
+    profs: gens.filter(u => m.roles[u] === 'prof').length, refs: gens.filter(u => m.roles[u] === 'ref').length,
+    services: sv.filter(x => cl.some(c => c.id === x.cid)).length, devoirs: 0,
+    actifs7: gens.filter(u => m.membres.some(x => x.uid === u && x.vu)).length,
+    jamais_venus: gens.filter(u => u !== uid && !m.membres.some(x => x.uid === u && x.vu)).length,
+    sans_classe: eleves.filter(u => !homeDe(m, o.id, u)).length,
+    classes_vides: cl.filter(c => !effectif(m, c.id)).length,
+    sans_pp: cl.filter(c => !sv.some(x => x.cid === c.id && x.pp)).length }];
+}
+
+function classesRef(et, m, uid) {
+  const o = referent(et, m, uid), sv = et.services || [];
+  return m.classes.filter(c => c.org === o.id && !c.archivee).map(c => {
+    const pp = sv.find(x => x.cid === c.id && x.pp);
+    return { id: c.id, name: c.name, niveau: c.niveau || '', cycle: c.cycle || '', filiere: '', code: c.code, annee: '2026-2027',
+      effectif: effectif(m, c.id), prevu: null, profs: sv.filter(x => x.cid === c.id).length, pp: pp ? m.noms[pp.prof] : null,
+      devoirs: 0, actifs7: 0, genre: c.genre || 'classe' };
+  });
+}
+
+function fonctionsRef(store, et, m, uid) {
+  const sv = () => (et.services = et.services || []);
+  const classe = cid => { const o = referent(et, m, uid), c = m.classes.find(x => x.id === cid && x.org === o.id);
+    return c || erreur('Classe introuvable'); };
+  return {
+    ref_codes: () => { const o = referent(et, m, uid), gens = membresOrg(et, o);
+      return { eleve: o.codes.eleve, prof: o.codes.prof, offre: o.offre, places: o.places, licence_fin: o.fin,
+        eleves: gens.filter(u => estEleve(m, u)).length, profs: gens.filter(u => m.roles[u] === 'prof').length }; },
+    ref_nouveau_code: b => { const o = referent(et, m, uid); o.codes[b.quel] = tire(); tracer(store, null, 'code changé', { role: b.quel });
+      return o.codes[b.quel]; },
+    ref_dashboard: () => tableau(et, m, uid),
+    ref_classes: () => classesRef(et, m, uid),
+    ref_personnes: b => personnes(store, et, m, uid, b),
+    ref_class_team: b => { classe(b.cid);
+      return sv().filter(x => x.cid === b.cid).map(x => ({ teaching_id: x.id, teacher: x.prof, nom: m.noms[x.prof], matiere: x.matiere,
+        principal: x.pp })); },
+    ref_service: b => { referent(et, m, uid);
+      return sv().filter(x => x.prof === b.uid).map(x => { const c = m.classes.find(k => k.id === x.cid);
+        return { teaching_id: x.id, class_id: x.cid, classe: c.name, niveau: c.niveau, matiere: x.matiere, principal: x.pp,
+          effectif: effectif(m, x.cid) }; }); },
+    ref_save_class: b => {
+      const o = referent(et, m, uid);
+      if (!String(b.nom || '').trim()) erreur('Donne un nom à la classe');
+      if (b.cid) { const c = classe(b.cid); c.name = b.nom; c.niveau = b.niveau; tracer(store, null, 'classe modifiée', { nom: b.nom }); return c.id; }
+      const c = { id: randomUUID(), name: b.nom, niveau: b.niveau, cycle: b.cycle, matiere: '', code: tire(), owner: uid, ouvert: true,
+        validation: false, places: 40, fin: null, archivee: false, org: o.id, genre: 'classe' };
+      m.classes.push(c); tracer(store, null, 'classe créée', { nom: b.nom });
+      return c.id;
+    },
+    ref_delete_class: b => { const c = classe(b.cid);
+      if (effectif(m, c.id)) erreur(`Cette classe compte encore ${effectif(m, c.id)} élèves. Déplace-les d’abord.`);
+      m.classes = m.classes.filter(x => x.id !== c.id); tracer(store, null, 'classe supprimée', { nom: c.name }); return null; },
+    ref_set_teaching: b => { classe(b.cid);
+      if (b.pp) for (const x of sv()) if (x.cid === b.cid) x.pp = false;
+      let t = sv().find(x => x.cid === b.cid && x.prof === b.prof && x.matiere === b.matiere);
+      if (!t) { t = { id: randomUUID(), cid: b.cid, prof: b.prof, matiere: b.matiere, pp: false }; sv().push(t); }
+      t.pp = !!b.pp; tracer(store, b.prof, 'service', { matiere: b.matiere }); return t.id; },
+    ref_drop_teaching: b => { referent(et, m, uid); et.services = sv().filter(x => x.id !== b.tid); return null; },
+    ref_move_student: b => {
+      const o = referent(et, m, uid), avant = homeDe(m, o.id, b.cible);
+      if (avant) m.membres = m.membres.filter(x => !(x.uid === b.cible && x.cid === avant.id));
+      if (b.vers) { const c = classe(b.vers); m.membres.push({ cid: c.id, uid: b.cible, depuis: new Date().toISOString() }); }
+      tracer(store, b.cible, 'élève déplacé', { avant: avant && avant.name, apres: b.vers && classe(b.vers).name }); return null;
+    },
+    ref_update_account: b => { referent(et, m, uid); const avant = m.noms[b.cible];
+      if (b.nom) m.noms[b.cible] = b.nom;
+      tracer(store, b.cible, 'identité corrigée', { avant: { nom: avant }, apres: { nom: b.nom } }); return null; },
+    ref_set_role: b => { referent(et, m, uid); const avant = m.roles[b.cible] || 'eleve'; m.roles[b.cible] = b.nouveau;
+      tracer(store, b.cible, 'rôle changé', { avant, apres: b.nouveau }); return null; },
+    ref_set_password: b => { referent(et, m, uid); store.users.find(x => x.id === b.cible).password = b.pw; return null; }
+  };
+}
+
 /* La table des fonctions, construite à l'appel (elle lit `store`). */
 export function fonctionsEtab(store, m, uid) {
   const et = etab(store);
@@ -162,6 +277,7 @@ export function fonctionsEtab(store, m, uid) {
     prof_mon_code: b => {
       if (!et.codesProfs[uid] || (b && b.nouveau)) et.codesProfs[uid] = tire();
       return et.codesProfs[uid];
-    }
+    },
+    ...fonctionsRef(store, et, m, uid)
   };
 }

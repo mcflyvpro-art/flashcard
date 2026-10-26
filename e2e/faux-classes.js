@@ -9,7 +9,7 @@
 // `avancement_devoir`, dans les révisions envoyées par l'app (cartes
 // « a:<devoir>:<rang> »).
 import { randomUUID } from 'node:crypto';
-import { fonctionsEtab } from './faux-etablissement.js';
+import { etab, fonctionsEtab } from './faux-etablissement.js';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const ANNEE = '2026-2027';
@@ -137,6 +137,7 @@ function creerEleves(store, m, b) {
     store.users.push({ id, email: `${identifiant}@eleves.folio.invalid`, password: code });
     m.comptes[id] = { identifiant, nom }; m.noms[id] = nom; m.roles[id] = 'eleve';
     m.membres.push({ cid: c.id, uid: id, depuis: new Date().toISOString() });
+    if (c.org) etab(store).membres[id] = c.org;          // un compte à carte d'un établissement en est membre
     return { rang: i + 1, statut: 'cree', user_id: id, nom, identifiant, code };
   });
 }
@@ -301,5 +302,7 @@ export function rpcClasses(store, nom, corps, user) {
   if (!f) return null;
   /* Première requête authentifiée de la journée : l'élève « s'est connecté ». */
   for (const x of m.membres) if (x.uid === user.id && !x.vu) x.vu = new Date().toISOString();
-  return [200, f(corps || {})];
+  /* Une exception de la base revient en 400 avec son message, que l'app
+     montre tel quel (« Cette classe compte encore 28 élèves… »). */
+  try { return [200, f(corps || {})]; } catch (e) { return [400, { code: 'P0001', message: e.message }]; }
 }

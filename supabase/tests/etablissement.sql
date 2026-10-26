@@ -1,4 +1,4 @@
--- Tests de 20261025233000 + 20261026001000 (un seul code) : du prospect au
+-- Tests de 20261025233000 + 20261026001000 (un seul code) + 20261026020000 : du prospect au
 -- client, le code qui fait entrer tout de suite (élève, professeur,
 -- référent, professeur particulier), la classe choisie, les groupes, la
 -- licence. Même mode que jetons.sql : transaction ANNULÉE, comptes
@@ -174,6 +174,27 @@ begin
     j->>'eleve' = ce and (j->>'eleves')::int = 3 and (j->>'profs')::int = 1, j::text);
   select count(*) into n from public.ref_classes() x where x.genre = 'groupe';
   insert into public.zz_res (nom, ok, vu) values ('il voit aussi les groupes des professeurs', n = 1, n::text);
+
+  -- ══════════ la console : une ligne par personne (20261026020000) ══════════
+  select count(*) into n from public.ref_personnes('', 'eleve');
+  insert into public.zz_res (nom, ok, vu) values ('trois élèves, chacun une fois (Emma est aussi dans un groupe)',
+    n = 3 and (select min(x.total) from public.ref_personnes('', 'eleve') x) = 3, n::text);
+  insert into public.zz_res (nom, ok, vu) values ('sa classe est sa classe de rattachement, pas son groupe',
+    (select x.class_id from public.ref_personnes('', 'eleve') x where x.id = emma) = c2, 'c2');
+  select count(*) into n from public.ref_personnes(qclass := g);
+  insert into public.zz_res (nom, ok, vu) values ('filtrer sur un groupe rend ses membres', n = 2, n::text);
+  perform public.ref_move_student(lucas, null);
+  select count(*) into n from public.ref_personnes(sans_classe := true) x where x.id = lucas;
+  insert into public.zz_res (nom, ok, vu) values ('Lucas sorti de sa classe : « sans classe »',
+    n = 1 and (select count(*) from public.ref_personnes(sans_classe := true)) = 1, n::text);
+  perform public.ref_move_student(lucas, c1);
+  select count(*) into n from public.ref_personnes('ines');
+  insert into public.zz_res (nom, ok, vu) values ('chercher sans accent trouve Inès', n = 1, n::text);
+  select count(*) into n from public.ref_personnes('', 'eleve', lim := 1, off := 1);
+  insert into public.zz_res (nom, ok, vu) values ('une page à la fois, le total en plus', n = 1, n::text);
+  perform public.zz_comme(prof);
+  select count(*) into n from public.ref_personnes();
+  insert into public.zz_res (nom, ok, vu) values ('un professeur ne lit pas la liste du référent', n = 0, n::text);
 
   -- ══════════ un professeur particulier : son code ══════════
   perform public.zz_comme(prof);

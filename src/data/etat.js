@@ -326,15 +326,16 @@ export let mates2 = null;                  // ses camarades de classe
    change une en trois clics. Rien n'y est joli, et ce n'est pas un oubli :
    ce qu'on lui demande, c'est que ça marche.
 
-   Trois onglets, parce qu'il n'y a que trois questions : l'établissement
-   (où en est-on ?), les comptes (qui, et comment le corriger ?), les
-   classes (qui est où, et qui y enseigne ?). */
-export const refNeuf = () => ({ tab: 'etab', board: null, err: 0,
-            gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
-            classes: null, open: null, team: null,
-            who: null, service: null, form: null, trace: null,
-            // licence et codes (migration 20261026001000)
-            codes: null, qr: '' });
+   Refaite le 2026-10-26 (ui/ref-console.js, chargée à la demande) : cinq
+   onglets — l'accueil (les deux codes à donner, la licence, ce qui demande
+   une décision), les classes, les élèves, les professeurs, le journal — et,
+   caché derrière un lien discret, les cartes élève. */
+export const refNeuf = () => ({ tab: 'accueil', board: null, err: 0, charge: false,
+            gens: null, total: 0, page: 0, q: '', role: '', cls: null, sans: false, cherche: 0,
+            classes: null, open: null, team: null, profsListe: null,
+            who: null, service: null, trace: null,
+            // licence et codes (migration 20261026001000), projection, cartes élève
+            codes: null, projo: '', cartes: null });
 export let ref = refNeuf();
 
 /* ══════════ l'espace professeur ══════════

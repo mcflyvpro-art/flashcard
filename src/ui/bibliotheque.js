@@ -17,9 +17,8 @@ import { bindPager } from './balayage.js';
 import { entreeEcran, glissiereAvant, glisserOnglet } from './mouvement.js';
 import { sallesPull } from '../core/cercle.js';
 import { STATE, cstate, paintMedia } from './carte-media.js';
-import {
-  adminView, atSchool, isProf, isPupil, modView, refView
-} from './classement.js';
+import { adminView, atSchool, isProf, isPupil, modView } from './classement.js';
+import { refView } from './etablissement.js';
 import { accountsPull, admPull, boardPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { deckView, legalView, loginView, selOff } from './connexion.js';

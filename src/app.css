@@ -2193,43 +2193,13 @@ body{height:100%;overflow-y:auto;overflow-x:hidden;
 .camadd:active,.camo:active{transform:scale(.9)}
 .camw{flex:none;font-size:12px;color:var(--soft)}
 
-/* ══════════ la console du référent d'établissement ══════════
-   Écrit comme un outil de gestion, pas comme une app. Des tableaux denses,
-   des colonnes alignées, la recherche toujours au même endroit, aucune
-   animation — le référent travaille sur un ordinateur, il connaît son
-   métier, et ce qu'il veut c'est voir six cents lignes et en changer une
-   en trois clics. Rien n'est joli ici, et ce n'est pas un oubli. */
+/* ══════════ la console de l'éditeur ══════════
+   Un outil de gestion : des tableaux denses, des colonnes alignées. La
+   console du référent a la sienne depuis le 2026-10-26 (ui/ref-console.css,
+   préfixe rf-, chargée à la demande) ; ne reste ici que ce que lit encore
+   celle de l'éditeur (ui/classement.js, adminView). */
 .dense{padding-bottom:44px}
 .dense .lbl{margin-top:18px}
-
-/* les trois onglets : l'établissement, les comptes, les classes */
-
-.rhead{margin-bottom:14px}
-.rhead b{display:block;font-size:21px;font-weight:800;letter-spacing:-.6px}
-.rhead i{font-style:normal;font-size:13px;color:var(--soft)}
-.kpi.six{grid-template-columns:repeat(2,1fr)}
-
-/* ce qui demande une décision : le chiffre, ce qu'il désigne, et quoi faire */
-.rsous{display:flex;flex-direction:column;gap:7px}
-.rsou{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:baseline;
-  background:var(--card);box-shadow:var(--s1);border-radius:14px;padding:11px 14px}
-.rsou b{font-size:21px;font-weight:800;letter-spacing:-.6px;color:var(--leather)}
-.rsou span{font-size:14px;font-weight:700}
-.rsou i{grid-column:2;font-style:normal;font-size:12px;color:var(--soft)}
-
-/* le journal : qui a changé quoi, et quand */
-.rjour{display:flex;flex-direction:column;gap:5px}
-.rj{display:grid;grid-template-columns:1fr auto;gap:0 12px;font-size:12.5px;
-  background:var(--card);box-shadow:var(--s1);border-radius:11px;padding:8px 12px}
-.rj b{font-weight:700;color:var(--ink)}
-.rj i{grid-column:1;font-style:normal;color:var(--soft);font-size:11.5px}
-.rj span{grid-row:span 2;align-self:center;color:var(--soft);font-size:11.5px;white-space:nowrap}
-
-/* la barre de recherche, toujours à la même place */
-.rbar{display:flex;flex-direction:column;gap:9px;margin-bottom:10px}
-.rcount{font-size:12.5px;color:var(--soft);margin-bottom:9px;display:flex;gap:10px;
-  align-items:baseline;flex-wrap:wrap}
-.rcount b{color:var(--ink);font-weight:800}
 
 /* le tableau. Sur téléphone chaque ligne se replie en fiche ; en large elle
    redevient une vraie ligne, colonnes alignées, en-tête compris. */
@@ -2247,37 +2217,6 @@ body{height:100%;overflow-y:auto;overflow-x:hidden;
 .rl.ref,.rl.admin{background:var(--ink);color:var(--bg)}
 .rl.vide,.rl.jamais{background:color-mix(in srgb,var(--ko) 12%,transparent);color:var(--ko)}
 
-.rpage{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 18px;
-  font-size:12.5px;color:var(--soft)}
-.rpage button{height:34px;padding:0 14px;border-radius:10px;background:var(--surf);
-  font-size:13px;font-weight:700;color:var(--ink2)}
-.rpage button:disabled{opacity:.4}
-
-/* Les formulaires de feuille, les onglets et les listes déroulantes sont
-   définis une seule fois, plus bas, avec la console du professeur. */
-
-@media (min-width:760px){
-  .kpi.six{grid-template-columns:repeat(6,1fr)}
-  .rsou{grid-template-columns:auto auto 1fr;align-items:baseline}
-  .rsou i{grid-column:auto}
-  .rbar{flex-direction:row;align-items:center;gap:14px}
-  .rbar .fld{flex:1;margin:0}
-  .rtable{gap:2px}
-  .rrow{grid-template-columns:minmax(180px,1.4fr) minmax(150px,1.4fr) 110px minmax(120px,1fr) 140px;
-    gap:12px;align-items:center;border-radius:9px;padding:9px 14px}
-  .rrow.tete{display:grid;background:none;box-shadow:none;font-size:11px;font-weight:700;
-    color:var(--soft);text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px}
-  .rform{grid-template-columns:1fr 1fr}
-}
-@media (hover:hover){
-  .rrow:not(.tete):hover{background:var(--surf)}
-  .otab:hover{color:var(--ink)}
-}
-
-/* ══════════ ce qui reste de l'ancienne console ══════════
-   L'espace professeur a sa propre feuille de style (« pf- », plus bas).
-   Ne restent ici que les briques encore lues par la console du référent,
-   celle de l'éditeur et quelques feuilles communes. */
 .kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
 .kc{background:var(--card);box-shadow:var(--s1);border-radius:16px;padding:12px 14px;
   display:flex;flex-direction:column;gap:1px;text-align:left}
@@ -2295,24 +2234,20 @@ button.kc:active{transform:scale(.97)}
   border-radius:9px;font-size:13.5px;font-weight:700;color:var(--soft)}
 .otab.on{background:var(--card);color:var(--ink);box-shadow:var(--s1)}
 .otab em{font-style:normal;font-size:11px;font-weight:700;opacity:.65}
-.rform{display:grid;gap:9px;padding:4px 18px 12px}
-.rform label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--soft)}
-.rform input,.rform textarea{border-radius:12px;background:var(--surf);padding:10px 13px;
-  font-size:15px;color:var(--ink);border:0;width:100%;font-family:inherit;line-height:1.5}
-.rform input{height:42px;padding:0 13px}
-.rform textarea{resize:vertical;min-height:96px}
-.rform input:focus,.rform textarea:focus{box-shadow:inset 0 0 0 1px rgba(29,28,25,.24),var(--ring)}
-.mscroll.courte{max-height:210px}
-.mi.lect{cursor:default}
-.mi .tail.warn{color:var(--ko);font-weight:700}
 @media (min-width:760px){
   .kpi{grid-template-columns:repeat(4,1fr)}
   .kpi.cinq{grid-template-columns:repeat(5,1fr)}
   .kpi.six{grid-template-columns:repeat(6,1fr)}
-  .rform{grid-template-columns:1fr 1fr}
-  .rform label:has(textarea){grid-column:1 / -1}
+  .rtable{gap:2px}
+  .rrow{grid-template-columns:minmax(180px,1.4fr) minmax(150px,1.4fr) 110px minmax(120px,1fr) 140px;
+    gap:12px;align-items:center;border-radius:9px;padding:9px 14px}
+  .rrow.tete{display:grid;background:none;box-shadow:none;font-size:11px;font-weight:700;
+    color:var(--soft);text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px}
 }
-@media (hover:hover){.otab:hover{color:var(--ink)}}
+@media (hover:hover){
+  .rrow:not(.tete):hover{background:var(--surf)}
+  .otab:hover{color:var(--ink)}
+}
 
 /* ══════════ la barre du haut, pour les comptes d'établissement ══════════
    Un professeur, un référent et l'éditeur ne révisent pas : leur écran est

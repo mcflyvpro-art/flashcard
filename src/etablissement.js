@@ -85,4 +85,21 @@ export function etatLicence(l, auj = iso(new Date())) {
   };
 }
 
+/* Les cycles d'une classe (la base range les classes par cycle, niveau_rang). */
+export const CYCLES = { college: 'Collège', lycee_gt: 'Lycée général', lycee_techno: 'Lycée technologique',
+  lycee_pro: 'Lycée professionnel', cpge: 'CPGE', sup: 'Supérieur' };
+
+/* Les niveaux qu'on propose en créant une classe, et le cycle qui va avec :
+   le référent choisit « 2nde », la base reçoit aussi « lycee_gt ». */
+export const NIVEAUX = ['6e', '5e', '4e', '3e', '2nde', '1re', 'Tle', 'CAP', 'Bac pro', 'BTS', 'Prépa', 'Licence', 'Autre'];
+export function cycleDe(niveau) {
+  const n = String(niveau || '').toLowerCase();
+  if (/^[3-6]e$/.test(n)) return 'college';
+  if (['2nde', '1re', 'tle'].includes(n)) return 'lycee_gt';
+  if (['cap', 'bac pro'].includes(n)) return 'lycee_pro';
+  if (n === 'prépa') return 'cpge';
+  if (['bts', 'licence'].includes(n)) return 'sup';
+  return '';
+}
+
 export const uaiValide = s => /^[0-9]{7}[A-Z]$/.test(String(s || '').trim().toUpperCase());

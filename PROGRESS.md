@@ -19,15 +19,15 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-26 · EN COURS : parcours B2B/B2C (docs/PARCOURS.md). Appliqué en base :
-          « un seul code » (20261026001000, etablissement.sql 51/51) — l'élève tape le code
-          de son établissement ou de son prof particulier, son nom, choisit sa classe, entre
-          aussitôt ; classes et groupes ; suivi commercial, démo en un geste avec classes
-          d'exemple, « Demander une démo » sans compte ; la feuille « J'ai un code »
-          (ui/code-entree.js) et le B2C sans onglet Classe. À faire : les consoles référent
-          et admin (PC), l'espace
-          prof (ses classes, ses groupes, son code), l'onboarding, la démo sans compte. Pas
-          de Stripe (Capacitor, achats Apple/Google).
+DERNIER   2026-10-26 · EN COURS : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
+          code » en base (20261026001000) et la feuille « J'ai un code » ; B2C sans onglet
+          Classe ; la console du référent refaite pour l'ordinateur (ui/ref-console.js, à
+          la demande : codes + QR projeté, licence, à régler, classes, élèves, profs,
+          journal, cartes élève cachées ; au téléphone les codes et la licence), sur
+          ref_personnes (20261026020000) — etablissement.sql 58/58, e2e/referent.e2e.js 4/4.
+          À faire : la console admin (PC), l'espace prof (ses classes, ses groupes, son
+          code), l'onboarding, la démo sans compte. Pas de Stripe (Capacitor, achats
+          Apple/Google).
           Avant : 2026-10-25 (soir) · « Ma classe » rendue à tout compte personnel (onglet
           au téléphone, entrée sur PC : c'est là qu'on tape le code du professeur ;
           la refonte du cercle l'avait réservée à qui avait déjà une classe —

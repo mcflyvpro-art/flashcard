@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BESOINS, bienvenue, ETAPES, etatLicence, messageEtab, ROLES_CODE, uaiValide } from '../src/etablissement.js';
+import { BESOINS, bienvenue, cycleDe, ETAPES, etatLicence, messageEtab, NIVEAUX, ROLES_CODE, uaiValide } from '../src/etablissement.js';
 
 describe('messageEtab — la réponse de la base, en clair', () => {
   it('chaque statut connu a un titre et un ton', () => {
@@ -64,5 +64,22 @@ describe('uaiValide — le numéro d’un établissement', () => {
     expect(uaiValide('300021K')).toBe(false);
     expect(uaiValide('03000210')).toBe(false);
     expect(uaiValide('')).toBe(false);
+  });
+});
+
+describe('cycleDe — le cycle d’une classe d’après son niveau', () => {
+  it('collège, lycée, professionnel, prépa, supérieur', () => {
+    expect(['6e', '3e'].map(cycleDe)).toEqual(['college', 'college']);
+    expect(['2nde', '1re', 'Tle'].map(cycleDe)).toEqual(['lycee_gt', 'lycee_gt', 'lycee_gt']);
+    expect(cycleDe('Bac pro')).toBe('lycee_pro');
+    expect(cycleDe('Prépa')).toBe('cpge');
+    expect(cycleDe('BTS')).toBe('sup');
+  });
+  it('un niveau inconnu ne devine rien', () => {
+    expect(cycleDe('Autre')).toBe('');
+    expect(cycleDe('')).toBe('');
+  });
+  it('chaque niveau proposé a son cycle, sauf « Autre »', () => {
+    expect(NIVEAUX.filter(n => !cycleDe(n))).toEqual(['Autre']);
   });
 });

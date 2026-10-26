@@ -4,7 +4,7 @@ import { I } from '../icones.js';
 import { shuffle } from '../file.js';
 import {
   accounts, adm, board, cercle, comp, deckOpen, duels, friends, leaving,
-  mailbox, mods, online, peek, prefs, quiz, ref,
+  mailbox, mods, online, peek, prefs, quiz,
   reorder, sel, setAccOpen, setAnimate, setCardEdit,
   setDeckOpen, setDeckQ, setDuelRun, setFilter, setFindQ,
   setHelpKey, setLeaving, setLegalBack, setLegalTab, setMates2,
@@ -14,10 +14,10 @@ import {
 import { allerClasses, go, render, retourLivre } from './bibliotheque.js';
 import { commuPull, doAdd, ouvrirProfil } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
-import { isPupil, lireClass, lireNew } from './classement.js';
+import { isPupil } from './classement.js';
 import {
   accountsPull, admPull, blocksPull, boardPull, matesPull, modAct,
-  modPull, refDo, refPeople, refPull, refTeam
+  modPull, refPull
 } from '../core/classement.js';
 import { deck, doUndo, flush, pending, plur, pushUndo, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
 import { selBar } from './connexion.js';
@@ -45,67 +45,6 @@ import {
 } from './revision.js';
 
 
-
-/* ---- les feuilles du référent ---- */
-function tapRmove(a, ds) {
-  if (!ref.who) return;
-  const cid = ds.rmove || null;
-  refDo('ref_move_student', { cible: ref.who.id, vers: cid },
-    cid ? 'Changé de classe' : 'Retiré de sa classe').then(() => { closeMenu(); render(); });
-}
-
-function tapRrolechg(a, ds) {
-  if (!ref.who) return;
-  refDo('ref_set_role', { cible: ref.who.id, nouveau: ds.rrolechg }, 'Rôle enregistré')
-    .then(() => { closeMenu(); render(); });
-}
-
-function tapRdropt(a, ds) {
-  refDo('ref_drop_teaching', { tid: ds.rdropt }, 'Service retiré').then(() => paintMenu());
-}
-
-function tapRpp(a, ds) {
-  const [qui, mat] = ds.rpp.split('|');
-  refDo('ref_set_teaching', { cid: ref.open, prof: qui, matiere: mat, pp: true },
-    'Professeur principal enregistré').then(() => { ref.team = null; refTeam(ref.open); });
-}
-
-function tapRaddt(a, ds) {
-  const mat = ((document.getElementById('tmat') || {}).value || '').trim();
-  if (!mat) return toast(I.x, 'Écris d’abord la matière');
-  ref.form = { ...(ref.form || {}), mat };
-  refDo('ref_set_teaching', { cid: ref.open, prof: ds.raddt, matiere: mat, pp: false },
-    'Professeur ajouté à l’équipe').then(() => { ref.team = null; refTeam(ref.open); });
-}
-
-function tapRnrole(a, ds) { ref.form = { ...(ref.form || {}), role: ds.rnrole, ...lireNew() }; paintMenu(); }
-function tapRncls(a, ds) { ref.form = { ...(ref.form || {}), cls: ds.rncls, ...lireNew() }; paintMenu(); }
-function tapRncyc(a, ds) { ref.form = { ...(ref.form || {}), cyc: ds.rncyc, ...lireClass() }; paintMenu(); }
-
-const FEUILLE_RULES = [
-  [(a, ds) => ds.rmove !== undefined, tapRmove],
-  [(a, ds) => ds.rrolechg, tapRrolechg],
-  [(a, ds) => ds.rdropt, tapRdropt],
-  [(a, ds) => ds.rpp, tapRpp],
-  [(a, ds) => ds.raddt, tapRaddt],
-  [(a, ds) => ds.rnrole, tapRnrole],
-  [(a, ds) => ds.rncls, tapRncls],
-  [(a, ds) => ds.rncyc, tapRncyc]
-];
-
-/* ══════════ ce qui se presse dans une feuille ══════════
-   Une feuille est montée sur `document.body`, pas dans `#app` : les
-   branches écrites pour l'écran ne la voient jamais. Plutôt que d'en tenir
-   deux copies — qui divergeront —, on les range ici, et les deux
-   gestionnaires appellent la même fonction. Elle rend `true` quand elle a
-   traité le clic, et le gestionnaire s'arrête là. */
-export function feuilleTap(b) {
-  const ds = b.dataset;
-  for (const [test, run] of FEUILLE_RULES) {
-    if (test(null, ds)) { run(null, ds); return true; }
-  }
-  return false;
-}
 
 /* Une révision simple se reprend là où elle s'est arrêtée : la quitter
    ne coûte rien. Un quiz, un QCM ou une association, non — vingt
@@ -190,23 +129,6 @@ function tapCard(a, ds) { setCardEdit(ds.card); return openMenu('card'); }
 
 /* ---- la console du référent ---- */
 function tapAtab(a, ds) { adm.tab = ds.atab; setAnimate(false); return render(); }
-
-function tapRtab(a, ds) {
-  ref.tab = ds.rtab; if (ref.tab === 'gens' && !ref.gens) refPeople(true);
-  setAnimate(false); return render();
-}
-
-function tapRrole(a, ds) { ref.role = ds.rrole; refPeople(true); setAnimate(false); return render(); }
-function tapRpage(a, ds) { ref.page = +ds.rpage; refPeople(false); setAnimate(false); return render(); }
-function tapRclsoff() { ref.cls = null; refPeople(true); setAnimate(false); return render(); }
-
-function tapRwho(a, ds) {
-  ref.who = (ref.gens || []).find(x => x.id === ds.rwho) || null;
-  ref.service = null; ref.form = {};
-  return openMenu('refwho');
-}
-
-function tapRcls(a, ds) { ref.open = ds.rcls; ref.team = null; ref.form = {}; return openMenu('refcls'); }
 
 function tapCamadd(a, ds) {
   const n = ds.camn;
@@ -323,8 +245,6 @@ const tapBlocked = () => { blocksPull().then(() => paintMenu()); return openMenu
 const tapClasses = () => allerClasses();
 
 const tapRef = () => { refPull(); return go('ref'); };
-const tapRefnew = () => { ref.form = { role: 'eleve' }; return openMenu('refnew'); };
-const tapRefnewclass = () => { ref.form = {}; return openMenu('refnewclass'); };
 
 /* Retour de l'éditeur vers le devoir en préparation. */
 function tapPretour() {
@@ -477,8 +397,8 @@ function tapAdd() {
 }
 
 /* Table de dispatch pour le clic « écran » (celui monté sur `#app`, à
-   distinguer de celui des feuilles, `FEUILLE_RULES` plus haut). Même
-   principe et même raison (M06.T6) : chaque test lit `ds.*` (l'attribut
+   distinguer de celui des feuilles, dans `menus-c.js`). Même principe et
+   même raison (M06.T6) : chaque test lit `ds.*` (l'attribut
    `data-*` du bouton) ou compare `a` (`ds.act`), dans l'ordre où ces cas
    étaient déclarés dans la chaîne de `if` qu'elle remplace. */
 const CLICK_RULES = [
@@ -509,12 +429,6 @@ const CLICK_RULES = [
   [(a, ds) => ds.sus, tapSus],
   [(a, ds) => ds.card, tapCard],
   [(a, ds) => ds.atab, tapAtab],
-  [(a, ds) => ds.rtab, tapRtab],
-  [(a, ds) => ds.rrole !== undefined, tapRrole],
-  [(a, ds) => ds.rpage !== undefined, tapRpage],
-  [(a, ds) => ds.rclsoff, tapRclsoff],
-  [(a, ds) => ds.rwho, tapRwho],
-  [(a, ds) => ds.rcls, tapRcls],
   [(a, ds) => ds.camadd, tapCamadd],
   [(a, ds, b) => b.dataset.tf !== undefined, tapTf],
   [(a, ds, b) => b.dataset.pick !== undefined, tapPick],
@@ -551,8 +465,6 @@ const CLICK_RULES = [
   [a => a === 'blocked', tapBlocked],
   [a => a === 'classes' || a === 'tab-classes', tapClasses],
   [a => a === 'ref', tapRef],
-  [a => a === 'refnew', tapRefnew],
-  [a => a === 'refnewclass', tapRefnewclass],
   [a => a === 'pretour', tapPretour],
   [a => a === 'backup2', tapBackup2],
   [a => a === 'undo2', tapUndo2],
@@ -603,7 +515,6 @@ $.addEventListener('click', e => {
   const b = e.target.closest('button,[data-act],[data-go],[data-rm],[data-a],[data-g],[data-q],[data-filt],[data-nsubj],[data-ed],[data-dl],[data-sub],[data-sus],[data-ord],[data-snd],[data-say],[data-tf],[data-card],[data-pick],[data-mt],[data-qp],[data-qsay],[data-trr],[data-trd],[data-pkc],[data-mail],[data-duel],[data-brange],[data-dpick],[data-help],[data-yes],[data-no],[data-mate],[data-legal],[data-modact],[data-account]');
   if (!b) return;
   const ds = b.dataset;
-  if (feuilleTap(b)) return;
   const a = ds.act;
   for (const [test, run] of CLICK_RULES) {
     if (test(a, ds, b)) return run(a, ds, b);

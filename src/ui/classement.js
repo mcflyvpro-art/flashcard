@@ -2,17 +2,14 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import {
-  accOpen, accounts, adm, auth, blocks, compte, mods, myRole, ref,
+  accOpen, accounts, adm, auth, blocks, compte, mods, myRole,
   reportOn, reportWhy, school, setMenu, setReportOn, setReportWhy
 } from '../data/etat.js';
 import { avatar } from './jeton.js';
 import { esc, plur } from '../core/coeur-sync.js';
-import {
-  joursDici, refCls, refEtab, refGens
-} from './etablissement.js';
+import { joursDici } from './etablissement.js';
 import { openMenu, mountMenu } from './menus-a.js';
 import { cb, cf, timeAgo } from './reglages-corbeille.js';
-import { refPeople, refTrace } from '../core/classement.js';
 
 /* ---------- classement ----------
    Les révisions de chacun restent privées : la fonction côté serveur ne
@@ -228,41 +225,3 @@ export const dueLabel = s => {
   return j < 0 ? (j === -1 ? 'hier' : `il y a ${-j} jours`)
        : j === 0 ? 'aujourd’hui' : j === 1 ? 'demain' : `dans ${j} jours`;
 };
-
-/* Un bouton de la feuille la repeint, et repeindre efface ce qui est tapé.
-   On relit donc les champs avant chaque repeinture : sans cela, choisir le
-   rôle en dernier effaçait l'adresse, et choisir l'adresse en dernier
-   effaçait le rôle — l'un ou l'autre, jamais les deux. */
-const lireChamps = map => {
-  const o = {};
-  for (const [k, id] of Object.entries(map)) {
-    const n = document.getElementById(id);
-    if (n) o[k] = n.value;            // absent = on garde ce qu'on avait
-  }
-  return o;
-};
-
-export const lireNew = () => lireChamps({ mel: 'nmel', nom: 'nnom', pse: 'npse', pw: 'npw' });
-
-export const lireClass = () => lireChamps({ nom: 'knom', niv: 'kniv', fil: 'kfil', pre: 'kpre' });
-
-export function refView() {
-  const b = ref.board;
-  const onglet = (k, n) => `<button class="otab ${ref.tab === k ? 'on' : ''}" data-rtab="${k}">${n}</button>`;
-  $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
-      <h1>${b ? esc(b.org) : 'Mon établissement'}</h1></div>
-    <div class="page dense">
-      <div class="rtabs">${onglet('etab', 'Établissement')}${onglet('gens', 'Comptes')}${onglet('cls', 'Classes')}</div>
-      ${ref.tab === 'etab' ? refEtab() : ref.tab === 'gens' ? refGens() : refCls()}
-    </div>`;
-  if (ref.tab === 'etab') refTrace();
-  const q = document.getElementById('rq');
-  if (q) {
-    q.addEventListener('input', () => { ref.q = q.value; clearTimeout(refView.t);
-      refView.t = setTimeout(() => refPeople(true), 220); });
-    if (ref.tab === 'gens' && document.activeElement !== q && ref.q) {
-      q.focus(); q.setSelectionRange(q.value.length, q.value.length);
-    }
-  }
-}

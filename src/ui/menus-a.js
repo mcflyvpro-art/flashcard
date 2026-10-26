@@ -2,19 +2,16 @@
 import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
-  db, menu, ref, setMenu, setSubjName, subjColor, subjEdit, subjName, view
+  db, menu, setMenu, setSubjName, subjColor, subjEdit, subjName, view
 } from '../data/etat.js';
 import { render } from './bibliotheque.js';
-import { avatar } from './jeton.js';
 import { sansMouvement } from './mouvement.js';
 import { paintMenuCercle } from './cercle-feuilles.js';
 import { paintMenuCode } from './code-entree.js';
 import { paintMedia } from './carte-media.js';
 import { accountSheet, blockedSheet, reportSheet } from './classement.js';
-import { ROLENOM, refService, refTeam } from '../core/classement.js';
-import { COLORS, PALETTE, canUndo, deck, esc, plur, subj, undoLabel } from '../core/coeur-sync.js';
+import { COLORS, PALETTE, canUndo, deck, esc, subj, undoLabel } from '../core/coeur-sync.js';
 import { paintMenuProf } from './prof-porte.js';
-import { CYCLES } from './etablissement.js';
 import {
   paintMenuCard, paintMenuConflict, paintMenuDeckset, paintMenuDuelitem,
   paintMenuFnr, paintMenuHandle, paintMenuHelp, paintMenuLeave,
@@ -25,7 +22,6 @@ import {
 } from './menus-b.js';
 import { paintMenuRename } from './menus-c.js';
 import { installSheet } from './onboarding.js';
-import { timeAgo } from './reglages-corbeille.js';
 
 /* ---------- menu contextuel ----------
    Sur ordinateur, une feuille n'est pas un tiroir de téléphone posé au
@@ -300,9 +296,6 @@ function menuPainter(m) {
     cc: paintMenuCercle,
     code: paintMenuCode,
     /* ---------- les feuilles du référent ---------- */
-    refwho: paintMenuRefwho,
-    refcls: paintMenuRefcls,
-    refnew: paintMenuRefnew, refnewclass: paintMenuRefnew,
     account: paintMenuAccount,
     report: paintMenuReport,
     blocked: paintMenuBlocked,
@@ -397,176 +390,6 @@ function paintMenuSubject(w) {
 
 function paintMenuInstall(w) {
   return installSheet(w);
-}
-
-function paintMenuRefwho(w) {
-  const g = ref.who;
-    if (!g) { setMenu(null); return; }
-    const f = ref.form || {};
-    const eleve = g.role === 'eleve';
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu pv">
-        <div class="mhd">${avatar(g.id, g.name)}
-          <span class="mhx"><b>${esc(g.name)}</b>
-            <i>@${esc(g.handle || '')} · ${esc(ROLENOM[g.role] || g.role)}${
-              g.jamais ? ' · jamais venu' : ' · vu ' + timeAgo(g.derniere)}</i></span></div>
-        <div class="mscroll">
-          <div class="rform">
-            <label>Nom<input id="fnom" value="${esc(g.name)}" spellcheck="false"></label>
-            <label>Pseudo<input id="fpse" value="${esc(g.handle || '')}" spellcheck="false"
-              autocapitalize="none"></label>
-            <label>Adresse<input id="fmel" value="${esc(g.email)}" spellcheck="false"
-              autocapitalize="none" type="email"></label>
-          </div>
-          <button class="mi" data-mact="refsave">${svg(I.check)}<span>Enregistrer l’identité</span></button>
-          <div class="msep"></div>
-
-          <div class="rform">
-            <label>Nouveau mot de passe
-              <input id="fpw" value="${esc(f.pw || '')}" spellcheck="false" autocapitalize="none"
-                placeholder="dix caractères au moins"></label>
-          </div>
-          <button class="mi" data-mact="refpw">${svg(I.key)}<span>Refaire le mot de passe</span>
-            <span class="tail">à lire à l’intéressé</span></button>
-          <div class="msep"></div>
-
-          ${eleve ? `<div class="mlbl">Classe</div>
-            <div class="mscroll courte">${(ref.classes || []).map(c => `
-              <button class="mi${g.class_id === c.id ? ' on' : ''}" data-rmove="${esc(c.id)}">
-                ${svg(g.class_id === c.id ? I.check : I.arrow)}<span>${esc(c.name)}</span>
-                <span class="tail">${c.effectif} él.</span></button>`).join('')}</div>
-            ${g.class_id ? `<button class="mi warn" data-rmove="">${svg(I.x)}
-              <span>Retirer de sa classe</span></button>` : ''}`
-          : `<div class="mlbl">Service d’enseignement</div>
-            ${!ref.service ? ``
-              : !ref.service.length ? ``
-              : `<div class="mscroll courte">${ref.service.map(s => `<div class="mi lect">
-                  ${svg(I.school)}<span>${esc(s.classe)} · ${esc(s.matiere)}${
-                    s.principal ? ' (PP)' : ''}</span>
-                  <button class="tail warn" data-rdropt="${esc(s.teaching_id)}">retirer</button>
-                  </div>`).join('')}</div>`}`}
-          <div class="msep"></div>
-          <div class="mlbl">Rôle</div>
-          ${['eleve', 'prof'].map(k => `<button class="mi${g.role === k ? ' on' : ''}"
-            data-rrolechg="${k}">${svg(g.role === k ? I.check : I.arrow)}${ROLENOM[k]}</button>`).join('')}
-        </div>
-      </div>`;
-    mountMenu(w);
-    if (g.role !== 'eleve' && !ref.service) refService(g.id);
-    return;
-}
-
-function equipePedagogiqueHtml(team) {
-  if (!team || !team.length) return ``;
-  return `<div class="mscroll courte">${team.map(t => `<div class="mi lect">
-      ${svg(t.principal ? I.check : I.user)}
-      <span>${esc(t.nom)} · ${esc(t.matiere)}${t.principal ? ' (PP)' : ''}</span>
-      <button class="tail" data-rpp="${esc(t.teacher)}|${esc(t.matiere)}">PP</button>
-      <button class="tail warn" data-rdropt="${esc(t.teaching_id)}">retirer</button>
-      </div>`).join('')}</div>`;
-}
-
-function profsAAjouterHtml(gens) {
-  return (gens || []).filter(x => x.role === 'prof').map(p => `
-    <button class="mi" data-raddt="${esc(p.id)}">${svg(I.plus)}<span>${esc(p.name)}</span>
-      <span class="tail">${esc(p.matiere || '')}</span></button>`).join('');
-}
-
-function paintMenuRefcls(w) {
-  const c = (ref.classes || []).find(x => x.id === ref.open);
-    if (!c) { setMenu(null); return; }
-    const f = ref.form || {};
-    const filiere = c.filiere ? ' · ' + esc(c.filiere) : '';
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu pv">
-        <div class="mhd">${svg(I.school)}<span class="mhx"><b>${esc(c.name)}</b>
-          <i>${esc(c.niveau || '')}${filiere} · ${
-            plur(c.effectif, 'élève')} · code ${esc(c.code || '—')}</i></span></div>
-        <div class="mscroll">
-          <div class="rform">
-            <label>Nom<input id="knom" value="${esc(c.name)}" spellcheck="false"></label>
-            <label>Niveau<input id="kniv" value="${esc(c.niveau || '')}" spellcheck="false"></label>
-            <label>Filière<input id="kfil" value="${esc(c.filiere || '')}" spellcheck="false"></label>
-            <label>Effectif prévu<input id="kpre" value="${c.prevu || ''}" inputmode="numeric"></label>
-          </div>
-          <button class="mi" data-mact="refclssave">${svg(I.check)}<span>Enregistrer</span></button>
-          <button class="mi" data-mact="refclsgens">${svg(I.users)}
-            <span>Voir ses ${plur(c.effectif, 'élève')}</span></button>
-          <div class="msep"></div>
-
-          <div class="mlbl">Équipe pédagogique</div>
-          ${equipePedagogiqueHtml(ref.team)}
-          <div class="rform">
-            <label>Ajouter un professeur — matière
-              <input id="tmat" value="${esc(f.mat || '')}" spellcheck="false"
-                placeholder="Mathématiques"></label>
-          </div>
-          <div class="mscroll courte">${profsAAjouterHtml(ref.gens)}</div>
-          <div class="msep"></div>
-          <button class="mi warn" data-mact="refclsdel">${svg(I.trash)}
-            <span>Supprimer la classe</span>
-            <span class="tail">${c.effectif ? 'videz-la d’abord' : ''}</span></button>
-        </div>
-      </div>`;
-    mountMenu(w);
-    if (!ref.team) refTeam(c.id);
-    return;
-}
-
-function formNouveauCompte(f) {
-  return `<div class="rform">
-      <label>Adresse<input id="nmel" value="${esc(f.mel || '')}" type="email"
-        autocapitalize="none" spellcheck="false" placeholder="prenom.nom@lycee.fr"></label>
-      <label>Nom<input id="nnom" value="${esc(f.nom || '')}" spellcheck="false"></label>
-      <label>Pseudo (facultatif)<input id="npse" value="${esc(f.pse || '')}"
-        autocapitalize="none" spellcheck="false"></label>
-      <label>Mot de passe<input id="npw" value="${esc(f.pw || '')}"
-        autocapitalize="none" spellcheck="false" placeholder="dix caractères au moins"></label>
-    </div>
-    <div class="mlbl">Rôle</div>
-    ${['eleve', 'prof'].map(k => `<button class="mi${(f.role || 'eleve') === k ? ' on' : ''}"
-      data-rnrole="${k}">${svg((f.role || 'eleve') === k ? I.check : I.arrow)}${ROLENOM[k]}</button>`).join('')}
-    ${(f.role || 'eleve') === 'eleve' ? `
-      <div class="mlbl">Classe</div>
-      <div class="mscroll courte">${(ref.classes || []).map(c => `
-        <button class="mi${f.cls === c.id ? ' on' : ''}" data-rncls="${esc(c.id)}">
-          ${svg(f.cls === c.id ? I.check : I.arrow)}<span>${esc(c.name)}</span>
-          <span class="tail">${c.effectif} él.</span></button>`).join('')}</div>` : ''}`;
-}
-
-function formNouvelleClasse(f) {
-  return `<div class="rform">
-      <label>Nom de la classe<input id="knom" value="${esc(f.nom || '')}"
-        spellcheck="false" placeholder="2nde 4"></label>
-      <label>Niveau<input id="kniv" value="${esc(f.niv || '')}" spellcheck="false"
-        placeholder="Seconde"></label>
-      <label>Filière (facultatif)<input id="kfil" value="${esc(f.fil || '')}"
-        spellcheck="false"></label>
-      <label>Effectif prévu<input id="kpre" value="${esc(f.pre || '')}" inputmode="numeric"></label>
-    </div>
-    <div class="mlbl">Cycle</div>
-    ${Object.entries(CYCLES).map(([k, n]) => `<button class="mi${f.cyc === k ? ' on' : ''}"
-      data-rncyc="${k}">${svg(f.cyc === k ? I.check : I.arrow)}${n}</button>`).join('')}`;
-}
-
-function paintMenuRefnew(w) {
-  const cpt = menu === 'refnew';
-    const f = ref.form || {};
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu pv">
-        <div class="mhd">${svg(I.plus)}<span class="mhx">
-          <b>${cpt ? 'Ouvrir un compte' : 'Créer une classe'}</b></span></div>
-        <div class="mscroll">
-          ${cpt ? formNouveauCompte(f) : formNouvelleClasse(f)}
-          <div class="msep"></div>
-          <button class="mi" data-mact="${cpt ? 'refdonew' : 'refdonewclass'}"
-            style="justify-content:center;font-weight:700">${svg(I.check)}${
-              cpt ? 'Ouvrir le compte' : 'Créer la classe'}</button>
-        </div>
-      </div>`;
-    mountMenu(w);
-    setTimeout(() => { const i = document.getElementById(cpt ? 'nmel' : 'knom'); if (i) i.focus(); }, 60);
-    return;
 }
 
 function paintMenuAccount(w) {

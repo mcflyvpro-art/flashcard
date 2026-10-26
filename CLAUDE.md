@@ -52,7 +52,7 @@ l'air de marcher ».
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
     HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout, sauf
     l'envoi des préférences dans `ui/import-cartes.js`, plus ancien, à sortir).
-    `coeur-sync.js` (~775 lignes — `api()`, auth, sync, undo, palette) et douze
+    `coeur-sync.js` (~775 lignes — `api()`, auth, sync, undo, palette) et treize
     modules, un par domaine : `classement.js` (rôle, établissement, accueil
     selon le métier), `defis.js` (les défis « à son rythme »), `cercle.js`
     (clubs et salles en direct : lire, créer, rejoindre, inviter — tout par
@@ -77,7 +77,10 @@ l'air de marcher ».
     ligne — une décision de gestion se prend contre l'état réel de la classe —,
     `repeindre()` qui ne repeint jamais sous les doigts de qui tape) et
     `eleve-classes.js` (« Mes classes » : `class_preview`/`class_join`,
-    devoirs, `mon_compte`, `messageErreur`). L'ancien `core/etablissement.js`
+    devoirs, `mon_compte`, `messageErreur`) et `referent.js` (la console du
+    référent : toutes les fonctions `ref_*`, `refAgir()` qui refuse hors ligne
+    et relit ce qui a bougé, `refProfsPull` à part de la recherche — chargé
+    avec la console). L'ancien `core/etablissement.js`
     (console prof d'avant le 2026-10-24) n'existe plus.
   - `src/ui/` — les 18 écrans (rendu, DOM, `$.innerHTML`, menus, événements),
     même noms de fichier que leur pendant `core/` quand les deux existent
@@ -92,8 +95,22 @@ l'air de marcher ».
     `raccourcis.js` (raccourcis clavier pendant une révision, et les
     raccourcis d'ouverture `?go=…` — extrait d'`interactions.js` sur M06.T6,
     qui frôlait la limite de lignes une fois ses tables de dispatch posées),
-    `onboarding.js`. `ui/etablissement.js` ne porte plus que la console du
-    référent. **Navigation au téléphone** (2026-10-25) : `balayage.js` fait
+    `onboarding.js`. `ui/etablissement.js` n'est plus que la **porte de la
+    console du référent** (2026-10-26) : `refView` charge à la demande
+    `ref-console.js` + `ref-console.css` (préfixe `rf-`) et `core/referent.js`
+    — rien d'autre ne doit importer `ui/ref-console.js`. Faite pour l'ordinateur
+    (≥ 900 px) : cinq onglets — Accueil (les codes élèves et professeurs :
+    copier, afficher en grand avec le QR, changer en deux appuis ; la licence ;
+    ce qui demande une décision, chaque ligne menant à la liste filtrée),
+    Classes (liste à gauche, détail à droite : renommer, équipe et professeur
+    principal, élèves et « changer de classe », supprimer une classe vide),
+    Élèves et Professeurs (recherche, filtre classe ou « sans classe », fiche :
+    nom — le référent seul le corrige —, classe, rôle, mot de passe oublié),
+    Journal ; et, derrière un lien discret « Des élèves sans adresse e-mail ? »,
+    les cartes élève, expliquées, imprimées avec leur QR. Au téléphone :
+    les deux codes et la licence seulement. Chaque ouverture repart de
+    l'accueil (`refPull` remet `ref.charge` à faux). L'ancienne console en
+    feuilles (`refwho`, `refcls`, `refnew`) n'existe plus. **Navigation au téléphone** (2026-10-25) : `balayage.js` fait
     glisser d'un onglet à l'autre (Livres ↔ Classe ↔ Cercle des lecteurs,
     l'ordre de `ordreOnglets()` dans `bibliotheque.js`, le même que la barre)
     comme une app native — la voisine est rendue par sa vraie fonction d'écran
@@ -164,7 +181,10 @@ l'air de marcher ».
     `prefs` `{ tuto: 1 }` écarte la visite guidée ; un établissement se sème
     avec `semerEtablissement(store, { nom, classes })` de
     `e2e/faux-etablissement.js` (codes, licence, classes ; il rejoue aussi
-    `code_apercu`, `rejoindre`, `my_school`, `prof_mon_code`).
+    `code_apercu`, `rejoindre`, `my_school`, `prof_mon_code` et toutes les
+    `ref_*` de la console, services dans `store.et.services`, journal dans la
+    table `ref_audit` ; une exception d'une fausse fonction revient en 400 avec
+    son message, comme la vraie base) — parcours dans `e2e/referent.e2e.js`.
     **Le profil d'un lecteur** (2026-10-25) : toucher un ami, une ligne de
     classement (`rangLigne`, `data-lecteur`), une demande d'ami ou un membre
     de club ouvre son profil (vue `profil`, `ouvrirProfil(id, { club })` de
@@ -296,7 +316,8 @@ l'air de marcher ».
   - **Profil d'un lecteur** (`20261025200000`) : `profil_lecteur(u, p_tz)` (jsonb) — statut `ok` (soi, ami accepté, membre d'un même club : décomptes et noms de matières, jamais un livre ni une carte), `prive` (quelqu'un qu'on voit déjà par `voit_personne` — camarade, professeur, joueur, demande en attente : nom, pseudo, ancienneté, clubs en commun, pas de chiffres), `inconnu` (personne d'autre, ou un blocage dans un sens ou l'autre).
   - **Page d'une classe, côté élève** (`20261025210000`) : `eleve_classe(cid)` (jsonb) — `inscrit` (un élève de la classe : nom, niveau, établissement, date d'entrée, `peut_quitter`, `profs` avec leur matière et le principal, `eleves` sous leur nom de classe avec le lien d'amitié de chacun, jamais un compte bloqué, jamais le code), `attente` (salle d'attente : nom de la classe seulement), `inconnue` (personne d'autre, ou classe archivée).
   - **Établissements : un seul code** (`20261025233000` puis `20261026001000` ; les parcours en clair dans **`docs/PARCOURS.md`**, à lire avant d'y toucher) : un élève entre avec UN code — celui de son établissement (`org_codes.eleve`) ou de son professeur particulier (`codes_profs`) — et `rejoindre(code, prénom, nom, classe)` le fait entrer **aussitôt**, sans validation (la sécurité est dans le code : 8 caractères, 10 faux/h tous codes confondus dans `class_join_attempts`, changeable à tout moment) ; `code_apercu(code)` dit d'abord ce que c'est et rend la liste des classes à choisir (statut `choisir` si l'élève n'en a pas pris une alors qu'il y en a). Plus de code par classe pour un élève (les anciens codes de classe marchent encore, `class_preview`, mais l'app ne les montre plus). Dans un établissement, un élève a **une** classe (`classes.genre = 'classe'`, la même pour tous ses camarades) et des **groupes** (`'groupe'`) que forment les professeurs en sélectionnant des élèves (`prof_groupe`, `prof_eleves_etab`) ; un professeur choisit ses classes (`prof_classes_etab`, `prof_enseigner`) ; `ref_move_student` ne touche que la classe, jamais les groupes. Le code professeur fait entrer un professeur, le code référent (usage unique, 30 j) un référent — et pose les **classes d'exemple** d'une démo (`orgs.exemples`, `poser_exemples`). Un professeur particulier (rôle prof sans établissement) a son code (`prof_mon_code`) ; son premier élève lui crée « Mes élèves » ; `prof_ajouter_eleve` range un élève dans une autre de ses classes ; un élève d'un lycée peut aussi suivre un professeur particulier. Le nom « Prénom NOM » est figé à l'entrée : seul le référent le corrige (`ref_update_account`). Licence : `orgs.offre` (`demo` | `etablissement`), `places`, `licence_fin` (`etab_verdict` : `licence`, `plein`…). Les codes vivent dans `org_codes` et `codes_profs`, **tables sans aucune politique** (tout membre lit sa ligne `orgs`). Côté vente, pour l'éditeur seul : `org_suivi` (étape prospect/démo/client/pause/perdu, contact, besoins, budget, prix, notes, relance ; **sans aucune politique**, lu par `admin_orgs`), `admin_etab_enregistrer(org, fiche jsonb)` (le formulaire), `admin_lancer_demo(org, places, jours, exemples)`, `admin_licence`, `admin_code_ref`, `admin_supprimer_etab` (seulement sans comptes : le contact part avec), et **`demander_demo(...)`, ouverte à `anon`** — la seule avec `shared_deck` —, freinée en base (20 demandes/h en tout, une par adresse et par jour).
-  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas), `journal.sql` (18 cas), `profil.sql` (19 cas), `classe_eleve.sql` (12 cas) et `etablissement.sql` (51 cas : du prospect au client, les quatre codes, classes et groupes, licence, anon).
+  - **Console du référent** (`20261026020000`) : `ref_personnes(q, qrole, qclass, sans_classe, lim, off)` rend **une ligne par personne** (sa classe de rattachement, jamais un groupe ; filtre sur une classe ou un groupe ; les élèves sans classe ; recherche sans casse ni accent ; `carte` pour un compte à carte ; `total` pour la pagination) — `ref_people` reste pour les anciennes apps installées. Les cartes élève du référent passent par `prof_creer_eleves` (`class_manager` l'admet sur une classe de son établissement).
+  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `execute_sql` ne rend que le résultat de la **dernière** instruction (le `rollback`, donc rien) : pour lire le bilan, remplacer le `select … from zz_res` final et le `rollback` par un `do $$ begin raise exception 'RESULTATS %', (select … from public.zz_res); end $$;` — l'erreur porte le bilan et annule tout. `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas), `journal.sql` (18 cas), `profil.sql` (19 cas), `classe_eleve.sql` (12 cas) et `etablissement.sql` (58 cas : du prospect au client, les quatre codes, classes et groupes, la liste du référent, licence, anon).
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
 - **Hébergement : une seule cible, Vercel, un seul domaine :
   `https://www.folioflashcard.online/`** (projet Vercel `flashcard`, équipe
@@ -407,7 +428,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, sauvegarde, entretien… cumulés) JS ≤ 56, CSS ≤ 22 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, console du référent, sauvegarde, entretien… cumulés) JS ≤ 56, CSS ≤ 22 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans

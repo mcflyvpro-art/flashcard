@@ -1,14 +1,14 @@
 import { I } from '../icones.js';
 import {
   adm, auth, blocks, board, cercle, duels, iAmMod, mailbox,
-  menu, mods, myRole, ref, reportOn, reportWhy,
+  mods, myRole, ref, reportOn, reportWhy,
   setAccounts, setAnimate, setAsks, setBlocks,
   setFriends, setIAmMod, setMates, setMates2, setMyRole, setReportOn, setReportWhy,
   setSchool, view
 } from '../data/etat.js';
 import { go, render } from '../ui/bibliotheque.js';
 import { atSchool, isPupil, isProf } from '../ui/classement.js';
-import { api, esc, shortWho } from './coeur-sync.js';
+import { api, shortWho } from './coeur-sync.js';
 import { duelsPull } from './defis.js';
 import { comptePull, eleveClassesPull } from './eleve-classes.js';
 import { toast } from '../ui/import-cartes.js';
@@ -17,7 +17,6 @@ import { allerAccueil } from '../ui/prof-porte.js';
 import { lienApresRole } from '../ui/liens-entrants.js';
 import { friendsPull, mailPull } from './reglages-corbeille.js';
 import { sallesPull } from './cercle.js';
-import { timeAgo } from '../ui/reglages-corbeille.js';
 
 /* ---------- classement ----------
    Les révisions de chacun restent privées : la fonction côté serveur ne
@@ -189,98 +188,7 @@ export async function matesPull() {
   if (view.name === 'classes') { setAnimate(false); render(); }
 }
 
-export const PAGE_REF = 60;
-
-export const ROLENOM = { eleve: 'Élève', prof: 'Professeur', ref: 'Référent', admin: 'Éditeur' };
-
-async function refBoard() {
-  try { const [r] = await api('/rest/v1/rpc/ref_dashboard', 'POST', {}) || []; ref.board = r || false; }
-  catch (e) { ref.board = false; ref.err = 1; }
-  if (view.name === 'ref') { setAnimate(false); render(); }
-}
-
-async function refClasses() {
-  try { ref.classes = await api('/rest/v1/rpc/ref_classes', 'POST', {}) || []; }
-  catch (e) { ref.classes = []; }
-  if (view.name === 'ref') { setAnimate(false); render(); }
-}
-
-/* La recherche repart toujours de la première page : garder la page 4 en
-   changeant le filtre donne un écran vide qu'on ne sait pas expliquer. */
-export async function refPeople(reset) {
-  if (reset) ref.page = 0;
-  const n = ++ref.cherche;
-  try {
-    const rows = await api('/rest/v1/rpc/ref_people', 'POST',
-      { q: ref.q.trim(), qrole: ref.role, qclass: ref.cls,
-        lim: PAGE_REF, off: ref.page * PAGE_REF }) || [];
-    if (n !== ref.cherche) return;                 // une frappe plus récente a gagné
-    ref.gens = rows; ref.total = rows.length ? +rows[0].total : 0;
-  } catch (e) { if (n === ref.cherche) { ref.gens = []; ref.total = 0; } }
-  if (view.name === 'ref') { setAnimate(false); render(); }
-}
-
-export async function refTeam(cid) {
-  try { ref.team = await api('/rest/v1/rpc/ref_class_team', 'POST', { cid }) || []; }
-  catch (e) { ref.team = []; }
-  if (menu) paintMenu();
-}
-
-export async function refService(uid) {
-  try { ref.service = await api('/rest/v1/rpc/ref_service', 'POST', { uid }) || []; }
-  catch (e) { ref.service = []; }
-  if (menu) paintMenu();
-}
-
-/* Le journal, affiché après coup : il n'a jamais à retarder l'écran, et
-   son absence n'empêche rien. On le lit directement — la table est déjà
-   fermée par sa politique, et personne ne peut y écrire depuis l'app. */
-export async function refTrace() {
-  const box = document.getElementById('rtrace'); if (!box) return;
-  try {
-    const rows = await api('/rest/v1/ref_audit?select=acte,cible,created_at,detail'
-      + '&order=created_at.desc&limit=12') || [];
-    box.innerHTML = !rows.length
-      ? 'Aucune modification pour l’instant. Tout ce que tu changeras ici sera inscrit.'
-      : `<div class="rjour">${rows.map(r => `<div class="rj">
-          <b>${esc(r.acte)}</b>
-          <i>${esc(quoiTrace(r.detail))}</i>
-          <span>${timeAgo(r.created_at)}</span></div>`).join('')}</div>`;
-  } catch (e) { box.textContent = 'Journal indisponible.'; }
-}
-
-/* Le détail est du JSON, et le référent n'a pas à lire du JSON. */
-function quoiTrace(d) {
-  if (!d || typeof d !== 'object') return '';
-  if (d.avant && d.apres && typeof d.avant === 'object')
-    return `${d.avant.nom || ''} → ${d.apres.nom || d.avant.nom || ''}`;
-  if (d.avant || d.apres) return `${d.avant || '—'} → ${d.apres || '—'}`;
-  return [d.nom, d.classe, d.matiere, d.adresse, d.role && ROLENOM[d.role]]
-    .filter(Boolean).join(' · ');
-}
-
-export function refPull() {
-  if (!ref.board) refBoard();
-  if (!ref.classes) refClasses();
-  if (!ref.gens) refPeople(true);
-}
-
-/* Une seule fonction pour tous les appels d'écriture : chacun renvoie le
-   message de la base, qui est déjà écrit pour être lu — « Cette classe
-   compte encore 28 élèves. Déplace-les d'abord. » vaut mieux que tout ce
-   que le client pourrait inventer. */
-export async function refDo(rpc, args, bon) {
-  try {
-    const r = await api('/rest/v1/rpc/' + rpc, 'POST', args);
-    ref.board = null; ref.classes = null;
-    refBoard(); refClasses(); refPeople(false);
-    if (ref.open) refTeam(ref.open);
-    if (ref.who) refService(ref.who.id);
-    toast(I.check, bon);
-    return r;
-  } catch (e) {
-    const m = String((e && e.message) || '');
-    toast(I.x, m.slice(0, 90) || 'Impossible pour l’instant');
-    return null;
-  }
-}
+/* La console du référent vit dans un morceau chargé à la demande
+   (ui/ref-console.js, core/referent.js) : ici, seulement de quoi la faire
+   relire en entier à sa prochaine ouverture. */
+export function refPull() { ref.charge = false; }
