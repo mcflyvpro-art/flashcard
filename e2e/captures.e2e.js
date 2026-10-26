@@ -39,7 +39,7 @@ for (const ecran of LARGEURS) {
       vus.push(nom);
     }
 
-    await page.goto('./');
+    await page.goto('./app');
     await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
     await verifier('connexion');
     await page.getByRole('button', { name: 'Créer un compte' }).click();

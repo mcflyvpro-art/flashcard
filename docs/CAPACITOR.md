@@ -32,7 +32,14 @@ connectée.
 - **`base: '/'`** (`vite.config.js`) : le WebView sert `dist/` depuis sa
   racine, comme Vercel.
 - **Zones sûres** : `env(safe-area-inset-*)` est déjà employé partout
-  (`src/app.css`) ; poser `viewport-fit=cover` reste fait dans `index.html`.
+  (`src/app.css`) ; poser `viewport-fit=cover` reste fait dans `app.html`.
+- **L'app est `app.html`, pas `index.html`** (depuis le 2026-10-26 :
+  `index.html` est la page d'accueil du site, docs/LANDING.md). Le WebView
+  ouvre `index.html` par défaut ; son aiguillage voit `window.Capacitor` et
+  passe aussitôt à `/app.html` (le serveur local de Capacitor ne connaît
+  pas les adresses sans extension). Mieux, le jour venu : copier
+  `dist/app.html` sur `index.html` dans le dossier servi au WebView (étape
+  de build dédiée), pour ne jamais charger la page d'accueil dans l'app.
 
 ## Installation (le jour venu)
 

@@ -22,23 +22,29 @@ self.addEventListener('activate', e => {
    chargé à la demande (journal, espace professeur, partie en direct) est
    demandé comme module, avec un en-tête Origin que la copie faite à
    l'installation n'avait pas — le cache la refusait, rendait index.html à
-   la place, et le morceau ne s'ouvrait jamais hors ligne. */
-/* Chaque écran a son adresse (src/routes.js) et toutes servent la même
-   page : une navigation se range sous index.html, jamais sous son adresse
-   — sinon chaque livre, chaque classe ouverte laisserait sa copie, et une
-   adresse jamais visitée ne s'ouvrirait pas hors ligne. Seule une réponse
-   saine remplace la page gardée. */
+   la place, et le morceau ne s'ouvrait jamais hors ligne.
+   Chaque écran de l'app a son adresse (src/routes.js) et toutes servent la
+   même page, app.html : une navigation de l'app se range sous « app »,
+   jamais sous son adresse — sinon chaque livre, chaque classe ouverte
+   laisserait sa copie, et une adresse jamais visitée ne s'ouvrirait pas
+   hors ligne. La racine est la page d'accueil du site (index.html) : elle
+   garde sa copie à elle, « / ». Seule une réponse saine remplace une page
+   gardée ; hors ligne, une navigation sans copie retombe sur l'app, et une
+   autre requête échoue franchement au lieu de recevoir une page HTML à la
+   place d'un script. */
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-  const page = req.mode === 'navigate', cle = page ? BASE + 'index.html' : req;
+  const page = req.mode === 'navigate';
+  const cle = !page ? req : new URL(req.url).pathname === BASE ? BASE : BASE + 'app';
   e.respondWith(
     fetch(req)
       .then(r => {
         if (!page || r.ok) { const c = r.clone(); caches.open(C).then(x => x.put(cle, c)); }
         return r;
       })
-      .catch(() => caches.match(cle, { ignoreVary: true })
-        .then(hit => hit || caches.match(BASE + 'index.html', { ignoreVary: true })))
+      .catch(async () => (await caches.match(cle, { ignoreVary: true }))
+        || (page && await caches.match(BASE + 'app', { ignoreVary: true }))
+        || Response.error())
   );
 });

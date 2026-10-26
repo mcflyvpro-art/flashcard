@@ -6,7 +6,7 @@ test('ouvrir l’app sans compte : écran de connexion, aucune erreur, aucun dé
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));
 
-  await page.goto('./');
+  await page.goto('./app');
   await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible({ timeout: 10000 });
   await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Mot de passe' })).toBeVisible();
@@ -24,7 +24,7 @@ test('ouvrir l’app sans compte : écran de connexion, aucune erreur, aucun dé
 test('les conditions d’utilisation s’ouvrent depuis l’écran de connexion', async ({ page }) => {
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));
-  await page.goto('./');
+  await page.goto('./app');
   await page.locator('.lleg [data-legal="cgu"]').click();
   await expect(page.locator('.bar h1')).toHaveText('Conditions d’utilisation');
   await expect(page.locator('.legal')).toContainText('Ce que Folio est');
@@ -39,7 +39,7 @@ test('les conditions d’utilisation s’ouvrent depuis l’écran de connexion'
 // code doit s'y lire en gros, prêt à copier, et attendre la connexion.
 test('un QR de partie ouvert hors de l’app : le code en gros, prêt à copier', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.goto('./?defi=482913');
+  await page.goto('./app?defi=482913');
   const carte = page.locator('#passage');
   await expect(carte).toContainText('482 913', { timeout: 10000 });
   await expect(carte).toContainText('Entrer un code');

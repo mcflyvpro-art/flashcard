@@ -10,7 +10,7 @@ import { etab, semerEtablissement } from './faux-etablissement.js';
 const enClair = c => c.slice(0, 4) + '-' + c.slice(4);
 
 async function entrer(page, email) {
-  await page.goto('./');
+  await page.goto('./app');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toBeFocused();
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);

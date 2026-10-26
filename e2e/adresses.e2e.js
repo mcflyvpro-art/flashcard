@@ -12,7 +12,7 @@ import { creerLivre, inscrire } from './aide.js';
 
 const chemin = page => new URL(page.url()).pathname;
 
-async function entrer(page, email, url = './') {
+async function entrer(page, email, url = './app') {
   await page.goto(url);
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toBeFocused();
@@ -32,7 +32,7 @@ function compte(store, email, role, nom, org) {
 test('un élève : chaque écran a son adresse, rafraîchir le garde, retour revient', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);
-  await page.goto('./');
+  await page.goto('./app');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await expect(page).toHaveURL(/\/connexion$/);
   await page.getByRole('button', { name: 'Créer un compte' }).click();
@@ -114,7 +114,7 @@ test.describe('sur ordinateur', () => {
 
 test('la démo a ses adresses, et rafraîchir ne la quitte plus', async ({ page }) => {
   await brancher(page, nouveauStore());
-  await page.goto('./');
+  await page.goto('./app');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await page.getByRole('button', { name: 'Essayer sans compte' }).click();
   await expect(page).toHaveURL(/\/essayer$/);

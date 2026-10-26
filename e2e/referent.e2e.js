@@ -29,7 +29,7 @@ function lycee(store) {
 }
 
 async function entrerReferent(page) {
-  await page.goto('./');
+  await page.goto('./app');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toBeFocused();
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill('ref@lycee.fr');

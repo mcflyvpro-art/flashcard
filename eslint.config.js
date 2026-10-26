@@ -45,6 +45,11 @@ export default [
     files: ['tools/pages-redirection/sw.js'],
     languageOptions: { sourceType: 'script', globals: globals.serviceworker }
   },
+  /* les affiches du site : Node, et le navigateur dans page.evaluate() */
+  {
+    files: ['tools/affiches.js'],
+    languageOptions: { sourceType: 'module', globals: { ...globals.node, ...globals.browser } }
+  },
   /* M07 : un parcours tourne dans Node, mais les fonctions passées à
      page.evaluate() s'exécutent dans la page — les deux jeux de globales. */
   {

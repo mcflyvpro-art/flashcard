@@ -28,6 +28,20 @@ DERNIER   2026-10-26 · La licence du référent (20261026130000) : une place pa
           onglet Entreprise) — licence.sql 50/50, etablissement.sql 72/72,
           test/facture.test.js 19/19, e2e referent 6/6 et editeur 5/5. Corrigé :
           « 2 élèves en retard » ouvrait un filtre vide (élèves jamais connectés).
+          Avant : La page d'accueil publique : le site à `/` (index.html, src/site/),
+          l'app à ses adresses (app.html, réécriture de vercel.json ; `/app` pour
+          « l'app, sans plus de précision ») ; un aiguillage en tête de page envoie
+          dans l'app qui a une session, l'icône installée ou un lien de l'app (QR
+          imprimés compris). Les boutons mènent aux adresses du routeur
+          (/inscription, /connexion, /essayer, /demo/prof, /demande-demo…). B2C, Folio
+          Campus (B2B), tarifs Folio / Folio+ (mensuel ou annuel, prix à valider) /
+          Campus, tableau comparatif, FAQ, SEO (JSON-LD, robots,
+          sitemap, image de partage), logo redessiné en vrai SVG (tools/logo.py),
+          emplacements vidéo avec les vrais écrans en affiche (tools/affiches.js).
+          Reste à l'utilisateur : valider les prix, déposer les vidéos, décider des
+          icônes PNG de l'app. Tout est dans docs/LANDING.md (fichier de reprise).
+          Preuves : npm run check vert, e2e/site.e2e.js 6/6, e2e complets verts,
+          Lighthouse 100/100/100/100 (téléphone et ordinateur).
           Avant : codes renouvelés seuls chaque semaine (20261026110000).
           Avant : une adresse par écran et par espace (src/routes.js, ui/routeur.js) :
           /eleve, /prof, /referent, /admin, /demo/<rôle> ; rafraîchir garde l'écran, le

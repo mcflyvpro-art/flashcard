@@ -40,7 +40,7 @@ for (const largeur of [390, 1440]) {
     await brancher(page, store);
     /* pas connecter() : il attend la bibliothèque, qu'un professeur ne voit
        pas toujours — son rôle connu tôt, il arrive droit sur ses classes */
-    await page.goto('./');
+    await page.goto('./app');
     await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
     await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toBeFocused();
     await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill('prof@exemple.fr');
