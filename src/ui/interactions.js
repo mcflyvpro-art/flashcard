@@ -11,7 +11,7 @@ import {
   setPeek, setPendingGrade, setQuiz, setReorder, setSel, setShared,
   setStudy, shared, study, trash, view
 } from '../data/etat.js';
-import { allerClasses, go, render, retourLivre } from './bibliotheque.js';
+import { allerClasses, gestion, go, render, retourLivre } from './bibliotheque.js';
 import { commuPull, doAdd, ouvrirProfil } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
 import { isPupil } from './classement.js';
@@ -154,7 +154,8 @@ function tapSndSay(a, ds, b) {
   else play(aud);
 }
 
-const tapHome = () => go('home');
+// un compte de gestion n'a pas de bibliothèque : son « accueil », c'est sa console
+const tapHome = () => (gestion() ? allerClasses() : go('home'));
 // le « Retour » d'un livre : là d'où on l'a ouvert (« Ma classe » pour un devoir)
 const tapDeckback = () => { const o = retourLivre(); return o.name === 'classes' ? allerClasses() : go(o.name, o.id); };
 const tapCommu = () => { commuPull(); return go('commu'); };

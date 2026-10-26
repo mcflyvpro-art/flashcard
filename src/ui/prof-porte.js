@@ -44,6 +44,9 @@ export const profAgendaView = vue('profAgendaView');
 export const profClasseView = vue('profClasseView');
 
 export const allerAccueil = () => chargerEspace().then(m => m && m.allerAccueil());
+// depuis une adresse (ui/routeur.js) : l'agenda, une classe et son onglet
+export const allerAgenda = () => chargerEspace().then(m => m && m.ouvrirAgenda());
+export const allerClasse = (id, tab) => chargerEspace().then(m => m && m.ouvrirClasse(id, tab));
 export const donnerLivre = d => chargerEspace().then(m => m && m.donnerLivre(d));
 export const rejoindreCollegue = code => chargerEspace().then(m => m && m.rejoindreCollegue(code));
 

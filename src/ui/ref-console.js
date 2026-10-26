@@ -39,12 +39,6 @@ function tete(b, c) {
     </div>`;
 }
 
-const ONGLETS = [['accueil', 'Accueil'], ['classes', 'Classes'], ['eleves', 'Élèves'], ['profs', 'Professeurs'], ['journal', 'Journal']];
-function onglets(b) {
-  const n = { classes: (ref.classes || []).filter(c => c.genre === 'classe').length, eleves: b && b.eleves, profs: b && b.profs };
-  return `<nav class="rf-onglets" role="tablist">${ONGLETS.map(([k, t]) => `<button role="tab" aria-selected="${ref.tab === k}"
-    class="${ref.tab === k ? 'on' : ''}" data-rf="onglet" data-id="${k}">${t}${n[k] != null ? `<i>${n[k]}</i>` : ''}</button>`).join('')}</nav>`;
-}
 
 /* ---------- l'accueil : les codes, la licence, ce qui demande une décision ---------- */
 function tuileCode(quel, titre, code) {
@@ -314,12 +308,14 @@ const CORPS = { accueil, classes, eleves: personnes, profs: personnes, journal, 
    d'il y a une heure sous un filtre oublié. */
 export function consoleRef() {
   if (!ref.charge) {
-    Object.assign(ref, { charge: true, tab: 'accueil', open: null, who: null, team: null, profsListe: null, projo: '' });
+    const c = ref.cible;
+    Object.assign(ref, { charge: true, tab: 'accueil', open: null, who: null, team: null, profsListe: null, projo: '', cible: null });
     refCharger();
+    if (c) poserAdresse(c.sous, c.id);
   }
   const b = ref.board;
   $.innerHTML = `<div class="page rf" id="page">${tete(b, ref.codes)}
-      ${PC() ? `${onglets(b)}<section class="rf-corps">${(CORPS[ref.tab] || accueil)()}</section>` : telephone()}
+      ${PC() ? `<section class="rf-corps">${(CORPS[ref.tab] || accueil)()}</section>` : telephone()}
     </div>${ref.projo ? projection() : ''}`;
   dessinerQR();
 }
@@ -333,7 +329,9 @@ function dessinerQR() {
 }
 
 /* ---------- les gestes ---------- */
-function ouvrirOnglet(k, sans = false) {
+/* Poser l'état d'un onglet sans repeindre : la première ouverture le fait
+   au milieu du rendu (une adresse /referent/classes/… rechargée). */
+function poserOnglet(k, sans = false) {
   ref.tab = k; ref.who = null; ref.service = null; ref.open = null; ref.team = null;
   if (k === 'eleves' || k === 'profs') {
     ref.role = k === 'eleves' ? 'eleve' : 'prof'; ref.cls = null; ref.sans = sans; ref.gens = null; ref.q = '';
@@ -341,14 +339,23 @@ function ouvrirOnglet(k, sans = false) {
   }
   if (k === 'classes' && !ref.profsListe) refProfsPull();
   if (k === 'journal') { ref.trace = null; refJournalPull(); }
-  repeint();
 }
 
-function ouvrirClasse(id) {
+function poserClasse(id) {
   ref.open = id; ref.team = null; ref.gens = null; ref.role = 'eleve'; ref.cls = id; ref.sans = false; ref.q = '';
   refEquipePull(id); refPersonnesPull(true);
-  repeint();
 }
+
+function ouvrirOnglet(k, sans = false) { poserOnglet(k, sans); repeint(); }
+function ouvrirClasse(id) { poserClasse(id); repeint(); }
+
+/* Depuis une adresse (ui/routeur.js, par la porte ui/etablissement.js) :
+   l'onglet et, pour les classes, celle qui est ouverte. */
+function poserAdresse(k, id) {
+  poserOnglet(CORPS[k] ? k : 'accueil');
+  if (ref.tab === 'classes' && id) poserClasse(id);
+}
+export function allerA(k, id) { poserAdresse(k, id); repeint(); }
 
 function ouvrirPersonne(id) {
   ref.who = (ref.gens || []).find(g => g.id === id) || null;

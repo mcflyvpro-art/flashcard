@@ -6,7 +6,7 @@ import {
   accounts, auth, blocks, compte, db, iAmMod, mods, myRole, online, prefs, ref,
   setSubjColor, setSubjEdit, setSubjName, shared, trash, vers, view
 } from '../data/etat.js';
-import { render } from './bibliotheque.js';
+import { gestion, render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
 import { atSchool, isAdmin } from './classement.js';
 import {
@@ -58,7 +58,7 @@ function settingsRevisionHtml() {
       </div>`;
 }
 
-function settingsAffichageHtml() {
+function settingsAffichageHtml(sansSons) {
   return `
       <div class="lbl"><span>Affichage</span></div>
       <div class="slist">
@@ -69,9 +69,9 @@ function settingsAffichageHtml() {
             value="${Math.round((prefs.font || 1) * 100)}" aria-label="Taille du texte">
           <div class="fprev" style="font-size:calc(17px * var(--fs,1))">Aperçu : la casa</div>
         </div>
-        <button class="sr flat" data-act="tglsound">${svg(I.sound)}
+        ${sansSons ? '' : `<button class="sr flat" data-act="tglsound">${svg(I.sound)}
           <span class="n">Sons</span>
-          <span class="tgl ${prefs.sound ? 'on' : ''}"></span></button>
+          <span class="tgl ${prefs.sound ? 'on' : ''}"></span></button>`}
       </div>`;
 }
 
@@ -158,16 +158,34 @@ function settingsQuitterHtml() {
         : online ? 'Synchronisé' : 'Hors ligne — rien en attente'}</div>`;
 }
 
+/* Le référent et l'éditeur ne révisent pas : leur compte (son nom vient de
+   l'établissement, il ne se change pas d'ici), l'affichage, les textes du
+   cadre, et c'est tout — ni objectif, ni matières, ni corbeille, ni sons. */
+function settingsGestionHtml() {
+  return `
+      <div class="lbl"><span>Mon compte</span></div>
+      <div class="slist">
+        <div class="sr flat fixe">${svg(I.user)}<span class="n">${esc((compte && compte.nom) || prefs.name || '')}</span>
+          <span class="c">${esc(auth.email || '')}</span></div>
+        <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
+        ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
+          <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
+        <button class="sr flat" data-legal="cgu">${svg(I.file)}
+          <span class="n">Conditions et confidentialité</span>${svg(I.arrow)}</button>
+      </div>`;
+}
+
 export function settingsView() {
+  const sections = gestion() ? [settingsGestionHtml, () => settingsAffichageHtml(true), settingsQuitterHtml]
+    : [settingsRevisionHtml, settingsAffichageHtml, settingsMatieresHtml, settingsCompteHtml, settingsDonneesHtml, settingsQuitterHtml];
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Réglages</div></div>
-      <div class="rg-grille">${[settingsRevisionHtml, settingsAffichageHtml, settingsMatieresHtml,
-        settingsCompteHtml, settingsDonneesHtml, settingsQuitterHtml].map(f => `<section class="rg">${f()}</section>`).join('')}</div>
+      <div class="rg-grille">${sections.map(f => `<section class="rg">${f()}</section>`).join('')}</div>
     </div>`;
   const g = document.getElementById('pGoal');
-  g.addEventListener('input', () => {
+  if (g) g.addEventListener('input', () => {
     prefs.goal = +g.value; savePrefs();
     g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' pages';
   });

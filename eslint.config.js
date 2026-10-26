@@ -24,6 +24,14 @@ export default [
       'max-depth': ['error', 4]
     }
   },
+  /* La base locale (2026-10-26) rejoue des fonctions SQL au plus près de
+     leur texte — un verdict, ses dix cas, dans l'ordre de la base : la
+     découper pour la complexité éloignerait l'émulation de ce qu'elle
+     émule. Le reste des règles s'applique. */
+  {
+    files: ['src/base-locale/**/*.js'],
+    rules: { complexity: 'off' }
+  },
   {
     files: ['src/sw.js'],
     languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker, __SHELL__: 'readonly' } }

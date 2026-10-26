@@ -94,11 +94,16 @@ de connexion et sous le formulaire de démo) : le **Lycée Démo Folio**,
 établissement fictif, où l'on entre comme élève (Léa MARTIN, 2nde B et le
 groupe Spé maths, trois devoirs), professeur (Marc DURAND, ses classes, son
 groupe, le code de l'établissement) ou référent (Claire ROUX, les codes, la
-licence de démo, les classes, les élèves, les professeurs, le journal). Ce
-sont les vrais écrans, au téléphone comme sur ordinateur ; rien n'est créé
-en base, rien ne part : un geste qui écrirait répond « Démo : rien n'est
-enregistré ». Un bandeau change de rôle en un geste, « Quitter » ramène à
-la connexion — pour montrer Folio en rendez-vous, ou se faire une idée.
+licence de démo, les classes, les élèves, les professeurs, le journal). C'est
+la vraie app, au téléphone comme sur ordinateur, et tout s'y fait : donner
+un devoir, le lire en tant qu'élève, écrire à la classe, créer une classe,
+regarder son journal ou le classement des amis. Rien n'est créé en base,
+rien ne part : chaque visiteur a son lycée à lui, dans son onglet
+(rafraîchir le garde, fermer l'onglet l'efface). Ce qui coûte — l'IA, les
+photos, les fichiers, les images et les sons — est grisé et le dit. Un
+bandeau change de rôle en un geste (ce que Marc donne, Léa le reçoit),
+« Quitter » ramène à la connexion — pour montrer Folio en rendez-vous, ou se
+faire une idée.
 
 ### 4.3 Licence
 

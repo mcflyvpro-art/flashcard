@@ -55,7 +55,7 @@ test.describe('sur ordinateur', () => {
 
     // ce qui demande une décision mène droit à la liste filtrée
     await page.locator('[data-rf="aller"]', { hasText: 'sans classe' }).click();
-    await expect(page.locator('.rf-onglets .on')).toContainText('Élèves');
+    await expect(page.locator('#rail nav .on')).toContainText('Élèves');      // les pages du référent sont dans la barre
     await expect(page.locator('.rf-liste .rf-ligne')).toHaveCount(1);
     await page.locator('.rf-liste .rf-ligne', { hasText: 'tom dupont' }).click();
 
@@ -69,7 +69,7 @@ test.describe('sur ordinateur', () => {
     await expect(page.locator('.rf-qui b')).toHaveText('Tom DUPONT');
 
     // le journal garde la trace de ce qu'on vient de faire
-    await page.locator('.rf-onglets button', { hasText: 'Journal' }).click();
+    await page.locator('#rail [data-r="ref:journal"]').click();
     await expect(page.locator('.rf-jl', { hasText: 'identité corrigée' })).toBeVisible();
     await expect(page.locator('.rf-jl', { hasText: 'élève déplacé' })).toBeVisible();
     expect(await page.evaluate(() => document.body.scrollWidth)).toBeLessThanOrEqual(1360);
@@ -96,7 +96,7 @@ test.describe('sur ordinateur', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('.rf-projo')).toHaveCount(0);
 
-    await page.locator('.rf-onglets button', { hasText: 'Classes' }).click();
+    await page.locator('#rail [data-r="ref:classes"]').click();
     await page.locator('#rfcnom').fill('2nde C');
     await page.locator('#rfcniv').selectOption('2nde');
     await page.getByRole('button', { name: 'Créer' }).click();
@@ -151,7 +151,7 @@ test('au téléphone : les deux codes et la licence, le reste sur ordinateur', a
   await entrerReferent(page);
   await expect(page.locator('.rf-tel .rf-code-v').first()).toHaveText(enClair(org.codes.eleve));
   await expect(page.locator('.rf-tel .rf-licence')).toContainText('Démo');
-  await expect(page.locator('.rf-onglets')).toHaveCount(0);
+  await expect(page.locator('#rail [data-r="ref:classes"]')).toBeHidden();      // au téléphone : les codes, la licence
   await expect(page.locator('.rf-tel')).toContainText('sur ordinateur');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });

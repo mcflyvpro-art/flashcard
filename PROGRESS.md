@@ -20,15 +20,31 @@ CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
 DERNIER   2026-10-26 · La page d'accueil publique : le site à `/` (index.html, src/site/),
-          l'app à `/app` (app.html) ; un aiguillage en tête de page envoie dans l'app
-          qui a une session, l'icône installée ou un lien de l'app (QR imprimés
-          compris). B2C, Folio Campus (B2B), tarifs Folio / Folio+ (mensuel ou annuel,
-          prix à valider) / Campus, tableau comparatif, FAQ, SEO (JSON-LD, robots,
+          l'app à ses adresses (app.html, réécriture de vercel.json ; `/app` pour
+          « l'app, sans plus de précision ») ; un aiguillage en tête de page envoie
+          dans l'app qui a une session, l'icône installée ou un lien de l'app (QR
+          imprimés compris). Les boutons mènent aux adresses du routeur
+          (/inscription, /connexion, /essayer, /demo/prof, /demande-demo…). B2C, Folio
+          Campus (B2B), tarifs Folio / Folio+ (mensuel ou annuel, prix à valider) /
+          Campus, tableau comparatif, FAQ, SEO (JSON-LD, robots,
           sitemap, image de partage), logo redessiné en vrai SVG (tools/logo.py),
           emplacements vidéo avec les vrais écrans en affiche (tools/affiches.js).
           Reste à l'utilisateur : valider les prix, déposer les vidéos, décider des
           icônes PNG de l'app. Tout est dans docs/LANDING.md (fichier de reprise).
-          Preuves : npm run check vert, e2e/site.e2e.js 6/6, e2e complets verts.
+          Preuves : npm run check vert, e2e/site.e2e.js 6/6, e2e complets verts,
+          Lighthouse 100/100/100/100 (téléphone et ordinateur).
+          Avant : Une adresse par écran et par espace (src/routes.js, ui/routeur.js) :
+          /eleve, /prof, /referent, /admin, /demo/<rôle> ; rafraîchir garde l'écran, le
+          retour du navigateur revient à l'écran d'avant, une adresse ouverte sans session
+          attend la connexion — e2e/adresses.e2e.js 4/4, test/routes.test.js 7/7. Le
+          référent et l'éditeur n'ont plus dans leur barre que leurs pages (onglets de la
+          console, réglages réduits), l'éditeur arrive sur sa console. La démo sans compte
+          devient la vraie app sur une base locale (src/base-locale/, le Supabase en mémoire
+          des parcours, sorti de e2e/) : tout s'écrit, d'un rôle à l'autre, rien ne part ;
+          l'IA, les photos et les fichiers grisés — e2e/demo.e2e.js 3/3,
+          test/monde-demo.test.js 6/6. Corrigé en chemin : la fiche d'un élève et « Ce qui
+          bloque » restaient en chargement chez un vrai professeur. Suite : licence et
+          factures du référent, codes renouvelés chaque semaine.
           Avant : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
           code » en base (20261026001000) et la feuille « J'ai un code » ; B2C sans onglet
           Classe ; la console du référent refaite pour l'ordinateur (ui/ref-console.js, à
@@ -45,7 +61,7 @@ DERNIER   2026-10-26 · La page d'accueil publique : le site à `/` (index.html,
           Comptes de test : referent@folio.app (Lycée d'essai Folio). L'accueil d'un
           nouveau compte (ui/bienvenue.js : prénom, pseudo, visage, niveau, matières,
           objectif ; visage seul pour un élève de classe) — e2e/bienvenue.e2e.js 3/3.
-          La démo sans compte (« Essayer sans compte » : le Lycée Démo Folio, src/demo-etab.js,
+          La démo sans compte (« Essayer sans compte » : le Lycée Démo Folio, alors src/demo-etab.js,
           servi en tête d'api() ; élève, professeur, référent, vrais écrans, aucune requête,
           bandeau pour changer de rôle) — e2e/demo.e2e.js 4/4, test/demo-etab.test.js 6/6.
           Reste : la page d'accueil publique (plus tard). Pas de Stripe (Capacitor, achats

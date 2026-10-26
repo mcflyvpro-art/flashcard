@@ -49,6 +49,29 @@ function serviceWorker(base) {
   };
 }
 
+/* Chaque écran de l'app a son adresse (/connexion, /eleve/livres… —
+   src/routes.js) et toutes servent app.html ; la racine reste la page
+   d'accueil du site. Vercel le fait par la réécriture de vercel.json ; ce
+   relais fait de même pour `npm run dev` et `vite preview` (les parcours
+   e2e), avant le repli de Vite, qui servirait index.html — la page
+   d'accueil — à toute adresse inconnue. Un fichier (une extension), les
+   modules de Vite et ce qui n'est pas une page passent tels quels. */
+function adressesDeLApp() {
+  const relais = (req, res, next) => {
+    const i = req.url.search(/[?#]/);
+    const chemin = i < 0 ? req.url : req.url.slice(0, i), reste = i < 0 ? '' : req.url.slice(i);
+    const page = req.method === 'GET' && (req.headers.accept || '').includes('text/html');
+    if (page && chemin !== '/' && !/\.[a-z0-9]+$/i.test(chemin)
+      && !/^\/(assets|icons|site|src|node_modules|@)/.test(chemin)) req.url = '/app.html' + reste;
+    next();
+  };
+  return {
+    name: 'folio-adresses',
+    configureServer(s) { s.middlewares.use(relais); },
+    configurePreviewServer(s) { s.middlewares.use(relais); }
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   /* Sans ces deux valeurs, l'app se construirait quand même et
@@ -64,7 +87,7 @@ export default defineConfig(({ mode }) => {
   const base = '/';
   return {
     base,
-    plugins: [serviceWorker(base)],
+    plugins: [serviceWorker(base), adressesDeLApp()],
     /* Deux pages : la page d'accueil du site (index.html, servie à `/`) et
        l'app (app.html, servie à `/app`). docs/LANDING.md. */
     build: { target: 'es2022', sourcemap: true, rollupOptions: { input: { site: 'index.html', app: 'app.html' } } },

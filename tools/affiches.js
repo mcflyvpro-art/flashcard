@@ -10,7 +10,7 @@
 import { chromium } from '@playwright/test';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
-const URL_APP = (process.env.AFFICHES_URL || 'http://localhost:4190') + '/app?go=essai';
+const URL_APP = (process.env.AFFICHES_URL || 'http://localhost:4190') + '/essayer';
 const SORTIE = 'public/site/affiches/';
 const chrome = process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium';
 
@@ -20,7 +20,7 @@ const AFFICHES = [
   { nom: 'pc', role: 'eleve', fenetre: { width: 1152, height: 720 }, densite: 1.25,
     async chemin(p) {
       await p.locator('aside, nav, .rail').getByText('Livres', { exact: true }).first().click();
-      await p.getByText('Droit civil').first().click();
+      await p.getByText(/Dates d.histoire/).first().click();
       await p.locator('[data-act="study"]:visible').first().click();
       await p.waitForTimeout(900);
       await p.keyboard.press('Space');               // la fiche retournée : la réponse et les quatre boutons

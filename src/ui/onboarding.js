@@ -3,7 +3,7 @@ import { I, SWIPE, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { DAY } from '../fsrs.js';
 import {
-  DECKPAGE, DEFPREFS, asks, auth, bip, board, cercle, cercleNeuf, db, defiNeuf, demo, directNeuf, duels,
+  DECKPAGE, DEFPREFS, asks, auth, bip, board, cercle, cercleNeuf, db, defiNeuf, demo, demoEtab, directNeuf, duels,
   filter, friends, mates, me, mediaCache, menu, myRole, peek, prefs, quiz,
   setAccounts, setAddQ, setAdm, setAnimate, setAsks, setBip, setBlocks, setBoard,
   setCardEdit, setCercle, setComp, setCompte, setConflicts, setDb, setDeckOpen, setDeckQ, setDefi, setDirect,
@@ -21,7 +21,9 @@ import { dec, fsrsMigrate } from './carte-media.js';
 import { accueil } from '../core/classement.js';
 import { cacheKey, esc, flush, load, plur, pull, refreshToken, save, saveAuth, setOnline } from '../core/coeur-sync.js';
 import { selOff } from './connexion.js';
-import { ecranSansSession, lienAvantSession } from './liens-entrants.js';
+import { lienAvantSession } from './liens-entrants.js';
+import { armer, armerSansSession, cibleDepart, desarmer } from './routeur.js';
+import { effacerDemo, ouvrirDemo } from './demo-porte.js';
 import { isPupil } from './classement.js';
 import { ouvrirBienvenue } from './bienvenue-porte.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
@@ -107,6 +109,8 @@ export function resetSession() {
 }
 
 export function logout() {
+  // dans la démo sans compte, se déconnecter c'est la quitter (ui/demo.js) : rien ne doit rester branché
+  if (demoEtab) { try { sessionStorage.removeItem('folio.demo'); } catch (e) { /* rien à effacer */ } return location.replace('/connexion'); }
   flush();
   const key = cacheKey();
   saveAuth(null);
@@ -701,7 +705,11 @@ export async function boot() {
   /* Le QR d'une carte élève ouvre la session avant tout le reste ; un code
      de classe, de partie ou de club arrivé sans session attend la
      connexion (liens-entrants.js, la porte de tout lien entrant). */
-  if (!(await lienAvantSession())) { setView({ name: ecranSansSession() }); return render(); }
+  const adresse = cibleDepart();          // l'écran que demande l'adresse (ui/routeur.js)
+  if (adresse && adresse.demo) return ouvrirDemo(adresse);
+  effacerDemo();
+  if (!(await lienAvantSession())) { setView({ name: 'login' }); render(); return armerSansSession(cibleDepart()); }
+  desarmer();
   setDb(load());
   fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état
   if (!consumeHash()) render();          // le cache s'affiche tout de suite
@@ -732,6 +740,7 @@ export async function boot() {
     setOnline(true);
     let pret = null;
     if (!(shortcut && consumeGoto())) { render(); pret = accueil(); }
+    Promise.resolve(pret).then(r => armer(!!pret && r !== 'lien'), () => armer(false));
     flush();
     maybeTour(pret);
   } catch (e) {

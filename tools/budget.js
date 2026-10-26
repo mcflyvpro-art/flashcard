@@ -34,6 +34,14 @@
 // plafond « à la demande » passe de 56 à 68 Ko (JS) et de 22 à 27 Ko (CSS) :
 // la même marge par morceau, et toujours personne qui les charge tous.
 //
+// 2026-10-26 (bis) : la démo sans compte embarque une base locale entière
+// (le Supabase en mémoire des parcours, src/base-locale/, et le monde du
+// Lycée Démo Folio) — 22 Ko de JS. Elle ne se charge que chez un visiteur
+// sans compte qui clique « Essayer », jamais chez un élève, un professeur
+// ou un référent : elle a son plafond à elle (30 Ko JS, 3 Ko CSS) au lieu
+// de gonfler celui des comptes. Ses fichiers se reconnaissent à leur nom
+// (`demo-…`, ui/demo.js et sa feuille).
+//
 // 2026-10-26 : la racine devient la page d'accueil du site (dist/index.html)
 // et l'app passe à /app (dist/app.html) : le démarrage de l'app se lit
 // désormais dans app.html. La page d'accueil a sa propre part, « site » :
@@ -45,23 +53,24 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, site: 48 * 1024 };
+const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 30 * 1024, cssDemo: 3 * 1024,
+  site: 48 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
-  site: 'Page d’accueil (HTML + CSS + JS)' };
+  jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte', site: 'Page d’accueil (HTML + CSS + JS)' };
 const dir = 'dist/assets';
 const gz = b => gzipSync(b, { level: 9 }).length;
 const app = readFileSync('dist/app.html', 'utf8');
 const site = readFileSync('dist/index.html', 'utf8');
 const auDemarrage = f => app.includes('/assets/' + f);
 const duSite = f => site.includes('/assets/' + f);
-const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, site: gz(site) };
+const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, jsDemo: 0, cssDemo: 0, site: gz(site) };
 for (const f of readdirSync(dir)) {
   const ext = f.split('.').pop();
   if (ext !== 'js' && ext !== 'css') continue;
   const n = gz(readFileSync(`${dir}/${f}`));
   if (duSite(f)) total.site += n;
   if (duSite(f) && !auDemarrage(f)) continue;
-  const part = auDemarrage(f) ? ext : ext + 'Demande';
+  const part = auDemarrage(f) ? ext : /^demo-/.test(f) ? ext + 'Demo' : ext + 'Demande';
   total[part] += n;
 }
 let ok = true;

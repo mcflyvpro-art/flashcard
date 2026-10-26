@@ -2,8 +2,9 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { iso, joursEntre } from '../classe.js';
-import { setAnimate, view } from '../data/etat.js';
-import { render } from './bibliotheque.js';
+import { ref, setAnimate, view } from '../data/etat.js';
+import { refPull } from '../core/classement.js';
+import { go, render } from './bibliotheque.js';
 import { toast } from './import-cartes.js';
 
 /* ---------- la porte de la console du référent ----------
@@ -28,6 +29,16 @@ export function refView() {
     <div class="empty">${svg(I.school)}</div></div>`;
   charger().then(() => { if (view.name === 'ref') { setAnimate(false); render(); } })
     .catch(() => toast(I.x, 'La console n’a pas pu s’ouvrir : vérifie ta connexion'));
+}
+
+/* Ouvrir un onglet de la console (une adresse, le retour du navigateur) :
+   la console déjà là y va tout de suite ; sinon elle le trouvera à sa
+   première ouverture (ref.cible). */
+export function refAller(sous, id) {
+  if (ecran && ref.charge && view.name === 'ref') return ecran.allerA(sous, id);
+  ref.cible = { sous, id };
+  refPull();
+  go('ref');
 }
 
 export const joursDici = s => joursEntre(iso(new Date()), s);

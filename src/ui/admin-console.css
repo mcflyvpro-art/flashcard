@@ -26,12 +26,6 @@
 .ed-kc.chaud b{color:#B05A12}
 button.ed-kc:hover{background:var(--surf)}
 
-.ed-onglets{display:flex;gap:2px;margin:0 0 16px;border-bottom:1px solid var(--hair)}
-.ed-onglets button{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 14px;margin-bottom:-1px;
-  font-weight:650;font-size:14px;color:var(--soft);border-bottom:2px solid transparent}
-.ed-onglets button:hover{color:var(--ink)}
-.ed-onglets button.on{color:var(--ink);border-bottom-color:var(--ink)}
-.ed-onglets i{font-style:normal;font-size:12px;font-weight:700;padding:1px 7px;border-radius:9px;background:var(--surf)}
 
 /* ---------- liste à gauche, fiche à droite ---------- */
 .ed-maitre{display:grid;grid-template-columns:minmax(320px,.85fr) minmax(0,1.15fr);gap:16px;align-items:start}

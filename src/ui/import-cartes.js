@@ -3,7 +3,7 @@ import { I, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import { aLire } from '../file.js';
 import {
-  actx, auth, booted, db, dirty, fnr, gone, prefs, prefsTimer, setActx, setBooted,
+  actx, auth, booted, db, demoEtab, dirty, fnr, gone, prefs, prefsTimer, setActx, setBooted,
   setPrefsTimer, setTt, tt
 } from '../data/etat.js';
 import {
@@ -22,10 +22,12 @@ export const AIERR = {
   fquota: 'Quota photos et PDF du jour atteint',
   long: 'Texte trop long', short: 'Texte trop court',
   big: 'Fichier trop lourd', mime: 'Format non reconnu',
-  nokey: 'IA non configurée', empty: 'Rien à extraire'
+  nokey: 'IA non configurée', empty: 'Rien à extraire',
+  demo: 'Avec un compte Folio'
 };
 
 async function aiCall(payload) {
+  if (demoEtab) throw new Error('demo');     // l'IA est réservée aux comptes : la démo ne l'appelle jamais
   if (auth && auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
   const call = () => fetch(SB.url + '/functions/v1/ai', {
     method: 'POST',

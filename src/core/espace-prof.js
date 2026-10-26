@@ -82,14 +82,18 @@ export async function exclusPull(cid) {
   repeindre();
 }
 
+/* Ces deux lectures remplissent une feuille déjà ouverte (la fiche d'un
+   élève, « Ce qui bloque » d'un devoir) : `repeindre(true)` la redessine.
+   Sans ce drapeau, une feuille ouverte n'est jamais repeinte et ses points
+   de chargement restaient là pour toujours (vu le 2026-10-26). */
 export async function fichePull(cid, qui) {
   try { prof.fiche = await rpc('prof_eleve', { cid, qui }) || []; } catch (e) { prof.fiche = []; }
-  repeindre();
+  repeindre(true);
 }
 
 export async function cartesBloquePull(aid) {
   try { prof.cartes = await rpc('prof_cartes', { aid }) || []; } catch (e) { prof.cartes = []; }
-  repeindre();
+  repeindre(true);
 }
 
 export async function agendaPull(du, au) {

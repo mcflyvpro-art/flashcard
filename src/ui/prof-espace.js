@@ -8,4 +8,4 @@ import './prof-espace.css';
 export { profAccueilView, profAgendaView } from './prof-accueil.js';
 export { profClasseView } from './prof-classe.js';
 export { paintMenuProf } from './prof-feuilles.js';
-export { allerAccueil, donnerLivre, rejoindreCollegue } from './prof-actions.js';
+export { allerAccueil, donnerLivre, ouvrirAgenda, ouvrirClasse, rejoindreCollegue } from './prof-actions.js';

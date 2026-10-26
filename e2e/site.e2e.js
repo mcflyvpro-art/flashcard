@@ -34,28 +34,32 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
   expect(erreurs).toEqual([]);
 });
 
-test('les boutons ouvrent l’app au bon endroit, sans laisser « ?go= » dans l’adresse', async ({ page }) => {
+test('les boutons ouvrent l’app à l’adresse de chaque écran (src/routes.js)', async ({ page }) => {
   await page.goto('./');
   await page.locator('.heros').getByRole('link', { name: 'Créer un compte' }).click();
   await expect(page.getByRole('button', { name: 'Créer le compte' })).toBeVisible({ timeout: 10000 });
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\/inscription$/);
 
   await page.goto('./');
   await page.locator('.heros').getByRole('link', { name: 'Essayer sans compte' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'decouvrir', { timeout: 10000 });
-  await expect(page.getByText('Lycée Démo Folio')).toBeVisible();
+  await expect(page).toHaveURL(/\/essayer$/);
 
   await page.goto('./');
   await page.locator('#campus').getByRole('link', { name: 'Essayer en professeur' }).click();
   await expect(page.getByText('Bonjour, Marc')).toBeVisible({ timeout: 10000 });
+  await expect(page).toHaveURL(/\/demo\/prof$/);
 
-  await page.goto('./app?go=demo');
+  await page.goto('./');
+  await page.locator('#campus').getByRole('link', { name: 'Demander une démo' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'demande', { timeout: 10000 });
 
-  await page.goto('./app?go=carte');
+  await page.goto('./');
+  await page.locator('.pied').getByRole('link', { name: 'Carte élève' }).click();
   await expect(page.locator('#lmode [data-lm="carte"]')).toHaveClass(/on/, { timeout: 10000 });
 
-  await page.goto('./app?go=mentions');
+  await page.goto('./');
+  await page.locator('.pied').getByRole('link', { name: 'Mentions légales' }).click();
   await expect(page.locator('.bar h1')).toHaveText('Mentions légales', { timeout: 10000 });
 });
 
@@ -71,7 +75,7 @@ test('« J’ai un code » : un code de classe attend la connexion dans l’app'
   await expect(champ).toHaveValue('ABCD 2345');
   await page.getByRole('button', { name: 'Continuer' }).click();
   await expect(page.locator('#passage')).toContainText('ABCD', { timeout: 10000 });
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\/connexion$/);
 });
 
 test('« J’ai un code » : six chiffres, c’est une partie en direct', async ({ page }) => {
@@ -87,7 +91,7 @@ test('« J’ai un code » : six chiffres, c’est une partie en direct', async 
 test('l’aiguillage : un lien de l’app arrivé à la racine passe dans l’app', async ({ page }) => {
   await page.goto('./?defi=482913');
   await expect(page.locator('#passage')).toContainText('482 913', { timeout: 10000 });
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\/connexion$/);
 });
 
 test('l’aiguillage : avec une session, la racine ouvre l’app ; « ?site » montre l’accueil', async ({ page }) => {
@@ -95,7 +99,7 @@ test('l’aiguillage : avec une session, la racine ouvre l’app ; « ?site » m
   await brancher(page, store);
   await inscrire(page);
   await page.goto('./');
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\/eleve\/livres$/, { timeout: 10000 });
   await expect(page.getByRole('button', { name: 'Nouveau livre' })).toBeVisible({ timeout: 10000 });
   await page.goto('./?site');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(TITRE);

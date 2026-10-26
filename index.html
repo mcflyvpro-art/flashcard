@@ -158,12 +158,12 @@
       <li><a href="#moteur">Le moteur</a></li>
       <li><a href="#campus">Établissements</a></li>
       <li><a href="#tarifs">Tarifs</a></li>
-      <li><a href="/app?go=essai">Démo</a></li>
+      <li><a href="/essayer">Démo</a></li>
     </ul>
     <div class="tete-actions">
       <button class="lien tete-code" type="button" data-code>J’ai un code</button>
-      <a class="bt bt-clair" href="/app">Se connecter</a>
-      <a class="bt bt-encre tete-creer" href="/app?go=inscription">Créer un compte</a>
+      <a class="bt bt-clair" href="/connexion">Se connecter</a>
+      <a class="bt bt-encre tete-creer" href="/inscription">Créer un compte</a>
       <button class="burger" type="button" aria-expanded="false" aria-controls="menu-mobile" aria-label="Ouvrir le menu">
         <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg>
       </button>
@@ -173,9 +173,9 @@
     <a href="#moteur">Le moteur</a>
     <a href="#campus">Établissements</a>
     <a href="#tarifs">Tarifs</a>
-    <a href="/app?go=essai">Essayer sans compte</a>
+    <a href="/essayer">Essayer sans compte</a>
     <button class="lien" type="button" data-code>J’ai un code</button>
-    <a class="bt bt-encre" href="/app?go=inscription">Créer un compte</a>
+    <a class="bt bt-encre" href="/inscription">Créer un compte</a>
   </div>
 </header>
 
@@ -197,10 +197,10 @@
       <h1 id="titre" class="titre-heros"><span class="mot">Révise</span> <span class="mot">moins.</span> <span class="mot">Retiens</span> <span class="mot">tout.</span></h1>
       <p class="chapeau">Tes fiches reviennent juste avant que tu les oublies, sur ton téléphone comme sur ton ordinateur.</p>
       <div class="actions">
-        <a class="bt bt-encre bt-grand" href="/app?go=inscription">Créer un compte<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
-        <a class="bt bt-blanc bt-grand" href="/app?go=essai"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer sans compte</a>
+        <a class="bt bt-encre bt-grand" href="/inscription">Créer un compte<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="bt bt-blanc bt-grand" href="/essayer"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer sans compte</a>
       </div>
-      <p class="actions-bis"><button class="lien" type="button" data-code><svg class="ic" aria-hidden="true"><use href="#i-cle"/></svg>J’ai un code</button><span aria-hidden="true">·</span><a class="lien" href="/app">Se connecter</a></p>
+      <p class="actions-bis"><button class="lien" type="button" data-code><svg class="ic" aria-hidden="true"><use href="#i-cle"/></svg>J’ai un code</button><span aria-hidden="true">·</span><a class="lien" href="/connexion">Se connecter</a></p>
     </div>
 
     <div class="scene" id="scene">
@@ -210,7 +210,7 @@
             <div class="ecran" data-ecran="pc">
               <img class="affiche" src="/site/affiches/pc.webp" width="1440" height="900" fetchpriority="high" decoding="async"
                 srcset="/site/affiches/pc-petit.webp 720w, /site/affiches/pc.webp 1440w" sizes="(max-width: 640px) 92vw, 900px"
-                alt="Folio sur ordinateur : les livres d’un élève rangés par matière, prêts à réviser">
+                alt="Folio sur ordinateur : une fiche de révision retournée, sa réponse et les quatre boutons Encore, Difficile, Correct, Facile">
               <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
             </div>
           </div>
@@ -222,7 +222,7 @@
             <div class="ecran" data-ecran="mobile">
               <img class="affiche" src="/site/affiches/mobile.webp" width="390" height="844" decoding="async"
                 srcset="/site/affiches/mobile-petit.webp 390w, /site/affiches/mobile.webp 780w" sizes="(max-width: 640px) 31vw, 232px"
-                alt="Folio sur téléphone : une fiche à réviser et ses quatre boutons, Encore, Difficile, Correct, Facile">
+                alt="Folio sur téléphone : la bibliothèque d’un élève, ses livres rangés par matière et la lecture du jour">
               <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
             </div>
             <i class="ilot" aria-hidden="true"></i>
@@ -392,8 +392,8 @@
           <h2 id="campus-t" class="titre">Tout l’établissement, en deux codes.</h2>
           <p class="texte">Un code pour les élèves, un pour les profs. Le référent garde la main sur le reste.</p>
           <div class="actions">
-            <a class="bt bt-creme bt-grand" href="/app?go=demo">Demander une démo<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
-            <a class="bt bt-fantome bt-grand" href="/app?go=essai-prof"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer en professeur</a>
+            <a class="bt bt-creme bt-grand" href="/demande-demo">Demander une démo<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+            <a class="bt bt-fantome bt-grand" href="/demo/prof"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer en professeur</a>
           </div>
           <p class="petit">Démo gratuite&#8239;: 30 jours, 60 élèves, sans engagement.</p>
         </div>
@@ -465,7 +465,7 @@
         <h3>Folio</h3>
         <p class="prix"><b>0&nbsp;€</b></p>
         <p class="prix-note">Sans carte bancaire</p>
-        <a class="bt bt-clair bt-plein" href="/app?go=inscription">Créer un compte</a>
+        <a class="bt bt-clair bt-plein" href="/inscription">Créer un compte</a>
         <ul class="inclus">
           <li>Le moteur de révision complet</li>
           <li>Livres et fiches sans limite</li>
@@ -480,7 +480,7 @@
         <h3>Folio+</h3>
         <p class="prix"><b data-an="2,50&nbsp;€" data-mois="4,99&nbsp;€">2,50&nbsp;€</b><span>/mois</span></p>
         <p class="prix-note" data-an="29,99&nbsp;€ par an, au lieu de &lt;s&gt;59,88&nbsp;€&lt;/s&gt;" data-mois="Sans engagement, arrêt en un geste">29,99&nbsp;€ par an, au lieu de <s>59,88&nbsp;€</s></p>
-        <a class="bt bt-encre bt-plein" href="/app?go=inscription">Passer à Folio+<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="bt bt-encre bt-plein" href="/inscription">Passer à Folio+<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
         <ul class="inclus">
           <li><b>Tout Folio, et&#8239;:</b></li>
           <li>50 cours par mois en fiches avec l’IA</li>
@@ -493,7 +493,7 @@
         <h3>Folio Campus</h3>
         <p class="prix"><b>3&nbsp;€&nbsp;HT</b><span>/élève/an</span></p>
         <p class="prix-note">300&nbsp;€&nbsp;HT minimum par an</p>
-        <a class="bt bt-clair bt-plein" href="/app?go=demo">Demander une démo</a>
+        <a class="bt bt-clair bt-plein" href="/demande-demo">Demander une démo</a>
         <ul class="inclus">
           <li><b>Pour tout l’établissement&#8239;:</b></li>
           <li>Espace professeur et devoirs suivis</li>
@@ -552,10 +552,10 @@
     <div class="enveloppe fin-in rv">
       <h2 id="fin-t" class="titre">Ouvre ton premier livre ce soir.</h2>
       <div class="actions">
-        <a class="bt bt-creme bt-grand" href="/app?go=inscription">Créer un compte<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="bt bt-creme bt-grand" href="/inscription">Créer un compte<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
         <button class="bt bt-fantome bt-grand" type="button" data-code><svg class="ic" aria-hidden="true"><use href="#i-cle"/></svg>J’ai un code</button>
       </div>
-      <p class="actions-bis"><a class="lien" href="/app?go=essai">Essayer sans compte</a><span aria-hidden="true">·</span><a class="lien" href="/app">Se connecter</a></p>
+      <p class="actions-bis"><a class="lien" href="/essayer">Essayer sans compte</a><span aria-hidden="true">·</span><a class="lien" href="/connexion">Se connecter</a></p>
     </div>
   </section>
 </main>
@@ -569,23 +569,23 @@
     <nav class="pied-liens" aria-label="Pied de page">
       <div>
         <h2>Folio</h2>
-        <a href="/app">Se connecter</a>
-        <a href="/app?go=inscription">Créer un compte</a>
+        <a href="/connexion">Se connecter</a>
+        <a href="/inscription">Créer un compte</a>
         <button class="lien" type="button" data-code>J’ai un code</button>
-        <a href="/app?go=carte">Carte élève</a>
-        <a href="/app?go=essai">Essayer sans compte</a>
+        <a href="/carte-eleve">Carte élève</a>
+        <a href="/essayer">Essayer sans compte</a>
       </div>
       <div>
         <h2>Établissements</h2>
         <a href="#campus">Folio Campus</a>
-        <a href="/app?go=demo">Demander une démo</a>
+        <a href="/demande-demo">Demander une démo</a>
         <a href="#tarifs">Tarifs</a>
       </div>
       <div>
         <h2>Le cadre</h2>
-        <a href="/app?go=mentions">Mentions légales</a>
-        <a href="/app?go=vie">Confidentialité</a>
-        <a href="/app?go=cgu">Conditions d’utilisation</a>
+        <a href="/mentions/mentions">Mentions légales</a>
+        <a href="/mentions/confidentialite">Confidentialité</a>
+        <a href="/mentions/cgu">Conditions d’utilisation</a>
       </div>
     </nav>
   </div>
@@ -607,7 +607,7 @@
       spellcheck="false" enterkeyhint="go" placeholder="ABCD 2345" maxlength="14">
     <p class="code-erreur" id="code-erreur" role="alert"></p>
     <button class="bt bt-encre bt-plein bt-grand" type="submit">Continuer<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></button>
-    <a class="lien code-carte" href="/app?go=carte"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg>J’ai une carte élève</a>
+    <a class="lien code-carte" href="/carte-eleve"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg>J’ai une carte élève</a>
   </form>
 </dialog>
 </body>

@@ -310,6 +310,8 @@ const ONGLETS = { eleves: elevesOnglet, demandes: demandesOnglet, devoirs: devoi
 
 export function profClasseView() {
   const c = classeOuverte();
+  /* ouverte par son adresse, la classe arrive avec la liste : on attend */
+  if (!c && !prof.classes) { $.innerHTML = '<div class="pf"><main class="pf-main"><div class="pf-load"><i></i><i></i><i></i></div></main></div>'; return; }
   if (!c) return go('prof');
   const s = syntheseClasse(prof.roster || []);
   $.innerHTML = `<div class="pf">${navProf('classe')}<main class="pf-main">

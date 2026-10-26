@@ -2,10 +2,11 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import {
-  blocks, compte, mods, myRole, reportOn, reportWhy, school, setAnimate, setMenu, setReportOn, setReportWhy, view
+  adm, blocks, compte, mods, myRole, reportOn, reportWhy, school, setAnimate, setMenu, setReportOn, setReportWhy, view
 } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
-import { render } from './bibliotheque.js';
+import { admPull } from '../core/classement.js';
+import { go, render } from './bibliotheque.js';
 import { toast } from './import-cartes.js';
 import { joursDici } from './etablissement.js';
 import { openMenu, mountMenu } from './menus-a.js';
@@ -131,6 +132,13 @@ function chargerAdmin() {
       .catch(e => { chargeAdm = null; throw e; });
   }
   return chargeAdm;
+}
+
+export function admAller(sous, id) {
+  if (consoleAdm && adm.charge && view.name === 'admin') return consoleAdm.allerA(sous, id);
+  admPull();
+  chargerAdmin().then(m => m.allerA(sous, id)).catch(() => { /* hors ligne : adminView le dira */ });
+  go('admin');
 }
 
 export function adminView() {

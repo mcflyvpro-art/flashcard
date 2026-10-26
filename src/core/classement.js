@@ -15,6 +15,7 @@ import { toast } from '../ui/import-cartes.js';
 import { closeMenu, paintMenu } from '../ui/menus-a.js';
 import { allerAccueil } from '../ui/prof-porte.js';
 import { lienApresRole } from '../ui/liens-entrants.js';
+import { cibleEnAttente } from '../ui/routeur.js';
 import { friendsPull, mailPull } from './reglages-corbeille.js';
 import { sallesPull } from './cercle.js';
 
@@ -81,7 +82,7 @@ export async function sendReport() {
 }
 
 async function modCheck() {
-  try { setIAmMod(!!(await api('/rest/v1/rpc/is_mod', 'POST', {}))); }
+  try { setIAmMod((await api('/rest/v1/rpc/is_mod', 'POST', {})) === true); }   // un booléen, rien d'autre
   catch (e) { setIAmMod(false); }
 }
 
@@ -126,12 +127,14 @@ export async function accueil() {
   /* Un lien ou un QR « rejoindre », une partie en direct (« ?defi= »), une
      invitation dans un club (« ?club= ») attendait — ouvert avant la
      connexion, ou à l'instant : il passe avant l'écran d'arrivée habituel. */
-  if (await lienApresRole()) return;
+  if (await lienApresRole()) return 'lien';
   /* Un compte personnel peut avoir rejoint la classe d'un professeur : il
      faut le savoir pour lui montrer l'onglet « Classe ». */
   if (!isPupil() && !isProf() && myRole !== 'ref' && myRole !== 'admin') eleveClassesPull();
   if (view.name !== 'home') return;              // l'utilisateur est déjà parti ailleurs
+  if (cibleEnAttente()) return;                  // l'adresse désigne un écran : armer() y mène (ui/routeur.js)
   if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
+  if (myRole === 'admin') { admPull(); return go('admin'); }      // l'éditeur arrive sur sa console
   if (isProf()) return allerAccueil();
   if (isPupil()) { eleveClassesPull(); matesPull(); return go('classes'); }
 }
