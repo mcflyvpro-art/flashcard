@@ -6,6 +6,7 @@ import { api } from './coeur-sync.js';
 import { messageErreur } from './eleve-classes.js';
 import { toast } from '../ui/import-cartes.js';
 import { paintMenu } from '../ui/menus-a.js';
+import { atSchool } from '../ui/classement.js';
 
 /* ══════════ l'espace professeur : ce qui part et ce qui revient ══════════
    Tout passe par les fonctions de la base (migrations 20261024…) : elles
@@ -121,6 +122,57 @@ export async function codeCollegue(code, entrer) {
 export const defiClasse = ({ classe, nom, cartes, qui }) => api('/rest/v1/duels', 'POST',
   [{ deck_id: null, owner: auth.uid, who: qui, name: nom, total: cartes.length, cards: cartes, class_id: classe }],
   { Prefer: 'return=minimal' });
+
+/* ---------- un seul code (20261026030000) ----------
+   Le code que ce professeur donne à ses élèves : dans un établissement,
+   celui que le référent distribue (prof_code_etab) ; sinon le sien
+   (prof_mon_code, `nouveau` pour en changer). Les élèves le tapent dans
+   « J'ai un code », puis choisissent leur classe. */
+let codeEnCours = null;
+export function codePull(nouveau) {
+  if (codeEnCours && !nouveau) return codeEnCours;      // un écran repeint dix fois ne le demande qu'une
+  codeEnCours = (async () => {
+    try {
+      prof.code = atSchool() ? await rpc('prof_code_etab') : await rpc('prof_mon_code', { nouveau: !!nouveau });
+      prof.codeErr = '';
+      if (nouveau) toast(I.check, 'Nouveau code : l’ancien ne marche plus');
+    } catch (e) { prof.code = prof.code || ''; prof.codeErr = messageErreur(e).slice(0, 140); }
+    codeEnCours = null;
+    repeindre(true);
+  })();
+  return codeEnCours;
+}
+
+/* Les classes de l'établissement, pour choisir les siennes. */
+export async function classesEtabPull() {
+  try { prof.etabClasses = await rpc('prof_classes_etab') || []; } catch (e) { prof.etabClasses = prof.etabClasses || []; }
+  repeindre(true);
+}
+
+/* Les élèves de l'établissement, pour former un groupe : la réponse d'une
+   frappe plus ancienne ne remplace jamais celle d'une plus récente. */
+let cherche = 0;
+export async function elevesEtabPull(q, cid) {
+  const n = ++cherche;
+  try {
+    const l = await rpc('prof_eleves_etab', { q: q || '', cid: cid || null }) || [];
+    if (n === cherche) prof.etabEleves = l;
+  } catch (e) { if (n === cherche) prof.etabEleves = []; }
+  repeindre(true);
+}
+
+/* Professeur particulier : les élèves de ses autres classes, pour en ranger
+   un dans celle-ci (prof_ajouter_eleve). Peu de classes, peu d'appels. */
+export async function mesElevesPull(cid) {
+  const autres = (prof.classes || []).filter(c => !c.etab && !c.archivee && c.id !== cid);
+  const r = await Promise.allSettled(autres.map(c => rpc('prof_roster', { cid: c.id })));
+  const vus = new Map();
+  r.forEach((x, i) => (x.status === 'fulfilled' ? x.value || [] : []).forEach(m => {
+    if (!vus.has(m.user_id)) vus.set(m.user_id, { id: m.user_id, nom: m.who, classe: autres[i].name });
+  }));
+  prof.mesEleves = [...vus.values()].sort((a, b) => String(a.nom).localeCompare(String(b.nom), 'fr'));
+  repeindre(true);
+}
 
 /* ---------- écrire ---------- */
 export async function ecrire(nom, args, bon) {

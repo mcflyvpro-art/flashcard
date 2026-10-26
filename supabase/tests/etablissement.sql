@@ -1,4 +1,4 @@
--- Tests de 20261025233000 + 20261026001000 (un seul code) + 20261026020000 : du prospect au
+-- Tests de 20261025233000 + 20261026001000 (un seul code) + 20261026020000 + 20261026030000 : du prospect au
 -- client, le code qui fait entrer tout de suite (élève, professeur,
 -- référent, professeur particulier), la classe choisie, les groupes, la
 -- licence. Même mode que jetons.sql : transaction ANNULÉE, comptes
@@ -30,7 +30,7 @@ declare
   adm uuid := gen_random_uuid(); dir uuid := gen_random_uuid(); prof uuid := gen_random_uuid();
   emma uuid := gen_random_uuid(); lucas uuid := gen_random_uuid(); ines uuid := gen_random_uuid();
   tuteur uuid := gen_random_uuid(); paul uuid := gen_random_uuid(); zoe uuid := gen_random_uuid(); u record;
-  j jsonb; o uuid; o2 uuid; cref text; ce text; cp text; ct text; c1 uuid; c2 uuid; g uuid; t2 uuid; s text; n integer;
+  j jsonb; o uuid; o2 uuid; cref text; ce text; cp text; ct text; c1 uuid; c2 uuid; g uuid; g2 uuid; t2 uuid; s text; n integer;
 begin
   for u in select * from (values
       (adm, 'zzadmin', 'admin'), (dir, 'zzdir', null), (prof, 'zzprof', null), (emma, 'zzemma', null),
@@ -196,6 +196,19 @@ begin
   select count(*) into n from public.ref_personnes();
   insert into public.zz_res (nom, ok, vu) values ('un professeur ne lit pas la liste du référent', n = 0, n::text);
 
+  -- ══════════ l'espace professeur (20261026030000) ══════════
+  s := public.prof_code_etab();
+  insert into public.zz_res (nom, ok, vu) values ('un professeur de l''établissement lit le code élèves, pour le projeter', s = ce, s);
+  g2 := public.prof_creer_classe('Atelier théâtre', '', 'Lettres');
+  insert into public.zz_res (nom, ok, vu) values ('« Nouvelle classe » dans un établissement : un groupe',
+    (select genre from public.classes where id = g2) = 'groupe'
+    and exists (select 1 from public.prof_classes() x where x.id = g2 and x.genre = 'groupe'), 'groupe');
+  insert into public.zz_res (nom, ok, vu) values ('ce groupe n''est pas proposé aux élèves qui tapent le code',
+    not exists (select 1 from public.prof_classes_etab() x where x.id = g2), 'absent');
+  perform public.zz_comme(emma);
+  s := public.zz_leve('select public.prof_code_etab()');
+  insert into public.zz_res (nom, ok, vu) values ('un élève ne lit pas le code par cette porte', s like '%Réservé%', s);
+
   -- ══════════ un professeur particulier : son code ══════════
   perform public.zz_comme(prof);
   s := public.zz_leve('select public.prof_mon_code()');
@@ -219,6 +232,11 @@ begin
   perform public.zz_comme(tuteur);
   t2 := public.prof_creer_classe('Maths Tle', 'Tle', 'Maths');
   perform public.prof_ajouter_eleve(t2, zoe);
+  insert into public.zz_res (nom, ok, vu) values ('un professeur particulier crée une vraie classe, ouverte au code',
+    (select genre = 'classe' and join_open from public.classes where id = t2)
+    and exists (select 1 from public.prof_classes() x where x.id = t2 and x.genre = 'classe'), 'classe');
+  s := public.zz_leve('select public.prof_code_etab()');
+  insert into public.zz_res (nom, ok, vu) values ('un professeur particulier n''a pas de code d''établissement', s like '%établissement%', s);
   perform public.zz_root();
   insert into public.zz_res (nom, ok, vu) values ('il range Zoé dans une deuxième classe',
     exists (select 1 from public.class_members m where m.class_id = t2 and m.user_id = zoe and m.who = 'Zoé BLANC'), 'rangée');
@@ -260,7 +278,9 @@ begin
   insert into public.zz_res (nom, ok, vu) values ('anon : la demande de démo seulement',
     has_function_privilege('anon', 'public.demander_demo(text, text, text, text, text, text, integer, text)', 'execute')
     and not has_function_privilege('anon', 'public.rejoindre(text, text, text, uuid)', 'execute')
-    and not has_function_privilege('anon', 'public.admin_lancer_demo(uuid, integer, integer, boolean)', 'execute'), 'anon');
+    and not has_function_privilege('anon', 'public.admin_lancer_demo(uuid, integer, integer, boolean)', 'execute')
+    and not has_function_privilege('anon', 'public.prof_code_etab()', 'execute')
+    and not has_function_privilege('anon', 'public.prof_classes(text)', 'execute'), 'anon');
   insert into public.zz_res (nom, ok, vu) values ('les outils internes ne s''appellent pas de l''extérieur',
     not has_function_privilege('authenticated', 'public.code_unique()', 'execute')
     and not has_function_privilege('authenticated', 'public.prof_verdict(uuid)', 'execute')

@@ -171,7 +171,26 @@ l'air de marcher ».
     avec le reste. **Rien d'autre ne doit importer `ui/prof-*.js`
     directement** — passer par `prof-porte.js` (`allerAccueil`, `donnerLivre`,
     `rejoindreCollegue`, les trois vues, `paintMenuProf`), sinon le morceau
-    retombe dans le démarrage.
+    retombe dans le démarrage. **Au modèle « un seul code »** (2026-10-26,
+    `ui/prof-etab.js`, dans le morceau) : le code que le professeur donne est
+    en bandeau en tête de l'accueil (`codeBande` : celui de l'établissement
+    par `prof_code_etab`, ou le sien par `prof_mon_code`, changé en deux
+    appuis) ; « Ajouter des élèves » montre ce code, son QR et « Choisir
+    « la classe » » (les cartes élève derrière un lien discret « Des élèves
+    sans adresse e-mail ? ») ; le mode tableau projette ce code et la liste
+    des élèves qui arrivent (relue toutes les 6 s). Dans un établissement :
+    « Mes classes » (`choisir`, `prof_enseigner`) et « Nouveau groupe »
+    (`groupe`, chercher et cocher des élèves de l'établissement,
+    `prof_groupe`, recomposé par « Élèves du groupe ») remplacent « Nouvelle
+    classe » ; « Ne plus enseigner dans cette classe » dans ses réglages.
+    Professeur particulier : « Nouvelle classe », et ranger un élève d'une
+    autre de ses classes (`ajouter`, `prof_ajouter_eleve`). Plus de code
+    par classe à l'écran, ni d'interrupteurs d'inscription (seules restent
+    les places d'une classe de professeur particulier). Ces feuilles se
+    lisent dans `FEUILLES_ETAB`, consulté **dans** `paintMenuProf`, jamais
+    au niveau du module (`prof-etab.js` importe `prof-feuilles.js`) ; une
+    liste qui arrive pendant la frappe se pose sur place (`surPlace`), car
+    l'espace ne repeint jamais une feuille sous les doigts.
 
     **Le cercle** (refait le 2026-10-24) : des amis, des clubs, des défis —
     rien d'autre. `cercle.js` (l’écran « Cercle des lecteurs » : moi et mon jeton, « Lancer
@@ -208,7 +227,11 @@ l'air de marcher ».
     table `ref_audit` ; une exception d'une fausse fonction revient en 400 avec
     son message, comme la vraie base) — parcours dans `e2e/referent.e2e.js` ;
     les `admin_*`, `set_role` et `demander_demo` (sans compte, comme la
-    vraie) aussi, parcours dans `e2e/editeur.e2e.js`.
+    vraie) aussi, parcours dans `e2e/editeur.e2e.js` ; et les fonctions de
+    l'espace professeur au modèle « un seul code » (`prof_code_etab`,
+    `prof_classes_etab`, `prof_enseigner`, `prof_eleves_etab`, `prof_groupe`,
+    `prof_ajouter_eleve`), parcours dans `e2e/prof-code.e2e.js` et
+    `e2e/espace-prof.e2e.js`.
     **Le profil d'un lecteur** (2026-10-25) : toucher un ami, une ligne de
     classement (`rangLigne`, `data-lecteur`), une demande d'ami ou un membre
     de club ouvre son profil (vue `profil`, `ouvrirProfil(id, { club })` de
@@ -344,8 +367,9 @@ l'air de marcher ».
   - **Profil d'un lecteur** (`20261025200000`) : `profil_lecteur(u, p_tz)` (jsonb) — statut `ok` (soi, ami accepté, membre d'un même club : décomptes et noms de matières, jamais un livre ni une carte), `prive` (quelqu'un qu'on voit déjà par `voit_personne` — camarade, professeur, joueur, demande en attente : nom, pseudo, ancienneté, clubs en commun, pas de chiffres), `inconnu` (personne d'autre, ou un blocage dans un sens ou l'autre).
   - **Page d'une classe, côté élève** (`20261025210000`) : `eleve_classe(cid)` (jsonb) — `inscrit` (un élève de la classe : nom, niveau, établissement, date d'entrée, `peut_quitter`, `profs` avec leur matière et le principal, `eleves` sous leur nom de classe avec le lien d'amitié de chacun, jamais un compte bloqué, jamais le code), `attente` (salle d'attente : nom de la classe seulement), `inconnue` (personne d'autre, ou classe archivée).
   - **Établissements : un seul code** (`20261025233000` puis `20261026001000` ; les parcours en clair dans **`docs/PARCOURS.md`**, à lire avant d'y toucher) : un élève entre avec UN code — celui de son établissement (`org_codes.eleve`) ou de son professeur particulier (`codes_profs`) — et `rejoindre(code, prénom, nom, classe)` le fait entrer **aussitôt**, sans validation (la sécurité est dans le code : 8 caractères, 10 faux/h tous codes confondus dans `class_join_attempts`, changeable à tout moment) ; `code_apercu(code)` dit d'abord ce que c'est et rend la liste des classes à choisir (statut `choisir` si l'élève n'en a pas pris une alors qu'il y en a). Plus de code par classe pour un élève (les anciens codes de classe marchent encore, `class_preview`, mais l'app ne les montre plus). Dans un établissement, un élève a **une** classe (`classes.genre = 'classe'`, la même pour tous ses camarades) et des **groupes** (`'groupe'`) que forment les professeurs en sélectionnant des élèves (`prof_groupe`, `prof_eleves_etab`) ; un professeur choisit ses classes (`prof_classes_etab`, `prof_enseigner`) ; `ref_move_student` ne touche que la classe, jamais les groupes. Le code professeur fait entrer un professeur, le code référent (usage unique, 30 j) un référent — et pose les **classes d'exemple** d'une démo (`orgs.exemples`, `poser_exemples`). Un professeur particulier (rôle prof sans établissement) a son code (`prof_mon_code`) ; son premier élève lui crée « Mes élèves » ; `prof_ajouter_eleve` range un élève dans une autre de ses classes ; un élève d'un lycée peut aussi suivre un professeur particulier. Le nom « Prénom NOM » est figé à l'entrée : seul le référent le corrige (`ref_update_account`). Licence : `orgs.offre` (`demo` | `etablissement`), `places`, `licence_fin` (`etab_verdict` : `licence`, `plein`…). Les codes vivent dans `org_codes` et `codes_profs`, **tables sans aucune politique** (tout membre lit sa ligne `orgs`). Côté vente, pour l'éditeur seul : `org_suivi` (étape prospect/démo/client/pause/perdu, contact, besoins, budget, prix, notes, relance ; **sans aucune politique**, lu par `admin_orgs`), `admin_etab_enregistrer(org, fiche jsonb)` (le formulaire), `admin_lancer_demo(org, places, jours, exemples)`, `admin_licence`, `admin_code_ref`, `admin_supprimer_etab` (seulement sans comptes : le contact part avec), et **`demander_demo(...)`, ouverte à `anon`** — la seule avec `shared_deck` —, freinée en base (20 demandes/h en tout, une par adresse et par jour).
+  - **Espace professeur, un seul code** (`20261026030000`) : `prof_classes` rend aussi `genre` ; dans un établissement, `prof_creer_classe` crée un **groupe** (une app ancienne ne glisse plus une classe de plus dans la liste que voient les élèves) ; `prof_code_etab()` donne au professeur le code élèves de son établissement, pour le projeter (le code professeurs et le code référent restent au référent).
   - **Console du référent** (`20261026020000`) : `ref_personnes(q, qrole, qclass, sans_classe, lim, off)` rend **une ligne par personne** (sa classe de rattachement, jamais un groupe ; filtre sur une classe ou un groupe ; les élèves sans classe ; recherche sans casse ni accent ; `carte` pour un compte à carte ; `total` pour la pagination) — `ref_people` reste pour les anciennes apps installées. Les cartes élève du référent passent par `prof_creer_eleves` (`class_manager` l'admet sur une classe de son établissement).
-  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `execute_sql` ne rend que le résultat de la **dernière** instruction (le `rollback`, donc rien) : pour lire le bilan, remplacer le `select … from zz_res` final et le `rollback` par un `do $$ begin raise exception 'RESULTATS %', (select … from public.zz_res); end $$;` — l'erreur porte le bilan et annule tout. `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas), `journal.sql` (18 cas), `profil.sql` (19 cas), `classe_eleve.sql` (12 cas) et `etablissement.sql` (58 cas : du prospect au client, les quatre codes, classes et groupes, la liste du référent, licence, anon).
+  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `execute_sql` ne rend que le résultat de la **dernière** instruction (le `rollback`, donc rien) : pour lire le bilan, remplacer le `select … from zz_res` final et le `rollback` par un `do $$ begin raise exception 'RESULTATS %', (select … from public.zz_res); end $$;` — l'erreur porte le bilan et annule tout. `classes_securisees.sql` (56 cas), `identite_eleve.sql` (22 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas), `journal.sql` (18 cas), `profil.sql` (19 cas), `classe_eleve.sql` (12 cas) et `etablissement.sql` (64 cas : du prospect au client, les quatre codes, classes et groupes, la liste du référent, l'espace professeur, licence, anon).
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
 - **Hébergement : une seule cible, Vercel, un seul domaine :
   `https://www.folioflashcard.online/`** (projet Vercel `flashcard`, équipe

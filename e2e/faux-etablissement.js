@@ -347,6 +347,47 @@ export function demanderDemoFaux(store, b) {
   return 'ok';
 }
 
+/* ---------- l'espace professeur au modèle « un seul code » (20261026030000) ---------- */
+function fonctionsProf(store, et, m, uid) {
+  const sv = () => (et.services = et.services || []);
+  const monOrg = () => { const o = orgDe(et, uid); if (m.roles[uid] !== 'prof' || !o) erreur('Réservé aux professeurs d’un établissement'); return o; };
+  return {
+    prof_code_etab: () => monOrg().codes.eleve || erreur('Le référent n’a pas encore de code élèves'),
+    prof_classes_etab: () => { const o = monOrg();
+      return classesOrg(m, o).map(c => { const s = sv().find(x => x.cid === c.id && x.prof === uid);
+        return { id: c.id, nom: c.name, niveau: c.niveau || '', effectif: effectif(m, c.id), enseigne: !!s, matiere: s ? s.matiere : '' }; }); },
+    prof_enseigner: b => { const o = monOrg();
+      if (!classesOrg(m, o).some(c => c.id === b.cid)) erreur('Cette classe n’est pas dans ton établissement');
+      et.services = sv().filter(x => !(x.cid === b.cid && x.prof === uid));
+      if (b.oui) sv().push({ id: randomUUID(), cid: b.cid, prof: uid, matiere: b.matiere || 'Cours', pp: false });
+      return null; },
+    prof_eleves_etab: b => { const o = monOrg(), q = String(b.q || '').toLowerCase();
+      return membresOrg(et, o).filter(u => estEleve(m, u)).map(u => { const h = homeDe(m, o.id, u);
+        return { id: u, nom: m.noms[u] || 'Élève', classe: h ? h.name : '', classe_id: h ? h.id : null }; })
+        .filter(e => (!b.cid || e.classe_id === b.cid) && (!q || e.nom.toLowerCase().includes(q)))
+        .sort((a, c) => a.classe.localeCompare(c.classe) || a.nom.localeCompare(c.nom)); },
+    prof_groupe: b => { const o = monOrg();
+      if (!String(b.nom || '').trim()) erreur('Un nom de groupe de 1 à 60 caractères');
+      let g = b.gid && m.classes.find(c => c.id === b.gid && c.genre === 'groupe');
+      if (b.gid && !g) erreur('Ce groupe n’est pas à toi');
+      if (!g) {
+        g = { id: randomUUID(), name: b.nom.trim(), niveau: '', matiere: b.matiere || 'Cours', code: tire(), owner: uid, ouvert: false,
+          validation: false, places: 300, fin: null, archivee: false, org: o.id, genre: 'groupe' };
+        m.classes.push(g);
+      } else { g.name = b.nom.trim(); m.membres = m.membres.filter(x => x.cid !== g.id || (b.eleves || []).includes(x.uid)); }
+      for (const u of b.eleves || []) {
+        if (et.membres[u] === o.id && estEleve(m, u) && !m.membres.some(x => x.cid === g.id && x.uid === u)) {
+          m.membres.push({ cid: g.id, uid: u, depuis: new Date().toISOString() });
+        }
+      }
+      return g.id; },
+    prof_ajouter_eleve: b => { const c = m.classes.find(x => x.id === b.cid && x.owner === uid && !x.org);
+      if (!c) erreur('Cette classe n’est pas à toi');
+      if (!m.membres.some(x => x.cid === c.id && x.uid === b.qui)) m.membres.push({ cid: c.id, uid: b.qui, depuis: new Date().toISOString() });
+      return null; }
+  };
+}
+
 /* La table des fonctions, construite à l'appel (elle lit `store`). */
 export function fonctionsEtab(store, m, uid) {
   const et = etab(store);
@@ -359,6 +400,7 @@ export function fonctionsEtab(store, m, uid) {
       return et.codesProfs[uid];
     },
     ...fonctionsRef(store, et, m, uid),
+    ...fonctionsProf(store, et, m, uid),
     ...fonctionsAdmin(store, et, m, uid)
   };
 }

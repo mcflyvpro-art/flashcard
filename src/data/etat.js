@@ -353,7 +353,11 @@ export const profNeuf = () => ({
   vue: 'liste', mois: null, jour: null, agenda: null, semaine: null,
   feuille: null, f: {},                 // la feuille ouverte et ses champs
   faites: null,                         // les cartes à imprimer (codes montrés une seule fois)
-  archives: false, sale: false
+  archives: false, sale: false,
+  // « un seul code » (20261026030000) : le code que ce professeur donne — celui de
+  // son établissement ou le sien —, les classes de l'établissement à choisir, les
+  // élèves de l'établissement pour former un groupe, ceux de ses autres classes
+  code: null, codeErr: '', etabClasses: null, etabEleves: null, mesEleves: null
 });
 export let prof = profNeuf();
 

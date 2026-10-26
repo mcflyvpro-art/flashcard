@@ -1,8 +1,10 @@
-// L'espace professeur et « Mes classes », de bout en bout (2026-10-24) : un
-// professeur crée sa classe, crée les comptes à carte de deux élèves et
-// projette le code ; un élève à compte personnel rejoint avec son vrai nom
-// et attend ; le professeur l'admet et donne un devoir ; l'élève à carte se
-// connecte avec son identifiant et son code et trouve le devoir.
+// L'espace professeur et « Mes classes », de bout en bout (2026-10-24, au
+// modèle « un seul code » le 2026-10-26) : un professeur crée sa classe, la
+// feuille lui montre SON code ; il crée les comptes à carte de deux élèves
+// sans adresse e-mail (le lien discret) ; un élève à compte personnel tape
+// le code, donne son vrai nom, choisit la classe et entre aussitôt — le
+// professeur le voit arriver sur le code projeté — ; un devoir ; l'élève à
+// carte se connecte avec son identifiant et son code et trouve le devoir.
 //
 // Sur téléphone (390 px, le projet Playwright) et sur ordinateur (1440 px) :
 // aucun écran ne déborde. Les captures (SHOTS=dossier) servent à relire les
@@ -10,6 +12,7 @@
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
 import { faireProfesseur } from './faux-classes.js';
+import { etab } from './faux-etablissement.js';
 import { inscrire } from './aide.js';
 
 const SHOTS = process.env.SHOTS;
@@ -23,7 +26,7 @@ async function voir(page, nom, largeur, serie = largeur) {
 }
 
 for (const largeur of [390, 1440]) {
-  test(`professeur à ${largeur} px : créer une classe, des comptes à carte, admettre, donner un devoir`, async ({ page, browser }, info) => {
+  test(`professeur à ${largeur} px : créer une classe, son code, des comptes à carte, un élève qui entre, un devoir`, async ({ page, browser }, info) => {
     test.setTimeout(120000);
     await page.setViewportSize({ width: largeur, height: largeur > 900 ? 900 : 844 });
     const store = nouveauStore();
@@ -35,7 +38,11 @@ for (const largeur of [390, 1440]) {
     faireProfesseur(store, 'durand@exemple.fr', 'Claire DURAND');
     semerLivre(store, 'durand@exemple.fr', 'Verbes irréguliers', [['be', 'été'], ['go', 'aller'], ['see', 'voir'], ['take', 'prendre']]);
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Votre première classe' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Vos premiers élèves' })).toBeVisible({ timeout: 10000 });
+    const moi = store.users.find(u => u.email === 'durand@exemple.fr').id;
+    await expect(page.locator('.pf-codeband .pf-cb-c')).toBeVisible();
+    const code = etab(store).codesProfs[moi], enClair = code.slice(0, 4) + '-' + code.slice(4);
+    await expect(page.locator('.pf-codeband .pf-cb-c')).toHaveText(enClair);
     await voir(page, '01-accueil-vide', largeur);
 
     // un code collègue : la feuille le met en forme et ne vérifie qu'un code complet
@@ -47,7 +54,7 @@ for (const largeur of [390, 1440]) {
     await expect(page.getByRole('button', { name: 'Vérifier le code' })).toBeEnabled();
     await page.locator('.menu .mx').click();
 
-    // créer la classe : la feuille d'ajout des élèves s'ouvre aussitôt
+    // créer la classe : la feuille d'ajout des élèves s'ouvre aussitôt, sur le code
     await page.getByRole('button', { name: 'Créer une classe' }).click();
     await expect(page.getByLabel('Nom')).toBeFocused();
     await page.getByLabel('Nom').fill('2nde 4');
@@ -55,6 +62,11 @@ for (const largeur of [390, 1440]) {
     await page.getByLabel('Matière facultatif').fill('Anglais');
     await voir(page, '02-creer', largeur);
     await page.getByRole('button', { name: 'Créer la classe' }).click();
+    await expect(page.locator('.pf-inv .pf-gros')).toHaveText(enClair);
+    await expect(page.locator('.pf-etapes')).toContainText('Choisir « 2nde 4 »');
+
+    // des élèves sans adresse e-mail : le cas à part, derrière un lien
+    await page.getByRole('button', { name: 'Des élèves sans adresse e-mail ?' }).click();
     await expect(page.getByRole('button', { name: 'Créer les comptes' })).toBeVisible();
 
     // deux élèves collés depuis une liste : deux comptes à carte
@@ -68,37 +80,33 @@ for (const largeur of [390, 1440]) {
     await expect(page.locator('.pf-t-eleves')).toContainText('Alice MARTIN');
     await voir(page, '05-classe-eleves', largeur);
 
-    // un élève à compte personnel demande à entrer avec le code
-    const code = store.cl.classes[0].code;
+    // un élève à compte personnel tape le code du professeur
     // un autre téléphone : un autre contexte, sans la session du professeur
     const autre = await browser.newContext({ ...info.project.use, viewport: { width: 390, height: 844 } });
     const eleve = await autre.newPage();
     await brancher(eleve, store);
     await inscrire(eleve, 'leo@exemple.fr');
+    // projeter le code au tableau, et voir l'élève arriver
+    await page.getByRole('button', { name: 'Plus d’actions' }).click();
+    await page.getByRole('button', { name: 'Projeter le code au tableau' }).click();
+    await expect(page.locator('.pf-tb-code')).toHaveText(enClair);
+    await voir(page, '09-tableau', largeur);
+
     await eleve.goto('./?rejoindre=' + code);
-    await expect(eleve.getByText('2nde 4')).toBeVisible({ timeout: 10000 });
+    await expect(eleve.locator('.ce-f .mhx b')).toHaveText('Claire DURAND', { timeout: 10000 });
     await eleve.getByLabel('Prénom').fill('léo');
     await eleve.getByLabel('Nom', { exact: true }).fill('dubois');
     await expect(eleve.getByText('Tu apparaîtras comme Léo DUBOIS')).toBeVisible();
+    await eleve.locator('.ce-cl', { hasText: '2nde 4' }).click();
     await voir(eleve, '06-eleve-apercu', 390, largeur);
-    await eleve.getByRole('button', { name: 'Rejoindre', exact: true }).click();
-    await expect(eleve.getByText('En attente de Claire DURAND')).toBeVisible();
-    await voir(eleve, '07-eleve-attente', 390, largeur);
+    await eleve.locator('#cego').click();
+    await expect(eleve.locator('#app')).toHaveAttribute('data-view', 'classes');
+    await voir(eleve, '07-eleve-entre', 390, largeur);
 
-    // le professeur le voit dans les demandes et l'admet
-    await page.getByRole('tab', { name: /Demandes/ }).click();
-    await expect(page.getByText('Léo DUBOIS')).toBeVisible({ timeout: 10000 });
-    await voir(page, '08-demandes', largeur);
-    await page.getByRole('button', { name: 'Admettre', exact: true }).click();
-    await page.getByRole('tab', { name: /Élèves/ }).click();
-    await expect(page.locator('.pf-t-eleves')).toContainText('Léo DUBOIS');
-
-    // projeter le code au tableau
-    await page.getByRole('button', { name: 'Plus d’actions' }).click();
-    await page.getByRole('button', { name: 'Projeter le code au tableau' }).click();
-    await expect(page.locator('.pf-tb-code')).toHaveText(code.slice(0, 4) + '-' + code.slice(4));
-    await voir(page, '09-tableau', largeur);
+    // sans salle d'attente : il apparaît sur le code projeté, puis dans la classe
+    await expect(page.locator('.pf-tb-att')).toContainText('Léo DUBOIS', { timeout: 15000 });
     await page.locator('.menu .mx').click();
+    await expect(page.locator('.pf-t-eleves')).toContainText('Léo DUBOIS');
 
     // donner un devoir depuis un livre de la bibliothèque
     await page.getByRole('button', { name: 'Devoir', exact: true }).click();

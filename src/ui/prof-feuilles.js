@@ -3,8 +3,8 @@ import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { prof, setMenu, visuels } from '../data/etat.js';
 import {
-  CREATION, codeComplet, dansJours, echeance, etatDevoir, etatEleve, etatInscriptions, formatCode, grilleMois, iso,
-  auJour, jourCourt, jourLong, lienCarte, lienRejoindre, lireListeEleves, messageStatut, MOIS, pc, tonReussite
+  CREATION, codeComplet, dansJours, echeance, etatDevoir, etatEleve, formatCode, grilleMois, iso,
+  auJour, jourCourt, jourLong, lienCarte, lireListeEleves, messageStatut, MOIS, pc, tonReussite
 } from '../classe.js';
 import { qrSvg } from '../qr.js';
 import { esc, live, plur } from '../core/coeur-sync.js';
@@ -14,6 +14,7 @@ import { emblemeDe, rangCouleur } from '../jeton.js';
 import { ETATS } from './prof-classe.js';
 import { mountMenu } from './menus-a.js';
 import { timeAgo } from './reglages-corbeille.js';
+import { FEUILLES_ETAB, inviterCode as inviterUnCode, tableauCode } from './prof-etab.js';
 
 /* ══════════ les feuilles de l'espace professeur ══════════
    Une seule entrée dans la table des feuilles (`pf`, menus-a.js) ; laquelle
@@ -27,7 +28,7 @@ export const baseApp = () => SITE;
    même ne fait rien bouger (menus-a.js, poser). */
 const etape = () => prof.feuille + (prof.feuille === 'donner' && prof.comp && prof.comp.cartes ? ':details' : '');
 
-function feuille(w, cls, titre, sous, corps, pied) {
+export function feuille(w, cls, titre, sous, corps, pied) {
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu pf-s ${cls || ''}" data-etape="${etape()}">
       <div class="pf-sh">${titre}${sous ? `<i>${sous}</i>` : ''}</div>
@@ -37,13 +38,13 @@ function feuille(w, cls, titre, sous, corps, pied) {
   mountMenu(w);
 }
 
-const champ = (lab, cle, attrs, val) => `<label class="pf-fl">${lab}<input data-pfin="f.${cle}" value="${
+export const champ = (lab, cle, attrs, val) => `<label class="pf-fl">${lab}<input data-pfin="f.${cle}" value="${
   esc(val !== undefined ? val : prof.f[cle] || '')}" ${attrs || ''}></label>`;
 
 /* Le champ principal reçoit le focus à l'ouverture — sauf si l'on est déjà
    en train d'écrire ailleurs : un doigt rapide (ou un test) taperait sinon
    la suite dans le mauvais champ. */
-const focus = id => setTimeout(() => {
+export const focus = id => setTimeout(() => {
   const n = document.getElementById(id), a = document.activeElement;
   if (n && !(a && a !== n && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) n.focus();
 }, 80);
@@ -86,58 +87,35 @@ function resultats() {
       ${btn('homonymes', I.plus, `Créer quand même (${n('homonyme')})`, 'sm')}</p>` : ''}`;
 }
 
-function inviterCode(c) {
-  const ins = etatInscriptions(c), lien = lienRejoindre(baseApp(), c.code);
-  return `<div class="pf-inv">
-    <div class="pf-inv-qr">${qrSvg(lien, 'QR pour rejoindre ' + c.name)}</div>
-    <div class="pf-inv-t"><span>Code de la classe</span><b class="pf-gros">${esc(formatCode(c.code))}</b>
-      ${pill(ins.ouvert ? 'ok' : 'am', ins.t)}
-      <div class="pf-lien"><input readonly value="${esc(lien)}" aria-label="Lien d’invitation">${btn('copier-lien', I.copy, '', 'ic sm', 'aria-label="Copier le lien"')}</div>
-      ${!ins.ouvert && c.gere && !c.archivee ? btn('r-ouvert', I.redo, 'Rouvrir les inscriptions', 'sm') : ''}
-    </div></div>
-    <p class="pf-note">${c.validation ? 'Chaque élève attend votre accord dans « Demandes ».' : 'Les élèves entrent sans validation.'}
-      Un compte personnel doit écrire son vrai prénom et son nom.</p>`;
-}
-
+/* « Ajouter des élèves » (2026-10-26) : d'abord le code à donner — celui de
+   l'établissement ou le sien, ui/prof-etab.js — ; les cartes de connexion,
+   pour des élèves sans adresse e-mail, sont un cas à part, derrière un lien. */
 function inviter(w) {
   const c = classeOuverte(); if (!c) return setMenu(null);
-  const mode = prof.f.mode || 'liste';
-  const seg = `<div class="pf-seg plein">${[['liste', I.key, 'Liste de noms'], ['code', I.link, 'Code à projeter']].map(([k, ic, t]) =>
-    `<button class="${mode === k ? 'on' : ''}" data-pf="f-mode" data-v="${k}">${svg(ic)}${t}</button>`).join('')}</div>`;
+  const cartes = prof.f.mode === 'liste' || prof.faites;
   let corps, pied;
-  if (mode === 'code') {
-    corps = seg + inviterCode(c);
+  if (!cartes) {
+    corps = inviterUnCode(c);
     pied = btn('tableau', I.grid, 'Projeter au tableau', 'pri lg');
   } else if (prof.faites) {
     corps = resultats();
     pied = (prof.faites.some(x => x.code) ? btn('imprimer', I.file, 'Imprimer les cartes', 'pri lg') : '') + btn('fermer', '', 'Terminé', 'lg');
   } else {
     const n = lireListeEleves(prof.f.liste || '').eleves.length;
-    corps = `${seg}<label class="pf-fl">Un élève par ligne — copiez la colonne depuis Pronote ou un tableur
+    corps = `<button class="pf-lnk" data-pf="f-mode" data-v="code">${svg(I.back)}Le code</button>
+      <p class="pf-note">Pour des élèves sans adresse e-mail : Folio crée un compte par élève, avec un identifiant et un code secret
+        imprimés sur une carte avec un QR. Les autres entrent avec le code.</p>
+      <label class="pf-fl">Un élève par ligne — copiez la colonne depuis Pronote ou un tableur
         <textarea id="pfliste" data-pfin="f.liste" rows="9" spellcheck="false" placeholder="MARTIN Alice&#10;DUBOIS Léo&#10;N’DIAYE Awa">${esc(prof.f.liste || '')}</textarea></label>
-      <div id="pfapercu">${apercuListe()}</div>
-      <p class="pf-note">${svg(I.lock)}Chaque élève reçoit un identifiant et un code secret. Son nom, « Prénom NOM », ne pourra pas être changé par lui.</p>`;
+      <div id="pfapercu">${apercuListe()}</div>`;
     pied = btn('creer-eleves', I.check, n ? `Créer ${plur(n, 'compte')}` : 'Créer les comptes', 'pri lg', `id="pfcreer" ${n ? '' : 'disabled'}`);
   }
-  feuille(w, 'large', `<b>Ajouter des élèves</b>`, esc(c.name), corps, pied);
-  if (mode === 'liste' && !prof.faites) focus('pfliste');
+  feuille(w, cartes ? 'large' : '', `<b>Ajouter des élèves</b>`, esc(c.name), corps, pied);
+  if (cartes && !prof.faites) focus('pfliste');
 }
 
 /* ---------- le mode tableau : projeté devant la classe ---------- */
-function tableau(w) {
-  const c = classeOuverte(); if (!c) return setMenu(null);
-  const lien = lienRejoindre(baseApp(), c.code), l = prof.demandes || [];
-  feuille(w, 'pf-tableau', '', '', `<div class="pf-tb">
-      <div class="pf-tb-g">${pastilleClasse(c, true)}<h1>${esc(c.name)}</h1>
-        <ol><li>Ouvrez <b>Folio</b> sur votre téléphone</li><li>Visez le QR code, ou tapez le code</li></ol>
-        <b class="pf-tb-code">${esc(formatCode(c.code))}</b>
-        <p>${esc(lien.replace(/^https?:\/\//, '').replace(/\?.*$/, ''))}</p></div>
-      <div class="pf-tb-qr">${qrSvg(lien, 'QR pour rejoindre ' + c.name)}</div>
-    </div>
-    <div class="pf-tb-att"><span><b>${l.length}</b> en attente${c.effectif ? ` · ${plur(c.effectif, 'inscrit')}` : ''}</span>
-      <div class="pf-noms">${l.slice(-24).map(d => `<span>${esc(d.who)}</span>`).join('')}</div>
-      ${l.length ? btn('admettre-tout', I.check, 'Tout admettre', 'pri') : ''}</div>`, '');
-}
+const tableau = w => tableauCode(w);
 
 /* ---------- un élève ---------- */
 function devoirsEleve() {
@@ -384,7 +362,8 @@ const FEUILLES = {
 };
 
 export function paintMenuProf(w) {
-  const f = FEUILLES[prof.feuille];
+  // FEUILLES_ETAB se lit ici, jamais au niveau du module : prof-etab.js importe ce fichier (cycle, CLAUDE.md)
+  const f = FEUILLES[prof.feuille] || FEUILLES_ETAB[prof.feuille];
   if (!f) { setMenu(null); return; }
   f(w);
 }

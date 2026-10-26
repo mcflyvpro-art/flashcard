@@ -59,12 +59,13 @@ function avancement(store, d, uid) {
 function ligneClasse(store, m, c, uid) {
   const mem = membresDe(m, c.id), devs = m.devoirs.filter(d => d.cid === c.id);
   const dernier = devs[devs.length - 1];
+  const sv = ((store.et && store.et.services) || []).find(x => x.cid === c.id && x.prof === uid);
   return {
     id: c.id, name: c.name, niveau: c.niveau, cycle: '', filiere: '', annee_scolaire: ANNEE, code: c.code,
-    matiere: c.matiere, principal: false, effectif: mem.length, devoirs: devs.length, encours: devs.length,
+    matiere: sv ? sv.matiere : c.matiere, principal: false, effectif: mem.length, devoirs: devs.length, encours: devs.length,
     retard: 0, pas_ouvert: 0, jamais: mem.filter(x => !x.vu).length, actifs7: 0, pct: 0,
     dernier: dernier ? dernier.nom : null, dernier_due: dernier ? dernier.due : null,
-    gere: c.owner === uid, createur: c.owner === uid, etab: false,
+    gere: c.owner === uid, createur: c.owner === uid, etab: !!c.org, genre: c.genre || 'classe',
     attente: m.demandes.filter(x => x.cid === c.id).length, archivee: !!c.archivee,
     ouvert: c.ouvert, validation: c.validation, places: c.places, fin: c.fin,
     code_collegue: null, fin_collegue: null
@@ -231,9 +232,9 @@ function reglages(m, b) {
 
 function creerClasse(store, m, b, uid) {
   const id = randomUUID();
+  const org = (store.et && store.et.membres[uid]) || null;      // dans un établissement : un groupe (20261026030000)
   m.classes.push({ id, name: b.nom, niveau: b.niveau || '', matiere: b.matiere || '', code: tire(), owner: uid,
-    ouvert: true, validation: true, places: 40, fin: null, archivee: false,
-    org: (store.et && store.et.membres[uid]) || null, genre: 'classe' });
+    ouvert: !org, validation: false, places: 40, fin: null, archivee: false, org, genre: org ? 'groupe' : 'classe' });
   return id;
 }
 
@@ -248,7 +249,8 @@ function fonctions(store, m, uid) {
     mon_compte: () => [m.comptes[uid] ? { gere: true, nom: m.comptes[uid].nom, identifiant: m.comptes[uid].identifiant }
       : { gere: false, nom: m.noms[uid] || null, identifiant: null }],
     prof_annees: () => [{ annee: ANNEE, classes: m.classes.filter(c => c.owner === uid).length, courante: true }],
-    prof_classes: () => m.classes.filter(c => c.owner === uid).map(c => ligneClasse(store, m, c, uid)),
+    prof_classes: () => m.classes.filter(c => c.owner === uid
+      || ((store.et && store.et.services) || []).some(x => x.cid === c.id && x.prof === uid)).map(c => ligneClasse(store, m, c, uid)),
     prof_creer_classe: b => creerClasse(store, m, b, uid),
     prof_roster: b => roster(store, m, b.cid),
     prof_devoirs: b => devoirsClasse(store, m, b.cid, uid),

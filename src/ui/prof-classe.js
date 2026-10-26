@@ -4,7 +4,7 @@ import { I, svg } from '../icones.js';
 import { prof } from '../data/etat.js';
 import { go } from './bibliotheque.js';
 import {
-  DUREES, FILTRES, TRIS, etatDevoir, etatEleve, etatInscriptions, filtrerEleves, finTexte,
+  FILTRES, TRIS, etatDevoir, etatEleve, filtrerEleves, finTexte,
   formatCode, grilleMois, iso, auJour, jourCourt, MOIS, parJour, pc, syntheseClasse, tonReussite, trierEleves
 } from '../classe.js';
 import { esc, plur } from '../core/coeur-sync.js';
@@ -29,10 +29,20 @@ function selecteurMobile(c) {
       <i></i>${esc(x.name)}${x.attente ? `<em>${x.attente}</em>` : ''}</button>`).join('')}</div>`;
 }
 
+/* Le premier bouton selon ce qu'est la classe (docs/PARCOURS.md) : un groupe
+   se compose en cochant des élèves ; une classe de l'établissement ou d'un
+   professeur particulier se rejoint avec le code. */
+function boutonEleves(c) {
+  if (c.genre === 'groupe') return c.gere ? btn('groupe-modifier', I.users, 'Élèves du groupe', 'pri') : '';
+  if (!c.etab) return `${c.gere ? btn('inviter', I.plus, 'Ajouter des élèves', 'pri') : ''}${
+    c.gere && (prof.classes || []).filter(x => !x.etab && !x.archivee).length > 1 ? btn('ajouter', I.swap, '', 'ic',
+      'aria-label="Un élève de mes autres classes" title="Un élève de mes autres classes"') : ''}`;
+  return btn('inviter', I.key, 'Code élèves', 'pri');
+}
+
 function enteteClasse(c) {
-  const ins = etatInscriptions(c);
   const actions = c.archivee ? btn('desarchiver', I.redo, 'Désarchiver')
-    : `${c.gere ? btn('inviter', I.plus, 'Ajouter des élèves', 'pri') : ''}
+    : `${boutonEleves(c)}
        ${btn('direct', I.bolt, 'Défi en direct')}${btn('donner', I.card, 'Devoir')}${btn('message', I.mail2, 'Message')}
        ${btn('actions', I.more, '', 'ic', 'aria-label="Plus d’actions" title="Plus d’actions"')}`;
   return `<header class="pf-ch" style="--k:${couleur(c.id)}">
@@ -40,8 +50,8 @@ function enteteClasse(c) {
       : pastilleClasse(c, true)}
     <div class="pf-cht"><h1>${esc(c.name)}</h1>
       <p>${metaClasse(c)}${metaClasse(c) ? ' · ' : ''}${esc(c.annee_scolaire || '')}</p>
-      <div class="pf-chips">${pill(ins.ouvert ? 'ok' : c.archivee ? 'neutre' : 'am', ins.t)}
-        <span class="pf-chip" title="Élèves inscrits / places">${svg(I.users)}${c.effectif}/${c.places}</span>
+      <div class="pf-chips">${c.genre === 'groupe' ? '<span class="pf-tag">Groupe</span>' : ''}${c.archivee ? pill('neutre', 'Archivée') : ''}
+        <span class="pf-chip" title="${c.etab ? 'Élèves' : 'Élèves inscrits / places'}">${svg(I.users)}${c.effectif}${c.etab ? '' : '/' + c.places}</span>
         ${c.principal ? '<span class="pf-tag">Professeur principal</span>' : ''}
         ${c.etab ? '' : '<span class="pf-chip">Hors établissement</span>'}</div></div>
     <div class="pf-cha">${actions}</div>
@@ -106,14 +116,15 @@ function barreSelection() {
   </div>`;
 }
 
+/* Personne encore : le code d'abord (les élèves entrent seuls et choisissent
+   cette classe) ; un groupe, lui, se compose en cochant des élèves. */
 function elevesVide(c) {
+  if (c.genre === 'groupe') {
+    return `<div class="pf-vide petit"><i class="pf-vide-ic">${svg(I.users)}</i><h2>Aucun élève</h2>
+      ${c.gere ? btn('groupe-modifier', I.users, 'Choisir les élèves', 'pri') : ''}</div>`;
+  }
   return `<div class="pf-vide petit"><i class="pf-vide-ic">${svg(I.users)}</i><h2>Aucun élève</h2>
-    <div class="pf-duo">
-      <button class="pf-choix" data-pf="inviter" data-v="liste">${svg(I.key)}<b>Créer les comptes</b>
-        <span>Collez la liste de la classe, imprimez les cartes de connexion</span></button>
-      <button class="pf-choix" data-pf="inviter" data-v="code">${svg(I.link)}<b>Projeter le code</b>
-        <span>Les élèves rejoignent avec leur propre compte</span></button>
-    </div>${c.gere ? '' : '<p class="pf-note">Seul le gestionnaire de la classe ajoute des élèves.</p>'}</div>`;
+    ${btn('inviter', I.key, 'Donner le code', 'pri', 'data-v="code"')}</div>`;
 }
 
 function elevesOnglet(c) {
@@ -149,8 +160,7 @@ function demandesOnglet(c) {
   if (!l) return chargement();
   if (!l.length) {
     return `<div class="pf-vide petit"><i class="pf-vide-ic">${svg(I.check)}</i><h2>Personne en attente</h2>
-      <p class="pf-code-mini">${svg(I.key)}<b>${esc(formatCode(c.code))}</b></p>
-      ${btn('tableau', I.grid, 'Projeter au tableau', 'pri')}</div>`;
+      ${btn('tableau', I.grid, 'Projeter le code', 'pri')}</div>`;
   }
   return `<div class="pf-dem-h"><b>${plur(l.length, 'élève')} en attente</b>
       <span>Un nom inconnu ? Refusez-le, et bloquez-le.</span>
@@ -233,23 +243,18 @@ function bilanOnglet() {
 }
 
 /* ---------- les réglages ---------- */
-const interrupteur = (act, on, lab, sous, off) => `<button class="pf-sw" role="switch" aria-checked="${!!on}" data-pf="${act}" ${off ? 'disabled' : ''}>
-  <span><b>${lab}</b>${sous ? `<i>${sous}</i>` : ''}</span><i class="pf-swi"></i></button>`;
 
+/* Les inscriptions se règlent au niveau du code (docs/PARCOURS.md) : dans un
+   établissement, c'est l'affaire du référent ; seul reste, pour la classe
+   d'un professeur particulier, le nombre de places. */
 function reglagesInscriptions(c) {
+  if (c.etab) return '';
   const g = c.gere && !c.archivee;
   return `<section class="pf-panel"><h2>Inscriptions</h2>
-    ${interrupteur('r-ouvert', c.ouvert, 'Ouvertes', 'Le code permet de demander à rejoindre', !g)}
-    ${interrupteur('r-validation', c.validation, 'Je valide chaque élève', 'Recommandé : un code qui circule ne fait entrer personne', !g)}
     <div class="pf-row"><span><b>Places</b><i>${c.effectif} inscrits</i></span>
       <span class="pf-step">${btn('r-places', I.minus, '', 'ic sm', `data-v="-1" aria-label="Une place de moins" ${g ? '' : 'disabled'}`)}
         <input type="number" min="1" max="300" value="${c.places}" data-pfch="places" aria-label="Places" ${g ? '' : 'disabled'}>
         ${btn('r-places', I.plus, '', 'ic sm', `data-v="1" aria-label="Une place de plus" ${g ? '' : 'disabled'}`)}</span></div>
-    <div class="pf-row col"><span><b>Durée du code</b><i>${esc(finTexte(c.fin))}</i></span>
-      <div class="pf-seg">${DUREES.map(d => `<button class="${!d.min && !c.fin ? 'on' : ''}" data-pf="r-duree" data-v="${d.min}" ${
-        g ? '' : 'disabled'}>${esc(d.t)}</button>`).join('')}</div></div>
-    <div class="pf-code"><span>Code</span><b>${esc(formatCode(c.code))}</b>
-      ${btn('copier-code', I.copy, 'Copier', 'sm')}${g ? btn('nouveau-code', I.refresh, 'Changer', 'sm') : ''}</div>
   </section>`;
 }
 
@@ -261,7 +266,9 @@ function reglagesEquipe(c) {
       <span class="pf-lit"><b>${esc(t.nom)}${t.moi ? ' (vous)' : ''}</b><i>${esc(t.matiere)}${t.createur ? ' · créateur' : ''}${t.principal ? ' · PP' : ''}</i></span>
       ${c.createur && !t.moi ? btn('retirer-collegue', I.x, '', 'sm ic warn', `data-id="${esc(t.teacher)}" aria-label="Retirer ${esc(t.nom)}"`) : ''}
     </div>`).join('')}</div>
-    ${c.createur ? (c.code_collegue
+    ${c.etab ? (c.genre === 'classe' && !c.createur
+      ? btn('ne-plus-enseigner', I.exit, 'Ne plus enseigner dans cette classe', 'sm warn') : '')
+    : c.createur ? (c.code_collegue
       ? `<div class="pf-code"><span>Code collègue</span><b>${esc(formatCode(c.code_collegue))}</b>${btn('copier-collegue', I.copy, 'Copier', 'sm')}${
           btn('collegue-off', I.x, 'Désactiver', 'sm')}</div><p class="pf-note">Valable ${esc(finTexte(c.fin_collegue))}, pour un professeur${c.etab ? ' de votre établissement' : ''}.</p>`
       : btn('collegue-on', I.plus, 'Inviter un collègue', 'sm'))

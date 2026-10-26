@@ -12,8 +12,8 @@ import {
 import { deck, plur } from '../core/coeur-sync.js';
 import { DUELQ } from '../core/defis.js';
 import {
-  agendaPull, cartesBloquePull, cartesDuDevoir, classePull, codeCollegue, defiClasse, demandesPull, ecrire, exclusPull,
-  fichePull, profPull, relire, repeindre, semainePull
+  agendaPull, cartesBloquePull, cartesDuDevoir, classePull, codeCollegue, codePull, defiClasse, demandesPull, ecrire,
+  exclusPull, fichePull, profPull, relire, repeindre, semainePull
 } from '../core/espace-prof.js';
 import { messageErreur } from '../core/eleve-classes.js';
 import { sendMotProf } from '../core/menus-c.js';
@@ -22,6 +22,7 @@ import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { classeOuverte } from './prof-accueil.js';
 import { apercuListe, baseApp, devoirOuvert, imprimerCartes, listeLivres } from './prof-feuilles.js';
 import { resetComp } from './creation.js';
+import { actionsEtab, chercherEleves, majBoutonGroupe } from './prof-etab.js';
 import { ouvrirDefi } from './defi-nouveau.js';
 import { choisirJetonClasse, surVisuels } from '../core/visuels.js';
 import { emblemeDe, rangCouleur } from '../jeton.js';
@@ -270,7 +271,7 @@ function actions() {
     archives: () => { prof.archives = !prof.archives; repeindre(); },
     classe: id => ouvrirClasse(id),
     aller: (id, v) => {
-      if (v === 'inviter') { prof.faites = null; ouvrirClasse(id); return ouvrir('inviter', { mode: 'liste' }); }
+      if (v === 'inviter') { prof.faites = null; ouvrirClasse(id); return ouvrir('inviter', { mode: 'code' }); }
       if (v === 'donner') { ouvrirClasse(id); prof.comp = null; return ouvrir('donner'); }
       ouvrirClasse(id, v === 'demandes' ? 'demandes' : 'eleves');
       prof.filtre = v === 'retard' ? 'ko' : v === 'jamais' ? 'jamais' : 'tous';
@@ -315,7 +316,7 @@ function actions() {
     retirer: () => ouvrir('retirer', { qui: [prof.eleve] }),
     'f-choix': (id, v) => { prof.f.choix = v; paintMenu(); },
     'retirer-go': retirerGo,
-    inviter: (id, v) => { if (v) prof.faites = null; ouvrir('inviter', { mode: v || 'liste' }); },
+    inviter: (id, v) => { if (v) prof.faites = null; ouvrir('inviter', { mode: v || 'code' }); },
     'f-mode': (id, v) => { prof.f.mode = v; paintMenu(); },
     'creer-eleves': () => creerEleves(false),
     homonymes: () => creerEleves(true),
@@ -324,7 +325,7 @@ function actions() {
     cartes: () => { prof.faites = null; ouvrir('cartes'); },
     'carte-coche': id => { const s = prof.f.cartes; s.has(id) ? s.delete(id) : s.add(id); paintMenu(); },
     'cartes-go': () => nouvellesCartes([...(prof.f.cartes || [])]),
-    tableau: () => { demandesPull(cid()); ouvrir('tableau'); },
+    tableau: () => { if (prof.code === null) codePull(); ouvrir('tableau'); },
     admettre: id => admettre([id]),
     'admettre-tout': () => admettre((prof.demandes || []).map(d => d.user_id)),
     refuser: id => refuser([id], false),
@@ -371,7 +372,7 @@ function actions() {
       const id = await ecrire('prof_creer_classe', { nom: prof.f.nom || '', niveau: prof.f.niveau || '', matiere: prof.f.matiere || '' }, 'Classe créée');
       if (!id || id === true) return;
       closeMenu(); prof.annees = null; await profPull();
-      prof.faites = null; ouvrirClasse(id); ouvrir('inviter', { mode: 'liste' });
+      prof.faites = null; ouvrirClasse(id); ouvrir('inviter', { mode: 'code' });
     },
     devoir: id => { prof.work = id; prof.cartes = null; prof.f = {}; cartesBloquePull(id); ouvrir('devoir'); },
     echeance: async (id, v) => {
@@ -395,7 +396,9 @@ function actions() {
     'livre-neuf': () => { prof.comp = compNeuf(); closeMenu(); resetComp({ cours: true, pour: 'devoir' }); go('import'); },
     cible: id => { const s = prof.comp.cibles; s.has(id) ? s.delete(id) : s.add(id); paintMenu(); },
     due: (id, v) => { prof.comp.due = v; paintMenu(); },
-    'donner-go': donnerGo
+    'donner-go': donnerGo,
+    // « un seul code » : le code à donner, choisir ses classes, former un groupe (ui/prof-etab.js)
+    ...actionsEtab({ ouvrir, ouvrirClasse, arme, allerAccueil })
   };
 }
 
@@ -415,7 +418,14 @@ document.addEventListener('click', e => {
 /* ---------- la saisie ----------
    On écrit dans l'état sans repeindre (le curseur resterait en place mais
    la feuille clignoterait) ; seuls les morceaux qui en dépendent changent. */
+/* La feuille « groupe » : la recherche se relance, le bouton suit le nom. */
+function apercuGroupe(cle) {
+  if (cle === 'f.gq') chercherEleves();
+  if (prof.feuille === 'groupe' && cle === 'f.nom') majBoutonGroupe();
+}
+
 function apercus(cle) {
+  apercuGroupe(cle);
   if (cle === 'f.liste') {
     const a = document.getElementById('pfapercu'); if (a) a.innerHTML = apercuListe();
     const n = lireListeEleves(prof.f.liste || '').eleves.length, b = document.getElementById('pfcreer');
@@ -469,6 +479,7 @@ document.addEventListener('change', e => {
   const k = n.dataset.pfch;
   if (k === 'tri') { prof.tri = n.value; n.blur(); repeindre(); }
   if (k === 'annee') { prof.annee = n.value; prof.classes = null; prof.open = null; n.blur(); render(); profPull(); }
+  if (k === 'gcls') { prof.f.gcls = n.value; chercherEleves(); }
   if (k === 'places') { const v = Math.round(+n.value); n.blur(); if (v >= 1 && v <= 300) reglages({ nb_places: v }); else repeindre(true); }
 });
 
@@ -476,7 +487,8 @@ document.addEventListener('change', e => {
    focus, et dans une feuille Entrée valide le formulaire. */
 /* Entrée dans un champ de feuille : valide le formulaire, comme le bouton. */
 function entreeFeuille(e) {
-  const go2 = { creer: 'creer-go', nommer: 'nommer-go', rejoindre: prof.f.apercu ? 'rejoindre-go' : 'rejoindre-voir' }[prof.feuille];
+  const go2 = { creer: 'creer-go', nommer: 'nommer-go', groupe: 'groupe-go',
+    rejoindre: prof.f.apercu ? 'rejoindre-go' : 'rejoindre-voir' }[prof.feuille];
   const b = go2 && document.querySelector(`[data-pf="${go2}"]`);
   if (b && !b.disabled) { e.preventDefault(); b.click(); }
 }
@@ -493,15 +505,24 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- ce qui se relit seul ----------
-   La salle d'attente, quand elle est à l'écran (onglet Demandes ou mode
-   tableau) : les élèves arrivent un par un pendant que le code est projeté.
+   La classe, quand son code est projeté (mode tableau) : les élèves
+   arrivent un par un ; la salle d'attente, si l'onglet Demandes est ouvert
+   (un ancien code de classe en remplit encore).
    Et, une fois par minute, les compteurs de l'accueil. */
 let tours = 0;
+const projete = () => menu === 'pf' && prof.feuille === 'tableau';
+
+/* Le code projeté : chaque élève qui le tape entre aussitôt, la liste se relit. */
+async function releveTableau() {
+  await classePull(prof.open);
+  if (projete()) paintMenu();
+}
+
 setInterval(async () => {
   if (document.hidden || !auth || !/^prof/.test(view.name)) return;
   tours++;
-  const tableau = menu === 'pf' && prof.feuille === 'tableau';
-  if (prof.open && view.name === 'profclasse' && (prof.tab === 'demandes' || tableau)) {
-    if (await demandesPull(prof.open)) { if (tableau) paintMenu(); else repeindre(); }
+  if (projete() && prof.open) return releveTableau();
+  if (prof.open && view.name === 'profclasse' && prof.tab === 'demandes') {
+    if (await demandesPull(prof.open)) repeindre();
   } else if (view.name === 'prof' && tours % 10 === 0 && !menu) profPull();
 }, 6000);

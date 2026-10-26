@@ -3,11 +3,12 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { prefs, prof } from '../data/etat.js';
 import {
-  JOURS, MOIS, aTraiter, auJour, echeance, etatInscriptions, grilleMois, iso,
+  JOURS, MOIS, aTraiter, auJour, echeance, grilleMois, iso,
   jourLong, parJour, rangerClasses, syntheseAccueil, tonReussite
 } from '../classe.js';
 import { avatar as jeton, blason, couleurClasse } from './jeton.js';
 import { esc, plur } from '../core/coeur-sync.js';
+import { codeBande, etab } from './prof-etab.js';
 
 /* ══════════ l'espace professeur : l'accueil ══════════
    Un outil de travail, pas une vitrine. On y lit d'un coup d'œil ce qui
@@ -58,9 +59,12 @@ export function navProf(actif) {
     <button class="pf-ni${actif === 'accueil' ? ' on' : ''}" data-pf="accueil">${svg(I.grid)}<span>Tableau de bord</span></button>
     <button class="pf-ni${actif === 'agenda' ? ' on' : ''}" data-pf="agenda">${svg(I.cal)}<span>Agenda</span></button>
     <div class="pf-nl"><span>Classes${an.length > 1 ? '' : prof.annee ? ' · ' + esc(prof.annee) : ''}</span>
-      <span><button class="pf-nadd" data-pf="rejoindre" aria-label="Rejoindre une classe avec un code collègue"
+      <span>${etab() ? `<button class="pf-nadd" data-pf="choisir" aria-label="Mes classes de l’établissement"
+        title="Mes classes de l’établissement">${svg(I.school)}</button><button class="pf-nadd" data-pf="groupe"
+        aria-label="Nouveau groupe" title="Nouveau groupe">${svg(I.plus)}</button>`
+      : `<button class="pf-nadd" data-pf="rejoindre" aria-label="Rejoindre une classe avec un code collègue"
         title="Rejoindre avec un code collègue">${svg(I.link)}</button><button class="pf-nadd" data-pf="creer"
-        aria-label="Nouvelle classe" title="Nouvelle classe">${svg(I.plus)}</button></span></div>
+        aria-label="Nouvelle classe" title="Nouvelle classe">${svg(I.plus)}</button>`}</span></div>
     ${actives.map(c => ligneNav(c, actif)).join('') || '<p class="pf-nvide">Aucune classe</p>'}
     ${archives.length ? `<button class="pf-ni pf-narch" data-pf="archives">${svg(I.clock)}<span>Archives</span><b>${
       archives.length}</b></button>${prof.archives ? archives.map(c => ligneNav(c, actif)).join('') : ''}` : ''}
@@ -120,7 +124,6 @@ function semaineHtml() {
 }
 
 function carteClasse(c) {
-  const ins = etatInscriptions(c);
   const ton = c.pct ? tonReussite(c.pct) : '';
   return `<button class="pf-kc" data-pf="classe" data-id="${esc(c.id)}" style="--k:${couleur(c.id)}">
     <span class="pf-kch">${pastilleClasse(c)}<span><b>${esc(c.name)}</b><i>${metaClasse(c) || '&nbsp;'}</i></span>
@@ -132,30 +135,46 @@ function carteClasse(c) {
     </span>
     <span class="pf-kcd">${c.dernier ? `${svg(I.card)}<b>${esc(c.dernier)}</b><i>${esc(echeance(c.dernier_due))}</i>`
       : `<i>Aucun devoir</i>`}</span>
-    <span class="pf-kcf">${pill(ins.k === 'ouvert' ? 'ok' : 'neutre', ins.t)}${c.principal ? '<em class="pf-tag">PP</em>' : ''}</span>
+    <span class="pf-kcf">${c.genre === 'groupe' ? '<em class="pf-tag">Groupe</em>' : ''}${c.principal && c.genre !== 'groupe' ? '<em class="pf-tag">PP</em>' : ''}</span>
   </button>`;
 }
 
+/* Le premier jour : dans un établissement, choisir ses classes ; seul, donner
+   son code — le premier élève qui le tape crée « Mes élèves ». */
 function accueilVide() {
-  return `<div class="pf-vide">
-    <i class="pf-vide-ic">${svg(I.school)}</i>
-    <h2>Votre première classe</h2>
+  if (etab()) {
+    return `<div class="pf-vide">
+      <i class="pf-vide-ic">${svg(I.school)}</i>
+      <h2>Vos classes</h2>
+      <ol class="pf-etapes">
+        <li><b>1</b><span>Choisissez vos classes dans l’établissement</span></li>
+        <li><b>2</b><span>Formez un groupe si besoin (spécialité, option…)</span></li>
+        <li><b>3</b><span>Donnez un devoir</span></li>
+      </ol>
+      ${btn('choisir', I.school, 'Choisir mes classes', 'pri lg')}
+      <button class="pf-lnk seul" data-pf="groupe">${svg(I.users)}Former un groupe</button>
+    </div>`;
+  }
+  return `${codeBande()}<div class="pf-vide">
+    <i class="pf-vide-ic">${svg(I.key)}</i>
+    <h2>Vos premiers élèves</h2>
     <ol class="pf-etapes">
-      <li><b>1</b><span>Créez la classe</span></li>
-      <li><b>2</b><span>Ajoutez les élèves : liste de noms ou code à projeter</span></li>
+      <li><b>1</b><span>Donnez votre code à vos élèves</span></li>
+      <li><b>2</b><span>Ils le tapent dans Folio → Réglages → J’ai un code</span></li>
       <li><b>3</b><span>Donnez un devoir</span></li>
     </ol>
-    ${btn('creer', I.plus, 'Créer une classe', 'pri lg')}
-    <button class="pf-lnk seul" data-pf="rejoindre">${svg(I.link)}J’ai un code collègue</button>
+    ${btn('tableau', I.grid, 'Projeter mon code', 'pri lg')}
+    <span class="pf-lnks"><button class="pf-lnk" data-pf="creer">${svg(I.plus)}Créer une classe</button>
+      <button class="pf-lnk" data-pf="rejoindre">${svg(I.link)}J’ai un code collègue</button></span>
   </div>`;
 }
 
 function accueilCorps(l) {
   const s = syntheseAccueil(l);
   const { actives } = rangerClasses(l);
-  return `<div class="pf-kpis">
+  return `${codeBande()}<div class="pf-kpis">
       ${kpi(I.users, s.eleves, 'Élèves')}
-      ${kpi(I.user, s.attente, 'En attente', s.attente ? 'am' : '', s.attente ? 'aller-attente' : '')}
+      ${s.attente ? kpi(I.user, s.attente, 'En attente', 'am', 'aller-attente') : ''}
       ${kpi(I.warn, s.retard, 'En retard', s.retard ? 'ko' : '')}
       ${kpi(I.lock, s.jamais, 'Jamais connectés', s.jamais ? 'gris' : '')}
       ${kpi(I.card, s.encours, 'Devoirs en cours')}
@@ -166,7 +185,9 @@ function accueilCorps(l) {
     </div>
     <section class="pf-sec"><h2>Mes classes <span>${actives.length}</span></h2>
       <div class="pf-grid">${actives.map(carteClasse).join('')}
-        <button class="pf-kc pf-kadd" data-pf="creer">${svg(I.plus)}<span>Nouvelle classe</span></button></div></section>`;
+        ${etab() ? `<button class="pf-kc pf-kadd" data-pf="choisir">${svg(I.school)}<span>Mes classes</span></button>
+          <button class="pf-kc pf-kadd" data-pf="groupe">${svg(I.users)}<span>Nouveau groupe</span></button>`
+        : `<button class="pf-kc pf-kadd" data-pf="creer">${svg(I.plus)}<span>Nouvelle classe</span></button>`}</div></section>`;
 }
 
 const bonjour = () => {
@@ -176,9 +197,10 @@ const bonjour = () => {
 
 export function profAccueilView() {
   const l = prof.classes;
-  const actions = l && l.length
-    ? btn('rejoindre', I.link, '', 'ic', 'aria-label="Rejoindre avec un code collègue" title="Rejoindre avec un code collègue"')
-      + btn('donner', I.card, 'Donner un devoir') + btn('creer', I.plus, 'Nouvelle classe', 'pri') : '';
+  const actions = !(l && l.length) ? '' : etab()
+    ? btn('choisir', I.school, 'Mes classes') + btn('donner', I.card, 'Donner un devoir') + btn('groupe', I.users, 'Nouveau groupe', 'pri')
+    : btn('rejoindre', I.link, '', 'ic', 'aria-label="Rejoindre avec un code collègue" title="Rejoindre avec un code collègue"')
+      + btn('donner', I.card, 'Donner un devoir') + btn('creer', I.plus, 'Nouvelle classe', 'pri');
   const an = anneeChoix() || (prof.annee ? esc(prof.annee) : '');
   $.innerHTML = `<div class="pf">${navProf('accueil')}<main class="pf-main" id="pfmain">
     ${tete(bonjour(), `${esc(jourLong(iso(new Date())))}${an ? ' · ' + an : ''}`, actions)}
