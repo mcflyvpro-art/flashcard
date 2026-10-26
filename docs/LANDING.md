@@ -78,7 +78,7 @@ ordinateur). Tant que `data-src` est vide, l'affiche (`poster`) s'affiche.
 ## Où on en est
 
 - [x] 1. Fichier de reprise (celui-ci), pointé depuis CLAUDE.md et PROGRESS.md
-- [ ] 2. Logo SVG propre (`public/site/logo.svg` + `public/favicon.svg`), vérifié en image à 16, 32, 180, 512 px ; supprimer `Vectorized SVG.svg` et `public/icons/test svg` (779 Ko mis en cache par le service worker chez tout le monde !)
+- [x] 2. Logo SVG propre (`public/site/logo.svg` + `public/favicon.svg`), vérifié en image à 16, 32, 180, 512 px ; supprimer `Vectorized SVG.svg` et `public/icons/test svg` (779 Ko mis en cache par le service worker chez tout le monde !)
 - [ ] 3. Bascule de l'app vers `/app` : `index.html` → `app.html`, vite multi-pages, `tools/budget.js` (démarrage lu dans `app.html`, plus une ligne « site »), service worker, manifeste, `vercel.json` (en-têtes, `app.html`), e2e (`goto('./')` → `goto('./app')`), portes `?go=` sans session
 - [ ] 4. La page : structure HTML + SEO (titre, description, canonique, Open Graph, JSON-LD Organization/WebSite/SoftwareApplication/FAQPage, robots, sitemap)
 - [ ] 5. La page : style et animations (héros, moteur, fonctions, vidéos, Campus, tarifs + tableau, FAQ, appel final, pied de page), mouvement réduit respecté
@@ -88,6 +88,20 @@ ordinateur). Tant que `data-src` est vide, l'affiche (`poster`) s'affiche.
 - [ ] 9. Textes passés au humanizer (aucun « — » ni « – » visible : `grep -c '—\|–'` sur le texte rendu = 0)
 - [ ] 10. Vérifs : `npm run check`, e2e complets, Lighthouse (SEO 100, perf ≥ 90), écran 390 px et 1440 px
 - [ ] 11. CLAUDE.md (architecture : `/` = site, `/app` = app) et PROGRESS.md à jour, push branche + `main`
+
+## Le logo
+
+`tools/logo.py` le **calcule** (pas de détourage) : trois volumes projetés,
+dos en demi-cylindre, couverture en « C » à la queue, pages en retrait.
+Régler une valeur en tête du fichier (angles `EX`/`EY`, `W L T`, `PLAT`,
+`DOS`, couleurs `COULEURS`) puis `python3 tools/logo.py` réécrit
+`public/site/logo.svg` (la marque), `public/site/icone.svg` (sur son carré)
+et `public/favicon.svg` (pile qui remplit le carré, sans feuillets). Chaque
+livre est un `<g class="livre livre-clair|gris|noir">` et l'étiquette a la
+classe `etiquette` : la page d'accueil les anime (la pile se pose livre par
+livre). Les icônes PNG de l'app (`public/icons/`) **n'ont pas été
+changées** : `tools/make_icons.py` part encore de l'ancienne image ; les
+refaire depuis `icone.svg` est une décision à prendre avec l'utilisateur.
 
 ## Pièges connus
 
