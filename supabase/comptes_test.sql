@@ -1,11 +1,12 @@
 -- ══════════ comptes d'essai ══════════
--- À jouer dans l'éditeur SQL du projet. Trois comptes, trois interfaces :
+-- À jouer dans l'éditeur SQL du projet. Quatre comptes, quatre interfaces :
 -- l'élève reçoit et travaille, le professeur distribue et suit,
 -- l'administrateur instruit les signalements.
 --
---   admin@folio.app   FolioAdmin2026
---   prof@folio.app    FolioProf2026
---   eleve@folio.app   FolioEleve2026
+--   admin@folio.app     FolioAdmin2026   (l'éditeur : la console d'administration)
+--   prof@folio.app      FolioProf2026
+--   eleve@folio.app     FolioEleve2026
+--   referent@folio.app  FolioRef2026     (référent du « Lycée d'essai Folio », plus bas)
 --
 -- ⚠ LE PIÈGE, et il coûte une heure si on ne le connaît pas.
 -- Créer un compte à la main laisse les colonnes de jetons à NULL, alors que
@@ -92,6 +93,53 @@ begin
   end if;
 end $$;
 
+-- Un établissement d'essai et son référent, par le vrai chemin (2026-10-26) :
+-- l'éditeur crée la fiche et lance la démo (un an, 60 places, classes
+-- d'exemple), puis le référent entre avec le code référent — exactement
+-- ce que font un vrai lycée et son référent (docs/PARCOURS.md, § 4). Les
+-- codes élèves et professeurs se lisent ensuite dans sa console.
+do $$
+declare adm uuid; r uuid; o uuid; j jsonb;
+begin
+  select id into adm from auth.users where email = 'admin@folio.app';
+  select id into r from auth.users where email = 'referent@folio.app';
+  if r is null then
+    r := gen_random_uuid();
+    insert into auth.users (
+      instance_id, id, aud, role, email, encrypted_password,
+      email_confirmed_at, created_at, updated_at,
+      raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous,
+      confirmation_token, recovery_token, email_change_token_new,
+      email_change_token_current, email_change, phone_change,
+      phone_change_token, reauthentication_token
+    ) values (
+      '00000000-0000-0000-0000-000000000000', r, 'authenticated', 'authenticated',
+      'referent@folio.app', extensions.crypt('FolioRef2026', extensions.gen_salt('bf')),
+      now(), now(), now(),
+      '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, false, false,
+      '', '', '', '', '', '', '', ''
+    );
+    insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+    values (r::text, r, jsonb_build_object('sub', r::text, 'email', 'referent@folio.app', 'email_verified', true),
+            'email', now(), now(), now());
+    insert into public.profiles (id, email, name, handle) values (r, 'referent@folio.app', 'referent', 'referent')
+      on conflict (id) do update set handle = excluded.handle;
+  end if;
+  if not exists (select 1 from public.org_members where user_id = r) then
+    perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+    perform set_config('role', 'authenticated', true);
+    o := public.admin_etab_enregistrer(null, jsonb_build_object('nom', 'Lycée d’essai Folio', 'ville', 'Nîmes', 'genre', 'lycee',
+      'statut', 'demo', 'contact_nom', 'Claire Essai', 'contact_fonction', 'Référente', 'contact_email', 'referent@folio.app',
+      'eleves_estimes', '60', 'besoins', jsonb_build_array('devoirs', 'revision'),
+      'notes', 'Établissement d’essai : les comptes de test (supabase/comptes_test.sql).'));
+    j := public.admin_lancer_demo(o, 60, 365, true);
+    perform set_config('request.jwt.claims', json_build_object('sub', r, 'role', 'authenticated')::text, true);
+    j := public.rejoindre(j->>'code_ref', 'Claire', 'Essai');
+    if j->>'statut' <> 'ok' then raise exception 'le référent n''est pas entré : %', j; end if;
+    perform set_config('role', 'postgres', true);
+  end if;
+end $$;
+
 -- Filet de sécurité : si un compte a été créé autrement, on répare ses jetons.
 update auth.users set
   confirmation_token         = coalesce(confirmation_token, ''),
@@ -109,4 +157,4 @@ select u.email, r.role,
        u.email_confirmed_at is not null as confirme,
        u.confirmation_token = ''        as jetons_ok
 from auth.users u join public.user_roles r on r.user_id = u.id
-order by case r.role when 'admin' then 1 when 'prof' then 2 else 3 end;
+order by case r.role when 'admin' then 1 when 'ref' then 2 when 'prof' then 3 else 4 end;

@@ -484,4 +484,4 @@ réseau de l'environnement pour s'en servir. Les scripts de revue visuelle
 `e2e/zz-*.e2e.js` (captures dans `SHOTS=dossier`) ne sont jamais versionnés
 (`.gitignore`) ; sans `SHOTS`, ils écrivent dans `undefined/` ou `zz-…/`.
 
-Comptes de test : `supabase/comptes_test.sql` (admin, prof, élève).
+Comptes de test : `supabase/comptes_test.sql` (admin, prof, élève, et le référent du « Lycée d'essai Folio », créé par le vrai chemin : fiche et démo par l'éditeur, puis le code référent).
