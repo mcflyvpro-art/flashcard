@@ -78,6 +78,11 @@ describe('le Lycée Démo Folio', () => {
     const claire = client(monde(), COMPTES.ref);
     expect(claire.rpc('ref_codes')).toMatchObject({ eleve: ETAB.codeEleves, prof: ETAB.codeProfs, offre: 'demo', eleves: 20, profs: 3 });
     expect(claire.rpc('ref_personnes', { qrole: 'eleve', lim: 60, off: 0 })).toHaveLength(20);
+    const c = claire.rpc('ref_codes');                                   // renouvelés il y a trois jours, chaque semaine
+    expect(c.rythme).toBe('semaine');
+    expect(Date.parse(c.eleve_jusqua) - Date.now()).toBeGreaterThan(3.9 * 864e5);
+    claire.rpc('ref_rythme', { p: 'mois' });
+    expect(Date.parse(claire.rpc('ref_codes').prof_jusqua) - Date.now()).toBeGreaterThan(26 * 864e5);
     claire.rpc('ref_save_class', { nom: '2nde C', niveau: '2nde' });
     expect(claire.rpc('ref_classes').map(c => c.name)).toContain('2nde C');
   });

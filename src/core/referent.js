@@ -110,6 +110,15 @@ export async function refNouveauCode(quel) {
   return r;
 }
 
+/* Le rythme des codes : chaque semaine, chaque mois ou chaque trimestre
+   (20261026110000). La base garde le code du moment ; seule sa date de fin
+   bouge avec le rythme. */
+export async function refRythme(p) {
+  const r = await refAgir('ref_rythme', { p }, 'Rythme des codes changé');
+  if (r) await refCodesPull();
+  return r;
+}
+
 /* Les cartes élève (cas particulier : des élèves sans adresse e-mail) : la
    fonction des professeurs, que le référent a le droit d'appeler sur une
    classe de son établissement (class_manager). */

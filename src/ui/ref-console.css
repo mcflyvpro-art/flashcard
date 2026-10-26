@@ -31,6 +31,15 @@
 .rf-code-l{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--soft)}
 .rf-code-l svg{width:16px;height:16px}
 .rf-code-v{font:800 34px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:2px;color:var(--ink)}
+.rf-code-f{display:flex;align-items:center;gap:6px;margin-top:-4px;font-size:12.5px;color:var(--soft)}
+.rf-code-f svg{width:14px;height:14px}
+.rf-rythme{display:flex;align-items:center;gap:8px;align-self:flex-start;height:36px;padding:0 6px 0 12px;border-radius:10px;
+  background:var(--card);box-shadow:var(--edge);color:var(--soft)}
+.rf-rythme svg{width:15px;height:15px}
+.rf .rf-rythme select{height:34px;padding:0 4px;border:0;background:none;box-shadow:none;font:inherit;font-size:13px;font-weight:600;
+  color:var(--ink);cursor:pointer}
+.rf .rf-rythme select:focus{box-shadow:none}
+.rf-rythme:focus-within{box-shadow:var(--edge),var(--ring)}
 .rf-code-b{display:flex;gap:6px;flex-wrap:wrap}
 .rf-code-b button{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:9px;
   background:var(--surf);font-weight:650;font-size:13px;color:var(--ink2)}

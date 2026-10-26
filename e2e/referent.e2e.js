@@ -90,6 +90,13 @@ test.describe('sur ordinateur', () => {
     await expect.poll(() => org.codes.eleve).not.toBe(ancien);
     await expect(page.locator('.rf-code-v').first()).toHaveText(enClair(org.codes.eleve));
 
+    // les codes changent seuls, chaque semaine par défaut ; le référent choisit le rythme
+    await expect(page.locator('.rf-code-f').first()).toContainText('Nouveau code le');
+    await expect(page.locator('#rfrythme')).toHaveValue('semaine');
+    await page.locator('#rfrythme').selectOption('mois');
+    await expect.poll(() => org.rythme).toBe('mois');
+    await expect(page.locator('#rfrythme')).toHaveValue('mois');
+
     await page.locator('[data-rf="projeter"][data-id="eleve"]').click();
     await expect(page.locator('.rf-projo-c')).toHaveText(enClair(org.codes.eleve));
     await expect(page.locator('.rf-projo .rf-qr svg')).toBeVisible();

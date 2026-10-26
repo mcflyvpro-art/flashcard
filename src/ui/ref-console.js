@@ -6,10 +6,10 @@ import { ref, setAnimate, view } from '../data/etat.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
   PAGE, refAgir, refCharger, refCreerCartes, refEquipePull, refJournalPull, refNouveauCode, refPersonnesPull,
-  refProfsPull, refServicePull
+  refProfsPull, refRythme, refServicePull
 } from '../core/referent.js';
 import { formatCode, lienCarte, lienRejoindre, lireListeEleves, nomValide } from '../classe.js';
-import { cycleDe, etatLicence, NIVEAUX } from '../etablissement.js';
+import { changeLe, cycleDe, etatLicence, NIVEAUX, RYTHMES } from '../etablissement.js';
 import { render } from './bibliotheque.js';
 import { avatar } from './jeton.js';
 import { toast } from './import-cartes.js';
@@ -41,16 +41,28 @@ function tete(b, c) {
 
 
 /* ---------- l'accueil : les codes, la licence, ce qui demande une décision ---------- */
-function tuileCode(quel, titre, code) {
+function tuileCode(quel, titre, code, jusqua) {
+  const fin = changeLe(jusqua);
   return `<div class="rf-code">
       <span class="rf-code-l">${svg(quel === 'eleve' ? I.users : I.school)}${titre}</span>
       <b class="rf-code-v">${code ? formatCode(code) : '— — —'}</b>
+      ${fin ? `<span class="rf-code-f">${svg(I.clock)}${fin}</span>` : ''}
       <div class="rf-code-b">
         <button data-rf="copier" data-id="${quel}">${svg(I.copy)}Copier</button>
         <button data-rf="projeter" data-id="${quel}">${svg(I.grid)}Afficher</button>
         <button data-rf="changer" data-id="${quel}" title="L’ancien code cessera de marcher">${svg(I.refresh)}<span>Changer</span></button>
       </div>
     </div>`;
+}
+
+/* Les deux codes et leur rythme : un code qui ne change jamais finit sur un
+   groupe de discussion, et fait encore entrer n'importe qui en juin. */
+function tuilesCodes(c) {
+  const r = c.rythme || 'semaine';
+  return `${tuileCode('eleve', 'Code élèves', c.eleve, c.eleve_jusqua)}${tuileCode('prof', 'Code professeurs', c.prof, c.prof_jusqua)}
+    <label class="rf-rythme" title="Les codes changent seuls ; ceux qui sont entrés restent">${svg(I.refresh)}
+      <select id="rfrythme" aria-label="Nouveaux codes">${Object.entries(RYTHMES).map(([k, t]) =>
+        `<option value="${k}"${k === r ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`;
 }
 
 function tuileLicence(c) {
@@ -83,7 +95,7 @@ function accueil() {
   if (c === null) return vide(I.build, 'Chargement…');
   if (!c) return vide(I.lock, 'Réservé au référent de l’établissement');
   return `<div class="rf-accueil">
-      <div class="rf-codes">${tuileCode('eleve', 'Code élèves', c.eleve)}${tuileCode('prof', 'Code professeurs', c.prof)}</div>
+      <div class="rf-codes">${tuilesCodes(c)}</div>
       <div class="rf-cote">
         ${tuileLicence(c)}
         <div class="rf-chiffres">${kc(b.classes, 'classes')}${kc(b.eleves, 'élèves')}${kc(b.profs, 'professeurs')}
@@ -230,8 +242,15 @@ function servicesProf(g, cl) {
 }
 
 /* ---------- le journal ---------- */
-function detailTrace(d) {
+const QUI_CODE = { eleve: 'élèves', prof: 'professeurs', ref: 'référent' };
+
+/* Un code changé, renouvelé, ou son rythme : « code élèves · chaque semaine ». */
+const detailCode = d => [QUI_CODE[d.role] && 'code ' + QUI_CODE[d.role], (RYTHMES[d.rythme] || '').toLowerCase()]
+  .filter(Boolean).join(' · ');
+
+function detailTrace(d, acte) {
   if (!d || typeof d !== 'object') return '';
+  if (/code/.test(acte || '')) return detailCode(d);
   if (d.avant && d.apres && typeof d.avant === 'object') return `${d.avant.nom || ''} → ${d.apres.nom || d.avant.nom || ''}`;
   if (d.avant || d.apres) return `${d.avant || '—'} → ${d.apres || '—'}`;
   return [d.nom, d.classe, d.matiere, d.role].filter(Boolean).join(' · ');
@@ -241,7 +260,7 @@ function journal() {
   const l = ref.trace;
   if (!l) return vide(I.clock, 'Chargement…');
   if (!l.length) return vide(I.clock, 'Rien encore');
-  return `<div class="rf-journal">${l.map(r => `<div class="rf-jl"><b>${esc(r.acte)}</b><i>${esc(detailTrace(r.detail))}</i>
+  return `<div class="rf-journal">${l.map(r => `<div class="rf-jl"><b>${esc(r.acte)}</b><i>${esc(detailTrace(r.detail, r.acte))}</i>
     <span>${timeAgo(r.created_at)}</span></div>`).join('')}</div>`;
 }
 
@@ -285,7 +304,7 @@ function telephone() {
   const c = ref.codes;
   if (c === null) return vide(I.build, 'Chargement…');
   if (!c) return vide(I.lock, 'Réservé au référent de l’établissement');
-  return `<div class="rf-tel">${tuileCode('eleve', 'Code élèves', c.eleve)}${tuileCode('prof', 'Code professeurs', c.prof)}
+  return `<div class="rf-tel">${tuilesCodes(c)}
     ${tuileLicence(c)}<p class="rf-rien">${svg(I.build)}Classes, élèves et professeurs se gèrent sur ordinateur.</p></div>`;
 }
 
@@ -482,6 +501,7 @@ document.addEventListener('change', e => {
     });
     return;
   }
+  if (s.id === 'rfrythme') { refRythme(s.value); return; }
   if (s.id === 'rfcls') {
     ref.sans = s.value === '-'; ref.cls = ref.sans || !s.value ? null : s.value; ref.who = null;
     refPersonnesPull(true);
