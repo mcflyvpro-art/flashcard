@@ -306,7 +306,6 @@ export const eleveNeuf = () => ({
   classes: null, devoirs: null, err: 0,
   code: '', apercu: null, prenom: '', nom: '', reponse: null, envoi: false,
   fiches: {},                  // eleve_classe() par classe : la page d'une classe (2026-10-25)
-  demandeEtab: null,           // sa demande à un établissement, en attente (ma_demande_etab)
   // la feuille « J'ai un code » (ui/code-entree.js) : le code tapé, la réponse de la base, le formulaire
   entree: { code: '', fiche: null, reponse: null, envoi: false, prenom: '', nom: '', classe: '' }
 });
@@ -334,8 +333,8 @@ export const refNeuf = () => ({ tab: 'etab', board: null, err: 0,
             gens: null, total: 0, page: 0, q: '', role: '', cls: null, cherche: 0,
             classes: null, open: null, team: null,
             who: null, service: null, form: null, trace: null,
-            // licence, codes et demandes (migration 20261025233000) ; la classe choisie par demande
-            codes: null, demandes: null, qr: '', choix: {} });
+            // licence et codes (migration 20261026001000)
+            codes: null, qr: '' });
 export let ref = refNeuf();
 
 /* ══════════ l'espace professeur ══════════

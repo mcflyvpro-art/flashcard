@@ -13,36 +13,49 @@ export const GENRES = {
   college: 'Collège', lycee: 'Lycée', lycee_pro: 'Lycée professionnel', sup: 'Études supérieures', autre: 'Autre'
 };
 
-export const OFFRES = { essai: 'Essai', etablissement: 'Licence' };
+export const OFFRES = { demo: 'Démo', etablissement: 'Licence' };
 
-/* La réponse de code_apercu / etab_demander, en clair. `quel` précise le
-   rôle quand il change la phrase (un référent entre tout de suite). */
+/* La réponse de code_apercu / rejoindre, en clair. Il n'y a plus d'attente :
+   le code fait entrer (migration 20261026001000). */
 const STATUTS = {
-  ok: ['ok', 'C’est bien ton établissement ?', ''],
-  attente: ['attente', 'Demande envoyée', 'Ton établissement doit la valider. Tu le verras ici dès que ce sera fait.'],
-  admis: ['ok', 'Tu es référent de l’établissement', ''],
-  deja: ['ok', 'Tu fais déjà partie de cet établissement', ''],
+  ok: ['ok', 'C’est bien ça ?', ''],
+  deja: ['ok', 'Tu y es déjà', ''],
+  choisir: ['ko', 'Choisis ta classe', ''],
+  classe: ['ko', 'Cette classe n’est plus proposée', 'Choisis-en une autre dans la liste.'],
   autre: ['ko', 'Ton compte appartient à un autre établissement', 'Un compte ne fait partie que d’un seul établissement.'],
   gere: ['ko', 'Ton compte vient déjà de ton établissement', 'Une carte élève n’a pas besoin de code.'],
   role: ['ko', 'Ce code n’est pas pour ce compte', 'Les élèves et les professeurs n’ont pas le même code.'],
-  demande: ['ko', 'Une demande attend déjà ailleurs', 'Annule-la dans « Ma classe » avant d’en envoyer une autre.'],
+  soi: ['ko', 'C’est ton propre code', 'Donne-le à tes élèves.'],
   plein: ['ko', 'L’établissement n’a plus de place', 'Préviens-le : il doit ajouter des places à sa licence.'],
+  complet: ['ko', 'Cette classe est complète', 'Ton professeur doit ajouter des places.'],
   licence: ['ko', 'La licence de l’établissement a pris fin', 'Préviens-le : il doit la renouveler.'],
-  complet: ['ko', 'Trop de demandes en attente', 'Ton établissement doit d’abord répondre aux demandes en cours.'],
-  nom: ['ko', 'Ton prénom et ton nom', 'Ton établissement doit te reconnaître : écris ton vrai prénom et ton vrai nom.'],
-  classe: ['ko', 'Classe trop longue', 'Quarante caractères au plus, par exemple « 2nde 4 ».'],
+  nom: ['ko', 'Ton prénom et ton nom', 'Ton vrai prénom et ton vrai nom : on doit te reconnaître.'],
   inconnu: ['ko', 'Code inconnu', 'Vérifie les huit caractères : sans 0, O, 1, I ni L.'],
   trop: ['ko', 'Trop d’essais', 'Par sécurité, réessaie dans une heure.'],
   connexion: ['ko', 'Connecte-toi d’abord', '']
 };
 
-export function messageEtab(statut, quel) {
+export function messageEtab(statut) {
   const [ton, titre, texte] = STATUTS[statut] || ['ko', 'Impossible pour l’instant', 'Réessaie dans un moment.'];
-  if (statut === 'attente' && quel === 'prof') {
-    return { ton, titre, texte: 'Le référent de l’établissement doit la valider. Tu auras l’espace professeur dès que ce sera fait.' };
-  }
   return { ton, titre, texte };
 }
+
+/* Ce qu'on dit en entrant, selon qui l'on devient. */
+export function bienvenue(r) {
+  if (r.type === 'prof') return `Tu suis maintenant ${r.nom}${r.classe ? ' · ' + r.classe : ''}`;
+  if (r.quel === 'ref') return `Tu es référent de ${r.nom}`;
+  if (r.quel === 'prof') return `Bienvenue à ${r.nom}`;
+  return `Bienvenue à ${r.nom}${r.classe ? ' · ' + r.classe : ''}`;
+}
+
+/* Le suivi d'un établissement, du premier contact au client. */
+export const ETAPES = {
+  prospect: 'Prospect', demo: 'Démo', client: 'Client', pause: 'En pause', perdu: 'Perdu'
+};
+export const BESOINS = {
+  devoirs: 'Devoirs', revision: 'Révision autonome', ia: 'Fiches par l’IA', defis: 'Défis en classe',
+  suivi: 'Suivi des élèves', examens: 'Examens'
+};
 
 const finFr = fin => (fin ? `${fin.slice(8, 10)}/${fin.slice(5, 7)}/${fin.slice(0, 4)}` : 'sans fin');
 const decompte = (eleves, places) => (places == null ? `${eleves} élève${eleves > 1 ? 's' : ''}` : `${eleves} / ${places}`);

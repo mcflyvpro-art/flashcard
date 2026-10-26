@@ -1,24 +1,38 @@
 import { describe, it, expect } from 'vitest';
-import { etatLicence, messageEtab, ROLES_CODE, uaiValide } from '../src/etablissement.js';
+import { BESOINS, bienvenue, ETAPES, etatLicence, messageEtab, ROLES_CODE, uaiValide } from '../src/etablissement.js';
 
 describe('messageEtab — la réponse de la base, en clair', () => {
   it('chaque statut connu a un titre et un ton', () => {
-    for (const s of ['ok', 'attente', 'admis', 'deja', 'autre', 'gere', 'role', 'demande', 'plein', 'licence',
-      'complet', 'nom', 'classe', 'inconnu', 'trop', 'connexion']) {
+    for (const s of ['ok', 'deja', 'choisir', 'classe', 'autre', 'gere', 'role', 'soi', 'plein', 'complet', 'licence',
+      'nom', 'inconnu', 'trop', 'connexion']) {
       const m = messageEtab(s);
       expect(m.titre.length).toBeGreaterThan(5);
-      expect(['ok', 'ko', 'attente']).toContain(m.ton);
+      expect(['ok', 'ko']).toContain(m.ton);
     }
   });
   it('un statut inconnu ne laisse jamais un écran vide', () => {
     expect(messageEtab('n-importe-quoi')).toEqual({ ton: 'ko', titre: 'Impossible pour l’instant', texte: 'Réessaie dans un moment.' });
   });
-  it('un professeur attend le référent, un élève son établissement', () => {
-    expect(messageEtab('attente', 'prof').texte).toMatch(/espace professeur/);
-    expect(messageEtab('attente', 'eleve').texte).toMatch(/établissement/);
-  });
   it('trois rôles nommés', () => {
     expect(Object.keys(ROLES_CODE)).toEqual(['eleve', 'prof', 'ref']);
+  });
+});
+
+describe('bienvenue — ce qu’on dit en entrant', () => {
+  it('élève : son établissement et sa classe', () => {
+    expect(bienvenue({ type: 'etab', quel: 'eleve', nom: 'Lycée Camus', classe: '2nde A' })).toBe('Bienvenue à Lycée Camus · 2nde A');
+  });
+  it('référent, professeur, professeur particulier', () => {
+    expect(bienvenue({ type: 'etab', quel: 'ref', nom: 'Lycée Camus' })).toBe('Tu es référent de Lycée Camus');
+    expect(bienvenue({ type: 'etab', quel: 'prof', nom: 'Lycée Camus' })).toBe('Bienvenue à Lycée Camus');
+    expect(bienvenue({ type: 'prof', nom: 'M. Durand', classe: 'Mes élèves' })).toBe('Tu suis maintenant M. Durand · Mes élèves');
+  });
+});
+
+describe('le suivi commercial', () => {
+  it('cinq étapes, dans l’ordre de la vente', () => {
+    expect(Object.keys(ETAPES)).toEqual(['prospect', 'demo', 'client', 'pause', 'perdu']);
+    expect(Object.keys(BESOINS).length).toBeGreaterThan(3);
   });
 });
 
@@ -32,7 +46,7 @@ describe('etatLicence — où en est la licence', () => {
     expect(etatLicence({ places: 60, eleves: 60, licence_fin: '2027-01-01' }, auj).k).toBe('pleine');
   });
   it('bientôt finie à 30 jours ou moins, échue la veille', () => {
-    expect(etatLicence({ places: 60, eleves: 3, licence_fin: '2026-11-24', offre: 'essai' }, auj)).toMatchObject({ k: 'bientot', jours: 30, offre: 'Essai' });
+    expect(etatLicence({ places: 60, eleves: 3, licence_fin: '2026-11-24', offre: 'demo' }, auj)).toMatchObject({ k: 'bientot', jours: 30, offre: 'Démo' });
     expect(etatLicence({ places: 60, eleves: 3, licence_fin: '2026-10-24' }, auj)).toMatchObject({ k: 'echue', jours: -1 });
   });
   it('échue passe avant pleine : c’est ce qu’il faut régler d’abord', () => {

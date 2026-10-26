@@ -18,15 +18,13 @@ export function messageErreur(e) {
   try { return JSON.parse(t).message || t; } catch (x) { return t; }   // pas du JSON : le texte tel quel
 }
 
-const enClasse = () => !!eleve.demandeEtab
-  || (eleve.classes || []).some(c => c.statut === 'inscrit' || c.statut === 'attente');
+const enClasse = () => (eleve.classes || []).some(c => c.statut === 'inscrit' || c.statut === 'attente');
 
 export async function eleveClassesPull() {
-  const r = await Promise.allSettled([rpc('eleve_classes'), rpc('eleve_devoirs'), rpc('ma_demande_etab')]);
+  const r = await Promise.allSettled([rpc('eleve_classes'), rpc('eleve_devoirs')]);
   const avant = enClasse();
   eleve.classes = r[0].status === 'fulfilled' ? r[0].value || [] : eleve.classes || [];
   eleve.devoirs = r[1].status === 'fulfilled' ? r[1].value || [] : eleve.devoirs || [];
-  if (r[2].status === 'fulfilled') eleve.demandeEtab = r[2].value || null;
   eleve.err = r.some(x => x.status === 'rejected') ? 1 : 0;
   /* Admis dans une classe (ou sorti) : l'onglet « Classe » apparaît (ou
      s'en va) sur l'écran d'accueil aussi, pas seulement dans le cercle. */
@@ -54,13 +52,13 @@ export async function rejoindreCode(code, prenom, nom) {
 
 export const annulerDemande = cid => rpc('eleve_annuler', { cid });
 
-/* « J'ai un code » (migration 20261025233000) : un code d'établissement
-   (élève, professeur, référent) ou de classe, dans le même champ. La base
-   dit lequel, compte l'essai une seule fois, et rend son verdict. */
+/* « J'ai un code » (migration 20261026001000) : le code d'un établissement
+   (élève, professeur, référent) ou d'un professeur particulier, dans le même
+   champ. La base dit lequel, rend la liste des classes à choisir, compte
+   l'essai une seule fois ; `rejoindre` fait entrer aussitôt. */
 export const codeApercu = code => rpc('code_apercu', { code });
-export const etabDemander = (code, prenom, nom, classe) =>
-  rpc('etab_demander', { code, son_prenom: prenom || '', son_nom: nom || '', sa_classe: classe || '' });
-export const etabAnnuler = () => rpc('etab_annuler');
+export const rejoindreAvecCode = (code, prenom, nom, classe) =>
+  rpc('rejoindre', { code, son_prenom: prenom || '', son_nom: nom || '', classe: classe || null });
 
 export const quitterClasse = cid => rpc('eleve_quitter', { cid });
 
