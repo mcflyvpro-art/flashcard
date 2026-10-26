@@ -126,7 +126,7 @@ toucher. Les quatre : `pc` (héros, ordinateur : une séance de révision),
 - [x] 8. Image de partage `public/site/og.jpg` (1200×630, 76 Ko)
 - [x] 9. Textes passés au humanizer (aucun « — » ni « – » visible : vérifié par `test/site.test.js`)
 - [x] 10. Vérifs : `npm run check` vert, e2e complets 60/60, Lighthouse **100 / 100 / 100 / 100** (performance, accessibilité, bonnes pratiques, SEO) au téléphone (FCP 1,1 s, LCP 1,4 s, CLS 0) comme sur ordinateur, écrans 390 px et 1440 px relus en capture, routage vérifié sur la préversion Vercel (`/`, `/app`, `/app/`, `sw.js`, CSP)
-- [ ] 11. CLAUDE.md (architecture : `/` = site, `/app` = app) et PROGRESS.md à jour, push branche + `main`
+- [x] 11. CLAUDE.md et PROGRESS.md à jour ; `main` fusionnée deux fois pendant le chantier (le routeur à adresses et la démo sur base locale, puis les codes renouvelés) ; routage vérifié sur la préversion Vercel, adresse par adresse, puis poussé sur `main` (00a5228)
 
 ## Ce qui reste à décider (l'utilisateur)
 
@@ -171,6 +171,15 @@ refaire depuis `icone.svg` est une décision à prendre avec l'utilisateur.
   et ne jamais jeter (tout en `try`).
 - `vercel.json` a `cleanUrls: true` : `/app.html` redirige (308) vers `/app` ;
   mettre en cache `/app`, jamais `/app.html` (une réponse redirigée ne sert
-  pas une navigation).
+  pas une navigation). **Et une réécriture doit viser `/app`, jamais
+  `/app.html`** : avec `cleanUrls`, Vercel range le fichier sous `/app`, et
+  la destination `/app.html` (comme `/index.html` avant elle) ne trouve
+  rien — toutes les adresses de l'app répondaient 404 (vérifié sur la
+  préversion le 2026-10-26 ; la production l'avait déjà, depuis l'arrivée
+  du routeur). `vite preview` ne le voit pas : vérifier sur une préversion
+  (`curl` avec le lien de partage de Vercel) à chaque changement de
+  `vercel.json`.
+- `main` bouge pendant qu'on travaille (d'autres sessions y poussent) :
+  `git fetch origin main` et fusionner avant de pousser, jamais forcer.
 - La CSP est en *Report-Only* : un script en ligne y est signalé, pas bloqué
   (l'empreinte sha256 de l'aiguillage y est ajoutée, vérifiée par un test).
