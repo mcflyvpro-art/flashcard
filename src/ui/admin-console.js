@@ -47,12 +47,6 @@ function chiffres() {
     </div>`;
 }
 
-function onglets() {
-  const t = [['suivi', 'Établissements', (adm.orgs || []).length], ['comptes', 'Comptes', (accounts || []).length]];
-  return `<nav class="ed-onglets" role="tablist">${t.map(([k, n, c]) => `<button role="tab" aria-selected="${adm.tab === k}"
-    class="${adm.tab === k ? 'on' : ''}" data-adm="onglet" data-id="${k}">${n}<i>${c}</i></button>`).join('')}</nav>`;
-}
-
 /* ---------- le suivi : la liste ---------- */
 function drapeau(o, auj) {
   if (o.statut === 'perdu') return '';
@@ -256,6 +250,13 @@ function ficheCompte() {
     </div>`;
 }
 
+/* Depuis une adresse (ui/routeur.js, par la porte ui/classement.js). */
+export function allerA(k, id) {
+  adm.tab = k === 'comptes' ? 'comptes' : 'suivi';
+  if (adm.tab === 'suivi') adm.open = id || null; else adm.copen = id || null;
+  repeint();
+}
+
 /* ---------- l'écran ---------- */
 export function consoleAdmin() {
   if (!adm.charge) { adm.charge = true; admCharger(); }
@@ -266,7 +267,7 @@ export function consoleAdmin() {
   $.innerHTML = `<div class="page ed" id="page">
       <div class="top"><div class="hero">Administration</div>
         ${suivi ? `<button class="ed-b pri" data-adm="nouveau">${svg(I.plus)}Établissement</button>` : ''}</div>
-      ${adm.err && !adm.orgs?.length && !accounts?.length ? vide(I.lock, 'Réservé à l’éditeur') : `${chiffres()}${onglets()}
+      ${adm.err && !adm.orgs?.length && !accounts?.length ? vide(I.lock, 'Réservé à l’éditeur') : `${chiffres()}
       <section class="ed-corps">${corps}</section>`}
     </div>`;
 }

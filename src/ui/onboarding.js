@@ -22,6 +22,8 @@ import { accueil } from '../core/classement.js';
 import { cacheKey, esc, flush, load, plur, pull, refreshToken, save, saveAuth, setOnline } from '../core/coeur-sync.js';
 import { selOff } from './connexion.js';
 import { lienAvantSession } from './liens-entrants.js';
+import { armer, armerSansSession, cibleDepart, desarmer } from './routeur.js';
+import { ouvrirDemo } from './demo-porte.js';
 import { isPupil } from './classement.js';
 import { ouvrirBienvenue } from './bienvenue-porte.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
@@ -701,7 +703,10 @@ export async function boot() {
   /* Le QR d'une carte élève ouvre la session avant tout le reste ; un code
      de classe, de partie ou de club arrivé sans session attend la
      connexion (liens-entrants.js, la porte de tout lien entrant). */
-  if (!(await lienAvantSession())) { setView({ name: 'login' }); return render(); }
+  const adresse = cibleDepart();          // l'écran que demande l'adresse (ui/routeur.js)
+  if (adresse && adresse.demo) return ouvrirDemo(adresse);
+  if (!(await lienAvantSession())) { setView({ name: 'login' }); render(); return armerSansSession(cibleDepart()); }
+  desarmer();
   setDb(load());
   fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état
   if (!consumeHash()) render();          // le cache s'affiche tout de suite
@@ -732,6 +737,7 @@ export async function boot() {
     setOnline(true);
     let pret = null;
     if (!(shortcut && consumeGoto())) { render(); pret = accueil(); }
+    Promise.resolve(pret).then(r => armer(!!pret && r !== 'lien'), () => armer(false));
     flush();
     maybeTour(pret);
   } catch (e) {

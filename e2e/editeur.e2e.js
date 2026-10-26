@@ -31,9 +31,8 @@ async function entrer(page) {
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill('motdepasse-solide-42');
   await page.getByRole('button', { name: 'Se connecter' }).click();
   await expect(page.locator('#boot')).toHaveCount(0);
-  await page.locator('[data-act="settings"]:visible, [data-r="settings"]:visible').first().click();
-  await page.getByRole('button', { name: /Administration/ }).last().click();
-  await expect(page.locator('.ed-chiffres')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.ed-chiffres')).toBeVisible({ timeout: 10000 });     // l'éditeur arrive sur sa console
+  await expect(page).toHaveURL(/\/admin$/);
 }
 
 test.describe('sur ordinateur', () => {
@@ -102,7 +101,7 @@ test.describe('sur ordinateur', () => {
     await expect(page.locator('.ed-ligne', { hasText: 'Lycée Neuf' })).toHaveCount(0);
     expect(store.et.orgs.some(o => o.nom === 'Lycée Neuf')).toBe(false);
 
-    await page.locator('.ed-onglets button', { hasText: 'Comptes' }).click();
+    await page.locator('#rail [data-r="adm:comptes"]').click();
     await page.locator('#edcq').fill('tuteur');
     await page.locator('.ed-ligne', { hasText: 'tuteur@exemple.fr' }).click();
     await page.locator('[data-adm="role"][data-id="prof"]').click();
@@ -158,8 +157,6 @@ test('sans compte, un principal demande une démo ; l’éditeur la voit arriver
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill('editeur@folio.fr');
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill('motdepasse-solide-42');
   await page.getByRole('button', { name: 'Se connecter' }).click();
-  await page.locator('[data-act="settings"]:visible, [data-r="settings"]:visible').first().click();
-  await page.getByRole('button', { name: /Administration/ }).last().click();
-  await expect(page.locator('[data-adm="voir-demandes"] b')).toHaveText('1');
+  await expect(page.locator('[data-adm="voir-demandes"] b')).toHaveText('1', { timeout: 10000 });
   await expect(page.locator('.ed-ligne', { hasText: 'Collège Jean Moulin' })).toContainText('demande');
 });

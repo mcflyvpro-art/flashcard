@@ -23,13 +23,22 @@ self.addEventListener('activate', e => {
    demandé comme module, avec un en-tête Origin que la copie faite à
    l'installation n'avait pas — le cache la refusait, rendait index.html à
    la place, et le morceau ne s'ouvrait jamais hors ligne. */
+/* Chaque écran a son adresse (src/routes.js) et toutes servent la même
+   page : une navigation se range sous index.html, jamais sous son adresse
+   — sinon chaque livre, chaque classe ouverte laisserait sa copie, et une
+   adresse jamais visitée ne s'ouvrirait pas hors ligne. Seule une réponse
+   saine remplace la page gardée. */
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  const page = req.mode === 'navigate', cle = page ? BASE + 'index.html' : req;
   e.respondWith(
     fetch(req)
-      .then(r => { const c = r.clone(); caches.open(C).then(x => x.put(req, c)); return r; })
-      .catch(() => caches.match(req, { ignoreVary: true })
+      .then(r => {
+        if (!page || r.ok) { const c = r.clone(); caches.open(C).then(x => x.put(cle, c)); }
+        return r;
+      })
+      .catch(() => caches.match(cle, { ignoreVary: true })
         .then(hit => hit || caches.match(BASE + 'index.html', { ignoreVary: true })))
   );
 });

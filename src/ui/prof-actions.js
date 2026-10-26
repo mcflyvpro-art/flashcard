@@ -41,6 +41,7 @@ export function allerAccueil() {
 }
 
 export function ouvrirClasse(id, tab) {
+  if (!prof.classes) profPull();       // ouverte par son adresse, sans passer par l'accueil
   if (prof.open !== id) {
     prof.roster = null; prof.devoirs = null; prof.demandes = null; prof.equipe = null; prof.exclus = null;
     prof.sel = new Set(); prof.q = ''; prof.filtre = 'tous'; prof.vue = 'liste'; prof.mois = null;
@@ -51,7 +52,8 @@ export function ouvrirClasse(id, tab) {
   go('profclasse');
 }
 
-function ouvrirAgenda(mois) {
+export function ouvrirAgenda(mois) {
+  if (!prof.classes) profPull();
   prof.mois = mois || prof.mois || iso(new Date());
   const d = new Date(+prof.mois.slice(0, 4), +prof.mois.slice(5, 7) - 1, 1, 12);
   const du = iso(new Date(d.getFullYear(), d.getMonth(), 1 - 7, 12));

@@ -10,12 +10,6 @@
 .rf-lic.bientot,.rf-lic.pleine{background:#FBF1DC;color:#7A5A12}
 .rf-lic.echue{background:#F8E3DF;color:var(--ko)}
 
-.rf-onglets{display:flex;gap:2px;margin:0 0 18px;border-bottom:1px solid var(--hair)}
-.rf-onglets button{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 14px;margin-bottom:-1px;
-  font-weight:650;font-size:14px;color:var(--soft);border-bottom:2px solid transparent}
-.rf-onglets button:hover{color:var(--ink)}
-.rf-onglets button.on{color:var(--ink);border-bottom-color:var(--ink)}
-.rf-onglets i{font-style:normal;font-size:12px;font-weight:700;padding:1px 7px;border-radius:9px;background:var(--surf)}
 
 /* ---------- les boutons ---------- */
 .rf-b{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 14px;flex:none;

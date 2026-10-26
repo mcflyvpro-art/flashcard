@@ -334,7 +334,9 @@ export const refNeuf = () => ({ tab: 'accueil', board: null, err: 0, charge: fal
             classes: null, open: null, team: null, profsListe: null,
             who: null, service: null, trace: null,
             // licence et codes (migration 20261026001000), projection, cartes élève
-            codes: null, projo: '', cartes: null });
+            codes: null, projo: '', cartes: null,
+            // l'onglet que demande une adresse, posé à la première ouverture (ui/routeur.js)
+            cible: null });
 export let ref = refNeuf();
 
 /* ══════════ l'espace professeur ══════════

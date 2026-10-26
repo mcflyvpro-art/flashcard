@@ -2234,6 +2234,7 @@ html.nav-haut .menu{left:0}
   html.nav-haut #rail nav button{padding:0 12px}
   html.nav-haut #app{padding-top:64px}
   html.nav-haut .tabs{display:none}
+  html.nav-haut #rail nav button.pc{display:none}   /* la console du référent, au téléphone, n'a que ses codes */
 }
 
 /* un titre de section dans une feuille : un mot, pas une phrase */

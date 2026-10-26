@@ -67,10 +67,10 @@ test('édition croisée hors ligne sur deux appareils : 0 perte, 0 boîte de cho
   expect(store.tables.cards).toHaveLength(3);
   await expect(B.getByText('Modifié sur un autre appareil')).toHaveCount(0);
 
-  // et chaque appareil, rouvert, voit les deux corrections
+  // et chaque appareil, rouvert (sur le livre : l'adresse le garde), voit les deux corrections
   for (const p of [A, B]) {
     await p.reload();
-    await p.getByRole('button', { name: /Capitales/ }).click();
+    await expect(p.getByRole('button', { name: 'Menu du livre' })).toBeVisible({ timeout: 10000 });
     await expect(p.getByRole('textbox', { name: 'Recto' }).nth(0)).toHaveValue('Pays 1 — corrigé sur A');
     await expect(p.getByRole('textbox', { name: 'Verso' }).nth(2)).toHaveValue('Capitale 3 — corrigée sur B');
   }

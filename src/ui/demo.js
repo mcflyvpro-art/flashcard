@@ -12,6 +12,7 @@ import { ETAB, journalDemo, reponseDemo, ROLES_DEMO } from '../demo-etab.js';
 import { go } from './bibliotheque.js';
 import { demoDB } from './onboarding.js';
 import { allerAccueil } from './prof-porte.js';
+import { armerSur, desarmer } from './routeur.js';
 import './demo.css';
 
 /* ══════════ « Essayer Folio », sans compte (2026-10-26) ══════════
@@ -73,10 +74,11 @@ function nettoyer() {
 
 function quitter() {
   nettoyer();
-  location.replace(location.pathname);   // tout repart de zéro : plus de session, plus de lycée fictif
+  location.replace('/connexion');   // tout repart de zéro : plus de session, plus de lycée fictif
 }
 
-export function lancer(role) {
+/* `adresse` : l'écran d'une adresse /demo/… rechargée (ui/routeur.js). */
+export function lancer(role, adresse) {
   const r = ROLES.find(x => x.k === role) || ROLES[0], uid = ROLES_DEMO[r.k];
   nettoyer();
   setDemo(true);
@@ -90,10 +92,11 @@ export function lancer(role) {
   setPrefs({ ...DEFPREFS, name: r.nom, tuto: 1, bienvenue: 1 });   // ni visite guidée ni accueil
   setDb(r.k === 'ref' ? { subjects: [], decks: [], hist: {} } : demoDB());
   bandeau(r.k);
-  if (r.k === 'ref') { refPull(); return go('ref'); }
-  if (r.k === 'prof') return allerAccueil();
-  eleveClassesPull();
-  return go('classes');
+  desarmer();
+  if (adresse && adresse.name) return armerSur(adresse);
+  if (r.k === 'ref') { refPull(); go('ref'); } else if (r.k === 'prof') allerAccueil();
+  else { eleveClassesPull(); go('classes'); }
+  armerSur(null);
 }
 
 document.addEventListener('click', e => {

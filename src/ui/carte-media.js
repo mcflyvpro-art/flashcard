@@ -583,7 +583,7 @@ export function fsrsOptimize(items) {
       w.onmessage = e => fin(e.data);
       w.onerror = () => fin(null);
       setTimeout(() => fin(null), 60000);     // un calcul qui s'éternise n'aura pas lieu
-      w.postMessage({ url: new URL('fsrs.wasm', location.href).href,
+      w.postMessage({ url: new URL(import.meta.env.BASE_URL + 'fsrs.wasm', location.origin).href,
         ratings: items.ratings, deltas: items.deltas, lengths: items.lengths });
     } catch (e) { fin(null); }
   });

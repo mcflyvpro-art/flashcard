@@ -19,7 +19,14 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-26 · EN COURS : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
+DERNIER   2026-10-26 · Une adresse par écran et par espace (src/routes.js, ui/routeur.js) :
+          /eleve, /prof, /referent, /admin, /demo/<rôle> ; rafraîchir garde l'écran, le
+          retour du navigateur revient à l'écran d'avant, une adresse ouverte sans session
+          attend la connexion — e2e/adresses.e2e.js 4/4, test/routes.test.js 7/7. Le
+          référent et l'éditeur n'ont plus dans leur barre que leurs pages (onglets de la
+          console, réglages réduits), l'éditeur arrive sur sa console. Suite : démo libre,
+          licence et factures, codes renouvelés chaque semaine.
+          Avant : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
           code » en base (20261026001000) et la feuille « J'ai un code » ; B2C sans onglet
           Classe ; la console du référent refaite pour l'ordinateur (ui/ref-console.js, à
           la demande : codes + QR projeté, licence, à régler, classes, élèves, profs,

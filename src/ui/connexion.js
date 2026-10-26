@@ -25,6 +25,8 @@ import { norm } from './quiz.js';
 import { cartePassage, lierPassage } from './passage.js';
 import { bindReorder } from './reordonner.js';
 import { CONTACT, EDITEUR } from '../editeur.js';
+import { armer, desarmer, synchroniser } from './routeur.js';
+import { chargerDemo } from './demo-porte.js';
 
 /* ---------- sélection multiple ----------
    `sel` est nul hors du mode ; sinon c'est l'ensemble des cartes cochées.
@@ -332,7 +334,7 @@ export function decouvrirView() {
   if (decouvrir) return decouvrir.decouvrirEcran();
   $.innerHTML = `<div class="bar"><button class="ic" data-act="tolog" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page"><div class="empty">${svg(I.school)}</div></div>`;
-  import('./demo.js').then(m => { decouvrir = m; if (view.name === 'decouvrir') render(); })
+  chargerDemo().then(m => { decouvrir = m; if (view.name === 'decouvrir') render(); })
     .catch(() => toast(I.x, 'La démo n’a pas pu s’ouvrir : vérifie ta connexion'));
 }
 
@@ -396,6 +398,7 @@ function loginErrorMessage(x, up) {
 
 /* Ce qui suit toute connexion réussie, quelle qu'en soit la porte. */
 async function apresConnexion() {
+  desarmer();                              // l'adresse attend le rôle : un professeur n'a pas d'espace « élève »
   setDb(load());
   await pull();
   /* Un lien de partage ouvert alors qu'on n'était pas connecté attend
@@ -404,6 +407,7 @@ async function apresConnexion() {
      classe en attente (« ?rejoindre= ») est repris par accueil(). */
   let pret = null;
   if (!consumeHash() && !consumeGoto()) { go('home'); pret = accueil(); }
+  Promise.resolve(pret).then(r => armer(!!pret && r !== 'lien'), () => armer(false));
   maybeTour(pret);
 }
 
@@ -506,7 +510,7 @@ export async function consumeCarte() {
 export function loginView() {
   const up = loginMode === 'up', carte = loginMode === 'carte';
   $.innerHTML = `<div class="login">
-    <img class="logo" src="icons/icon-192.png" alt="">
+    <img class="logo" src="/icons/icon-192.png" alt="">
     <div class="lt">Folio</div>
     <div class="lsub">Tes cours, reliés en livres.</div>
     ${cartePassage()}
@@ -536,7 +540,7 @@ export function loginView() {
   </div>`;
   document.getElementById('lmode').onclick = e => {
     const b = e.target.closest('[data-lm]'); if (!b) return;
-    setLoginMode(b.dataset.lm); loginView();
+    setLoginMode(b.dataset.lm); loginView(); synchroniser();
   };
   lierPassage();
   if (carte) return bindCarte();

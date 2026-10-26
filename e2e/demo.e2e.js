@@ -55,10 +55,10 @@ test('référent, sur ordinateur : les codes, la liste des élèves ; une écrit
   await page.locator('.dm-role[data-v="ref"]').click();
 
   await expect(page.getByText('PRFQ-WT58')).toBeVisible({ timeout: 10000 });
-  await page.getByRole('tab', { name: /Élèves/ }).click();
+  await page.locator('#rail [data-r="ref:eleves"]').click();
   await expect(page.locator('#page').getByText('Léa MARTIN')).toBeVisible();
 
-  await page.getByRole('tab', { name: /Accueil/ }).click();
+  await page.locator('#rail [data-r="ref:accueil"]').click();
   await page.getByRole('button', { name: 'Changer' }).first().click();
   await page.getByRole('button', { name: 'Sûr ? L’ancien cessera' }).click();
   await expect(page.locator('.toast')).toContainText('Démo : rien n’est enregistré');

@@ -132,7 +132,19 @@ l'air de marcher ».
     signalements. PC d'abord, utilisable au téléphone (la liste, puis la
     fiche). L'ancien tableau et la feuille `account` n'existent plus. Les
     règles (tri, filtres, bilan, prochain pas, courriel) sont dans
-    `src/etablissement.js`. **Navigation au téléphone** (2026-10-25) : `balayage.js` fait
+    `src/etablissement.js`. **La barre d'un compte de gestion** (2026-10-26,
+    `gestion()` de `bibliotheque.js` : l'éditeur, ou un référent dans son
+    établissement) ne porte que ses pages — pour le référent les onglets de
+    sa console (Accueil, Classes, Élèves, Professeurs, Historique ; au
+    téléphone, Accueil seulement : `button.pc`), pour l'éditeur
+    Établissements et Comptes, puis Signalements (modérateur) et Réglages —,
+    jamais Livres, Courrier ni Cercle ; les onglets internes des deux consoles
+    sont partis (`refAller`/`admAller` depuis `data-r="ref:…"`/`"adm:…"`).
+    L'éditeur arrive sur sa console (`accueil()`), « Retour » ramène un
+    compte de gestion à la sienne (`tapHome`), et ses Réglages se réduisent
+    à son compte (nom de l'établissement, e-mail, mot de passe), la taille du
+    texte, les textes du cadre et « Quitter » (`settingsGestionHtml`).
+    `iAmMod` ne vaut vrai que si `is_mod()` rend `true`. **Navigation au téléphone** (2026-10-25) : `balayage.js` fait
     glisser d'un onglet à l'autre (Livres ↔ Classe ↔ Cercle des lecteurs,
     l'ordre de `ordreOnglets()` dans `bibliotheque.js`, le même que la barre)
     comme une app native — la voisine est rendue par sa vraie fonction d'écran
@@ -293,8 +305,11 @@ l'air de marcher ».
     `demande-demo.css` (préfixe `dd-`) ; la demande arrive chez l'éditeur,
     étape Prospect (`messageDemande` dit la réponse de la base en clair).
     **« Essayer sans compte »** (2026-10-26, lien de l'écran de connexion et
-    du formulaire de démo, vue `decouvrir`) : `decouvrirView()` de
-    `ui/connexion.js` charge `ui/demo.js` + `demo.css` (préfixe `dm-`) ; on
+    du formulaire de démo, vue `decouvrir`, adresse `/essayer`) : `decouvrirView()` de
+    `ui/connexion.js` charge `ui/demo.js` + `demo.css` (préfixe `dm-`) par
+    sa porte, `ui/demo-porte.js` (`chargerDemo`, `ouvrirDemo` pour une
+    adresse `/demo/<rôle>/…` rechargée : la démo reprend sur cet écran —
+    rien d'autre ne doit importer `ui/demo.js`) ; on
     choisit élève, professeur ou référent du **Lycée Démo Folio**
     (`src/demo-etab.js`) et l'app s'ouvre sur ses **vrais écrans** : une
     session en mémoire seulement (jamais `saveAuth`), `demo` levé (ni cache,
@@ -302,8 +317,8 @@ l'air de marcher ».
     d'`api()` — chaque `rpc` est servie par `reponseDemo`, une écriture lève
     « Démo : rien n'est enregistré » (que chaque écran montre déjà comme un
     refus), le reste des lectures rend `[]`. Un bandeau (`.dm-bandeau`) change
-    de rôle et « Quitter » (comme « Se déconnecter », intercepté) recharge la
-    page et efface les caches écrits sous `demo-*`. Aucune requête ne part :
+    de rôle et « Quitter » (comme « Se déconnecter », intercepté) ramène à
+    `/connexion` et efface les caches écrits sous `demo-*`. Aucune requête ne part :
     `e2e/demo.e2e.js` le compte.
 
     Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
@@ -381,6 +396,7 @@ l'air de marcher ».
   pas cette passe. Annoter un type qui ne se déduit pas de lui-même se
   fait en JSDoc (`/** @type {...} */`), jamais en réécrivant le fichier
   en `.ts`. Preuve : `npm run typecheck`.
+- **Adresses** (2026-10-26) : chaque écran a son chemin, rangé dans l'espace de son métier — `/connexion`, `/inscription`, `/carte-eleve`, `/essayer`, `/demande-demo`, `/mentions/<texte>` avant la connexion ; `/eleve/…`, `/prof/…`, `/referent/…`, `/admin/…` ensuite ; `/demo/<rôle>/…` pour la démo sans compte. `src/routes.js` (pur et testé, `test/routes.test.js`) traduit un écran `{ name, id, sous }` en chemin et l'inverse (`ROUTES`, `chemin`, `lireChemin`, `aRouvrir` : une révision, un quiz, une partie ne se reprennent pas depuis une adresse, on rouvre leur livre ou le cercle). `src/ui/routeur.js` s'en sert : `synchroniser()`, appelé à la fin de `render()`, donne à l'adresse le chemin de l'écran (une entrée d'historique par changement d'écran ; un écran « de passage » — création, révision, quiz, accueil, partie — est remplacé par le suivant ; revenir à l'écran d'avant recule dans l'historique au lieu d'empiler une copie, `pile`/`rang` dans `history.state`) ; `popstate` rouvre l'écran de l'adresse (`OUVRIR`, une fonction par écran) ; au démarrage, `cibleDepart()` lit l'adresse avant tout, `accueil()` ne mène pas à l'arrivée du rôle si elle désigne autre chose (`cibleEnAttente()`), et `armer()` l'ouvre une fois le rôle connu — **le routeur ne touche à rien tant qu'il n'est pas armé** (le cache affiché au démarrage ne doit pas écraser l'adresse qu'on suit), et il n'arme qu'une fois l'écran demandé ouvert (un morceau à la demande, l'espace professeur, se fait attendre). Sans session, une adresse d'espace attend la connexion en `sessionStorage` (`folio.cible`). Une adresse d'un autre espace ne garde qu'un écran précis (un livre, un profil) ; sinon l'arrivée du compte. Les onglets d'une classe de professeur (`prof.tab`), de la console du référent (`ref.tab`, `ref.open`, posés à la première ouverture par `ref.cible`) et de l'éditeur (`adm.tab`, `adm.open`) font partie du chemin (`refAller`, `admAller`, `allerClasse`, `allerAgenda` par leurs portes). **Tout nouvel écran s'ajoute à `ROUTES` et à `OUVRIR`**, sinon il n'a pas d'adresse (l'adresse ne bouge pas). Les ressources se demandent par un chemin absolu (`/icons/…`, `BASE_URL + 'fsrs.wasm'`) : un chemin relatif casserait sous `/prof/classes/…`. Vercel sert `index.html` à toute adresse (`rewrites` de `vercel.json`, sauf `/assets/` et `/icons/`), `vite preview` aussi ; le service worker range toute navigation sous `index.html`. Preuve : `e2e/adresses.e2e.js`.
 - **Rendu** : état global dans `src/data/etat.js` (voir plus haut), `render()` (dans `src/ui/bibliotheque.js`) reconstruit l'écran depuis `view`. **C'est `<body>` qui défile, pas la fenêtre** (`html{overflow:hidden}`, contre le rebond iOS) : `window.scrollTo` n'y fait rien. `render()` replace lui-même le défilement à chaque changement d'écran (`placerDefilement()` : en haut, sauf le retour sur l'accueil ou le cercle, qui retrouvent leur position) — ne pas rajouter de `scrollTo` ailleurs, lire et écrire `document.body.scrollTop`. Le démarrage (`boot()`, dans `src/ui/onboarding.js`) est différé d'un micro-tick (`queueMicrotask`) exprès : appelé au fil de l'évaluation des modules, il pouvait tomber sur un module pas encore lié à cause des cycles ci-dessus.
 - **Backend : Supabase** (projet `qqbzefpdeinlynjtarqr`, eu-west-1), appelé en `fetch` brut via `api(path, method, body)` — pas de SDK `supabase-js`.
   - Auth : `signIn` / `signUp` / `refreshToken` (un seul rafraîchissement à la fois — ne pas casser ce verrou). L'écran de connexion a trois portes : e-mail, création de compte, **« Carte élève »** (identifiant + code → `signIn(emailCarte(id), code)`) ; le QR imprimé sur la carte ouvre `?carte=identifiant-CODE`, consommé par `consumeCarte()` (`ui/connexion.js`) au tout début de `boot()` — il ne ferme un autre compte ouvert que si celui-ci n'a plus rien à envoyer, et retire le code de l'adresse. Un élève de classe (`isPupil()`) ne reçoit pas la visite guidée : il arrive sur ses devoirs.

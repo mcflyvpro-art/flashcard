@@ -5,6 +5,9 @@
   "outputDirectory": "dist",
   "installCommand": "npm ci",
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/((?!assets/|icons/).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

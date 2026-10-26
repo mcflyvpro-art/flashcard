@@ -3,8 +3,8 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
-  DECKPAGE, animate, asks, auth, compte, db, demo, dirty, eleve, filter, liveAt, me,
-  liveSoon, liveT, mailbox, menu, myRole, online, pageDir, peek, prefs,
+  DECKPAGE, adm, animate, asks, auth, compte, db, demo, dirty, eleve, filter, iAmMod, liveAt, me,
+  liveSoon, liveT, mailbox, menu, mods, myRole, online, pageDir, peek, prefs, ref,
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
   setPageDir, setPreviewOf, setView, view
 } from '../data/etat.js';
@@ -17,10 +17,10 @@ import { bindPager } from './balayage.js';
 import { entreeEcran, glissiereAvant, glisserOnglet } from './mouvement.js';
 import { sallesPull } from '../core/cercle.js';
 import { STATE, cstate, paintMedia } from './carte-media.js';
-import { adminView, atSchool, isProf, isPupil, modView } from './classement.js';
-import { refView } from './etablissement.js';
+import { admAller, adminView, atSchool, isProf, isPupil, modView } from './classement.js';
+import { refAller, refView } from './etablissement.js';
 import { bienvenueView } from './bienvenue-porte.js';
-import { admPull, boardPull, refPull } from '../core/classement.js';
+import { admPull, boardPull, modPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { decouvrirView, deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
 import { duelView } from './defis.js';
@@ -41,6 +41,7 @@ import {
 } from './reglages-corbeille.js';
 import { mailPull } from '../core/reglages-corbeille.js';
 import { loadResume, studyView } from './revision.js';
+import { synchroniser } from './routeur.js';
 
 /* ---------- synchronisation vivante ----------
    Le classement et le Journal ne doivent jamais attendre un rechargement.
@@ -134,6 +135,7 @@ export function render() {
   if (menu) paintMenu();
   liveSync();
   dropBoot();
+  synchroniser();                              // l'adresse suit l'écran (ui/routeur.js)
 }
 
 /* D'où l'on a ouvert un livre : son « Retour » y ramène. Un devoir ouvert
@@ -154,8 +156,16 @@ export function go(name, id, dir, calme) {
   render();
 }
 
+/* Un compte de gestion — le référent d'un établissement, l'éditeur — ne lit
+   ni ne révise : sa barre ne porte que ses pages (les onglets de sa console,
+   les signalements, les réglages), sans livres, courrier ni cercle. */
+export const gestion = () => myRole === 'admin' || (myRole === 'ref' && atSchool());
+
 function railOn() {
   if (view.name === 'settings') return 'settings';
+  if (view.name === 'ref') return 'ref:' + (ref.tab || 'accueil');
+  if (view.name === 'admin') return 'adm:' + (adm.tab || 'suivi');
+  if (view.name === 'mod') return 'mod';
   if (view.name === 'mail' || view.name === 'lettre') return 'mail';
   if (view.name === 'stats') return 'stats';
   if (/^(classes|classe$|prof|ref$|admin$)/.test(view.name)) return 'classes';
@@ -174,10 +184,35 @@ const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' :
 
 const railMailBadge = () => mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0;
 
+/* Les pages d'un compte de gestion. `pc` : celles qui n'existent que sur
+   ordinateur (la console du référent, au téléphone, n'a que ses codes). */
+const PAGES_REF = [['accueil', I.grid, 'Accueil'], ['classes', I.school, 'Classes', 1], ['eleves', I.users, 'Élèves', 1],
+  ['profs', I.user, 'Professeurs', 1], ['journal', I.clock, 'Historique', 1]];
+const PAGES_ADM = [['suivi', I.build, 'Établissements'], ['comptes', I.users, 'Comptes']];
+
+const railCompte = () => String(iAmMod && mods.list ? mods.list.length : '');
+
+function railNavGestion(on) {
+  const pages = myRole === 'ref'
+    ? PAGES_REF.map(([k, ic, nom, pc]) => [`ref:${k}`, ic, nom, 0, pc])
+    : PAGES_ADM.map(([k, ic, nom]) => [`adm:${k}`, ic, nom, 0]);
+  const ent = ([k, ic, nom, badge, pc]) => railEntry(on, k, ic, nom, badge).replace('<button class="', `<button class="${pc ? 'pc ' : ''}`);
+  return `
+    <div class="brand"><img src="/icons/icon-192.png" alt=""><span>Folio</span></div>
+    <nav>
+      ${pages.map(ent).join('')}
+      ${iAmMod ? ent(['mod', I.warn, 'Signalements', mods.list ? mods.list.length : 0]) : ''}
+      ${ent(['settings', I.gear, 'Réglages', 0])}
+    </nav>
+    <div class="sp"></div>
+    ${moiRail()}`;
+}
+
 function railNavBoulot(on, classeNom) {
+  if (gestion()) return railNavGestion(on);
   const ent = (k, ic, nom, badge) => railEntry(on, k, ic, nom, badge);
   return `
-    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
+    <div class="brand"><img src="/icons/icon-192.png" alt=""><span>Folio</span></div>
     <nav>
       ${ent('classes', I.school, classeNom)}
       ${ent('home', I.layers, 'Livres')}
@@ -207,7 +242,7 @@ const railHasClasses = aUneClasse;
 function railNavHome(on, classeNom) {
   const ent = (k, ic, nom, badge) => railEntry(on, k, ic, nom, badge);
   return `
-    <div class="brand"><img src="icons/icon-192.png" alt=""><span>Folio</span></div>
+    <div class="brand"><img src="/icons/icon-192.png" alt=""><span>Folio</span></div>
     <nav>
       ${ent('home', I.layers, 'Livres')}
       ${ent('stats', I.chart, 'Journal')}
@@ -229,6 +264,10 @@ export function allerClasses() {
 
 function railClick(e) {
   const b = e.target.closest('[data-r]'); if (!b) return;
+  const [quoi, k] = b.dataset.r.split(':');
+  if (quoi === 'ref') return refAller(k);
+  if (quoi === 'adm') return admAller(k);
+  if (quoi === 'mod') { if (!mods.list) modPull(); return go('mod'); }
   if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
   if (b.dataset.r === 'stats') { statsPull(); return go('stats'); }
   if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
@@ -239,6 +278,12 @@ function railClick(e) {
 /* Pas de barre sans session, ni pendant l'accueil d'un nouveau compte : rien n'y mène encore. */
 const sansRail = () => !auth || view.name === 'login' || view.name === 'bienvenue';
 
+/* Un compte d'établissement (et l'éditeur) travaille, il ne révise pas : ni
+   journal de lecture, ni cercle des lecteurs. Ses entrées passent en barre
+   horizontale — la page de gestion prend alors toute la largeur au lieu de
+   vivre dans les trois quarts restants. */
+const auBoulot = () => (atSchool() && myRole !== 'eleve') || isProf() || myRole === 'admin';
+
 function paintRail() {
   let r = document.getElementById('rail');
   if (sansRail()) {
@@ -247,12 +292,8 @@ function paintRail() {
     return;
   }
   const on = railOn();
-  /* Un compte d'établissement travaille, il ne révise pas : ni journal de
-     lecture, ni cercle des lecteurs. Quatre entrées, et elles passent en
-     barre horizontale — la page de gestion prend alors toute la largeur au
-     lieu de vivre dans les trois quarts restants. */
-  const boulot = (atSchool() && myRole !== 'eleve') || isProf();
-  const base = monNomRail() + '\u0000' + mailbox.n
+  const boulot = auBoulot();
+  const base = monNomRail() + '\u0000' + mailbox.n + '\u0000' + (gestion() ? railCompte() : '')
             + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v') + '\u0000' + aUneClasse() + (asks || []).length;
   if (r && r.dataset.sig === on + '\u0000' + base) return;      // rien n'a changé : on ne redessine pas
   /* seule l'entrée allumée change : on la déplace sur place, son fond glisse
