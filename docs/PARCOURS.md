@@ -45,8 +45,13 @@ même pour tous ses camarades) ; il peut en plus être dans des **groupes**
 ## 3. Le particulier (B2C)
 
 1. Il s'inscrit (e-mail, mot de passe, « j'ai 15 ans ou plus »).
-2. L'accueil en quelques écrans, chacun passable : « Je révise pour moi » ou
-   « **J'ai un code** », pseudo, avatar, niveau, matières, objectif du jour.
+2. L'accueil en quelques écrans, chacun passable (« Passer » en haut) :
+   « Je révise pour moi » ou « **J'ai un code** » ; son prénom et un pseudo
+   (proposé depuis le prénom) ; son visage parmi six (« D'autres ») ; son
+   niveau et ses matières (elles remplacent les matières d'exemple) ; un
+   objectif de pages par jour. Puis la visite guidée.
+   Un élève entré par son établissement ou avec une carte : seulement son
+   visage, puis ses classes.
 3. Il arrive sur ses **Livres**. Barre : Livres, Cercle — pas de Classe.
 4. Le jour où on lui donne un code : **Réglages → J'ai un code**. « Classe »
    apparaît dès qu'il est entré.

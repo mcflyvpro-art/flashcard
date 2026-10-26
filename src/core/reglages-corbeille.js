@@ -2,14 +2,14 @@ import { I } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { DAY } from '../fsrs.js';
 import {
-  asks, auth, db, friends, mailbox, mates, me, menu, prefs, sendMsg,
+  asks, auth, db, friends, mailbox, mates, me, menu, prefs, prefsTimer, sendMsg,
   setAnimate, setAsks, setFriends, setMailOpen, setMates, setMe, setSendMsg,
   setSendTo, setShared, setVers, setView, trash, vers, view
 } from '../data/etat.js';
 import { go, render } from '../ui/bibliotheque.js';
 import { fsrsW, plain } from '../ui/carte-media.js';
 import {
-  api, deck, metaOf, plur, pull, pushSubject, pushUndo, save, saveDeck, setMeta, subj, uid
+  api, deck, metaOf, plur, pull, pushSubject, pushUndo, save, saveDeck, setMeta, setOnline, subj, uid
 } from './coeur-sync.js';
 import { deDevoir } from '../file.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
@@ -114,6 +114,20 @@ export async function dropFriend(id) {
       + `and(user_id.eq.${id},friend_id.eq.${auth.uid}))`, 'DELETE', null, { Prefer: 'return=minimal' });
   } catch (e) { /* réseau indisponible : friendsPull() qui suit remontrera le lien tel quel */ }
   closeMenu(); friendsPull();
+}
+
+/* Les préférences tout de suite, sans le délai de savePrefs : l'accueil
+   d'un nouveau compte les écrit juste avant que la visite guidée ne passe
+   en démonstration — où plus rien ne part, ni vers la base ni vers le
+   cache (le « déjà accueilli » se perdait si l'on quittait en pleine
+   visite, et l'accueil revenait à l'ouverture suivante). */
+export async function envoyerPrefs() {
+  clearTimeout(prefsTimer);
+  save();
+  try {
+    await api('/rest/v1/prefs', 'POST', [{ user_id: auth.uid, name: prefs.name || null, data: prefs }],
+      { Prefer: 'resolution=merge-duplicates,return=minimal' });
+  } catch (e) { setOnline(false); }
 }
 
 /* ---------- pseudo ----------

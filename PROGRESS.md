@@ -32,8 +32,10 @@ DERNIER   2026-10-26 · EN COURS : parcours B2B/B2C (docs/PARCOURS.md). Fait : �
           donner en tête, choisir ses classes et former des groupes dans un établissement,
           un seul code pour un professeur particulier — etablissement.sql 64/64,
           e2e/prof-code.e2e.js 2/2, espace-prof.e2e.js refait au nouveau parcours.
-          Comptes de test : referent@folio.app (Lycée d'essai Folio). À faire :
-          l'onboarding, la démo sans compte. Pas de Stripe (Capacitor, achats Apple/Google).
+          Comptes de test : referent@folio.app (Lycée d'essai Folio). L'accueil d'un
+          nouveau compte (ui/bienvenue.js : prénom, pseudo, visage, niveau, matières,
+          objectif ; visage seul pour un élève de classe) — e2e/bienvenue.e2e.js 3/3.
+          À faire : la démo sans compte. Pas de Stripe (Capacitor, achats Apple/Google).
           Avant : 2026-10-25 (soir) · « Ma classe » rendue à tout compte personnel (onglet
           au téléphone, entrée sur PC : c'est là qu'on tape le code du professeur ;
           la refonte du cercle l'avait réservée à qui avait déjà une classe —

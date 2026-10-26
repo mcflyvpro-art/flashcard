@@ -23,6 +23,7 @@ import { cacheKey, esc, flush, load, plur, pull, refreshToken, save, saveAuth, s
 import { selOff } from './connexion.js';
 import { lienAvantSession } from './liens-entrants.js';
 import { isPupil } from './classement.js';
+import { ouvrirBienvenue } from './bienvenue-porte.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
@@ -487,16 +488,24 @@ export function helpSheet(w) {
    juste après que leur console se soit affichée. Elle ne part donc que
    pour ceux à qui elle s'adresse, et seulement une fois le rôle connu :
    au moment où on l'appelle, on ne le sait pas encore. */
-export function maybeTour() {
+export function maybeTour(pret) {
   if (prefs.tuto || tour || location.hash || location.search.includes('go=')) return;
-  setTimeout(() => {
+  // `pret` : la promesse d'accueil() — le rôle et l'établissement connus, pas un délai qui parie sur le réseau
+  Promise.resolve(pret).catch(() => { /* accueil() a échoué : on décide quand même, sur ce qu'on sait */ }).then(() => setTimeout(() => {
     if (tour || prefs.tuto) return;
     /* Un élève de classe (carte ou établissement) arrive sur ses devoirs :
        la visite de la bibliothèque, avec ses livres d'exemple, viendrait
        les recouvrir. C'est son professeur qui l'accompagne. */
-    if (myRole !== 'eleve' || isPupil()) return;
+    if (myRole !== 'eleve') return;
+    // un nouveau compte passe d'abord par l'accueil (ui/bienvenue.js) ; un élève de classe, son visage seulement —
+    // jamais sous les doigts : déjà parti ailleurs (son devoir ouvert), il l'aura à l'ouverture suivante
+    if (!prefs.bienvenue) {
+      if (menu || !['home', 'classes'].includes(view.name)) return;
+      return ouvrirBienvenue(isPupil() ? 'classe' : 'perso', isPupil() ? null : () => startTour());
+    }
+    if (isPupil()) return;
     startTour();
-  }, 900);
+  }, 600));
 }
 
 /* ══════════ l'écran d'accueil ══════════
@@ -721,9 +730,10 @@ export async function boot() {
   try {
     await pull();
     setOnline(true);
-    if (!(shortcut && consumeGoto())) { render(); accueil(); }
+    let pret = null;
+    if (!(shortcut && consumeGoto())) { render(); pret = accueil(); }
     flush();
-    maybeTour();
+    maybeTour(pret);
   } catch (e) {
     if (/JWT|401/i.test(String(e.message || e))) { saveAuth(null); setView({ name: 'login' }); render(); }
     else setOnline(false);

@@ -934,7 +934,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   #app > .fab,#app > .tabs{width:auto;max-width:none;margin:0}
   #app > .login{max-width:400px}
   /* sans session, pas de barre latérale : la page se centre sur tout l'écran */
-  #app[data-view="login"],#app[data-view="legal"],#app[data-view="demande"]{padding-left:var(--gut)}
+  #app[data-view="login"],#app[data-view="legal"],#app[data-view="demande"],#app[data-view="bienvenue"]{padding-left:var(--gut)}
   .top [data-act="settings"],.top [data-act="mail"]{display:none}   /* la barre latérale les porte déjà */
   .hero{font-size:28px;letter-spacing:-.7px;margin:2px 1px 22px}
   .top{margin:2px 1px 22px;align-items:center;gap:8px}

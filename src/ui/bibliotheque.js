@@ -19,6 +19,7 @@ import { sallesPull } from '../core/cercle.js';
 import { STATE, cstate, paintMedia } from './carte-media.js';
 import { adminView, atSchool, isProf, isPupil, modView } from './classement.js';
 import { refView } from './etablissement.js';
+import { bienvenueView } from './bienvenue-porte.js';
 import { admPull, boardPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
@@ -103,7 +104,7 @@ function placerDefilement() {
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, lettre: lettreView, stats: statsView, find: findView,
-              shared: sharedView, duel: duelView, legal: legalView, demande: demandeView, mod: modView,
+              shared: sharedView, duel: duelView, legal: legalView, demande: demandeView, bienvenue: bienvenueView, mod: modView,
               classes: mesClassesView, classe: classeEleveView,
               prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
               ref: refView,
@@ -235,9 +236,12 @@ function railClick(e) {
   go(b.dataset.r === 'settings' ? 'settings' : 'home');
 }
 
+/* Pas de barre sans session, ni pendant l'accueil d'un nouveau compte : rien n'y mène encore. */
+const sansRail = () => !auth || view.name === 'login' || view.name === 'bienvenue';
+
 function paintRail() {
   let r = document.getElementById('rail');
-  if (!auth || view.name === 'login') {
+  if (sansRail()) {
     if (r) r.remove();
     document.documentElement.classList.remove('nav-haut');
     return;

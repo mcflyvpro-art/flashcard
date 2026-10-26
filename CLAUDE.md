@@ -266,6 +266,23 @@ l'air de marcher ».
 
     Aucun fichier, `core/` ou `ui/`, ne dépasse 800 lignes (les plus gros :
     `core/coeur-sync.js` 789, `onboarding.js` 773, `revision.js` 733).
+    **L'accueil d'un nouveau compte** (2026-10-26) : vue `bienvenue` (sans
+    barre latérale), chargée à la demande par `ui/bienvenue-porte.js`
+    (`bienvenueView`, `ouvrirBienvenue(mode, apres)`) — `ui/bienvenue.js` +
+    `bienvenue.css`, préfixe `bv-` ; rien d'autre ne doit importer
+    `ui/bienvenue.js`. Un particulier : « Je révise pour moi » / « J'ai un
+    code », prénom et pseudo, visage parmi six (`propositions`), niveau et
+    matières (`matieresApres` : les cochées remplacent les matières
+    d'exemple, jamais une qu'un livre emploie), objectif de pages par jour,
+    puis la visite guidée ; un élève de classe (`isPupil`) : son visage
+    seulement. Tout part à la fin, les préférences par `envoyerPrefs()`
+    (`core/reglages-corbeille.js`, sans le délai de `savePrefs` : la visite
+    passe aussitôt en démonstration, où plus rien ne part). Marqué fait par
+    `prefs.bienvenue`. `maybeTour(pret)` attend la promesse d'`accueil()`
+    (rôle et établissement connus) et n'ouvre l'accueil que sur l'écran
+    d'arrivée, sans feuille ouverte — un élève qui a déjà touché son devoir
+    l'aura à l'ouverture suivante. Les règles dans `src/bienvenue.js`, pur et
+    testé (`test/bienvenue.test.js`) ; parcours `e2e/bienvenue.e2e.js`.
     **Les textes du cadre** (conditions, confidentialité, mentions) sont
     chargés à la demande par `legalView()` (`ui/connexion.js`, qui ne garde
     que leurs titres, `LEGAL_TITRES`) depuis `ui/legal-textes.js` ; l'éditeur

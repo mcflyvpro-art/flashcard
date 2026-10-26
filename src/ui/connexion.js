@@ -391,8 +391,9 @@ async function apresConnexion() {
      dans l'adresse : c'est maintenant qu'il faut le suivre, sinon on
      atterrit sur l'accueil sans savoir ce qu'on venait voir. Un code de
      classe en attente (« ?rejoindre= ») est repris par accueil(). */
-  if (!consumeHash() && !consumeGoto()) { go('home'); accueil(); }
-  maybeTour();
+  let pret = null;
+  if (!consumeHash() && !consumeGoto()) { go('home'); pret = accueil(); }
+  maybeTour(pret);
 }
 
 async function doLogin(up, em, pw, err, btn) {
