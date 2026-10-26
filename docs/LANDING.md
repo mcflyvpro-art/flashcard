@@ -184,14 +184,66 @@ les visuels de la page d'accueil avec les nouveaux écrans ». Capture jointe :
 la ligne d'un défi dans le Cercle des lecteurs, dont le bouton « Jouer »
 (rond rose, triangle rouge, « Jouer » dessous) déborde de sa ligne.
 
-- [ ] T3.1 L'état des lieux : chaque écran des quatre rôles, à 390 et 1440 px, relu ; la liste des défauts ci-dessous.
+- [x] T3.1 L'état des lieux : chaque écran des quatre rôles, à 390 et 1440 px, relu ; la liste des défauts ci-dessous.
 - [ ] T3.2 Le logo dans l'app : la barre latérale, les en-têtes du téléphone, l'écran d'ouverture, les états vides.
 - [ ] T3.3 La charte affinée, la même partout (typographie, espacements, cartes, boutons), dans le budget de poids.
 - [ ] T3.4 Les défauts corrigés, un par un (dont le bouton « Jouer » d'un défi).
 - [ ] T3.5 Les affiches de la page d'accueil et l'image de partage refaites avec les nouveaux écrans.
 - [ ] T3.6 Vérifs (check, e2e, Lighthouse, captures), docs, push branche + `main`.
 
-Défauts relevés (T3.1) : à remplir.
+Défauts relevés (T3.1), sur 79 captures (`e2e/zz-visuels.e2e.js`, non
+versionné : élève, professeur et référent dans la démo, l'éditeur sur la
+base locale ; `SHOTS=dossier ROLES=eleve,prof,ref,admin`) :
+
+Partout
+1. Le logo : la barre latérale, la barre du haut (professeur, référent,
+   éditeur) et leur version téléphone portent l'ancienne icône PNG
+   (`/icons/icon-192.png`) ; l'élève au téléphone n'a aucun logo ; les
+   icônes installées (`public/icons/`) sont l'ancienne image.
+2. Deux voix : la page d'accueil et les écrans publics titrent en serif,
+   l'app en sans-serif, sauf l'espace professeur (« Bonsoir, Marc »,
+   « 2nde B », « Agenda » en serif).
+3. Les liserés de couleur (haut de la page lue, gauche d'un livre, d'une
+   page en création, d'une classe) sont des bordures sur un coin arrondi :
+   ils s'amincissent en croissant aux coins.
+
+Élève
+4. Cercle : la ligne d'un défi n'a plus de marge intérieure (le sélecteur
+   `.cc-defi,` se retrouve collé au `.cc-qui` d'après un commentaire) :
+   « Jouer » est coupé par le bord arrondi de la liste (la capture).
+5. Classement (Cercle, Amis) : le nom centré au-dessus de la barre, les
+   infos à gauche ; la colonne des chiffres bouge d'une ligne à l'autre.
+6. Camarades : « Ajouter » en texte nu à côté des visages.
+7. Profil d'un lecteur : un filet vide en tête de la carte « Signaler /
+   Bloquer » ; la barre latérale allume « Mes classes » (`railOn` :
+   `profil` commence par `prof`).
+8. Courrier : toucher une lettre de la démo ne l'ouvre pas
+   (`openMail(+id)` donne NaN sur un identifiant de la base locale).
+9. Téléphone, démo : le bandeau « Démo » cache le bouton « + » des livres.
+10. Journal au téléphone : la grille de régularité coupée net à gauche
+    (« in » pour « juin »).
+11. Mes classes : « Léa MARTIN » collé au titre « À faire ».
+12. Démo : des titres avec un tiret cadratin (« Espagnol — vocabulaire »,
+    « Irregular verbs — série 1 »…), repris par les affiches du site ; et
+    aucun défi dans le Cercle de Léa.
+
+Professeur
+13. Sous chaque élève d'une classe, un « @ » seul (pas de pseudo).
+14. Devoirs d'une classe : « 4pas ouvert », l'espace manque.
+15. Agenda : les pastilles coupées net, sans points de suspension ; la
+    semaine du tableau de bord réduit un devoir à cinq lettres.
+16. Téléphone : les chiffres du tableau de bord et d'une classe débordent à
+    droite (« Jam… », « Réussite moyenn ») ; les filtres de la liste coupés
+    (« À j… »).
+17. Téléphone, Livres : courrier et réglages en double (barre du haut et
+    en-tête de la page).
+
+Référent
+18. Classes : « groupe · » suivi de rien.
+
+Éditeur
+19. Téléphone : les chiffres du haut débordent (le quatrième coupé), le
+    titre et « Établissement » se serrent sur une ligne.
 
 ## Ce qui reste à décider (l'utilisateur)
 
