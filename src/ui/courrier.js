@@ -20,6 +20,9 @@ import './courrier.css';
 
 const qui = it => shortWho(it.from_name) || 'Un ami';
 const pages = it => (it.cards || []).length;
+/* Une lettre sans pages est un mot — celui d'un professeur à sa classe
+   (prof_message_classe) : le nom de la classe, le message, pas de livre. */
+const mot = it => !pages(it);
 
 // la matière du livre, à la couleur qu'elle a ici si on l'a aussi
 function matiere(it) {
@@ -49,8 +52,8 @@ function ligne(it) {
       ${avatar(it.from_user, qui(it))}
       <span class="co-l">
         <span class="co-h"><b>${esc(qui(it))}</b><time>${timeAgo(it.created_at)}</time></span>
-        <span class="co-livre">${svg(I.book)}<span>${esc(it.deck_name)}</span></span>
-        <span class="co-s">${pastille(m)}<span class="co-n">${plur(pages(it), 'page')}</span>
+        <span class="co-livre">${svg(mot(it) ? I.school : I.book)}<span>${esc(it.deck_name)}</span></span>
+        <span class="co-s">${mot(it) ? '' : `${pastille(m)}<span class="co-n">${plur(pages(it), 'page')}</span>`}
           ${it.message ? `<span class="co-extrait">« ${esc(it.message)} »</span>` : ''}</span>
       </span>
       ${neuf ? '<i class="co-point" aria-label="Non lu"></i>' : ''}
@@ -103,23 +106,23 @@ export function lettreView() {
     <div class="co-page">
       <section class="co-lettre">
         <div class="co-de">${avatar(it.from_user, qui(it), 'lg')}
-          <div><b>${esc(qui(it))}</b><span>t’a envoyé un livre</span>
+          <div><b>${esc(qui(it))}</b><span>${mot(it) ? `écrit à ${esc(it.deck_name || 'la classe')}` : 't’a envoyé un livre'}</span>
             <time datetime="${esc(it.created_at)}" title="${esc(d.toLocaleString('fr-FR'))}">${quand(it.created_at)}</time></div>
         </div>
         ${it.message ? `<blockquote class="co-mot">${esc(it.message)}</blockquote>` : ''}
-        <div class="co-colis" style="${m ? m.sty : ''}">
+        ${mot(it) ? '' : `<div class="co-colis" style="${m ? m.sty : ''}">
           <div class="co-couv">${svg(I.book)}</div>
           <div class="co-titre"><b>${esc(it.deck_name)}</b>
             <span>${pastille(m)}<span class="co-n">${plur(pages(it), 'page')}</span></span></div>
         </div>
-        ${actionsHtml(it)}
+        ${actionsHtml(it)}`}
         <div class="co-pied">
           <button data-mact="delmail">${svg(I.trash)}Supprimer</button>
           ${autre ? `<button data-mact="mailreport">${svg(I.warn)}Signaler</button>
             <button data-mact="mailblock">${svg(I.lock)}Bloquer</button>` : ''}
         </div>
       </section>
-      ${pagesHtml(it)}
+      ${mot(it) ? '' : pagesHtml(it)}
     </div>`;
 }
 

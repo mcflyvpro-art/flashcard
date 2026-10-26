@@ -33,20 +33,29 @@
 // formulaire « Demander une démo » de l'écran de connexion (2 Ko). Le
 // plafond « à la demande » passe de 56 à 68 Ko (JS) et de 22 à 27 Ko (CSS) :
 // la même marge par morceau, et toujours personne qui les charge tous.
+//
+// 2026-10-26 (bis) : la démo sans compte embarque une base locale entière
+// (le Supabase en mémoire des parcours, src/base-locale/, et le monde du
+// Lycée Démo Folio) — 22 Ko de JS. Elle ne se charge que chez un visiteur
+// sans compte qui clique « Essayer », jamais chez un élève, un professeur
+// ou un référent : elle a son plafond à elle (30 Ko JS, 3 Ko CSS) au lieu
+// de gonfler celui des comptes. Ses fichiers se reconnaissent à leur nom
+// (`demo-…`, ui/demo.js et sa feuille).
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024 };
-const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande' };
+const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 30 * 1024, cssDemo: 3 * 1024 };
+const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
+  jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte' };
 const dir = 'dist/assets';
 const html = readFileSync('dist/index.html', 'utf8');
 const auDemarrage = f => html.includes('/assets/' + f);
-const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0 };
+const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, jsDemo: 0, cssDemo: 0 };
 for (const f of readdirSync(dir)) {
   const ext = f.split('.').pop();
   if (ext !== 'js' && ext !== 'css') continue;
-  const part = auDemarrage(f) ? ext : ext + 'Demande';
+  const part = auDemarrage(f) ? ext : /^demo-/.test(f) ? ext + 'Demo' : ext + 'Demande';
   total[part] += gzipSync(readFileSync(`${dir}/${f}`), { level: 9 }).length;
 }
 let ok = true;

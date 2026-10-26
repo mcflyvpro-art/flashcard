@@ -11,8 +11,8 @@ test('un courrier : qui, quand, quel livre, quelle matière, ses pages, puis l�
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
-  store.tables.mail = [{
-    id: 7, from_user: '5b7a3c1e-0000-4000-8000-000000000007', from_name: 'Thibaut', deck_name: 'Mobility',
+  store.tables.mail = [{                // adressée à l'élève : comme la vraie base, la base locale ne montre que son courrier
+    id: 7, to_user: store.users[0].id, from_user: '5b7a3c1e-0000-4000-8000-000000000007', from_name: 'Thibaut', deck_name: 'Mobility',
     subject_name: 'Anglais', message: 'Tiens, pour jeudi', created_at: new Date(Date.now() - 19 * J).toISOString(),
     cards: Array.from({ length: 32 }, (_, j) => ['word ' + j, 'mot ' + j]), read_at: null, added_at: null
   }];

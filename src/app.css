@@ -1176,6 +1176,12 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   padding:8px 12px;border-radius:10px;transition:background .2s,color .2s}
 .lnk:hover{background:var(--surf);color:var(--ink)}
 .lnk svg{width:15px;height:15px;flex:none}
+/* ce que la démo sans compte n'ouvre pas : grisé, et dit pourquoi au survol */
+.payant{cursor:not-allowed;position:relative}
+.payant > *{opacity:.42}
+.payant[data-astuce]:hover::after,.payant[data-astuce]:focus-visible::after{content:attr(data-astuce);position:absolute;left:50%;
+  bottom:calc(100% + 6px);transform:translateX(-50%);padding:5px 9px;border-radius:8px;background:var(--ink);color:#fff;
+  font-size:12px;font-weight:650;white-space:nowrap;z-index:5;pointer-events:none}
 .ldemos{display:flex;flex-direction:column;align-items:center;margin-top:6px}
 .ldemos .lnk{margin-top:2px}
 

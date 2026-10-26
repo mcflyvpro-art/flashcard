@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { parseText } from '../parseur.js';
-import { aiBusy, comp, db, setAiBusy, setComp, view } from '../data/etat.js';
+import { aiBusy, comp, db, demoEtab, setAiBusy, setComp, view } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { donnerLivre } from './prof-porte.js';
 import { MAXB, MAXF, markDups, markOver } from './carte-media.js';
@@ -52,9 +52,17 @@ function identiteHtml() {
     </section>`;
 }
 
+/* Ce qui coûte (l'IA lit les photos, les PDF et le cours) n'existe qu'avec
+   un compte : dans la démo sans compte, ces onglets sont grisés et le
+   disent au survol (`data-astuce`, app.css). */
+const PAYANTS = new Set(['fichier', 'photo', 'ia']);
+const payant = id => !!demoEtab && PAYANTS.has(id);
+export const ASTUCE_PAYANT = 'Avec un compte Folio';
+
 const ongletsHtml = mode => `<div class="cr-tabs" role="tablist" aria-label="Façon de créer les pages">
-    ${MODES.map(m => `<button role="tab" class="${m.id === mode ? 'on' : ''}" data-cmode="${m.id}"
-      aria-selected="${m.id === mode}" title="${m.aide}">${svg(I[m.icon])}<span>${m.nom}</span></button>`).join('')}
+    ${MODES.map(m => `<button role="tab" class="${m.id === mode ? 'on' : ''}${payant(m.id) ? ' payant' : ''}" data-cmode="${m.id}"
+      aria-selected="${m.id === mode}" ${payant(m.id) ? `aria-disabled="true" data-astuce="${ASTUCE_PAYANT}"` : `title="${m.aide}"`}>${
+      svg(I[m.icon])}<span>${m.nom}</span></button>`).join('')}
   </div>`;
 
 function ecrireHtml(s) {
@@ -135,6 +143,7 @@ export function importView() {
   const nm = document.getElementById('nm');
   if (nm) nm.addEventListener('input', () => comp.name = nm.value);
   $.querySelectorAll('[data-cmode]').forEach(b => b.onclick = () => {
+    if (payant(b.dataset.cmode)) return toast(I.lock, ASTUCE_PAYANT);
     if (b.dataset.cmode === comp.mode) return;
     comp.mode = b.dataset.cmode; comp.edit = -1; render();
   });

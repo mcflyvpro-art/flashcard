@@ -18,6 +18,17 @@ export function chargerDemo() {
   return attente;
 }
 
+/* Hors de la démo, rien ne doit en rester : le lycée rangé pour l'onglet
+   (`folio.demo`) et ce que l'app a pu ranger sous un compte de démo (les
+   identifiants de src/base-locale/monde.js commencent par `dece0000-`).
+   Appelé par boot() pour toute adresse qui n'est pas /demo/…. */
+export function effacerDemo() {
+  try {
+    sessionStorage.removeItem('folio.demo');
+    Object.keys(localStorage).filter(k => k.includes('dece0000-')).forEach(k => localStorage.removeItem(k));
+  } catch (e) { /* stockage indisponible : il n'y a alors rien à effacer */ }
+}
+
 /* Une adresse /demo/<rôle>/… : la démo reprend avec ce rôle, sur cet écran. */
 export function ouvrirDemo(adresse) {
   return chargerDemo().then(m => m.lancer(adresse.role, adresse))

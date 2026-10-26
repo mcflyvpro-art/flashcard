@@ -3,7 +3,7 @@ import { I, SWIPE, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { DAY } from '../fsrs.js';
 import {
-  DECKPAGE, DEFPREFS, asks, auth, bip, board, cercle, cercleNeuf, db, defiNeuf, demo, directNeuf, duels,
+  DECKPAGE, DEFPREFS, asks, auth, bip, board, cercle, cercleNeuf, db, defiNeuf, demo, demoEtab, directNeuf, duels,
   filter, friends, mates, me, mediaCache, menu, myRole, peek, prefs, quiz,
   setAccounts, setAddQ, setAdm, setAnimate, setAsks, setBip, setBlocks, setBoard,
   setCardEdit, setCercle, setComp, setCompte, setConflicts, setDb, setDeckOpen, setDeckQ, setDefi, setDirect,
@@ -23,7 +23,7 @@ import { cacheKey, esc, flush, load, plur, pull, refreshToken, save, saveAuth, s
 import { selOff } from './connexion.js';
 import { lienAvantSession } from './liens-entrants.js';
 import { armer, armerSansSession, cibleDepart, desarmer } from './routeur.js';
-import { ouvrirDemo } from './demo-porte.js';
+import { effacerDemo, ouvrirDemo } from './demo-porte.js';
 import { isPupil } from './classement.js';
 import { ouvrirBienvenue } from './bienvenue-porte.js';
 import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
@@ -109,6 +109,8 @@ export function resetSession() {
 }
 
 export function logout() {
+  // dans la démo sans compte, se déconnecter c'est la quitter (ui/demo.js) : rien ne doit rester branché
+  if (demoEtab) { try { sessionStorage.removeItem('folio.demo'); } catch (e) { /* rien à effacer */ } return location.replace('/connexion'); }
   flush();
   const key = cacheKey();
   saveAuth(null);
@@ -705,6 +707,7 @@ export async function boot() {
      connexion (liens-entrants.js, la porte de tout lien entrant). */
   const adresse = cibleDepart();          // l'écran que demande l'adresse (ui/routeur.js)
   if (adresse && adresse.demo) return ouvrirDemo(adresse);
+  effacerDemo();
   if (!(await lienAvantSession())) { setView({ name: 'login' }); render(); return armerSansSession(cibleDepart()); }
   desarmer();
   setDb(load());

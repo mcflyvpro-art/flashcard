@@ -327,7 +327,7 @@ export function demandeView() {
     .catch(() => toast(I.x, 'Le formulaire n’a pas pu s’ouvrir : vérifie ta connexion'));
 }
 
-/* « Essayer sans compte » : le lycée fictif (ui/demo.js, src/demo-etab.js),
+/* « Essayer sans compte » : le lycée fictif (ui/demo.js, src/base-locale/),
    chargé à l'ouverture comme le formulaire ci-dessus. */
 let decouvrir = null;
 export function decouvrirView() {

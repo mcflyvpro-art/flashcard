@@ -394,10 +394,10 @@ export let aiBusy = false;
 export let tour = null, tourSave = null, tourPoll = 0;
 
 export let demo = false;                       // pendant la visite : plus rien ne sort de l'appareil
-/* La démo sans compte (ui/demo.js, 2026-10-26) : le répondeur qui sert, à la
-   place de la base, toutes les demandes d'api() — le « Lycée Démo Folio »
-   de src/demo-etab.js. Rien ne part, rien n'est enregistré. */
-/** @type {null | ((path: string, method: string, body: any) => any)} */
+/* La démo sans compte (ui/demo.js, 2026-10-26) : la base locale qui sert, à
+   la place du réseau, chaque requête d'api() — un `fetch` dans l'onglet,
+   sur le « Lycée Démo Folio » de src/base-locale/. Rien ne part. */
+/** @type {null | ((url: string, init: any) => Promise<Response>)} */
 export let demoEtab = null;
 
 /* L'invite native d'Android n'est donnée qu'une fois, très tôt : on la

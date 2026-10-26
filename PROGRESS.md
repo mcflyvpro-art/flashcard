@@ -24,8 +24,13 @@ DERNIER   2026-10-26 · Une adresse par écran et par espace (src/routes.js, ui/
           retour du navigateur revient à l'écran d'avant, une adresse ouverte sans session
           attend la connexion — e2e/adresses.e2e.js 4/4, test/routes.test.js 7/7. Le
           référent et l'éditeur n'ont plus dans leur barre que leurs pages (onglets de la
-          console, réglages réduits), l'éditeur arrive sur sa console. Suite : démo libre,
-          licence et factures, codes renouvelés chaque semaine.
+          console, réglages réduits), l'éditeur arrive sur sa console. La démo sans compte
+          devient la vraie app sur une base locale (src/base-locale/, le Supabase en mémoire
+          des parcours, sorti de e2e/) : tout s'écrit, d'un rôle à l'autre, rien ne part ;
+          l'IA, les photos et les fichiers grisés — e2e/demo.e2e.js 3/3,
+          test/monde-demo.test.js 6/6. Corrigé en chemin : la fiche d'un élève et « Ce qui
+          bloque » restaient en chargement chez un vrai professeur. Suite : licence et
+          factures du référent, codes renouvelés chaque semaine.
           Avant : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
           code » en base (20261026001000) et la feuille « J'ai un code » ; B2C sans onglet
           Classe ; la console du référent refaite pour l'ordinateur (ui/ref-console.js, à
@@ -42,7 +47,7 @@ DERNIER   2026-10-26 · Une adresse par écran et par espace (src/routes.js, ui/
           Comptes de test : referent@folio.app (Lycée d'essai Folio). L'accueil d'un
           nouveau compte (ui/bienvenue.js : prénom, pseudo, visage, niveau, matières,
           objectif ; visage seul pour un élève de classe) — e2e/bienvenue.e2e.js 3/3.
-          La démo sans compte (« Essayer sans compte » : le Lycée Démo Folio, src/demo-etab.js,
+          La démo sans compte (« Essayer sans compte » : le Lycée Démo Folio, alors src/demo-etab.js,
           servi en tête d'api() ; élève, professeur, référent, vrais écrans, aucune requête,
           bandeau pour changer de rôle) — e2e/demo.e2e.js 4/4, test/demo-etab.test.js 6/6.
           Reste : la page d'accueil publique (plus tard). Pas de Stripe (Capacitor, achats

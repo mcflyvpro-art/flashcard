@@ -1,4 +1,4 @@
-import { auth, comp, optRunning, prefs, setOptRunning, view } from '../data/etat.js';
+import { auth, comp, demoEtab, optRunning, prefs, setOptRunning, view } from '../data/etat.js';
 import { SB, apiAll, deck, refreshToken, uid } from './coeur-sync.js';
 import { savePrefs } from '../ui/import-cartes.js';
 import { fsrsItems, fsrsOptimize, fsrsReplay } from '../ui/carte-media.js';
@@ -20,6 +20,7 @@ const MEXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'i
 
 export async function upload(file) {
   if (!auth) throw new Error('auth');
+  if (demoEtab) throw new Error('demo');     // la démo ne garde ni image ni son : rien ne part vers le stockage
   if (file.size > 7.5e6) throw new Error('big');
   const mime = String(file.type || '').split(';')[0].trim().toLowerCase();
   const named = ((file.name || '').split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');

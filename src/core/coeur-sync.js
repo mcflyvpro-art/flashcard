@@ -122,7 +122,13 @@ export function doUndo() {
 
 export function loadAuth() { try { return JSON.parse(localStorage.getItem(AKEY)); } catch (e) { return null; } }
 
-export function saveAuth(a) { setAuth(a); a ? localStorage.setItem(AKEY, JSON.stringify(a)) : localStorage.removeItem(AKEY); }
+/* Dans la démo sans compte, la session ne vit qu'en mémoire : elle ne doit
+   jamais remplacer — ni effacer — celle d'un vrai compte ouvert sur cet appareil. */
+export function saveAuth(a) {
+  setAuth(a);
+  if (demoEtab) return;
+  if (a) localStorage.setItem(AKEY, JSON.stringify(a)); else localStorage.removeItem(AKEY);
+}
 
 export const cacheKey = () => 'cartes.cache.' + (auth && auth.uid);
 
@@ -147,7 +153,7 @@ export function load() {
 }
 
 export function save() {
-  if (demo) return;                       // la démonstration n'écrase pas le cache du compte
+  if (demo || demoEtab) return;           // la démonstration n'écrase pas le cache du compte
   if (auth) localStorage.setItem(cacheKey(), JSON.stringify({ ...db, prefs, dirty, gone, outbox }));
 }
 
@@ -162,6 +168,7 @@ function loadBases() {
 }
 
 function saveBases() {
+  if (demoEtab) return;                   // la démo ne laisse rien sur l'appareil
   try { localStorage.setItem(baseKey(), JSON.stringify(bases)); }
   catch (e) { /* quota plein : même filet que ci-dessus, la boîte de choix au lieu d'une fusion */ }
 }
@@ -241,7 +248,7 @@ function authHeaders(extra) {
 }
 
 async function refreshIfUnauthorized(r) {
-  return r.status === 401 && auth && auth.refresh && await refreshToken();
+  return r.status === 401 && !demoEtab && auth && auth.refresh && await refreshToken();
 }
 
 /** @returns {Error & { status: number }} */
@@ -256,13 +263,16 @@ async function throwIfError(r) {
   throw apiError(await r.text().catch(() => String(r.status)), r.status);
 }
 
+/* La démo sans compte (ui/demo.js) branche ici sa base locale : la même
+   requête, servie dans l'onglet au lieu de partir sur le réseau. */
+const envoyer = (url, init) => (demoEtab ? demoEtab(url, init) : fetch(url, init));
+
 export async function api(path, method = 'GET', body, extra = {}) {
   /* Pendant la visite guidée, aucune requête ne part : ni lecture, ni
      écriture. Le compte de démonstration n'existe que dans cet onglet. */
-  if (demoEtab) return demoEtab(path, method, body);   // la démo sans compte : le lycée fictif répond
   if (demo) return [];
-  if (tokenExpiring()) await refreshToken();
-  const r = await fetch(SB.url + path,
+  if (!demoEtab && tokenExpiring()) await refreshToken();
+  const r = await envoyer(SB.url + path,
     { method, headers: authHeaders(extra), body: body ? JSON.stringify(body) : undefined });
   if (await refreshIfUnauthorized(r)) return api(path, method, body, extra);
   await throwIfError(r);
@@ -285,10 +295,10 @@ async function throwIfPageError(r) {
 
 async function apiPage(path, from, to) {
   if (demo) return { rows: [], total: 0 };
-  if (tokenExpiring()) await refreshToken();
+  if (!demoEtab && tokenExpiring()) await refreshToken();
   const h = { apikey: SB.key, Range: `${from}-${to}`, Prefer: 'count=exact' };
   if (auth && auth.token) h.Authorization = 'Bearer ' + auth.token;
-  const r = await fetch(SB.url + path, { headers: h });
+  const r = await envoyer(SB.url + path, { headers: h });
   if (await refreshIfUnauthorized(r)) return apiPage(path, from, to);
   await throwIfPageError(r);
   const rows = await r.json().catch(() => []);
