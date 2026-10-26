@@ -7,6 +7,12 @@ professeurs, référents, éditeurs — modèle « à la Pronote »). Tout ce qu
 
 Langue : **français** partout — code commenté, messages de commit, réponses.
 
+## Chantier en cours : la page d'accueil publique
+
+**`docs/LANDING.md` est son fichier de reprise** (demande, décisions, cases
+à cocher, pièges) : une session qui reprend ce chantier le lit en entier
+et fait la première case non cochée, puis commit + push après chaque case.
+
 ## Où on en est : PROGRESS.md
 
 `PROGRESS.md` est la mémoire du projet. Il tient l'état de 148 tâches

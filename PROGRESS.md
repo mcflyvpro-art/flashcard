@@ -19,7 +19,10 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      45 / 148
-DERNIER   2026-10-26 · EN COURS : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
+DERNIER   2026-10-26 · EN COURS : la page d'accueil publique (site vitrine à `/`, l'app
+          passe à `/app`) — tout est dans docs/LANDING.md, FICHIER DE REPRISE : le lire
+          en entier et faire la première case non cochée.
+          Avant : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
           code » en base (20261026001000) et la feuille « J'ai un code » ; B2C sans onglet
           Classe ; la console du référent refaite pour l'ordinateur (ui/ref-console.js, à
           la demande : codes + QR projeté, licence, à régler, classes, élèves, profs,
