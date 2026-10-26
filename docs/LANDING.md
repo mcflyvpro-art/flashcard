@@ -54,38 +54,76 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
 
 ## Architecture de la page (fichiers)
 
-- `index.html` — la page, tout le contenu en HTML statique (lu par les
-  moteurs sans JS), métadonnées, JSON-LD, aiguillage en ligne.
-- `src/site/site.css` — sa feuille de style (préfixe aucun : la page n'a
-  pas l'app.css), `src/site/site.js` — ses animations, la bascule
-  mensuel/annuel, la fenêtre « J'ai un code », le chargement des vidéos.
-- `public/site/` — logo, image de partage (og 1200×630), affiches des
-  vidéos ; **les vidéos iront dans `public/site/videos/`** (voir plus bas).
+- `index.html` — la page : tout le texte en HTML statique (les moteurs le
+  lisent sans JS), métadonnées (titre, description, canonique, Open Graph,
+  Twitter), données structurées JSON-LD (Organization, WebSite,
+  SoftwareApplication avec ses offres, FAQPage), l'aiguillage en ligne,
+  le logo en « sprite » (entre `<!-- logo:debut -->` et `<!-- logo:fin -->`,
+  réécrit par `tools/logo.py`) et les icônes (tracés Lucide). Sections, dans
+  l'ordre : en-tête collant · héros (la pile qui se pose, le titre mot par
+  mot, un portable qui se redresse au défilement, un téléphone, des fiches
+  qui flottent et se retournent) · matières qui défilent · le moteur
+  (courbe « sans Folio / avec Folio » qui se dessine) · « Du cours au
+  concours » (six tuiles animées) · Folio Campus (fond sombre : un code qui
+  distribue des élèves vers des classes, portable à onglets
+  Professeur/Référent) · tarifs (bascule mensuel/annuel, trois offres,
+  tableau comparatif) · questions (FAQ) · appel final · pied de page ·
+  fenêtre « J'ai un code ».
+- `src/site/site.css` — son style (aucun préfixe : la page n'a pas
+  `app.css`). Règles : n'animer que `transform`/`opacity` ; une apparition
+  au défilement = classe `.rv` (site.js pose `.vu` ; sans site.js tout
+  apparaît au bout de 3 s) ; ce qui tourne en boucle s'arrête hors écran
+  (`.dort`) ; « mouvement réduit » coupe toutes les animations.
+- `src/site/site.js` — ce qui bouge et répond : apparitions, en-tête,
+  inclinaison du portable (`--p`), calendrier du journal, vidéos (chargées
+  et jouées seulement à l'écran), onglets Campus, bascule des tarifs,
+  fenêtre « J'ai un code » (règles des codes importées de `src/classe.js`
+  et `src/defi.js`, jamais réécrites). Aucun appel à la base.
+- `public/site/` — `logo.svg`, `icone.svg`, `og.jpg` (partage 1200×630),
+  `affiches/{pc,mobile,prof,referent}.webp` (19 à 51 Ko). **Exclu du cache
+  du service worker** (l'app hors ligne n'en a pas besoin).
 - `public/robots.txt`, `public/sitemap.xml`, `public/favicon.svg`.
-- `app.html` — l'ancien `index.html` de l'app, inchangé à part
-  `noindex`.
+- `app.html` — l'app (l'ancien `index.html`), `noindex`.
+- `tools/logo.py` (le logo), `tools/affiches.js` (affiches + image de
+  partage, depuis la démo sans compte), `test/site.test.js` (CSP, ordre du
+  `<head>`, aucun tiret long, JSON-LD valide), `e2e/site.e2e.js` (6
+  parcours : page au téléphone, boutons → bons écrans, « J'ai un code »
+  classe et partie, aiguillage lien et session, `?site`).
+
+### Refaire les affiches et l'image de partage
+
+```sh
+npm run build && npx vite preview --port 4190 --strictPort &
+node tools/affiches.js          # réécrit public/site/affiches/*.webp et public/site/og.jpg
+npm run build                   # les fichiers de public/ ne sont copiés qu'au build
+```
 
 ### Insérer les vidéos (pour l'utilisateur, plus tard)
 
-Chaque emplacement est un `<video data-video="…">` dans `index.html`. Pour
-en remplir un : déposer `public/site/videos/<nom>.mp4` (H.264, muet, 8–15 s,
-en boucle, ≤ 2 Mo ; 1280×800 pour un PC, 390×844 pour un téléphone), puis
-mettre le chemin dans l'attribut `data-src` du `<video>` correspondant. Les
-noms prévus : `pc` (élève sur ordinateur), `mobile` (élève au téléphone),
-`prof` (espace professeur, ordinateur), `referent` (console du référent,
-ordinateur). Tant que `data-src` est vide, l'affiche (`poster`) s'affiche.
+Chaque emplacement est un `<div class="ecran" data-ecran="pc|mobile|prof|referent">`
+dans `index.html`, qui contient l'affiche (`<img class="affiche">`) et un
+`<video class="video" data-src="">`. Pour en remplir un : déposer
+`public/site/videos/<nom>.mp4` (H.264, **muette**, 8 à 15 s, faite pour
+tourner en boucle, ≤ 2 Mo ; 1440×900 pour un ordinateur, 780×1688 pour un
+téléphone, comme les affiches), puis écrire son chemin dans le `data-src`
+du `<video>` correspondant (`data-src="/site/videos/pc.mp4"`). site.js la
+charge quand elle arrive à l'écran, la joue, la met en pause hors écran, et
+l'affiche reste dessous tant qu'elle n'a pas démarré. Rien d'autre à
+toucher. Les quatre : `pc` (héros, ordinateur : une séance de révision),
+`mobile` (héros, téléphone : la bibliothèque), `prof` et `referent`
+(Folio Campus, onglets).
 
 ## Où on en est
 
 - [x] 1. Fichier de reprise (celui-ci), pointé depuis CLAUDE.md et PROGRESS.md
 - [x] 2. Logo SVG propre (`public/site/logo.svg` + `public/favicon.svg`), vérifié en image à 16, 32, 180, 512 px ; supprimer `Vectorized SVG.svg` et `public/icons/test svg` (779 Ko mis en cache par le service worker chez tout le monde !)
 - [x] 3. Bascule de l'app vers `/app` : `index.html` → `app.html`, vite multi-pages, `tools/budget.js` (démarrage lu dans `app.html`, plus une ligne « site »), service worker, manifeste, `vercel.json` (en-têtes, `app.html`), e2e (`goto('./')` → `goto('./app')`), portes `?go=` sans session
-- [ ] 4. La page : structure HTML + SEO (titre, description, canonique, Open Graph, JSON-LD Organization/WebSite/SoftwareApplication/FAQPage, robots, sitemap)
-- [ ] 5. La page : style et animations (héros, moteur, fonctions, vidéos, Campus, tarifs + tableau, FAQ, appel final, pied de page), mouvement réduit respecté
-- [ ] 6. Les boutons branchés sur l'app (se connecter, créer un compte, j'ai un code, démo, demander une démo) + test e2e `e2e/site.e2e.js`
-- [ ] 7. Affiches des emplacements vidéo : captures de l'app réelle en mode démo (élève téléphone et PC, professeur, référent)
-- [ ] 8. Image de partage `public/site/og.png` (1200×630)
-- [ ] 9. Textes passés au humanizer (aucun « — » ni « – » visible : `grep -c '—\|–'` sur le texte rendu = 0)
+- [x] 4. La page : structure HTML + SEO (titre, description, canonique, Open Graph, JSON-LD Organization/WebSite/SoftwareApplication/FAQPage, robots, sitemap)
+- [x] 5. La page : style et animations (héros, moteur, fonctions, vidéos, Campus, tarifs + tableau, FAQ, appel final, pied de page), mouvement réduit respecté
+- [x] 6. Les boutons branchés sur l'app (se connecter, créer un compte, j'ai un code, démo, demander une démo) + test e2e `e2e/site.e2e.js`
+- [x] 7. Affiches des emplacements vidéo : captures de l'app réelle en mode démo (élève téléphone et PC, professeur, référent)
+- [x] 8. Image de partage `public/site/og.jpg` (1200×630, 76 Ko)
+- [x] 9. Textes passés au humanizer (aucun « — » ni « – » visible : vérifié par `test/site.test.js`)
 - [ ] 10. Vérifs : `npm run check`, e2e complets, Lighthouse (SEO 100, perf ≥ 90), écran 390 px et 1440 px
 - [ ] 11. CLAUDE.md (architecture : `/` = site, `/app` = app) et PROGRESS.md à jour, push branche + `main`
 

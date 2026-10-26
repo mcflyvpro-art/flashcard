@@ -48,7 +48,13 @@ l'air de marcher ».
     les liens fabriqués sur `SITE` continuent d'ouvrir l'app. `?site` force
     l'accueil. Son empreinte sha256 est dans la CSP de `vercel.json`
     (`test/site.test.js` le vérifie, avec l'absence de tiret cadratin dans le
-    texte affiché). **Tout est dans `docs/LANDING.md`.**
+    texte affiché). Ses images dans `public/site/` (logo, image de partage
+    `og.jpg`, affiches des emplacements vidéo, **hors du cache du service
+    worker**) : le logo se calcule (`python3 tools/logo.py`, qui réécrit aussi
+    son « sprite » dans `index.html`), les affiches et l'image de partage se
+    photographient dans la démo sans compte (`node tools/affiches.js`, sur un
+    `vite preview` au port 4190). Parcours : `e2e/site.e2e.js`. **Tout est
+    dans `docs/LANDING.md`** (dont comment insérer les vidéos).
     `app.html` — l'app, servie à **`/app`** (sans barre finale : ses
     adresses relatives restent justes ; `noindex`) : écran d'ouverture
     inline, charge `/src/app.css` puis `/src/app.js`. Les boutons du site
@@ -540,6 +546,8 @@ npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 K
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
+python3 tools/logo.py                # le logo (public/site/, public/favicon.svg, sprite de index.html)
+node tools/affiches.js               # affiches du site + image de partage, depuis la démo (vite preview --port 4190 d'abord)
 supabase db diff / supabase migration new <nom>   # si la CLI est installée
 CI=1 npx playwright test -c tools/pw-local.config.js   # e2e dans une session cloud (Chromium préinstallé, /opt/pw-browsers/chromium)
 CI=1 npx playwright test -c tools/pw-webkit.config.js  # e2e sous Safari (WebKit, iPhone 13 + Safari bureau) — installation en tête du fichier

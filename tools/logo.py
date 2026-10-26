@@ -195,6 +195,14 @@ def livre(o, c, uid, t=T, detail=True, etiquette=False):
     g.append(f'<path d="M {pt(P(16, L - .6, t, o))} L {pt(P(W - R_COIN * .7, L - .6, t, o))}" '
              f'stroke="{c["pli"]}" stroke-width="1.2" stroke-linecap="round" opacity=".7" fill="none"/>')
     if etiquette:
+        g.extend(etiquette_de(o, t, uid))
+    return g
+
+
+def etiquette_de(o, t=T, uid='clair'):
+    """L'étiquette sombre au milieu de la couverture du livre du haut."""
+    g = []
+    if True:
         cx, cy, s = W * .54, L * .42, 74.0
         et = [P(cx - s / 2, cy - s * .44, t, o), P(cx + s / 2, cy - s * .44, t, o),
               P(cx + s / 2, cy + s * .44, t, o), P(cx - s / 2, cy + s * .44, t, o)]
@@ -276,9 +284,46 @@ def svg_icone(detail=True, remplir=362):
             f'{ombre}<g transform="translate({f(tx)} {f(ty)}) scale({k:.4f})">{corps}</g></svg>')
 
 
+def sprite():
+    """Pour la page d'accueil : chaque livre et l'étiquette en <g id>, et
+    la marque entière en <symbol id="logo"> ; l'en-tête et le pied la
+    reprennent d'un <use>, le héros pose les livres un par un (un <use>
+    chacun, animé). Rend (le SVG caché, la viewBox de la marque)."""
+    _, (x0, y0, x1, y1) = marque()
+    m = 8
+    vb = f'{f(x0 - m)} {f(y0 - m)} {f(x1 - x0 + 2 * m)} {f(y1 - y0 + 2 * m)}'
+    groupes = []
+    for i, (k, (dx, dy)) in enumerate(PILE):
+        o = P(dx, dy, i * T)
+        groupes.append(f'<g id="livre-{k}">' + ''.join(livre(o, COULEURS[k], k)) + '</g>')
+        if k == 'clair':
+            groupes.append('<g id="etiquette">' + ''.join(etiquette_de(o)) + '</g>')
+    logo = (f'<symbol id="logo" viewBox="{vb}"><use href="#livre-noir"/><use href="#livre-gris"/>'
+            f'<use href="#livre-clair"/><use href="#etiquette"/></symbol>')
+    return (f'<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">'
+            f'<defs>{"".join(groupes)}{logo}</defs></svg>'), vb
+
+
+def injecter(page):
+    """Réécrit le sprite entre ses deux marqueurs, et la viewBox du héros."""
+    import re
+    with open(page, encoding='utf8') as fh:
+        h = fh.read()
+    svg, vb = sprite()
+    h, n = re.subn(r'(<!-- logo:debut -->).*?(<!-- logo:fin -->)', lambda mo: mo.group(1) + svg + mo.group(2), h, flags=re.S)
+    # le héros garde de la place sous la pile pour son ombre
+    x, y, w, hh = (float(v) for v in vb.split())
+    vbh = f'{f(x)} {f(y)} {f(w)} {f(hh + 26)}'
+    h = re.sub(r'(<svg class="pile"[^>]*?viewBox=")[^"]*(")', lambda mo: mo.group(1) + vbh + mo.group(2), h)
+    with open(page, 'w', encoding='utf8') as fh:
+        fh.write(h)
+    return n
+
+
 if __name__ == '__main__':
     ecrire(os.path.join(ROOT, 'public', 'site', 'logo.svg'), svg_marque())
     ecrire(os.path.join(ROOT, 'public', 'site', 'icone.svg'), svg_icone())
     # l'onglet d'un navigateur : 16 px, la pile remplit le carré
     ecrire(os.path.join(ROOT, 'public', 'favicon.svg'), svg_icone(detail=False, remplir=440))
-    print('logo.svg, icone.svg, favicon.svg écrits')
+    n = injecter(os.path.join(ROOT, 'index.html'))
+    print('logo.svg, icone.svg, favicon.svg écrits' + (' ; sprite de index.html à jour' if n else ''))
