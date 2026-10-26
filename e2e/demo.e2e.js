@@ -13,7 +13,7 @@ async function ouvrirDemo(page) {
   await brancher(page, store);
   const parties = [];
   page.on('request', r => { if (BASE.test(r.url())) parties.push(r.method() + ' ' + new URL(r.url()).pathname); });
-  await page.goto('./');
+  await page.goto('./app');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await page.getByRole('button', { name: 'Essayer sans compte' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'decouvrir');

@@ -5,7 +5,7 @@ import { expect } from '@playwright/test';
    fin de l'ouverture (qui le couvre, M05.T4) mélangeait les saisies d'un
    champ à l'autre. Un élève ne peut pas taper si tôt ; le test non plus. */
 async function ouvrir(page) {
-  await page.goto('./');
+  await page.goto('./app');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
 }
 

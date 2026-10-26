@@ -12,7 +12,7 @@ import { connecter, inscrire } from './aide.js';
 const J = 864e5;
 
 async function ouvrirJournal(page) {
-  await page.goto('./?go=stats');
+  await page.goto('./app?go=stats');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await expect(page.locator('.jr-kpi')).toBeVisible({ timeout: 10000 });
 }

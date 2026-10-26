@@ -96,7 +96,7 @@ test('modifié hors ligne, app fermée, l’autre appareil passe, réouverture :
 
   await couper(ctxB, store, false);
   const B2 = await ctxB.newPage();                   // B rouvre l'app, réseau revenu
-  await B2.goto('./');
+  await B2.goto('./app');
   await expect.poll(() => carte(store, 3).back, { timeout: 15000 }).toBe('Capitale 3 — corrigée sur B');
   expect(carte(store, 1).front).toBe('Pays 1 — corrigé sur A');
   await expect(B2.getByText('Modifié sur un autre appareil')).toHaveCount(0);

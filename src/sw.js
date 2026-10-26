@@ -22,14 +22,20 @@ self.addEventListener('activate', e => {
    chargé à la demande (journal, espace professeur, partie en direct) est
    demandé comme module, avec un en-tête Origin que la copie faite à
    l'installation n'avait pas — le cache la refusait, rendait index.html à
-   la place, et le morceau ne s'ouvrait jamais hors ligne. */
+   la place, et le morceau ne s'ouvrait jamais hors ligne.
+   Sans copie, une navigation retombe sur l'app (servie à « app » depuis
+   que la racine est la page d'accueil du site : une adresse avec ses
+   paramètres, « /app?go=study » ou « /?rejoindre=… », n'a pas de copie à
+   elle) ; une autre requête échoue franchement, au lieu de recevoir une
+   page HTML à la place d'un script. */
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
     fetch(req)
       .then(r => { const c = r.clone(); caches.open(C).then(x => x.put(req, c)); return r; })
-      .catch(() => caches.match(req, { ignoreVary: true })
-        .then(hit => hit || caches.match(BASE + 'index.html', { ignoreVary: true })))
+      .catch(async () => (await caches.match(req, { ignoreVary: true }))
+        || (req.mode === 'navigate' && await caches.match(BASE + 'app', { ignoreVary: true }))
+        || Response.error())
   );
 });

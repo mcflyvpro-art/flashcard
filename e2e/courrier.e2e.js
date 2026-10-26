@@ -16,7 +16,7 @@ test('un courrier : qui, quand, quel livre, quelle matière, ses pages, puis l�
     subject_name: 'Anglais', message: 'Tiens, pour jeudi', created_at: new Date(Date.now() - 19 * J).toISOString(),
     cards: Array.from({ length: 32 }, (_, j) => ['word ' + j, 'mot ' + j]), read_at: null, added_at: null
   }];
-  await page.goto('./?go=mail');
+  await page.goto('./app?go=mail');
   const ligne = page.locator('.co-ligne');
   for (const t of ['Thibaut', 'Mobility', 'Anglais', '32 pages', '19 j', '« Tiens, pour jeudi »']) await expect(ligne).toContainText(t);
   await expect(ligne).toHaveClass(/neuf/);

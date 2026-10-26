@@ -6,13 +6,15 @@ import { boot, consumeHash } from './onboarding.js';
 import { consumeRejoindre } from './eleve-classes.js';
 import { consumeDefi } from './direct-porte.js';
 import { consumeClub } from './cercle-feuilles.js';
-import { consumeGoto } from './raccourcis.js';
+import { consumeGoto, consumePorte } from './raccourcis.js';
 
 /* ══════════ les liens qui entrent dans l'app ══════════
    Une seule porte pour tout lien qui ouvre l'app : « ?carte= » (le QR d'une
    carte élève), « #i= » / « #s= » (un livre partagé), « ?go= » (raccourci de
    l'icône), « ?rejoindre= » (une classe), « ?defi= » (une partie en
-   direct), « ?club= » (un club). Chacun a son consommateur, qui lit
+   direct), « ?club= » (un club) ; sans session, « ?go= » ouvre aussi une
+   porte de l'écran de connexion (`consumePorte`, les boutons de la page
+   d'accueil du site). Chacun a son consommateur, qui lit
    l'adresse et la nettoie ; ce fichier ne fait que les appeler dans le
    bon ordre — le même au démarrage (`boot()`) qu'à l'arrivée d'un lien
    alors que l'app tourne déjà.
@@ -37,6 +39,10 @@ export async function lienAvantSession() {
   return false;
 }
 
+/* L'écran à montrer sans session : la connexion, ou la porte qu'un bouton
+   de la page d'accueil a demandée (« ?go=inscription », « ?go=essai »…). */
+export const ecranSansSession = () => consumePorte() || 'login';
+
 /* Une fois le rôle connu (un code de classe ne veut pas dire la même chose
    pour un professeur et pour un élève) : la classe, la partie, le club. */
 export async function lienApresRole() {
@@ -54,7 +60,8 @@ export async function traiterLienEntrant(url) {
   history.replaceState(null, '', location.pathname + u.search + u.hash);
   const avant = auth && auth.uid;
   if (!(await lienAvantSession())) {
-    if (view.name !== 'login') setView({ name: 'login' });
+    const ecran = ecranSansSession();
+    if (view.name !== ecran) setView({ name: ecran });
     render();
     return false;
   }

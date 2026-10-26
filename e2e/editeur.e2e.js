@@ -24,7 +24,7 @@ function editeurEtProspect(store) {
 }
 
 async function entrer(page) {
-  await page.goto('./');
+  await page.goto('./app');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await expect(page.getByRole('textbox', { name: 'Adresse e-mail' })).toBeFocused();
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill('editeur@folio.fr');
@@ -131,7 +131,7 @@ test('sans compte, un principal demande une démo ; l’éditeur la voit arriver
   m.roles[moi] = 'admin';
   store.tables.prefs = [{ id: moi, user_id: moi, data: { tuto: 1 } }];
   await brancher(page, store);
-  await page.goto('./');
+  await page.goto('./app');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
 
   await page.getByRole('button', { name: 'Un établissement ? Demander une démo' }).click();

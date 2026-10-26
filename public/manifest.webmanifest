@@ -2,7 +2,7 @@
   "name": "Folio",
   "short_name": "Folio",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "launch_handler": {
     "client_mode": [
@@ -54,7 +54,7 @@
       "name": "Lire maintenant",
       "short_name": "Lire",
       "description": "Ouvre les fiches du jour, toute la bibliothèque confondue.",
-      "url": "./?go=study",
+      "url": "/app?go=study",
       "icons": [
         {
           "src": "icons/icon-192.png",
@@ -66,7 +66,7 @@
       "name": "Nouveau livre",
       "short_name": "Écrire",
       "description": "Crée un livre et ouvre sa première fiche.",
-      "url": "./?go=new",
+      "url": "/app?go=new",
       "icons": [
         {
           "src": "icons/icon-192.png",
@@ -78,7 +78,7 @@
       "name": "Courrier",
       "short_name": "Courrier",
       "description": "Les livres qu’on t’a prêtés.",
-      "url": "./?go=mail",
+      "url": "/app?go=mail",
       "icons": [
         {
           "src": "icons/icon-192.png",

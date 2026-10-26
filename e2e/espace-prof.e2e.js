@@ -92,7 +92,7 @@ for (const largeur of [390, 1440]) {
     await expect(page.locator('.pf-tb-code')).toHaveText(enClair);
     await voir(page, '09-tableau', largeur);
 
-    await eleve.goto('./?rejoindre=' + code);
+    await eleve.goto('./app?rejoindre=' + code);
     await expect(eleve.locator('.ce-f .mhx b')).toHaveText('Claire DURAND', { timeout: 10000 });
     await eleve.getByLabel('Prénom').fill('léo');
     await eleve.getByLabel('Nom', { exact: true }).fill('dubois');
@@ -143,7 +143,7 @@ for (const largeur of [390, 1440]) {
     };
     const carte = id => store.users.find(u => u.email === id + '@eleves.folio.invalid');
     const [c1, alice] = await telephone();
-    await alice.goto('./');
+    await alice.goto('./app');
     await expect(alice.locator('#boot')).toHaveCount(0, { timeout: 10000 });
     await alice.getByRole('button', { name: 'Carte élève' }).click();
     await alice.getByLabel('Identifiant').fill('alice.martin');
@@ -168,7 +168,7 @@ for (const largeur of [390, 1440]) {
     await c1.close();
 
     const [c2, awa] = await telephone();
-    await awa.goto('./?carte=awa.ndiaye-' + carte('awa.ndiaye').password);
+    await awa.goto('./app?carte=awa.ndiaye-' + carte('awa.ndiaye').password);
     await expect(awa.locator('#app')).toHaveAttribute('data-view', 'bienvenue', { timeout: 10000 });
     await awa.getByRole('button', { name: 'Passer' }).click();
     await expect(awa.getByText('Verbes irréguliers')).toBeVisible({ timeout: 10000 });

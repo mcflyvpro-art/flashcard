@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I } from '../icones.js';
 import {
-  mailbox, menu, pendingGrade, prefs, setPendingGrade, study, view
+  mailbox, menu, pendingGrade, prefs, setLegalBack, setLegalTab, setLoginMode, setPendingGrade, study, view
 } from '../data/etat.js';
 import { allDue, go } from './bibliotheque.js';
 import { commuPull } from './cercle.js';
@@ -75,6 +75,27 @@ const GOTO = {
   commu: () => { commuPull(); go('commu'); },
   stats: () => { statsPull(); go('stats'); }
 };
+
+/* Les portes de l'écran de connexion, pour les boutons de la page d'accueil
+   du site (index.html, servie à la racine ; l'app est à /app) : « Créer un
+   compte », « Carte élève », « Essayer sans compte », « Demander une démo »
+   et les textes du cadre. Sans session seulement — la page d'accueil envoie
+   déjà dans l'app qui en a une. Rend l'écran à ouvrir, ou rien. */
+const legal = k => () => { setLegalTab(k); setLegalBack('login'); return 'legal'; };
+const PORTES = {
+  inscription: () => { setLoginMode('up'); return 'login'; },
+  carte: () => { setLoginMode('carte'); return 'login'; },
+  essai: () => 'decouvrir',
+  demo: () => 'demande',
+  cgu: legal('cgu'), vie: legal('vie'), mentions: legal('mentions')
+};
+
+export function consumePorte() {
+  const q = new URLSearchParams(location.search).get('go');
+  if (!q || !PORTES[q]) return null;
+  history.replaceState(null, '', location.pathname + location.hash);
+  return PORTES[q]();
+}
 
 export function consumeGoto() {
   const q = new URLSearchParams(location.search).get('go');
