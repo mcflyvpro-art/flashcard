@@ -35,7 +35,11 @@ DERNIER   2026-10-26 · EN COURS : parcours B2B/B2C (docs/PARCOURS.md). Fait : �
           Comptes de test : referent@folio.app (Lycée d'essai Folio). L'accueil d'un
           nouveau compte (ui/bienvenue.js : prénom, pseudo, visage, niveau, matières,
           objectif ; visage seul pour un élève de classe) — e2e/bienvenue.e2e.js 3/3.
-          À faire : la démo sans compte. Pas de Stripe (Capacitor, achats Apple/Google).
+          La démo sans compte (« Essayer sans compte » : le Lycée Démo Folio, src/demo-etab.js,
+          servi en tête d'api() ; élève, professeur, référent, vrais écrans, aucune requête,
+          bandeau pour changer de rôle) — e2e/demo.e2e.js 4/4, test/demo-etab.test.js 6/6.
+          Reste : la page d'accueil publique (plus tard). Pas de Stripe (Capacitor, achats
+          Apple/Google).
           Avant : 2026-10-25 (soir) · « Ma classe » rendue à tout compte personnel (onglet
           au téléphone, entrée sur PC : c'est là qu'on tape le code du professeur ;
           la refonte du cercle l'avait réservée à qui avait déjà une classe —

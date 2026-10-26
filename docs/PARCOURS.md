@@ -89,9 +89,16 @@ Le référent tape son code : il est référent, les classes d'exemple sont là,
 il trouve dans sa console le code élève et le code professeur à distribuer
 à une classe pilote. Tout est réel : rien à refaire en passant en licence.
 
-Il existera aussi une **démo sans compte** (bouton « Essayer ») : un
-établissement fictif, côté référent, professeur et élève, sans rien créer
-en base — pour montrer Folio en rendez-vous.
+Il y a aussi une **démo sans compte** (« Essayer sans compte », sur l'écran
+de connexion et sous le formulaire de démo) : le **Lycée Démo Folio**,
+établissement fictif, où l'on entre comme élève (Léa MARTIN, 2nde B et le
+groupe Spé maths, trois devoirs), professeur (Marc DURAND, ses classes, son
+groupe, le code de l'établissement) ou référent (Claire ROUX, les codes, la
+licence de démo, les classes, les élèves, les professeurs, le journal). Ce
+sont les vrais écrans, au téléphone comme sur ordinateur ; rien n'est créé
+en base, rien ne part : un geste qui écrirait répond « Démo : rien n'est
+enregistré ». Un bandeau change de rôle en un geste, « Quitter » ramène à
+la connexion — pour montrer Folio en rendez-vous, ou se faire une idée.
 
 ### 4.3 Licence
 

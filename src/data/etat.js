@@ -392,6 +392,11 @@ export let aiBusy = false;
 export let tour = null, tourSave = null, tourPoll = 0;
 
 export let demo = false;                       // pendant la visite : plus rien ne sort de l'appareil
+/* La démo sans compte (ui/demo.js, 2026-10-26) : le répondeur qui sert, à la
+   place de la base, toutes les demandes d'api() — le « Lycée Démo Folio »
+   de src/demo-etab.js. Rien ne part, rien n'est enregistré. */
+/** @type {null | ((path: string, method: string, body: any) => any)} */
+export let demoEtab = null;
 
 /* L'invite native d'Android n'est donnée qu'une fois, très tôt : on la
    met de côté au lieu de la laisser passer, pour la rejouer au moment
@@ -501,6 +506,7 @@ export const setTour = v => tour = v;
 export const setTourSave = v => tourSave = v;
 export const setTourPoll = v => tourPoll = v;
 export const setDemo = v => demo = v;
+export const setDemoEtab = v => demoEtab = v;
 export const setBip = v => bip = v;
 /* `online` a déjà un « setter » avec un vrai sens : `setOnline` (app.js) fait
    plus qu'assigner, il met aussi à jour la pastille hors-ligne. Celui-ci

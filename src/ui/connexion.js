@@ -325,6 +325,17 @@ export function demandeView() {
     .catch(() => toast(I.x, 'Le formulaire n’a pas pu s’ouvrir : vérifie ta connexion'));
 }
 
+/* « Essayer sans compte » : le lycée fictif (ui/demo.js, src/demo-etab.js),
+   chargé à l'ouverture comme le formulaire ci-dessus. */
+let decouvrir = null;
+export function decouvrirView() {
+  if (decouvrir) return decouvrir.decouvrirEcran();
+  $.innerHTML = `<div class="bar"><button class="ic" data-act="tolog" aria-label="Retour">${svg(I.back)}</button></div>
+    <div class="page"><div class="empty">${svg(I.school)}</div></div>`;
+  import('./demo.js').then(m => { decouvrir = m; if (view.name === 'decouvrir') render(); })
+    .catch(() => toast(I.x, 'La démo n’a pas pu s’ouvrir : vérifie ta connexion'));
+}
+
 /* Les textes eux-mêmes se chargent à l'ouverture (ui/legal-textes.js). */
 let textes = null;
 export function legalView() {
@@ -518,7 +529,8 @@ export function loginView() {
       <button class="cta" id="go" type="submit">${up ? 'Créer le compte' : 'Se connecter'}${svg(I.arrow)}</button>
       ${up ? '' : `<button class="lnk" id="forgot" type="button">Mot de passe oublié</button>`}
     </form>`}
-    <button class="lnk ldemo" data-act="demande" type="button">${svg(I.school)}Un établissement ? Demander une démo</button>
+    <div class="ldemos"><button class="lnk ldemo" data-act="decouvrir" type="button">${svg(I.play)}Essayer sans compte</button>
+      <button class="lnk ldemo" data-act="demande" type="button">${svg(I.school)}Un établissement ? Demander une démo</button></div>
     <div class="lleg">${Object.entries(LEGAL_TITRES).map(([k, t]) =>
       `<button data-legal="${k}">${esc(t)}</button>`).join('<i>·</i>')}</div>
   </div>`;

@@ -163,7 +163,7 @@ function demoDeck(id, name, subject, pat) {
   return { id, name, subject, hidden: false, pinned: false, pos: 0, meta: {}, rev: 1, cards };
 }
 
-function demoDB() {
+export function demoDB() {
   const mid = new Date(); mid.setHours(0, 0, 0, 0);
   const decks = [
     demoDeck('dmo1', 'Italien — les bases', 'italien', ['due', 'young', 'due', 'mature', 'learn', 'due']),

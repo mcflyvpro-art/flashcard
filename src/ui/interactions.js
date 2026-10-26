@@ -230,6 +230,7 @@ function tapResume() {
 const tapSettings = () => go('settings');
 const tapTolog = () => go('login');
 const tapDemande = () => go('demande');
+const tapDecouvrir = () => go('decouvrir');
 const tapMod = () => { if (!mods.list) modPull(); return go('mod'); };
 const tapAdmin = () => { admPull(); return go('admin'); };
 
@@ -458,6 +459,7 @@ const CLICK_RULES = [
   [a => a === 'settings', tapSettings],
   [a => a === 'tolog', tapTolog],
   [a => a === 'demande', tapDemande],
+  [a => a === 'decouvrir', tapDecouvrir],
   [a => a === 'mod', tapMod],
   [a => a === 'admin', tapAdmin],
   [a => a === 'blocked', tapBlocked],

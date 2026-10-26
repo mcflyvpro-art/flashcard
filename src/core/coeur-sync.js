@@ -1,5 +1,5 @@
 import {
-  DEFPREFS, auth, bases, conflicts, db, demo, dirty, flushAgain, flushTimer, flushing, gone, mailbox,
+  DEFPREFS, auth, bases, conflicts, db, demo, demoEtab, dirty, flushAgain, flushTimer, flushing, gone, mailbox,
   menu, online, outbox, prefs, refreshing, setAnimate, setAuth, setBases, setDirty, setFlushAgain,
   setFlushTimer, setFlushing, setGone, setOnlineState, setOutbox, setPrefs, setRefreshing,
   study, trash, undos, view
@@ -259,6 +259,7 @@ async function throwIfError(r) {
 export async function api(path, method = 'GET', body, extra = {}) {
   /* Pendant la visite guidée, aucune requête ne part : ni lecture, ni
      écriture. Le compte de démonstration n'existe que dans cet onglet. */
+  if (demoEtab) return demoEtab(path, method, body);   // la démo sans compte : le lycée fictif répond
   if (demo) return [];
   if (tokenExpiring()) await refreshToken();
   const r = await fetch(SB.url + path,

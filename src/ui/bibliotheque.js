@@ -22,7 +22,7 @@ import { refView } from './etablissement.js';
 import { bienvenueView } from './bienvenue-porte.js';
 import { admPull, boardPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
-import { deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
+import { decouvrirView, deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
 import { duelView } from './defis.js';
 import { duelsPull } from '../core/defis.js';
 import { findView, statsView } from './ecran-groupe.js';
@@ -104,7 +104,7 @@ function placerDefilement() {
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, lettre: lettreView, stats: statsView, find: findView,
-              shared: sharedView, duel: duelView, legal: legalView, demande: demandeView, bienvenue: bienvenueView, mod: modView,
+              shared: sharedView, duel: duelView, legal: legalView, demande: demandeView, decouvrir: decouvrirView, bienvenue: bienvenueView, mod: modView,
               classes: mesClassesView, classe: classeEleveView,
               prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
               ref: refView,

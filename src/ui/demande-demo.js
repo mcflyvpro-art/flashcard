@@ -34,6 +34,7 @@ function formulaire() {
         maxlength="2000">${esc(etat.champs.message || '')}</textarea></label>
       ${m ? `<p class="dd-rep ${m.ton}"><b>${esc(m.titre)}</b>${m.texte ? `<span>${esc(m.texte)}</span>` : ''}</p>` : ''}
       <button class="cta dd-go" type="submit" ${etat.envoi ? 'disabled' : ''}>Demander une démo${svg(I.arrow)}</button>
+      ${auth ? '' : `<button class="lnk" data-act="decouvrir" type="button">${svg(I.play)}Essayer tout de suite, sans compte</button>`}
     </form>`;
 }
 
