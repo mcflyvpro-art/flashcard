@@ -128,6 +128,25 @@ toucher. Les quatre : `pc` (héros, ordinateur : une séance de révision),
 - [x] 10. Vérifs : `npm run check` vert, e2e complets 60/60, Lighthouse **100 / 100 / 100 / 100** (performance, accessibilité, bonnes pratiques, SEO) au téléphone (FCP 1,1 s, LCP 1,4 s, CLS 0) comme sur ordinateur, écrans 390 px et 1440 px relus en capture, routage vérifié sur la préversion Vercel (`/`, `/app`, `/app/`, `sw.js`, CSP)
 - [x] 11. CLAUDE.md et PROGRESS.md à jour ; `main` fusionnée deux fois pendant le chantier (le routeur à adresses et la démo sur base locale, puis les codes renouvelés) ; routage vérifié sur la préversion Vercel, adresse par adresse, puis poussé sur `main` (00a5228)
 
+## Tour 2 : les retours de l'utilisateur (2026-10-26, soir)
+
+Mot pour mot résumés ; une case par retour, cochée seulement une fois vue
+en capture (390 et 1440 px) et les tests verts.
+
+- [ ] T2.1 Fiches flottantes : tout le texte rentre (recto et verso de même taille, la plus grande des deux) ; aucune ne déborde, nulle part.
+- [ ] T2.2 « Ton cours devient un livre » : **ni Quizlet ni Anki écrits** (ni dans le tableau, ni dans la FAQ) ; ajouter **IA**, et mettre en avant que Folio est **boosté à l'IA**.
+- [ ] T2.3 **« Testé et validé en prépa »** au lieu d'« Éprouvé » (page, titre, image de partage, JSON-LD).
+- [ ] T2.4 Le haut : fond organique **plus marqué**, **moins bleu, un bleu-rose léger**, très professionnel, pour que le logo ressorte ; le fond organique, qu'il adore, un peu **accentué** partout.
+- [ ] T2.5 Héros : les boutons **Encore / Difficile / Correct / Facile jouables** — la fiche part à gauche (Encore, Difficile) ou à droite (Correct, Facile), les suivantes roulent ; une petite flèche « Clique pour tester ».
+- [ ] T2.6 Héros **au téléphone : rien de rogné**.
+- [ ] T2.7 Le moteur : **« Le meilleur moteur de révision au monde »**, une **micro-explication**, **sans les chiffres 9/10 et 4** ; un graphique **bien plus impressionnant**, qui montre la force du moteur.
+- [ ] T2.8 Défis : **« Entre amis, en classe, en club »** (pas seulement la classe).
+- [ ] T2.9 Folio Campus : **la facilité** (arrivée, création, gestion) **en animations**, sans explication technique ; **les trois rôles clairs** (élève, professeur, **référent de l'établissement**) sans gros texte.
+- [ ] T2.10 L'encadré noir final en **bleu-rose** comme le haut (plus de vert).
+- [ ] T2.11 Quitter la démo, revenir d'une page publique, se déconnecter : **retour à la page d'accueil** ; `/connexion` seulement quand on veut se connecter.
+- [ ] T2.12 **/connexion** (et /inscription, /carte-eleve), **/essayer**, **/demande-demo** refaites dans le style du site, « magnifiques ».
+- [ ] T2.13 Vérifs (check, e2e, Lighthouse, captures, préversion Vercel), docs, push branche + `main`.
+
 ## Ce qui reste à décider (l'utilisateur)
 
 - **Les prix** affichés sont une proposition : Folio+ 4,99 €/mois ou
