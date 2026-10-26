@@ -42,10 +42,10 @@ export function messageEtab(statut) {
 
 /* Ce qu'on dit en entrant, selon qui l'on devient. */
 export function bienvenue(r) {
-  if (r.type === 'prof') return `Tu suis maintenant ${r.nom}${r.classe ? ' · ' + r.classe : ''}`;
-  if (r.quel === 'ref') return `Tu es référent de ${r.nom}`;
-  if (r.quel === 'prof') return `Bienvenue à ${r.nom}`;
-  return `Bienvenue à ${r.nom}${r.classe ? ' · ' + r.classe : ''}`;
+  const ou = [r.nom, r.classe].filter(Boolean).join(' · ');
+  if (r.type === 'prof') return `Tu suis ${ou}`;
+  if (r.quel === 'ref') return `Tu es référent · ${r.nom}`;
+  return `Bienvenue · ${ou}`;
 }
 
 /* Le suivi d'un établissement, du premier contact au client. */

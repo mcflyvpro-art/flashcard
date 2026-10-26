@@ -9,6 +9,7 @@
 // `avancement_devoir`, dans les révisions envoyées par l'app (cartes
 // « a:<devoir>:<rang> »).
 import { randomUUID } from 'node:crypto';
+import { fonctionsEtab } from './faux-etablissement.js';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const ANNEE = '2026-2027';
@@ -20,7 +21,7 @@ const nomPropre = (p, n) => {
   return `${cap(String(p).trim())} ${String(n).trim().toUpperCase()}`;
 };
 
-function modele(store) {
+export function modele(store) {
   store.cl = store.cl || { classes: [], membres: [], demandes: [], exclus: [], devoirs: [], roles: {}, comptes: {}, noms: {} };
   return store.cl;
 }
@@ -157,9 +158,10 @@ function donner(m, b, uid) {
 }
 
 function eleveClasses(store, m, uid) {
-  const l = c => ({ class_id: c.id, nom: c.name, niveau: c.niveau, etab: null, prof: nomDe(m, c.owner, store),
-    matieres: c.matiere, effectif: membresDe(m, c.id).length, depuis: new Date().toISOString(), peut_quitter: true,
-    a_faire: m.devoirs.filter(d => d.cid === c.id).length });
+  const etab = c => ((store.et && store.et.orgs.find(o => o.id === c.org)) || {}).nom || null;
+  const l = c => ({ class_id: c.id, nom: c.name, niveau: c.niveau, etab: etab(c), prof: nomDe(m, c.owner, store),
+    matieres: c.matiere, effectif: membresDe(m, c.id).length, depuis: new Date().toISOString(), peut_quitter: !c.org,
+    a_faire: m.devoirs.filter(d => d.cid === c.id).length, genre: c.genre || 'classe' });
   return [
     ...m.membres.filter(x => x.uid === uid).map(x => ({ ...l(classeDe(m, x.cid)), statut: 'inscrit' })),
     ...m.demandes.filter(x => x.uid === uid).map(x => ({ ...l(classeDe(m, x.cid)), statut: 'attente' }))
@@ -226,10 +228,11 @@ function reglages(m, b) {
   return null;
 }
 
-function creerClasse(m, b, uid) {
+function creerClasse(store, m, b, uid) {
   const id = randomUUID();
   m.classes.push({ id, name: b.nom, niveau: b.niveau || '', matiere: b.matiere || '', code: tire(), owner: uid,
-    ouvert: true, validation: true, places: 40, fin: null, archivee: false });
+    ouvert: true, validation: true, places: 40, fin: null, archivee: false,
+    org: (store.et && store.et.membres[uid]) || null, genre: 'classe' });
   return id;
 }
 
@@ -241,12 +244,11 @@ function fonctions(store, m, uid) {
        la visite guidée, réservée aux élèves, ne s'invite pas au milieu des
        parcours qui ne parlent pas de classes. */
     my_role: () => m.roles[uid] || [],
-    my_school: () => [],
     mon_compte: () => [m.comptes[uid] ? { gere: true, nom: m.comptes[uid].nom, identifiant: m.comptes[uid].identifiant }
       : { gere: false, nom: m.noms[uid] || null, identifiant: null }],
     prof_annees: () => [{ annee: ANNEE, classes: m.classes.filter(c => c.owner === uid).length, courante: true }],
     prof_classes: () => m.classes.filter(c => c.owner === uid).map(c => ligneClasse(store, m, c, uid)),
-    prof_creer_classe: b => creerClasse(m, b, uid),
+    prof_creer_classe: b => creerClasse(store, m, b, uid),
     prof_roster: b => roster(store, m, b.cid),
     prof_devoirs: b => devoirsClasse(store, m, b.cid, uid),
     prof_demandes: b => m.demandes.filter(x => x.cid === b.cid)
@@ -269,6 +271,14 @@ function fonctions(store, m, uid) {
     prof_nouvelles_cartes: b => nouvellesCartes(store, m, b),
     prof_message_classe: b => membresDe(m, b.cid).length,
     class_preview: b => { const [s, c] = verdict(store, m, b.join_code, uid); return fiche(store, m, s, c); },
+    /* Un code d'établissement ou de professeur (faux-etablissement.js), sinon
+       l'ancien code d'une classe : la même réponse qu'en base. */
+    code_apercu: b => {
+      const r = fonctionsEtab(store, m, uid).code_apercu(b);
+      if (r) return r;
+      const [s, c] = verdict(store, m, b.code, uid);
+      return { type: 'classe', fiche: fiche(store, m, s, c)[0] };
+    },
     class_join: b => rejoindre(store, m, b, uid),
     eleve_classes: () => eleveClasses(store, m, uid),
     eleve_devoirs: () => eleveDevoirs(store, m, uid),
@@ -287,7 +297,7 @@ function fonctions(store, m, uid) {
 /* Rend [statut, corps] pour une fonction connue, `null` sinon. */
 export function rpcClasses(store, nom, corps, user) {
   const m = modele(store);
-  const f = fonctions(store, m, user.id)[nom];
+  const f = fonctions(store, m, user.id)[nom] || fonctionsEtab(store, m, user.id)[nom];
   if (!f) return null;
   /* Première requête authentifiée de la journée : l'élève « s'est connecté ». */
   for (const x of m.membres) if (x.uid === user.id && !x.vu) x.vu = new Date().toISOString();

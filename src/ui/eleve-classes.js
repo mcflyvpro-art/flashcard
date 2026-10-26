@@ -6,17 +6,17 @@ import { auth, cercle, compte, db, duels, eleve, mates2, online, setAnimate, vie
 import { bindPager, go, render, tabs } from './bibliotheque.js';
 import { defiLigne, enDirectHtml, parDefi } from './cercle.js';
 import {
-  codeComplet, codeDepuisTexte, echeance, etatDevoirEleve, formatCode, iso,
+  codeDepuisTexte, echeance, etatDevoirEleve, formatCode, iso,
   messageStatut, nomPropre, nomValide, normCode
 } from '../classe.js';
 import { avatar, blason, couleurClasse } from './jeton.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
-  annulerDemande, apercuCode, cartesDevoir, classePull, eleveClassesPull, messageErreur, quitterClasse, rejoindreCode
+  annulerDemande, cartesDevoir, classePull, eleveClassesPull, messageErreur, quitterClasse, rejoindreCode
 } from '../core/eleve-classes.js';
 import { importPayload, toast } from './import-cartes.js';
 import { closeMenu } from './menus-a.js';
-import { rejoindreCollegue } from './prof-porte.js';
+import { ouvrirCode } from './code-entree.js';
 
 /* ══════════ « Mes classes », côté élève (téléphone d'abord) ══════════
    Dans l'ordre de ce qui presse : les devoirs à faire, puis rejoindre une
@@ -53,13 +53,10 @@ function rejoindreHtml() {
         <button class="el-btn pri" data-el="rejoindre" id="elgo" ${ok && !eleve.envoi ? '' : 'disabled'}>Rejoindre</button></div>
     </div>`;
   }
-  return `<form class="el-carte el-rej" id="elform" autocomplete="off">
-    <label for="elcode">Rejoindre une classe</label>
-    <div class="el-code"><input id="elcode" data-elin="code" value="${esc(eleve.code)}" placeholder="XXXX-XXXX"
-      inputmode="text" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="40" enterkeyhint="go">
-      <button class="el-btn pri" data-el="apercu" id="elok" ${codeComplet(eleve.code) && !eleve.envoi ? '' : 'disabled'}>OK</button></div>
-    ${r ? `<p class="el-rep ${r.ton}"><b>${esc(r.titre)}</b>${r.texte ? ' ' + esc(r.texte) : ''}</p>` : ''}
-  </form>`;
+  /* Un seul champ pour tous les codes : la feuille « J'ai un code »
+     (ui/code-entree.js). La réponse d'un ancien code de classe s'affiche ici. */
+  return `<button class="el-carte el-rej-b" data-ce="ouvrir">${svg(I.key)}<span>J’ai un code</span>${svg(I.arrow)}</button>
+    ${r ? `<p class="el-rep ${r.ton}"><b>${esc(r.titre)}</b>${r.texte ? ' ' + esc(r.texte) : ''}</p>` : ''}`;
 }
 
 /* ---------- les devoirs ---------- */
@@ -134,24 +131,18 @@ export function mesClassesView() {
       </div>
     </div>
     ${tabs('classes')}`;
-  const f = document.getElementById('elform');
-  if (f) f.onsubmit = e => { e.preventDefault(); apercu(); };
   bindPager();
 }
 
 /* ---------- les gestes ---------- */
-async function apercu(code) {
-  const k = normCode(code || eleve.code);
-  if (!codeComplet(k)) return;
-  if (!online) return toast(I.cloud, 'Hors ligne : rejoindre demande le réseau');
-  eleve.envoi = true; eleve.reponse = null; repeint();
-  try {
-    const r = await apercuCode(k);
-    eleve.apercu = r && r.statut === 'apercu' ? r : null;
-    eleve.reponse = r && r.statut !== 'apercu' ? r.statut : r ? null : 'inconnu';
-    if (r && r.statut === 'deja') eleveClassesPull();
-  } catch (e) { eleve.reponse = 'erreur'; toast(I.x, messageErreur(e).slice(0, 120) || 'Impossible pour l’instant'); }
-  eleve.envoi = false; repeint();
+/* Un ancien code de classe (la feuille « J'ai un code » l'a reconnu) : son
+   parcours continue ici — la classe trouvée, le nom, « Rejoindre ». */
+export function versClasse(code, f) {
+  eleve.code = formatCode(code);
+  eleve.apercu = f && f.statut === 'apercu' ? f : null;
+  eleve.reponse = f && f.statut !== 'apercu' ? f.statut : f ? null : 'inconnu';
+  if (f && f.statut === 'deja') eleveClassesPull();
+  go('classes');
   if (eleve.apercu && !nomConnu()) {
     setTimeout(() => {
       const n = document.getElementById('elpre'), a = document.activeElement;
@@ -201,7 +192,6 @@ async function ouvrirDevoir(aid) {
 function repeint() { if (view.name === 'classes') { setAnimate(false); render(); } }
 
 const ACTIONS = {
-  apercu: () => apercu(),
   'annuler-apercu': () => { eleve.apercu = null; eleve.reponse = null; repeint(); },
   rejoindre,
   devoir: id => ouvrirDevoir(id),
@@ -231,15 +221,6 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => {
   const n = e.target.closest('[data-elin]'); if (!n) return;
   const k = n.dataset.elin;
-  if (k === 'code') {
-    /* Un lien entier collé dans le champ se réduit à son code. */
-    const v = /rejoindre=/.test(n.value) ? codeDepuisTexte(n.value) : n.value;
-    eleve.code = formatCode(v);
-    if (n.value !== eleve.code) { n.value = eleve.code; n.setSelectionRange(n.value.length, n.value.length); }
-    eleve.reponse = null;
-    const b = document.getElementById('elok'); if (b) b.disabled = !codeComplet(eleve.code);
-    return;
-  }
   eleve[k] = n.value;
   const ok = nomValide(eleve.prenom) && nomValide(eleve.nom);
   const b = document.getElementById('elgo'); if (b) b.disabled = !ok;
@@ -280,10 +261,8 @@ export function consumeRejoindre() {
   try { auth ? sessionStorage.removeItem('folio.rejoindre') : sessionStorage.setItem('folio.rejoindre', k); }
   catch (e) { /* idem */ }
   if (!auth) return false;
-  if (isProf()) { rejoindreCollegue(k); return true; }   // un code collègue : l'équipe, pas les élèves
-  eleve.code = formatCode(k); eleve.apercu = null; eleve.reponse = null;
-  eleveClassesPull();
-  go('classes');
-  apercu(k);
+  /* Code d'établissement, de professeur particulier, d'équipe ou ancien
+     code de classe : la feuille « J'ai un code » reconnaît chacun. */
+  ouvrirCode(k);
   return true;
 }

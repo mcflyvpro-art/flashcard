@@ -147,16 +147,24 @@ l'air de marcher ».
     `?club=CODE`), `defi-nouveau.js` (« Nouveau défi » : avec qui — un club,
     une classe pour un prof, les amis, une salle ouverte —, quel livre,
     comment : en direct ou à son rythme). « Mes classes » n'est plus dans le
-    cercle : onglet **Classe** à part (`montreClasse()` de `bibliotheque.js`),
-    pour qui en a une (`aUneClasse()` — élève à carte ou d'établissement,
-    professeur, ou compte personnel admis ou en attente dans une classe) **et
-    pour tout compte personnel** (`myRole === 'eleve'`), qui y tape le code de
-    son professeur — le réserver à qui avait déjà une classe l'avait fait
-    disparaître des téléphones (rendu le 2026-10-25) ; ni référent ni
-    administrateur. Un professeur a son espace à la place. Dans les parcours,
-    un compte sans rôle déclaré n'est pas « eleve » (le faux `my_role` répond
-    vide) : `faireEleve(store, email)` de `e2e/faux-classes.js` le déclare,
-    et un `prefs` `{ tuto: 1 }` écarte la visite guidée.
+    cercle : onglet **Classe** à part, **seulement pour qui en a une**
+    (`aUneClasse()` de `bibliotheque.js` — élève entré avec un code dans un
+    établissement ou chez un professeur particulier, élève à carte,
+    professeur) : un particulier n'en a pas (docs/PARCOURS.md). **« J'ai un
+    code »** (`ui/code-entree.js`, feuille `code` de la table des menus, un
+    seul écouteur `[data-ce]`, `ouvrirCode(code)`) est la seule porte
+    d'entrée : le code (établissement — élève, professeur, référent — ou
+    professeur particulier), puis le prénom, le nom et la classe à choisir,
+    et l'on est dedans ; ouverte depuis les Réglages (« J'ai un code »),
+    « Ma classe » et les liens `?rejoindre=` (`consumeRejoindre`) ; un ancien
+    code de classe continue dans « Ma classe » (`versClasse`), un code
+    d'équipe chez `rejoindreCollegue`. Dans les parcours, un compte sans rôle
+    déclaré n'est pas « eleve » (le faux `my_role` répond vide) :
+    `faireEleve(store, email)` de `e2e/faux-classes.js` le déclare, et un
+    `prefs` `{ tuto: 1 }` écarte la visite guidée ; un établissement se sème
+    avec `semerEtablissement(store, { nom, classes })` de
+    `e2e/faux-etablissement.js` (codes, licence, classes ; il rejoue aussi
+    `code_apercu`, `rejoindre`, `my_school`, `prof_mon_code`).
     **Le profil d'un lecteur** (2026-10-25) : toucher un ami, une ligne de
     classement (`rangLigne`, `data-lecteur`), une demande d'ami ou un membre
     de club ouvre son profil (vue `profil`, `ouvrirProfil(id, { club })` de

@@ -105,8 +105,8 @@ function settingsCompteHtml() {
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>`}
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="commu">${svg(I.users)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
-        ${myRole === 'eleve' && !carteEleve() && !atSchool() ? `<button class="sr flat" data-act="classes">${svg(I.school)}
-          <span class="n">Rejoindre la classe d’un professeur</span><span class="c">avec son code</span>${svg(I.arrow)}</button>` : ''}
+        ${(myRole === 'eleve' || myRole === 'prof') && !carteEleve() && !atSchool() ? `<button class="sr flat" data-ce="ouvrir">${svg(I.key)}
+          <span class="n">J’ai un code</span><span class="c">établissement, professeur</span>${svg(I.arrow)}</button>` : ''}
         ${carteEleve() ? '' : `<button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>`}
       </div>${carteEleve() ? `<p class="note">${svg(I.key)}Carte élève : un nouveau code se demande à ton professeur.</p>` : ''}`;
 }

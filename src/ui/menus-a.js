@@ -8,6 +8,7 @@ import { render } from './bibliotheque.js';
 import { avatar } from './jeton.js';
 import { sansMouvement } from './mouvement.js';
 import { paintMenuCercle } from './cercle-feuilles.js';
+import { paintMenuCode } from './code-entree.js';
 import { paintMedia } from './carte-media.js';
 import { accountSheet, blockedSheet, reportSheet } from './classement.js';
 import { ROLENOM, refService, refTeam } from '../core/classement.js';
@@ -297,6 +298,7 @@ function menuPainter(m) {
        entrée ; laquelle est ouverte se lit dans `prof.feuille`. */
     pf: paintMenuProf,
     cc: paintMenuCercle,
+    code: paintMenuCode,
     /* ---------- les feuilles du référent ---------- */
     refwho: paintMenuRefwho,
     refcls: paintMenuRefcls,

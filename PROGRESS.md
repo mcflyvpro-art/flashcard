@@ -23,8 +23,9 @@ DERNIER   2026-10-26 · EN COURS : parcours B2B/B2C (docs/PARCOURS.md). Appliqu�
           « un seul code » (20261026001000, etablissement.sql 51/51) — l'élève tape le code
           de son établissement ou de son prof particulier, son nom, choisit sa classe, entre
           aussitôt ; classes et groupes ; suivi commercial, démo en un geste avec classes
-          d'exemple, « Demander une démo » sans compte. À faire : la feuille « J'ai un
-          code » et le B2C sans onglet Classe, les consoles référent et admin (PC), l'espace
+          d'exemple, « Demander une démo » sans compte ; la feuille « J'ai un code »
+          (ui/code-entree.js) et le B2C sans onglet Classe. À faire : les consoles référent
+          et admin (PC), l'espace
           prof (ses classes, ses groupes, son code), l'onboarding, la démo sans compte. Pas
           de Stripe (Capacitor, achats Apple/Google).
           Avant : 2026-10-25 (soir) · « Ma classe » rendue à tout compte personnel (onglet

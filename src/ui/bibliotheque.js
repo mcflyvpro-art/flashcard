@@ -195,21 +195,14 @@ export const monIdent = () => (me && me.handle) || (compte && compte.nom) || (me
 const monNomRail = () => (compte && compte.nom) || (me && me.handle ? '@' + me.handle : (me && me.name) || prefs.name || 'Mon profil');
 const moiRail = () => `<button class="who" data-cc="moi">${avatar(auth.uid, monIdent(), 'sm')}<span>${esc(monNomRail())}</span></button>`;
 
-/* Qui a une classe : un élève inscrit par son établissement ou par carte,
-   un professeur, ou un compte personnel qui a rejoint la classe d'un
-   professeur (ou attend d'y être admis). */
+/* « Classe » n'existe que pour qui en a une (docs/PARCOURS.md) : un élève
+   entré dans son établissement ou chez un professeur particulier avec un
+   code, un élève à carte, un professeur. Un particulier n'a ni l'onglet ni
+   l'entrée : le jour où on lui donne un code, il le tape dans les Réglages
+   (« J'ai un code ») et l'onglet apparaît. */
 export const aUneClasse = () => isPupil() || isProf() || atSchool()
   || (eleve.classes || []).some(c => c.statut === 'inscrit' || c.statut === 'attente');
-
-/* L'onglet « Classe » (et l'entrée de la barre latérale) : pour qui en a
-   une, et pour tout compte personnel, qui y tape le code que son professeur
-   lui donne. Le réserver à qui avait déjà une classe (refonte du cercle,
-   2026-10-25 midi) l'avait fait disparaître des téléphones : un compte
-   personnel n'avait plus que le lien du professeur ou une entrée cachée des
-   Réglages pour en rejoindre une. Un référent ou un administrateur n'en a
-   pas. */
-export const montreClasse = () => aUneClasse() || myRole === 'eleve';
-const railHasClasses = montreClasse;
+const railHasClasses = aUneClasse;
 
 function railNavHome(on, classeNom) {
   const ent = (k, ic, nom, badge) => railEntry(on, k, ic, nom, badge);
@@ -257,7 +250,7 @@ function paintRail() {
      lieu de vivre dans les trois quarts restants. */
   const boulot = (atSchool() && myRole !== 'eleve') || isProf();
   const base = monNomRail() + '\u0000' + mailbox.n
-            + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v') + '\u0000' + montreClasse() + (asks || []).length;
+            + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v') + '\u0000' + aUneClasse() + (asks || []).length;
   if (r && r.dataset.sig === on + '\u0000' + base) return;      // rien n'a changé : on ne redessine pas
   /* seule l'entrée allumée change : on la déplace sur place, son fond glisse
      de l'une à l'autre au lieu que toute la barre soit refaite */
@@ -279,7 +272,7 @@ function paintRail() {
    qui en a une), Cercle. C'est la seule navigation horizontale de l'app :
    partout ailleurs on entre et on ressort par la flèche. */
 const ONGLETS = { home: [I.layers, 'Livres'], classes: [I.school, 'Classe'], commu: [I.users, 'Cercle des lecteurs'] };
-export const ordreOnglets = () => ['home', ...(montreClasse() && !isProf() ? ['classes'] : []), 'commu'];
+export const ordreOnglets = () => ['home', ...(aUneClasse() && !isProf() ? ['classes'] : []), 'commu'];
 export const vueOnglet = k => ({ home, classes: mesClassesView, commu: commuView })[k];
 
 /* Ouvrir un onglet déjà glissé à l'écran : mêmes lectures que son bouton,

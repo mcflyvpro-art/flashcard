@@ -20,12 +20,12 @@ describe('messageEtab — la réponse de la base, en clair', () => {
 
 describe('bienvenue — ce qu’on dit en entrant', () => {
   it('élève : son établissement et sa classe', () => {
-    expect(bienvenue({ type: 'etab', quel: 'eleve', nom: 'Lycée Camus', classe: '2nde A' })).toBe('Bienvenue à Lycée Camus · 2nde A');
+    expect(bienvenue({ type: 'etab', quel: 'eleve', nom: 'Lycée Camus', classe: '2nde A' })).toBe('Bienvenue · Lycée Camus · 2nde A');
   });
   it('référent, professeur, professeur particulier', () => {
-    expect(bienvenue({ type: 'etab', quel: 'ref', nom: 'Lycée Camus' })).toBe('Tu es référent de Lycée Camus');
-    expect(bienvenue({ type: 'etab', quel: 'prof', nom: 'Lycée Camus' })).toBe('Bienvenue à Lycée Camus');
-    expect(bienvenue({ type: 'prof', nom: 'M. Durand', classe: 'Mes élèves' })).toBe('Tu suis maintenant M. Durand · Mes élèves');
+    expect(bienvenue({ type: 'etab', quel: 'ref', nom: 'Lycée Camus' })).toBe('Tu es référent · Lycée Camus');
+    expect(bienvenue({ type: 'etab', quel: 'prof', nom: 'Lycée Camus' })).toBe('Bienvenue · Lycée Camus');
+    expect(bienvenue({ type: 'prof', nom: 'M. Durand', classe: 'Mes élèves' })).toBe('Tu suis M. Durand · Mes élèves');
   });
 });
 
