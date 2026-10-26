@@ -175,6 +175,24 @@ vrai navigateur, CSP comprise (la pile, le graphique, « Retour » de
 `/essayer` vers le site, `/connexion`), toutes les adresses de l'app en
 200, le logo dans le cache du service worker.
 
+## Tour 3 : les visuels de l'app (2026-10-26, nuit)
+
+La demande : « refaire les visuels de l'app aussi, de toutes les apps
+(prof, élève, référent, admin), pour mieux incruster le logo et réparer les
+petites erreurs visuelles ; un visuel parfait, pro et mature ; puis changer
+les visuels de la page d'accueil avec les nouveaux écrans ». Capture jointe :
+la ligne d'un défi dans le Cercle des lecteurs, dont le bouton « Jouer »
+(rond rose, triangle rouge, « Jouer » dessous) déborde de sa ligne.
+
+- [ ] T3.1 L'état des lieux : chaque écran des quatre rôles, à 390 et 1440 px, relu ; la liste des défauts ci-dessous.
+- [ ] T3.2 Le logo dans l'app : la barre latérale, les en-têtes du téléphone, l'écran d'ouverture, les états vides.
+- [ ] T3.3 La charte affinée, la même partout (typographie, espacements, cartes, boutons), dans le budget de poids.
+- [ ] T3.4 Les défauts corrigés, un par un (dont le bouton « Jouer » d'un défi).
+- [ ] T3.5 Les affiches de la page d'accueil et l'image de partage refaites avec les nouveaux écrans.
+- [ ] T3.6 Vérifs (check, e2e, Lighthouse, captures), docs, push branche + `main`.
+
+Défauts relevés (T3.1) : à remplir.
+
 ## Ce qui reste à décider (l'utilisateur)
 
 - **Les prix** affichés sont une proposition : Folio+ 4,99 €/mois ou
