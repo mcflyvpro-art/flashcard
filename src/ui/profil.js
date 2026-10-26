@@ -90,13 +90,15 @@ function gestes(id, p) {
   if (p.moi) return `<div class="lp-gestes"><button class="mi" data-cc="moi">${svg(I.pen)}Mon jeton et mon pseudo</button></div>`;
   const ami = (friends || []).some(f => f.id === id && f.status === 'ok');
   const club = cercle.profilClub && (cercle.clubs || []).find(g => g.id === cercle.profilClub);
+  /* le filet ne sépare que s'il y a quelque chose au-dessus : seul, il
+     traînait en tête de la carte (2026-10-26) */
+  const haut = (ami ? `<button class="mi" data-mact="matedefi">${svg(I.bolt)}Défier</button>
+        <button class="mi" data-mact="matesend">${svg(I.share)}Lui prêter un livre</button>` : '')
+    + (!ami && p.statut === 'ok' && p.pseudo && !isPupil() ? `<button class="mi" data-lp="ami">${svg(I.plus)}Ajouter en ami</button>` : '')
+    + (club && club.chef ? `<button class="mi warn" data-lp="retirer">${svg(I.x)}<span>Retirer du club</span></button>` : '')
+    + (ami ? `<button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes amis</span></button>` : '');
   return `<div class="lp-gestes">
-      ${ami ? `<button class="mi" data-mact="matedefi">${svg(I.bolt)}Défier</button>
-        <button class="mi" data-mact="matesend">${svg(I.share)}Lui prêter un livre</button>` : ''}
-      ${!ami && p.statut === 'ok' && p.pseudo && !isPupil() ? `<button class="mi" data-lp="ami">${svg(I.plus)}Ajouter en ami</button>` : ''}
-      ${club && club.chef ? `<button class="mi warn" data-lp="retirer">${svg(I.x)}<span>Retirer du club</span></button>` : ''}
-      ${ami ? `<button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes amis</span></button>` : ''}
-      <div class="msep"></div>
+      ${haut ? haut + '<div class="msep"></div>' : ''}
       <button class="mi" data-lp="signaler">${svg(I.warn)}<span>Signaler</span></button>
       <button class="mi warn" data-lp="bloquer">${svg(I.lock)}<span>Bloquer</span></button>
     </div>`;

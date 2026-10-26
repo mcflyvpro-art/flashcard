@@ -47,7 +47,7 @@ test('les boutons ouvrent l’app à l’adresse de chaque écran (src/routes.js
 
   await page.goto('./');
   await page.locator('#campus').getByRole('link', { name: 'Essayer en professeur' }).click();
-  await expect(page.getByText('Bonjour, Marc')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText(/^Bon(jour|soir), Marc$/)).toBeVisible({ timeout: 10000 });
   await expect(page).toHaveURL(/\/demo\/prof$/);
 
   await page.goto('./');

@@ -56,6 +56,8 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
 | Écrans publics de l'app | connexion (et inscription, carte élève), essai, demande de démo, mentions avant la connexion : habillés comme le site (`.pub`, la lumière sur `#app:has(> .pub)::before`, le logo `/site/logo.svg` qui ramène au site, titres en serif, cartes de verre) ; à partir de 900 px, la connexion a sa vitrine à gauche | « une cohérence, magnifique » ; le logo est le seul fichier de `site/` que le service worker garde (hors ligne) |
 | L'ouverture de l'app | sans session et hors app installée, l'écran d'ouverture ne dure que le temps d'un fondu (450 ms) au lieu de 3 s | on arrive du site, qui vient de montrer la marque ; il n'y a ni compte ni livres à attendre |
 | « Le meilleur moteur de révision au monde » | écrit tel quel (demandé) ; le graphique repose sur la courbe d'oubli de FSRS et une révision à 90 %, comme le moteur de l'app | l'allégation s'appuie sur FSRS, en tête des comparatifs publics d'algorithmes de répétition espacée ; à garder défendable si on la conteste |
+| Le logo dans l'app (tour 3) | le logo vectoriel du site partout : barre latérale, barre du haut, en tête des trois onglets au téléphone, écran d'ouverture ; icônes installées refaites depuis `public/site/icone.svg` | l'app installée et le site ont enfin la même marque |
+| Les titres de l'app (tour 3) | la serif du site pour les titres de page (`.hero`, `.bar h1`, le titre d'un livre), le reste en sans-serif ; un signet de la couleur de la matière sur la fiche lue | une seule voix du site à l'app ; l'espace prof était seul en serif |
 
 ## Architecture de la page (fichiers)
 
@@ -185,9 +187,9 @@ la ligne d'un défi dans le Cercle des lecteurs, dont le bouton « Jouer »
 (rond rose, triangle rouge, « Jouer » dessous) déborde de sa ligne.
 
 - [x] T3.1 L'état des lieux : chaque écran des quatre rôles, à 390 et 1440 px, relu ; la liste des défauts ci-dessous.
-- [ ] T3.2 Le logo dans l'app : la barre latérale, les en-têtes du téléphone, l'écran d'ouverture, les états vides.
-- [ ] T3.3 La charte affinée, la même partout (typographie, espacements, cartes, boutons), dans le budget de poids.
-- [ ] T3.4 Les défauts corrigés, un par un (dont le bouton « Jouer » d'un défi).
+- [x] T3.2 Le logo dans l'app : la barre latérale, les en-têtes du téléphone, l'écran d'ouverture, les icônes installées.
+- [x] T3.3 La charte affinée, la même partout (typographie, espacements, cartes, boutons), dans le budget de poids : titres de page dans la serif du site (Charter avant Palatino), signet de la matière sur la fiche lue, fond de l'ouverture et du manifeste = celui de l'app (#F6F5F1) ; CSS au démarrage 23,6/25 Ko.
+- [x] T3.4 Les défauts corrigés, un par un (dont le bouton « Jouer » d'un défi : marge rendue ET triangle dimensionné, il n'avait pas de taille). Les liserés de gauche (livre, ligne, classe) restent : ce sont ceux des fiches de la page d'accueil ; seul le bandeau du haut de la fiche lue est devenu un signet.
 - [ ] T3.5 Les affiches de la page d'accueil et l'image de partage refaites avec les nouveaux écrans.
 - [ ] T3.6 Vérifs (check, e2e, Lighthouse, captures), docs, push branche + `main`.
 
@@ -257,9 +259,6 @@ Référent
 - **Le paiement** n'existe pas (M12) : « Passer à Folio+ » mène à la création
   de compte.
 - **Le nom « Folio Campus »** pour l'offre établissement.
-- **Les icônes PNG de l'app** (`public/icons/`) viennent encore de l'ancienne
-  image ; les refaire depuis `public/site/icone.svg` change l'icône installée
-  chez tout le monde.
 - **Les vidéos** : à déposer (voir plus haut). Elles peuvent aussi se
   tourner automatiquement dans la démo (Playwright sait filmer une page,
   `recordVideo`, ffmpeg est déjà sur la machine) si l'utilisateur le veut.

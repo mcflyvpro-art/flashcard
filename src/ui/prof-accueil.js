@@ -181,7 +181,7 @@ function accueilCorps(l) {
     </div>
     <div class="pf-2">
       <section class="pf-panel"><h2>À traiter</h2>${aTraiterHtml(l)}</section>
-      <section class="pf-panel"><h2>Cette semaine <button class="pf-lnk" data-pf="agenda">Agenda</button></h2>${semaineHtml()}</section>
+      <section class="pf-panel pf-semaine"><h2>Cette semaine <button class="pf-lnk" data-pf="agenda">Agenda</button></h2>${semaineHtml()}</section>
     </div>
     <section class="pf-sec"><h2>Mes classes <span>${actives.length}</span></h2>
       <div class="pf-grid">${actives.map(carteClasse).join('')}
@@ -220,7 +220,7 @@ function moisAgenda(ancre) {
       const ds = jours[k] || [];
       return `<button class="pf-agj${k === auj ? ' auj' : ''}${k === prof.jour ? ' on' : ''}${k < auj ? ' passe' : ''}"
         data-pf="jour" data-v="${k}"><b>${+k.slice(8)}</b>${ds.slice(0, 3).map(x =>
-          `<span class="pf-agi" style="--k:${couleur(x.class_id)}"><i></i>${esc(x.classe)} · ${esc(x.nom)}</span>`).join('')}${
+          `<span class="pf-agi" style="--k:${couleur(x.class_id)}"><i></i><span>${esc(x.classe)} · ${esc(x.nom)}</span></span>`).join('')}${
           ds.length > 3 ? `<em>+${ds.length - 3}</em>` : ''}</button>`;
     }).join('')}</div>`;
 }
@@ -240,7 +240,7 @@ export function profAgendaView() {
   const ancre = auJour(prof.mois || iso(new Date()));
   const a = ancre.getFullYear(), m = ancre.getMonth();
   $.innerHTML = `<div class="pf">${navProf('agenda')}<main class="pf-main">
-    ${tete('Agenda', 'Tous les devoirs, toutes les classes', btn('donner', I.plus, 'Donner un devoir', 'pri'))}
+    ${tete('Agenda', '', btn('donner', I.plus, 'Donner un devoir', 'pri'))}
     <div class="pf-calh">
       <button class="pf-btn ic" data-pf="mois" data-v="${iso(new Date(a, m - 1, 1, 12))}" aria-label="Mois précédent">${svg(I.back)}</button>
       <h2>${MOIS[m]} ${a}</h2>

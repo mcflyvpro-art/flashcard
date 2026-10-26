@@ -48,7 +48,7 @@ describe('le Lycée Démo Folio', () => {
     expect(lea.rpc('eleve_classes').map(c => c.nom).sort()).toEqual(['2nde B', 'Spé maths']);
     const d = lea.rpc('eleve_devoirs');
     expect(d.find(x => x.nom === 'Vocabulaire : la ville').etat).toBe('rendu');
-    expect(d.find(x => x.nom === 'Irregular verbs — série 1').etat).toBe('commence');
+    expect(d.find(x => x.nom === 'Irregular verbs, série 1').etat).toBe('commence');
     expect(d.find(x => x.nom === 'Fonctions affines').etat).toBe('a_faire');
     expect(lea.get('decks?select=id,name&deleted_at=is.null')).toHaveLength(4);
     const j = lea.rpc('journal', { p_depuis: new Date(Date.now() - 35 * 864e5).toISOString(), p_tz: 'Europe/Paris', p_bornes: [1, 3, 14, 90] });

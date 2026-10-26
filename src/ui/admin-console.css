@@ -114,7 +114,10 @@ button.ed-ligne:hover{background:var(--surf)}
 
 @media (max-width:1280px){.ed-chiffres{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:899px){
-  .ed-chiffres{display:flex;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding:0 16px 2px}
+  .ed-chiffres{display:flex;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding:0 16px 2px;
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+  .ed-nouveau{width:38px;padding:0}   /* le titre garde sa ligne, le bouton son « + » */
+  .ed-nouveau span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}   /* lu, pas vu */
   .ed-chiffres::-webkit-scrollbar{display:none}
   .ed-kc{flex:none;min-width:112px}
   .ed-form{grid-template-columns:minmax(0,1fr)}

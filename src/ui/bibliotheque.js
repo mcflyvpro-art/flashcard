@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
-import { I, svg } from '../icones.js';
+import { I, LOGO, MARQUE, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
   DECKPAGE, adm, animate, asks, auth, compte, db, demo, dirty, eleve, filter, iAmMod, liveAt, me,
@@ -161,15 +161,24 @@ export function go(name, id, dir, calme) {
    les signalements, les réglages), sans livres, courrier ni cercle. */
 export const gestion = () => myRole === 'admin' || (myRole === 'ref' && atSchool());
 
+/* La page d'un profil garde l'entrée d'où l'on vient (une classe, le
+   cercle) : « profil » commençait comme « prof », et la barre allumait
+   « Mes classes » quel que soit le chemin (2026-10-26). */
+let dernierOn = 'home';
 function railOn() {
-  if (view.name === 'settings') return 'settings';
-  if (view.name === 'ref') return 'ref:' + (ref.tab || 'accueil');
-  if (view.name === 'admin') return 'adm:' + (adm.tab || 'suivi');
-  if (view.name === 'mod') return 'mod';
-  if (view.name === 'mail' || view.name === 'lettre') return 'mail';
-  if (view.name === 'stats') return 'stats';
-  if (/^(classes|classe$|prof|ref$|admin$)/.test(view.name)) return 'classes';
-  if (/^(commu|friends|club|defi|direct|shared)$/.test(view.name)) return 'commu';
+  if (view.name !== 'profil') dernierOn = railOnDe(view.name);
+  return dernierOn;
+}
+
+function railOnDe(name) {
+  if (name === 'settings') return 'settings';
+  if (name === 'ref') return 'ref:' + (ref.tab || 'accueil');
+  if (name === 'admin') return 'adm:' + (adm.tab || 'suivi');
+  if (name === 'mod') return 'mod';
+  if (name === 'mail' || name === 'lettre') return 'mail';
+  if (name === 'stats') return 'stats';
+  if (/^(classes|classe|prof|profagenda|profclasse)$/.test(name)) return 'classes';
+  if (/^(commu|friends|club|defi|direct|shared)$/.test(name)) return 'commu';
   return 'home';
 }
 
@@ -181,6 +190,10 @@ function railClasseNom() {
 
 const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' : ''}" data-r="${k}">${
   svg(ic)}<span>${nom}</span>${badge ? `<i class="icb">${badge}</i>` : ''}</button>`;
+
+/* Le logo en tête de la barre : un appui ramène à la première page du
+   compte, comme partout ailleurs sur le web. */
+const marqueRail = k => `<button class="brand" data-vers="${k}" aria-label="Folio : accueil">${LOGO}<span>Folio</span></button>`;
 
 const railMailBadge = () => mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0;
 
@@ -198,7 +211,7 @@ function railNavGestion(on) {
     : PAGES_ADM.map(([k, ic, nom]) => [`adm:${k}`, ic, nom, 0]);
   const ent = ([k, ic, nom, badge, pc]) => railEntry(on, k, ic, nom, badge).replace('<button class="', `<button class="${pc ? 'pc ' : ''}`);
   return `
-    <div class="brand"><img src="/icons/icon-192.png" alt=""><span>Folio</span></div>
+    ${marqueRail(pages[0][0])}
     <nav>
       ${pages.map(ent).join('')}
       ${iAmMod ? ent(['mod', I.warn, 'Signalements', mods.list ? mods.list.length : 0]) : ''}
@@ -212,7 +225,7 @@ function railNavBoulot(on, classeNom) {
   if (gestion()) return railNavGestion(on);
   const ent = (k, ic, nom, badge) => railEntry(on, k, ic, nom, badge);
   return `
-    <div class="brand"><img src="/icons/icon-192.png" alt=""><span>Folio</span></div>
+    ${marqueRail('classes')}
     <nav>
       ${ent('classes', I.school, classeNom)}
       ${ent('home', I.layers, 'Livres')}
@@ -242,7 +255,7 @@ const railHasClasses = aUneClasse;
 function railNavHome(on, classeNom) {
   const ent = (k, ic, nom, badge) => railEntry(on, k, ic, nom, badge);
   return `
-    <div class="brand"><img src="/icons/icon-192.png" alt=""><span>Folio</span></div>
+    ${marqueRail('home')}
     <nav>
       ${ent('home', I.layers, 'Livres')}
       ${ent('stats', I.chart, 'Journal')}
@@ -263,16 +276,17 @@ export function allerClasses() {
 }
 
 function railClick(e) {
-  const b = e.target.closest('[data-r]'); if (!b) return;
-  const [quoi, k] = b.dataset.r.split(':');
+  const b = e.target.closest('[data-r],[data-vers]'); if (!b) return;
+  const r = b.dataset.r || b.dataset.vers;      // le logo mène à la première entrée de la barre
+  const [quoi, k] = r.split(':');
   if (quoi === 'ref') return refAller(k);
   if (quoi === 'adm') return admAller(k);
   if (quoi === 'mod') { if (!mods.list) modPull(); return go('mod'); }
-  if (b.dataset.r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
-  if (b.dataset.r === 'stats') { statsPull(); return go('stats'); }
-  if (b.dataset.r === 'commu') { commuPull(); return go('commu'); }
-  if (b.dataset.r === 'classes') return allerClasses();
-  go(b.dataset.r === 'settings' ? 'settings' : 'home');
+  if (r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
+  if (r === 'stats') { statsPull(); return go('stats'); }
+  if (r === 'commu') { commuPull(); return go('commu'); }
+  if (r === 'classes') return allerClasses();
+  go(r === 'settings' ? 'settings' : 'home');
 }
 
 /* Pas de barre sans session, ni pendant l'accueil d'un nouveau compte : rien n'y mène encore. */
@@ -471,7 +485,7 @@ function home() {
   const list = db.decks.filter(d => (peek || !d.hidden) && (!filter || d.subject === filter));
   $.innerHTML = `
     <div class="page ${reorder ? 'frozen' : ''}" id="page">
-      <div class="top">
+      <div class="top">${MARQUE}
         <div class="hero">Mes livres</div>
         ${queueChip()}
         ${goalRing()}

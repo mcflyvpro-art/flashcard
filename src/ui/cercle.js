@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
-import { I, svg } from '../icones.js';
+import { I, MARQUE, svg } from '../icones.js';
 import {
   addQ, asks, auth, board, cercle, compte, duels, friends, mates, mates2, me, school, setAddQ, setAnimate, setMateOpen, view
 } from '../data/etat.js';
@@ -206,7 +206,7 @@ function amisHtml(eleve) {
       <button class="cc-lnk" data-act="friends" aria-label="Gérer">${a ? `<b class="cc-badge">${a}</b>` : ''}${svg(I.arrow)}</button></div>
     <div class="cc-amis">${l.slice(0, 11).map(f => `<button class="cc-ami" data-mate="${esc(f.id)}">
         ${avatar(f.id, f.handle || f.name)}<span>${esc((shortWho(f.name || f.handle) || '').split(' ')[0])}</span></button>`).join('')}
-      <button class="cc-ami plus" data-act="friends"><i class="cc-av vide">${svg(I.plus)}</i><span>Ajouter</span></button></div>
+      <button class="cc-ami plus" data-act="friends"><i class="jt vide">${svg(I.plus)}</i><span>Ajouter</span></button></div>
   </section>`;
 }
 
@@ -214,7 +214,7 @@ export function commuView() {
   const eleve = isPupil();
   $.innerHTML = `
     <div class="page cc" id="page">
-      <div class="top"><div class="hero">Cercle des lecteurs</div></div>
+      <div class="top">${MARQUE}<div class="hero">Cercle des lecteurs</div></div>
       <div class="cc-grille">
         <div class="cc-main">
           ${moiHtml(eleve)}

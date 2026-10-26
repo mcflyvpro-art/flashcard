@@ -46,6 +46,7 @@
 @media (max-width:899px){
   html.en-demo #app{padding-bottom:calc(64px + env(safe-area-inset-bottom))}   /* la fin de la page ne passe pas dessous */
   html.nav-haut .dm-bandeau{bottom:calc(14px + env(safe-area-inset-bottom))}   /* prof et référent : pas d'onglets en bas */
+  html.en-demo:not(.nav-haut) .fab{bottom:calc(140px + env(safe-area-inset-bottom))}   /* le « + » des livres passe au-dessus du bandeau */
 }
 @media (min-width:900px){
   .dm-roles{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none}

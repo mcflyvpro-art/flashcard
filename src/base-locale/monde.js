@@ -80,12 +80,12 @@ const nomComplet = (p, n) => `${p} ${n}`;
 const C = l => l.map(([f, b]) => ({ f, b }));
 const DEVOIRS = [
   { n: 201, classe: 102, prof: 2, nom: 'Fonctions affines', matiere: 'Mathématiques', due: 2, donne: -3, cartes: C([
-    ['Forme d’une fonction affine', 'f(x) = ax + b'], ['Que représente a ?', 'Le coefficient directeur (la pente)'],
-    ['Que représente b ?', 'L’ordonnée à l’origine'], ['f(x) = 2x + 3 : f(0) ?', '3'],
+    ['Forme d’une fonction affine', 'f(x) = ax + b'], ['Que représente a ?', 'Le coefficient directeur (la pente)'],
+    ['Que représente b ?', 'L’ordonnée à l’origine'], ['f(x) = 2x + 3 : f(0) ?', '3'],
     ['Si a > 0, la fonction est…', 'Croissante'], ['Pente de la droite passant par (0 ; 1) et (2 ; 5)', '2']]) },
-  { n: 202, classe: 102, prof: 4, nom: 'Irregular verbs — série 1', matiere: 'Anglais', due: 5, donne: -2, cartes: C([
-    ['to be', 'was / were — been'], ['to go', 'went — gone'], ['to see', 'saw — seen'], ['to take', 'took — taken'],
-    ['to write', 'wrote — written'], ['to buy', 'bought — bought'], ['to think', 'thought — thought'], ['to begin', 'began — begun']]) },
+  { n: 202, classe: 102, prof: 4, nom: 'Irregular verbs, série 1', matiere: 'Anglais', due: 5, donne: -2, cartes: C([
+    ['to be', 'was / were, been'], ['to go', 'went, gone'], ['to see', 'saw, seen'], ['to take', 'took, taken'],
+    ['to write', 'wrote, written'], ['to buy', 'bought, bought'], ['to think', 'thought, thought'], ['to begin', 'began, begun']]) },
   { n: 203, classe: 102, prof: 4, nom: 'Vocabulaire : la ville', matiere: 'Anglais', due: -2, donne: -9, cartes: C([
     ['la mairie', 'the town hall'], ['le carrefour', 'the crossroads'], ['la gare', 'the train station'],
     ['le trottoir', 'the pavement'], ['la bibliothèque', 'the library'], ['le quartier', 'the neighbourhood']]) },
@@ -94,7 +94,7 @@ const DEVOIRS = [
     ['Si Δ = 0', 'Une racine double : −b / 2a'], ['Sommet de la parabole', 'x = −b / 2a'], ['Forme canonique', 'a(x − α)² + β']]) },
   { n: 205, classe: 105, prof: 2, nom: 'Suites arithmétiques', matiere: 'Mathématiques', due: -1, donne: -6, cartes: C([
     ['Définition', 'uₙ₊₁ = uₙ + r'], ['Terme général', 'uₙ = u₀ + n·r'], ['Somme des n premiers termes', 'n × (premier + dernier) / 2'],
-    ['u₀ = 3, r = 2 : u₅ ?', '13'], ['Sens de variation si r > 0', 'Croissante']]) },
+    ['u₀ = 3, r = 2 : u₅ ?', '13'], ['Sens de variation si r > 0', 'Croissante']]) },
   { n: 206, classe: 103, prof: 5, nom: 'La Révolution française', matiere: 'Histoire-géographie', due: 4, donne: -2, cartes: C([
     ['Prise de la Bastille', '14 juillet 1789'], ['Abolition des privilèges', 'Nuit du 4 août 1789'],
     ['Déclaration des droits de l’homme', '26 août 1789'], ['Proclamation de la République', '21 septembre 1792'],
@@ -118,24 +118,24 @@ function travail(rand, eleve, devoir) {
 const MATIERES = [['maths', 'Mathématiques', 'blue'], ['anglais', 'Anglais', 'red'], ['histoire', 'Histoire-géographie', 'amber'],
   ['svt', 'SVT', 'green'], ['espagnol', 'Espagnol', 'coral']];
 const LIVRES = [
-  { n: 301, nom: 'Espagnol — vocabulaire', matiere: 'espagnol', cartes: [['la casa', 'la maison'], ['el perro', 'le chien'],
+  { n: 301, nom: 'Vocabulaire espagnol', matiere: 'espagnol', cartes: [['la casa', 'la maison'], ['el perro', 'le chien'],
     ['la ciudad', 'la ville'], ['el libro', 'le livre'], ['la playa', 'la plage'], ['el tiempo', 'le temps'], ['la semana', 'la semaine'],
     ['el trabajo', 'le travail'], ['la calle', 'la rue'], ['el agua', 'l’eau'], ['la noche', 'la nuit'], ['el viaje', 'le voyage']] },
   { n: 302, nom: 'Dates d’histoire', matiere: 'histoire', cartes: [['Chute de Rome', '476'], ['Sacre de Charlemagne', '800'],
     ['Découverte de l’Amérique', '1492'], ['Révolution française', '1789'], ['Fin de la Première Guerre mondiale', '1918'],
     ['Fin de la Seconde Guerre mondiale', '1945'], ['Traité de Rome', '1957'], ['Premier pas sur la Lune', '1969'],
     ['Chute du mur de Berlin', '1989'], ['Euro en pièces et billets', '2002']] },
-  { n: 303, nom: 'SVT — la cellule', matiere: 'svt', cartes: [['Unité du vivant', 'La cellule'], ['Contient l’ADN', 'Le noyau'],
+  { n: 303, nom: 'La cellule', matiere: 'svt', cartes: [['Unité du vivant', 'La cellule'], ['Contient l’ADN', 'Le noyau'],
     ['Produit l’énergie', 'La mitochondrie'], ['Photosynthèse', 'Le chloroplaste'], ['Enveloppe de la cellule', 'La membrane plasmique'],
     ['Cellule sans noyau', 'Procaryote'], ['Cellule avec noyau', 'Eucaryote'], ['Division cellulaire', 'La mitose']] },
-  { n: 304, nom: 'Anglais — phrasal verbs', matiere: 'anglais', cartes: [['to give up', 'abandonner'], ['to look after', 's’occuper de'],
+  { n: 304, nom: 'Phrasal verbs', matiere: 'anglais', cartes: [['to give up', 'abandonner'], ['to look after', 's’occuper de'],
     ['to find out', 'découvrir'], ['to turn down', 'refuser'], ['to get on with', 's’entendre avec'], ['to put off', 'remettre à plus tard'],
     ['to carry on', 'continuer'], ['to run out of', 'manquer de']] }
 ];
 const LIVRES_MARC = [
-  { n: 311, nom: 'Fonctions — le cours', matiere: 'maths', cartes: [['Image de x', 'f(x)'], ['Antécédent de y', 'x tel que f(x) = y'],
+  { n: 311, nom: 'Fonctions : le cours', matiere: 'maths', cartes: [['Image de x', 'f(x)'], ['Antécédent de y', 'x tel que f(x) = y'],
     ['Ensemble de définition', 'Les x pour lesquels f(x) existe'], ['Fonction carré', 'x ↦ x²'], ['Fonction inverse', 'x ↦ 1/x']] },
-  { n: 312, nom: 'Probabilités — vocabulaire', matiere: 'maths', cartes: [['Univers', 'L’ensemble des issues'],
+  { n: 312, nom: 'Vocabulaire des probabilités', matiere: 'maths', cartes: [['Univers', 'L’ensemble des issues'],
     ['Événement certain', 'Probabilité 1'], ['Événement impossible', 'Probabilité 0'], ['Événements incompatibles', 'P(A ∩ B) = 0']] }
 ];
 
@@ -274,15 +274,29 @@ export function semerMonde(store, graine = 2026) {
   // les clubs sont fermés aux élèves de classe (un élève de classe n'en crée ni n'en rejoint) : ceux du lycée vivent entre anciens
   club(401, 'Les matheux', 23, [24], 'sigma', 1, 'Une page par jour, pas une de moins');
 
+  /* deux défis entre amis : celui de Tom, que Léa n'a pas encore joué ;
+     celui d'Inès, joué par les trois (Léa deuxième) */
+  const defi = (n, de, nom, cartes, il, scores) => {
+    tab(store, 'duels').push({ id: ID(n), owner: ID(de), who: m.noms[ID(de)].split(' ')[0], name: nom, total: cartes.length,
+      cards: cartes, group_id: null, class_id: null, created_at: iso(now - il * JOUR) });
+    for (const [u, score, s] of scores) tab(store, 'duel_scores').push({ id: uuid(), duel_id: ID(n), user_id: u === 'lea' ? lea : ID(u),
+      who: u === 'lea' ? 'Léa' : m.noms[ID(u)].split(' ')[0], score, ms: s * 1000 });
+  };
+  defi(601, 10, 'Capitales d’Europe', [['France', 'Paris'], ['Espagne', 'Madrid'], ['Italie', 'Rome'], ['Allemagne', 'Berlin'],
+    ['Portugal', 'Lisbonne'], ['Belgique', 'Bruxelles'], ['Pologne', 'Varsovie'], ['Grèce', 'Athènes']], 0.3, [[10, 7, 64]]);
+  defi(602, 11, 'Les grandes dates', [['Chute de Rome', '476'], ['Sacre de Charlemagne', '800'], ['Découverte de l’Amérique', '1492'],
+    ['Révolution française', '1789'], ['Fin de la Première Guerre mondiale', '1918'], ['Fin de la Seconde Guerre mondiale', '1945'],
+    ['Premier pas sur la Lune', '1969'], ['Chute du mur de Berlin', '1989']], 3, [[11, 8, 51], ['lea', 7, 58], [10, 6, 73]]);
+
   /* le courrier de Léa */
   const lettre = (n, de, message, livre, matiere, cartes, il, lu) => tab(store, 'mail').push({ id: ID(n), user_id: ID(de),
     from_user: ID(de), to_user: lea, from_name: m.noms[ID(de)], deck_name: livre, subject_name: matiere, message,
     cards: cartes, created_at: iso(now - il * JOUR), read_at: lu ? iso(now - il * JOUR + 3600e3) : null, added_at: null });
-  lettre(501, 10, 'Pour le contrôle de jeudi, je t’ai fait les capitales !', 'Capitales d’Europe', 'Géographie',
+  lettre(501, 10, 'Pour le contrôle de jeudi, je t’ai fait les capitales !', 'Capitales d’Europe', 'Géographie',
     [['France', 'Paris'], ['Espagne', 'Madrid'], ['Italie', 'Rome'], ['Allemagne', 'Berlin'], ['Portugal', 'Lisbonne'],
       ['Belgique', 'Bruxelles'], ['Pologne', 'Varsovie'], ['Grèce', 'Athènes']], 0.6, false);
-  lettre(502, 2, 'Pensez à finir les fonctions affines avant mercredi. Bon courage !', '2nde B', null, [], 2, true);
-  lettre(503, 11, 'Ma fiche sur les suites, si ça peut t’aider', 'Suites — la fiche d’Inès', 'Mathématiques',
+  lettre(502, 2, 'Pensez à finir les fonctions affines avant mercredi. Bon courage !', '2nde B', null, [], 2, true);
+  lettre(503, 11, 'Ma fiche sur les suites, si ça peut t’aider', 'Les suites, la fiche d’Inès', 'Mathématiques',
     [['Suite arithmétique', 'uₙ₊₁ = uₙ + r'], ['Suite géométrique', 'uₙ₊₁ = q·uₙ'], ['Raison', 'r (ou q)']], 4, true);
 
   /* l'historique du référent */
@@ -333,7 +347,7 @@ function semerLicence(store, et, org, now, trace) {
   const msg = (id, il, de, sujet, message, lu) => ({ id, org_id: org.id, de, auteur: de === 'etab' ? COMPTES.ref : null, sujet, message,
     cree: iso(now - il * JOUR), lu: lu ? iso(now - (il - 0.5) * JOUR) : null });
   et.echanges = [
-    msg(1, 8, 'etab', 'places', 'Bonjour, une classe de plus ouvre après les vacances : pouvez-vous ajouter 50 places ?', true),
+    msg(1, 8, 'etab', 'places', 'Bonjour, une classe de plus ouvre après les vacances : pouvez-vous ajouter 50 places ?', true),
     msg(2, 7, 'folio', 'places', 'C’est fait : 50 places de plus dès aujourd’hui. La facture suit, à déposer sur Chorus Pro.', true),
     msg(3, 6, 'folio', 'facture', `Voici la facture F-${an}-0002 (150 € HT), à régler sous trente jours.`, false)
   ];

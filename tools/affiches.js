@@ -33,7 +33,7 @@ const AFFICHES = [
       await p.waitForTimeout(600);
     } },
   { nom: 'prof', role: 'prof', fenetre: { width: 1280, height: 800 }, densite: 1.125,
-    async chemin(p) { await p.getByText('Bonjour, Marc').waitFor(); } },
+    async chemin(p) { await p.getByText(/^Bon(jour|soir), Marc$/).waitFor(); } },
   { nom: 'referent', role: 'ref', fenetre: { width: 1280, height: 800 }, densite: 1.125,
     async chemin(p) { await p.getByText('PRFQ-WT58').waitFor(); } }
 ];
@@ -76,11 +76,25 @@ async function webp(page, png, qualite, echelle = 1) {
   return Buffer.from(b64, 'base64');
 }
 
-const navigateur = await chromium.launch({ executablePath: chrome });
-mkdirSync(SORTIE, { recursive: true });
-for (const a of AFFICHES) {
+/* Les captures du manifeste (public/shots/) : ce que Chrome montre avant
+   d'installer l'app, la bibliothèque de Léa sur ordinateur et au téléphone.
+   La taille en pixels doit être celle que déclare le manifeste. */
+const CAPTURES = [
+  { nom: 'wide', role: 'eleve', fenetre: { width: 1440, height: 900 }, densite: 1,
+    async chemin(p) { await p.locator('aside, nav, .rail').getByText('Livres', { exact: true }).first().click(); } },
+  { nom: 'narrow', role: 'eleve', fenetre: { width: 414, height: 896 }, densite: 1, mobile: true,
+    async chemin(p) { await p.click('[data-act="tab-home"]'); } }
+];
+
+/* Dix heures du matin, aujourd'hui : l'accueil du professeur dit
+   « Bonjour », quelle que soit l'heure où l'on photographie (la démo se
+   sème autour de cette heure-là, rien d'autre ne bouge). */
+const matin = new Date(); matin.setHours(10, 0, 0, 0);
+
+async function ouvrir(a) {
   const ctx = await navigateur.newContext({ viewport: a.fenetre, deviceScaleFactor: a.densite, locale: 'fr-FR',
     isMobile: !!a.mobile, hasTouch: !!a.mobile });
+  await ctx.clock.install({ time: matin });
   const p = await ctx.newPage();
   await p.route(/supabase\.co/, r => r.abort());
   await p.goto(URL_APP);
@@ -89,6 +103,20 @@ for (const a of AFFICHES) {
   // ni le bandeau de la démo ni un message passager sur une affiche
   await p.addStyleTag({ content: '.dm-bandeau,.toast{display:none!important}' });
   await a.chemin(p);
+  return { ctx, p };
+}
+
+const navigateur = await chromium.launch({ executablePath: chrome });
+mkdirSync(SORTIE, { recursive: true });
+for (const a of CAPTURES) {
+  const { ctx, p } = await ouvrir(a);
+  await p.waitForTimeout(1400);
+  writeFileSync(`public/shots/${a.nom}.png`, await p.screenshot());
+  console.log(`shots/${a.nom}.png`);
+  await ctx.close();
+}
+for (const a of AFFICHES) {
+  const { ctx, p } = await ouvrir(a);
   if (a.mobile) await barreEtat(p);
   await p.waitForTimeout(1400);
   const png = await p.screenshot();
