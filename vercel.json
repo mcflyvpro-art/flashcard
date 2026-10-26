@@ -9,7 +9,7 @@
     { "source": "/app/", "destination": "/app", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/((?!assets/|icons/|site/).*)", "destination": "/app.html" }
+    { "source": "/((?!assets/|icons/|site/).*)", "destination": "/app" }
   ],
   "headers": [
     {
