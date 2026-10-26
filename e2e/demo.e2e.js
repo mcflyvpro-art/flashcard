@@ -118,8 +118,10 @@ test.describe('sur ordinateur', () => {
     await expect(page.locator('.rf-ligne', { hasText: '2nde C' })).toBeVisible({ timeout: 10000 });
     expect(parties).toEqual([]);
 
+    // « Quitter » ramène au site, pas à la connexion (2026-10-26)
     await page.locator('.dm-bandeau').getByRole('button', { name: 'Quitter' }).click();
-    await expect(page).toHaveURL(/\/connexion$/, { timeout: 10000 });
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Révise moins. Retiens tout.', { timeout: 10000 });
+    await expect(page).toHaveURL(/\/$/);
     const restes = await page.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]
       .filter(k => /dece0000-|folio\.demo/.test(k)));
     expect(restes).toEqual([]);

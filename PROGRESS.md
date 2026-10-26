@@ -19,7 +19,18 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      46 / 148
-DERNIER   2026-10-26 · La licence du référent (20261026130000) : une place par élève
+DERNIER   2026-10-26 · La page d'accueil, tour 2 (docs/LANDING.md, T2.1 à T2.13) :
+          une lumière bleu-rose plus marquée en haut et dans l'encadré final (plus de
+          vert), « Testé et validé en prépa », l'IA en avant, ni Quizlet ni Anki ; les
+          fiches flottantes ne débordent plus ; la pile du héros se note (Encore et
+          Difficile à gauche, Correct et Facile à droite) ; au téléphone rien n'est
+          rogné ; « Le meilleur moteur de révision au monde » et un an de mémoire
+          animé (src/site/courbes.js : 96 % avec Folio, 16 % sans) ; Folio Campus en
+          trois scènes et trois rôles, dont le référent de l'établissement. Quitter
+          la démo, se déconnecter, « Retour » d'un écran public ramènent au site ;
+          connexion, essai et demande de démo refaits comme le site. Preuves :
+          test/site.test.js 10/10, e2e 69 (site 9/9), Lighthouse 100/100/100/100.
+          Avant : La licence du référent (20261026130000) : une place par élève
           et par professeur (M14.T4), « Ajouter un professeur », « Retirer de
           l'établissement » qui libère la place ; un onglet Licence (places, prix,
           factures et avoirs à leur adresse, imprimables, coordonnées Chorus Pro,

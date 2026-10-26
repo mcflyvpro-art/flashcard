@@ -23,6 +23,20 @@ export const COMPTES = { eleve: ID(1), prof: ID(2), ref: ID(3) };
 
 export const ETAB = { nom: 'Lycée Démo Folio', ville: 'Nîmes', codeEleves: 'DEMXPK47', codeProfs: 'PRFQWT58' };
 
+/* Le visage de la personne n° n (traits de src/avatar.js, à normaliser par
+   ecrireAvatar) et sa couleur de jeton : les mêmes dans la démo, sur sa
+   porte d'entrée (« Essayer Folio », ui/demo.js) et, pour Léa, Marc et
+   Claire, sur la page d'accueil du site (les trois rôles de Folio Campus).
+   Les autres se tirent de leur numéro. */
+const VEDETTES = {
+  1: [{ peau: 1, coiffure: 7, cheveux: 2, yeux: 4, bouche: 0, accessoire: 0, haut: 7 }, 10],
+  2: [{ peau: 3, coiffure: 1, cheveux: 0, yeux: 0, bouche: 0, accessoire: 2, haut: 1 }, 0],
+  3: [{ peau: 0, coiffure: 6, cheveux: 4, yeux: 2, bouche: 2, accessoire: 1, haut: 6 }, 6]
+};
+export const visageDemo = n => (VEDETTES[n] ? VEDETTES[n][0]
+  : { peau: n * 5, coiffure: n * 7, cheveux: n * 3, yeux: n, bouche: n * 2, accessoire: n % 4 ? 0 : n, haut: n * 3 });
+export const teinteDemo = n => (VEDETTES[n] ? VEDETTES[n][1] : n % 12);
+
 const JOUR = 864e5;
 const iso = t => new Date(t).toISOString();
 const dansJours = n => iso(Date.now() + n * JOUR).slice(0, 10);
@@ -190,8 +204,7 @@ export function semerMonde(store, graine = 2026) {
     store.users.push({ id, email: `${(pseudo || prenom).toLowerCase()}@demo.folio.invalid`, password: uuid() });
     m.roles[id] = role; m.noms[id] = nomComplet(prenom, nom); et.membres[id] = org.id;
     profils.push({ id, email: '', handle: pseudo || null, name: nomComplet(prenom, nom) });
-    jetons['p:' + id] = { cle: ecrireAvatar({ peau: n * 5, coiffure: n * 7, cheveux: n * 3, yeux: n, bouche: n * 2, accessoire: n % 4 ? 0 : n, haut: n * 3 }),
-      teinte: n % 12 };
+    jetons['p:' + id] = { cle: ecrireAvatar(visageDemo(n)), teinte: teinteDemo(n) };
     tab(store, 'prefs').push({ id, user_id: id, data: { tuto: 1, bienvenue: 1, name: prenom, goal: 30 } });
     return id;
   };

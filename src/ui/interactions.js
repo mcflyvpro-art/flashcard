@@ -11,6 +11,7 @@ import {
   setPeek, setPendingGrade, setQuiz, setReorder, setSel, setShared,
   setStudy, shared, study, trash, view
 } from '../data/etat.js';
+import { retourPublic } from './routeur.js';
 import { allerClasses, gestion, go, render, retourLivre } from './bibliotheque.js';
 import { commuPull, doAdd, ouvrirProfil } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
@@ -229,7 +230,7 @@ function tapResume() {
 }
 
 const tapSettings = () => go('settings');
-const tapTolog = () => go('login');
+const tapTolog = () => retourPublic();          // l'écran d'avant, ou le site (routeur.js)
 const tapDemande = () => go('demande');
 const tapDecouvrir = () => go('decouvrir');
 const tapMod = () => { if (!mods.list) modPull(); return go('mod'); };

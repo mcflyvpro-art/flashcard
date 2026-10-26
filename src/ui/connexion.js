@@ -25,7 +25,7 @@ import { norm } from './quiz.js';
 import { cartePassage, lierPassage } from './passage.js';
 import { bindReorder } from './reordonner.js';
 import { CONTACT, EDITEUR } from '../editeur.js';
-import { armer, desarmer, synchroniser } from './routeur.js';
+import { armer, desarmer, installee, synchroniser } from './routeur.js';
 import { chargerDemo } from './demo-porte.js';
 
 /* ---------- sélection multiple ----------
@@ -316,13 +316,26 @@ if (/⟦/.test(EDITEUR + CONTACT)) {
     + 'Voir EDITEUR et CONTACT dans src/editeur.js.');
 }
 
+/* ══════════ les écrans publics ══════════
+   Connexion, essai sans compte, demande de démo, mentions avant la
+   connexion : habillés comme la page d'accueil du site (index.html), avec
+   la même lumière bleu-rose derrière (app.css, #app:has(> .pub)). Le logo
+   ramène au site, sauf dans l'app installée, qui n'en a pas. */
+export function pubTete(retour = true) {
+  const m = '<img src="/site/logo.svg" alt="" width="30" height="32"><span>Folio</span>';
+  return `<header class="pub-tete">
+      ${retour ? `<button class="ic" data-act="tolog" aria-label="Retour">${svg(I.back)}</button>` : ''}
+      ${installee() ? `<span class="pub-marque">${m}</span>` : `<a class="pub-marque" href="/" aria-label="Folio, la page d’accueil">${m}</a>`}
+    </header>`;
+}
+const attente = () => `<div class="pub">${pubTete()}<div class="pub-attente">${svg(I.school)}</div></div>`;
+
 /* « Demander une démo » : un établissement qui découvre Folio, sans compte
    (ui/demande-demo.js et sa feuille, chargés à l'ouverture). */
 let demande = null;
 export function demandeView() {
   if (demande) return demande.demandeEcran();
-  $.innerHTML = `<div class="bar"><button class="ic" data-act="tolog" aria-label="Retour">${svg(I.back)}</button></div>
-    <div class="page"><div class="empty">${svg(I.school)}</div></div>`;
+  $.innerHTML = attente();
   import('./demande-demo.js').then(m => { demande = m; if (view.name === 'demande') render(); })
     .catch(() => toast(I.x, 'Le formulaire n’a pas pu s’ouvrir : vérifie ta connexion'));
 }
@@ -332,8 +345,7 @@ export function demandeView() {
 let decouvrir = null;
 export function decouvrirView() {
   if (decouvrir) return decouvrir.decouvrirEcran();
-  $.innerHTML = `<div class="bar"><button class="ic" data-act="tolog" aria-label="Retour">${svg(I.back)}</button></div>
-    <div class="page"><div class="empty">${svg(I.school)}</div></div>`;
+  $.innerHTML = attente();
   chargerDemo().then(m => { decouvrir = m; if (view.name === 'decouvrir') render(); })
     .catch(() => toast(I.x, 'La démo n’a pas pu s’ouvrir : vérifie ta connexion'));
 }
@@ -341,22 +353,18 @@ export function decouvrirView() {
 /* Les textes eux-mêmes se chargent à l'ouverture (ui/legal-textes.js). */
 let textes = null;
 export function legalView() {
-  const titre = LEGAL_TITRES[legalTab];
-  const barre = `<div class="bar"><button class="ic" data-act="${legalBack === 'login' ? 'tolog' : 'settings'}"
-        aria-label="Retour">${svg(I.back)}</button><h1>${esc(titre)}</h1></div>`;
+  const titre = esc(LEGAL_TITRES[legalTab]), pub = legalBack === 'login';
+  const barre = pub ? `${pubTete()}<div class="bar"><h1>${titre}</h1></div>`
+    : `<div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button><h1>${titre}</h1></div>`;
   const onglets = `<div class="pills" id="lgTabs">${Object.entries(LEGAL_TITRES).map(([k, t]) =>
         `<button class="p${legalTab === k ? ' on' : ''}" data-legal="${k}">${esc(t)}</button>`).join('')}</div>`;
+  const page = `${barre}<div class="page">${onglets}
+      <div class="legal">${textes ? textes.legalHtml(textes.LEGAL[legalTab][1]) : '<p>Chargement…</p>'}</div></div>`;
+  $.innerHTML = pub ? `<div class="pub pub-texte">${page}</div>` : page;
   if (!textes) {
-    $.innerHTML = `${barre}<div class="page">${onglets}<div class="legal"><p>Chargement…</p></div></div>`;
     import('./legal-textes.js').then(m => { textes = m; if (view.name === 'legal') render(); })
       .catch(() => toast(I.x, 'Ce texte n’a pas pu s’ouvrir : vérifie ta connexion'));
-    return;
   }
-  $.innerHTML = `${barre}
-    <div class="page">
-      ${onglets}
-      <div class="legal">${textes.legalHtml(textes.LEGAL[legalTab][1])}</div>
-    </div>`;
 }
 
 /* Six caractères se cassent hors ligne en quelques secondes. Dix est
@@ -507,12 +515,21 @@ export async function consumeCarte() {
   }
 }
 
+/* À côté du formulaire, sur un écran large : ce que dit la page d'accueil. */
+const vitrine = () => `<div class="pub-vitrine" aria-hidden="true">
+    <p class="pv-pastilles"><span>${svg(I.school)}Testé et validé en prépa</span><span class="ia">${svg(I.spark)}Boosté à l’IA</span></p>
+    <p class="pv-titre">Révise moins.<br>Retiens <em>tout.</em></p>
+    <div class="pv-fiches">${[['Histoire', '#A8483C', '14 juillet 1789'], ['Maths', '#2F5D8A', 'eˣ + C'], ['SVT', '#2E7A86', 'Mitochondrie']]
+      .map(([m, c, t]) => `<span style="--c:${c}"><small>${m}</small>${t}</span>`).join('')}</div>
+  </div>`;
+
 export function loginView() {
   const up = loginMode === 'up', carte = loginMode === 'carte';
-  $.innerHTML = `<div class="login">
-    <img class="logo" src="/icons/icon-192.png" alt="">
-    <div class="lt">Folio</div>
-    <div class="lsub">Tes cours, reliés en livres.</div>
+  $.innerHTML = `<div class="pub pub-connexion">
+    ${pubTete(false)}
+    <div class="pub-duo">${vitrine()}<div class="login">
+    <h1 class="lt">${up ? 'Bienvenue.' : carte ? 'Ta carte élève.' : 'Bon retour.'}</h1>
+    <p class="lsub">Tes cours, reliés en livres.</p>
     ${cartePassage()}
     <div class="seg lseg" id="lmode">
       <button data-lm="in" class="${up || carte ? '' : 'on'}">Connexion</button>
@@ -535,6 +552,7 @@ export function loginView() {
     </form>`}
     <div class="ldemos"><button class="lnk ldemo" data-act="decouvrir" type="button">${svg(I.play)}Essayer sans compte</button>
       <button class="lnk ldemo" data-act="demande" type="button">${svg(I.school)}Un établissement ? Demander une démo</button></div>
+    </div></div>
     <div class="lleg">${Object.entries(LEGAL_TITRES).map(([k, t]) =>
       `<button data-legal="${k}">${esc(t)}</button>`).join('<i>·</i>')}</div>
   </div>`;

@@ -696,15 +696,45 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
    feuille entière vers la droite */
 .ms span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ---------- connexion ---------- */
-.login{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:0;padding:0 6px 40px}
-.login .logo{width:78px;height:78px;border-radius:22px;box-shadow:var(--s2)}
-.login .lt{margin:16px 0 30px;font-weight:800;font-size:27px;letter-spacing:-.9px}
+/* ══════════ les écrans publics : connexion, essai, demande de démo, mentions ══════════
+   Habillés comme la page d'accueil du site (src/site/site.css) : la même
+   lumière bleu-rose derrière, le logo, des titres en serif, des pilules.
+   La lumière est posée sur #app : passer de la connexion à l'inscription
+   repeint l'écran sans la faire repartir. */
+/* un contexte d'empilement à lui : sans, le fond de <body> se peignait par-dessus la lumière */
+body > #app:has(> .pub){padding:0;position:relative;z-index:0}
+#app:has(> .pub)::before{content:'';position:fixed;inset:-30%;z-index:-1;pointer-events:none;
+  background:radial-gradient(26% 26% at 30% 27%,rgba(90,118,208,.3),transparent 72%),
+    radial-gradient(24% 26% at 73% 29%,rgba(215,100,141,.26),transparent 72%),
+    radial-gradient(22% 24% at 52% 52%,rgba(154,120,207,.14),transparent 72%),
+    radial-gradient(30% 26% at 64% 76%,rgba(215,100,141,.13),transparent 72%);
+  animation:lumiere 28s ease-in-out infinite alternate}
+@keyframes lumiere{to{transform:translate3d(3%,2%,0) rotate(7deg) scale(1.06)}}
+@keyframes pvflotte{to{transform:translateY(-12px)}}
+.pub{flex:1;display:flex;flex-direction:column;width:100%;min-height:100svh;
+  padding:max(6px,env(safe-area-inset-top)) var(--pad) calc(16px + env(safe-area-inset-bottom))}
+.pub-tete{display:flex;align-items:center;gap:12px;min-height:54px;flex:none}
+.pub-tete .ic{background:rgba(255,255,255,.7);box-shadow:var(--edge)}
+.pub-marque{display:inline-flex;align-items:center;gap:9px;color:var(--ink);text-decoration:none;
+  font:700 23px/1 var(--serif);letter-spacing:-.5px}
+.pub-marque img{width:30px;height:32px;filter:drop-shadow(0 3px 5px rgba(46,40,96,.2))}
+.pub-attente{flex:1;display:grid;place-items:center;color:var(--soft)}
+.pub-attente svg{width:30px;height:30px}
+/* un mot éclairé par la marque, comme « tout. » sur la page d'accueil */
+.pv-titre em,.dm-t em,.dd-t em{font-style:italic;padding-right:.08em;color:transparent;
+  background:linear-gradient(100deg,#3E4FA0 8%,#80439C 55%,#B33F6C 94%);-webkit-background-clip:text;background-clip:text}
+.pub-duo{flex:1;display:flex;flex-direction:column;justify-content:center;padding:4px 0 16px}
+.pub-vitrine{display:none}
+/* une carte de verre dépoli posée sur la lumière */
+.login,.pub-texte .legal{background:rgba(255,255,255,.8);-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 1px 2px rgba(29,28,25,.05),0 30px 70px -32px rgba(52,40,110,.38)}
+.login{width:100%;max-width:420px;margin:0 auto;display:flex;flex-direction:column;padding:26px 16px 14px;border-radius:28px}
+.login .lt{margin:0;text-align:center;font:700 34px/1.05 var(--serif);letter-spacing:-1.2px}
+.lsub{margin:7px 0 22px;text-align:center;font:italic 400 16px/1.3 var(--serif);color:var(--soft)}
 .passage{width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:4px 12px;
-  margin:0 0 18px;padding:14px 14px 12px 16px;background:var(--card);box-shadow:var(--edge);border-radius:14px}
+  margin:0 0 18px;padding:14px 14px 12px 16px;background:var(--card);box-shadow:var(--edge);border-radius:16px}
 .passage > svg{width:22px;height:22px;color:var(--ink2)}
-.passage b{font-size:24px;font-weight:750;letter-spacing:1.5px;font-variant-numeric:tabular-nums}
+.passage b{font-size:clamp(19px,5.4vw,24px);font-weight:750;letter-spacing:1px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .passage button{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:10px;
   background:var(--bg2);font-weight:650;font-size:14px}
 .passage button svg{width:16px;height:16px}
@@ -712,12 +742,11 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .lf{width:100%;display:flex;flex-direction:column;gap:10px}
 /* l'écran de connexion s'anime à l'arrivée, pas quand on passe de
    « Se connecter » à « Créer un compte » */
-.fade .login .logo{animation:anneau .4s var(--e) both}
-.fade .login .lt{animation:rise .3s var(--e) .05s both}
-.fade .passage{animation:rise .3s var(--e) .07s both}
-.fade .lf{animation:rise .3s var(--e) .09s both}
+.fade .pub-vitrine{animation:rise .5s var(--e) .04s both}
+.fade .login{animation:rise .45s var(--e) .1s both}
 .lrow{display:flex;align-items:center;gap:12px;background:var(--card);box-shadow:var(--edge);
   border-radius:13px;padding:0 8px 0 16px;height:54px;transition:box-shadow .2s}
+.login .lrow{border-radius:16px}
 .lrow:focus-within{box-shadow:inset 0 0 0 1px rgba(29,28,25,.24),var(--ring)}
 .lrow > svg{width:19px;height:19px;color:var(--soft);flex:none}
 .lrow input{flex:1;min-width:0;height:100%;font-size:16px;font-weight:550;letter-spacing:-.15px}
@@ -728,7 +757,12 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .peek svg{width:19px;height:19px}
 .lerr{min-height:19px;text-align:center;font-size:13.5px;font-weight:650;color:var(--ko);
   padding:0 4px}
-.lf .cta{margin-top:2px}
+.lf .cta{margin-top:2px;border-radius:99px;box-shadow:0 12px 24px -12px rgba(29,28,25,.6)}
+/* les mentions, ouvertes avant la connexion */
+.pub-texte .bar,.pub-texte .page{width:100%;max-width:860px;margin-inline:auto}
+.pub-texte .bar{min-height:0;margin:16px auto 14px}
+.pub-texte .bar h1{font:700 clamp(30px,5vw,44px)/1.05 var(--serif);letter-spacing:-1px;white-space:normal}
+.pub-texte .legal{max-width:none;padding:22px 20px;border-radius:24px}
 
 /* ---------- réglages ---------- */
 .slist{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
@@ -932,7 +966,6 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   #app{padding:32px var(--gut) 64px calc(var(--rail) + var(--gut));min-height:100vh}
   #app > *{width:100%;max-width:var(--wide);margin-inline:auto}
   #app > .fab,#app > .tabs{width:auto;max-width:none;margin:0}
-  #app > .login{max-width:400px}
   /* sans session, pas de barre latérale : la page se centre sur tout l'écran */
   #app[data-view="login"],#app[data-view="legal"],#app[data-view="demande"],#app[data-view="decouvrir"],#app[data-view="bienvenue"]{padding-left:var(--gut)}
   .top [data-act="settings"],.top [data-act="mail"]{display:none}   /* la barre latérale les porte déjà */
@@ -1055,10 +1088,24 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   .el-grille{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:0 28px;align-items:start}
   .el-grille > div > .el-h2:first-child{margin-top:0}
 
-  /* ---------- connexion ---------- */
-  .login{max-width:400px;margin-inline:auto}
-  .login .logo{width:64px;height:64px;border-radius:18px}
-  .login .lt{font-size:28px;margin:16px 0 28px}
+  /* ---------- les écrans publics : la vitrine à côté du formulaire ---------- */
+  .pub{padding:12px 40px 18px}
+  .pub-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,430px);align-items:center;
+    gap:clamp(40px,6vw,100px);width:100%;max-width:1160px;margin:0 auto}
+  .pub-vitrine{display:flex;flex-direction:column;align-items:flex-start;gap:26px}
+  .pv-pastilles{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+  .pv-pastilles span{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px 0 10px;border-radius:99px;
+    background:rgba(255,255,255,.78);box-shadow:var(--edge);font-size:13.5px;font-weight:700}
+  .pv-pastilles svg{width:17px;height:17px;color:#3E58A8}
+  .pv-pastilles .ia svg{color:#9C3F86}
+  .pv-titre{margin:0;font:700 clamp(56px,6.4vw,94px)/.95 var(--serif);letter-spacing:-.045em}
+  .pv-fiches{display:flex;gap:14px;margin-top:8px}
+  .pv-fiches span{display:flex;flex-direction:column;gap:6px;min-width:150px;padding:14px 16px;border-radius:16px;background:var(--card);
+    box-shadow:inset 4px 0 0 var(--c),var(--s3);font:700 17px/1.2 var(--serif);rotate:-4deg;animation:pvflotte 7s ease-in-out infinite alternate}
+  .pv-fiches span:nth-child(2){rotate:3deg;translate:0 16px;animation-delay:-2.4s}
+  .pv-fiches span:nth-child(3){rotate:-1.5deg;animation-delay:-4.8s}
+  .pv-fiches small{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--c)}
+  .login{padding:32px 26px 16px}
 
   /* ---------- survol, seulement à la souris ---------- */
   @media (hover:hover){
@@ -1169,8 +1216,9 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .mrr{min-height:17px;text-align:center;font-size:13px;font-weight:650;color:var(--ko);padding:0 16px}
 
 /* ══════════ connexion ══════════ */
-.lseg{width:100%;margin-bottom:16px}
-.lseg button{height:40px}
+.lseg{width:100%;gap:3px;flex-wrap:nowrap;margin-bottom:16px;padding:4px;border-radius:99px;background:rgba(29,28,25,.06)}
+.lseg button{flex:1 1 auto;min-width:0;height:38px;padding:0 8px;border-radius:99px;background:none;white-space:nowrap}
+.lseg button.on{box-shadow:0 6px 14px -6px rgba(29,28,25,.55)}
 .lnk{display:inline-flex;align-items:center;justify-content:center;gap:7px;
   margin-top:12px;align-self:center;font-size:13.5px;font-weight:650;color:var(--soft);
   padding:8px 12px;border-radius:10px;transition:background .2s,color .2s}
@@ -1182,8 +1230,8 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .payant[data-astuce]:hover::after,.payant[data-astuce]:focus-visible::after{content:attr(data-astuce);position:absolute;left:50%;
   bottom:calc(100% + 6px);transform:translateX(-50%);padding:5px 9px;border-radius:8px;background:var(--ink);color:#fff;
   font-size:12px;font-weight:650;white-space:nowrap;z-index:5;pointer-events:none}
-.ldemos{display:flex;flex-direction:column;align-items:center;margin-top:6px}
-.ldemos .lnk{margin-top:2px}
+.ldemos{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair)}
+.ldemos .lnk{margin:0;border-radius:99px}
 
 @media (min-width:900px){
   .grades{gap:10px}
@@ -1952,10 +2000,6 @@ body.touring .toast{display:none}
 .tdemo{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:8px;
   background:var(--surf2);color:var(--ink2);font-size:10.5px;font-weight:800;
   letter-spacing:.3px;text-transform:none;vertical-align:1px}
-/* la signature sous le titre, à l'ouverture */
-.lsub{font-family:var(--serif);font-size:15px;font-style:italic;color:var(--soft);
-  margin:-10px 0 22px;text-align:center}
-.lt{font-family:var(--serif);letter-spacing:-.5px}
 .brand span{font-family:var(--serif);font-weight:700;letter-spacing:-.2px}
 
 /* ══════════ le livre ouvert ══════════ */
@@ -2107,7 +2151,7 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 
 /* les trois liens sous le formulaire de connexion */
 .lleg{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;
-  gap:8px;margin-top:22px;font-size:12.5px;color:var(--soft)}
+  gap:8px;margin-top:auto;padding-top:14px;font-size:12.5px;color:var(--soft)}
 .lleg button{font-size:12.5px;color:var(--soft);text-decoration:underline;
   text-underline-offset:2px;padding:4px 2px}
 .lleg i{font-style:normal;opacity:.5}

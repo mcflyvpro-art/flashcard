@@ -94,11 +94,14 @@ const SEULE = [2, 3, 0, 2, 1, 3];          // ce que la pile joue quand on la la
 function essai() {
   const e = document.getElementById('essai');
   if (!e) return;
-  const cartes = [...e.querySelectorAll('.carte')];
   const boutons = [...e.querySelectorAll('[data-note]')];
   const retour = e.querySelector('.essai-retour');
-  let suivante = cartes.length, tour = 0, occupe = false, auto = !reduit.matches, visible = false, minuteur = 0;
-  const dessus = () => cartes.find(c => c.dataset.rang === '0');
+  /* `ordre` : les fiches de la pile, du dessus au fond. Celle qu'on note en
+     sort tout de suite (on peut noter la suivante pendant qu'elle vole) et
+     y revient par le fond, avec la fiche d'après, une fois partie. */
+  const ordre = [...e.querySelectorAll('.carte')];
+  let suivante = ordre.length, tour = 0, attente = false, auto = !reduit.matches, visible = false, minuteur = 0;
+  const ranger = () => ordre.forEach((x, i) => { x.dataset.rang = String(Math.min(i, 3)); });
   const remplir = (c, i) => {
     const [m, couleur, recto, verso] = PILE[i % PILE.length];
     c.style.setProperty('--c', couleur);
@@ -118,8 +121,10 @@ function essai() {
   };
 
   function lancer(c, note) {
+    ordre.shift();
+    ranger();                              // les suivantes avancent d'un rang
+    c.dataset.rang = 'part';
     c.classList.add('part');
-    cartes.forEach(x => { if (x !== c) x.dataset.rang = String(+x.dataset.rang - 1); });
     dire(note.dans);
     let vol = null;
     const fin = () => {
@@ -130,7 +135,8 @@ function essai() {
       void c.offsetWidth;
       if (vol) vol.cancel();               // l'envol gardait sa dernière image : elle s'efface, la fiche est déjà au fond
       c.classList.remove('net');
-      occupe = false;
+      ordre.push(c);
+      ranger();
       planifier();
     };
     if (reduit.matches) return fin();
@@ -145,20 +151,20 @@ function essai() {
 
   /* Noter la fiche du dessus : on voit d'abord la réponse, puis elle part. */
   function noter(n) {
-    if (occupe) return;
-    occupe = true;
+    if (attente || !ordre.length) return;
     clearTimeout(minuteur);
-    const c = dessus();
+    const c = ordre[0];
     if (c.classList.contains('retournee') || reduit.matches) return lancer(c, NOTES[n]);
+    attente = true;
     c.classList.add('retournee');
-    setTimeout(() => lancer(c, NOTES[n]), 380);
+    setTimeout(() => { attente = false; lancer(c, NOTES[n]); }, 380);
   }
 
   function planifier() {
     clearTimeout(minuteur);
-    if (!auto || !visible || occupe) return;
+    if (!auto || !visible || attente || ordre.length < 4) return;
     minuteur = setTimeout(() => {
-      dessus().classList.add('retournee');
+      ordre[0].classList.add('retournee');
       minuteur = setTimeout(() => { const n = SEULE[tour++ % SEULE.length]; appuyer(n); noter(n); }, 1500);
     }, 1400);
   }
@@ -166,9 +172,9 @@ function essai() {
   const prendreLaMain = () => { auto = false; clearTimeout(minuteur); e.classList.add('joue'); };
   boutons.forEach(b => b.addEventListener('click', () => { prendreLaMain(); noter(+b.dataset.note); }));
   e.querySelector('.essai-pile').addEventListener('click', () => {
-    if (occupe) return;
+    if (attente || !ordre.length) return;
     prendreLaMain();
-    dessus().classList.toggle('retournee');
+    ordre[0].classList.toggle('retournee');
   });
   vu(e, x => { visible = x.isIntersecting; if (visible) planifier(); else clearTimeout(minuteur); }, { threshold: .4 });
 }

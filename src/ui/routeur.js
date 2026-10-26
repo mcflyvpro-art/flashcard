@@ -204,6 +204,24 @@ export function armerSur(e) {
    temps que le rôle soit connu. */
 export function desarmer() { arme = false; }
 
+/* ---------- vers le site ----------
+   L'app vit à côté de la page d'accueil du site (index.html, à la racine).
+   Quitter la démo, se déconnecter, revenir d'un écran public ouvert depuis
+   le site ramènent au site : la connexion, c'est quand on veut se
+   connecter (demandé le 2026-10-26). L'app installée (icône d'écran
+   d'accueil, Capacitor) n'a pas de site : elle reste sur sa connexion. */
+export const installee = () => !!(window.Capacitor || navigator.standalone
+  || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
+
+/* « Retour » d'un écran public (essai, demande de démo, mentions) : l'écran
+   d'avant s'il est dans l'app (rang > 0 : une entrée que l'app a posée), le
+   site sinon. */
+export function retourPublic() {
+  if (rang > 0) return history.back();
+  if (installee()) return go('login');
+  location.assign('/');
+}
+
 /* Sans session : l'écran public de l'adresse (connexion, inscription,
    carte, mentions, démo, demande de démo), puis l'adresse suit. */
 export function armerSansSession(e) {

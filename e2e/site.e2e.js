@@ -104,3 +104,50 @@ test('l’aiguillage : avec une session, la racine ouvre l’app ; « ?site » m
   await page.goto('./?site');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(TITRE);
 });
+
+test('la pile du héros se note : Facile l’envoie à droite, Encore à gauche, la suivante avance', async ({ page }) => {
+  await page.goto('./');
+  const essai = page.locator('#essai');
+  await essai.scrollIntoViewIfNeeded();
+  const dessus = () => essai.locator('.carte[data-rang="0"] .face:not(.verso) b');
+  await expect(dessus()).toHaveText('Prise de la Bastille');
+  await essai.getByRole('button', { name: /^Facile/ }).click();
+  await expect(essai.locator('.essai-retour')).toHaveText('Revient dans 9 jours');
+  await expect(dessus()).toHaveText('Mitochondrie');
+  await expect(essai.locator('.essai-indice')).toHaveCSS('opacity', '0');      // « Clique pour tester » a servi
+  await essai.getByRole('button', { name: /^Encore/ }).click();
+  await expect(essai.locator('.essai-retour')).toHaveText('Revient dans 1 min');
+  await expect(dessus()).toHaveText('to take for granted', { timeout: 5000 });
+});
+
+test('Folio Campus : chaque rôle montre son espace et mène à sa démo', async ({ page }) => {
+  await page.goto('./');
+  const roles = page.locator('.roles');
+  await roles.scrollIntoViewIfNeeded();
+  await expect(page.locator('#p-prof')).toBeVisible();
+  await roles.getByRole('tab', { name: /Référent de l’établissement/ }).click();
+  await expect(page.locator('#p-ref')).toBeVisible();
+  await expect(page.locator('#p-prof')).toBeHidden();
+  await expect(page.locator('#essai-espace')).toHaveAttribute('href', '/demo/referent');
+  await roles.getByRole('tab', { name: /Élève/ }).click();
+  await expect(page.locator('#essai-espace')).toHaveAttribute('href', '/demo/eleve');
+  await page.locator('#essai-espace').click();
+  await expect(page).toHaveURL(/\/demo\/eleve/, { timeout: 10000 });
+  await expect(page.locator('.dm-bandeau')).toBeVisible({ timeout: 10000 });
+});
+
+test('« Retour » d’un écran ouvert depuis le site ramène au site, pas à la connexion', async ({ page }) => {
+  await page.goto('./');
+  await page.locator('.heros').getByRole('link', { name: 'Essayer sans compte' }).click();
+  await expect(page.locator('.dm-role')).toHaveCount(3, { timeout: 10000 });
+  await page.getByRole('button', { name: 'Retour' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(TITRE, { timeout: 10000 });
+
+  // depuis la connexion, il revient à la connexion
+  await page.goto('./connexion');
+  await page.getByRole('button', { name: 'Essayer sans compte' }).click();
+  await expect(page).toHaveURL(/\/essayer$/);
+  await page.getByRole('button', { name: 'Retour' }).click();
+  await expect(page).toHaveURL(/\/connexion$/);
+  await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible();
+});

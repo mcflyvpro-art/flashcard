@@ -91,7 +91,7 @@ button{font:inherit;color:inherit}
 .tete.colle{background:rgba(247,245,240,.8);-webkit-backdrop-filter:saturate(170%) blur(16px);backdrop-filter:saturate(170%) blur(16px);box-shadow:0 1px 0 var(--filet)}
 .tete-in{display:flex;align-items:center;gap:18px;height:68px}
 .marque{display:inline-flex;align-items:center;gap:10px;color:var(--encre);text-decoration:none;font:700 25px/1 var(--serif);letter-spacing:-.02em}
-.marque-livres{width:34px;height:36px;filter:drop-shadow(0 3px 5px rgba(46,40,96,.18))}
+.marque-livres{width:34px;height:36px}
 .tete-liens{display:flex;gap:2px;list-style:none;margin:0 auto;padding:0}
 .tete-liens a{display:block;padding:9px 14px;border-radius:99px;color:var(--encre2);text-decoration:none;font-weight:600;font-size:15px;transition:background-color .2s,color .2s}
 .tete-liens a:hover{background:rgba(29,28,25,.05);color:var(--encre)}
@@ -121,7 +121,7 @@ button{font:inherit;color:inherit}
 .t4{width:84vw;height:64vw;left:2vw;top:44vw;background:radial-gradient(closest-side,rgba(215,100,141,.14),rgba(90,118,208,.06) 62%,transparent);animation-duration:38s}
 
 .heros-texte{display:flex;flex-direction:column;align-items:center;text-align:center}
-.pile{width:clamp(96px,11vw,132px);height:auto;overflow:visible;margin-bottom:12px;filter:drop-shadow(0 16px 26px rgba(52,40,110,.2))}
+.pile{width:clamp(96px,11vw,132px);height:auto;overflow:visible;margin-bottom:12px}
 .pile .l{animation:pose .95s var(--rebond) both}
 .pile .l-noir{animation-delay:.05s}
 .pile .l-gris{animation-delay:.28s}
