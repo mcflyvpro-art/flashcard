@@ -49,7 +49,7 @@ function merci() {
    depuis les Réglages d'un compte, une page de l'app comme une autre. */
 export function demandeEcran() {
   const corps = `<div class="dd-pitch">
-        <p class="dd-sur">Folio Campus</p>
+        <p class="dd-marque"><span class="dd-ic" aria-hidden="true"><img src="/site/logo.svg" alt="" width="26" height="28"><i>${svg(I.school)}</i></span><span>Folio <em>Campus</em></span></p>
         <h1 class="dd-t">Folio pour votre <em>établissement.</em></h1>
         <ul class="dd-points">
           <li>${svg(I.school)}<span>Un code pour tout l’établissement</span></li>

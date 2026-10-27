@@ -355,6 +355,23 @@ button{font:inherit;color:inherit}
 .pt-avec{top:calc(var(--ya) * 100%);background:#F38DB2;box-shadow:0 0 0 3px rgba(243,141,178,.35)}
 .pt-sans{top:calc(var(--ys) * 100%);background:#C9C3D3}
 
+/* les deux moteurs : Memory Engine Lite (gratuit), Ultra (Folio+ et Campus), mis en avant */
+.moteurs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;max-width:1100px;margin:18px auto 0}
+.moteur-carte{display:flex;flex-direction:column;gap:8px;padding:24px 26px 26px;border-radius:26px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
+/* un nom de moteur, à la façon d'une fiche technique : « Memory Engine » et son rang */
+.moteur-carte h3{font:800 clamp(23px,2.3vw,29px)/1.1 var(--sans);letter-spacing:-.035em}
+.moteur-carte h3 span{font-weight:900;text-transform:uppercase;letter-spacing:.02em}
+.moteur-carte p{color:var(--doux);font-size:15.5px;line-height:1.45}
+.moteur-carte .moteur-offre{font:800 11.5px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--doux)}
+.moteur-plus{border:2px solid transparent;color:var(--creme);
+  background:linear-gradient(var(--nuit),var(--nuit)) padding-box,linear-gradient(115deg,#8DA2F0,#B996EC 52%,#F38DB2) border-box;box-shadow:var(--ombre2)}
+.moteur-plus h3{background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text;color:transparent;align-self:flex-start;padding-right:.08em}
+.moteur-plus p{color:var(--creme2)}
+.moteur-plus .moteur-offre{color:#C9C2D6}
+.moteur-plus .plus{background-image:linear-gradient(135deg,#8DA2F0 24%,#B996EC 50%,#F38DB2 76%)}
+.moteur-plus .lien{margin-top:auto;padding-top:8px;align-self:flex-start;color:var(--creme);font-weight:700;text-decoration-color:rgba(243,238,227,.3)}
+.moteurs .rv:nth-child(2){transition-delay:.1s}
+
 /* ---------- ce qu'il y a dedans ---------- */
 .atouts{padding-top:clamp(96px,13vw,170px)}
 .bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;margin-top:clamp(34px,5vw,60px)}
@@ -801,6 +818,7 @@ button{font:inherit;color:inherit}
   .essai{position:relative;left:auto;bottom:auto;width:min(320px,100%);margin:54px auto 0;translate:0 calc((1 - var(--p)) * 40px)}
   .essai-pile{height:128px}
   .moteur-tete .titre{max-width:none}
+  .moteurs{grid-template-columns:minmax(0,1fr)}
   .courbe-zone{grid-template-rows:250px auto;gap:8px 10px}
   .axe-y{width:34px}
   .axe-y span,.axe-x span{font-size:11.5px}
@@ -841,7 +859,7 @@ button{font:inherit;color:inherit}
 
 /* ---------- contraste forcé : le texte dégradé redevient du texte ---------- */
 @media (forced-colors:active){
-  .titre em,.titre-heros .mot:nth-child(4),.pastille-ia span,.plus,.campus-marque em{background:none;color:CanvasText}
+  .titre em,.titre-heros .mot:nth-child(4),.pastille-ia span,.plus,.campus-marque em,.moteur-plus h3{background:none;color:CanvasText}
 }
 /* un tout petit téléphone : le logo seul, le bouton d'inscription garde sa place */
 @media (max-width:360px){

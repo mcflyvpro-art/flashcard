@@ -1,7 +1,8 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
-import { setAuth, setDb, setDemoEtab, demoEtab } from '../data/etat.js';
+import { db, setAuth, setDb, setDemoEtab, demoEtab } from '../data/etat.js';
+import { deDevoir } from '../file.js';
 import { esc, flush, pull, setOnline } from '../core/coeur-sync.js';
 import { accueil } from '../core/classement.js';
 import { nouveauStore, repondre } from '../base-locale/serveur.js';
@@ -144,6 +145,8 @@ const ENVIES = {
     s: `Dépose le PDF d’un cours\u202f: l’IA en tire les flashcards. Avec Folio+, ${PRIX}.` },
   exercices: { t: 'QCM et associations',
     s: `Quatre réponses au choix, ou des paires à relier, tirées de tes pages\u202f: de quoi t’entraîner avant le contrôle. Avec Folio+, ${PRIX}.` },
+  livres: { t: 'Ta bibliothèque est pleine',
+    s: `Folio gratuit garde 5\u00a0livres. Avec Folio+, des livres sans limite, ${PRIX}.` },
   media: { t: 'Des images et des sons sur tes pages',
     s: `Un schéma, une carte, la prononciation d’un mot\u202f: ils se glissent sur tes pages. Avec Folio+, ${PRIX}.` }
 };
@@ -155,8 +158,21 @@ const PLUS_SEUL = {
   exercices: '[data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"]',
   media: '[data-mact^="med-"]'
 };
+/* 5 livres à soi en Folio gratuit (les devoirs ne comptent pas) : au-delà,
+   « Nouveau livre » se grise partout où il est (html.en-demo-plein,
+   recalculé à chaque rendu de l'app) et ouvre la fenêtre. */
+const LIVRES_GRATUITS = 5;
+const plein = () => document.documentElement.classList.contains('en-demo-libre')
+  && ((db && db.decks) || []).filter(d => !d.deleted_at && !deDevoir(d.cards || [])).length >= LIVRES_GRATUITS;
+let image = 0;
+new MutationObserver(() => {
+  if (image) return;
+  image = requestAnimationFrame(() => { image = 0; document.documentElement.classList.toggle('en-demo-plein', !!demoEtab && plein()); });
+}).observe(document.body, { childList: true, subtree: true });
+
 document.addEventListener('click', ev => {
   if (!demoEtab || !document.documentElement.classList.contains('en-demo-libre')) return;
+  if (ev.target.closest('[data-act="new"]') && plein()) { ev.stopPropagation(); ev.preventDefault(); envie('livres'); return; }
   const cle = Object.keys(PLUS_SEUL).find(k => ev.target.closest(PLUS_SEUL[k]));
   if (!cle) return;
   ev.stopPropagation(); ev.preventDefault();
