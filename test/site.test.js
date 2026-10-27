@@ -51,6 +51,15 @@ describe('page d’accueil', () => {
     expect(fautes).toEqual([]);
   });
 
+  /* « Fiche » trompe : en français, une fiche de révision est un résumé
+     écrit. La page dit « un livre de flashcards », des pages recto verso
+     (demandé le 2026-10-27). */
+  it('aucune « fiche » dans le texte affiché : des pages, des livres, des flashcards', () => {
+    const fautes = texteVisible(html).split('\n').filter(l => /\bfiches?\b/i.test(l)).map(l => l.trim());
+    expect(fautes).toEqual([]);
+    expect(texteVisible(html)).toMatch(/livre de flashcards/);
+  });
+
   it('les données structurées se lisent', () => {
     for (const s of scripts.filter(x => /application\/ld\+json/.test(x.attrs))) {
       expect(() => JSON.parse(s.code)).not.toThrow();

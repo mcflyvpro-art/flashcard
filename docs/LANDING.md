@@ -72,12 +72,12 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
   le logo en « sprite » (entre `<!-- logo:debut -->` et `<!-- logo:fin -->`,
   réécrit par `tools/logo.py`) et les icônes (tracés Lucide). Sections, dans
   l'ordre : en-tête collant · héros (la pile qui se pose, le titre mot par
-  mot, un portable qui se redresse au défilement, un téléphone, des fiches
+  mot, un portable qui se redresse au défilement, un téléphone, des pages
   qui flottent et se retournent, et **la pile qu'on note** : Encore et
   Difficile l'envoient à gauche, Correct et Facile à droite, les suivantes
   avancent, « Revient dans 4 jours » ; elle se joue seule tant qu'on n'y
   touche pas) · matières qui défilent · le moteur (« au monde », une phrase,
-  un an de mémoire de cinq fiches avec et sans Folio, une tête de lecture
+  un an de mémoire de cinq pages avec et sans Folio, une tête de lecture
   qu'on promène, les deux chiffres dans la légende) · « Du cours au
   concours » (six tuiles animées, l'IA dans la première) · Folio Campus
   (fond sombre : trois scènes animées, « Deux codes », « Chacun entre »,
@@ -119,6 +119,7 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
 ```sh
 npm run build && npx vite preview --port 4190 --strictPort &
 node tools/affiches.js          # réécrit public/site/affiches/*.webp et public/site/og.jpg
+node tools/affiches.js og       # l'image de partage seule (son texte et sa page sont dans le script)
 npm run build                   # les fichiers de public/ ne sont copiés qu'au build
 ```
 
@@ -281,8 +282,8 @@ recto), « flashcards » dit tout de suite ce que c'est. « Fiche » ne
 s'écrit plus nulle part sur la page.
 
 - [x] T4.1 La charte de l'app sur la page : chaque fiche dessinée (héros, pile qu'on note, tuiles, appel final) devient une **page de son livre** (le papier de la couverture `c`, son filet `b`, la matière en petites capitales et la pastille de sa reliure `d`, le grand signet) ; les matières qui défilent sont de petits livres (dos et couverture) ; les teintes viennent du nuancier (`src/couleurs.js`) ; ce qui se compte est en azur (calendrier du journal, avancement d'un devoir, podium) ; les états en `--ok`/`--ko`/`--am` ; les boutons de note comme dans l'app (papier blanc, mot en couleur, délai dessous) ; les affiches et l'image de partage vérifiées, refaites si besoin. **Fait** : quatorze règles `[data-teinte=…]` dans `site.css` (vérifiées contre `src/couleurs.js` par `test/site.test.js`), le signet partagé (`--sw`, `--sr`), la couleur d'un visage en `--j` (plus en `--c`, qui est désormais la couverture), les médailles de l'app sur le podium (chiffre à l'encre : en blanc sur l'or, 2,3:1), le papier de la page `#F6F5F1` comme l'app, la serif de l'app (Charter avant Palatino). Les affiches datent d'après le changement de couleurs (d078484) : gardées ; l'image de partage se refait avec les nouveaux textes (T4.2).
-- [ ] T4.2 Le vocabulaire : « livre de flashcards », « page », « recto/verso » partout (chapeau, `description`, Open Graph, Twitter, JSON-LD, FAQ, `aria-label`, légende du graphique, tarifs, tableau).
-- [ ] T4.3 La phrase du moteur, élevée.
+- [x] T4.2 Le vocabulaire : « livre de flashcards », « page », « recto/verso » partout (chapeau, `description`, Open Graph, Twitter, JSON-LD, FAQ, `aria-label`, légende du graphique, tarifs, tableau). **Fait** : chapeau « L’IA fait de ton cours un livre de flashcards. Folio te repose chaque page juste avant que tu l’oublies. » ; la tuile de l'import dit ce qu'est une page (« Une question au recto de chaque page, la réponse au verso. ») ; une question de plus en tête de la FAQ, « C’est quoi, un livre de flashcards ? » (et dans le JSON-LD, qui doit rester identique à la FAQ visible) ; l'image de partage refaite (`node tools/affiches.js og`, nouvelle option) avec ce texte et une page d'histoire dessinée comme dans l'app. `test/site.test.js` refuse désormais « fiche » dans le texte affiché.
+- [x] T4.3 La phrase du moteur, élevée : « Il apprend ta mémoire, page après page, et te rend chacune au moment où elle allait s’effacer. » (« juste avant » reste la promesse du héros ; ici, ce que fait le moteur, sans surpromettre un « instant précis »).
 - [ ] T4.4 Folio Campus : la marque (logo + « Campus » dans la lumière de la marque) et une étiquette « Pour les établissements » ; « Déployé dans tout votre établissement en dix minutes » ; « Cartes élève sans e-mail » remplacée par une fonction claire (tuile, offre, tableau) ; un appel à la démo en fin de bloc.
 - [ ] T4.5 Le « + » de Folio+ dans le dégradé de « tout. » (titre des tarifs, offre, tableau).
 - [ ] T4.6 Les appels à l'action : un seul geste principal par écran, honnête (« Commencer gratuitement », « Demander une démo »), rien de faux (ni compte à rebours, ni « le plus choisi »), le téléphone garde toujours un bouton d'inscription en vue.

@@ -5,6 +5,7 @@
 // À relancer quand ces écrans changent de visage :
 //   npm run build && npx vite preview --port 4190 --strictPort &
 //   node tools/affiches.js            (AFFICHES_URL pour une autre adresse)
+//   node tools/affiches.js og         (l'image de partage seule, depuis les affiches déjà là)
 // Le WebP est encodé par le navigateur lui-même (canvas) : aucun outil de
 // plus à installer. docs/LANDING.md.
 import { chromium } from '@playwright/test';
@@ -110,14 +111,15 @@ async function ouvrir(a) {
 
 const navigateur = await chromium.launch({ executablePath: chrome });
 mkdirSync(SORTIE, { recursive: true });
-for (const a of CAPTURES) {
+const seulOg = process.argv.includes('og');
+for (const a of seulOg ? [] : CAPTURES) {
   const { ctx, p } = await ouvrir(a);
   await p.waitForTimeout(1400);
   writeFileSync(`public/shots/${a.nom}.png`, await p.screenshot());
   console.log(`shots/${a.nom}.png`);
   await ctx.close();
 }
-for (const a of AFFICHES) {
+for (const a of seulOg ? [] : AFFICHES) {
   const { ctx, p } = await ouvrir(a);
   if (a.mobile) await barreEtat(p);
   await p.waitForTimeout(1400);
@@ -138,7 +140,7 @@ const og = await (await navigateur.newContext({ viewport: { width: 1200, height:
 await og.setContent(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
   body{margin:0;width:1200px;height:630px;overflow:hidden;font-family:Inter,system-ui,sans-serif;color:#1D1C19;
     background:radial-gradient(48% 64% at 6% 0%,rgba(90,118,208,.30),transparent),radial-gradient(44% 60% at 100% 24%,rgba(215,100,141,.26),transparent),
-    radial-gradient(40% 50% at 42% 30%,rgba(154,120,207,.16),transparent),radial-gradient(50% 50% at 60% 110%,rgba(215,100,141,.12),transparent),#F7F5F0}
+    radial-gradient(40% 50% at 42% 30%,rgba(154,120,207,.16),transparent),radial-gradient(50% 50% at 60% 110%,rgba(215,100,141,.12),transparent),#F6F5F1}
   .g{position:absolute;left:72px;top:70px;width:560px}
   .m{display:flex;align-items:center;gap:14px;font:700 44px 'Bitstream Charter',Charter,Georgia,serif;letter-spacing:-1px}
   .m svg{width:74px;height:auto}
@@ -156,15 +158,19 @@ await og.setContent(`<!doctype html><html lang="fr"><head><meta charset="utf-8">
     box-shadow:0 40px 70px -24px rgba(29,28,25,.55)}
   .tel img{display:block;width:100%;border-radius:22px}
   .tel i{position:absolute;top:13px;left:50%;width:48px;height:13px;margin-left:-24px;border-radius:9px;background:#0A0A09}
-  .f{position:absolute;left:575px;top:380px;width:200px;padding:14px 16px;border-radius:14px;background:#fff;transform:rotate(-6deg);
-    box-shadow:inset 4px 0 0 #A8483C,0 18px 40px -16px rgba(29,28,25,.4)}
-  .f small{display:block;font:800 11px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8483C}
-  .f b{display:block;margin-top:5px;font:700 21px 'Bitstream Charter',Georgia,serif}
+  /* une page d'histoire, dessinée comme dans l'app : la couverture de sa teinte (moutarde,
+     src/couleurs.js), son filet, la matière et la pastille de sa reliure, le signet */
+  .f{position:absolute;left:575px;top:380px;width:210px;padding:15px 16px;border-radius:14px;background:#F9EED7;transform:rotate(-6deg);
+    box-shadow:inset 0 0 0 1px #E9D7B0,0 18px 40px -16px rgba(29,28,25,.4)}
+  .f::before{content:'';position:absolute;right:15px;top:0;width:14px;height:28px;background:#CCA855;clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%)}
+  .f small{display:flex;align-items:center;gap:6px;font:800 11px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#513C00}
+  .f small::before{content:'';width:7px;height:7px;border-radius:50%;background:#CCA855}
+  .f b{display:block;margin-top:6px;font:700 21px 'Bitstream Charter',Georgia,serif}
 </style></head><body>
   <div class="g"><div class="m">${logo}<span>Folio</span></div>
     <div class="p"><i></i>Testé et validé en prépa · boosté à l’IA</div>
     <h1>Révise moins.<br>Retiens <em>tout.</em></h1>
-    <p class="s">L’IA fait tes fiches. Folio te les repose<br>juste avant que tu les oublies.</p></div>
+    <p class="s">L’IA fait de ton cours un livre<br>de flashcards. Folio te repose chaque<br>page juste avant que tu l’oublies.</p></div>
   <div class="pc"><img src="${dataUri(SORTIE + 'pc.webp', 'image/webp')}"></div><div class="socle"></div>
   <div class="tel"><img src="${dataUri(SORTIE + 'mobile.webp', 'image/webp')}"><i></i></div>
   <div class="f"><small>Histoire</small><b>14 juillet 1789</b></div>
