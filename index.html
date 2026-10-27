@@ -97,11 +97,11 @@
         { "@type": "Question", "name": "C’est quoi, un livre de flashcards ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Ton cours, mis en questions. Chaque page porte une question au recto et sa réponse au verso : tu lis, tu cherches, tu retournes la page. Folio range tes pages en livres, un par chapitre ou par matière." } },
         { "@type": "Question", "name": "Folio est-il vraiment gratuit ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Oui. Le moteur de révision, 5 livres, la synchro et les défis sont gratuits, sans publicité. Folio+ ouvre l’IA (50 cours par mois, photos et PDF compris), les livres sans limite, les QCM et associations, les images et les sons." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Oui. Le Memory Engine Lite, 5 livres, la synchro et les défis sont gratuits, sans publicité. Folio+ ouvre le Memory Engine Ultra, réglé sur ta mémoire, l’IA (50 cours par mois, photos et PDF compris), les livres sans limite, les QCM et associations, les images et les sons." } },
         { "@type": "Question", "name": "Comment l’IA transforme-t-elle mon cours en flashcards ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Avec Folio+, donne-lui ton cours, en texte, en photo ou en PDF. Elle en tire les questions et les réponses, une par page, la question au recto et la réponse au verso. Tu relis et tu gardes ce qui te va." } },
         { "@type": "Question", "name": "Comment Folio sait-il quand me reposer une page ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "À chaque page, tu dis si c’était facile ou non. Folio en déduit le moment où tu commencerais à l’oublier, et te la repose juste avant. C’est la répétition espacée, réglée pour que tu retiennes 9 pages sur 10." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "À chaque page, tu dis si c’était facile ou non. Folio en déduit le moment où tu commencerais à l’oublier, et te la repose juste avant. C’est la répétition espacée, réglée pour que tu retiennes 9 pages sur 10. Avec Folio+, le Memory Engine Ultra se règle en plus sur ta mémoire à toi." } },
         { "@type": "Question", "name": "Ça marche sans connexion ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Oui. Tu révises dans le métro ou en avion, et tout se synchronise dès que le réseau revient." } },
         { "@type": "Question", "name": "Je peux reprendre mes anciennes flashcards ?",
@@ -290,14 +290,14 @@
   <!-- ══════════ le moteur ══════════ -->
   <section class="moteur enveloppe" id="moteur" aria-labelledby="moteur-t">
     <div class="moteur-tete rv">
-      <p class="surtitre">Le moteur</p>
+      <p class="surtitre">Memory Engine Ultra · le moteur de Folio+</p>
       <h2 id="moteur-t" class="titre">Le meilleur moteur de révision <em>au&nbsp;monde.</em></h2>
       <p class="texte">Il apprend ta mémoire, page après page, et te rend chacune au moment où elle allait s’effacer.</p>
     </div>
     <!-- Les courbes sont calculées par src/site/courbes.js et posées par site.js. -->
     <figure class="courbe rv" id="courbe" aria-labelledby="courbe-l">
       <div class="courbe-haut" aria-hidden="true">
-        <p class="leg leg-avec"><small>Avec Folio</small><b>100&#8239;%</b></p>
+        <p class="leg leg-avec"><small>Avec Memory Engine Ultra</small><b>100&#8239;%</b></p>
         <p class="leg leg-sans"><small>Sans révision</small><b>100&#8239;%</b></p>
         <b class="courbe-temps">Aujourd’hui</b>
       </div>
@@ -326,8 +326,24 @@
         </div>
         <div class="axe-x" aria-hidden="true"><span class="x-j" style="--x:.0523">1 j</span><span style="--x:.1385">1 sem.</span><span style="--x:.2886">1 mois</span><span style="--x:.5">3 mois</span><span style="--x:.7071">6 mois</span><span style="--x:1">1 an</span></div>
       </div>
-      <figcaption id="courbe-l" class="cache">Ce que tu retiens de cinq pages pendant un an. Sans révision, le souvenir s’efface : la moitié est partie au bout d’un mois, et il en reste moins de deux sur dix au bout d’un an. Avec Folio, chaque page revient juste avant l’oubli et le souvenir reste au-dessus de neuf sur dix toute l’année, avec des révisions de plus en plus espacées.</figcaption>
+      <figcaption id="courbe-l" class="cache">Ce que tu retiens de cinq pages pendant un an. Sans révision, le souvenir s’efface : la moitié est partie au bout d’un mois, et il en reste moins de deux sur dix au bout d’un an. Avec Memory Engine Ultra, le moteur de Folio+, chaque page revient juste avant l’oubli et le souvenir reste au-dessus de neuf sur dix toute l’année, avec des révisions de plus en plus espacées.</figcaption>
     </figure>
+
+    <!-- Deux moteurs : Memory Engine Lite (Folio, gratuit) et Ultra (Folio+ et
+         Campus). docs/LANDING.md, « Folio et Folio+ ». -->
+    <div class="moteurs">
+      <article class="moteur-carte rv">
+        <p class="moteur-offre">Folio, gratuit</p>
+        <h3>Memory Engine <span>Lite</span></h3>
+        <p>La répétition espacée, avec des réglages faits pour tout le monde. Chaque page revient avant l’oubli.</p>
+      </article>
+      <article class="moteur-carte moteur-plus rv">
+        <p class="moteur-offre">Folio<span class="plus">+</span> et Campus</p>
+        <h3>Memory Engine <span>Ultra</span></h3>
+        <p>Il apprend ta mémoire à toi&#8239;: après tes premières révisions, il se règle sur toi, page par page. Et il étale tes révisions, jamais une journée à 200&nbsp;pages.</p>
+        <a class="lien" href="#tarifs"><span>Passer à Folio<span class="plus">+</span></span><svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+      </article>
+    </div>
   </section>
 
   <!-- ══════════ ce qu'il y a dedans ══════════ -->
@@ -547,7 +563,7 @@
         <p class="prix-note">Sans carte bancaire</p>
         <a class="bt bt-clair bt-plein" href="/inscription">Créer un compte</a>
         <ul class="inclus">
-          <li>Le moteur de révision complet</li>
+          <li>Le Memory Engine Lite</li>
           <li>5 livres, à écrire, coller ou importer</li>
           <li>Hors ligne, synchro sur tous tes écrans</li>
           <li>Défis, clubs et amis</li>
@@ -562,6 +578,7 @@
         <a class="bt bt-encre bt-plein" href="/inscription">Passer à Folio+<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
         <ul class="inclus">
           <li><b>Tout Folio, et&#8239;:</b></li>
+          <li>Le Memory Engine Ultra, réglé sur ta mémoire</li>
           <li>L’IA&#8239;: ton cours, une photo ou un PDF en flashcards, 50 par mois</li>
           <li>Des livres sans limite</li>
           <li>QCM et associations pour t’entraîner</li>
@@ -577,6 +594,7 @@
         <a class="bt bt-clair bt-plein" href="/demande-demo">Demander une démo</a>
         <ul class="inclus">
           <li><b>Pour tout l’établissement&#8239;:</b></li>
+          <li>Le Memory Engine Ultra pour chaque élève</li>
           <li>Espace professeur et devoirs suivis</li>
           <li>Console du référent de l’établissement</li>
           <li>Mise en place accompagnée</li>
@@ -592,7 +610,7 @@
           <tr><th scope="col"><span class="cache">Fonction</span></th><th scope="col">Folio</th><th scope="col" class="col-plus">Folio<span class="plus">+</span></th><th scope="col">Campus</th></tr>
         </thead>
         <tbody>
-          <tr><th scope="row">Le moteur de révision complet</th><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row">Moteur de révision</th><td>Lite</td><td class="col-plus"><b>Ultra</b></td><td>Ultra</td></tr>
           <tr><th scope="row">Livres</th><td>5</td><td class="col-plus"><b>Sans limite</b></td><td>Sans limite</td></tr>
           <tr><th scope="row">Hors ligne et synchro</th><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row">Reprendre tes anciennes flashcards</th><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
@@ -616,9 +634,9 @@
     <h2 id="faq-t" class="titre centre rv">Questions fréquentes</h2>
     <div class="questions">
       <details class="rv"><summary>C’est quoi, un livre de flashcards&#8239;?</summary><p>Ton cours, mis en questions. Chaque page porte une question au recto et sa réponse au verso&#8239;: tu lis, tu cherches, tu retournes la page. Folio range tes pages en livres, un par chapitre ou par matière.</p></details>
-      <details class="rv"><summary>Folio est-il vraiment gratuit&#8239;?</summary><p>Oui. Le moteur de révision, 5 livres, la synchro et les défis sont gratuits, sans publicité. Folio+ ouvre l’IA (50 cours par mois, photos et PDF compris), les livres sans limite, les QCM et associations, les images et les sons.</p></details>
+      <details class="rv"><summary>Folio est-il vraiment gratuit&#8239;?</summary><p>Oui. Le Memory Engine Lite, 5 livres, la synchro et les défis sont gratuits, sans publicité. Folio+ ouvre le Memory Engine Ultra, réglé sur ta mémoire, l’IA (50 cours par mois, photos et PDF compris), les livres sans limite, les QCM et associations, les images et les sons.</p></details>
       <details class="rv"><summary>Comment l’IA transforme-t-elle mon cours en flashcards&#8239;?</summary><p>Avec Folio+, donne-lui ton cours, en texte, en photo ou en PDF. Elle en tire les questions et les réponses, une par page, la question au recto et la réponse au verso. Tu relis et tu gardes ce qui te va.</p></details>
-      <details class="rv"><summary>Comment Folio sait-il quand me reposer une page&#8239;?</summary><p>À chaque page, tu dis si c’était facile ou non. Folio en déduit le moment où tu commencerais à l’oublier, et te la repose juste avant. C’est la répétition espacée, réglée pour que tu retiennes 9 pages sur 10.</p></details>
+      <details class="rv"><summary>Comment Folio sait-il quand me reposer une page&#8239;?</summary><p>À chaque page, tu dis si c’était facile ou non. Folio en déduit le moment où tu commencerais à l’oublier, et te la repose juste avant. C’est la répétition espacée, réglée pour que tu retiennes 9 pages sur 10. Avec Folio+, le Memory Engine Ultra se règle en plus sur ta mémoire à toi.</p></details>
       <details class="rv"><summary>Ça marche sans connexion&#8239;?</summary><p>Oui. Tu révises dans le métro ou en avion, et tout se synchronise dès que le réseau revient.</p></details>
       <details class="rv"><summary>Je peux reprendre mes anciennes flashcards&#8239;?</summary><p>Oui. Colle-les ou importe le fichier, un CSV marche aussi. Folio en fait un livre en quelques secondes.</p></details>
       <details class="rv"><summary>Comment équiper mon établissement&#8239;?</summary><p>Avec Folio Campus, ouvert en dix minutes à tous vos élèves et professeurs. Demandez une démo&#8239;: 30 jours gratuits pour 60 élèves, sans engagement. Ensuite, c’est 3&nbsp;€&nbsp;HT par élève et par an, 300&nbsp;€&nbsp;HT minimum.</p></details>

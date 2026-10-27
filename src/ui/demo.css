@@ -56,7 +56,8 @@
    les associations, les images et les sons, dans la démo d'un élève, qui
    essaie Folio gratuit (html.en-demo-libre, ui/demo.js). */
 .payant[data-offre="plus"]::before,
-html.en-demo-libre :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"])::after{
+html.en-demo-libre :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"])::after,
+html.en-demo-plein [data-act="new"]::after{
   content:'';order:9;flex:none;width:16px;height:16px;border-radius:50%;pointer-events:none;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 1.7v6.6M1.7 5h6.6' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat,
     linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D)}
@@ -66,6 +67,11 @@ html.en-demo-libre :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[da
 .cr-tabs .payant[data-offre="plus"]::before,html.en-demo-libre .acts :is([data-act="mcq"],[data-act="match"])::after{
   position:absolute;top:5px;left:calc(50% + 3px)}
 html.en-demo-libre [data-mact^="med-"]::after{position:absolute;top:-4px;right:-4px}
+/* la bibliothèque pleine : « Nouveau livre » grisé, le bouton rond du téléphone comme celui de l'ordinateur */
+html.en-demo-plein [data-act="new"]:not(.fab){position:relative}
+html.en-demo-plein [data-act="new"]{background:var(--bg2)!important;color:var(--soft)!important;box-shadow:var(--edge)!important}
+html.en-demo-plein [data-act="new"] svg{opacity:.5}
+html.en-demo-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-3px}
 /* ce qui coûte, touché : ce que ça ferait et comment l'avoir */
 .dm-envie{width:min(380px,calc(100vw - 32px));padding:28px 22px 14px;border:0;border-radius:24px;background:var(--card);color:var(--ink);
   text-align:center;box-shadow:var(--s3)}

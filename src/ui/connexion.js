@@ -16,7 +16,7 @@ import {
 import { codeComplet, emailCarte, formatCode, lireCarte, normCode, normIdentifiant } from '../classe.js';
 import { accueil } from '../core/classement.js';
 import {
-  deck, esc, load, pending, plur, pull, resetPassword, saveDeck, signIn, signUp, sty, subj
+  PALETTE, deck, esc, load, pending, plur, pull, resetPassword, saveDeck, signIn, signUp, sty, subj
 } from '../core/coeur-sync.js';
 import { dueCount, simpleMode, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
@@ -515,12 +515,13 @@ export async function consumeCarte() {
   }
 }
 
-/* À côté du formulaire, sur un écran large : ce que dit la page d'accueil. */
+/* À côté du formulaire, sur un écran large : ce que dit la page d'accueil,
+   et ses pages dessinées comme dans l'app (les teintes de la page d'accueil). */
 const vitrine = () => `<div class="pub-vitrine" aria-hidden="true">
     <p class="pv-pastilles"><span>${svg(I.school)}Testé et validé en prépa</span><span class="ia">${svg(I.spark)}Boosté à l’IA</span></p>
     <p class="pv-titre">Révise moins.<br>Retiens <em>tout.</em></p>
-    <div class="pv-fiches">${[['Histoire', '#A8483C', '14 juillet 1789'], ['Maths', '#2F5D8A', 'eˣ + C'], ['SVT', '#2E7A86', 'Mitochondrie']]
-      .map(([m, c, t]) => `<span style="--c:${c}"><small>${m}</small>${t}</span>`).join('')}</div>
+    <div class="pv-fiches">${[['Histoire', 'yellow', '14 juillet 1789'], ['Maths', 'blue', 'eˣ + C'], ['SVT', 'green', 'Mitochondrie']]
+      .map(([m, t, txt]) => `<span style="${sty(PALETTE[t])}"><small>${m}</small>${txt}</span>`).join('')}</div>
   </div>`;
 
 export function loginView() {
