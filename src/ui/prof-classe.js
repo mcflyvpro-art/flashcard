@@ -5,7 +5,7 @@ import { prof } from '../data/etat.js';
 import { go } from './bibliotheque.js';
 import {
   FILTRES, TRIS, correspond, etatDevoir, etatEleve, filtrerEleves, finTexte,
-  formatCode, grilleMois, iso, auJour, jourCourt, MOIS, parJour, pc, syntheseClasse, tonReussite, trierEleves
+  formatCode, grilleMois, iso, auJour, jourCourt, MOIS, parJour, pc, syntheseClasse, trierEleves
 } from '../classe.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
@@ -63,7 +63,7 @@ function kpisClasse(c, s) {
   const donnes = r.reduce((a, m) => a + (m.donnes || 0), 0), rendus = r.reduce((a, m) => a + (m.rendus || 0), 0);
   const jamais = s.paquets.find(p => p.k === 'jamais'), ko = s.paquets.find(p => p.k === 'ko');
   return `<div class="pf-kpis">
-    ${kpi(I.chart, s.moyenne ? s.moyenne + '<small>%</small>' : '—', 'Réussite moyenne', s.moyenne ? tonReussite(s.moyenne) : '')}
+    ${kpi(I.chart, s.moyenne ? s.moyenne + '<small>%</small>' : '—', 'Réussite moyenne')}
     ${kpi(I.check, donnes ? pc(rendus, donnes) + '<small>%</small>' : '—', 'Devoirs rendus')}
     ${kpi(I.warn, ko ? ko.l.length : 0, 'En retard', ko ? 'ko' : '', ko ? 'filtre-ko' : '')}
     ${kpi(I.lock, jamais ? jamais.l.length : 0, 'Jamais connectés', jamais ? 'gris' : '', jamais ? 'filtre-jamais' : '')}
@@ -96,8 +96,8 @@ function ligneEleve(m) {
       m.carte ? `<i>${svg(I.key)}${esc(m.identifiant)}</i>` : m.handle ? `<i>@${esc(m.handle)}</i>` : ''}</span></span>
     <span class="pf-c-etat">${pill(ETATS[e.k], e.t)}</span>
     <span class="pf-num pf-c-rendu"><b>${m.rendus}</b><i>/${m.donnes}</i>
-      <span class="pf-mb"><i class="${tonReussite(taux)}" style="width:${m.rendus ? Math.max(4, taux) : 0}%"></i></span></span>
-    <span class="pf-num pf-c-pct ${m.pct ? tonReussite(m.pct) : ''}"><b>${m.pct || '—'}</b><i>${m.pct ? '%' : ''}</i></span>
+      <span class="pf-mb"><i style="width:${m.rendus ? Math.max(4, taux) : 0}%"></i></span></span>
+    <span class="pf-num pf-c-pct"><b>${m.pct || '—'}</b><i>${m.pct ? '%' : ''}</i></span>
     <span class="pf-num pf-c-act"><b>${m.pages7 || 0}</b><i>p · ${m.jours7 || 0} j</i></span>
     <span class="pf-dim pf-c-vu">${m.jamais ? '—' : m.vu ? timeAgo(m.vu) : 'aucun rendu'}</span>
   </div>`;
@@ -181,9 +181,9 @@ function ligneDevoir(d) {
       d.matiere ? ' · ' + esc(d.matiere) : ''}${d.mien ? '' : ' · ' + esc(d.auteur)}</i></span></span>
     <span class="pf-c-due ${e.tard ? 'ko' : ''}"><b>${esc(jourCourt(d.due))}</b><i>${esc(e.echeance)}</i></span>
     <span class="pf-num pf-c-rendu"><b>${d.rendu}</b><i>/${d.effectif}</i>
-      <span class="pf-mb"><i class="${tonReussite(e.taux)}" style="width:${d.rendu ? Math.max(4, e.taux) : 0}%"></i></span></span>
+      <span class="pf-mb"><i style="width:${d.rendu ? Math.max(4, e.taux) : 0}%"></i></span></span>
     <span class="pf-num pf-c-po ${e.pasOuvert ? 'am' : ''}"><b>${e.pasOuvert}</b><i>pas ouvert</i></span>
-    <span class="pf-num pf-c-pct ${d.pct ? tonReussite(d.pct) : ''}"><b>${d.pct || '—'}</b><i>${d.pct ? '%' : ''}</i></span>
+    <span class="pf-num pf-c-pct"><b>${d.pct || '—'}</b><i>${d.pct ? '%' : ''}</i></span>
   </div>`;
 }
 
@@ -232,7 +232,7 @@ function bilanOnglet() {
     </section>
     <section class="pf-panel"><h2>Répartition des réussites <span>${s.notes} notés</span></h2>
       ${s.notes ? `<div class="pf-histo">${s.tranches.map(t => `<span class="pf-hb"><em>${t.n || ''}</em>
-        <i class="${t.ton}" style="height:${t.n ? Math.max(6, Math.round(t.n / hi * 100)) : 0}%"></i><b>${t.t}</b></span>`).join('')}</div>`
+        <i style="height:${t.n ? Math.max(6, Math.round(t.n / hi * 100)) : 0}%"></i><b>${t.t}</b></span>`).join('')}</div>`
         : `<div class="pf-ok">${svg(I.chart)}<span>Aucun résultat pour l’instant</span></div>`}
     </section></div>
     <section class="pf-panel"><h2>À reprendre <span>${s.aReprendre.length}</span></h2>

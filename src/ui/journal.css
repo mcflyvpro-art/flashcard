@@ -1,9 +1,11 @@
 /* Le journal de lecture (préfixe jr-), chargé avec son écran
-   (ui/journal-ecran.js). Ce qui mesure une activité est à l'encre ; ce qui
-   mesure la mémoire suit une seule rampe de vert, du plus clair (à lire)
-   au plus foncé (sue) : l'ordre se lit à la clarté, même sans les
-   couleurs. Une matière garde la sienne, partout la même. */
-.jr{--j0:#E2E7E0;--j1:#B3D2BD;--j2:#66AC80;--j3:var(--ok);gap:0}
+   (ui/journal-ecran.js). Tout ce qui se compte est en azur (app.css, --az1
+   à --az6), comme partout dans l'app : l'activité, la régularité, la
+   mémoire — du plus clair (à lire) au plus foncé (sue), l'ordre se lit à la
+   clarté même sans les couleurs. Une matière garde sa reliure, partout la
+   même ; le rouge ne dit que les erreurs. Avant (jusqu'au 2026-10-26),
+   l'activité était à l'encre, la mémoire en vert, la série en orange. */
+.jr{--j0:var(--surf2);--j1:var(--az3);--j2:var(--az4);--j3:var(--az6);gap:0}
 .jr .top{flex-wrap:wrap;align-items:center;row-gap:12px}
 .jr .top .hero{flex:1;margin-bottom:0}
 .jr-per{order:3;flex:1 0 100%;gap:4px;padding:3px;border-radius:12px;background:var(--surf)}
@@ -15,16 +17,14 @@
 .jr-kpi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
 .jr-k{position:relative;background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:14px 14px 12px;
   display:flex;flex-direction:column;gap:2px;min-width:0}
-.jr-k > i{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:var(--surf);margin-bottom:8px}
-.jr-k > i svg{width:16px;height:16px;color:var(--ink2)}
-.jr-k.feu > i{background:color-mix(in srgb,#C9803A 15%,transparent)}
-.jr-k.feu > i svg{color:#B66F2B}
+.jr-k > i{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:var(--az1);margin-bottom:8px}
+.jr-k > i svg{width:16px;height:16px;color:var(--az5)}
 .jr-k b{font-size:25px;font-weight:800;letter-spacing:-.8px;line-height:1.1;font-variant-numeric:tabular-nums;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .jr-k span{font-size:12px;font-weight:650;color:var(--soft)}
 .jr-k em{position:absolute;top:14px;right:12px;font-style:normal;font-size:11.5px;font-weight:750;
   padding:2px 7px;border-radius:999px;font-variant-numeric:tabular-nums}
-.jr-k em.up{color:var(--ok);background:color-mix(in srgb,var(--ok) 11%,transparent)}
+.jr-k em.up{color:var(--az5);background:var(--az1)}
 .jr-k em.down{color:var(--ink2);background:var(--surf)}
 
 /* ---------- les blocs ---------- */
@@ -50,7 +50,7 @@
 .jr-cases{display:flex;gap:3px;width:max-content}
 .jr-cases .hc{display:flex;flex-direction:column;gap:3px}
 .jr-cases i,.jr-ech i{display:block;width:12px;height:12px;border-radius:3px;background:var(--surf)}
-.jr i.n1{background:#D3E5D8} .jr i.n2{background:#9CC9AB} .jr i.n3{background:#5FA67A} .jr i.n4{background:var(--ok)}
+.jr i.n1{background:var(--az2)} .jr i.n2{background:var(--az3)} .jr i.n3{background:var(--az4)} .jr i.n4{background:var(--az5)}
 .jr-pied{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:12px;color:var(--soft)}
 .jr-pied b{color:var(--ink2);font-variant-numeric:tabular-nums}
 .jr-ech{display:flex;gap:3px;flex:none}
@@ -61,9 +61,9 @@
 .jr-bars.p30{gap:3px} .jr-bars.p365{gap:2px}
 .jr-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .jr-b u{flex:1;position:relative;text-decoration:none}
-.jr-b i{position:absolute;left:0;right:0;bottom:0;background:var(--ink);border-radius:4px 4px 1px 1px}
+.jr-b i{position:absolute;left:0;right:0;bottom:0;background:var(--az4);border-radius:4px 4px 1px 1px}
 .jr-bars.p365 .jr-b i{border-radius:2px 2px 1px 1px}
-.jr-b.auj i{background:var(--ok)}
+.jr-b.auj i{background:var(--az6)}
 .jr-b.nul i{height:2px !important;background:var(--surf2)}
 .jr-b span{height:13px;font-size:10.5px;font-weight:700;color:var(--soft);text-align:center;white-space:nowrap;overflow:visible}
 
@@ -72,7 +72,7 @@
 .jr-anneau{position:relative;width:116px;height:116px;flex:none;display:grid;place-items:center}
 .jr-anneau svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .jr-anneau circle{fill:none;stroke-width:5;stroke-linecap:butt}
-.jr-anneau .fond{stroke:var(--surf)}
+.jr-anneau .fond{stroke:var(--az1)}
 .jr-anneau .new{stroke:var(--j0)} .jr-anneau .learn{stroke:var(--j1)}
 .jr-anneau .young{stroke:var(--j2)} .jr-anneau .mature{stroke:var(--j3)}
 .jr-anneau div{display:flex;flex-direction:column;align-items:center;line-height:1.1}
@@ -103,14 +103,14 @@
 .jr-row{display:grid;grid-template-columns:74px minmax(0,1fr) 44px;align-items:center;gap:10px;padding:5px 0;font-size:13px}
 .jr-rl{font-weight:650;color:var(--ink2)}
 .jr-rb,.jr-mb{height:8px;border-radius:4px;background:var(--surf);overflow:hidden}
-.jr-rb i,.jr-mb i{display:block;height:100%;border-radius:4px;background:var(--j3)}
+.jr-rb i,.jr-mb i{display:block;height:100%;border-radius:4px;background:var(--az4)}
 .jr-row b,.jr-mat b{text-align:right;font-size:12.5px;font-weight:750;font-variant-numeric:tabular-nums}
 .jr-h24{display:flex;align-items:flex-end;gap:2px;height:64px}
 .jr-h24 i{flex:1;min-height:2px;background:var(--surf2);border-radius:3px 3px 1px 1px}
-.jr-h24 i[style*="height:"]:not([style*="height:0%"]){background:color-mix(in srgb,var(--ink) 55%,transparent)}
+.jr-h24 i[style*="height:"]:not([style*="height:0%"]){background:var(--az3)}
 /* jr-pic et non « top » : .top est la barre de titre des pages (app.css), et
    ses marges décollaient l'heure la plus chargée de la ligne de base */
-.jr-h24 i.jr-pic{background:var(--ink) !important}
+.jr-h24 i.jr-pic{background:var(--az5) !important}
 .jr-axe24{display:flex;justify-content:space-between;margin-top:6px;font-size:10.5px;font-weight:700;color:var(--soft)}
 
 .jr-mat{display:grid;grid-template-columns:10px minmax(0,1fr) 30% auto;align-items:center;gap:10px;padding:7px 0}

@@ -8,9 +8,9 @@ import { TRAITS, avatarSvg } from '../avatar.js';
 import { medaille } from '../club.js';
 
 /* ══════════ les jetons : un seul dessin, partout ══════════
-   Une personne : un rond, ses initiales ou son avatar (src/avatar.js). Une classe ou un
-   club : un carré arrondi et son emblème — la forme dit d'un coup d'œil
-   s'il s'agit de quelqu'un ou d'un groupe. Même fonction sur tous les
+   Une personne : un rond, ses initiales ou son avatar (src/avatar.js). Une
+   classe : un carré arrondi et son emblème ; un club : un écusson et son
+   emblème — la forme dit d'un coup d'œil qui ou quoi. Même fonction sur tous les
    écrans (cercle, club, espace prof, « Mes classes », partie en direct,
    fiches) : un élève a le même visage partout. Tailles : xs 24, sm 30,
    (défaut) 40, lg 54, xl 84 px. */
@@ -23,9 +23,9 @@ function personneHtml(id, nom, v, taille) {
     data-nom="${esc(nom || '')}" style="--k:${j.couleur}" aria-hidden="true">${j.avatar ? avatarSvg(j.avatar) : esc(j.texte)}</i>`;
 }
 
-function groupeHtml(id, v, taille, k) {
+function groupeHtml(id, v, taille, k, club) {
   const j = jetonGroupe(id, v && { embleme: v.cle, teinte: v.teinte });
-  return `<i class="jt groupe${taille ? ' ' + taille : ''}"${k ? ` data-jt="${esc(k)}"` : ''}
+  return `<i class="jt groupe${club ? ' club' : ''}${taille ? ' ' + taille : ''}"${k ? ` data-jt="${esc(k)}"` : ''}
     style="--k:${j.couleur}" aria-hidden="true">${svg(I[EMBLEMES[j.embleme]])}</i>`;
 }
 
@@ -36,7 +36,7 @@ export const avatar = (id, nom, taille = '') => personneHtml(id, nom, voir('p', 
 export const blason = (cid, taille = '') => groupeHtml(cid, voir('c', cid), taille, 'c:' + cid);
 
 // celui d'un club : mes_clubs() rend déjà l'emblème et la teinte
-export const blasonClub = (g, taille = '') => groupeHtml(g.id, { cle: g.embleme, teinte: g.teinte }, taille);
+export const blasonClub = (g, taille = '') => groupeHtml(g.id, { cle: g.embleme, teinte: g.teinte }, taille, '', true);
 
 // la couleur d'une classe, pour ce qui se teinte à côté de son blason
 export function couleurClasse(cid) {

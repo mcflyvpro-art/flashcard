@@ -10,7 +10,8 @@ import { paintMenuCercle } from './cercle-feuilles.js';
 import { paintMenuCode } from './code-entree.js';
 import { paintMedia } from './carte-media.js';
 import { blockedSheet, reportSheet } from './classement.js';
-import { COLORS, PALETTE, canUndo, deck, esc, subj, undoLabel } from '../core/coeur-sync.js';
+import { PALETTE, canUndo, deck, esc, sty, subj, undoLabel } from '../core/coeur-sync.js';
+import { NOMS, TEINTES } from '../couleurs.js';
 import { paintMenuProf } from './prof-porte.js';
 import {
   paintMenuCard, paintMenuConflict, paintMenuDeckset, paintMenuDuelitem,
@@ -332,7 +333,7 @@ function paintMenuDeck(w) {
     <div class="menu">
       <div class="mgrid">
         ${db.subjects.map(x => subj(x.id)).map(s => `<button class="ms ${d.subject === s.id ? 'on' : ''}"
-          data-msubj="${s.id}" style="--d:${s.d}"><i></i><span>${esc(s.name)}</span></button>`).join('')}
+          data-msubj="${s.id}" style="${sty(s)}"><i></i><span>${esc(s.name)}</span></button>`).join('')}
       </div>
       <div class="msep"></div>
       <button class="mi" data-mact="pindeck">${svg(I.pin)}${d.pinned ? 'Détacher' : 'Épingler en haut'}</button>
@@ -372,8 +373,9 @@ function paintMenuSubject(w) {
       <div class="menu">
         <input class="tok" id="sn" placeholder="Nom de la matière" spellcheck="false"
           enterkeyhint="done" value="${esc(subjName)}">
-        <div class="swatch">${COLORS.map(k => `<button class="sw2 ${k === subjColor ? 'on' : ''}"
-          data-color="${k}" style="background:${PALETTE[k].c};--dd:${PALETTE[k].d}"></button>`).join('')}</div>
+        <div class="swatch">${TEINTES.map(k => `<button class="sw2 ${k === subjColor ? 'on' : ''}"
+          data-color="${k}" style="--d:${PALETTE[k].d}" aria-label="${NOMS[k]}" title="${NOMS[k]}"
+          aria-pressed="${k === subjColor}"></button>`).join('')}</div>
         <div class="msep"></div>
         ${t.id ? `<button class="mi warn" data-mact="subjdel">${svg(I.trash)}<span>Supprimer</span></button>` : ''}
         <button class="mi" data-mact="subjok" style="justify-content:center;font-weight:700">

@@ -206,8 +206,6 @@ export function erreurPlaces(n, effectif) {
 /* ---------- un élève ---------- */
 export const pc = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 
-export const tonReussite = p => (p >= 70 ? 'ok' : p >= 45 ? 'am' : 'ko');
-
 /* Un élève n'a qu'un état à la fois, et c'est le plus grave qui compte. */
 export function etatEleve(m) {
   if (m.jamais) return { k: 'jamais', t: 'Jamais connecté', rang: 1 };
@@ -275,7 +273,7 @@ export function syntheseClasse(r) {
   const groupe = k => l.filter(m => etatEleve(m).k === k);
   const notes = l.filter(m => (m.pct || 0) > 0).map(m => m.pct);
   const tranches = [[0, 20], [20, 40], [40, 60], [60, 80], [80, 101]].map(([a, b]) => ({
-    t: `${a}–${b > 100 ? 100 : b}`, n: notes.filter(x => x >= a && x < b).length, ton: tonReussite(a + 10)
+    t: `${a}–${b > 100 ? 100 : b}`, n: notes.filter(x => x >= a && x < b).length
   }));
   return {
     n: l.length,

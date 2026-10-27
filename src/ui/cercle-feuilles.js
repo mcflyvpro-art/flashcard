@@ -57,7 +57,7 @@ async function entrerPin() {
 
 /* ---------- créer, personnaliser un club ---------- */
 function apercuClub(f) {
-  return `<div class="cf-apercu" id="cfap" style="--k:${teinte(f.teinte)}"><i class="jt groupe lg" id="cfapj">${iconeEmbleme(f.embleme)}</i>
+  return `<div class="cf-apercu" id="cfap" style="--k:${teinte(f.teinte)}"><i class="jt groupe club lg" id="cfapj">${iconeEmbleme(f.embleme)}</i>
     <span><b id="cfapn">${esc(f.nom.trim() || 'Nom du club')}</b><i id="cfapd">${esc(f.devise.trim())}</i></span></div>`;
 }
 

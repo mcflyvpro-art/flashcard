@@ -97,7 +97,7 @@ export function paintMenuMerge(w) {
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.link)}Fusionner « ${esc(d.name)} » avec</div>
         <div class="mscroll">${others.map(x => `<button class="mi" data-merge="${x.id}">
-          <i class="tri" style="--c:${subj(x.subject).c}"></i>${esc(x.name)}
+          <i class="tri" style="--c:${subj(x.subject).d}"></i>${esc(x.name)}
           <span class="tail">${x.cards.length}</span></button>`).join('')}</div>
       </div>`;
     mountMenu(w);
@@ -410,7 +410,7 @@ export function paintMenuMove(w) {
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.out)}Déplacer ${n} carte${n > 1 ? 's' : ''} vers</div>
         <div class="mscroll">${others.map(x => `<button class="mi" data-move="${x.id}">
-          <i class="tri" style="--c:${subj(x.subject).c}"></i>${esc(x.name)}
+          <i class="tri" style="--c:${subj(x.subject).d}"></i>${esc(x.name)}
           <span class="tail">${x.cards.length}</span></button>`).join('')}</div>
       </div>`;
     mountMenu(w);

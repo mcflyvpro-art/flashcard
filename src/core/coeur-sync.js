@@ -6,6 +6,7 @@ import {
 } from '../data/etat.js';
 import { I } from '../icones.js';
 import { mergeDeck } from '../fusion.js';
+import { PALETTE as NUANCES, SANS, SUCCESSION, teintesMatiere } from '../couleurs.js';
 import { $ } from '../racine.js';
 import { queueChip, render } from '../ui/bibliotheque.js';
 import { fsrsAuto, fsrsMigrate } from '../ui/carte-media.js';
@@ -42,27 +43,15 @@ const AKEY = 'cartes.auth';
    jeton expiré. */
 setAuth(loadAuth());
 
-/* ---------- palette : 16 teintes accordées à l'app ---------- */
-export const PALETTE = {
-  red:      { c: '#F6D2CB', ci: '#6B2A20', d: '#C5503F' },
-  coral:    { c: '#FAD7C7', ci: '#6B3319', d: '#D0703C' },
-  orange:   { c: '#FADCB8', ci: '#6A4014', d: '#D4842E' },
-  amber:    { c: '#F8E4B0', ci: '#61460F', d: '#CE9A21' },
-  yellow:   { c: '#F7E7AE', ci: '#5C4810', d: '#C9A526' },
-  lime:     { c: '#E4EBB4', ci: '#454E15', d: '#93A32C' },
-  green:    { c: '#CFE7D3', ci: '#1D4630', d: '#4C9862' },
-  teal:     { c: '#C4E6E4', ci: '#12433F', d: '#3B9490' },
-  cyan:     { c: '#C8E4EF', ci: '#14414F', d: '#3E8FA8' },
-  blue:     { c: '#CFDDF2', ci: '#1B3A5E', d: '#4A7FBE' },
-  indigo:   { c: '#D6D7F0', ci: '#2A2C5C', d: '#6366B4' },
-  violet:   { c: '#DFD3F0', ci: '#3A2559', d: '#7C5CB0' },
-  purple:   { c: '#EBD4EF', ci: '#4A2352', d: '#9857A6' },
-  pink:     { c: '#F8D2E3', ci: '#63234A', d: '#CB6C9E' },
-  sand:     { c: '#F0E9E0', ci: '#4A4137', d: '#A99A88' },
-  graphite: { c: '#DBD7DD', ci: '#201D25', d: '#2A2730' }
-};
+/* ---------- palette : le nuancier de src/couleurs.js ----------
+   PALETTE répond à toute clé que la base peut rendre (les deux anciennes
+   qui doublaient une voisine comprises) ; COLORS ne propose que les
+   quatorze teintes du nuancier, dans l'ordre où une matière nouvelle les
+   reçoit (SUCCESSION) — le nuancier, lui, s'affiche dans l'ordre des
+   teintes (TEINTES, ui/menus-a.js). */
+export const PALETTE = NUANCES;
 
-export const COLORS = Object.keys(PALETTE);
+export const COLORS = SUCCESSION;
 
 const SEED = [
   ['italien', 'Italien', 'red'], ['anglais', 'Anglais', 'graphite'],
@@ -71,15 +60,14 @@ const SEED = [
   ['lettres', 'Lettres', 'sand']
 ];
 
-const NONE = { id: '', name: 'Sans matière', color: 'graphite',
-               c: '#E8E3E9', ci: '#2A2530', d: '#8E8794' };
+const NONE = { id: '', name: 'Sans matière', color: '', ...SANS };
 
 export const subj = id => {
   const t = db.subjects.find(x => x.id === id);
-  return t ? { ...t, ...(PALETTE[t.color] || PALETTE.graphite) } : NONE;
+  return t ? { ...t, ...teintesMatiere(t.color) } : NONE;
 };
 
-export const sty = s => `--c:${s.c};--ci:${s.ci};--d:${s.d}`;
+export const sty = s => `--c:${s.c};--ci:${s.ci};--d:${s.d};--b:${s.b};--f:${s.f}`;
 
 /* ---------- annuler ----------
    Avant toute action qui écrase ou efface, on photographie les paquets

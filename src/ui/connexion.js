@@ -203,9 +203,9 @@ const pagesMontrees = (d, nq) => nq
    construire avant d'afficher quoi que ce soit : plusieurs secondes de
    page blanche sur un téléphone. On en pose une page, le reste arrive
    quand le bas de la liste approche. */
-function rowsHtml(shown, nq) {
+function rowsHtml(shown, nq, s) {
   const part = shown.slice(0, deckShow), rest = shown.length - part.length;
-  return `<div class="rows ${sel ? 'picking' : ''}">
+  return `<div class="rows ${sel ? 'picking' : ''}" style="--d:${s.d}">
       ${!shown.length ? `<div class="note" style="padding:14px 4px">Aucune carte ne contient « ${esc(deckQ)} ».</div>` : ''}
       ${part.map((c, i) => cardRow(c, i, nq)).join('')}
       ${rest ? `<div class="more" id="more">${plur(rest, 'page')} de plus…</div>` : ''}
@@ -231,7 +231,7 @@ function bindRows(d, nq) {
 function repeindrePages(d) {
   const rows = $.querySelector('.rows'); if (!rows) return;
   const nq = norm(deckQ), shown = pagesMontrees(d, nq);
-  rows.outerHTML = rowsHtml(shown, nq);
+  rows.outerHTML = rowsHtml(shown, nq, subj(d.subject));
   const n = document.getElementById('dcount'); if (n) n.textContent = countLabel(shown, d);
   const b = $.querySelector('[data-act="deckfind"]'); if (b) b.classList.toggle('on', !!deckQ);
   bindRows(d, nq);
@@ -287,7 +287,7 @@ export function deckView() {
       ${selectButton(d)}
       <span id="dcount">${countLabel(shown, d)}</span></div>
     ${searchField()}
-    ${rowsHtml(shown, nq)}
+    ${rowsHtml(shown, nq, s)}
     ${sel ? selBar(d) : ''}`;
   bindDeckName(d);
   bindRows(d, nq);

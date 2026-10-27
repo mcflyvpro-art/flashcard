@@ -1,5 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
+import { cleTeinte } from '../couleurs.js';
+import { couleurLibre } from '../matieres.js';
 import { I, svg } from '../icones.js';
 import { DAY, MIN } from '../fsrs.js';
 import {
@@ -30,7 +32,8 @@ export function openSubject(id) {
   if (t0 && t0.locked) return toast(I.lock, 'Matière du cours · posée par ton professeur');
   setSubjEdit(id);
   const t = t0;
-  setSubjColor(t ? t.color : COLORS[db.subjects.length % COLORS.length]);
+  // une ancienne clé (corail, ambre) s'ouvre sur la teinte qui l'a remplacée
+  setSubjColor(t ? cleTeinte(t.color) : couleurLibre(db.subjects, COLORS));
   setSubjName(t ? t.name : '');
   openMenu('subject');
 }

@@ -4,7 +4,7 @@ import { SITE } from '../adresse.js';
 import { prof, setMenu, visuels } from '../data/etat.js';
 import {
   CREATION, codeComplet, dansJours, echeance, etatDevoir, etatEleve, formatCode, grilleMois, iso,
-  auJour, jourCourt, jourLong, lienCarte, lireListeEleves, messageStatut, MOIS, pc, tonReussite
+  auJour, jourCourt, jourLong, lienCarte, lireListeEleves, messageStatut, MOIS, pc
 } from '../classe.js';
 import { qrSvg } from '../qr.js';
 import { esc, live, plur } from '../core/coeur-sync.js';
@@ -125,7 +125,7 @@ function devoirsEleve() {
   const ETAT = { rendu: 'ok', 'commencé': 'am', 'non rendu': 'ko', 'pas ouvert': 'neutre' };
   return `<div class="pf-list">${f.map(x => `<div class="pf-li">
     <span class="pf-lit"><b>${esc(x.devoir)}</b><i>${jourCourt(x.due)} · ${esc(echeance(x.due))}${x.mien ? '' : ' · un collègue'}</i></span>
-    <span class="pf-num ${x.pct ? tonReussite(x.pct) : ''}"><b>${x.pct || '—'}</b><i>${x.pct ? '%' : ''}</i></span>
+    <span class="pf-num"><b>${x.pct || '—'}</b><i>${x.pct ? '%' : ''}</i></span>
     ${pill(ETAT[x.etat] || 'neutre', x.etat)}</div>`).join('')}</div>`;
 }
 
@@ -139,7 +139,7 @@ function actionsEleve(c, m) {
 function chiffresEleve(m) {
   return `<div class="pf-mini">
       <span><b>${m.rendus}<small>/${m.donnes}</small></b><i>rendus</i></span>
-      <span class="${m.pct ? tonReussite(m.pct) : ''}"><b>${m.pct || '—'}${m.pct ? '<small>%</small>' : ''}</b><i>réussite</i></span>
+      <span><b>${m.pct || '—'}${m.pct ? '<small>%</small>' : ''}</b><i>réussite</i></span>
       <span class="${m.retard ? 'ko' : ''}"><b>${m.retard}</b><i>en retard</i></span>
       <span><b>${m.pages7}</b><i>pages · 7 j</i></span></div>
     ${m.jamais ? `<p class="pf-alerte">${svg(I.lock)}${m.carte ? 'Jamais connecté : sa carte lui est-elle parvenue ?'
@@ -214,7 +214,7 @@ function chiffresDevoir(d, e) {
   return `<div class="pf-mini">
       <span><b>${d.rendu}<small>/${d.effectif}</small></b><i>rendus</i></span>
       <span class="${e.pasOuvert ? 'am' : ''}"><b>${e.pasOuvert}</b><i>pas ouvert</i></span>
-      <span class="${d.pct ? tonReussite(d.pct) : ''}"><b>${d.pct || '—'}${d.pct ? '<small>%</small>' : ''}</b><i>réussite</i></span>
+      <span><b>${d.pct || '—'}${d.pct ? '<small>%</small>' : ''}</b><i>réussite</i></span>
       <span class="${e.tard ? 'ko' : ''}"><b>${esc(jourCourt(d.due))}</b><i>${esc(e.echeance)}</i></span></div>`;
 }
 

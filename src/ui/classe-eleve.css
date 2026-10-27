@@ -23,7 +23,7 @@
 .ec-pers-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .ec-pers-t b{font-size:15px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ec-pers-t i{font-style:normal;font-size:12.5px;font-weight:600;color:var(--soft)}
-.ec-tag{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:var(--surf);color:#B8860B}
+.ec-tag{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:var(--surf);color:var(--ink2)}
 .ec-tag svg{width:15px;height:15px}
 
 .ec-eleves{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
@@ -31,7 +31,7 @@
   background:var(--card);box-shadow:var(--edge);text-align:center;min-width:0}
 .ec-el b{max-width:100%;font-size:13px;font-weight:650;line-height:1.25;overflow-wrap:anywhere}
 .ec-el em{display:inline-flex;align-items:center;gap:4px;font-style:normal;font-size:11.5px;font-weight:650;color:var(--soft)}
-.ec-el em.ami{color:var(--ok)}
+.ec-el em.ami{color:var(--ink2)}
 .ec-el em svg{width:12px;height:12px}
 .ec-el.moi{box-shadow:inset 0 0 0 1.5px var(--ink2)}
 @media (hover:hover){button.ec-el:hover{box-shadow:inset 0 0 0 1px rgba(29,28,25,.2),var(--s2)}}
