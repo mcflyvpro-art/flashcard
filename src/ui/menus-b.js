@@ -17,7 +17,6 @@ import {
   dueCount, fnrNote, fnrScan, simpleMode
 } from './import-cartes.js';
 import { mountMenu } from './menus-a.js';
-import { helpSheet } from './onboarding.js';
 import { timeAgo } from './reglages-corbeille.js';
 import { VERSN } from '../core/reglages-corbeille.js';
 
@@ -229,10 +228,6 @@ export function paintMenuMate(w) {
       </div>`;
     mountMenu(w);
     return;
-}
-
-export function paintMenuTuto(w) {
-  return helpSheet(w);
 }
 
 export function paintMenuHelp(w) {

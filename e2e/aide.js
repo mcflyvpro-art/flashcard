@@ -60,3 +60,21 @@ export async function noter(page, note) {
   await bouton.click();
   await page.waitForTimeout(400);           // l'animation de la page qui s'en va
 }
+
+/* Le tuto (ui/tuto.js) s'ouvre à la première connexion d'un élève (après
+   son accueil), d'un professeur et d'un référent : un parcours qui ne le
+   joue pas le dit, comme le ferait le compte qui l'a déjà vu (prefs.tuto). */
+export function sansTuto(store, email) {
+  const u = store.users.find(x => x.email === email);
+  const l = store.tables.prefs = store.tables.prefs || [];
+  const p = l.find(r => r.user_id === u.id);
+  if (p) p.data = { ...(p.data || {}), tuto: 1 };
+  else l.push({ id: u.id, user_id: u.id, data: { tuto: 1 } });
+  return u.id;
+}
+
+/* Le tuto est là (sa carte du début) : « Passer ». */
+export async function passerTuto(page) {
+  await page.locator('#tu [data-tu="non"]').click({ timeout: 10000 });
+  await expect(page.locator('#tu')).toHaveCount(0);
+}

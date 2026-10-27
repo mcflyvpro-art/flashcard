@@ -52,10 +52,11 @@ même pour tous ses camarades) ; il peut en plus être dans des **groupes**
    (proposé depuis le prénom, vérifié pendant la frappe : la règle, puis la
    base dit s'il est libre) ; son visage parmi six (« D'autres ») ; son
    niveau et ses matières (elles remplacent les matières d'exemple) ; un
-   objectif de pages par jour. Puis la visite guidée.
-   Un élève entré par son établissement ou avec une carte : son pseudo (son
-   nom de classe, « Prénom NOM », s'affiche à côté, fixe), son visage, puis
-   ses classes.
+   objectif de pages par jour. Puis **le tuto** (§ 3 bis).
+   « J'ai un code » s'ouvre par-dessus l'accueil : entré, il reprend en élève
+   de sa classe. Un élève entré par son établissement ou avec une carte : son
+   lycée et sa classe pour l'accueillir, son pseudo (son nom de classe,
+   « Prénom NOM », s'affiche à côté, fixe), son visage, puis son tuto.
    **Les pseudos** (2026-10-27) : tout compte en a un, donné d'office par la
    base (le prénom, sinon « lecteur », et des chiffres s'il est pris) ; 3 à
    20 caractères, minuscules, chiffres, point, tiret bas, une lettre en tête,
@@ -68,6 +69,31 @@ même pour tous ses camarades) ; il peut en plus être dans des **groupes**
 3. Il arrive sur ses **Livres**. Barre : Livres, Cercle — pas de Classe.
 4. Le jour où on lui donne un code : **Réglages → J'ai un code**. « Classe »
    apparaît dès qu'il est entré.
+
+### 3 bis. Le tuto de première connexion (2026-10-27)
+
+Un guide court qui **fait faire**, sur le vrai écran et le vrai compte : un
+trou de lumière sur ce qu'il faut toucher, une bulle d'une phrase. Il se
+passe à tout moment et se rejoue des Réglages (« Revoir le tuto »).
+
+- **Le particulier**, à la fin de son accueil : il crée son premier livre
+  (« Remplir pour moi » y met trois pages de sa première matière), le lit,
+  retourne une page, dit s'il savait, découvre le cercle ; la fin présente
+  **Folio+** (« Découvrir Folio+ » ouvre les tarifs).
+- **L'élève d'une classe**, à la fin de son accueil : sa classe, son devoir,
+  qu'il ouvre et lit (sinon, là où ses devoirs arriveront), ses livres, le
+  cercle ; la fin présente Folio+.
+- **Le professeur**, à sa première connexion : son code ; sans classe, il
+  choisit les siennes (établissement) ou crée la sienne (particulier) ; avec
+  des classes, il donne un devoir, ouvre une classe et son bilan, voit le
+  défi en direct. « Tout est prêt ».
+- **Le référent** : ses deux codes, puis sur ordinateur les onglets Classes,
+  Élèves, Licence (au téléphone, la licence). « Tout est prêt ».
+- **L'éditeur** : rien.
+
+Au téléphone la bulle prend toute la largeur, sous ou sur ce qu'on montre ;
+sur ordinateur elle se pose à côté, et dit « Clique sur » plutôt que
+« Touche ».
 
 **Payer** : pas de Stripe. L'app sera publiée sur l'App Store et Google
 Play (Capacitor) ; un abonnement s'y vend par l'achat intégré d'Apple et de
@@ -115,8 +141,11 @@ rien ne part : chaque visiteur a son lycée à lui, dans son onglet
 (rafraîchir le garde, fermer l'onglet l'efface). Ce qui coûte — l'IA, les
 photos, les fichiers, les images et les sons — est grisé et le dit. Un
 bandeau change de rôle en un geste (ce que Marc donne, Léa le reçoit),
-« Quitter » ramène à la connexion — pour montrer Folio en rendez-vous, ou se
-faire une idée.
+« Quitter » ramène au site — pour montrer Folio en rendez-vous, ou se faire
+une idée. À la première entrée de la visite, **le tuto** du rôle choisi se
+joue (pas aux changements de rôle) ; « Tuto », dans le bandeau, le rejoue ;
+il finit sur Folio+ pour l'élève (« Créer mon compte ») et sur Folio Campus
+pour le professeur et le référent (« Essayer dans mon établissement »).
 
 ### 4.3 Licence
 

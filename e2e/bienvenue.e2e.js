@@ -1,9 +1,10 @@
-// L'accueil d'un nouveau compte (2026-10-26) : un particulier donne son
-// prénom, son pseudo, choisit son visage, son niveau, ses matières et un
-// objectif, puis la visite guidée part ; un élève entré par son
-// établissement choisit son pseudo et son visage (2026-10-27 ; son nom de
-// classe ne bouge pas, e2e/pseudo.e2e.js) ; « J'ai un code » ouvre la
-// porte d'entrée dans une école.
+// L'accueil d'un nouveau compte (2026-10-26, refait le 2026-10-27) : un
+// particulier donne son prénom, son pseudo, choisit son visage, son niveau,
+// ses matières et un objectif, puis le tuto prend le relais (ui/tuto.js,
+// e2e/tuto.e2e.js le joue) ; un élève entré par son établissement voit son
+// lycée et sa classe, choisit son pseudo et son visage (son nom de classe ne
+// bouge pas, e2e/pseudo.e2e.js), puis son tuto ; « J'ai un code » ouvre la
+// porte d'entrée par-dessus l'accueil.
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerCompte } from './faux-cercle.js';
@@ -19,7 +20,7 @@ async function entrer(page, email) {
   await page.getByRole('button', { name: 'Se connecter' }).click();
 }
 
-test('un particulier : prénom, pseudo, visage, matières, objectif, puis la visite', async ({ page }) => {
+test('un particulier : prénom, pseudo, visage, matières, objectif, puis le tuto', async ({ page }) => {
   const store = nouveauStore();
   const lea = semerCompte(store, 'lea@exemple.fr');
   faireEleve(store, 'lea@exemple.fr');
@@ -57,7 +58,7 @@ test('un particulier : prénom, pseudo, visage, matières, objectif, puis la vis
   await page.locator('.bv-obj', { hasText: '30' }).click();
   await page.getByRole('button', { name: 'C’est parti' }).click();
 
-  await expect(page.locator('.tbub')).toBeVisible({ timeout: 10000 });        // la visite guidée prend le relais
+  await expect(page.locator('#tu .tu-debut')).toContainText('Bienvenue, Léa', { timeout: 10000 });   // le tuto prend le relais
   const p = (store.tables.prefs || []).find(r => r.user_id === lea);
   await expect.poll(() => (store.tables.prefs || []).find(r => r.user_id === lea)?.data?.bienvenue).toBe(1);
   expect(p.data).toMatchObject({ name: 'Léa', goal: 30, niveau: 'lycee' });
@@ -69,7 +70,7 @@ test('un particulier : prénom, pseudo, visage, matières, objectif, puis la vis
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test('un élève de son lycée : son pseudo, son visage, puis ses classes', async ({ page }) => {
+test('un élève de son lycée : son lycée et sa classe, son pseudo, son visage, puis son tuto', async ({ page }) => {
   const store = nouveauStore();
   const { org, classes } = semerEtablissement(store, { nom: 'Lycée Camus', classes: ['2nde A'] });
   const m = modele(store);
@@ -81,6 +82,7 @@ test('un élève de son lycée : son pseudo, son visage, puis ses classes', asyn
 
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'bienvenue', { timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Choisis ton pseudo' })).toBeVisible();
+  await expect(page.locator('.bv-ecole')).toHaveText('Lycée Camus · 2nde A');
   await expect(page.locator('.bv-classe')).toContainText('Tom PETIT');
   await page.getByRole('button', { name: 'Continuer' }).click();            // le pseudo donné d'office lui va
   await expect(page.getByRole('heading', { name: 'Choisis ton visage' })).toBeVisible();
@@ -88,7 +90,7 @@ test('un élève de son lycée : son pseudo, son visage, puis ses classes', asyn
   await page.getByRole('button', { name: 'C’est parti' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'classes');
   await expect.poll(() => (store.jetons || {})['p:' + tom]?.cle).toMatch(/^av[a-z]{7}$/);
-  await expect(page.locator('.tbub')).toHaveCount(0);                        // pas de visite de la bibliothèque
+  await expect(page.locator('#tu .tu-debut')).toContainText('Bienvenue, Tom', { timeout: 10000 });   // son tuto, côté classe
 });
 
 test('« J’ai un code » dès l’accueil ouvre la porte d’entrée', async ({ page }) => {

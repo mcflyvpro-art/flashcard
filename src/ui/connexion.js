@@ -20,7 +20,8 @@ import {
 } from '../core/coeur-sync.js';
 import { dueCount, simpleMode, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
-import { consumeHash, logout, maybeTour } from './onboarding.js';
+import { consumeHash, logout } from './onboarding.js';
+import { maybeTuto } from './tuto-porte.js';
 import { norm } from './quiz.js';
 import { cartePassage, lierPassage } from './passage.js';
 import { bindReorder } from './reordonner.js';
@@ -416,7 +417,7 @@ async function apresConnexion() {
   let pret = null;
   if (!consumeHash() && !consumeGoto()) { go('home'); pret = accueil(); }
   Promise.resolve(pret).then(r => armer(!!pret && r !== 'lien'), () => armer(false));
-  maybeTour(pret);
+  maybeTuto(pret);
 }
 
 async function doLogin(up, em, pw, err, btn) {

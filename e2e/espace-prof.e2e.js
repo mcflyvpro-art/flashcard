@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
 import { faireProfesseur } from './faux-classes.js';
 import { etab } from './faux-etablissement.js';
-import { inscrire } from './aide.js';
+import { inscrire, passerTuto, sansTuto } from './aide.js';
 
 const SHOTS = process.env.SHOTS;
 
@@ -36,6 +36,7 @@ for (const largeur of [390, 1440]) {
 
     await inscrire(page, 'durand@exemple.fr');
     faireProfesseur(store, 'durand@exemple.fr', 'Claire DURAND');
+    sansTuto(store, 'durand@exemple.fr');
     semerLivre(store, 'durand@exemple.fr', 'Verbes irréguliers', [['be', 'été'], ['go', 'aller'], ['see', 'voir'], ['take', 'prendre']]);
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Vos premiers élèves' })).toBeVisible({ timeout: 10000 });
@@ -155,9 +156,11 @@ for (const largeur of [390, 1440]) {
     await voir(alice, '16-connexion-carte', 390);
     await alice.getByRole('button', { name: 'Se connecter' }).click();
     // à sa première ouverture, il choisit son pseudo puis son visage (ui/bienvenue.js), puis arrive sur ses devoirs
+    // avec son tuto (ui/tuto.js), qu'il passe ici
     await expect(alice.locator('#app')).toHaveAttribute('data-view', 'bienvenue', { timeout: 10000 });
     await alice.getByRole('button', { name: 'Continuer' }).click();          // le pseudo donné d'office lui va
     await alice.getByRole('button', { name: 'C’est parti' }).click();
+    await passerTuto(alice);
     // un élève à carte arrive sur ses devoirs, sous le nom de la liste de classe
     await expect(alice.getByText('Verbes irréguliers')).toBeVisible({ timeout: 10000 });
     await expect(alice.locator('.el-qui')).toContainText('Alice MARTIN');
@@ -172,6 +175,7 @@ for (const largeur of [390, 1440]) {
     await awa.goto('./app?carte=awa.ndiaye-' + carte('awa.ndiaye').password);
     await expect(awa.locator('#app')).toHaveAttribute('data-view', 'bienvenue', { timeout: 10000 });
     await awa.getByRole('button', { name: 'Passer' }).click();
+    await passerTuto(awa);                                                    // l'accueil passé, le tuto vient quand même
     await expect(awa.getByText('Verbes irréguliers')).toBeVisible({ timeout: 10000 });
     await expect(awa.locator('.el-qui')).toContainText('Awa N’DIAYE');
     expect(new URL(awa.url()).search, 'le code ne reste pas dans l’adresse').toBe('');

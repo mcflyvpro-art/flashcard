@@ -11,7 +11,7 @@ import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerCompte, semerPseudo } from './faux-cercle.js';
 import { modele } from './faux-classes.js';
 import { etab, semerEtablissement } from './faux-etablissement.js';
-import { inscrire } from './aide.js';
+import { inscrire, passerTuto } from './aide.js';
 
 const pseudoDe = (store, email) => {
   const u = store.users.find(x => x.email === email);
@@ -102,6 +102,7 @@ test('un élève de lycée : son pseudo à l’accueil, puis dans le cercle ; so
   await page.getByRole('button', { name: 'C’est parti' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'classes');
   await expect.poll(() => pseudoDe(store, 'tom@lycee.fr')).toBe('tom.petit');
+  await passerTuto(page);                                                     // le tuto prend le relais de l'accueil
 
   await page.getByRole('button', { name: /^(Le )?[Cc]ercle( des lecteurs)?$/ }).first().click();
   await expect(page.locator('.cc-moi')).toContainText('Tom PETIT');

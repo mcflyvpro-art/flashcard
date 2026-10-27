@@ -18,7 +18,7 @@ import {
   paintMenuFnr, paintMenuHelp, paintMenuLeave,
   paintMenuLend, paintMenuMate, paintMenuMateprof,
   paintMenuMerge, paintMenuMove, paintMenuPreview, paintMenuSendfriend,
-  paintMenuSharepick, paintMenuSortpick, paintMenuSplit, paintMenuTuto,
+  paintMenuSharepick, paintMenuSortpick, paintMenuSplit,
   paintMenuVers
 } from './menus-b.js';
 import { paintMenuRename } from './menus-c.js';
@@ -311,7 +311,6 @@ function menuPainter(m) {
     sharepick: paintMenuSharepick,
     handle: paintMenuPseudo,
     mate: paintMenuMate,
-    tuto: paintMenuTuto,
     help: paintMenuHelp,
     vers: paintMenuVers,
     conflict: paintMenuConflict,

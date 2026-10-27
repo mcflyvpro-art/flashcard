@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, LOGO, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
-  DECKPAGE, adm, animate, asks, auth, compte, db, demo, dirty, eleve, filter, iAmMod, liveAt, me,
+  DECKPAGE, adm, animate, asks, auth, compte, db, dirty, eleve, filter, iAmMod, liveAt, me,
   liveSoon, liveT, mailbox, menu, mods, myRole, online, pageDir, peek, prefs, ref,
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
   setPageDir, setPreviewOf, setView, view
@@ -54,7 +54,7 @@ const LIVEMS = 15000;
 const LIVEV = /^(stats|commu|friends|club)$/;
 
 function livePull(force) {
-  if (!auth || demo || document.hidden || !LIVEV.test(view.name)) return;
+  if (!auth || document.hidden || !LIVEV.test(view.name)) return;
   if (!force && Date.now() - liveAt < 4000) return;
   setLiveAt(Date.now());
   if (view.name === 'stats') statsPull(1);
@@ -67,7 +67,7 @@ function livePull(force) {
 }
 
 function liveSync() {
-  const want = auth && !demo && LIVEV.test(view.name);
+  const want = auth && LIVEV.test(view.name);
   if (want && !liveT) { setLiveT(setInterval(livePull, LIVEMS)); livePull(); }
   if (!want && liveT) { clearInterval(liveT); setLiveT(0); }
 }

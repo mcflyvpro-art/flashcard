@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
-import { auth, compte, db, me, online, prefs, view } from '../data/etat.js';
+import { auth, compte, db, eleve, me, online, prefs, school, view } from '../data/etat.js';
 import { COLORS, delSubject, esc, pushSubject, save } from '../core/coeur-sync.js';
 import { changerPseudo, envoyerPrefs, mePull, pseudoLibre } from '../core/reglages-corbeille.js';
 import { choisirMonJeton } from '../core/visuels.js';
@@ -11,19 +11,24 @@ import { MATIERES, matieresApres, NIVEAUX_PERSO, OBJECTIFS, prenomValide, propos
 import { MAX, message, motif, proposer, saisie } from '../pseudo.js';
 import { go } from './bibliotheque.js';
 import { ouvrirCode } from './code-entree.js';
-import { savePrefs, toast } from './import-cartes.js';
+import { toast } from './import-cartes.js';
+import { avancer } from './mouvement.js';
 import './bienvenue.css';
 
-/* ══════════ l'accueil d'un nouveau compte (2026-10-26) ══════════
+/* ══════════ l'accueil d'un nouveau compte (2026-10-26, refait le 2026-10-27) ══════════
    Chargé une fois par compte par ui/bienvenue-porte.js. Un particulier :
    « pour moi » ou « j'ai un code », puis son prénom et son pseudo, son
-   visage, son niveau et ses matières, un objectif — et la visite guidée.
-   Un élève entré par son établissement : son pseudo (son nom de classe,
-   « Prénom NOM », reste celui qu'on voit en classe), puis son visage
-   (2026-10-27). Le pseudo suit la règle de src/pseudo.js pendant la
-   frappe, et la base dit s'il est libre. Peu de mots, de gros boutons,
-   une étape par écran ; « Passer » à tout moment (le pseudo donné
-   d'office par la base reste alors). */
+   visage, son niveau et ses matières, un objectif — et le tuto
+   (ui/tuto.js), qui prend le relais. Un élève entré par son établissement :
+   son lycée et sa classe pour l'accueillir, son pseudo (son nom de classe,
+   « Prénom NOM », reste celui qu'on voit en classe), son visage — et le
+   tuto aussi. « J'ai un code » ouvre la porte d'entrée par-dessus l'accueil :
+   entré, l'élève reprend ici, en élève de sa classe. Le pseudo suit la
+   règle de src/pseudo.js pendant la frappe, et la base dit s'il est libre.
+   Habillé comme les écrans publics (la lumière de la marque, le logo, des
+   titres en serif) : on arrive du site, on y est encore un peu. Peu de
+   mots, de gros boutons, une étape par écran ; « Passer » à tout moment
+   (le pseudo donné d'office par la base reste alors). */
 
 const e = { mode: 'perso', etape: 0, apres: null, prenom: '', pseudo: '', pseudoTouche: false, libre: '', suggestion: '',
   jeton: 0, tour: 0, choix: null, niveau: '', matieres: new Set(), objectif: 20, envoi: false };
@@ -45,15 +50,16 @@ export function commencer(mode, apres) {
 }
 
 const repeint = () => { if (view.name === 'bienvenue') bienvenueEcran(); };
-const gros = (act, ic, titre, on, attr = '') => `<button class="bv-gros${on ? ' on' : ''}" data-bv="${act}" ${attr}>
-  ${ic ? svg(ic) : ''}<b>${titre}</b></button>`;
+const gros = (act, ic, titre, sous) => `<button class="bv-gros" data-bv="${act}">
+  <i class="bv-gros-ic">${svg(ic)}</i><span class="bv-gros-t"><b>${titre}</b><small>${sous}</small></span>${svg(I.arrow)}</button>`;
 
 /* ---------- les étapes ---------- */
 function choix() {
-  return `<h1 class="bv-t">Bienvenue sur Folio</h1>
+  return `<h1 class="bv-t">Bienvenue sur <em>Folio.</em></h1>
+    <p class="bv-s">Tu révises pour toi, ou avec ta classe&nbsp;?</p>
     <div class="bv-duo">
-      ${gros('pour-moi', I.book, 'Je révise pour moi')}
-      ${gros('code', I.key, 'J’ai un code')}
+      ${gros('pour-moi', I.book, 'Je révise pour moi', 'Mes livres, mon rythme')}
+      ${gros('code', I.key, 'J’ai un code', 'Mon établissement, mon prof')}
     </div>`;
 }
 
@@ -64,18 +70,28 @@ const champPseudo = () => `<label class="bv-ch"><span>Pseudo</span><span class="
 
 function nom() {
   return `<h1 class="bv-t">Comment t’appelles-tu&nbsp;?</h1>
-    <div class="bv-champs">
+    <div class="bv-champs bv-verre">
       <label class="bv-ch"><span>Prénom</span><input id="bvpre" data-bvin="prenom" value="${esc(e.prenom)}" maxlength="40"
         autocomplete="given-name" enterkeyhint="next"></label>
       ${champPseudo()}
     </div>`;
 }
 
+/* Où l'élève vient d'entrer : son établissement et sa classe (une carte
+   élève : la classe de son professeur). */
+function ouEntre() {
+  const cl = (eleve.classes || []).find(c => c.statut === 'inscrit') || {};
+  const ec = school || {};
+  const lieu = ec.org || cl.etab || cl.prof || '', classe = ec.classe || cl.nom || '';
+  if (!lieu && !classe) return '';
+  return `<p class="bv-ecole">${svg(I.school)}<span>${[lieu && esc(lieu), classe && `<b>${esc(classe)}</b>`].filter(Boolean).join(' · ')}</span></p>`;
+}
+
 /* L'élève de classe : son nom de classe, fixe, et le pseudo qu'il veut. */
 function pseudo() {
-  return `<h1 class="bv-t">Choisis ton pseudo</h1>
+  return `${ouEntre()}<h1 class="bv-t">Bienvenue&nbsp;! Choisis ton pseudo</h1>
     ${compte && compte.nom ? `<p class="bv-classe">${svg(I.lock)}<span>En classe : <b>${esc(compte.nom)}</b></span></p>` : ''}
-    <div class="bv-champs">${champPseudo()}</div>`;
+    <div class="bv-champs bv-verre">${champPseudo()}</div>`;
 }
 
 /* ---------- le pseudo : la règle ici, la place à la base ---------- */
@@ -118,7 +134,8 @@ function visage() {
   const l = propositions(auth ? auth.uid : 'folio', e.tour);
   if (!e.choix) e.choix = l[0];
   return `<h1 class="bv-t">Choisis ton visage</h1>
-    <div class="bv-moi"><i class="jt xl vis" style="--k:${COULEURS[e.choix.teinte]}">${avatarSvg(e.choix.avatar)}</i></div>
+    <div class="bv-moi"><i class="jt xl vis" style="--k:${COULEURS[e.choix.teinte]}">${avatarSvg(e.choix.avatar)}</i>
+      ${motif(e.pseudo) === 'ok' ? `<span>@${esc(e.pseudo)}</span>` : ''}</div>
     <div class="bv-visages">${l.map((p, i) => `<button class="bv-vis${p.cle === e.choix.cle ? ' on' : ''}" data-bv="visage" data-i="${i}"
       aria-label="Visage ${i + 1}" aria-pressed="${p.cle === e.choix.cle}"><i class="jt lg vis" style="--k:${COULEURS[p.teinte]}">${
         avatarSvg(p.avatar)}</i></button>`).join('')}</div>
@@ -137,7 +154,8 @@ function matieres() {
 function objectif() {
   return `<h1 class="bv-t">Combien de pages par jour&nbsp;?</h1>
     <div class="bv-objectifs">${OBJECTIFS.map(o => `<button class="bv-obj${e.objectif === o.n ? ' on' : ''}" data-bv="objectif"
-      data-v="${o.n}"><b>${o.n}</b><span>${o.t}</span></button>`).join('')}</div>`;
+      data-v="${o.n}"><b>${o.n}</b><span>${o.t}</span></button>`).join('')}</div>
+    <p class="bv-s bv-pied">${svg(I.cal)}Tu le changes quand tu veux, dans les Réglages.</p>`;
 }
 
 const ECRANS = { choix, nom, pseudo, visage, matieres, objectif };
@@ -152,17 +170,22 @@ function suite() {
     dernier ? 'C’est parti' : 'Continuer'}${svg(I.arrow)}</button>`;
 }
 
+/* En tête : le retour (ou le logo à la première étape), le fil de
+   l'avancement, « Passer ». Le fil glisse d'une étape à l'autre (avancer). */
 export function bienvenueEcran() {
   const l = etapes(), k = l[e.etape];
-  $.innerHTML = `<div class="bv" id="page" data-etape="${k}">
-      <div class="bv-haut">
-        ${e.etape > 0 ? `<button class="ic" data-bv="retour" aria-label="Retour">${svg(I.back)}</button>` : '<span></span>'}
-        ${l.length > 1 ? `<div class="bv-points">${l.map((x, i) => `<i class="${i <= e.etape ? 'on' : ''}"></i>`).join('')}</div>` : '<span></span>'}
+  $.innerHTML = `<div class="pub bv-pub"><div class="bv" data-etape="${k}">
+      <header class="bv-haut">
+        ${e.etape > 0 ? `<button class="ic" data-bv="retour" aria-label="Retour">${svg(I.back)}</button>`
+          : '<span class="bv-logo"><img src="/site/logo.svg" alt="" width="26" height="28"><span>Folio</span></span>'}
+        <span class="bv-fil" role="progressbar" aria-label="Avancement" aria-valuemin="1" aria-valuemax="${l.length}"
+          aria-valuenow="${e.etape + 1}"><i id="bvfil"></i></span>
         <button class="bv-passer" data-bv="passer">Passer</button>
-      </div>
-      <div class="bv-corps">${ECRANS[k]()}</div>
+      </header>
+      <div class="bv-corps" data-k="bv:${k}">${ECRANS[k]()}</div>
       <div class="bv-bas">${suite()}</div>
-    </div>`;
+    </div></div>`;
+  avancer('bienvenue', document.getElementById('bvfil'), Math.round((e.etape + 1) / l.length * 100));
   if (k === 'nom') setTimeout(() => { const i = document.getElementById(e.prenom ? 'bvpse' : 'bvpre'); if (i && !e.prenom) i.focus(); }, 80);
   if ((k === 'nom' || k === 'pseudo') && !e.libre && motif(e.pseudo) === 'ok') verifier();
 }
@@ -194,13 +217,14 @@ async function terminer(complet) {
   if (complet && e.choix) await choisirMonJeton(e.choix.cle, e.choix.teinte);
   e.envoi = false;
   go(e.mode === 'classe' ? 'classes' : 'home');
-  if (e.mode === 'perso' && e.apres) e.apres();
+  if (e.apres) e.apres();               // le tuto, pour l'un comme pour l'autre
 }
 
 /* ---------- les gestes ---------- */
 const ACTIONS = {
   'pour-moi': () => { e.etape = 1; repeint(); },
-  code: () => { prefs.bienvenue = 1; savePrefs(); go('home'); ouvrirCode(); },
+  // par-dessus l'accueil : refermée, on y est encore ; entré, l'élève reprend ici (ui/tuto-porte.js, apresEntree)
+  code: () => ouvrirCode(),
   passer: () => terminer(false),
   retour: () => { e.etape = Math.max(0, e.etape - 1); repeint(); },
   suivant: async () => {

@@ -19,20 +19,20 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      46 / 148
-DERNIER   2026-10-27 · Page d'accueil, tour 4 (docs/LANDING.md) : la page suit la nouvelle
-          charte (pages teintées à signet, matières en petits livres, azur pour
-          ce qui se compte, médailles de l'app), parle de « livre de flashcards »
-          et de pages recto verso au lieu de « fiches » (refusé par test),
-          Folio Campus a sa marque et dit qu'il s'adresse aux établissements,
-          le « + » de Folio+ en couleur, « Commencer gratuitement » et l'en-tête
-          du téléphone qui garde l'inscription ; la démo propose le geste
-          d'après (créer son compte, l'essayer dans son établissement) et dit
-          comment avoir ce qu'elle grise. Affiches et image de partage refaites.
-          Preuves : npm run check (459 tests), e2e 70 + 1 intermittent connu
-          (pseudo.e2e.js, sur main aussi), Lighthouse 100×4 sur ordinateur.
-Avant :   2026-10-27 · Les pseudos ont des règles (20261027090000) : tout compte en a un,
-          donné d'office, unique, deux changements par semaine, changeable de
-          partout ; au téléphone, les titres des onglets reviennent en haut.
+DERNIER   2026-10-27 · Le tuto de première connexion remplace la visite guidée (et son
+          compte d'essai) : il fait faire sur le vrai écran, s'adapte au rôle
+          (particulier : son premier livre, lu et noté, puis Folio+ ; élève de
+          classe : son devoir ; professeur : son code, ses classes, un devoir,
+          le bilan ; référent : ses codes et sa console) et à l'écran
+          (téléphone, ordinateur) ; passable, rejoué des Réglages ; dans la
+          démo, à la première entrée et depuis le bandeau. L'accueil d'un
+          compte neuf est refait (lumière de la marque, le lycée et la classe
+          d'un élève, « J'ai un code » par-dessus l'accueil). Preuves : npm run
+          check (tests du tuto 21), e2e/tuto.e2e.js 6/6 et toute la suite.
+Avant :   2026-10-27 · Page d'accueil, tour 4 (docs/LANDING.md) : la page suit la nouvelle
+          charte, parle de « livre de flashcards », Folio Campus a sa marque ;
+          la démo propose le geste d'après. Et les pseudos ont des règles
+          (20261027090000).
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.
