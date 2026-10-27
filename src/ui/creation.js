@@ -9,6 +9,7 @@ import { MAXB, MAXF, markDups, markOver } from './carte-media.js';
 import { deck, esc, plur, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
 import { askPages } from './ecran-groupe.js';
 import { AIERR, addDeck, aiCards, aiFromFile, toast } from './import-cartes.js';
+import { ouvrirEnvie } from './demo-porte.js';
 
 /* ---------- création / import ----------
    Un seul écran pour toutes les façons de remplir un livre. Il y en avait
@@ -54,14 +55,19 @@ function identiteHtml() {
 
 /* Ce qui coûte (l'IA lit les photos, les PDF et le cours) n'existe qu'avec
    un compte : dans la démo sans compte, ces onglets sont grisés et le
-   disent au survol (`data-astuce`, app.css). */
+   disent au survol (`data-astuce`, app.css) ; les toucher ouvre la
+   fenêtre de la démo qui dit ce qu'ils feraient et comment les avoir
+   (`ouvrirEnvie`, ui/demo.js). Le cours par l'IA est dans le compte
+   gratuit (3 par mois) ; la photo et le PDF, dans Folio+ (`data-offre`). */
 const PAYANTS = new Set(['fichier', 'photo', 'ia']);
 const payant = id => !!demoEtab && PAYANTS.has(id);
 export const ASTUCE_PAYANT = 'Avec un compte Folio';
+const astuce = id => (id === 'ia' ? ASTUCE_PAYANT : 'Avec Folio+');
 
 const ongletsHtml = mode => `<div class="cr-tabs" role="tablist" aria-label="Façon de créer les pages">
     ${MODES.map(m => `<button role="tab" class="${m.id === mode ? 'on' : ''}${payant(m.id) ? ' payant' : ''}" data-cmode="${m.id}"
-      aria-selected="${m.id === mode}" ${payant(m.id) ? `aria-disabled="true" data-astuce="${ASTUCE_PAYANT}"` : `title="${m.aide}"`}>${
+      aria-selected="${m.id === mode}" ${payant(m.id) ? `aria-disabled="true" data-astuce="${astuce(m.id)}"${
+        m.id === 'ia' ? '' : ' data-offre="plus"'}` : `title="${m.aide}"`}>${
       svg(I[m.icon])}<span>${m.nom}</span></button>`).join('')}
   </div>`;
 
@@ -143,7 +149,7 @@ export function importView() {
   const nm = document.getElementById('nm');
   if (nm) nm.addEventListener('input', () => comp.name = nm.value);
   $.querySelectorAll('[data-cmode]').forEach(b => b.onclick = () => {
-    if (payant(b.dataset.cmode)) return toast(I.lock, ASTUCE_PAYANT);
+    if (payant(b.dataset.cmode)) return ouvrirEnvie(b.dataset.cmode);
     if (b.dataset.cmode === comp.mode) return;
     comp.mode = b.dataset.cmode; comp.edit = -1; render();
   });

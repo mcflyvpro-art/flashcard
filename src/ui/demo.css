@@ -43,10 +43,40 @@
 /* pendant une révision, un quiz ou une partie, les boutons du bas sont à l'élève : le bandeau s'efface */
 #app:is([data-view="study"],[data-view="run"],[data-view="duel"],[data-view="direct"],[data-view="bienvenue"]) ~ .dm-bandeau{display:none}
 .dm-bandeau .dm-neuf{width:32px;padding:0;justify-content:center;background:rgba(255,255,255,.14);color:#fff}
+/* le geste d'après (créer son compte, l'essayer dans son établissement) :
+   dans la lumière de la marque, la seule couleur du bandeau */
+.dm-bandeau .dm-cta{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:16px;
+  background:linear-gradient(115deg,#5A76D0,#9A78CF 52%,#D7648D);color:#fff;font-weight:750;text-decoration:none;white-space:nowrap}
+.dm-bandeau .dm-cta svg{width:15px;height:15px;stroke-width:2.2}
+.dm-court{display:none}
+/* ce que la démo n'ouvre pas : un « + » pour ce qui est dans Folio+ */
+.payant[data-offre="plus"]::before{content:'+';position:absolute;top:4px;right:5px;width:15px;height:15px;border-radius:50%;
+  background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);color:#fff;font:800 12px/15px var(--sans,system-ui);text-align:center}
+/* ce qui coûte, touché : ce que ça ferait et comment l'avoir */
+.dm-envie{width:min(380px,calc(100vw - 32px));padding:28px 22px 14px;border:0;border-radius:24px;background:var(--card);color:var(--ink);
+  text-align:center;box-shadow:var(--s3)}
+.dm-envie::backdrop{background:rgba(29,28,25,.42);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+.dm-envie-ic{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 14px;border-radius:17px;
+  background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);color:#fff;box-shadow:0 12px 24px -12px rgba(120,70,160,.8)}
+.dm-envie-ic svg{width:26px;height:26px;fill:rgba(255,255,255,.25)}
+.dm-envie h2{margin:0;font:700 24px/1.15 var(--serif);letter-spacing:-.02em;text-wrap:balance}
+.dm-envie p{margin:10px 0 20px;color:var(--ink2);font-size:15px;line-height:1.45}
+.dm-envie .cta{text-decoration:none}
+.dm-envie .lnk{display:flex;justify-content:center;width:100%;margin:6px 0 0;text-decoration:none}
 @media (max-width:899px){
   html.en-demo #app{padding-bottom:calc(64px + env(safe-area-inset-bottom))}   /* la fin de la page ne passe pas dessous */
+  /* au téléphone, tout sur une ligne : le libellé court sans icône, « Quitter » en icône (il garde son nom
+     pour qui ne voit pas l'icône) ; sous 380 px, « Recommencer » laisse sa place */
+  .dm-bandeau{gap:6px;padding-left:12px}
+  .dm-long,.dm-bandeau .dm-cta svg{display:none}
+  .dm-court{display:inline}
+  .dm-bandeau [data-dm="quitter"]{width:32px;padding:0;justify-content:center}
+  .dm-bandeau [data-dm="quitter"] span{display:none}
   html.nav-haut .dm-bandeau{bottom:calc(14px + env(safe-area-inset-bottom))}   /* prof et référent : pas d'onglets en bas */
   html.en-demo:not(.nav-haut) .fab{bottom:calc(140px + env(safe-area-inset-bottom))}   /* le « + » des livres passe au-dessus du bandeau */
+}
+@media (max-width:379px){
+  .dm-bandeau .dm-neuf{display:none}
 }
 @media (min-width:900px){
   .dm-roles{grid-template-columns:repeat(3,minmax(0,1fr));max-width:none}

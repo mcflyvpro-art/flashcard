@@ -85,7 +85,7 @@ test('Léa lit son devoir, Marc le voit ; Marc écrit à la classe, Léa le reç
   expect(parties).toEqual([]);
 });
 
-test('ce qui coûte est grisé, et le dit', async ({ page }) => {
+test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', async ({ page }) => {
   const parties = await ouvrirDemo(page, 'eleve');
   await expect(page).toHaveURL(/\/demo\/eleve\/classe$/, { timeout: 10000 });
   await aller(page, '/demo/eleve/livres/nouveau');
@@ -93,12 +93,28 @@ test('ce qui coûte est grisé, et le dit', async ({ page }) => {
   await expect(cours).toHaveClass(/payant/, { timeout: 10000 });
   await expect(cours).toHaveAttribute('data-astuce', 'Avec un compte Folio');
   await expect(page.getByRole('tab', { name: 'Photo' })).toHaveClass(/payant/);
+  await expect(page.getByRole('tab', { name: 'Photo' })).toHaveAttribute('data-astuce', 'Avec Folio+');
   await expect(page.getByRole('tab', { name: 'Fichier' })).toHaveClass(/payant/);
   await expect(page.getByRole('tab', { name: 'Coller' })).not.toHaveClass(/payant/);
+
+  // le toucher ouvre ce qu'il ferait, et comment l'avoir ; on ferme d'un appui (2026-10-27)
   await cours.click({ force: true });                     // aria-disabled : on touche quand même, comme un visiteur
-  await expect(page.locator('.toast')).toContainText('Avec un compte Folio');
+  const fenetre = page.locator('#dmenvie');
+  await expect(fenetre).toBeVisible();
+  await expect(fenetre.getByRole('heading')).toHaveText('L’IA écrit le livre pour toi');
+  await expect(fenetre.getByRole('link', { name: 'Créer mon compte' })).toHaveAttribute('href', '/inscription');
+  await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
+  await expect(fenetre).toBeHidden();
   await expect(page.getByRole('tab', { name: 'Écrire' })).toHaveAttribute('aria-selected', 'true');
   expect(parties).toEqual([]);
+
+  // le bandeau propose le geste d'après : pour un élève, son compte ; la démo ne laisse rien
+  await page.locator('.dm-bandeau').getByRole('link', { name: 'Créer mon compte' }).click();
+  await expect(page).toHaveURL(/\/inscription$/, { timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Créer le compte' })).toBeVisible({ timeout: 10000 });
+  const restes = await page.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]
+    .filter(k => /dece0000-|folio\.demo/.test(k)));
+  expect(restes).toEqual([]);
 });
 
 test.describe('sur ordinateur', () => {
@@ -117,6 +133,10 @@ test.describe('sur ordinateur', () => {
     await expect(page).toHaveURL(/\/demo\/referent\/classes/);
     await expect(page.locator('.rf-ligne', { hasText: '2nde C' })).toBeVisible({ timeout: 10000 });
     expect(parties).toEqual([]);
+
+    // un référent : le geste d'après, c'est Folio dans son établissement
+    await expect(page.locator('.dm-bandeau').getByRole('link', { name: 'Essayer dans mon établissement' }))
+      .toHaveAttribute('href', '/demande-demo');
 
     // « Quitter » ramène au site, pas à la connexion (2026-10-26)
     await page.locator('.dm-bandeau').getByRole('button', { name: 'Quitter' }).click();

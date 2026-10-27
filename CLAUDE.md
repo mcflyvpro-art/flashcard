@@ -432,14 +432,25 @@ l'air de marcher ».
     l'appareil reste intact) ; « Quitter », « Se déconnecter » et `logout()`
     ramènent au site (`/`), et `effacerDemo()` (`ui/demo-porte.js`, appelé
     par `boot()` hors `/demo/`) efface `folio.demo` et toute clé
-    `dece0000-`. **Ce qui coûte** — l'IA (onglets Fichier, Photo, Cours de
+    `dece0000-`. **Le geste d'après** (2026-10-27) : le bandeau porte, dans
+    la lumière de la marque, ce qui suit la démo selon le rôle (`suite` des
+    `ROLES` de `ui/demo.js` : « Créer mon compte » vers `/inscription` pour
+    l'élève, « Essayer dans mon établissement » vers `/demande-demo` pour le
+    professeur et le référent ; libellé court et « Quitter » en icône au
+    téléphone) ; partir par un tel lien (`data-dm="partir"`) efface la démo
+    comme « Quitter ». **Ce qui coûte** — l'IA (onglets Fichier, Photo, Cours de
     la création), les images et les sons — est grisé en démo (`.payant`,
-    pastille `data-astuce` au survol, « Avec un compte Folio » au toucher),
-    et `aiCall`/`upload` refusent d'eux-mêmes (`demo`). Preuve :
-    `e2e/demo.e2e.js` (un devoir lu par Léa rendu chez Marc, un mot de Marc
-    dans le courrier de Léa, une classe de Claire après un rafraîchissement,
-    les onglets payants, aucune requête, rien qui reste après « Quitter »),
-    `test/monde-demo.test.js`.
+    pastille `data-astuce` au survol : « Avec un compte Folio » pour le cours
+    par l'IA, qui est dans le compte gratuit, « Avec Folio+ » et un « + »
+    dessiné, `data-offre="plus"`, pour la photo et le PDF) ; le toucher ouvre
+    une fenêtre qui dit ce que ferait la fonction et mène au compte ou à
+    Folio+ (`envie()` de `ui/demo.js`, par `ouvrirEnvie` de
+    `ui/demo-porte.js`), et `aiCall`/`upload` refusent d'eux-mêmes (`demo`).
+    Preuve : `e2e/demo.e2e.js` (un devoir lu par Léa rendu chez Marc, un mot
+    de Marc dans le courrier de Léa, une classe de Claire après un
+    rafraîchissement, les onglets payants et leur fenêtre, le bandeau qui
+    mène au compte sans rien laisser, aucune requête, rien qui reste après
+    « Quitter »), `test/monde-demo.test.js`.
 
     Historique de la découpe (M06.T3 puis M06.T4) : la coupe en 18 modules
     a d'abord suivi les anciennes sections `/* ---------- nom ---------- */`

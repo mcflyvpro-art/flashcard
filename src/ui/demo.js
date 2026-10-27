@@ -34,11 +34,17 @@ import './demo.css';
    Marc donne, Léa le reçoit. */
 
 /* n : le numéro de la personne dans monde.js (son visage, sa couleur) ;
-   t : le rôle sur la porte, c : dans le bandeau, q : ce qu'on y verra. */
+   t : le rôle sur la porte, c : dans le bandeau, q : ce qu'on y verra ;
+   suite : le geste d'après, dans le bandeau. Un élève crée son compte (il
+   est gratuit) ; un professeur ou un référent ouvre Folio dans son
+   établissement (la démo de 30 jours, /demande-demo). Le libellé court
+   sert au téléphone, où le bandeau n'a pas la place. */
+const POUR_SOI = { href: '/inscription', icone: 'user', long: 'Créer mon compte gratuit', court: 'Créer mon compte' };
+const POUR_L_ETAB = { href: '/demande-demo', icone: 'school', long: 'Essayer dans mon établissement', court: 'Mon établissement' };
 const ROLES = [
-  { k: 'eleve', n: 1, t: 'Élève', c: 'Élève', s: 'Léa · 2nde B', q: 'Ses devoirs, ses livres, sa série' },
-  { k: 'prof', n: 2, t: 'Professeur', c: 'Professeur', s: 'Marc · mathématiques', q: 'Ses classes, un devoir à donner' },
-  { k: 'ref', n: 3, t: 'Référent de l’établissement', c: 'Référent', s: 'Claire · le lycée', q: 'Les codes, les classes, les comptes' }
+  { k: 'eleve', n: 1, t: 'Élève', c: 'Élève', s: 'Léa · 2nde B', q: 'Ses devoirs, ses livres, sa série', suite: POUR_SOI },
+  { k: 'prof', n: 2, t: 'Professeur', c: 'Prof', s: 'Marc · mathématiques', q: 'Ses classes, un devoir à donner', suite: POUR_L_ETAB },
+  { k: 'ref', n: 3, t: 'Référent de l’établissement', c: 'Référent', s: 'Claire · le lycée', q: 'Les codes, les classes, les comptes', suite: POUR_L_ETAB }
 ];
 const CLE = 'folio.demo';
 
@@ -105,11 +111,45 @@ function nettoyer() {
 function bandeau(role) {
   let b = document.getElementById('dmbandeau');
   if (!b) { b = document.createElement('div'); b.id = 'dmbandeau'; b.className = 'dm-bandeau'; document.body.appendChild(b); }
+  const suite = (ROLES.find(x => x.k === role) || ROLES[0]).suite;
   b.innerHTML = `<b>Démo</b>
     <select data-dm-role aria-label="Rôle">${ROLES.map(r => `<option value="${r.k}"${r.k === role ? ' selected' : ''}>${r.c}</option>`).join('')}</select>
+    <a class="dm-cta" href="${suite.href}" data-dm="partir">${svg(I[suite.icone])}<span class="dm-long">${suite.long}</span><span class="dm-court">${suite.court}</span></a>
     <button data-dm="neuf" class="dm-neuf" aria-label="Recommencer la démo" title="Recommencer">${svg(I.refresh)}</button>
-    <button data-dm="quitter">${svg(I.exit)}<span>Quitter</span></button>`;
+    <button data-dm="quitter" aria-label="Quitter la démo">${svg(I.exit)}<span>Quitter</span></button>`;
   document.documentElement.classList.add('en-demo');
+}
+
+/* ---------- ce qui coûte, touché dans la démo ----------
+   Les onglets grisés de la création (ui/creation.js) : au lieu d'un simple
+   « non », ce qu'ils feraient, et comment les avoir, au moment où on en a
+   envie. Une fenêtre, une fois par geste, qu'on ferme d'un appui : rien
+   ne revient tout seul. Les offres sont celles de la page d'accueil. */
+const PRIX = 'dès 2,50\u00a0€ par mois';
+const ENVIES = {
+  ia: { t: 'L’IA écrit le livre pour toi',
+    s: 'Colle ton cours\u202f: elle en tire les questions et les réponses, une par page. 3 cours par mois avec un compte gratuit, 50 avec Folio+.' },
+  photo: { t: 'Ton cahier en photo, et c’est un livre',
+    s: `Prends ton cours en photo\u202f: l’IA le lit et en fait des flashcards. Avec Folio+, ${PRIX}.` },
+  fichier: { t: 'Ton PDF devient un livre',
+    s: `Dépose le PDF d’un cours\u202f: l’IA en tire les flashcards. Avec Folio+, ${PRIX}.` }
+};
+
+export function envie(cle) {
+  const e = ENVIES[cle] || ENVIES.ia;
+  let d = document.getElementById('dmenvie');
+  if (!d) {
+    d = document.createElement('dialog'); d.id = 'dmenvie'; d.className = 'dm-envie';
+    d.setAttribute('aria-labelledby', 'dmenviet');
+    d.addEventListener('click', ev => { if (ev.target === d) d.close(); });   // un appui sur le voile ferme
+    document.body.appendChild(d);
+  }
+  d.innerHTML = `<i class="dm-envie-ic">${svg(I.spark)}</i>
+    <h2 id="dmenviet">${e.t}</h2><p>${e.s}</p>
+    <a class="cta" href="/inscription" data-dm="partir">${svg(I.user)}Créer mon compte</a>
+    <a class="lnk" href="/#tarifs" data-dm="partir">Voir Folio+</a>
+    <button class="lnk" data-dm="rester">Continuer la démo</button>`;
+  if (!d.open) d.showModal();
 }
 
 export function quitter() {
@@ -142,7 +182,18 @@ export async function lancer(role, adresse) {
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-dm]');
   if (!b) return;
+  /* Partir vers une page de l'app (créer un compte, demander une démo, les
+     tarifs) : comme « Quitter », rien de la démo ne reste ; le lien fait
+     le reste. Sans preventDefault : un appui long ou un clic du milieu
+     l'ouvrent ailleurs et la démo continue ici. */
+  if (b.dataset.dm === 'partir') {
+    monde = null;
+    nettoyer();
+    try { sessionStorage.removeItem(CLE); } catch (x) { /* rien à effacer */ }
+    return;
+  }
   e.preventDefault();
+  if (b.dataset.dm === 'rester') b.closest('dialog').close();
   if (b.dataset.dm === 'lancer') lancer(b.dataset.v);
   if (b.dataset.dm === 'quitter') quitter();
   if (b.dataset.dm === 'neuf') {
