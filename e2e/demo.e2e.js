@@ -17,7 +17,7 @@ async function ouvrirDemo(page, role) {
   await aller(page, '/essayer');
   await expect(page.locator('.dm-role')).toHaveCount(3, { timeout: 10000 });
   await page.locator(`.dm-role[data-v="${role}"]`).click();
-  await passerTuto(page);              // la première entrée a son tuto (e2e/tuto.e2e.js le joue) ; changer de rôle, non
+  await passerTuto(page);              // chaque rôle a son tuto la première fois qu'on le prend (e2e/tuto.e2e.js le joue)
   return parties;
 }
 
@@ -48,6 +48,7 @@ test('Léa lit son devoir, Marc le voit ; Marc écrit à la classe, Léa le reç
 
   // Marc : dans la fiche de Léa, le devoir est rendu
   await changer(page, 'prof');
+  await passerTuto(page);                                                  // la première fois en professeur : son tuto
   await expect(page.getByText(/^Bon(jour|soir), Marc$/)).toBeVisible({ timeout: 10000 });
   await expect(page).toHaveURL(/\/demo\/prof$/);
   await page.locator('[data-pf="classe"]:visible').filter({ hasText: '2nde B' }).first().click();

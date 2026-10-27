@@ -49,9 +49,11 @@ const ROLES = [
   { k: 'ref', n: 3, t: 'Référent de l’établissement', c: 'Référent', s: 'Claire · le lycée', q: 'Les codes, les classes, les comptes', suite: POUR_L_ETAB }
 ];
 const CLE = 'folio.demo';
-/* Le tuto se joue à la première entrée dans la démo, pas à chaque rôle :
-   changer d'élève à professeur ne le relance pas ; « Revoir le tuto », dans
-   le bandeau, le rejoue pour le rôle du moment. Quitter la démo l'oublie. */
+/* Le tuto de chaque rôle se joue la première fois qu'on le prend : entrer en
+   élève, puis passer en professeur, donne l'un puis l'autre ; revenir à
+   l'élève ne le rejoue pas. « Tuto », dans le bandeau, le rejoue pour le
+   rôle du moment. Les rôles déjà vus sont rangés le temps de l'onglet ;
+   quitter la démo les oublie. */
 const CLE_TUTO = 'folio.demo.tuto';
 
 export function decouvrirEcran() {
@@ -209,12 +211,25 @@ export function quitter() {
   location.replace('/');               // le site : tout repart de zéro, plus de session, plus de lycée
 }
 
-/* La première entrée de la visite : le tuto du rôle choisi. */
-function premiereEntree() {
+/* Les rôles dont le tuto a déjà été vu dans cette visite. */
+function tutosVus() {
   try {
-    if (sessionStorage.getItem(CLE_TUTO)) return;
-    sessionStorage.setItem(CLE_TUTO, '1');
-  } catch (e) { /* stockage refusé : le tuto se joue, il se rejouera peut-être à un rafraîchissement */ }
+    const l = JSON.parse(sessionStorage.getItem(CLE_TUTO) || '[]');
+    return Array.isArray(l) ? l : [];
+  } catch (e) { return []; }   // stockage refusé ou abîmé : aucun vu
+}
+
+function tutoVu(role) {
+  const l = tutosVus();
+  if (l.includes(role)) return;
+  try { sessionStorage.setItem(CLE_TUTO, JSON.stringify([...l, role])); }
+  catch (e) { /* stockage refusé : le tuto se rejouera peut-être à un rafraîchissement */ }
+}
+
+/* La première fois qu'on prend ce rôle : son tuto. */
+function premiereEntree(role) {
+  if (tutosVus().includes(role)) return;
+  tutoVu(role);
   lancerTuto();
 }
 
@@ -235,8 +250,10 @@ export async function lancer(role, adresse) {
   await accueil();                     // son rôle, son établissement, son écran d'arrivée
   flush();
   armerSur(adresse && adresse.name && !adresse.racine ? adresse : null);
-  premiereEntree();
+  premiereEntree(r.k);
 }
+
+const roleDuBandeau = () => (document.querySelector('[data-dm-role]') || {}).value || 'eleve';
 
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-dm]');
@@ -248,11 +265,11 @@ document.addEventListener('click', e => {
   if (b.dataset.dm === 'partir') return oublier();
   e.preventDefault();
   if (b.dataset.dm === 'rester') b.closest('dialog').close();
-  if (b.dataset.dm === 'tuto') lancerTuto({ rejoue: true });
+  if (b.dataset.dm === 'tuto') { tutoVu(roleDuBandeau()); lancerTuto({ rejoue: true }); }
   if (b.dataset.dm === 'lancer') lancer(b.dataset.v);
   if (b.dataset.dm === 'quitter') quitter();
   if (b.dataset.dm === 'neuf') {
-    const role = (document.querySelector('[data-dm-role]') || {}).value || 'eleve';
+    const role = roleDuBandeau();
     try { sessionStorage.removeItem(CLE); } catch (x) { /* rien à effacer */ }
     nettoyer(); monde = semerMonde(nouveauStore()); garder();
     lancer(role);

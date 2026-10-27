@@ -19,20 +19,17 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      46 / 148
-DERNIER   2026-10-27 · Le tuto de première connexion remplace la visite guidée (et son
-          compte d'essai) : il fait faire sur le vrai écran, s'adapte au rôle
-          (particulier : son premier livre, lu et noté, puis Folio+ ; élève de
-          classe : son devoir ; professeur : son code, ses classes, un devoir,
-          le bilan ; référent : ses codes et sa console) et à l'écran
-          (téléphone, ordinateur) ; passable, rejoué des Réglages ; dans la
-          démo, à la première entrée et depuis le bandeau. L'accueil d'un
-          compte neuf est refait (lumière de la marque, le lycée et la classe
-          d'un élève, « J'ai un code » par-dessus l'accueil). Preuves : npm run
-          check (tests du tuto 21), e2e/tuto.e2e.js 6/6 et toute la suite.
-Avant :   2026-10-27 · Page d'accueil, tour 4 (docs/LANDING.md) : la page suit la nouvelle
-          charte, parle de « livre de flashcards », Folio Campus a sa marque ;
-          la démo propose le geste d'après. Et les pseudos ont des règles
-          (20261027090000).
+DERNIER   2026-10-27 · Le tuto, v2 : il présente l'app pas à pas (l'élève : ses
+          livres, une flashcard, créer, son journal, sa classe, ses amis, son
+          courrier ; le professeur : tableau de bord, une classe, un élève, un
+          devoir donné, le bilan, l'agenda ; le référent : sa console onglet par
+          onglet) et rien ne le contourne sauf la croix, « Passer » et Échap
+          (une garde sur la fenêtre ; le retour du navigateur ramène à
+          l'étape). Dans la démo, chaque rôle a le sien la première fois ;
+          Folio Campus a la marque du site. Preuves : npm run check (tests du
+          tuto 32), e2e/tuto.e2e.js 8/8 (trois tours) et toute la suite.
+Avant :   2026-10-27 · Le tuto de première connexion remplace la visite guidée (et son
+          compte d'essai), l'accueil d'un compte neuf est refait.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

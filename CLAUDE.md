@@ -397,43 +397,72 @@ l'air de marcher ».
     (`core/reglages-corbeille.js`, sans le délai de `savePrefs`). Marqué fait
     par `prefs.bienvenue`. Les règles dans `src/bienvenue.js`, pur et testé
     (`test/bienvenue.test.js`) ; parcours `e2e/bienvenue.e2e.js`.
-    **Le tuto de première connexion** (2026-10-27, à la place de l'ancienne
-    visite guidée et de son compte d'essai) : un guide court qui **fait
-    faire**, sur le vrai écran et le vrai compte — le livre qu'on y crée est
-    le sien. Les scénarios dans `src/tuto.js` (pur et testé,
-    `test/tuto.test.js` : étapes, ce qui les retire selon le compte — des
-    livres, un devoir, des classes, l'ordinateur —, cartes du début et de la
-    fin, pages d'exemple tirées de la matière, textes courts vérifiés) ; le
-    moteur dans `ui/tuto.js` + `tuto.css` (préfixe `tu-`), chargés à la
-    demande par sa porte `ui/tuto-porte.js` (`lancerTuto`, `arreterTuto`,
-    `maybeTuto`, `apresEntree`) — rien d'autre ne doit importer
-    `ui/tuto.js` ; l'état en cours dans `tuto` (`src/data/etat.js`). Un
-    voile, un trou sur la cible (les volets autour prennent les appuis), un
-    anneau qui pulse, une bulle d'une phrase : au téléphone toute la largeur,
-    sous ou sur la cible ; sur ordinateur à côté ; « Touche » au doigt,
-    « Clique sur » à la souris (`aideSelon`). Une étape finit quand ce
-    qu'elle attend arrive (un écran, une page retournée, un onglet) ; une
-    feuille ouverte reste à portée de main (mode `ouvert` : on y coche, nomme,
-    choisit) et l'étape finit avec elle ; une lecture libre n'a qu'une petite
-    bulle ; rien ne coince (une étape sans son écran passe, un geste qui ne
-    mène à rien fait paraître « Suivant » au bout de 12 s, × et Échap
-    quittent). Scénarios : **le particulier** — son premier livre (« Remplir
-    pour moi » : trois pages de sa première matière), le lire, retourner une
-    page, dire s'il savait (voile léger : la réponse se lit), le cercle, puis
-    **Folio+** (la page des tarifs, `?site#tarifs`, dans un autre onglet) ;
-    **l'élève de classe** — sa classe, son devoir ouvert et lu (sinon où ils
-    arriveront), ses livres, le cercle, Folio+ ; **le professeur** — son code,
-    choisir ses classes (établissement) ou créer la sienne (particulier), ou,
-    s'il en a, donner un devoir, une classe, son bilan, le défi en direct ;
-    « Tout est prêt » ; **le référent** — ses deux codes, puis sur ordinateur
-    les onglets Classes, Élèves, Licence (au téléphone, la licence) ; « Tout
-    est prêt » ; **l'éditeur** — rien. Il part une fois : à la fin de
-    l'accueil d'un élève, à la première connexion d'un professeur ou d'un
-    référent (`maybeTuto(pret)` après `accueil()`, seulement sur l'écran
-    d'arrivée et sans feuille ouverte), après une entrée par code
+    **Le tuto de première connexion** (2026-10-27, refait le jour même : v2)
+    : un guide qui **fait faire**, sur le vrai écran et le vrai compte — le
+    livre qu'on y crée est le sien, le devoir qu'un professeur y donne aussi.
+    Les scénarios dans `src/tuto.js` (pur et testé, `test/tuto.test.js` :
+    l'ordre des étapes de chaque rôle, ce qui les retire selon le compte —
+    des livres, des classes, l'ordinateur —, `CONNU` : tout ce qu'un scénario
+    écrit, le moteur doit savoir le lire ; une reprise mène toujours à une
+    étape d'avant ; cartes du début et de la fin ; pages d'exemple tirées de
+    la matière ; textes courts vérifiés) ; le moteur dans `ui/tuto.js` +
+    `tuto.css` (préfixe `tu-`), chargés à la demande par sa porte
+    `ui/tuto-porte.js` (`lancerTuto`, `arreterTuto`, `maybeTuto`,
+    `apresEntree`) — rien d'autre ne doit importer `ui/tuto.js` ; l'état en
+    cours dans `tuto` (`src/data/etat.js`). Un voile, un trou sur ce qui
+    reste éclairé (`trou` : toute une feuille, un formulaire), un anneau qui
+    pulse sur la cible, une bulle d'une phrase : au téléphone toute la
+    largeur, sous ou sur le trou ; sur ordinateur à côté ; « Touche » au
+    doigt, « Clique sur » à la souris, l'icône qui s'allume au téléphone
+    (`aideSelon(aide, souris, pc)`, `aide: { pc, tel }`). **Rien ne le
+    contourne, sauf la croix, « Passer » et Échap** : une garde posée sur la
+    fenêtre, en capture (`GARDES` : clic, appui, touche, frappe, focus),
+    ne laisse passer que ce que l'étape permet (`permis`, par défaut la cible
+    montrée et elle seule ; `sauf` : la case à cocher d'une ligne d'élève) ;
+    aucun écouteur `pointerdown` de l'app ne voit un appui (ni le balayage
+    entre onglets, ni la feuille qu'on tire, ni l'appui long), sauf ce qui se
+    glisse à cette étape (`glisse` : la page d'une lecture) ; le clavier ne
+    garde que les raccourcis d'une lecture (`clavier`), jamais « annuler ».
+    « Créer un nouveau livre » pendant qu'on choisit le livre d'un devoir, la
+    croix d'une feuille, un appui à côté : retenus, la bulle le rappelle. Le
+    retour du navigateur ne fait sauter aucune étape : le tuto ramène à
+    l'écran de l'étape (`ALLER`), ou revient à l'étape d'où l'on y entre
+    (`reprise` : une lecture ne se rouvre pas d'une adresse, on revient à
+    « Lis-le ») ; une feuille refermée autrement aussi. Une étape ne passe
+    d'elle-même que si elle ne peut pas se jouer (`tant` faux : rien à lire,
+    pas de classe, pas d'élève ; une cible qui ne vient pas), jamais parce
+    qu'on a attendu. Une bulle qui vient de se poser ignore un double appui
+    (300 ms). Sur un vrai compte, « Plus tard » (`passable`) dispense de
+    créer une vraie classe ou de donner un vrai devoir ; pas dans la démo.
+    Scénarios : **l'élève** (particulier et de classe) — ses livres (un
+    livre qui a des pages à lire, ou le premier qu'il crée : « Remplir pour
+    moi », trois pages de sa première matière), une flashcard lue, retournée,
+    notée (voile léger : la réponse se lit), « Folio s'en souvient » (un mot
+    au centre), comment créer (« Nouveau livre », les cinq façons — dans la
+    démo d'un élève, bibliothèque pleine : un mot seulement), son journal,
+    sa classe et ses devoirs (s'il en a une), ses amis ou camarades, son
+    courrier, puis **Folio+** (la page des tarifs, `?site#tarifs`, dans un
+    autre onglet) ; **le professeur**, pas à pas — son code, ses classes
+    choisies (établissement : sa matière, « Ajouter », « Terminé ») ou sa
+    classe créée (particulier) et la feuille du code, le tableau de bord,
+    « À traiter », une classe, son suivi, un élève et sa fiche, l'onglet
+    Devoirs, un devoir donné (le livre, puis « Donner » ; sans livre, on
+    montre seulement où), le bilan, le défi en direct, l'agenda, ses livres,
+    son courrier ; « Tout est prêt » ; **le référent** — ses deux codes, sa
+    licence, puis sur ordinateur les onglets Classes, Élèves, Professeurs,
+    Licence, Historique (au téléphone, les codes et la licence) ; « Tout est
+    prêt » ; **l'éditeur** — rien. La fin de la démo d'un professeur ou d'un
+    référent : **Folio Campus**, la marque du site (le logo sur son carré de
+    papier, l'école en écusson dégradé, « Campus » en italique dégradée, la
+    carte sombre au liseré qui tourne, comme Folio+). Il part une fois : à
+    la fin de l'accueil d'un élève, à la première connexion d'un professeur
+    ou d'un référent (`maybeTuto(pret)` après `accueil()`, seulement sur
+    l'écran d'arrivée et sans feuille ouverte), après une entrée par code
     (`apresEntree`) ; vu dès qu'il commence (`prefs.tuto`), « Passer » dit où
     le retrouver ; **« Revoir le tuto »** dans les Réglages (`data-act="tuto"`,
-    ceux du référent compris, pas l'éditeur). Parcours `e2e/tuto.e2e.js`.
+    ceux du référent compris, pas l'éditeur). Parcours `e2e/tuto.e2e.js`
+    (dont la démo : « Créer un nouveau livre », la croix, le retour du
+    navigateur, Ctrl+Z ne contournent rien).
     **Le pseudo** (2026-10-27) : tout compte en a un et le change de
     partout — la ligne « Pseudo » des Réglages (les deux, gestion comprise),
     « Mon jeton » du cercle (`data-cc="pseudo"`), l'accueil —, élève de
@@ -496,10 +525,12 @@ l'air de marcher ».
     l'élève, « Essayer dans mon établissement » vers `/demande-demo` pour le
     professeur et le référent ; libellé court et « Quitter » en icône au
     téléphone) ; partir par un tel lien (`data-dm="partir"`) efface la démo
-    comme « Quitter ». **Le tuto** (2026-10-27) : à la première entrée de la
-    visite, celui du rôle choisi (`premiereEntree` de `ui/demo.js`,
-    `folio.demo.tuto` en `sessionStorage`, oublié avec la démo et par
-    `effacerDemo`) — pas aux changements de rôle ; « Tuto » dans le bandeau
+    comme « Quitter ». **Le tuto** (2026-10-27) : celui de chaque rôle la
+    première fois qu'on le prend — entrer en élève puis passer en professeur
+    donne l'un puis l'autre, revenir à l'élève ne le rejoue pas
+    (`premiereEntree(role)` de `ui/demo.js`, les rôles vus dans
+    `folio.demo.tuto` en `sessionStorage`, oubliés avec la démo et par
+    `effacerDemo` ; « Recommencer » ne le relance pas) ; « Tuto » dans le bandeau
     le rejoue pour le rôle du moment (`data-dm="tuto"` ; sous 430 px il prend
     la place de « Recommencer ») ; sa fin mène au compte (l'élève : Folio+,
     « Créer mon compte ») ou à l'établissement (Folio Campus, « Essayer dans

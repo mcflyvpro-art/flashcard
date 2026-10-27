@@ -72,23 +72,30 @@ même pour tous ses camarades) ; il peut en plus être dans des **groupes**
 
 ### 3 bis. Le tuto de première connexion (2026-10-27)
 
-Un guide court qui **fait faire**, sur le vrai écran et le vrai compte : un
-trou de lumière sur ce qu'il faut toucher, une bulle d'une phrase. Il se
-passe à tout moment et se rejoue des Réglages (« Revoir le tuto »).
+Un guide qui **fait faire**, sur le vrai écran et le vrai compte : un trou
+de lumière sur ce qu'il faut toucher, une bulle d'une phrase. Il présente
+l'app pas à pas, dans l'ordre où on la découvre. Rien ne le contourne :
+seul ce que l'étape montre répond (un appui à côté, la croix d'une
+feuille, « Créer un nouveau livre » pendant qu'on choisit un livre ne font
+rien), et le retour du navigateur ramène à l'étape. On le quitte par la
+croix, « Passer » ou Échap ; il se rejoue des Réglages (« Revoir le tuto »).
 
-- **Le particulier**, à la fin de son accueil : il crée son premier livre
-  (« Remplir pour moi » y met trois pages de sa première matière), le lit,
-  retourne une page, dit s'il savait, découvre le cercle ; la fin présente
-  **Folio+** (« Découvrir Folio+ » ouvre les tarifs).
-- **L'élève d'une classe**, à la fin de son accueil : sa classe, son devoir,
-  qu'il ouvre et lit (sinon, là où ses devoirs arriveront), ses livres, le
-  cercle ; la fin présente Folio+.
-- **Le professeur**, à sa première connexion : son code ; sans classe, il
-  choisit les siennes (établissement) ou crée la sienne (particulier) ; avec
-  des classes, il donne un devoir, ouvre une classe et son bilan, voit le
-  défi en direct. « Tout est prêt ».
-- **Le référent** : ses deux codes, puis sur ordinateur les onglets Classes,
-  Élèves, Licence (au téléphone, la licence). « Tout est prêt ».
+- **L'élève** (particulier, ou d'une classe), à la fin de son accueil : ses
+  livres (ou le premier qu'il crée : « Remplir pour moi » y met trois pages
+  de sa première matière) ; une flashcard qu'il lit, retourne et note ;
+  comment créer un livre (les cinq façons) ; son journal ; sa classe et ses
+  devoirs, s'il en a une ; ses amis (ses camarades) ; son courrier. La fin
+  présente **Folio+** (« Découvrir Folio+ » ouvre les tarifs).
+- **Le professeur**, à sa première connexion, pas à pas dans un espace qui
+  est grand : son code ; sans classe, il choisit les siennes (établissement)
+  ou crée la sienne (particulier) ; son tableau de bord, « À traiter », une
+  classe, son suivi, un élève et sa fiche, les devoirs, un devoir qu'il
+  donne pour de vrai (le livre, puis « Donner » ; « Plus tard » s'il ne
+  veut pas encore), le bilan, le défi en direct, l'agenda, ses livres, son
+  courrier. « Tout est prêt ».
+- **Le référent** : ses deux codes, sa licence, puis sur ordinateur les
+  onglets Classes, Élèves, Professeurs, Licence, Historique (au téléphone,
+  les codes et la licence). « Tout est prêt ».
 - **L'éditeur** : rien.
 
 Au téléphone la bulle prend toute la largeur, sous ou sur ce qu'on montre ;
@@ -142,8 +149,9 @@ rien ne part : chaque visiteur a son lycée à lui, dans son onglet
 photos, les fichiers, les images et les sons — est grisé et le dit. Un
 bandeau change de rôle en un geste (ce que Marc donne, Léa le reçoit),
 « Quitter » ramène au site — pour montrer Folio en rendez-vous, ou se faire
-une idée. À la première entrée de la visite, **le tuto** du rôle choisi se
-joue (pas aux changements de rôle) ; « Tuto », dans le bandeau, le rejoue ;
+une idée. La première fois qu'on prend un rôle, **son tuto** se joue (entrer
+en élève puis passer en professeur donne l'un puis l'autre ; revenir à
+l'élève ne le rejoue pas) ; « Tuto », dans le bandeau, le rejoue ;
 il finit sur Folio+ pour l'élève (« Créer mon compte ») et sur Folio Campus
 pour le professeur et le référent (« Essayer dans mon établissement »).
 

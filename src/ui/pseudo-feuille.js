@@ -60,7 +60,13 @@ export function peindre(w) {
       <button class="cta ps-ok" data-ps="ok" id="psok" ${pret() ? '' : 'disabled'}>${svg(I.check)}Enregistrer</button>
     </div>`;
   mountMenu(w);
-  setTimeout(() => { const i = document.getElementById('hq'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 80);
+  /* le curseur en fin de pseudo — sauf si l'on tape déjà dans le champ : le
+     replacer couperait une sélection en cours, et la frappe s'ajouterait au
+     pseudo actuel au lieu de le remplacer */
+  setTimeout(() => {
+    const i = document.getElementById('hq');
+    if (i && document.activeElement !== i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+  }, 80);
 }
 
 /* La règle d'abord, ici ; la place ensuite, à la base — la dernière frappe

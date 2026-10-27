@@ -1,12 +1,14 @@
 // Le tuto de première connexion (2026-10-27, ui/tuto.js, scénarios de
-// src/tuto.js) : un guide court qui fait faire, sur le vrai écran. Un
-// particulier finit son accueil et le tuto lui fait créer son premier livre,
-// le lire et noter une page, puis montre le cercle et finit sur Folio+ ; un
-// élève entré par un code (depuis l'accueil même) a l'accueil de sa classe,
-// puis son tuto, qui se passe et se rejoue des Réglages ; un professeur et
-// un référent ont le leur, sans accueil ; l'éditeur rien. Dans la démo sans
-// compte, le tuto part à la première entrée, pas aux changements de rôle, et
-// le bandeau le rejoue.
+// src/tuto.js) : un guide qui fait faire, sur le vrai écran, et que rien ne
+// contourne sauf la croix, « Passer » et Échap. Un particulier finit son
+// accueil, crée son premier livre, lit et note une page, voit son journal,
+// ses amis, son courrier, et finit sur Folio+ ; un élève entré par un code a
+// le sien, qui se passe et se rejoue des Réglages ; un professeur fait le
+// tour de son espace, sa classe créée pour de vrai ; un référent celui de sa
+// console ; l'éditeur n'en a pas. Dans la démo, chaque rôle a son tuto la
+// première fois qu'on le prend ; « Créer un nouveau livre », la croix d'une
+// feuille, un appui à côté ne font rien sauter, et le retour du navigateur
+// ramène à l'étape d'où l'on était parti.
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerCompte } from './faux-cercle.js';
@@ -23,24 +25,81 @@ async function entrer(page, email) {
 }
 
 const bulle = page => page.locator('#tu .tu-bulle.vue');
-const etape = (page, titre) => expect(bulle(page).locator('.tu-t')).toHaveText(titre, { timeout: 10000 });
+const titre = page => bulle(page).locator('.tu-t');
+const etape = (page, t) => expect(titre(page)).toHaveText(t, { timeout: 10000 });
+/* « Suivant » : une bulle qui vient de se poser ignore un appui trop
+   rapide (un double appui ne saute pas l'étape d'après) — on réessaie
+   jusqu'à ce que l'étape change, comme quelqu'un qui retouche. */
+async function suivant(page) {
+  const avant = await titre(page).textContent();
+  for (let n = 0; n < 8; n++) {
+    await bulle(page).getByRole('button', { name: 'Suivant' }).click({ timeout: 3000 }).catch(() => {});
+    const change = await page.waitForFunction(a => {
+      const r = document.getElementById('tu'), b = document.querySelector('#tu .tu-bulle.vue .tu-t');
+      return !r || r.dataset.mode === 'carte' || !b || b.textContent !== a;
+    }, avant, { timeout: 700 }).then(() => true, () => false);
+    if (change) return;
+  }
+  throw new Error(`« Suivant » ne passe pas l’étape « ${avant} »`);
+}
 const prefsDe = (store, id) => ((store.tables.prefs || []).find(r => r.user_id === id) || {}).data || {};
 
 /* Toucher ce que montre l'anneau : le geste passe par le trou, comme un
    doigt. L'anneau glisse d'une cible à l'autre (0,45 s) : on attend qu'il
-   se pose, sinon on viserait l'endroit où il passait. */
-async function toucherLaCible(page) {
+   se pose, sinon on viserait l'endroit où il passait — et l'on ne touche
+   que si l'étape est toujours celle qu'on lisait. */
+async function toucherLaCible(page, lue) {
   await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'geste');
   const anneau = page.locator('#tu .tu-anneau');
   let avant = null, b = await anneau.boundingBox();
   for (let n = 0; n < 20 && JSON.stringify(b) !== JSON.stringify(avant); n++) {
     avant = b; await page.waitForTimeout(120); b = await anneau.boundingBox();
   }
+  if (lue && (await page.locator('#tu').getAttribute('data-mode') !== 'geste' || await titre(page).textContent() !== lue)) return;
   await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
 }
 
-test('un particulier : son accueil, puis son premier livre, une page lue et notée, le cercle, Folio+', async ({ page }) => {
-  test.setTimeout(90000);
+/* Les gestes qui ne sont pas un simple appui au centre de la cible. */
+const GESTES = {
+  'Dis si tu savais': page => page.locator('.grades button').nth(2).click({ timeout: 3000 }),
+  'Écris ta première page': page => bulle(page).getByRole('button', { name: 'Remplir pour moi' }).click({ timeout: 3000 }),
+  'Le livre': page => page.locator('#pflivres [data-pf="livre"]').first().click({ timeout: 3000 })
+};
+
+/* L'étape du moment, lue d'un coup (le titre et le mode ensemble : entre
+   deux lectures, le tuto peut avoir avancé). `null` tant qu'elle se prépare. */
+const etatTuto = page => page.evaluate(() => {
+  const r = document.getElementById('tu');
+  if (!r) return { fini: true };
+  if (r.dataset.mode === 'carte') return { fini: !!r.querySelector('.tu-fin') };
+  const b = r.querySelector('.tu-bulle.vue .tu-t');
+  return b && !['attente', 'pause'].includes(r.dataset.mode) ? { mode: r.dataset.mode, titre: b.textContent } : null;
+});
+
+/* Joue le tuto, comme quelqu'un qui suit les bulles, jusqu'à l'étape qui
+   porte ce titre (ou jusqu'à la carte de fin) ; rend les titres traversés. */
+async function jusqua(page, but) {
+  const vus = [];
+  for (let n = 0; n < 60; n++) {
+    const s = await etatTuto(page);
+    if (s && s.fini) return vus;
+    if (!s || s.fini === false) { await page.waitForTimeout(100); continue; }
+    if (s.titre === but) return vus;
+    if (vus.at(-1) !== s.titre) vus.push(s.titre);
+    try {
+      if (s.mode === 'geste') await (GESTES[s.titre] || toucherLaCible)(page, s.titre);
+      else await page.locator('#tu .tu-bulle.vue [data-tu="suivant"]').click({ timeout: 3000 });
+    } catch { continue; }                                            // l’étape a changé sous le doigt : on relit
+    await page.waitForFunction(avant => {
+      const r = document.getElementById('tu'), b = document.querySelector('#tu .tu-bulle.vue .tu-t');
+      return !r || r.dataset.mode === 'carte' || !b || b.textContent !== avant;
+    }, s.titre, { timeout: 2500 }).catch(() => {});                // rien n'a bougé (un appui trop tôt) : on relit, on retouche
+  }
+  throw new Error(`le tuto n’arrive pas à « ${but} » : ${vus.join(' → ')}`);
+}
+
+test('un particulier : son premier livre, une page lue et notée, son journal, ses amis, son courrier, Folio+', async ({ page }) => {
+  test.setTimeout(120000);
   const store = nouveauStore();
   const lea = semerCompte(store, 'lea@exemple.fr');
   faireEleve(store, 'lea@exemple.fr');
@@ -63,35 +122,27 @@ test('un particulier : son accueil, puis son premier livre, une page lue et not�
   await page.locator('#tu .tu-go').click();
 
   await etape(page, 'Ton premier livre');
-  // un appui hors du trou ne fait rien : le tuto le rappelle, l'écran ne bouge pas
+  // un appui à côté ne fait rien : la bulle le rappelle, l'écran ne bouge pas
   await page.mouse.click(30, 300);
+  await expect(page.locator('#tu')).toHaveClass(/rappel/);
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'home');
   await toucherLaCible(page);
 
   await etape(page, 'Écris ta première page');
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'import');
+  // une autre façon de créer (l'onglet « Coller ») attendra : on écrit sa première page
+  await page.locator('[data-cmode="coller"]').click();
+  await expect(page.locator('#cf')).toBeVisible();
   await bulle(page).getByRole('button', { name: 'Remplir pour moi' }).click();
   await expect(page.locator('#cn')).toHaveText('3');
   await expect(page.locator('#nm')).toHaveValue('Verbes irréguliers');   // la matière choisie à l'accueil
 
-  await etape(page, 'Crée-le');
-  await toucherLaCible(page);
-  await etape(page, 'Lis-le');
-  await expect(page.locator('#app')).toHaveAttribute('data-view', 'deck');
-  await toucherLaCible(page);
+  expect(await jusqua(page, 'Folio s’en souvient')).toEqual(['Crée-le', 'Lis-le', 'Retourne la page', 'Dis si tu savais']);
+  await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'centre');
+  await suivant(page);
 
-  await etape(page, 'Retourne la page');
-  await toucherLaCible(page);
-  await etape(page, 'Dis si tu savais');
-  await page.getByRole('button', { name: /^Correct/ }).click();
-
-  await etape(page, 'Continue');                                     // une lecture libre : la bulle seule, sans voile
-  await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'libre');
-  await bulle(page).getByRole('button', { name: 'Passer à la suite' }).click();
-
-  await etape(page, 'Le cercle');
-  await toucherLaCible(page);
-  await expect(page.locator('#app')).toHaveAttribute('data-view', 'commu', { timeout: 10000 });
+  expect(await jusqua(page, '')).toEqual(['Ton journal', 'Tes progrès', 'Le cercle', 'Tes amis', 'Ton courrier', 'Ta boîte']);
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'mail');
 
   // la fin : Folio+, la page des tarifs dans un autre onglet
   const fin = page.locator('#tu .tu-fin.plus');
@@ -146,20 +197,22 @@ test('« J’ai un code » dès l’accueil : l’accueil de sa classe, son tuto
   await expect(page.locator('.toast')).toContainText('Le tuto t’attend dans les Réglages');
   await expect.poll(() => prefsDe(store, zoe).tuto).toBe(1);
 
-  // il ne revient pas de lui-même ; les Réglages le rejouent
+  // il ne revient pas de lui-même ; les Réglages le rejouent, depuis le début
   await page.goto('./eleve/reglages');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await page.getByRole('button', { name: 'Revoir le tuto' }).click({ timeout: 10000 });
   await expect(page.locator('#tu .tu-debut h2')).toHaveText('Bienvenue, Zoé', { timeout: 10000 });
   await page.locator('#tu .tu-go').click();
-  await etape(page, 'Ta classe');                                    // rejoué des Réglages : d'abord y aller
-  await toucherLaCible(page);
-  await etape(page, 'Tes devoirs');                                  // pas encore de devoir : là où ils arriveront
-  await expect(page.locator('#app')).toHaveAttribute('data-view', 'classes');
+  await etape(page, 'Ton premier livre');                            // pas encore de livre : le premier se crée
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'home');
+  // la croix le quitte, et dit où le retrouver
+  await bulle(page).getByRole('button', { name: 'Quitter le tuto' }).click();
+  await expect(page.locator('#tu')).toHaveCount(0);
+  await expect(page.locator('.toast')).toContainText('Le tuto t’attend dans les Réglages');
 });
 
-test('un professeur particulier : son code, sa première classe, et c’est prêt', async ({ page }) => {
-  test.setTimeout(90000);
+test('un professeur particulier : sa classe créée pour de vrai, puis le tour de son espace, et c’est prêt', async ({ page }) => {
+  test.setTimeout(120000);
   const store = nouveauStore();
   const marc = semerCompte(store, 'marc@exemple.fr');
   faireProfesseur(store, 'marc@exemple.fr', 'Marc DURAND');
@@ -169,31 +222,70 @@ test('un professeur particulier : son code, sa première classe, et c’est prê
   await expect(page.locator('#tu .tu-debut h2')).toHaveText('Bonjour, Marc', { timeout: 10000 });
   await expect(page.locator('#tu .tu-debut .tu-lien')).toHaveText('Passer');
   await page.locator('#tu .tu-go').click();
-  await etape(page, 'Le code élèves');
-  await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'info');
-  await bulle(page).getByRole('button', { name: 'Suivant' }).click();
-  await etape(page, 'Votre classe');
-  await toucherLaCible(page);
-  await etape(page, 'Nommez-la');
-  // la feuille reste à portée de main : on y tape, on y valide
-  await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'ouvert');
+  expect(await jusqua(page, 'Nommez-la')).toEqual(['Le code élèves', 'Votre classe']);
+
+  // la feuille reste à portée de main : on y tape, on y valide ; sa croix, elle, ne la ferme pas
   const feuille = page.locator('.menu:not(.sort)');
+  await feuille.locator('.mx').click();
+  await expect(feuille).toContainText('Nouvelle classe');
+  await etape(page, 'Nommez-la');
+  // un vrai compte : créer une vraie classe ne s'impose pas
+  await expect(bulle(page).getByRole('button', { name: 'Plus tard' })).toBeVisible();
   await feuille.getByLabel('Nom', { exact: true }).fill('2nde 4');
   await feuille.getByRole('button', { name: 'Créer la classe' }).click();
+  await etape(page, 'Ajoutez vos élèves');                            // la classe créée, la feuille d'après : le code à donner
+  await expect(feuille).toContainText('2nde 4');
+
+  expect(await jusqua(page, '')).toEqual(['Ajoutez vos élèves', 'Votre tableau de bord', 'À traiter', 'Une classe', 'Son suivi',
+    'Ses devoirs', 'Donner un devoir', 'Le bilan', 'Défi en direct', 'L’agenda', 'Vos livres', 'Le courrier']);
   await expect(page.locator('#tu .tu-fin.pret h2')).toHaveText('Tout est prêt', { timeout: 10000 });
   await page.locator('#tu .tu-fin').getByRole('button', { name: 'Commencer' }).click();
   await expect(page.locator('#tu')).toHaveCount(0);
-  // la classe existe, et l'app continue comme sans tuto : la feuille pour ajouter ses élèves
-  await expect(page.locator('#app')).toHaveAttribute('data-view', 'profclasse', { timeout: 10000 });
-  await expect(page.locator('.menu:not(.sort)')).toContainText('2nde 4');
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'mail');
+  expect(modele(store).classes.some(c => c.name === '2nde 4')).toBe(true);
   expect(prefsDe(store, marc).tuto).toBe(1);
+});
+
+test('un professeur d’établissement : ses classes choisies dans le tuto, puis l’une d’elles et un élève', async ({ page }) => {
+  test.setTimeout(120000);
+  const store = nouveauStore();
+  const { org, classes } = semerEtablissement(store, { nom: 'Lycée Camus', classes: ['2nde A', '1re B'] });
+  const m = modele(store);
+  const marc = semerCompte(store, 'durand@lycee.fr');
+  m.roles[marc] = 'prof'; m.noms[marc] = 'Marc DURAND'; etab(store).membres[marc] = org.id;
+  const lea = semerCompte(store, 'lea@lycee.fr');
+  m.roles[lea] = 'eleve'; m.noms[lea] = 'Léa MARTIN'; etab(store).membres[lea] = org.id;
+  m.membres.push({ cid: classes[0], uid: lea, depuis: new Date().toISOString() });
+  await brancher(page, store);
+  await entrer(page, 'durand@lycee.fr');
+
+  await expect(page.locator('#tu .tu-debut h2')).toHaveText('Bonjour, Marc', { timeout: 10000 });
+  await page.locator('#tu .tu-go').click();
+  expect(await jusqua(page, 'Ajoutez vos classes')).toEqual(['Vos classes']);
+  const feuille = page.locator('.menu:not(.sort)');
+  await expect(bulle(page).getByRole('button', { name: 'Plus tard' })).toBeVisible();
+  // « Terminé » sans classe ne finit pas l'étape : on y revient
+  await page.locator('#pfmat').fill('Mathématiques');
+  await feuille.locator('.pf-li', { hasText: '2nde A' }).locator('[data-pf="enseigner"]').click();
+  await expect(feuille.locator('.pf-li', { hasText: '2nde A' })).toContainText('J’y enseigne');
+  await feuille.getByRole('button', { name: 'Terminé' }).click();
+  expect(store.et.services.some(s => s.cid === classes[0] && s.prof === marc && s.matiere === 'Mathématiques')).toBe(true);
+
+  expect(await jusqua(page, 'Sa fiche')).toEqual(['Votre tableau de bord', 'À traiter', 'Une classe', 'Son suivi', 'Ses élèves']);
+  await expect(feuille).toContainText('Léa MARTIN');
+  await suivant(page);                                                 // « Suivant » referme la fiche
+  await expect(feuille).toHaveCount(0);
+  await etape(page, 'Ses devoirs');
+  await bulle(page).getByRole('button', { name: 'Quitter le tuto' }).click();
+  await expect(page.locator('#tu')).toHaveCount(0);
 });
 
 test.describe('sur ordinateur', () => {
   // un ordinateur, pas un téléphone en grand : une souris, sans écran tactile (« Cliquez », pas « Touchez »)
   test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false });
 
-  test('un référent : ses codes, puis les onglets de sa console, et c’est prêt', async ({ page }) => {
+  test('un référent : ses codes, sa licence, puis chaque onglet de sa console, et c’est prêt', async ({ page }) => {
+    test.setTimeout(90000);
     const store = nouveauStore();
     const { org } = semerEtablissement(store, { nom: 'Lycée Camus', classes: ['2nde A'] });
     const m = modele(store);
@@ -205,14 +297,17 @@ test.describe('sur ordinateur', () => {
     await expect(page.locator('#tu .tu-debut h2')).toHaveText('Bonjour, Claire', { timeout: 10000 });
     await page.locator('#tu .tu-go').click();
     await etape(page, 'Vos deux codes');
-    await bulle(page).getByRole('button', { name: 'Suivant' }).click();
-    for (const [titre, aide] of [['Les classes', 'Cliquez sur « Classes »'], ['Les élèves', 'Cliquez sur « Élèves »'],
-      ['La licence', 'Cliquez sur « Licence »']]) {
-      await etape(page, titre);
+    await suivant(page);
+    await etape(page, 'Votre licence');
+    await suivant(page);
+    for (const [t, aide, adresse] of [['Les classes', 'Cliquez sur « Classes »', /\/referent\/classes/],
+      ['Les élèves', 'Cliquez sur « Élèves »', /\/referent\/eleves/], ['Les professeurs', 'Cliquez sur « Professeurs »', /\/referent\/professeurs/],
+      ['La licence', 'Cliquez sur « Licence »', /\/referent\/licence/], ['L’historique', 'Cliquez sur « Historique »', /\/referent\/historique/]]) {
+      await etape(page, t);
       await expect(bulle(page).locator('.tu-geste')).toHaveText(aide);     // à la souris, on clique
       await toucherLaCible(page);
+      await expect(page).toHaveURL(adresse);
     }
-    await expect(page).toHaveURL(/\/referent\/licence/);
     await expect(page.locator('#tu .tu-fin.pret')).toBeVisible({ timeout: 10000 });
     await page.locator('#tu .tu-fin').getByRole('button', { name: 'Commencer' }).click();
     await expect(page.locator('#tu')).toHaveCount(0);
@@ -233,43 +328,98 @@ test.describe('sur ordinateur', () => {
   });
 });
 
-test('la démo : le tuto à la première entrée, pas aux changements de rôle, et le bandeau le rejoue', async ({ page }) => {
-  test.setTimeout(90000);
+test('la démo : un tuto par rôle la première fois, et rien ne le contourne', async ({ page }) => {
+  test.setTimeout(150000);
   await brancher(page, nouveauStore());
   await page.goto('./essayer');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await page.locator('.dm-role[data-v="eleve"]').click();
   await expect(page.locator('#tu .tu-debut h2')).toHaveText('Tu es Léa, en 2nde B', { timeout: 10000 });
-
-  // le devoir de Léa, lu pour de vrai dans le lycée de la démo
   await page.locator('#tu .tu-go').click();
-  await etape(page, 'Ton devoir');
-  await toucherLaCible(page);
+
+  // une lecture : le retour du navigateur ne fait pas sauter d'étape, il ramène à « Lis-le »
+  expect(await jusqua(page, 'Retourne la page')).toEqual(['Tes livres', 'Lis-le']);
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'study');
+  await page.goBack();
   await etape(page, 'Lis-le');
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'deck');
+  await toucherLaCible(page);
+  await etape(page, 'Retourne la page');
+  // un raccourci de la lecture marche aussi ; « annuler », non
+  await page.keyboard.press('Control+z');
+  await etape(page, 'Retourne la page');
+  await page.keyboard.press(' ');
+  await etape(page, 'Dis si tu savais');
   await bulle(page).getByRole('button', { name: 'Quitter le tuto' }).click();
   await expect(page.locator('#tu')).toHaveCount(0);
   await expect(page.locator('.toast')).toContainText('Revois le tuto depuis le bandeau');
+  await page.getByRole('button', { name: 'Retour' }).first().click();      // le bandeau se cache pendant une lecture
+  await expect(page.locator('.dm-bandeau')).toBeVisible();
 
-  // un autre rôle : pas de tuto ; le bandeau le rejoue, pour ce rôle
+  // la première fois en professeur : son tuto
   await page.locator('.dm-bandeau select').selectOption('prof');
-  await expect(page.getByText(/^Bon(jour|soir), Marc$/)).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('#tu .tu-debut h2')).toHaveText('Vous êtes Marc, professeur', { timeout: 10000 });
+  await page.locator('#tu .tu-go').click();
+  expect(await jusqua(page, 'Le livre')).toEqual(['Le code élèves', 'Votre tableau de bord', 'À traiter', 'Une classe', 'Son suivi',
+    'Ses élèves', 'Sa fiche', 'Ses devoirs', 'Donner un devoir']);
+
+  // choisir le livre d'un devoir : « Créer un nouveau livre », la croix de la feuille, un appui à côté ne font rien
+  const feuille = page.locator('.menu:not(.sort)');
+  await feuille.locator('[data-pf="livre-neuf"]').click();
+  await expect(page.locator('#tu')).toHaveClass(/rappel/);
+  await feuille.locator('.mx').click();
+  await page.mouse.click(8, 8);
+  await page.waitForTimeout(500);
+  await etape(page, 'Le livre');
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'profclasse');
+  await expect(feuille).toContainText('Quel livre');
+  await feuille.locator('#pflivres [data-pf="livre"]', { hasText: 'Fonctions : le cours' }).click();
+
+  // dans la démo, le devoir se donne pour de vrai (rien ne part : c'est le lycée de la démo)
+  await etape(page, 'C’est prêt');
+  await expect(bulle(page).getByRole('button', { name: 'Plus tard' })).toHaveCount(0);
+  await toucherLaCible(page);
+  await etape(page, 'Le bilan');
+  await expect(page.locator('.toast')).toContainText('5 cartes');
+  await page.keyboard.press('Escape');                                // Échap le quitte
+  await expect(page.locator('#tu')).toHaveCount(0);
+
+  // revenir à l'élève : son tuto est déjà vu ; le bandeau le rejoue
+  await page.locator('.dm-bandeau select').selectOption('eleve');
+  await expect(page).toHaveURL(/\/demo\/eleve\/classe$/, { timeout: 10000 });
   await page.waitForTimeout(1200);
   await expect(page.locator('#tu')).toHaveCount(0);
   await page.locator('.dm-bandeau [data-dm="tuto"]').click();
-  await expect(page.locator('#tu .tu-debut h2')).toHaveText('Vous êtes Marc, professeur', { timeout: 10000 });
-  await page.locator('#tu .tu-go').click();
-  await etape(page, 'Le code élèves');
-  await page.keyboard.press('Escape');                                 // Échap le quitte aussi
-  await expect(page.locator('#tu')).toHaveCount(0);
+  await expect(page.locator('#tu .tu-debut h2')).toHaveText('Tu es Léa, en 2nde B', { timeout: 10000 });
+  await passerTuto(page);
 
-  // la fin d'un élève de la démo mène au compte, et quitter la démo l'oublie
-  await page.locator('.dm-bandeau select').selectOption('eleve');
-  await expect(page).toHaveURL(/\/demo\/eleve\/classe$/, { timeout: 10000 });
+  // quitter la démo l'oublie : on y revient, le tuto du rôle choisi revient
   await page.locator('.dm-bandeau [data-dm="quitter"]').click();
   await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
   await page.goto('./essayer');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await page.locator('.dm-role[data-v="ref"]').click();
   await expect(page.locator('#tu .tu-debut h2')).toHaveText('Vous êtes Claire, référente', { timeout: 10000 });
+});
+
+test.describe('la démo sur ordinateur', () => {
+  test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false });
+
+  test('un professeur de la démo finit sur Folio Campus, la marque du site', async ({ page }) => {
+    test.setTimeout(120000);
+    await brancher(page, nouveauStore());
+    await page.goto('./essayer');
+    await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
+    await page.locator('.dm-role[data-v="prof"]').click();
+    await expect(page.locator('#tu .tu-debut h2')).toHaveText('Vous êtes Marc, professeur', { timeout: 10000 });
+    await page.locator('#tu .tu-go').click();
+    const vus = await jusqua(page, '');
+    expect(vus.slice(-4)).toEqual(['Défi en direct', 'L’agenda', 'Vos livres', 'Le courrier']);
+    const fin = page.locator('#tu .tu-fin.campus');
+    await expect(fin.locator('h2')).toHaveText(/Folio\s+Campus/);
+    await expect(fin.locator('.tu-campus-ic img')).toHaveAttribute('src', '/site/logo.svg');
+    await expect(fin.getByRole('link', { name: 'Essayer dans mon établissement' })).toHaveAttribute('href', '/demande-demo');
+    await fin.getByRole('button', { name: 'Continuer la démo' }).click();
+    await expect(page.locator('#tu')).toHaveCount(0);
+  });
 });

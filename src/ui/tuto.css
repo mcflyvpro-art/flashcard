@@ -7,22 +7,26 @@
 .tu > i,.tu > div{position:absolute;left:0;top:0}
 .tu-voile{width:100%;height:100%;background:rgba(18,17,26,.56);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);
   opacity:0;transition:opacity .35s var(--e)}
-.tu[data-mode="carte"] .tu-voile{opacity:1;pointer-events:auto}
+/* une carte, un mot au centre : tout est voilé ; une étape qui se prépare ou
+   qui vient de finir : rien ne se touche, le trou reste où il était */
+.tu:is([data-mode="carte"],[data-mode="centre"]) .tu-voile{opacity:1;pointer-events:auto}
+.tu:is([data-mode="attente"],[data-mode="pause"]) .tu-voile{pointer-events:auto}
 /* le trou : c'est son ombre, démesurée, qui assombrit le reste */
 .tu-spot{border-radius:16px;box-shadow:0 0 0 200vmax rgba(18,17,26,.54);
   transition:transform .45s var(--e),width .45s var(--e),height .45s var(--e),opacity .3s var(--e)}
-.tu[data-mode="carte"] .tu-spot,.tu[data-mode="libre"] .tu-spot{opacity:0}
+.tu:is([data-mode="carte"],[data-mode="centre"]) .tu-spot{opacity:0}
 /* un voile léger : ce qu'il y a autour se lit encore (la réponse, avant de dire si on savait) */
-.tu[data-voile="leger"] .tu-spot{box-shadow:0 0 0 200vmax rgba(18,17,26,.14)}
+.tu[data-voile="leger"]:not([data-mode="attente"],[data-mode="pause"]) .tu-spot{box-shadow:0 0 0 200vmax rgba(18,17,26,.14)}
 .tu-anneau{border-radius:16px;opacity:0;
   box-shadow:0 0 0 2px #fff,0 0 0 5px rgba(154,120,207,.62),0 0 30px 6px rgba(215,100,141,.38);
   transition:transform .45s var(--e),width .45s var(--e),height .45s var(--e),opacity .25s var(--e)}
 .tu[data-mode="geste"] .tu-anneau{opacity:1;animation:tu-pouls 1.8s ease-in-out infinite}
 @keyframes tu-pouls{50%{box-shadow:0 0 0 2px #fff,0 0 0 10px rgba(154,120,207,.2),0 0 46px 14px rgba(215,100,141,.2)}}
-/* les volets prennent les appuis hors du trou ; pendant un mot sans geste,
-   le trou aussi est fermé — pas sur une feuille, où l'on coche, nomme, choisit */
+/* les volets prennent les appuis hors du trou ; pendant un mot, le trou
+   aussi est fermé. Dans le trou d'un geste, la garde de ui/tuto.js ne
+   laisse passer que ce que l'étape permet. */
 .tu-blk{pointer-events:auto}
-.tu:is([data-mode="geste"],[data-mode="ouvert"]) [data-c="trou"],.tu[data-mode="libre"] .tu-blk,.tu[data-mode="carte"] .tu-blk{display:none}
+.tu[data-mode="geste"] [data-c="trou"],.tu:is([data-mode="carte"],[data-mode="centre"]) .tu-blk{display:none}
 
 /* ---------- la bulle ---------- */
 .tu-bulle{pointer-events:auto;max-width:calc(100vw - 24px);padding:12px 16px 14px;border-radius:20px;overflow:hidden;
@@ -32,13 +36,13 @@
 .tu-bulle::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;
   background:linear-gradient(115deg,#5A76D0,#9A78CF 52%,#D7648D)}
 .tu-bulle.vue{opacity:1;visibility:visible;transition:transform .45s var(--e),opacity .22s var(--e)}
-.tu[data-mode="carte"] .tu-bulle,.tu[data-mode="pause"] .tu-bulle{opacity:0;visibility:hidden}
+.tu:is([data-mode="carte"],[data-mode="pause"],[data-mode="attente"]) .tu-bulle{opacity:0;visibility:hidden}
 .tu-haut{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}
-.tu-pas{display:flex;align-items:center;gap:4px}
+.tu-pas{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 .tu-pas i{width:6px;height:6px;border-radius:3px;background:var(--surf2);transition:width .3s var(--e),background .3s}
 .tu-pas i.fait{background:var(--ink2)}
 .tu-pas i.ici{width:18px;background:linear-gradient(115deg,#5A76D0,#9A78CF 52%,#D7648D)}
-.tu-x{display:grid;place-items:center;width:30px;height:30px;margin-right:-6px;border-radius:9px;color:var(--soft)}
+.tu-x{display:grid;place-items:center;flex:none;width:30px;height:30px;margin-right:-6px;border-radius:9px;color:var(--soft)}
 .tu-x svg{width:16px;height:16px}
 .tu-x:hover{background:var(--surf);color:var(--ink)}
 .tu-t{display:block;margin:4px 0 3px;font:700 19px/1.2 var(--serif);letter-spacing:-.3px;color:var(--ink)}
@@ -48,18 +52,21 @@
 .tu-geste svg{width:17px;height:17px;flex:none;animation:tu-tape 1.8s ease-in-out infinite}
 @keyframes tu-tape{40%{transform:translateY(-2px)}55%{transform:translateY(1px) scale(.88)}70%{transform:none}}
 .tu-b{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:12px}
-.tu-b:has(> [hidden]:only-child){display:none}
 .tu-btn{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:12px;
   background:var(--surf);color:var(--ink);font-weight:700;font-size:14px}
 .tu-btn svg{width:15px;height:15px}
 .tu-btn.pri{background:var(--ink);color:#fff}
 .tu-btn:active{transform:scale(.96)}
-/* une lecture libre : la bulle se fait petite, en haut, et laisse lire */
-.tu[data-mode="libre"] .tu-bulle{padding:10px 12px 10px 14px}
-.tu[data-mode="libre"] .tu-t{font-size:16px;margin-top:2px}
-.tu[data-mode="libre"] .tu-p{font-size:13.5px}
-.tu[data-mode="libre"] .tu-b{margin-top:8px}
-.tu[data-mode="libre"] .tu-btn{height:34px}
+/* « Plus tard » : à gauche, discret — on peut, on n'y est pas poussé */
+.tu-btn[data-tu="plustard"]{margin-right:auto;background:none;color:var(--soft);padding:0 8px}
+.tu-btn[data-tu="plustard"]:hover{color:var(--ink)}
+/* un mot au centre de l'écran : la bulle se pose au milieu du voile */
+.tu[data-mode="centre"] .tu-bulle{padding:16px 20px 18px;text-align:center}
+.tu[data-mode="centre"] .tu-haut{justify-content:center}
+.tu[data-mode="centre"] .tu-x{position:absolute;right:14px;top:10px}
+.tu[data-mode="centre"] .tu-t{margin-top:10px;font-size:23px}
+.tu[data-mode="centre"] .tu-p{font-size:15.5px;text-wrap:balance}
+.tu[data-mode="centre"] .tu-b{justify-content:center;margin-top:16px}
 /* un appui à côté : l'anneau et la bulle le rappellent */
 .tu.rappel .tu-bulle.vue{animation:tu-rappel .42s var(--e)}
 .tu.rappel .tu-anneau{animation:tu-pouls .42s ease-in-out 2}
@@ -73,7 +80,7 @@
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 40px 90px -30px rgba(20,14,50,.7);animation:tu-entre .5s var(--e) both}
 @keyframes tu-entre{from{opacity:0;transform:translateY(16px) scale(.97)}}
 /* la lumière de la marque, derrière le visage */
-.tu-debut::before,.tu-fin.campus::before,.tu-fin.pret::before{content:'';position:absolute;inset:-40% -20% auto;height:80%;z-index:-1;pointer-events:none;
+.tu-debut::before,.tu-fin.pret::before{content:'';position:absolute;inset:-40% -20% auto;height:80%;z-index:-1;pointer-events:none;
   background:radial-gradient(40% 50% at 32% 50%,rgba(90,118,208,.22),transparent 70%),radial-gradient(40% 50% at 70% 46%,rgba(215,100,141,.2),transparent 70%)}
 .tu-c h2{margin:14px 0 6px;font:700 30px/1.08 var(--serif);letter-spacing:-.8px;text-wrap:balance}
 .tu-c > p{margin:0 0 22px;color:var(--ink2);font-size:15.5px;line-height:1.45;text-wrap:pretty}
@@ -99,26 +106,34 @@
 .tu-ok{display:grid;place-items:center;width:58px;height:58px;margin:0 auto;border-radius:18px;color:#fff;
   background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);box-shadow:0 14px 26px -12px rgba(120,70,160,.8)}
 .tu-ok svg{width:28px;height:28px;stroke-width:2.6}
-.tu-campus{position:relative;display:inline-grid;place-items:center;width:58px;height:58px;border-radius:18px;background:#fff;
-  box-shadow:inset 0 0 0 1px var(--line),0 14px 26px -14px rgba(52,40,110,.5)}
-.tu-campus i{position:absolute;right:-6px;bottom:-6px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;
-  background:var(--ink);color:#fff;box-shadow:0 0 0 3px #fff}
-.tu-campus i svg{width:13px;height:13px}
-/* Folio+ : la carte sombre de la page des tarifs, son liseré qui tourne */
+
+/* Folio+ et Folio Campus : les cartes sombres de la page d'accueil, leur
+   liseré qui tourne dans la lumière de la marque */
 @property --tu-angle{syntax:'<angle>';inherits:false;initial-value:0deg}
-.tu-fin.plus{color:#F3EEE3;border:2px solid transparent;
+.tu-fin:is(.plus,.campus){color:#F3EEE3;border:2px solid transparent;
   background:linear-gradient(#17161E,#17161E) padding-box,conic-gradient(from var(--tu-angle),#8DA2F0,#B996EC,#F38DB2,#F6B59E,#8DA2F0) border-box;
   box-shadow:0 40px 90px -30px rgba(20,14,50,.8),0 30px 60px -30px rgba(215,100,141,.45);
   animation:tu-entre .5s var(--e) both,tu-tour 6s linear infinite}
 @keyframes tu-tour{to{--tu-angle:360deg}}
+.tu-fin:is(.plus,.campus) .tu-sous{color:#CFC8BA}
+.tu-fin:is(.plus,.campus) .tu-points svg{color:#F6A8C5}
+.tu-fin:is(.plus,.campus) .tu-a{background:rgba(243,238,227,.1);color:#F3EEE3}
+.tu-fin:is(.plus,.campus) .tu-a.pri{background:#F3EEE3;color:#1D1C19;box-shadow:none}
+.tu-fin:is(.plus,.campus) .tu-note{color:rgba(207,200,186,.75)}
 .tu-marque{margin-top:6px;font-size:44px}
 .tu-plus{padding:0 .03em;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:800;font-style:normal;
   background:linear-gradient(135deg,#8DA2F0 24%,#B996EC 50%,#F38DB2 76%);-webkit-background-clip:text;background-clip:text;color:transparent}
-.tu-fin.plus .tu-sous{color:#CFC8BA}
-.tu-fin.plus .tu-points svg{color:#F6A8C5}
-.tu-fin.plus .tu-a{background:rgba(243,238,227,.1);color:#F3EEE3}
-.tu-fin.plus .tu-a.pri{background:#F3EEE3;color:#1D1C19;box-shadow:none}
-.tu-fin.plus .tu-note{color:rgba(207,200,186,.75)}
+/* la marque de Folio Campus, celle du site : le logo sur son carré de
+   papier, l'école en écusson dégradé, « Campus » en italique dégradée */
+.tu-c h2.tu-campus{display:flex;align-items:center;justify-content:center;gap:16px;margin:8px 0 6px;font-size:34px;letter-spacing:-.025em}
+.tu-campus em{font-style:italic;padding-right:.08em;
+  background:linear-gradient(115deg,#8DA2F0,#B996EC 52%,#F38DB2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tu-campus-ic{position:relative;flex:none;display:grid;place-items:center;width:54px;height:54px;border-radius:16px;background:#F3EEE3;
+  box-shadow:0 14px 30px -14px rgba(0,0,0,.8)}
+.tu-campus-ic img{width:62%;height:auto}
+.tu-campus-ic i{position:absolute;right:-8px;bottom:-8px;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(115deg,#5A76D0,#9A78CF 52%,#D7648D);color:#fff;box-shadow:0 0 0 3px #17161E}
+.tu-campus-ic i svg{width:15px;height:15px;stroke-width:2.2}
 
 /* les messages passent devant le voile : ils disent ce que le geste a fait */
 html.tu-actif .toast{z-index:76}
@@ -128,6 +143,7 @@ html.tu-actif .toast{z-index:76}
   .tu-c{padding:28px 18px 16px}
   .tu-a{font-size:15px}
   .tu-a svg{display:none}
+  .tu-c h2.tu-campus{font-size:30px;gap:14px}
 }
 @media (min-width:900px){
   .tu-c{width:min(430px,100%);padding:34px 30px 20px}
