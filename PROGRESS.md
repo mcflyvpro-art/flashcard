@@ -23,7 +23,8 @@ DERNIER   2026-10-27 · Folio gratuit et Folio+ (docs/LANDING.md) : le graphique
           trace aussi Memory Engine Lite (93 % à un an contre 96 % pour Ultra),
           deux cartes courtes ; dans la démo d'un élève, 5 livres au plus, QCM,
           associations, images et sons grisés, et le journal flouté hors série,
-          régularité et rythme. La règle de chaque offre est écrite une fois,
+          régularité et rythme — repris ligne à ligne dans le tableau comparatif
+          (« Tes statistiques »). La règle de chaque offre est écrite une fois,
           src/offres.js, pour le paiement à venir (M12). Preuves : npm run
           check, e2e (demo.e2e.js : volets floutés et fenêtre).
 Avant :   2026-10-27 · Le tuto de première connexion remplace la visite guidée : il fait

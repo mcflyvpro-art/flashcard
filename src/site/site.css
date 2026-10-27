@@ -696,6 +696,8 @@ button{font:inherit;color:inherit}
 .comparatif .oui{color:var(--ok);stroke-width:2.6}
 .comparatif .non{color:#C8C3B9;stroke-width:2.4}
 .comparatif tbody th{position:sticky;left:0;background:#FFF;z-index:1}
+/* un intertitre de groupe : « Tes statistiques », pour lire d'un coup d'œil tout ce que le journal de Folio gratuit n'a pas */
+.comparatif .groupe th{padding-top:26px;padding-bottom:10px;font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--az5)}
 .js .comparatif tbody tr{opacity:0;transform:translateY(10px)}
 .comparatif.vu tbody tr{opacity:1;transform:none;transition:opacity .6s var(--e),transform .6s var(--e);transition-delay:calc(var(--i,0) * 45ms + .15s)}
 
