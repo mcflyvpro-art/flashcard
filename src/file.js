@@ -11,12 +11,14 @@
    qui permet de tester le mélange et les échéances de façon déterministe.
    Ne mute jamais le tableau `cards` reçu. Testé dans test/file.test.js. */
 
+import { BASCULE } from './fsrs.js';
+
 /* ---------- la journée d'Anki ----------
    Anki ne change pas de jour à minuit mais à 4 h (« le jour suivant
    commence à », réglage par défaut) : une séance après minuit compte
    encore pour la veille. C'est ce découpage que suivent le quota de pages
-   neuves et l'échéance des cartes en révision. */
-export const BASCULE = 4;
+   neuves et l'échéance des cartes en révision ; le moteur compte les jours
+   écoulés entre deux lectures avec la même bascule (`dayNo`, src/fsrs.js). */
 export function debutJour(now) {
   const d = new Date(now);
   d.setHours(BASCULE, 0, 0, 0);

@@ -82,6 +82,12 @@ class Tournage {
         (document.head || document.documentElement).appendChild(s);
       };
       if (document.documentElement) poser(); else document.addEventListener('DOMContentLoaded', poser);
+      // ni le tuto que la démo lance à la première entrée de chaque rôle : les
+      // rôles sont « déjà vus », et le démarrage de l'app (effacerDemo) ne
+      // peut pas l'oublier
+      const vus = '["eleve","prof","ref"]', oter = Storage.prototype.removeItem;
+      Storage.prototype.removeItem = function (k) { return k === 'folio.demo.tuto' ? this.setItem(k, vus) : oter.call(this, k); };
+      try { sessionStorage.setItem('folio.demo.tuto', vus); } catch { /* stockage refusé : rien à poser */ }
     });
     const cadre = readFileSync(join(ICI, 'cadre.html'));
     await this.ctx.route(BASE + '/__academie/cadre', r => r.fulfill({ body: cadre, contentType: 'text/html; charset=utf-8' }));

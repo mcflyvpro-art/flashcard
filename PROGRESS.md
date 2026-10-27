@@ -30,6 +30,9 @@ DERNIER   2026-10-27 · Folio+ pour de vrai : les comptes d'avant gardent
           section « Sur tous tes écrans » du site est partie. Preuves :
           npm run check, tools/paiement/essai.js 32/32, e2e/folio-plus 8/8
           et toute la suite.
+Avant :   2026-10-27 · Le moteur compte les jours écoulés comme Anki (jours
+          de calendrier, bascule à 4 h, le même compte pour noter, rejouer
+          et optimiser). Avant encore : la page d'accueil, le tuto v2.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

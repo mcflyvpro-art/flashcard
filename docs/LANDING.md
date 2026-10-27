@@ -85,13 +85,15 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
   qui flottent et se retournent, et **la pile qu'on note** : Encore et
   Difficile l'envoient à gauche, Correct et Facile à droite, les suivantes
   avancent, « Revient dans 4 jours » ; elle se joue seule tant qu'on n'y
-  touche pas) · matières qui défilent · le moteur (« au monde », une phrase,
-  un an de mémoire de cinq pages avec et sans Folio, une tête de lecture
+  touche pas) · matières qui défilent · le moteur (« au monde », sans
+  sous-titre, un an de mémoire de cinq pages avec et sans Folio, une tête de lecture
   qu'on promène, les deux chiffres dans la légende) · « Du cours au
   concours » (six tuiles animées, l'IA dans la première) · Folio Campus
   (fond sombre : trois scènes animées, « Deux codes », « Chacun entre »,
   « Tout se suit », puis les trois rôles, élève, professeur, référent de
-  l'établissement, chacun son écran et « Essayer cet espace ») · tarifs
+  l'établissement, chacun son écran sur l'ordinateur, le même au téléphone
+  posé contre lui pour l'élève et le professeur, et « Essayer cet
+  espace ») · tarifs
   (bascule mensuel/annuel, trois offres, tableau comparatif) · questions
   (FAQ) · appel final · pied de page · fenêtre « J'ai un code ».
 - `src/site/site.css` — son style (aucun préfixe : la page n'a pas
@@ -104,12 +106,16 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
   graphique du moteur (`moteur()`), calendrier du journal, vidéos (chargées
   et jouées seulement à l'écran), rôles de Campus, bascule des tarifs,
   fenêtre « J'ai un code » (règles des codes importées de `src/classe.js`
-  et `src/defi.js`, jamais réécrites). Aucun appel à la base.
+  et `src/defi.js`, jamais réécrites). Aucun appel à la base. Les rôles
+  de Campus montrent leur écran sur l'ordinateur et le même au téléphone
+  posé contre lui (`#tel-campus`, ses écrans portent `data-onglet` = le
+  panneau de leur rôle) ; un rôle sans écran de téléphone (le référent)
+  range le téléphone (`.range`).
 - `src/site/courbes.js` — le modèle du graphique, pur et testé
   (`test/site.test.js`) : courbe d'oubli de FSRS, révision quand le rappel
   tombe à 90 %, temps en racine carrée ; site.js en tire les tracés.
 - `public/site/` — `logo.svg`, `icone.svg`, `og.jpg` (partage 1200×630),
-  `affiches/{pc,mobile,eleve,prof,referent}.webp` (16 à 52 Ko) et leurs variantes
+  `affiches/{pc,mobile,eleve,prof,referent,eleve-mobile,prof-mobile}.webp` (16 à 52 Ko) et leurs variantes
   `-petit.webp` (moitié de la taille, 7 à 21 Ko, servies aux petits écrans par `srcset`). **Exclu du cache
   du service worker** (l'app hors ligne n'en a pas besoin), sauf `logo.svg`,
   que les écrans publics de l'app affichent.
@@ -129,12 +135,13 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
 npm run build && npx vite preview --port 4190 --strictPort &
 node tools/affiches.js          # réécrit public/site/affiches/*.webp et public/site/og.jpg
 node tools/affiches.js og       # l'image de partage seule (son texte et sa page sont dans le script)
+node tools/affiches.js prof-mobile eleve-mobile   # quelques affiches, par leur nom (ni captures du manifeste, ni image de partage)
 npm run build                   # les fichiers de public/ ne sont copiés qu'au build
 ```
 
 ### Insérer les vidéos (pour l'utilisateur, plus tard)
 
-Chaque emplacement est un `<div class="ecran" data-ecran="pc|mobile|eleve|prof|referent">`
+Chaque emplacement est un `<div class="ecran" data-ecran="pc|mobile|eleve|prof|referent|eleve-mobile|prof-mobile">`
 dans `index.html`, qui contient l'affiche (`<img class="affiche">`) et un
 `<video class="video" data-src="">`. Pour en remplir un : déposer
 `public/site/videos/<nom>.mp4` (H.264, **muette**, 8 à 15 s, faite pour
@@ -143,9 +150,11 @@ téléphone, comme les affiches), puis écrire son chemin dans le `data-src`
 du `<video>` correspondant (`data-src="/site/videos/pc.mp4"`). site.js la
 charge quand elle arrive à l'écran, la joue, la met en pause hors écran, et
 l'affiche reste dessous tant qu'elle n'a pas démarré. Rien d'autre à
-toucher. Les cinq : `pc` (héros, ordinateur : une séance de révision),
+toucher. Les sept : `pc` (héros, ordinateur : une séance de révision),
 `mobile` (héros, téléphone : la bibliothèque), `eleve`, `prof` et
-`referent` (Folio Campus, un par rôle).
+`referent` (Folio Campus, l'ordinateur de chaque rôle), `eleve-mobile` et
+`prof-mobile` (Folio Campus, le téléphone posé contre l'ordinateur : les
+devoirs à faire de l'élève, le tableau de bord du professeur).
 
 ## Où on en est
 
@@ -292,12 +301,23 @@ s'écrit plus nulle part sur la page.
 
 - [x] T4.1 La charte de l'app sur la page : chaque fiche dessinée (héros, pile qu'on note, tuiles, appel final) devient une **page de son livre** (le papier de la couverture `c`, son filet `b`, la matière en petites capitales et la pastille de sa reliure `d`, le grand signet) ; les matières qui défilent sont de petits livres (dos et couverture) ; les teintes viennent du nuancier (`src/couleurs.js`) ; ce qui se compte est en azur (calendrier du journal, avancement d'un devoir, podium) ; les états en `--ok`/`--ko`/`--am` ; les boutons de note comme dans l'app (papier blanc, mot en couleur, délai dessous) ; les affiches et l'image de partage vérifiées, refaites si besoin. **Fait** : quatorze règles `[data-teinte=…]` dans `site.css` (vérifiées contre `src/couleurs.js` par `test/site.test.js`), le signet partagé (`--sw`, `--sr`), la couleur d'un visage en `--j` (plus en `--c`, qui est désormais la couverture), les médailles de l'app sur le podium (chiffre à l'encre : en blanc sur l'or, 2,3:1), le papier de la page `#F6F5F1` comme l'app, la serif de l'app (Charter avant Palatino). Les affiches datent d'après le changement de couleurs (d078484) : gardées ; l'image de partage se refait avec les nouveaux textes (T4.2).
 - [x] T4.2 Le vocabulaire : « livre de flashcards », « page », « recto/verso » partout (chapeau, `description`, Open Graph, Twitter, JSON-LD, FAQ, `aria-label`, légende du graphique, tarifs, tableau). **Fait** : chapeau « L’IA fait de ton cours un livre de flashcards. Folio te repose chaque page juste avant que tu l’oublies. » ; la tuile de l'import dit ce qu'est une page (« Une question au recto de chaque page, la réponse au verso. ») ; une question de plus en tête de la FAQ, « C’est quoi, un livre de flashcards ? » (et dans le JSON-LD, qui doit rester identique à la FAQ visible) ; l'image de partage refaite (`node tools/affiches.js og`, nouvelle option) avec ce texte et une page d'histoire dessinée comme dans l'app. `test/site.test.js` refuse désormais « fiche » dans le texte affiché.
-- [x] T4.3 La phrase du moteur, élevée : « Il apprend ta mémoire, page après page, et te rend chacune au moment où elle allait s’effacer. » (« juste avant » reste la promesse du héros ; ici, ce que fait le moteur, sans surpromettre un « instant précis »).
+- [x] T4.3 La phrase du moteur, élevée : « Il apprend ta mémoire, page après page, et te rend chacune au moment où elle allait s’effacer. » (« juste avant » reste la promesse du héros ; ici, ce que fait le moteur, sans surpromettre un « instant précis »). Retirée au tour 5 (T5.2) : le titre seul.
 - [x] T4.4 Folio Campus : la marque (logo + « Campus » dans la lumière de la marque) et une étiquette « Pour les établissements » ; « Déployé dans tout votre établissement en dix minutes » ; « Cartes élève sans e-mail » remplacée par une fonction claire (tuile, offre, tableau) ; un appel à la démo en fin de bloc. **Fait** : la marque (`.campus-marque` : le logo sur son carré de papier, une toque en écusson dans la lumière de la marque, « Folio *Campus* »), la même en petit sur l'offre des tarifs ; l'étiquette « Pour les établissements scolaires », posée puis retirée à la demande (la marque seule, plus d'air dessous) ; « Dix minutes pour ouvrir Folio à tous vos élèves et professeurs, sans rien installer. » ; « Les points faibles de la classe, repérés » (le « Ce qui bloque » d'un devoir dans l'espace professeur : ce que la classe rate le plus, sans nom d'élève) dans les atouts et le tableau, « Mise en place accompagnée » dans l'offre ; en fin de bloc « Équiper mon établissement » (vers `/demande-demo` ; un autre nom que « Demander une démo », que le parcours e2e cherche seul dans `#campus`) et le prix en une ligne ; la FAQ dit aussi les dix minutes.
 - [x] T4.5 Le « + » de Folio+ dans le dégradé de « tout. » (titre des tarifs, offre, tableau). **Fait** : `.plus`, en biais et en sans-serif épaisse (sur le trait fin du « + » de la serif, le dégradé ne montrait que son violet) ; la version claire sur l'offre sombre.
 - [x] T4.6 Les appels à l'action : un seul geste principal par écran, honnête (« Commencer gratuitement », « Demander une démo »), rien de faux (ni compte à rebours, ni « le plus choisi »), le téléphone garde toujours un bouton d'inscription en vue. **Fait** : « Commencer gratuitement » dans le héros, après les six tuiles (`.relance`, avec « Voir Folio+ ») et dans l'appel final (où « Essayer sans compte » devient le second bouton, « J'ai un code » passe en lien) ; au téléphone, l'en-tête collant garde « Créer un compte » et « Se connecter » passe dans le menu (sous 360 px, le logo seul) ; « Équiper mon établissement » en fin de bloc Campus (T4.4).
 - [x] T4.7 La démo donne envie de payer : son bandeau propose le geste suivant selon le rôle (créer un compte, demander une démo pour son établissement), une fonction grisée dit ce qu'elle ferait et comment l'avoir ; dans le budget du morceau de la démo. **Fait** : le bandeau porte « Créer mon compte » (élève) ou « Essayer dans mon établissement » (professeur, référent, vers `/demande-demo`), dans le dégradé de la marque, la seule couleur du bandeau ; au téléphone, libellé court, « Quitter » en icône, « Prof » dans le choix du rôle, « Recommencer » caché sous 380 px. Toucher Cours, Photo ou Fichier ouvre une fenêtre (« L’IA écrit le livre pour toi », « Ton cahier en photo, et c’est un livre », « Ton PDF devient un livre ») : ce que ça ferait, l'offre qui l'ouvre (3 cours par mois gratuits, 50 avec Folio+ ; photo et PDF avec Folio+, dès 2,50 € par mois), « Créer mon compte », « Voir Folio+ », « Continuer la démo ». Un « + » dessiné sur Photo et Fichier. Partir par ces liens efface la démo comme « Quitter ». Morceau de la démo : JS 26,7/30 Ko, CSS 1,6/3 Ko.
 - [x] T4.8 Vérifs (check, e2e, Lighthouse, captures 390 et 1440 px), docs, `main` fusionnée, push branche + `main`. **Fait** : `main` fusionnée (les pseudos ; au téléphone les onglets sans la ligne du logo, d'où **les affiches refaites**, `node tools/affiches.js` ; la médaille de l'app redessinée, reprise sur le podium) ; `npm run check` vert (459 tests ; page 42,2/48 Ko ; démo JS 27,4/30, CSS 1,7/3) ; e2e 70 verts + 1 intermittent, `e2e/pseudo.e2e.js` (arrivé avec `main` : 1 échec sur 6 répétitions sur la branche comme sur `main` seule, sans rapport avec ce tour) ; Lighthouse sur ordinateur 100 / 100 / 100 / 100, au téléphone accessibilité, bonnes pratiques et SEO 100, performance 90 à 97 dans ce conteneur (la page d'avant le tour mesurée au même moment : 93 à 98 ; le temps de blocage varie d'un passage à l'autre avec la charge de la machine) ; les boutons de note ont pour nom leur texte (« Encore 10 min » : l'audit « label in name » échouait avec l'ancien `aria-label`) ; captures à 320, 390 et 1440 px relues (les pages de l'appel final, au téléphone, gardent la place de leur signet).
+
+## Tour 5 : Campus au téléphone aussi (2026-10-27, soir)
+
+La demande : « dans l'animation campus sur la projection élève/prof on voit
+le PC avec l'app comme actuellement mais aussi un téléphone avec l'app bien
+intégré, nickel, avec les deux visions pour montrer que mobile aussi ; aussi
+enlève "Il apprend ta mémoire…", pas de sous-titre, recadre, et c'est tout ».
+
+- [x] T5.1 Folio Campus : à côté de l'ordinateur, un téléphone avec l'app, pour l'élève et le professeur. **Fait** : `#tel-campus` (le cadre du téléphone du héros) posé contre le coin de l'ordinateur, légèrement incliné, dans une `.campus-appareils` ; il change d'écran avec l'onglet (`data-onglet`, site.js), monte un temps après l'ordinateur quand le bloc arrive, et se range pour le référent (sa console est faite pour l'ordinateur ; au téléphone, elle n'a que ses codes et sa licence). Deux affiches neuves photographiées dans la démo, avec la barre d'état d'un iPhone : `eleve-mobile` (« Mes classes » : les devoirs à faire, ses classes) et `prof-mobile` (le tableau de bord ; la barre du haut, fixe, descend sous l'heure). Au téléphone, l'ordinateur reste centré et le téléphone déborde à droite. `tools/affiches.js` prend des noms d'affiches et marque les tutos de la démo comme vus (depuis le tuto v2, il s'invitait sur les affiches) ; la Folio Academy aussi (`tools/academie/moteur.js`). Parcours : `e2e/site.e2e.js` (le téléphone suit l'onglet, rangé pour le référent).
+- [x] T5.2 Le moteur sans sous-titre : la phrase de T4.3 retirée ; le surtitre se coupe en deux lignes égales au téléphone (« Memory Engine Ultra · » / « le moteur de Folio+ »), le titre mène droit au graphique.
+- [x] T5.3 Vérifs (check, e2e, captures 390 et 1440 px), docs, push branche + `main`. **Fait** : `npm run check` vert (page 46,1/48 Ko) ; `e2e/site.e2e.js` 9/9 ; suite complète 81 verts et 3 repassés au second essai (deux parcours du tuto et un de la démo, sans rapport avec la page : verts seuls, 6/6 en quatre fils parallèles pour le particulier ; ce conteneur mettait 6,8 min au lieu de 2 à 3) ; captures à 390 et 1440 px relues pour les trois rôles et le moteur ; l'entrée de la Folio Academy dans la démo vérifiée (élève puis professeur, aucun tuto ne s'ouvre).
 
 ## Ce qui reste à décider (l'utilisateur)
 
