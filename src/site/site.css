@@ -702,6 +702,26 @@ button{font:inherit;color:inherit}
 .comparatif.vu tbody tr{opacity:1;transform:none;transition:opacity .6s var(--e),transform .6s var(--e);transition-delay:calc(var(--i,0) * 45ms + .15s)}
 
 /* ---------- les questions ---------- */
+/* ---------- sur tous tes écrans ----------
+   L'appareil qu'on tient vient en premier (site.js), cerné d'encre, avec le
+   bouton d'installation quand le navigateur sait le faire. */
+.telecharger{padding-top:clamp(96px,13vw,170px)}
+.tl-chapo{max-width:34em;margin:18px auto 0;text-align:center;font-size:clamp(16px,1.6vw,19px);color:var(--doux)}
+.tl-liste{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:clamp(30px,4vw,48px) 0 0;padding:0;list-style:none}
+.tl-carte{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:22px 20px 20px;border-radius:22px;
+  background:var(--carte);box-shadow:inset 0 0 0 1px var(--filet),var(--ombre1)}
+.tl-carte > .ic{width:26px;height:26px;color:var(--encre2)}
+.tl-carte h3{margin:4px 0 0;font:700 19px/1.2 var(--serif);letter-spacing:-.01em}
+.tl-carte p{margin:0;font-size:14px;line-height:1.5;color:var(--doux)}
+.tl-carte .bt{margin-top:auto;align-self:stretch}
+.tl-carte p + .bt{margin-top:8px}
+.tl-carte.tl-ici{box-shadow:inset 0 0 0 2px var(--encre),var(--ombre1)}
+.tl-ici-pastille{position:absolute;top:18px;right:18px;padding:4px 10px;border-radius:99px;font:700 11.5px/1.2 var(--sans);
+  letter-spacing:.02em;color:#FFF;background:var(--encre)}
+.tl-ok{font-weight:700;color:var(--encre)}
+.tl-bas{margin:22px 0 0;text-align:center}
+.tl-bas .bt .ic{width:16px;height:16px}
+
 .faq{padding-top:clamp(96px,13vw,170px)}
 .questions{max-width:800px;margin:clamp(30px,4vw,48px) auto 0}
 .questions details{border-bottom:1px solid var(--filet2)}
@@ -781,6 +801,7 @@ button{font:inherit;color:inherit}
   .t-partout .tuile-dessin{height:170px}
 }
 @media (max-width:900px){
+  .tl-liste{grid-template-columns:repeat(2,minmax(0,1fr))}
   /* au téléphone, l'inscription reste en vue ; « Se connecter » est dans le menu */
   .tete-liens,.tete-code,.tete-connexion{display:none}
   .burger{display:inline-flex}
@@ -793,6 +814,8 @@ button{font:inherit;color:inherit}
   .campus,.fin{margin-inline:12px}
 }
 @media (max-width:640px){
+  .tl-liste{grid-template-columns:minmax(0,1fr);gap:10px}
+  .tl-carte{padding:18px 18px 16px}
   :root{--gout:18px}
   .tete-in{height:62px;gap:10px}
   .tete-actions .bt{height:40px;padding:0 15px;font-size:14px}

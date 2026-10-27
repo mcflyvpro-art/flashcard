@@ -46,6 +46,7 @@ export const ROUTES = [
   R('settings', 'reglages'),
   R('trash', 'reglages/corbeille'),
   R('mod', 'moderation'),
+  R('plus', 'folio-plus', { espaces: ['eleve', 'prof'] }),
   R('shared', 'partage', { repli: 'home' }),
   R('bienvenue', 'bienvenue', { repli: 'home' }),
   R('classes', 'classe', { espaces: ['eleve'] }),

@@ -10,11 +10,11 @@ import {
   setDeckShow, setDirty, setDuelRun, setDuels, setEleve, setFilter, setFindQ, setFriends,
   setGone, setIAmMod, setLeaving, setLoginMode,
   setMailOpen, setMailbox, setMateOpen, setMateProf, setMates, setMates2, setMe,
-  setMenu, setMods, setMyRole, setPeek, setPrefs, setPreviewOf, setProf,
+  setMenu, setMods, setMyRole, setOffre, setPeek, setPlus, setPrefs, setPreviewOf, setProf,
   setQuiz, setRef, setReorder, setReportOn, setReportWhy, setSchool,
   setSel, setSendMsg, setSendTo, setShared, setStats, setStudy, setSubjEdit,
   setTrash, setUndos, setVers, setView,
-  admNeuf, eleveNeuf, profNeuf, refNeuf, study, tuto, view
+  admNeuf, eleveNeuf, plusNeuf, profNeuf, refNeuf, study, tuto, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { dec, fsrsMigrate } from './carte-media.js';
@@ -84,6 +84,7 @@ export function resetSession() {
   /* le rôle et ce qu'il ouvre */
   setMyRole('eleve'); setIAmMod(false);
   setSchool(null); setCompte(null); setMates2(null);
+  setOffre(null); setPlus(plusNeuf());
   setProf(profNeuf()); setEleve(eleveNeuf());
   setAdm(admNeuf());
   setRef(refNeuf());

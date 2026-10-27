@@ -5,7 +5,7 @@ import { couleurLibre } from '../matieres.js';
 import { I, svg } from '../icones.js';
 import { DAY, MIN } from '../fsrs.js';
 import {
-  accounts, auth, blocks, compte, db, iAmMod, me, mods, myRole, online, prefs, ref,
+  accounts, auth, blocks, compte, db, iAmMod, me, mods, myRole, offre, online, prefs, ref,
   setSubjColor, setSubjEdit, setSubjName, shared, trash, vers, view
 } from '../data/etat.js';
 import { gestion, render } from './bibliotheque.js';
@@ -16,6 +16,9 @@ import {
   subj, sty, uid, undoLabel
 } from '../core/coeur-sync.js';
 import { KEEP, mePull, snapVersion } from '../core/reglages-corbeille.js';
+import { offrePull } from '../core/abonnement.js';
+import { VENTE_OUVERTE, resume } from '../abonnement.js';
+import { sansFolioPlus } from './plus-porte.js';
 import { hlp } from './connexion.js';
 import { applyFont, savePrefs, toast } from './import-cartes.js';
 import { closeMenu, openMenu } from './menus-a.js';
@@ -98,10 +101,21 @@ function settingsMatieresHtml() {
    change d'ici, on les montre seulement. */
 const carteEleve = () => !!(compte && compte.gere);
 
+/* La ligne « Folio+ » : à qui l'a déjà (abonnement, établissement), et à
+   tous une fois la vente ouverte (VENTE_OUVERTE, src/abonnement.js). Jamais
+   au référent, à l'éditeur ni dans la démo. */
+function lignePlus() {
+  if (sansFolioPlus() || !(VENTE_OUVERTE || (offre && offre.offre !== 'gratuit'))) return '';
+  const r = offre ? resume(offre) : null;
+  return `<button class="sr flat" data-act="plus">${svg(I.star)}<span class="n">Folio+</span>
+          <span class="c">${r ? esc(r.titre === 'Folio' ? 'Gratuit' : r.titre === 'Folio+' ? 'Actif' : 'Campus') : ''}</span>${svg(I.arrow)}</button>`;
+}
+
 function settingsCompteHtml() {
   return `
       <div class="lbl"><span>Mon compte</span></div>
       <div class="slist">
+        ${lignePlus()}
         ${carteEleve() ? `<div class="sr flat fixe">${svg(I.user)}<span class="n">${esc(compte.nom || '')}</span>
           <span class="c">${esc(compte.identifiant || '')}</span></div>`
         : `<button class="sr flat" data-act="rename">${svg(I.user)}
@@ -185,6 +199,8 @@ function settingsGestionHtml() {
 export function settingsView() {
   // le pseudo de la ligne « Pseudo » : lu une fois, l'écran se repeint à son arrivée
   if (!me && auth) mePull().then(() => { if (view.name === 'settings') render(); });
+  // l'offre du compte, pour la ligne « Folio+ » : lue une fois, comme le pseudo
+  if (!offre && auth && !sansFolioPlus()) offrePull().then(() => { if (view.name === 'settings') render(); });
   const sections = gestion() ? [settingsGestionHtml, () => settingsAffichageHtml(true), settingsQuitterHtml]
     : [settingsRevisionHtml, settingsAffichageHtml, settingsMatieresHtml, settingsCompteHtml, settingsDonneesHtml, settingsQuitterHtml];
   $.innerHTML = `

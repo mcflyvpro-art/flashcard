@@ -31,6 +31,7 @@ import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { logout, openInstall } from './onboarding.js';
 import { allerAccueil, donnerLivre } from './prof-porte.js';
 import { ouvrirPseudo } from './pseudo-porte.js';
+import { ouvrirPlus } from './plus-porte.js';
 import {
   dictate, fail, nextQ, norm, pickQuiz, startQuiz, submit
 } from './quiz.js';
@@ -452,6 +453,7 @@ const CLICK_RULES = [
   [a => a === 'goalinfo' || a === 'stats', tapStats],
   [a => a === 'tuto', tapTuto],
   [a => a === 'install', tapInstall],
+  [a => a === 'plus', () => ouvrirPlus()],
   [a => a === 'duelquit', tapDuelquit],
   [a => a === 'addshared', tapAddshared],
   [a => a === 'expstats', tapExpstats],

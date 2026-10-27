@@ -6,6 +6,7 @@
 import { codeComplet, normCode } from '../classe.js';
 import { pinComplet, pinDepuisTexte } from '../defi.js';
 import { courbes, duree, versT } from './courbes.js';
+import { MAGASINS, NOMS, plateforme } from '../plateformes.js';
 
 const doc = document.documentElement;
 const reduit = matchMedia('(prefers-reduced-motion: reduce)');
@@ -329,6 +330,7 @@ function tarifs() {
       x.setAttribute('aria-checked', String(x === b));
       x.tabIndex = x === b ? 0 : -1;
     });
+    relierVente(t);
     t.querySelectorAll('[data-an][data-mois]').forEach(el => {
       el.classList.remove('roule');
       void el.offsetWidth;                 // relancer l'animation sur le même élément
@@ -337,10 +339,66 @@ function tarifs() {
     });
   };
   g.querySelectorAll('[role="radio"]').forEach(x => { x.tabIndex = x.getAttribute('aria-checked') === 'true' ? 0 : -1; });
+  relierVente(t);
   g.addEventListener('click', e => { const b = e.target.closest('[role="radio"]'); if (b) choisir(b); });
   auClavier(g, '[role="radio"]', choisir);
   // les lignes du tableau arrivent l'une après l'autre
   t.querySelectorAll('.comparatif tbody tr').forEach((r, i) => r.style.setProperty('--i', String(i)));
+}
+
+/* La vente ouverte (VENTE_OUVERTE de src/abonnement.js, et dans
+   index.html les adresses data-vente-an et data-vente-mois du bouton),
+   « Passer à Folio+ » mène à l'écran Folio+ de l'app, la formule choisie
+   ici déjà cochée ; sans session, elle attend la connexion
+   (ui/plus-porte.js). D'ici là, le bouton n'a pas ces adresses et mène à
+   l'inscription. Le module n'est pas importé ici : partagé avec le
+   démarrage de l'app, il ferait charger à la page d'accueil un morceau
+   commun bien plus gros (test/site.test.js garde les deux d'accord). */
+function relierVente(t) {
+  const mois = t.dataset.periode === 'mois';
+  t.querySelectorAll('[data-vente-an][data-vente-mois]').forEach(a => { a.href = mois ? a.dataset.venteMois : a.dataset.venteAn; });
+}
+
+/* ---------- sur chaque appareil ----------
+   L'appareil qu'on tient passe en premier, marqué ; le lien du magasin
+   apparaît quand l'app y est (MAGASINS) ; sinon, quand le navigateur sait
+   installer (Chrome, Edge : beforeinstallprompt), un bouton le fait en un
+   clic — l'app installée s'ouvre sur /app (le manifeste). */
+let invite = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); invite = e; montrerInstaller(); });
+
+function montrerInstaller() {
+  const ici = document.querySelector('.tl-carte.tl-ici');
+  if (!ici || !invite || ici.querySelector('[data-installer]') || MAGASINS[ici.dataset.os]) return;   // le magasin passe avant
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'bt bt-encre'; b.dataset.installer = '';
+  b.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-telecharger"/></svg>Installer Folio';
+  b.addEventListener('click', async () => {
+    if (!invite) return;
+    invite.prompt();
+    const { outcome } = await invite.userChoice.catch(() => ({}));
+    if (outcome === 'accepted') { invite = null; b.replaceWith(Object.assign(document.createElement('p'), { className: 'tl-ok', textContent: 'Folio est installé' })); }
+  });
+  ici.appendChild(b);
+}
+
+function appareils() {
+  const l = document.querySelector('.tl-liste');
+  if (!l) return;
+  const p = plateforme({ ua: navigator.userAgent, touches: navigator.maxTouchPoints || 0 });
+  for (const li of l.querySelectorAll('.tl-carte')) {
+    const lien = MAGASINS[li.dataset.os];
+    if (!lien) continue;
+    const a = Object.assign(document.createElement('a'), { className: 'bt bt-encre', href: lien, target: '_blank', rel: 'noopener' });
+    a.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-telecharger"/></svg>' + NOMS[li.dataset.os];
+    li.appendChild(a);
+  }
+  const ici = l.querySelector(`.tl-carte[data-os="${p.os}"]`);
+  if (!ici) return;
+  ici.classList.add('tl-ici');
+  ici.insertAdjacentHTML('afterbegin', '<span class="tl-ici-pastille">Ton appareil</span>');
+  l.prepend(ici);
+  montrerInstaller();
 }
 
 /* ---------- « J'ai un code » ----------
@@ -426,6 +484,7 @@ function demarrer() {
   videos();
   onglets();
   tarifs();
+  appareils();
   fenetreCode();
 }
 

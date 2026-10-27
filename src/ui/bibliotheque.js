@@ -20,6 +20,7 @@ import { STATE, cstate, paintMedia } from './carte-media.js';
 import { admAller, adminView, atSchool, isProf, isPupil, modView } from './classement.js';
 import { refAller, refView } from './etablissement.js';
 import { bienvenueView } from './bienvenue-porte.js';
+import { plusView } from './plus-porte.js';
 import { admPull, boardPull, modPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { decouvrirView, deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
@@ -105,7 +106,7 @@ function placerDefilement() {
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, lettre: lettreView, stats: statsView, find: findView,
-              shared: sharedView, duel: duelView, legal: legalView, demande: demandeView, decouvrir: decouvrirView, bienvenue: bienvenueView, mod: modView,
+              shared: sharedView, duel: duelView, legal: legalView, demande: demandeView, decouvrir: decouvrirView, bienvenue: bienvenueView, plus: plusView, mod: modView,
               classes: mesClassesView, classe: classeEleveView,
               prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
               ref: refView,
