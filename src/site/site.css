@@ -508,9 +508,8 @@ button{font:inherit;color:inherit}
 .campus-tete .texte{margin-inline:auto;text-wrap:balance}
 /* la marque de l'offre : le logo de Folio sur son carré de papier (sur le
    fond sombre, le livre noir de la pile disparaissait), la toque des
-   établissements en écusson, « Campus » dans la lumière de la marque ;
-   dessous, à qui elle s'adresse */
-.campus-marque{display:inline-flex;align-items:center;gap:14px;font:700 clamp(30px,3.4vw,40px)/1 var(--serif);letter-spacing:-.025em;color:var(--creme)}
+   établissements en écusson, « Campus » dans la lumière de la marque */
+.campus-marque{display:inline-flex;align-items:center;gap:16px;margin:0 0 30px;padding-bottom:8px;font:700 clamp(30px,3.4vw,40px)/1 var(--serif);letter-spacing:-.025em;color:var(--creme)}
 .campus-marque em{font-style:italic;background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
 .campus-ic{position:relative;flex:none;display:grid;place-items:center;width:clamp(50px,5vw,58px);aspect-ratio:1;border-radius:16px;background:var(--creme);
   box-shadow:0 14px 30px -14px rgba(0,0,0,.8)}
@@ -518,8 +517,6 @@ button{font:inherit;color:inherit}
 .campus-ecole{position:absolute;right:-8px;bottom:-8px;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--degrade);
   box-shadow:0 0 0 3px var(--nuit)}
 .campus-ecole .ic{width:15px;height:15px;color:#FFF;stroke-width:2.2}
-.campus-pour{margin:18px 0 22px;padding:8px 15px;border-radius:99px;background:rgba(243,238,227,.08);box-shadow:inset 0 0 0 1px rgba(243,238,227,.22);
-  font:700 14px/1.2 var(--sans);color:var(--creme)}
 /* la même marque, en petit, sur l'offre des tarifs */
 .offre-campus h3{display:flex;align-items:center;gap:12px}
 .offre-campus .campus-ic{width:40px;border-radius:12px;box-shadow:inset 0 0 0 1px var(--filet2)}
