@@ -3,7 +3,7 @@
    qu'un élève constate à l'écran, et qu'un bug rend absurdes. */
 import { describe, it, expect } from 'vitest';
 import { W6, W7, DAY, fsrsPlan, fsrsStates, fsrsR, fsrsIvl, fsrsInit, isV7,
-         f7bisect, f7curve } from '../src/fsrs.js';
+         f7bisect, f7curve, f6next, f6shortS, dayNo, fsrsReplayCard } from '../src/fsrs.js';
 
 const CFG = { w: W6, dr: 0.9, maxIvl: 36500 };
 const NOW = Date.UTC(2026, 8, 17, 9, 0, 0);
@@ -281,5 +281,40 @@ describe('équilibreur de charge', () => {
     const sans = fsrsPlan(c, 2, NOW, CFG, true), avec = fsrsPlan(c, 2, NOW, { ...CFG, charge: () => 99 }, true);
     expect(sans.ivl).toBeGreaterThan(EQUILIBRE_MAX);
     expect(avec.ivl).toBe(sans.ivl);
+  });
+});
+
+/* Anki compte l'écart entre deux lectures en jours de calendrier, avec un
+   jour qui change à 4 h. Folio comptait des fenêtres de 24 h en notant :
+   lue à 22 h puis à 8 h le lendemain, une page passait par la formule de
+   court terme (0 jour) au lieu de celle de long terme (1 jour). */
+describe('les jours écoulés, comptés comme Anki', () => {
+  const local = (j, h, m = 0) => new Date(2026, 9, j, h, m).getTime();
+  const c = lr => ({ id: 'j', st: 2, S: 5, D: 5, F: 5, n: 3, i: 5, lr, d: lr + 5 * DAY });
+  it('22 h puis 8 h le lendemain : un jour, la formule de long terme', () => {
+    expect(dayNo(local(26, 8)) - dayNo(local(25, 22))).toBe(1);
+    const p = fsrsPlan(c(local(25, 22)), 2, local(26, 8), CFG, false);
+    expect(p.S).toBeCloseTo(f6next(W6, { S: 5, D: 5, F: 5 }, 1, 3).S, 9);
+  });
+  it('23 h puis 3 h : encore le même jour, la formule de court terme', () => {
+    expect(dayNo(local(26, 3)) - dayNo(local(25, 23))).toBe(0);
+    const p = fsrsPlan(c(local(25, 23)), 2, local(26, 3), CFG, false);
+    expect(p.S).toBeCloseTo(f6shortS(W6, 5, 3), 9);
+  });
+  it('3 h puis 5 h : la bascule passe entre les deux', () => {
+    expect(dayNo(local(26, 5)) - dayNo(local(26, 3))).toBe(1);
+  });
+  it('un changement d’heure ne décale aucun jour', () => {
+    // la nuit du 25 octobre 2026 en Europe, et n'importe quel fuseau sinon
+    for (let j = 20; j < 31; j++) expect(dayNo(local(j + 1, 12)) - dayNo(local(j, 12))).toBe(1);
+  });
+  it('rejouer le journal compte comme noter', () => {
+    const log = [{ rating: 2, created_at: local(24, 20) }, { rating: 2, created_at: local(25, 22) },
+      { rating: 2, created_at: local(26, 8) }];
+    const rejoue = fsrsReplayCard(log, CFG);
+    let m = fsrsInit(W6, 3);
+    m = f6next(W6, m, 1, 3);
+    m = f6next(W6, m, 1, 3);
+    expect(rejoue.S).toBeCloseTo(m.S, 9);
   });
 });

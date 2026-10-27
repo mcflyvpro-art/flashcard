@@ -19,18 +19,15 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      47 / 148
-DERNIER   2026-10-27 · Page d'accueil, Folio Campus : l'élève et le professeur
-          ont leur espace sur l'ordinateur ET au téléphone posé contre lui
-          (deux affiches neuves prises dans la démo ; rangé pour le référent) ;
-          le moteur sans sous-titre. tools/affiches.js et la Folio Academy
-          passent le tuto de la démo. Preuves : npm run check (page 46,1/48
-          Ko), e2e/site.e2e.js 9/9, suite e2e 81 + 3 repassés au second essai
-          (machine lente, verts seuls), captures 390 et 1440 px relues.
-Avant :   2026-10-27 · Le tuto, v2 : il présente l'app pas à pas (élève,
-          professeur, référent) et rien ne le contourne sauf la croix,
-          « Passer » et Échap ; dans la démo, chaque rôle a le sien la première
-          fois. Avant encore : Folio+ se paie sur le site (docs/VENTE.md),
-          vente fermée tant que Stripe n'est pas posé.
+DERNIER   2026-10-27 · Le moteur compte les jours écoulés comme Anki : jours
+          de calendrier, bascule à 4 h, le même compte pour noter, rejouer
+          et optimiser (avant : 24 h glissantes en notant — lue à 22 h puis
+          8 h, une page passait par la formule de court terme — et minuit en
+          rejouant). Preuves : test/fsrs.test.js (3 cas qui échouent sur
+          l'ancien code ; Paris et New York), npm run check, e2e 84/84.
+Avant :   2026-10-27 · Page d'accueil : Folio Campus montre l'élève et le
+          professeur aussi au téléphone ; le moteur sans sous-titre. Avant
+          encore : le tuto v2.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

@@ -290,7 +290,25 @@ function stepReview(st, g, w, m, dr, maxIvl) {
     : { st, days: reviewIvl(w, m, dr, maxIvl) };
 }
 
-const sinceReview = (c, now) => c.lr ? Math.max(0, Math.floor((now - c.lr) / DAY)) : 0;
+/* ---------- les jours écoulés, comptés comme Anki ----------
+   Anki compte l'écart entre deux révisions en jours de calendrier, et son
+   jour change à 4 h, pas à minuit (« le jour suivant commence à ») : une
+   page lue à 22 h puis le lendemain à 8 h a un jour d'écart, et passe par
+   la formule de long terme ; lue à 23 h puis à 3 h, c'est encore le même
+   jour, et la formule de court terme. Folio comptait des fenêtres de 24 h
+   glissantes en notant (0 jour dans le premier cas) et coupait à minuit en
+   rejouant : les deux ne s'accordaient ni entre eux ni avec Anki. Un seul
+   compte désormais, partout. La file de révision (src/file.js) bascule à
+   la même heure. */
+export const BASCULE = 4;
+export const dayNo = t => {
+  const d = new Date(t);
+  if (d.getHours() < BASCULE) d.setDate(d.getDate() - 1);   // setDate : un changement d'heure ne décale rien
+  d.setHours(0, 0, 0, 0);
+  return Math.round(d.getTime() / DAY);
+};
+
+const sinceReview = (c, now) => c.lr ? Math.max(0, dayNo(now) - dayNo(c.lr)) : 0;
 
 const memoryState = (c, since, g, w) => c.S
   ? fsrsStep(w, { S: c.S, D: c.D || 5, F: c.F || c.S }, since, g)
@@ -347,12 +365,9 @@ export function fsrsStates(c, now, cfg) {
    associations et récitations ne notent pas la mémoire, ils ne disent
    que juste ou faux, et `rating` y vaut `null`.
 
-   Les intervalles entre deux révisions se comptent en jours calendaires
-   (`dayNo`), pas en fenêtres de 24 h glissantes : deux révisions faites
-   le même jour à midi et à minuit et demi ne doivent pas compter un jour
-   d'écart. C'est aussi ce que suppose l'optimiseur côté app
-   (`fsrsItems`), qui doit voir le même découpage en jours. */
-export const dayNo = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return Math.round(d.getTime() / DAY); };
+   Les intervalles s'y comptent avec `dayNo`, comme quand on note une
+   page : rejeu, note et optimiseur (`fsrsItems`) voient le même découpage
+   en jours. */
 
 /* Une seule fiche. `log` : des lignes `{ rating, created_at }`, dans
    n'importe quel ordre — celles sans note sont ignorées. Rend `null` si
