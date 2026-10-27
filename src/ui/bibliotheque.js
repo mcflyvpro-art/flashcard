@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
-import { I, LOGO, MARQUE, svg } from '../icones.js';
+import { I, LOGO, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
   DECKPAGE, adm, animate, asks, auth, compte, db, demo, dirty, eleve, filter, iAmMod, liveAt, me,
@@ -485,7 +485,7 @@ function home() {
   const list = db.decks.filter(d => (peek || !d.hidden) && (!filter || d.subject === filter));
   $.innerHTML = `
     <div class="page ${reorder ? 'frozen' : ''}" id="page">
-      <div class="top">${MARQUE}
+      <div class="top">
         <div class="hero">Mes livres</div>
         ${queueChip()}
         ${goalRing()}

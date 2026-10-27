@@ -16,6 +16,7 @@ import { uuid } from './uuid.js';
 import { modele } from './classes.js';
 import { etab } from './etablissement.js';
 import { ecrireAvatar } from '../avatar.js';
+import { pseudoNeuf } from './pseudos.js';
 
 export const PREFIXE = 'dece0000-';
 const ID = n => `${PREFIXE}0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -203,7 +204,7 @@ export function semerMonde(store, graine = 2026) {
     const id = ID(n);
     store.users.push({ id, email: `${(pseudo || prenom).toLowerCase()}@demo.folio.invalid`, password: uuid() });
     m.roles[id] = role; m.noms[id] = nomComplet(prenom, nom); et.membres[id] = org.id;
-    profils.push({ id, email: '', handle: pseudo || null, name: nomComplet(prenom, nom) });
+    profils.push({ id, email: '', handle: pseudo || pseudoNeuf(store, prenom, id), name: nomComplet(prenom, nom) });   // un pseudo pour tous
     jetons['p:' + id] = { cle: ecrireAvatar(visageDemo(n)), teinte: teinteDemo(n) };
     tab(store, 'prefs').push({ id, user_id: id, data: { tuto: 1, bienvenue: 1, name: prenom, goal: 30 } });
     return id;

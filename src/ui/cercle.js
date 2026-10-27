@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
-import { I, MARQUE, svg } from '../icones.js';
+import { I, svg } from '../icones.js';
 import {
   addQ, asks, auth, board, cercle, compte, duels, friends, mates, mates2, me, school, setAddQ, setAnimate, setMateOpen, view
 } from '../data/etat.js';
@@ -66,14 +66,15 @@ function moiEleve() {
   const nom = (compte && compte.nom) || (me && me.name) || 'Élève';
   const ou = school && school.classe ? `${school.classe}${school.org ? ' · ' + school.org : ''}` : 'Carte élève';
   return `<button class="cc-moi" data-cc="moi">${avatar(auth.uid, monIdent(), 'lg')}
-    <span class="cc-moi-t"><b>${esc(nom)}</b>${infos([['school', ou]])}${moiInfos()}</span>${svg(I.pen)}</button>`;
+    <span class="cc-moi-t"><b>${esc(nom)}</b>${infos([['school', ou], me && me.handle ? ['hash', '@' + me.handle, 'Ton pseudo'] : null])}${
+      moiInfos()}</span>${svg(I.pen)}</button>`;
 }
 
 function moiHtml(eleve) {
   if (eleve) return moiEleve();
   const h = me && me.handle;
   return `<button class="cc-moi" data-cc="moi">${avatar(auth.uid, monIdent(), 'lg')}
-    <span class="cc-moi-t"><b>${h ? '@' + esc(h) : 'Choisis ton pseudo'}</b>${moiInfos()}</span>${svg(I.pen)}</button>`;
+    <span class="cc-moi-t"><b>${h ? '@' + esc(h) : '…'}</b>${moiInfos()}</span>${svg(I.pen)}</button>`;
 }
 
 function actionsHtml(eleve) {
@@ -108,10 +109,10 @@ export function defiLigne(du, avecOu = true) {
   const m = myScore(du.id), r = rankOf(du.id);
   const pos = m ? r.findIndex(x => x.user_id === auth.uid) + 1 : 0;
   return `<button class="cc-defi" data-duel="${esc(du.id)}">
-    <i class="cc-defi-i">${svg(I.flame)}</i>
+    <i class="cc-defi-i">${svg(I.bolt)}</i>
     <span class="cc-defi-t"><b>${esc(du.name)}</b>${infos([['user', shortWho(du.who) || 'Un ami'], avecOu ? ['users', ouDefi(du)] : null,
       ['card', du.total, 'Questions'], r.length ? ['play', r.length, 'Joueurs'] : null])}</span>
-    ${m ? `<em class="cc-score"><b>${m.score}/${du.total}</b>${medaille(pos) ? medailleHtml(pos) : placeTexte(pos)}</em>`
+    ${m ? `<em class="cc-score">${medaille(pos) ? medailleHtml(pos) : placeTexte(pos)}<b>${m.score}/${du.total}</b></em>`
       : `<em class="cc-ajouer">${svg(I.play)}Jouer</em>`}</button>`;
 }
 
@@ -124,7 +125,7 @@ function defisHtml() {
   return `<section class="cc-sec"><div class="cc-h"><h2>Défis</h2>${
     tri.length > 4 ? `<button class="cc-lnk" data-cc="tous">${cercle.tous ? 'Moins' : 'Tout voir · ' + tri.length}</button>` : ''}</div>
     ${tri.length ? `<div class="cc-list">${tri.slice(0, max).map(du => defiLigne(du)).join('')}</div>`
-      : `<p class="cc-vide">${svg(I.flame)}Aucun défi</p>`}
+      : `<p class="cc-vide">${svg(I.bolt)}Aucun défi</p>`}
   </section>`;
 }
 
@@ -214,7 +215,7 @@ export function commuView() {
   const eleve = isPupil();
   $.innerHTML = `
     <div class="page cc" id="page">
-      <div class="top">${MARQUE}<div class="hero">Cercle des lecteurs</div></div>
+      <div class="top"><div class="hero">Cercle des lecteurs</div></div>
       <div class="cc-grille">
         <div class="cc-main">
           ${moiHtml(eleve)}

@@ -110,6 +110,8 @@ begin
   perform public.zz_root();
   insert into public.zz_res (nom, ok, vu) values ('son adresse ne va pas au journal',
     exists (select 1 from public.ref_audit a where a.cible = anne and a.acte = 'compte ouvert' and not a.detail ? 'adresse'), 'trace');
+  insert into public.zz_res (nom, ok, vu) values ('le compte ouvert reçoit un pseudo dans la règle (20261027090000)',
+    (select public.pseudo_motif(handle) = 'ok' from public.profiles where id = anne), (select handle from public.profiles where id = anne));
   perform public.zz_comme(paul);
   j := public.code_apercu(ce);
   insert into public.zz_res (nom, ok, vu) values ('une place libre : le code fait de nouveau entrer', j->>'statut' = 'ok', j::text);

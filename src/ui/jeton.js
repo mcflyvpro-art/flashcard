@@ -59,11 +59,15 @@ export function repeindreJetons(cles) {
   }
 }
 
-/* Une médaille dessinée pour les trois premiers d'un classement (or, argent,
+/* Une médaille pour les trois premiers d'un classement (or, argent,
    bronze), le rang en chiffre sinon — plus d'émoji, qui changeait d'un
-   téléphone à l'autre. */
+   téléphone à l'autre. Dessinée d'un seul tenant : deux rubans pleins, un
+   disque cerclé d'un filet, et le chiffre centré DANS le dessin ; posé
+   par-dessus en position absolue, il glissait hors du disque et les deux
+   traits du ruban faisaient un « V » tordu (2026-10-27). */
 export const medailleHtml = p => (medaille(p)
-  ? `<span class="med m${p}" role="img" aria-label="${p === 1 ? '1er' : p + 'e'}">${svg(I.medaille)}<b>${p}</b></span>` : String(p));
+  ? `<svg class="med m${p}" viewBox="0 0 24 28" role="img" aria-label="${p === 1 ? '1er' : p + 'e'}"><path class="med-r" d="M5.6 .5h4.6l3 9.5H8.6z"/><path class="med-r med-r2" d="M18.4 .5h-4.6l-3 9.5h4.6z"/><circle cx="12" cy="18.3" r="9.4"/><circle class="med-f" cx="12" cy="18.3" r="7.2"/><text x="12" y="18.6" text-anchor="middle" dominant-baseline="central">${p}</text></svg>`
+  : String(p));
 
 /* ---------- l'avatar : un aperçu par choix ----------
    Chaque trait se choisit en voyant le visage qu'il donnerait : la grille

@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { DAY, MIN } from '../fsrs.js';
 import {
-  accounts, auth, blocks, compte, db, iAmMod, mods, myRole, online, prefs, ref,
+  accounts, auth, blocks, compte, db, iAmMod, me, mods, myRole, online, prefs, ref,
   setSubjColor, setSubjEdit, setSubjName, shared, trash, vers, view
 } from '../data/etat.js';
 import { gestion, render } from './bibliotheque.js';
@@ -13,7 +13,7 @@ import {
   COLORS, PALETTE, canUndo, deck, esc, pending, plur, pushUndo, saveDeck,
   subj, sty, uid, undoLabel
 } from '../core/coeur-sync.js';
-import { KEEP, snapVersion } from '../core/reglages-corbeille.js';
+import { KEEP, mePull, snapVersion } from '../core/reglages-corbeille.js';
 import { hlp } from './connexion.js';
 import { applyFont, savePrefs, toast } from './import-cartes.js';
 import { closeMenu, openMenu } from './menus-a.js';
@@ -103,6 +103,8 @@ function settingsCompteHtml() {
           <span class="c">${esc(compte.identifiant || '')}</span></div>`
         : `<button class="sr flat" data-act="rename">${svg(I.user)}
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>`}
+        <button class="sr flat" data-act="handle">${svg(I.hash)}<span class="n">Pseudo</span>
+          <span class="c">${me && me.handle ? '@' + esc(me.handle) : ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="commu">${svg(I.users)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
         ${(myRole === 'eleve' || myRole === 'prof') && !carteEleve() && !atSchool() ? `<button class="sr flat" data-ce="ouvrir">${svg(I.key)}
@@ -167,6 +169,8 @@ function settingsGestionHtml() {
       <div class="slist">
         <div class="sr flat fixe">${svg(I.user)}<span class="n">${esc((compte && compte.nom) || prefs.name || '')}</span>
           <span class="c">${esc(auth.email || '')}</span></div>
+        <button class="sr flat" data-act="handle">${svg(I.hash)}<span class="n">Pseudo</span>
+          <span class="c">${me && me.handle ? '@' + esc(me.handle) : ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
           <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
@@ -176,6 +180,8 @@ function settingsGestionHtml() {
 }
 
 export function settingsView() {
+  // le pseudo de la ligne « Pseudo » : lu une fois, l'écran se repeint à son arrivée
+  if (!me && auth) mePull().then(() => { if (view.name === 'settings') render(); });
   const sections = gestion() ? [settingsGestionHtml, () => settingsAffichageHtml(true), settingsQuitterHtml]
     : [settingsRevisionHtml, settingsAffichageHtml, settingsMatieresHtml, settingsCompteHtml, settingsDonneesHtml, settingsQuitterHtml];
   $.innerHTML = `

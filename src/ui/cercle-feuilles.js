@@ -21,6 +21,7 @@ import { ouvrirDirect } from './direct-porte.js';
 import { toast } from './import-cartes.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { askFriend } from '../core/reglages-corbeille.js';
+import { ouvrirPseudo } from './pseudo-porte.js';
 
 /* ══════════ les feuilles du cercle, et ses gestes ══════════
    Une seule entrée `cc` dans la table des menus (menus-a.js) ; laquelle
@@ -155,8 +156,9 @@ function feuilleMembre() {
    Mon avatar (ou mes initiales) et ma couleur : un visage dessiné qu'on
    compose trait par trait (src/avatar.js), chaque choix montré sur le visage
    lui-même, d'un appui. Le jeton change aussitôt partout à l'écran, la base
-   suit. Le pseudo s'édite à part (un élève de classe n'en a pas : son nom est
-   celui que tient son professeur). */
+   suit. Le pseudo s'édite à part, dans sa feuille (ui/pseudo-porte.js) ; un
+   élève de classe en a un aussi, sous son nom de classe qui, lui, ne bouge
+   pas (2026-10-27). */
 const monNom = () => (compte && compte.nom) || (me && (me.handle || me.name)) || '?';
 const monChoix = () => visuels['p:' + auth.uid] || {};
 const maTeinte = () => { const v = monChoix(); return v.teinte != null ? v.teinte : rangCouleur(auth.uid); };
@@ -168,8 +170,8 @@ const ONGLETS_AV = { coiffure: 'Coiffure', cheveux: 'Cheveux', peau: 'Peau', yeu
 function feuilleMoi() {
   const v = monChoix(), eleve = isPupil(), trait = cercle.trait || 'coiffure';
   return coque(`<div class="jt-apercu">${avatar(auth.uid, monIdent(), 'xl')}
-      ${eleve ? `<b>${esc(monNom())}</b>` : `<button class="jt-pseudo" data-act="handle">${
-        me && me.handle ? '@' + esc(me.handle) : 'Choisis ton pseudo'}${svg(I.pen)}</button>`}</div>
+      ${eleve ? `<b>${esc(monNom())}</b>` : ''}<button class="jt-pseudo" data-cc="pseudo">${
+        me && me.handle ? '@' + esc(me.handle) : 'Mon pseudo'}${svg(I.pen)}</button></div>
     <div class="av-barre">
       <button class="av-b" data-cc="av-hasard">${svg(I.shuffle)}Au hasard</button>
       <button class="av-b${v.cle ? '' : ' on'}" data-cc="av-init" aria-pressed="${!v.cle}"><b>Aa</b>Initiales</button>
@@ -290,6 +292,7 @@ const ACTIONS = {
     const ap = document.getElementById('cfap'); if (ap) ap.style.setProperty('--k', teinte(i));
   },
   moi: () => ouvrir('moi'),
+  pseudo: () => ouvrirPseudo(),
   'av-trait': k => { cercle.trait = k; peindre(); },
   av: id => {
     const [trait, k] = String(id).split(':'), a = monAvatar();

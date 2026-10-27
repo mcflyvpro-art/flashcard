@@ -14,13 +14,14 @@ import { COLORS, PALETTE, canUndo, deck, esc, subj, undoLabel } from '../core/co
 import { paintMenuProf } from './prof-porte.js';
 import {
   paintMenuCard, paintMenuConflict, paintMenuDeckset, paintMenuDuelitem,
-  paintMenuFnr, paintMenuHandle, paintMenuHelp, paintMenuLeave,
+  paintMenuFnr, paintMenuHelp, paintMenuLeave,
   paintMenuLend, paintMenuMate, paintMenuMateprof,
   paintMenuMerge, paintMenuMove, paintMenuPreview, paintMenuSendfriend,
   paintMenuSharepick, paintMenuSortpick, paintMenuSplit, paintMenuTuto,
   paintMenuVers
 } from './menus-b.js';
 import { paintMenuRename } from './menus-c.js';
+import { paintMenuPseudo } from './pseudo-porte.js';
 import { installSheet } from './onboarding.js';
 
 /* ---------- menu contextuel ----------
@@ -307,7 +308,7 @@ function menuPainter(m) {
     sortpick: paintMenuSortpick,
     preview: paintMenuPreview,
     sharepick: paintMenuSharepick,
-    handle: paintMenuHandle,
+    handle: paintMenuPseudo,
     mate: paintMenuMate,
     tuto: paintMenuTuto,
     help: paintMenuHelp,

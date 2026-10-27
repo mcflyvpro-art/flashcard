@@ -1,0 +1,15 @@
+/* La feuille du pseudo (ui/pseudo-feuille.js), chargée avec elle. Préfixe ps-.
+   Aucune couleur à elle : les jetons de app.css. */
+.ps .ps-champ{margin:4px 16px 6px}
+.ps-nom{display:flex;align-items:center;gap:8px;margin:0 16px 10px;font-size:13.5px;color:var(--ink2)}
+.ps-nom svg{width:15px;height:15px;color:var(--soft);flex:none}
+.ps-v{min-height:26px;margin:0 16px 12px;display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;
+  font-size:13px;color:var(--soft)}
+.ps-libre{display:inline-flex;align-items:center;gap:5px;color:var(--ok);font-weight:600}
+.ps-libre svg{width:14px;height:14px}
+.ps-non{color:var(--ko)}
+.ps-sug{height:26px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:var(--card);
+  color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.ps .ps-ok{margin:0 16px 14px;width:calc(100% - 32px);display:flex;align-items:center;justify-content:center;gap:8px}
+.ps .ps-ok svg{width:18px;height:18px}
+.ps .ps-ok:disabled{opacity:.4}

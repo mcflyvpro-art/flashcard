@@ -93,16 +93,6 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
    il rétrécit, il ne se coupe jamais au milieu d'un mot */
 .top .hero{flex:1;min-width:0;margin:0;font-size:clamp(26px,7.4vw,30px)}
 .top .ic{margin-bottom:3px}
-/* le logo en tête des onglets, au téléphone : la marque sur la première
-   ligne avec les boutons, le titre en grand dessous (l'ordinateur a sa barre) */
-.marque-tel{display:none}
-.marque-tel .logo{width:24px;height:26px}
-@media (max-width:899px){
-  html:not(.nav-haut) .marque-tel{display:flex;align-items:center;gap:8px;min-height:40px;margin-right:auto;order:-1;
-    font:700 21px/1 var(--serif);letter-spacing:-.4px}
-  html:not(.nav-haut) .top:has(> .marque-tel){flex-wrap:wrap;row-gap:16px;margin-top:6px}
-  html:not(.nav-haut) .top:has(> .marque-tel) > .hero{order:1;flex-basis:100%;font-size:clamp(30px,8.8vw,36px)}
-}
 .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;
   background:var(--surf);color:var(--ink2);
   transition:transform .32s var(--sp),background .25s var(--e),color .25s}
@@ -1667,9 +1657,11 @@ body.touring .toast{display:none}
 .jt.vis{background:color-mix(in srgb,var(--k) 30%,#fff)}
 .jt.vis svg.visage{width:100%;height:100%;display:block;stroke:none;fill:none}
 /* les médailles des trois premiers (ui/jeton.js, medailleHtml) */
-.med{position:relative;display:inline-block;width:22px;height:24px;flex:none;vertical-align:middle;color:var(--mc)}
-.med svg{width:100%;height:100%;display:block}
-.med b{position:absolute;left:0;right:0;top:9.5px;text-align:center;font-size:9.5px;font-weight:800;line-height:1;color:#fff}
+.med{display:inline-block;width:22px;height:26px;flex:none;vertical-align:middle;stroke:none}
+.med circle{fill:var(--mc)}
+.med .med-f{fill:none;stroke:rgba(255,255,255,.5);stroke-width:1.1}
+.med .med-r{fill:color-mix(in srgb,var(--mc) 50%,var(--ink))} .med .med-r2{fill:color-mix(in srgb,var(--mc) 70%,var(--ink))}
+.med text{fill:#fff;font-size:11px;font-weight:800;font-family:system-ui,-apple-system,sans-serif}
 .med.m1{--mc:#D8A42C} .med.m2{--mc:#A3ACB6} .med.m3{--mc:#B97A47}
 
 .jt.groupe svg{width:56%;height:56%;color:#fff;stroke-width:1.9}
@@ -1745,8 +1737,8 @@ body.touring .toast{display:none}
 .cc-defi,.cc-ligne,.cl-partie{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;
   text-align:left;background:transparent;transition:background .15s}
 .cc-defi-i{width:38px;height:38px;border-radius:11px;flex:none;display:grid;place-items:center;
-  background:color-mix(in srgb,#C2632B 12%,var(--card));color:#B4561F}
-.cc-defi-i svg{width:19px;height:19px}
+  background:var(--surf);color:var(--ink)}   /* l'éclair de « Lancer un défi », sur le fond des autres boutons */
+.cc-defi-i svg{width:18px;height:18px}
 .cc-defi-t,.cc-ligne-t,.cl-partie-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .cc-defi-t b,.cc-ligne-t b,.cl-partie-t b{font-size:15px;font-weight:600;letter-spacing:-.15px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1759,7 +1751,7 @@ body.touring .toast{display:none}
 .cc-ajouer{flex:none;display:inline-flex;align-items:center;gap:5px;font-style:normal;font-size:12.5px;font-weight:700;color:var(--ko);
   background:rgba(181,71,58,.1);padding:6px 12px 6px 10px;border-radius:999px}
 .cc-ajouer svg{width:11px;height:11px}   /* sans taille, le triangle prenait toute la place (la capture du 2026-10-26) */
-.cc-score{flex:none;display:flex;flex-direction:column;align-items:flex-end;font-style:normal;
+.cc-score{flex:none;display:flex;align-items:center;gap:8px;font-style:normal;
   font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums}
 .cc-score b{font-size:14.5px;color:var(--ink)}
 .cc-rond{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--surf);color:var(--ink2)}
@@ -2295,8 +2287,7 @@ html.nav-haut .top [data-act="settings"],html.nav-haut .top [data-act="mail"]{di
   html.nav-haut #rail{display:flex;height:52px;gap:10px;padding:0 12px;overflow-x:auto;
     scrollbar-width:none}
   html.nav-haut #rail::-webkit-scrollbar{display:none}
-  html.nav-haut #rail .who,html.nav-haut #rail .sp{display:none}
-  html.nav-haut #rail .brand{margin-right:auto}
+  html.nav-haut #rail .brand span,html.nav-haut #rail .who{display:none}
   html.nav-haut #rail nav button span{display:none}
   html.nav-haut #rail nav button{padding:0 12px}
   html.nav-haut #app{padding-top:64px}

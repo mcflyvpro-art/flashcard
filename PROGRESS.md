@@ -19,7 +19,23 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      46 / 148
-DERNIER   2026-10-26 · Les visuels de l'app, tour 3 (docs/LANDING.md, T3.1 à T3.6) :
+DERNIER   2026-10-27 · Les pseudos ont des règles (20261027090000) : tout compte en a un,
+          donné d'office (le prénom, sinon « lecteur », et des chiffres) ; 3 à 20
+          caractères, minuscules, chiffres, point, tiret bas ; ni mot réservé ni
+          grossier ; unique au point et au tiret bas près ; deux changements par
+          semaine ; un pseudo quitté reste 30 jours à son titulaire. Il se change
+          de partout (Réglages pour tous les comptes, « Mon jeton », l'accueil),
+          élève de classe compris : on ne pouvait plus le changer nulle part (la
+          feuille ne s'ouvrait pas, et la base rendait en silence son ancien
+          pseudo à tout élève). L'accueil demande le pseudo à tous ; un élève de
+          lycée garde « Prénom NOM » en classe. Au téléphone, les titres des
+          onglets reviennent en haut, sans la ligne du logo ; médailles du
+          classement et icône des défis redessinées. Preuves : pseudos.sql 27/27,
+          identite_eleve 23/23, defis_direct 44/44, etablissement 72/72,
+          licence 51/51, jetons 23/23, profil 19/19, classe_eleve 12/12 ;
+          test/pseudo.test.js 18/18 (listes comparées à la migration) ;
+          e2e/pseudo 2/2, bienvenue 3/3.
+          Avant : Les visuels de l'app, tour 3 (docs/LANDING.md, T3.1 à T3.6) :
           le logo du site dans l'app (barre, barre du haut, onglets au téléphone,
           ouverture, icônes installées), les titres de page dans la serif du site,
           un signet de la matière sur la fiche lue ; dix-neuf défauts réparés sur

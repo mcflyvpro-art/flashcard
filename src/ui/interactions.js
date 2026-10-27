@@ -15,7 +15,6 @@ import { retourPublic } from './routeur.js';
 import { allerClasses, gestion, go, render, retourLivre } from './bibliotheque.js';
 import { commuPull, doAdd, ouvrirProfil } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
-import { isPupil } from './classement.js';
 import {
   admPull, blocksPull, boardPull, matesPull, modAct,
   modPull, refPull
@@ -31,6 +30,7 @@ import {
 import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { logout, openInstall } from './onboarding.js';
 import { allerAccueil, donnerLivre } from './prof-porte.js';
+import { ouvrirPseudo } from './pseudo-porte.js';
 import {
   dictate, fail, nextQ, norm, pickQuiz, startQuiz, submit
 } from './quiz.js';
@@ -167,10 +167,9 @@ const tapFriends = () => { if (!friends) friendsPull(); return go('friends'); };
 const tapFriendsBoard = () => { if (!board.rows) boardPull(); return tapFriends(); };
 const tapDoadd = () => doAdd();
 
-/* Le pseudo scolaire vient de l'établissement : la base renverse déjà
-   toute tentative de le changer, l'écran n'ouvre donc pas le formulaire. */
-const tapHandle = () => isPupil() ? toast(I.lock, 'Ton pseudo est celui de ton établissement')
-                                   : openMenu('handle');
+/* Tout compte change son pseudo, élève de classe compris (2026-10-27) :
+   son nom de classe, lui, ne bouge pas. */
+const tapHandle = () => ouvrirPseudo();
 
 
 /* un quiz se lance depuis un paquet : en sortir, c'est y revenir */

@@ -3,7 +3,8 @@
    son prénom, un pseudo, un visage, son niveau, ses matières et un
    objectif de pages par jour — de quoi ouvrir une bibliothèque qui lui
    ressemble, avant la visite guidée ; à un élève entré par son
-   établissement, seulement son visage (son nom vient de sa classe).
+   établissement, son pseudo et son visage (son nom vient de sa classe).
+   La règle du pseudo vit dans src/pseudo.js.
    Pur, testé dans test/bienvenue.test.js ; affiché par ui/bienvenue.js. */
 import { avatarDe, ecrireAvatar } from './avatar.js';
 import { COULEURS, hachage } from './jeton.js';
@@ -32,17 +33,6 @@ export function propositions(graine, tour = 0, n = 6) {
     const k = `${graine}:${tour}:${i}`, a = avatarDe(k);
     return { cle: ecrireAvatar(a), avatar: a, teinte: hachage(k) % COULEURS.length };
   });
-}
-
-/* Un pseudo proposé depuis le prénom (sinon l'adresse) : minuscules, sans
-   accent ni espace, 3 à 20 caractères — la règle de saveHandle. */
-const nettoyer = v => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
-  .toLowerCase().replace(/[^a-z0-9_.-]/g, '').slice(0, 20);
-export const pseudoValide = h => /^[a-z0-9_.-]{3,20}$/.test(String(h || ''));
-export function pseudoPropose(prenom, email) {
-  const p = nettoyer(String(prenom || '').split(/\s+/)[0]);
-  const base = p.length >= 3 ? p : nettoyer(String(email || '').split('@')[0]);
-  return base.length >= 3 ? base : (base + 'lecteur').slice(0, 20);
 }
 
 export const prenomValide = p => /^[\p{L}][\p{L} '’-]{0,39}$/u.test(String(p || '').trim());

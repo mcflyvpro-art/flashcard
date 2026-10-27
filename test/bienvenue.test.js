@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  MATIERES, matieresApres, NIVEAUX_PERSO, OBJECTIFS, prenomValide, propositions, pseudoPropose, pseudoValide
+  MATIERES, matieresApres, NIVEAUX_PERSO, OBJECTIFS, prenomValide, propositions
 } from '../src/bienvenue.js';
 import { estAvatar } from '../src/avatar.js';
 
@@ -16,18 +16,8 @@ describe('propositions — six visages', () => {
   });
 });
 
-describe('pseudo — proposé, puis vérifié', () => {
-  it('depuis le prénom, sans accent ni espace', () => {
-    expect(pseudoPropose('Éloïse Marie', 'x@y.fr')).toBe('eloise');
-    expect(pseudoPropose('Jo', 'jo.martin@exemple.fr')).toBe('jo.martin');
-    expect(pseudoPropose('', 'a@b.fr')).toBe('alecteur');
-  });
-  it('3 à 20 caractères, minuscules, chiffres et . _ -', () => {
-    expect(pseudoValide('lea_75')).toBe(true);
-    expect(pseudoValide('le')).toBe(false);
-    expect(pseudoValide('Léa')).toBe(false);
-    expect(pseudoValide('a'.repeat(21))).toBe(false);
-  });
+// le pseudo a sa règle à lui, src/pseudo.js (test/pseudo.test.js)
+describe('prénom', () => {
   it('un vrai prénom', () => {
     expect(prenomValide('Léa')).toBe(true);
     expect(prenomValide('Jean-Luc')).toBe(true);

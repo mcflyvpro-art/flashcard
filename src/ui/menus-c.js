@@ -39,7 +39,7 @@ import {
   addMail, backupData, backupRestore, delMail, dropFriend, lireSauvegarde
 } from '../core/reglages-corbeille.js';
 import {
-  friendsPull, revokeShare, saveHandle, sendDeck, shareLink, versPull
+  friendsPull, revokeShare, sendDeck, shareLink, versPull
 } from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
 
@@ -422,11 +422,6 @@ function clickDuelnew2(a, b, d) { if (!d) return; closeMenu(); ouvrirDefi({ livr
 const clickMatedefi = () => { closeMenu(); ouvrirDefi({ ou: 'amis', mode: 'rythme', retour: { name: view.name, id: view.id } }); };
 function clickVersopen(a, b, d) { if (!d) return; openMenu('vers'); return versPull(d.id); }
 
-async function clickSavehandle() {
-  const i = document.getElementById('hq');
-  if (await saveHandle(i ? i.value : '')) { closeMenu(); setAnimate(false); render(); }
-}
-
 const clickMatedrop = () => dropFriend(mateOpen);
 const clickMatesend = () => { setSendMsg(''); return openMenu('lend'); };
 const clickMateprof = () => { mateProfPull(mateOpen); return openMenu('mateprof'); };
@@ -546,7 +541,6 @@ const CLICK_RULES = [
   [a => a === 'roff', clickRoff],
   [a => a === 'duelnew2', clickDuelnew2],
   [a => a === 'versopen', clickVersopen],
-  [a => a === 'savehandle', clickSavehandle],
   [a => a === 'matedrop', clickMatedrop],
   [a => a === 'matesend', clickMatesend],
   [a => a === 'matedefi', clickMatedefi],

@@ -130,24 +130,27 @@ export async function envoyerPrefs() {
   } catch (e) { setOnline(false); }
 }
 
-/* ---------- pseudo ----------
+/* ---------- pseudo (2026-10-27) ----------
    On s'ajoute par pseudo, pas par adresse : c'est ce qu'on se dit de vive
-   voix, et ça évite de faire circuler les e-mails de tout le monde. */
-const cleanHandle = v => String(v || '').toLowerCase().replace(/[^a-z0-9_.-]/g, '').slice(0, 20);
+   voix, et ça évite de faire circuler les e-mails de tout le monde. Tout
+   compte en a un, donné par la base à sa création ; il ne se change que
+   par `changer_pseudo` (la règle de src/pseudo.js, une place libre, deux
+   changements par semaine) — l'API brute ne l'écrit plus. Pas de file
+   d'attente ici : un pseudo se tranche contre ceux des autres, au moment
+   même, et l'écran dit « en ligne seulement » plutôt que de promettre un
+   pseudo qui sera peut-être pris à la reconnexion. Ces deux fonctions
+   transportent ; la règle et les messages vivent dans src/pseudo.js. */
+export async function pseudoLibre(p) {
+  try { return (await api('/rest/v1/rpc/pseudo_libre', 'POST', { p })) || { statut: 'erreur' }; }
+  catch (e) { return { statut: e && e.status ? 'erreur' : 'hors_ligne', pseudo: p }; }
+}
 
-export async function saveHandle(v) {
-  const h = cleanHandle(v);
-  if (h.length < 3) { toast(I.x, 'Au moins 3 caractères'); return false; }
+export async function changerPseudo(p) {
   try {
-    await api('/rest/v1/profiles', 'POST', [{ id: auth.uid, email: auth.email, handle: h, name: prefs.name || null }],
-      { Prefer: 'resolution=merge-duplicates,return=minimal' });
-    me.handle = h; save();
-    toast(I.check, '@' + h);
-    return true;
-  } catch (e) {
-    toast(I.x, /duplicate|unique/i.test(String(e.message || '')) ? 'Ce pseudo est déjà pris' : 'Impossible pour l’instant');
-    return false;
-  }
+    const r = (await api('/rest/v1/rpc/changer_pseudo', 'POST', { p })) || { statut: 'erreur' };
+    if (r.statut === 'ok') { setMe({ ...(me || { id: auth.uid }), handle: r.pseudo }); save(); }
+    return r;
+  } catch (e) { return { statut: e && e.status ? 'erreur' : 'hors_ligne', pseudo: p }; }
 }
 
 export async function mePull() {

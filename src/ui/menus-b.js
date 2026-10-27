@@ -2,7 +2,7 @@
 import { I, svg } from '../icones.js';
 import {
   auth, cardEdit, conflicts, db, duels, fnr, friends, helpKey,
-  mateOpen, mateProf, mates, me, prefs, previewOf, quiz, recorder,
+  mateOpen, mateProf, mates, prefs, previewOf, quiz, recorder,
   sel, sendMsg, sendTo, setMenu, setSendMsg, setSplitSize, splitSize, study, vers, view
 } from '../data/etat.js';
 import { SORTS } from './bibliotheque.js';
@@ -212,21 +212,6 @@ export function paintMenuSharepick(w) {
     return;
 }
 
-export function paintMenuHandle(w) {
-  w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mhd">${svg(I.user)}<span class="mhx"><b>Ton pseudo</b></span></div>
-        <div class="fld addf"><span class="at">@</span><input id="hq" type="text"
-          placeholder="pseudo" autocapitalize="none" autocomplete="off" spellcheck="false"
-          value="${esc((me && me.handle) || '')}" aria-label="Ton pseudo"></div>
-        <button class="mi" data-mact="savehandle" style="justify-content:center;font-weight:700">
-          ${svg(I.check)}Enregistrer</button>
-      </div>`;
-    mountMenu(w);
-    setTimeout(() => { const i = document.getElementById('hq'); if (i) i.focus(); }, 80);
-    return;
-}
-
 export function paintMenuMate(w) {
   const f = (mates || []).find(x => x.id === mateOpen);
     if (!f) { setMenu(null); return; }
@@ -313,7 +298,7 @@ export function paintMenuDuelitem(w) {
     const r = rankOf(du.id), me = myScore(du.id), mine = du.owner === auth.uid;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mhd">${svg(I.flame)}
+        <div class="mhd">${svg(I.bolt)}
           <span class="mhx"><b>${esc(du.name)}</b>
             <i>lancé par ${esc(noDetect(shortWho(du.who) || 'un compte'))} · ${plur(du.total, 'question')}
               · ${timeAgo(du.created_at)}</i></span>

@@ -257,8 +257,6 @@ export function rpcCercle(store, nom, b, user) {
   const f = {
     my_friends: () => mesAmis(store, uid),
     profil_lecteur: () => profilDe(store, uid, c.u),
-    find_user: () => tab(store, 'profiles').filter(p => p.handle && p.handle === String(c.q || '').toLowerCase())
-      .map(p => ({ id: p.id, handle: p.handle, name: p.name || p.handle })),
     leaderboard: () => classement(store, uid, c.days),
     mes_clubs: () => mesClubs(store, m, uid),
     club_creer: () => creerClub(store, c, uid),

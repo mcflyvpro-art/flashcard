@@ -117,7 +117,7 @@ export function defiView() {
     <div class="dn">
       <div class="dn-main">${ouHtml()}${livresHtml()}</div>
       <aside class="dn-cote">${commentHtml()}
-        <button class="cta dn-go" data-cc="dn-go" ${pret ? '' : 'disabled'}>${svg(defi.mode === 'direct' ? I.bolt : I.flame)}${
+        <button class="cta dn-go" data-cc="dn-go" ${pret ? '' : 'disabled'}>${svg(I.bolt)}${
           defi.mode === 'direct' ? 'Ouvrir la salle' : 'Lancer le défi'}</button>
       </aside>
     </div>`;

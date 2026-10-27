@@ -74,9 +74,10 @@ D'autres tâches se sont ajoutées depuis, chacune posée par sa migration
 | --- | --- | --- | --- |
 | `renouveler-codes-quotidien` | `53 2 * * *` | `renouveler_codes()` : un code élèves ou professeurs neuf pour chaque établissement dont le code a fait son temps (`org_codes.rythme`, semaine par défaut), tracé au journal du référent | `20261026110000` |
 | `purge-salles-quotidienne` | `41 3 * * *` | `purge_salles()` : les parties en direct terminées | `20261024232855` |
+| `purge-pseudos-quotidienne` | `29 3 * * *` | efface le journal des pseudos (`pseudo_journal`) de plus de 60 jours : 30 de réserve d'un pseudo quitté, 7 pour compter les changements ; les anciens pseudos d'un élève ne traînent pas | `20261027090000` |
 | `audit-double-ecriture-cards-quotidien` | `3 4 * * *` | voir plus bas | `20260918100000` |
 
-Le 2026-10-26, `cron.job` les contenait toutes les cinq, actives.
+Le 2026-10-27, `cron.job` les contenait toutes les six, actives.
 
 **Incident découvert le 2026-10-16 (M04.T5)** : cette migration n'avait
 **jamais été appliquée en production**. Elle figurait dans le dépôt, mais

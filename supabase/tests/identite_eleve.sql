@@ -86,13 +86,18 @@ begin
   exception when others then s := 'refusé'; end;
   insert into public.zz_res (nom, ok, vu) values ('un collègue hors de la classe ne crée pas de compte', s = 'refusé', s);
 
-  -- ── le nom ne se change pas ──
+  -- ── le nom ne se change pas ; le pseudo, seulement par sa porte (2026-10-27) ──
   perform public.zz_comme(alice);
-  update public.profiles set name = 'DarkAlice', handle = 'darkalice' where id = alice;
+  update public.profiles set name = 'DarkAlice' where id = alice;
+  begin update public.profiles set handle = 'darkalice' where id = alice; s := 'passé';
+  exception when others then s := sqlstate; end;
   perform public.zz_root();
   select p.name || '/' || p.handle into t from public.profiles p where p.id = alice;
-  insert into public.zz_res (nom, ok, vu) values ('l''élève ne change ni son nom ni son pseudo',
-    t = 'Alice MARTIN/alice.martin', t);
+  insert into public.zz_res (nom, ok, vu) values ('l''élève ne change pas son nom, ni son pseudo par l''API brute',
+    t = 'Alice MARTIN/alice.martin' and s = '42501', t || ' ' || s);
+  perform public.zz_comme(alice);
+  insert into public.zz_res (nom, ok, vu) values ('son pseudo, par changer_pseudo (pseudos.sql)',
+    public.changer_pseudo('zz.alice.lit')->>'statut' = 'ok', '');
   select g.gere, g.nom, g.identifiant into b, s, t from public.mon_compte() g;
   perform public.zz_comme(alice);
   select g.gere, g.nom, g.identifiant into b, s, t from public.mon_compte() g;
@@ -161,7 +166,10 @@ begin
     s = 'attente' and t = 'Lucas DURAND', s || '/' || coalesce(t, '∅'));
 
   -- un compte à carte rejoint une autre classe avec son nom, sans le retaper
+  -- un groupe d'établissement se crée fermé (20261026030000) : on l'ouvre
+  -- pour éprouver l'ancien chemin du code de classe
   perform public.zz_root();
+  update public.classes set join_open = true where name = 'ZZ Option latin';
   select c.code into code1 from public.classes c where c.name = 'ZZ Option latin';
   perform public.zz_comme(alice);
   select j.statut into s from public.class_join(code1, 'Faux', 'Nom') j;

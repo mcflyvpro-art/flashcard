@@ -257,7 +257,7 @@ async function defi() {
   const q = shuffle(uniq.slice()).slice(0, DUELQ);
   try {
     await defiClasse({ classe, nom: d.nom, cartes: q, qui: prefs.name || (me && me.handle) || 'Professeur' });
-    toast(I.flame, 'Défi lancé · ' + plur(q.length, 'question'));
+    toast(I.bolt, 'Défi lancé · ' + plur(q.length, 'question'));
   } catch (e) { toast(I.x, 'Défi impossible'); }
 }
 
