@@ -113,7 +113,7 @@ function anneau(k) {
 function memoire(sv) {
   const k = sv.total, jours = ['auj.', 'dem.', ...[2, 3, 4, 5, 6].map(i => LETTRES[jourSemaine(decaler(jourDe(Date.now()), i))])];
   const max = Math.max(1, ...sv.aRevoir);
-  return `<section class="jr-c">
+  return `<section class="jr-c" data-volet="memoire">
     ${tete('Mémoire', 'Ce que tu sais aujourd’hui')}
     <div class="jr-mem">${anneau(k)}
       <ul class="jr-leg">${ETATS.map(([e, nom]) => `<li><i class="${e}"></i>${nom}<b>${nb(k[e])}</b></li>`).join('')}
@@ -130,7 +130,7 @@ function memoire(sv) {
 
 function fidelite(a) {
   if (!a.paliers.some(p => p.n)) return '';
-  return `<section class="jr-c">
+  return `<section class="jr-c" data-volet="pause">
     ${tete('Après une pause', 'Réponses justes selon le temps écoulé', 'jFidele', `<span class="jr-chip">${pct(a.rappel)}</span>`)}
     ${a.paliers.map(p => `<div class="jr-row" title="${p.ok} sur ${p.n}">
       <span class="jr-rl">${p.nom}</span><span class="jr-rb">${p.n ? `<i style="width:${Math.round(p.pct * 100)}%"></i>` : ''}</span>
@@ -141,7 +141,7 @@ function fidelite(a) {
 function heures(a) {
   if (a.heure == null) return '';
   const max = Math.max(1, ...a.heures);
-  return `<section class="jr-c">
+  return `<section class="jr-c" data-volet="heures">
     ${tete('Heure de lecture', `Surtout vers ${a.heure} h`)}
     <div class="jr-h24">${a.heures.map((n, h) => `<i class="${h === a.heure ? 'jr-pic' : ''}" style="height:${n ? Math.max(6, Math.round(n / max * 100)) : 0}%"
       title="${h} h · ${n} page${n > 1 ? 's' : ''}"></i>`).join('')}</div>
@@ -154,7 +154,7 @@ function matieres(a, J, sv) {
   const l = nommerMatieres(a.matieres, db.subjects, J.matieres);
   if (!l.length) return '';
   const max = Math.max(1, ...l.map(m => m.ms));
-  return `<section class="jr-c">
+  return `<section class="jr-c" data-volet="matieres">
     ${tete('Matières', 'Temps de lecture sur la période', 'jMatieres')}
     ${l.map(m => {
       const k = m.actuelle ? sv.parMatiere.get(m.cle) : null;
@@ -174,7 +174,7 @@ function livres(a, J, sv) {
   const l = [...actuels.sort((x, y) => ((y.t || {}).ms || 0) - ((x.t || {}).ms || 0) || y.pct - x.pct), ...partis];
   if (!l.length) return '';
   const montres = stats.tousLivres ? l : l.slice(0, 6);
-  return `<section class="jr-c">
+  return `<section class="jr-c" data-volet="livres">
     ${tete('Livres', 'Ce que tu en sais, le temps passé')}
     ${montres.map(p => p.k ? `<button class="jr-livre" data-go="${esc(p.id)}">
         <span class="jr-ln">${esc(p.nom)}</span>
@@ -190,7 +190,7 @@ function livres(a, J, sv) {
 function resistent() {
   const l = resistantes(db.decks, 6);
   if (!l.length) return '';
-  return `<section class="jr-c">
+  return `<section class="jr-c" data-volet="resistent">
     ${tete('Pages qui résistent', 'Les plus souvent oubliées')}
     ${l.map(({ c, d, l: n }) => `<button class="jr-res" data-go="${esc(d.id)}">
       <i title="${n} oubli${n > 1 ? 's' : ''}">${n}</i>

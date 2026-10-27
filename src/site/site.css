@@ -324,9 +324,11 @@ button{font:inherit;color:inherit}
 .leg small::before{content:'';width:22px;height:4px;border-radius:2px}
 .leg-avec small::before{background:var(--degrade-clair)}
 .leg-sans small::before{background:rgba(243,238,227,.36)}
+.leg-lite small::before{background:repeating-linear-gradient(90deg,#AEB8DA 0 6px,transparent 6px 9px)}
 .leg b{font:800 clamp(34px,4.4vw,52px)/.9 var(--sans);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
 .leg-avec b{background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text;color:transparent}
 .leg-sans b{color:#B9B3C4}
+.leg-lite b{color:#AEB8DA}
 .courbe-temps{margin-left:auto;align-self:center;padding:8px 14px;border-radius:99px;background:rgba(243,238,227,.1);color:var(--creme);font:800 14px/1 var(--sans);
   font-variant-numeric:tabular-nums;white-space:nowrap}
 .courbe-zone{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:clamp(240px,32vw,380px) auto;gap:10px 14px}
@@ -342,18 +344,21 @@ button{font:inherit;color:inherit}
 .grille{stroke:rgba(243,238,227,.08);stroke-width:1}
 .seuil{stroke:rgba(243,238,227,.2);stroke-width:1;stroke-dasharray:3 6}
 .sans-g path{stroke:rgba(243,238,227,.3);stroke-width:1.6}
+/* Lite : la version allégée, en pointillé, sous Ultra */
+.lite-g path{stroke:#AEB8DA;stroke-width:1.7;stroke-dasharray:6 5;opacity:.75}
 .lueur-g path{stroke:url(#g-avec);stroke-width:10;opacity:.13}
 .avec-g path{stroke:url(#g-avec);stroke-width:2.2}
 .courbe-svg .aire{fill:url(#g-aire)}
 .points i{position:absolute;left:calc(var(--x) * 100%);top:10%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#FFF;
   box-shadow:0 0 0 2.5px rgba(243,141,178,.5),0 0 14px rgba(243,141,178,.85);transform:scale(0);transition:transform .45s var(--rebond)}
 .points i.vu{transform:scale(1)}
-.lecture{position:absolute;inset:0;pointer-events:none;--x:0;--ya:0;--ys:0}
+.lecture{position:absolute;inset:0;pointer-events:none;--x:0;--ya:0;--ys:0;--yl:0}
 .lecture-trait{position:absolute;top:0;bottom:0;left:calc(var(--x) * 100%);width:1.5px;margin-left:-.75px;
   background:linear-gradient(rgba(255,255,255,.8),rgba(255,255,255,.1))}
 .lecture-pt{position:absolute;left:calc(var(--x) * 100%);width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:50%;border:2.5px solid var(--nuit)}
 .pt-avec{top:calc(var(--ya) * 100%);background:#F38DB2;box-shadow:0 0 0 3px rgba(243,141,178,.35)}
 .pt-sans{top:calc(var(--ys) * 100%);background:#C9C3D3}
+.pt-lite{top:calc(var(--yl) * 100%);background:#AEB8DA}
 
 /* les deux moteurs : Memory Engine Lite (gratuit), Ultra (Folio+ et Campus), mis en avant */
 .moteurs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;max-width:1100px;margin:18px auto 0}
@@ -691,6 +696,8 @@ button{font:inherit;color:inherit}
 .comparatif .oui{color:var(--ok);stroke-width:2.6}
 .comparatif .non{color:#C8C3B9;stroke-width:2.4}
 .comparatif tbody th{position:sticky;left:0;background:#FFF;z-index:1}
+/* un intertitre de groupe : « Tes statistiques », pour lire d'un coup d'œil tout ce que le journal de Folio gratuit n'a pas */
+.comparatif .groupe th{padding-top:26px;padding-bottom:10px;font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--az5)}
 .js .comparatif tbody tr{opacity:0;transform:translateY(10px)}
 .comparatif.vu tbody tr{opacity:1;transform:none;transition:opacity .6s var(--e),transform .6s var(--e);transition-delay:calc(var(--i,0) * 45ms + .15s)}
 

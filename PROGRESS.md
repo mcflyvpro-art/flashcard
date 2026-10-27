@@ -28,8 +28,12 @@ DERNIER   2026-10-27 · Le tuto, v2 : il présente l'app pas à pas (l'élève :
           l'étape). Dans la démo, chaque rôle a le sien la première fois ;
           Folio Campus a la marque du site. Preuves : npm run check (tests du
           tuto 32), e2e/tuto.e2e.js 8/8 (trois tours) et toute la suite.
-Avant :   2026-10-27 · Le tuto de première connexion remplace la visite guidée (et son
-          compte d'essai), l'accueil d'un compte neuf est refait.
+Avant :   2026-10-27 · Folio gratuit et Folio+ (docs/LANDING.md) : le graphique du moteur
+          trace aussi Memory Engine Lite ; la démo d'un élève grise ce que
+          Folio+ ajoute (5 livres, QCM, associations, images et sons, le
+          journal flouté hors série, régularité et rythme) ; la règle de chaque
+          offre dans src/offres.js. Avant encore, le premier tuto et l'accueil
+          d'un compte neuf refait.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

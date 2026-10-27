@@ -134,6 +134,14 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'home');
   await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
 
+  // le journal de Folio gratuit : la série et la régularité restent, la mémoire se floute sous « Avec Folio+ »
+  await aller(page, '/demo/eleve/journal');
+  await expect(page.locator('[data-volet="memoire"]')).toHaveClass(/plus-floute/, { timeout: 10000 });
+  await expect(page.locator('.plus-floute')).toHaveCount(6);
+  await page.locator('[data-volet="memoire"]').click();
+  await expect(fenetre.getByRole('heading')).toHaveText('Ton journal complet');
+  await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
+
   // le bandeau propose le geste d'après : pour un élève, son compte ; la démo ne laisse rien
   await page.locator('.dm-bandeau').getByRole('link', { name: 'Créer mon compte' }).click();
   await expect(page).toHaveURL(/\/inscription$/, { timeout: 10000 });

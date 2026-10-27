@@ -73,6 +73,15 @@ html.en-demo-plein [data-act="new"]:not(.fab){position:relative}
 html.en-demo-plein [data-act="new"]{background:var(--bg2)!important;color:var(--soft)!important;box-shadow:var(--edge)!important}
 html.en-demo-plein [data-act="new"] svg{opacity:.5}
 html.en-demo-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-3px}
+/* le journal de Folio gratuit : ces volets gardent leur titre, le reste se floute sous « Avec Folio+ » */
+.plus-floute{position:relative;cursor:pointer}
+.plus-floute>:not(.jr-h){filter:blur(7px);opacity:.7;pointer-events:none;user-select:none}
+.plus-floute::after{content:'Avec Folio+';position:absolute;left:50%;top:calc(50% + 14px);transform:translate(-50%,-50%);
+  padding:9px 15px;border-radius:99px;background:var(--card);color:var(--ink);font-size:13px;font-weight:750;line-height:1;white-space:nowrap;
+  box-shadow:var(--edge),0 10px 24px -14px rgba(29,28,25,.5)}
+.plus-floute .jr-h::after{content:'';display:inline-block;width:16px;height:16px;border-radius:50%;flex:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 1.7v6.6M1.7 5h6.6' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat,
+    linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D)}
 /* ce qui coûte, touché : ce que ça ferait et comment l'avoir */
 .dm-envie{width:min(380px,calc(100vw - 32px));padding:28px 22px 14px;border:0;border-radius:24px;background:var(--card);color:var(--ink);
   text-align:center;box-shadow:var(--s3)}

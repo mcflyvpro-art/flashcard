@@ -3,6 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { db, setAuth, setDb, setDemoEtab, demoEtab } from '../data/etat.js';
 import { deDevoir } from '../file.js';
+import { JOURNAL_PLUS, LIVRES_GRATUITS } from '../offres.js';
 import { esc, flush, pull, setOnline } from '../core/coeur-sync.js';
 import { accueil } from '../core/classement.js';
 import { nouveauStore, repondre } from '../base-locale/serveur.js';
@@ -150,7 +151,9 @@ const ENVIES = {
   livres: { t: 'Ta bibliothèque est pleine',
     s: `Folio gratuit garde 5\u00a0livres. Avec Folio+, des livres sans limite, ${PRIX}.` },
   media: { t: 'Des images et des sons sur tes pages',
-    s: `Un schéma, une carte, la prononciation d’un mot\u202f: ils se glissent sur tes pages. Avec Folio+, ${PRIX}.` }
+    s: `Un schéma, une carte, la prononciation d’un mot\u202f: ils se glissent sur tes pages. Avec Folio+, ${PRIX}.` },
+  journal: { t: 'Ton journal complet',
+    s: `Ta mémoire, tes heures, tes matières et les pages qui résistent. Avec Folio+, ${PRIX}.` }
 };
 
 /* Ce que Folio gratuit n'a pas, dans la démo d'un élève : le geste ouvre la
@@ -162,20 +165,27 @@ const PLUS_SEUL = {
 };
 /* 5 livres à soi en Folio gratuit (les devoirs ne comptent pas) : au-delà,
    « Nouveau livre » se grise partout où il est (html.en-demo-plein,
-   recalculé à chaque rendu de l'app) et ouvre la fenêtre. */
-const LIVRES_GRATUITS = 5;
+   recalculé à chaque rendu de l'app) et ouvre la fenêtre. Le journal garde
+   sa série, sa régularité et son activité ; ses autres volets (JOURNAL_PLUS,
+   src/offres.js : la règle que la vraie app reprendra avec le paiement) se
+   floutent sous leur titre (.plus-floute) et l'ouvrent aussi. */
 const plein = () => document.documentElement.classList.contains('en-demo-libre')
   && ((db && db.decks) || []).filter(d => !d.deleted_at && !deDevoir(d.cards || [])).length >= LIVRES_GRATUITS;
 let image = 0;
 new MutationObserver(() => {
   if (image) return;
-  image = requestAnimationFrame(() => { image = 0; document.documentElement.classList.toggle('en-demo-plein', !!demoEtab && plein()); });
+  image = requestAnimationFrame(() => {
+    image = 0;
+    const html = document.documentElement, libre = !!demoEtab && html.classList.contains('en-demo-libre');
+    html.classList.toggle('en-demo-plein', libre && plein());
+    for (const v of document.querySelectorAll('[data-volet]')) v.classList.toggle('plus-floute', libre && JOURNAL_PLUS.includes(v.dataset.volet));
+  });
 }).observe(document.body, { childList: true, subtree: true });
 
 document.addEventListener('click', ev => {
   if (!demoEtab || !document.documentElement.classList.contains('en-demo-libre')) return;
   if (ev.target.closest('[data-act="new"]') && plein()) { ev.stopPropagation(); ev.preventDefault(); envie('livres'); return; }
-  const cle = Object.keys(PLUS_SEUL).find(k => ev.target.closest(PLUS_SEUL[k]));
+  const cle = ev.target.closest('.plus-floute') ? 'journal' : Object.keys(PLUS_SEUL).find(k => ev.target.closest(PLUS_SEUL[k]));
   if (!cle) return;
   ev.stopPropagation(); ev.preventDefault();
   envie(cle);
