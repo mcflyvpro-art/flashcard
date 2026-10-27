@@ -19,6 +19,8 @@ import { avatar } from './jeton.js';
 import { beep, savePrefs, toast } from './import-cartes.js';
 import { closeMenu } from './menus-a.js';
 import { allerAccueil, allerClasse } from './prof-porte.js';
+import { ouvrirPlus, sansFolioPlus } from './plus-porte.js';
+import { VENTE_OUVERTE } from '../abonnement.js';
 import './tuto.css';
 
 /* ══════════ le tuto : le moteur (2026-10-27) ══════════
@@ -545,10 +547,15 @@ const titreFin = f => (f.cle === 'plus' ? '<h2 id="tuct" class="tu-marque">Folio
 
 /* « tarifs » : la page des tarifs du site, dans un autre onglet — l'app
    reste ouverte derrière (?site : l'aiguillage du site garde la page
-   d'accueil même avec une session). */
+   d'accueil même avec une session) ; une fois la vente ouverte
+   (VENTE_OUVERTE, src/abonnement.js), l'écran Folio+ de l'app, où l'on
+   s'abonne. */
 function actionHtml(a) {
   const c = `tu-a${a.pri ? ' pri' : ''}`;
   if (a.fin) return `<button class="${c}" data-tu="fin">${esc(a.t)}</button>`;
+  if (a.href === 'tarifs' && VENTE_OUVERTE && !sansFolioPlus()) {
+    return `<button class="${c}" data-tu="plus">${esc(a.t)}${a.pri ? svg(I.arrow) : ''}</button>`;
+  }
   const href = a.href === 'tarifs' ? `${SITE}?site#tarifs` : a.href;
   const dehors = a.href === 'tarifs' ? ' target="_blank" rel="noopener"' : '';
   return `<a class="${c}" href="${esc(href)}" data-tu="fin"${a.partir ? ' data-dm="partir"' : ''}${dehors}>${esc(a.t)}${a.pri ? svg(I.arrow) : ''}</a>`;
@@ -601,6 +608,7 @@ const GESTES = {
   non: passer,
   passer,
   fin: arreter,
+  plus: () => { arreter(); ouvrirPlus(); },
   exemple: () => { if (posee() && !comp.cards.length) remplir(); }
 };
 

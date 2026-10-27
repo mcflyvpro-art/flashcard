@@ -458,7 +458,8 @@ l'air de marcher ».
     démo d'un élève, bibliothèque pleine : un mot seulement), son journal,
     sa classe et ses devoirs (s'il en a une), ses amis ou camarades, son
     courrier, puis **Folio+** (la page des tarifs, `?site#tarifs`, dans un
-    autre onglet) ; **le professeur**, pas à pas — son code, ses classes
+    autre onglet ; une fois la vente ouverte, `VENTE_OUVERTE`, l'écran
+    Folio+ de l'app, `ouvrirPlus`) ; **le professeur**, pas à pas — son code, ses classes
     choisies (établissement : sa matière, « Ajouter », « Terminé ») ou sa
     classe créée (particulier) et la feuille du code, le tableau de bord,
     « À traiter », une classe, son suivi, un élève et sa fiche, l'onglet
