@@ -52,8 +52,9 @@
 .rf-tuile h2{margin:0 0 6px;font-size:14px;font-weight:700}
 .rf-tl{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-weight:750;font-size:16px}
 .rf-tl span{font-size:13px;font-weight:600;color:var(--soft)}
-.rf-barre{height:8px;margin:12px 0 8px;border-radius:4px;background:var(--surf2);overflow:hidden}
-.rf-barre i{display:block;height:100%;border-radius:4px;background:var(--ink)}
+/* les places prises se comptent, en azur ; pleine ou échue, c'est un état */
+.rf-barre{height:8px;margin:12px 0 8px;border-radius:4px;background:var(--az1);overflow:hidden}
+.rf-barre i{display:block;height:100%;border-radius:4px;background:var(--az4)}
 .rf-tl-p{font-size:13px;font-weight:600;color:var(--ink2)}
 .rf-alerte{display:flex;gap:8px;align-items:flex-start;margin:12px 0 0;padding:10px 12px;border-radius:11px;
   background:color-mix(in srgb,var(--am) 13%,var(--card));color:var(--am);font-size:13px;font-weight:600;line-height:1.4}
