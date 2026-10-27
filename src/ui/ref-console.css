@@ -7,8 +7,8 @@
   background:var(--surf);font-size:12.5px;font-weight:700;color:var(--ink2);white-space:nowrap}
 .rf-lic svg{width:14px;height:14px}
 .rf-lic.ok svg{color:var(--ok)}
-.rf-lic.bientot,.rf-lic.pleine{background:#FBF1DC;color:#7A5A12}
-.rf-lic.echue{background:#F8E3DF;color:var(--ko)}
+.rf-lic.bientot,.rf-lic.pleine{background:color-mix(in srgb,var(--am) 13%,var(--card));color:var(--am)}
+.rf-lic.echue{background:color-mix(in srgb,var(--ko) 13%,var(--card));color:var(--ko)}
 
 
 /* ---------- les boutons ---------- */
@@ -45,25 +45,26 @@
   background:var(--surf);font-weight:650;font-size:13px;color:var(--ink2)}
 .rf-code-b button:hover{background:var(--surf2);color:var(--ink)}
 .rf-code-b button svg{width:15px;height:15px}
-.rf-code-b [data-arme="1"]{background:#F8E3DF;color:var(--ko)}
+.rf-code-b [data-arme="1"]{background:color-mix(in srgb,var(--ko) 13%,var(--card));color:var(--ko)}
 .rf-cote{display:flex;flex-direction:column;gap:12px}
 .rf-tuile{padding:16px 18px;border-radius:18px;background:var(--card);box-shadow:var(--edge)}
 .rf-tuile .rf-ligne > span{flex:1;min-width:0}
 .rf-tuile h2{margin:0 0 6px;font-size:14px;font-weight:700}
 .rf-tl{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-weight:750;font-size:16px}
 .rf-tl span{font-size:13px;font-weight:600;color:var(--soft)}
-.rf-barre{height:8px;margin:12px 0 8px;border-radius:4px;background:var(--surf2);overflow:hidden}
-.rf-barre i{display:block;height:100%;border-radius:4px;background:var(--ink)}
+/* les places prises se comptent, en azur ; pleine ou échue, c'est un état */
+.rf-barre{height:8px;margin:12px 0 8px;border-radius:4px;background:var(--az1);overflow:hidden}
+.rf-barre i{display:block;height:100%;border-radius:4px;background:var(--az4)}
 .rf-tl-p{font-size:13px;font-weight:600;color:var(--ink2)}
 .rf-alerte{display:flex;gap:8px;align-items:flex-start;margin:12px 0 0;padding:10px 12px;border-radius:11px;
-  background:#FBF1DC;color:#7A5A12;font-size:13px;font-weight:600;line-height:1.4}
+  background:color-mix(in srgb,var(--am) 13%,var(--card));color:var(--am);font-size:13px;font-weight:600;line-height:1.4}
 .rf-alerte svg{width:16px;height:16px;flex:none;margin-top:1px}
-.rf-alerte.echue{background:#F8E3DF;color:var(--ko)}
+.rf-alerte.echue{background:color-mix(in srgb,var(--ko) 13%,var(--card));color:var(--ko)}
 .rf-chiffres{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .rf-kc{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:14px;background:var(--card);box-shadow:var(--edge)}
 .rf-kc b{font-size:22px;font-weight:800;letter-spacing:-.5px}
 .rf-kc span{font-size:12px;font-weight:650;color:var(--soft)}
-.rf-kc.am b{color:#B07A12}
+.rf-kc.am{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--am) 35%,transparent)}.rf-kc.am span{color:var(--am)}
 .rf-chiffres.petit .rf-kc{padding:9px 12px;background:var(--surf);box-shadow:none}
 .rf-chiffres.petit .rf-kc b{font-size:17px}
 .rf-discret{display:inline-flex;align-items:center;gap:7px;margin:22px 2px 0;font-size:13px;font-weight:600;color:var(--soft)}
@@ -171,9 +172,9 @@ button.rf-ligne:hover{background:var(--surf)}
 .rf-piece > svg{width:16px;height:16px;flex:none;color:var(--soft)}
 .rf-montant{flex:none;font-weight:750;font-variant-numeric:tabular-nums}
 .rf-etat{flex:none;font-style:normal;padding:3px 9px;border-radius:8px;background:var(--surf2);font-size:11.5px;font-weight:700;color:var(--ink2);white-space:nowrap}
-.rf-etat.payee{background:#E3F0E6;color:var(--ok)}
-.rf-etat.retard{background:#F8E3DF;color:var(--ko)}
-.rf-etat.attente{background:#FBF1DC;color:#7A5A12}
+.rf-etat.payee{background:color-mix(in srgb,var(--ok) 13%,var(--card));color:var(--ok)}
+.rf-etat.retard{background:color-mix(in srgb,var(--ko) 13%,var(--card));color:var(--ko)}
+.rf-etat.attente{background:color-mix(in srgb,var(--am) 13%,var(--card));color:var(--am)}
 .rf-fil{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;margin:6px 0 12px;padding-right:2px}
 .rf-msg{max-width:88%;padding:9px 12px;border-radius:14px;background:var(--surf)}
 .rf-msg.moi{align-self:flex-end;background:#EDEBE5}
@@ -194,7 +195,7 @@ button.rf-ligne:hover{background:var(--surf)}
 .rf-ajouter{align-self:flex-start;margin:0 0 10px}
 .rf-mdp{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 14px;border-radius:12px;background:var(--surf)}
 .rf-mdp b{font:700 16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:1px}
-.rf-retirer[data-arme="1"]{background:#F8E3DF}
+.rf-retirer[data-arme="1"]{background:color-mix(in srgb,var(--ko) 13%,var(--card))}
 @media (min-width:900px) and (max-width:1180px){.rf-ltab{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- au téléphone ---------- */

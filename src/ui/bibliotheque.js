@@ -358,22 +358,26 @@ export { bindPager };
 
 export const pills = (active, list, act) => `<div class="pills">
   <button class="p ${active === '' ? 'on' : ''}" data-${act}="">Tout</button>
-  ${list.map(s => `<button class="p ${active === s.id ? 'on' : ''}" data-${act}="${s.id}" style="--d:${s.d}">
+  ${list.map(s => `<button class="p ${active === s.id ? 'on' : ''}" data-${act}="${s.id}" style="${sty(s)}">
     <i></i>${esc(s.name)}</button>`).join('')}
 </div>`;
 
 const maturePct = d => d.cards.length
   ? Math.round(d.cards.filter(c => cstate(c) === 'mature').length / d.cards.length * 100) : 0;
 
+/* La matière s'écrit sur la couverture (.mt) ; la grille ne la montre que
+   si plusieurs matières se côtoient (.mixte, deckList). */
 const tile = (d, i) => {
   const due = simpleMode() ? 0 : dueCount(d);
   const p = simpleMode() ? 0 : maturePct(d);
+  const s = subj(d.subject);
   return `<button class="tile ${d.hidden ? 'mute' : ''}" data-go="${d.id}" data-peek="${d.id}"
   data-id="${d.id}" data-pin="${d.pinned ? 1 : 0}"
-  style="${sty(subj(d.subject))};--i:${i}">
+  style="${sty(s)};--i:${i}">
   <i class="spine" aria-hidden="true"></i>
   ${due ? `<i class="due" title="À lire aujourd’hui">${due}</i>` : ''}
   ${d.pinned ? `<i class="pind">${svg(I.pin)}</i>` : ''}
+  ${s.id ? `<span class="mt">${esc(s.name)}</span>` : ''}
   <span class="n">${esc(d.name)}</span>
   <span class="m" title="${plur(d.cards.length, 'page')}">${svg(d.hidden ? I.eyeoff : I.card)}${d.cards.length}</span>
   ${p ? `<i class="tbar"><b style="width:${p}%"></b></i>` : ''}
@@ -382,15 +386,17 @@ const tile = (d, i) => {
 
 /* Vue liste : plus dense que la grille dès qu'il y a beaucoup de paquets,
    et c'est elle qui porte la poignée quand on réorganise. */
-const listRow = (d, i) => {
+const listRow = (d, i, mixte) => {
   const due = simpleMode() ? 0 : dueCount(d);
   const p = simpleMode() ? 0 : maturePct(d);
-  return `<div class="lrow ${d.hidden ? 'mute' : ''}" style="${sty(subj(d.subject))};--i:${i}"
+  const s = subj(d.subject);
+  return `<div class="brow ${d.hidden ? 'mute' : ''}" style="${sty(s)};--i:${i}"
     data-id="${d.id}" data-pin="${d.pinned ? 1 : 0}">
-    ${reorder ? `<i class="grip">${svg(I.grip)}</i>` : `<i class="ldot"></i>`}
+    <i class="ldot" aria-hidden="true"></i>${reorder ? `<i class="grip">${svg(I.grip)}</i>` : ''}
     <button class="lmain" data-go="${d.id}" data-peek="${d.id}">
       <span class="n">${esc(d.name)}${d.pinned ? svg(I.pin) : ''}</span>
-      <span class="s" title="${plur(d.cards.length, 'page')}">${svg(I.card)}${d.cards.length}${p ? ` · ${p} %` : ''}</span>
+      <span class="s" title="${plur(d.cards.length, 'page')}">${mixte && s.id ? `<b class="mt">${esc(s.name)}</b>` : ''}${
+        svg(I.card)}${d.cards.length}${p ? ` · ${p} %` : ''}</span>
     </button>
     ${due ? `<i class="ldue" title="À lire aujourd’hui">${due}</i>` : ''}
   </div>`;
@@ -462,9 +468,10 @@ function deckList(list) {
     return `<div class="empty">${svg(I.layers)}<p><b>Ta bibliothèque est vide</b></p></div>`;
   }
   const sorted = sortDecks(list);
+  const mixte = new Set(list.map(d => d.subject || '')).size > 1 ? 'mixte' : '';
   return prefs.list
-    ? `<div class="rows lst ${reorder ? 'reord' : ''}">${sorted.map(listRow).join('')}</div>`
-    : `<div class="grid ${reorder ? 'reord' : ''}">${sorted.map(tile).join('')}</div>`;
+    ? `<div class="rows lst ${reorder ? 'reord' : ''}">${sorted.map((d, i) => listRow(d, i, mixte)).join('')}</div>`
+    : `<div class="grid ${mixte} ${reorder ? 'reord' : ''}">${sorted.map(tile).join('')}</div>`;
 }
 
 function marathonBanner() {
@@ -536,7 +543,7 @@ function subBar(list) {
 function bindDeckOrder() {
   const wrap = $.querySelector('.grid.reord, .rows.lst.reord'); if (!wrap) return;
   const grid = wrap.classList.contains('grid');
-  const SEL = grid ? '.tile' : '.lrow';
+  const SEL = grid ? '.tile' : '.brow';
   let g = null, hold = 0;
 
   const items = () => [...wrap.querySelectorAll(SEL)];
@@ -671,7 +678,7 @@ function bindPeek() {
     clearTimeout(t);
     /* le livre s'enfonce doucement sous le doigt : on voit que quelque
        chose se prépare, au lieu d'une feuille qui surgit sans prévenir */
-    held = b.closest('.tile, .lrow') || b;
+    held = b.closest('.tile, .brow') || b;
     held.classList.add('hold');
     t = setTimeout(() => { if (!moved) { setPreviewOf(b.dataset.peek); openMenu('preview'); } }, 480);
   };

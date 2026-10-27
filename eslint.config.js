@@ -4,7 +4,7 @@ import globals from 'globals';
 export default [
   /* les rapports de Playwright embarquent la visionneuse de traces (du JS
      minifié) : un `npm run check` lancé après un parcours raté les lisait */
-  { ignores: ['dist/', 'node_modules/', 'supabase/functions/', 'playwright-report/', 'test-results/'] },
+  { ignores: ['dist/', 'node_modules/', 'supabase/functions/', 'playwright-report/', 'test-results/', '.academie/'] },
   js.configs.recommended,
   {
     files: ['src/**/*.js'],
@@ -49,6 +49,11 @@ export default [
   {
     files: ['tools/affiches.js'],
     languageOptions: { sourceType: 'module', globals: { ...globals.node, ...globals.browser } }
+  },
+  /* la Folio Academy : Node, et la page cadre dans page.evaluate() (son objet A) */
+  {
+    files: ['tools/academie/**/*.js'],
+    languageOptions: { sourceType: 'module', globals: { ...globals.node, ...globals.browser, A: 'readonly' } }
   },
   /* M07 : un parcours tourne dans Node, mais les fonctions passées à
      page.evaluate() s'exécutent dans la page — les deux jeux de globales. */

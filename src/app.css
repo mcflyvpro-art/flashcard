@@ -11,7 +11,14 @@
   --ink:#1D1C19; --ink2:#4B4842; --soft:#8A867E;
   --card:#FFFFFF; --hair:rgba(29,28,25,.08); --line:rgba(29,28,25,.11);
   --surf:rgba(29,28,25,.045); --surf2:rgba(29,28,25,.085);
-  --ok:#2F7A4E; --ko:#B5473A; --leather:#7A4B34;
+  /* Une couleur, un travail (src/couleurs.js, qui les teste) : l'encre
+     habille, l'azur compte (piste 1 → texte 6 : pages lues, régularité,
+     mémoire, objectif, classement, avancement), les états jugent — juste,
+     en retard, attention, toujours avec une icône ou un mot —, le nuancier
+     relie une matière (--d, --c, --b, --ci, --f, posés par sty()). */
+  --az1:#E8EEFE; --az2:#C2D0F6; --az3:#91A8EB; --az4:#5B77D0; --az5:#3950A5; --az6:#243473;
+  --ok:#2A764A; --ko:#B24437; --am:#955C06; --leather:#7A4B34;
+  --ecu:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 1.5C26.5 4.3 32.3 5.5 37.5 5.9v13.9C37.5 29.6 30.6 36 20 38.8 9.4 36 2.5 29.6 2.5 19.8V5.9C7.7 5.5 13.5 4.3 20 1.5Z'/%3E%3C/svg%3E");
   --serif:ui-serif,"Iowan Old Style",Charter,"Bitstream Charter","Palatino Linotype",Palatino,
     "Book Antiqua",Georgia,"Times New Roman",serif;
   /* des ombres à peine là : une surface se détache par son filet, pas en
@@ -123,24 +130,34 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   transition:background .28s var(--e),color .28s var(--e),transform .3s var(--sp)}
 .p:active{transform:scale(.93)}
 .p.on{background:var(--ink);color:#fff;box-shadow:none}
+.p.on[style]{background:var(--c);color:var(--ci);box-shadow:inset 0 0 0 1.5px var(--d)}
 .p i{width:8px;height:8px;border-radius:50%;background:var(--d);flex:none}
 
 /* ---------- grille de paquets ----------
-   Un livre est une carte blanche cernée d'un filet ; sa matière se lit
-   au liseré de gauche et à la pastille du nombre de pages à revoir. Les
-   couvertures pastel, le grain et les nerfs du dos faisaient un écran de
-   jouets : ici on range des cours. */
+   Un livre a une reliure et une couverture (2026-10-27) : le dos plein,
+   dans la couleur de sa matière ; la couverture, un papier à peine teinté
+   du même ton et cerné de son filet ; le nom de la matière en petites
+   capitales quand plusieurs se côtoient (.mixte). Une étagère se lit d'un
+   coup d'œil, comme une vraie. Les cartes blanches à liseré d'avant ne se
+   distinguaient plus d'une matière à l'autre ; les couvertures pastel
+   d'avant encore, avec leur grain et les nerfs du dos, faisaient un écran
+   de jouets : ici, ni l'un ni l'autre. */
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
-.tile{position:relative;border-radius:14px;padding:14px 14px 13px 18px;min-height:124px;
-  display:flex;flex-direction:column;justify-content:space-between;gap:10px;text-align:left;
-  background:var(--card);color:var(--ink);box-shadow:var(--edge),var(--s1);overflow:hidden;
+.tile{position:relative;border-radius:14px;padding:13px 13px 12px 25px;min-height:124px;
+  display:flex;flex-direction:column;gap:3px;text-align:left;
+  background:var(--c);color:var(--ink);box-shadow:inset 0 0 0 1px var(--b),var(--s1);overflow:hidden;
   transition:transform .2s var(--e),box-shadow .2s var(--e),opacity .3s}
-.tile .spine{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--d);pointer-events:none}
+/* le dos : la reliure, avec le léger arrondi d'une toile tendue */
+.tile .spine,.brow .ldot{position:absolute;left:0;top:0;bottom:0;width:11px;background:var(--d);pointer-events:none;
+  background-image:linear-gradient(90deg,rgba(255,255,255,.16),transparent 38%,rgba(0,0,0,.1) 82%,rgba(0,0,0,.18))}
+.tile .mt{position:relative;z-index:1;padding-right:30px;font-size:10.5px;font-weight:750;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ci);opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid:not(.mixte) .tile .mt{display:none}
 .fade .tile{animation:pop .3s var(--e) both;animation-delay:calc(var(--retard,0ms) + min(var(--i,0),11) * 16ms)}
 .tile:active{transform:scale(.98)}
-.tile .pind{position:absolute;bottom:14px;right:14px;z-index:2;color:var(--soft);display:grid;place-items:center}
+.tile .pind{position:absolute;bottom:14px;right:14px;z-index:2;color:var(--ci);opacity:.6;display:grid;place-items:center}
 .tile .pind svg{width:13px;height:13px;stroke-width:2.2}
-.tile .tbar{position:absolute;left:18px;right:14px;bottom:0;height:3px;background:var(--surf);overflow:hidden}
+.tile .tbar{position:absolute;left:11px;right:0;bottom:0;height:3px;background:var(--b);overflow:hidden}
 .tile .tbar b{display:block;height:100%;background:var(--d)}
 
 /* barre de contrôles de l'accueil : tri à gauche, affichage à droite */
@@ -151,34 +168,35 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 /* progression de la sélection, une ligne fine sous les pastilles */
 .sbar{display:flex;gap:2px;height:4px;margin:0 2px 12px;border-radius:3px;overflow:hidden}
 .sbar i{border-radius:3px;background:var(--surf2)}
-.sbar i.mature{background:var(--ok)}
-.sbar i.young{background:#7FB08F}
-.sbar i.learn{background:#C9A526}
+.sbar i.mature{background:var(--az6)}
+.sbar i.young{background:var(--az4)}
+.sbar i.learn{background:var(--az3)}
 .sbar i.new{background:var(--surf2)}
 
 /* vue liste des paquets */
 .rows.lst{padding-bottom:34px}
-.lrow{display:flex;align-items:center;gap:10px;background:var(--card);box-shadow:var(--edge);
-  border-radius:12px;border-left:4px solid var(--d);padding:11px 14px;margin-bottom:6px;
+.brow{position:relative;display:flex;align-items:center;gap:10px;background:var(--c);box-shadow:inset 0 0 0 1px var(--b);
+  border-radius:12px;padding:11px 14px 11px 19px;margin-bottom:6px;overflow:hidden;
   transition:box-shadow .3s,transform .3s var(--sp)}
-.fade .lrow{animation:pop .3s var(--e) both;animation-delay:calc(var(--retard,0ms) + min(var(--i,0),11) * 16ms)}
-.lrow.mute{opacity:.5}
-.lrow .ldot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--d)}
-.lrow .lmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
-.lrow .n{display:flex;align-items:center;gap:6px;font-weight:650;font-size:15px;
+.fade .brow{animation:pop .3s var(--e) both;animation-delay:calc(var(--retard,0ms) + min(var(--i,0),11) * 16ms)}
+.brow.mute{opacity:.5}
+.brow .lmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left}
+.brow .n{display:flex;align-items:center;gap:6px;font-weight:650;font-size:15px;
   letter-spacing:-.25px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lrow .n svg{width:12px;height:12px;flex:none;color:var(--soft)}
-.lrow .s{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--soft)}
-.lrow .s svg{width:13px;height:13px}
-.lrow .ldue{flex:none;min-width:24px;height:22px;padding:0 7px;border-radius:11px;
-  background:color-mix(in srgb,var(--d) 16%,var(--card));color:var(--ink);display:grid;place-items:center;font-style:normal;
+.brow .n svg{width:12px;height:12px;flex:none;color:var(--soft)}
+.brow .s{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ci);opacity:.75}
+.brow .s svg{width:13px;height:13px}
+.brow .ldot{width:7px}
+.brow .mt{font-size:10.5px;font-weight:750;letter-spacing:.07em;text-transform:uppercase;margin-right:4px}
+.brow .ldue{flex:none;min-width:24px;height:22px;padding:0 7px;border-radius:11px;
+  background:var(--f);color:#fff;display:grid;place-items:center;font-style:normal;
   font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
-.lrow.drag{position:relative;z-index:3;box-shadow:var(--s3)}
-.rows.dragging .lrow:not(.drag){transition:transform .2s var(--e)}
+.brow.drag{position:relative;z-index:3;box-shadow:var(--s3)}
+.rows.dragging .brow:not(.drag){transition:transform .2s var(--e)}
 .tile .n{position:relative;z-index:1;font-weight:650;font-size:15px;line-height:1.3;letter-spacing:-.2px;
   padding-right:30px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.tile .m{position:relative;z-index:1;display:flex;align-items:center;gap:6px;
-  font-size:12.5px;font-weight:600;color:var(--soft);font-variant-numeric:tabular-nums}
+.tile .m{position:relative;z-index:1;display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:8px;
+  font-size:12.5px;font-weight:600;color:var(--ci);opacity:.72;font-variant-numeric:tabular-nums}
 .tile .m svg{width:13px;height:13px;stroke-width:2.1}
 .tile.mute{opacity:.45}
 
@@ -222,14 +240,20 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .fab.fabok.neuf{animation:fabin .26s var(--e) both}
 @keyframes fabin{from{opacity:0;transform:scale(.7)}}
 
-/* ---------- fiche paquet ---------- */
-.head{position:relative;padding:2px 2px 0 16px;margin-bottom:18px;color:var(--ink);
-  border-left:4px solid var(--d)}
+/* ---------- fiche paquet ----------
+   La tête d'un livre est sa couverture, la même que sur l'étagère : le
+   papier teinté, le filet, le dos de la reliure ; et chaque page de la
+   liste garde un liseré de sa reliure (--d, posé sur .rows). */
+.head{position:relative;padding:15px 16px 15px 27px;margin-bottom:16px;color:var(--ink);border-radius:16px;
+  background:var(--c);box-shadow:inset 0 0 0 1px var(--b);overflow:hidden}
+.head::before{content:'';position:absolute;left:0;top:0;bottom:0;width:11px;background:var(--d);
+  background-image:linear-gradient(90deg,rgba(255,255,255,.16),transparent 38%,rgba(0,0,0,.1) 82%,rgba(0,0,0,.18))}
 .head .t{position:relative;z-index:1;font:700 27px/1.16 var(--serif);
   letter-spacing:-.5px;min-height:31px;outline:none}
 .head .t:focus{opacity:.5}
 .head .s{position:relative;z-index:1;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin-top:8px;
-  font-size:13.5px;font-weight:600;color:var(--soft);font-variant-numeric:tabular-nums}
+  font-size:13.5px;font-weight:600;color:var(--ci);font-variant-numeric:tabular-nums}
+.head .s > span:first-child{opacity:.85}
 .head .s span{display:flex;align-items:center;gap:5px}
 .head .s svg{width:14px;height:14px;stroke-width:2.2}
 .head .s b{width:3px;height:3px;border-radius:50%;background:currentColor;opacity:.5}
@@ -249,7 +273,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .rows{padding-bottom:34px}
 #app[data-view="home"] .page,#app[data-view="commu"] .page,
 .balai-app[data-view="home"] .page,.balai-app[data-view="commu"] .page{padding-bottom:74px}
-.row{display:flex;align-items:center;gap:6px;background:var(--card);box-shadow:var(--edge);
+.row{display:flex;align-items:center;gap:6px;box-shadow:var(--edge);
+  background:linear-gradient(90deg,var(--d,transparent) 4px,var(--card) 4px);
   border-radius:12px;padding:10px 8px 10px 14px;margin-bottom:6px;
   transition:box-shadow .3s,transform .3s var(--sp)}
 .fade .row{animation:pop .3s var(--e) both;animation-delay:calc(var(--retard,0ms) + min(var(--i,0),11) * 16ms)}
@@ -331,11 +356,14 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 /* ---------- révision ---------- */
 .study{flex:1;display:flex;flex-direction:column;min-height:0}
 .prog{height:4px;border-radius:4px;background:var(--surf2);overflow:hidden;margin:4px 1px 2px;flex:none}
-.prog i{display:block;height:100%;border-radius:4px;background:var(--ink);
+.prog i{display:block;height:100%;border-radius:4px;background:var(--az4);
   transition:width .6s var(--e)}
 /* La fiche : un rectangle qu'on pousse à gauche ou à droite et qu'on
    retourne sur son axe. Rien d'autre — la reliure, la gouttière et la
-   page qui se soulève rendaient le geste lourd et illisible. */
+   page qui se soulève rendaient le geste lourd et illisible. C'est une
+   page de son livre (2026-10-27) : le papier de sa couverture (--c), son
+   filet, le nom de sa matière en tête et le signet de sa reliure — le
+   petit signet seul, sur une fiche blanche, ne se reconnaissait pas. */
 .stage{flex:1;display:flex;align-items:center;justify-content:center;
   padding:16px 0;perspective:1700px;min-height:0}
 .stack{position:relative;width:100%;height:min(58svh,460px)}
@@ -348,14 +376,15 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .card.flip .flipper{transform:rotateY(180deg)}
 .face{position:absolute;inset:0;border-radius:22px;display:grid;place-items:center;
   padding:34px;text-align:center;gap:10px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  background:var(--card);color:var(--ink);box-shadow:var(--edge),var(--s2);overflow:hidden;
+  background:var(--c);color:var(--ink);box-shadow:inset 0 0 0 1px var(--b),var(--s2);overflow:hidden;
   /* l'échange des deux faces se fait quand la fiche est sur la tranche :
      plus tôt on voit le verso à l'envers, plus tard le recto revient */
   opacity:1;transform:translateZ(0);transition:opacity 0s linear .2s}
-/* un signet de la couleur de la matière, accroché au haut de la fiche : le
-   bandeau sur toute la largeur s'amincissait en croissant dans les coins */
-.face::before{content:'';position:absolute;right:26px;top:0;width:13px;height:22px;pointer-events:none;background:var(--d);
-  clip-path:polygon(0 0,100% 0,100% 100%,50% 74%,0 100%)}
+/* le signet de la reliure, accroché au haut de la fiche : le bandeau sur
+   toute la largeur s'amincissait en croissant dans les coins */
+.face::before{content:'';position:absolute;right:24px;top:0;width:20px;height:38px;pointer-events:none;background:var(--d);
+  background-image:linear-gradient(90deg,rgba(255,255,255,.14),transparent 45%,rgba(0,0,0,.14));
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)}
 /* .tx porte le texte : une vraie boîte de bloc (le retournement se fait sur
    .face, pas sur un <span> en ligne) qui peut se limiter en hauteur et,
    passé cette limite, défiler plutôt que déborder du cadre. La taille se
@@ -370,7 +399,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .face.l .tx{font-size:calc(clamp(21px,6.6vw,34px) * var(--fs,1));line-height:1.26;letter-spacing:-.3px}
 .face.xl .tx{font-size:calc(clamp(17px,5.2vw,26px) * var(--fs,1));line-height:1.3;letter-spacing:-.4px;font-weight:750}
 .face.xxl .tx{font-size:calc(clamp(15px,4.2vw,20px) * var(--fs,1));line-height:1.36;letter-spacing:-.2px;font-weight:700}
-.face.bk{transform:rotateY(180deg) translateZ(0);background:#FCFBF8;color:var(--ink);opacity:0}
+.face.bk{transform:rotateY(180deg) translateZ(0);background:color-mix(in srgb,var(--c) 45%,var(--card));color:var(--ink);opacity:0}
 .card.flip .face{opacity:0}
 .card.flip .face.bk{opacity:1}
 
@@ -404,8 +433,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 @keyframes anneau{from{opacity:0;transform:scale(.96)}}
 .ring svg{position:absolute;inset:0;width:172px;height:172px;transform:rotate(-90deg)}
 .ring circle{fill:none;stroke-width:9;stroke-linecap:round}
-.ring .bgc{stroke:var(--surf2)}
-.ring .fgc{stroke:var(--rc,var(--ok));stroke-dasharray:471;stroke-dashoffset:471;
+.ring .bgc{stroke:var(--az1)}
+.ring .fgc{stroke:var(--az4);stroke-dasharray:471;stroke-dashoffset:471;
   transition:stroke-dashoffset 1.1s var(--e) .18s}
 .ring .in{position:absolute;inset:0;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:2px}
@@ -445,7 +474,6 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .st span{font-size:10.5px;font-weight:750;letter-spacing:.4px;text-transform:uppercase;
   color:var(--soft);white-space:nowrap}
 .st > svg{width:18px;height:18px;color:var(--soft);margin-bottom:3px}
-.lbl span > svg{width:14px;height:14px;vertical-align:-2px;margin-right:3px;color:#C9803A}
 
 /* ══════════ surfaces de tableau (console, établissement) ══════════
    Le journal de lecture a sa propre feuille (ui/journal.css), chargée avec
@@ -523,6 +551,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .cr-mat::-webkit-scrollbar{display:none}
 .cr-mat .p{height:30px;padding:0 12px;font-size:13.5px;box-shadow:none;background:var(--surf)}
 .cr-mat .p.on{background:var(--ink);color:#fff}
+.cr-mat .p.on[style]{background:var(--c);color:var(--ci);box-shadow:inset 0 0 0 1.5px var(--d)}
 
 .cr-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:4px;
   border-radius:14px;background:var(--bg2)}
@@ -693,7 +722,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .ms{display:flex;align-items:center;gap:9px;min-width:0;height:44px;padding:0 14px;
   border-radius:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   background:var(--surf);font-size:14.5px;font-weight:700;transition:background .22s,color .22s}
-.ms.on{background:var(--ink);color:var(--bg)}
+.ms.on{background:var(--c);color:var(--ci);box-shadow:inset 0 0 0 1.5px var(--d)}
 .ms i{width:9px;height:9px;border-radius:50%;background:var(--d);flex:none}
 /* un nom de matière trop long se coupe proprement au lieu de pousser la
    feuille entière vers la droite */
@@ -865,13 +894,12 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   box-shadow:inset 0 0 0 1.5px var(--surf2)}
 .msgin::placeholder{color:var(--soft);opacity:.72}
 
-.swatch{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;padding:4px 7px 8px}
-.sw2{aspect-ratio:1;border-radius:13px;position:relative;
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);transition:transform .3s var(--sp)}
+/* le nuancier : chaque teinte en reliure pleine, la choisie cerclée */
+.swatch{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;padding:4px 7px 8px}
+.sw2{aspect-ratio:1;border-radius:13px;position:relative;background:var(--d);transition:transform .3s var(--sp)}
 .sw2:active{transform:scale(.86)}
-.sw2.on{box-shadow:0 0 0 2px var(--card),0 0 0 4px rgba(29,28,25,.28)}
-.sw2::after{content:'';position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;
-  border-radius:50%;background:var(--dd)}
+.sw2.on{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--d)}
+.sw2.on::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#fff}
 
 /* ---------- toast ---------- */
 .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));
@@ -987,7 +1015,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   /* ---------- l'accueil ---------- */
   #page{padding-bottom:40px}
   .grid{grid-template-columns:repeat(auto-fill,minmax(224px,1fr));gap:14px}
-  .tile{min-height:136px;padding:16px 16px 15px 20px}
+  .tile{min-height:136px;padding:16px 16px 15px 28px}
   .fab{display:none}
   .fab.fabok{display:grid;right:var(--gut);bottom:32px}
   .newbtn{display:inline-flex}
@@ -1114,9 +1142,10 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   @media (hover:hover){
     #rail nav button:hover:not(.on){background:var(--surf);color:var(--ink)}
     .ic:hover{background:var(--surf2)}
-    .tile:hover{box-shadow:inset 0 0 0 1px rgba(29,28,25,.2),var(--s2);transform:translateY(-1px)}
+    .tile:hover{box-shadow:inset 0 0 0 1px var(--d),var(--s2);transform:translateY(-1px)}
     .tile:active{transform:translateY(0) scale(.99)}
     .lrow:hover,.row:hover,.dc:hover,.sr:hover,.resume:hover{box-shadow:inset 0 0 0 1px rgba(29,28,25,.2)}
+    .brow:hover{box-shadow:inset 0 0 0 1px var(--d)}
     .p:hover:not(.on){background:var(--surf);box-shadow:inset 0 0 0 1px rgba(29,28,25,.16)}
     .duo button:hover,.act:hover,.rev .b button:hover,.acts button:hover,.pick:hover:not(.on){box-shadow:inset 0 0 0 1px rgba(29,28,25,.22)}
     .cta:hover:not([disabled]){background:#34322D}
@@ -1133,10 +1162,12 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 }
 
 /* ══════════ moteur d'apprentissage ══════════ */
-/* état d'une carte : nouvelle · apprentissage · jeune · mûre · suspendue */
+/* état d'une carte : nouvelle · apprentissage · jeune · mûre · suspendue —
+   la même rampe d'azur que le journal : rien n'est encore su (un rond
+   vide), puis de plus en plus foncé à mesure que la page s'installe */
 .cst{width:7px;height:7px;border-radius:50%;flex:none;align-self:center;margin-right:-2px}
-.cst.new{background:#4A7FBE} .cst.learn{background:#D4842E}
-.cst.young{background:#4C9862} .cst.mature{background:#2A2730;opacity:.5}
+.cst.new{box-shadow:inset 0 0 0 1.5px var(--soft)} .cst.learn{background:var(--az3)}
+.cst.young{background:var(--az4)} .cst.mature{background:var(--az6)}
 .cst.susp{background:var(--soft);opacity:.4}
 .row.off{opacity:.45}
 .x.sus{color:var(--soft)}
@@ -1145,14 +1176,14 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .mixwrap{margin:0 2px 16px;display:flex;flex-direction:column;gap:8px}
 .mix{display:flex;gap:2px;height:7px;border-radius:4px;overflow:hidden}
 .mix i{display:block}
-.mix i.new{background:#4A7FBE} .mix i.learn{background:#D4842E}
-.mix i.young{background:#4C9862} .mix i.mature{background:var(--ink)}
+.mix i.new{background:var(--surf2)} .mix i.learn{background:var(--az3)}
+.mix i.young{background:var(--az4)} .mix i.mature{background:var(--az6)}
 .mix i.susp{background:var(--surf2)}
 .mixk{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;font-weight:650;color:var(--soft)}
 .mixk span{display:flex;align-items:center;gap:6px}
 .mixk i{width:7px;height:7px;border-radius:50%}
-.mixk i.new{background:#4A7FBE} .mixk i.learn{background:#D4842E}
-.mixk i.young{background:#4C9862} .mixk i.mature{background:var(--ink)}
+.mixk i.new{background:var(--surf2)} .mixk i.learn{background:var(--az3)}
+.mixk i.young{background:var(--az4)} .mixk i.mature{background:var(--az6)}
 .mixk .lee{color:var(--ko)}
 .mixk .lee svg{width:12px;height:12px;stroke-width:2.4}
 
@@ -1165,19 +1196,18 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .gr span{font-weight:750;font-size:13.5px;letter-spacing:-.2px}
 .gr i{font-style:normal;font-size:11px;font-weight:700;color:var(--soft);
   font-variant-numeric:tabular-nums}
-.gr.g0{color:var(--ko)} .gr.g1{color:#C9803A}
-.gr.g2{color:var(--ok)} .gr.g3{color:#3E8FA8}
+.gr.g0{color:var(--ko)} .gr.g1{color:var(--am)}
+.gr.g2{color:var(--ok)} .gr.g3{color:var(--az5)}
 
 /* échéance sur une tuile, anneau d'objectif, reprise, marathon */
-/* Le signet : il dépasse du haut de la couverture et porte le nombre de
-   fiches à lire aujourd'hui. Sa pointe est découpée en V, comme un vrai. */
-.tile .due{position:absolute;top:12px;right:12px;min-width:24px;height:22px;padding:0 7px;border-radius:11px;
-  background:color-mix(in srgb,var(--d) 16%,var(--card));color:var(--ink);display:grid;place-items:center;
-  font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;font-style:normal;z-index:3}
+/* le nombre de pages à lire aujourd'hui : un chiffre blanc sur la reliure foncée (--f) */
+.tile .due{position:absolute;top:11px;right:11px;min-width:24px;height:22px;padding:0 7px;border-radius:11px;
+  background:var(--f);color:#fff;display:grid;place-items:center;
+  font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;font-style:normal;z-index:3}
 .goal{position:relative;width:44px;height:44px;flex:none;margin-bottom:2px}
 .goal svg{position:absolute;inset:0;width:44px;height:44px;transform:rotate(-90deg)}
 .goal circle{fill:none;stroke-width:4;stroke-linecap:round}
-.goal .b{stroke:var(--surf2)} .goal .f{stroke:var(--ok);transition:stroke-dashoffset .8s var(--e)}
+.goal .b{stroke:var(--az1)} .goal .f{stroke:var(--az4);transition:stroke-dashoffset .8s var(--e)}
 .goal b{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;font-weight:800;
   font-variant-numeric:tabular-nums}
 .resume,.marathon{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;
@@ -1214,7 +1244,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   transition:background .26s var(--e)}
 .tgl::after{content:'';position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;
   background:var(--card);box-shadow:var(--s1);transition:transform .3s var(--sp)}
-.tgl.on{background:var(--ok)}
+.tgl.on{background:var(--ink)}
 .tgl.on::after{transform:translateX(17px)}
 .mrr{min-height:17px;text-align:center;font-size:13px;font-weight:650;color:var(--ko);padding:0 16px}
 
@@ -1331,23 +1361,20 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .snd.sm svg{width:17px;height:17px}
 
 /* ══════════ étiquettes de carte ══════════ */
-.ctags{position:absolute;left:16px;top:16px;z-index:2;display:flex;gap:5px;
+.ctags{position:absolute;left:16px;bottom:16px;z-index:2;display:flex;gap:5px;
   flex-wrap:wrap;max-width:62%;pointer-events:none}
 .ctags i{font-style:normal;font-size:11px;font-weight:750;letter-spacing:.3px;
-  padding:4px 9px;border-radius:9px;color:var(--ci);
-  background:rgba(255,255,255,.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+  padding:4px 9px;border-radius:9px;color:var(--ci);background:var(--card);box-shadow:inset 0 0 0 1px var(--b)}
 
-/* ══════════ repère de matière (marathon) ══════════
-   En marathon les cartes viennent de partout : un petit rectangle en bas
-   à gauche dit d'où vient celle qu'on a sous les yeux. Il se pose sur la
-   carte, hors du retourneur, donc il ne bascule pas avec elle et reste
-   lisible des deux côtés. Volontairement discret : la couleur de la
-   matière est déjà portée par la carte entière. */
-.sbj{position:absolute;left:16px;bottom:16px;z-index:2;pointer-events:none;
-  display:flex;align-items:center;gap:6px;padding:5px 10px 5px 8px;border-radius:9px;
-  font-size:11.5px;font-weight:750;letter-spacing:.2px;color:var(--ci);
-  background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
-.sbj i{width:7px;height:7px;border-radius:2.5px;background:var(--ci);opacity:.75}
+/* ══════════ la matière, en tête de la fiche ══════════
+   Sur chaque face (elle tourne avec), en haut à gauche, face au signet :
+   la pastille de la reliure et le nom en petites capitales. En marathon,
+   où les fiches viennent de partout, c'est elle qui dit d'où vient
+   celle qu'on a sous les yeux. */
+.sbj{position:absolute;left:20px;top:18px;z-index:2;pointer-events:none;max-width:calc(100% - 90px);
+  display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:750;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ci);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbj i{width:8px;height:8px;border-radius:50%;background:var(--d);flex:none}
 
 /* ══════════ vrai / faux ══════════ */
 .card.tf .face .tx{font-size:clamp(20px,5.2vw,31px);font-weight:750;letter-spacing:-.5px}
@@ -1366,12 +1393,13 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 .tfv.n{color:var(--ko)}
 
 /* ══════════ QCM ══════════ */
-/* la question d'un QCM : la même carte blanche que la révision, liseré de
-   la matière en haut, pleine largeur au-dessus des réponses */
+/* la question d'un QCM : la même page que la révision — le papier de la
+   matière et le signet de sa reliure —, pleine largeur au-dessus des réponses */
 .qcard{position:relative;width:100%;margin:10px 0 14px;padding:30px 24px;min-height:150px;
-  border-radius:18px;background:var(--card);color:var(--ink);box-shadow:var(--edge),var(--s1);
+  border-radius:18px;background:var(--c,var(--card));color:var(--ink);box-shadow:inset 0 0 0 1px var(--b,var(--line)),var(--s1);
   display:grid;place-items:center;align-content:center;gap:12px;text-align:center;overflow:hidden}
-.qcard::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:var(--d,var(--line))}
+.qcard::before{content:'';position:absolute;right:22px;top:0;width:16px;height:30px;background:var(--d,var(--line));
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)}
 .qcard.neuf{animation:pop .26s var(--e) both}
 .qcard span{font-family:var(--serif);font-weight:700;font-size:clamp(20px,5.4vw,30px);
   line-height:1.24;letter-spacing:-.2px}
@@ -1397,10 +1425,10 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
    elles, il n'y a plus de colonne « recto » et de colonne « verso ». */
 .match{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:stretch}
 .mc{min-height:64px;padding:12px 13px;border-radius:17px;background:var(--card);
-  box-shadow:var(--s1);font-weight:700;font-size:14.5px;line-height:1.25;letter-spacing:-.2px;
+  box-shadow:inset 0 0 0 1px var(--b,transparent),var(--s1);font-weight:700;font-size:14.5px;line-height:1.25;letter-spacing:-.2px;
   transition:transform .2s var(--sp),background .25s,color .25s,opacity .3s}
 .mc:active{transform:scale(.97)}
-.mc.on{background:var(--d);color:#fff;box-shadow:var(--s2)}
+.mc.on{background:var(--f);color:#fff;box-shadow:var(--s2)}
 .mc.done{background:var(--c);color:var(--ci);opacity:.4;box-shadow:none;pointer-events:none}
 .shk{animation:shk .38s}
 @keyframes shk{25%{transform:translateX(-7px)}55%{transform:translateX(6px)}80%{transform:translateX(-3px)}}
@@ -1496,18 +1524,18 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,[contenteditable
    proportionnelle au volume — lisible d'un coup d'œil, sans graphique */
 .bdr{display:flex;align-items:center;gap:11px;background:var(--card);box-shadow:var(--s1);
   border-radius:17px;padding:11px 14px;margin-bottom:8px}
-.bdr.me{background:color-mix(in srgb,var(--ok) 7%,var(--card));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 30%,transparent)}
+.bdr.me{background:color-mix(in srgb,var(--az1) 70%,var(--card));box-shadow:inset 0 0 0 1px var(--az2)}
 .bdp{flex:none;width:26px;text-align:center;font-size:17px;font-weight:800;
   color:var(--soft);font-variant-numeric:tabular-nums}
 .bdn{flex:1;min-width:0;display:block;position:relative}
 .bdn b{display:block;font-size:15px;font-weight:750;letter-spacing:-.2px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bdn i{display:block;font-style:normal;font-size:12.5px;color:var(--soft);margin-top:1px}
-.bdn em{display:block;height:4px;border-radius:4px;background:var(--ink);opacity:.16;margin-top:6px}
-.bdr.me .bdn em{opacity:.4}
+.bdn em{display:block;height:4px;border-radius:4px;background:var(--az3);margin-top:6px}
+.bdr.me .bdn em{background:var(--az5)}
 /* progression du défi : la même barre fine que le chrono du quiz */
 .dbar{height:4px;border-radius:4px;background:var(--surf);overflow:hidden;margin:2px 1px 14px;flex:none}
-.dbar i{display:block;height:100%;border-radius:4px;background:var(--ink);
+.dbar i{display:block;height:100%;border-radius:4px;background:var(--az4);
   transition:width .35s var(--e)}
 .cta.ghost{background:var(--card);color:var(--ink);box-shadow:var(--s1);margin:0 0 14px}
 .cta.ghost svg{color:var(--ink)}
@@ -1612,7 +1640,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,[contenteditable
 /* le geste attendu passe sur sa propre ligne, au-dessus des boutons :
    sur un écran étroit il se coupait en deux au milieu du mot */
 .ttap{flex:1 0 100%;order:-1;display:flex;align-items:center;gap:6px;font-style:normal;
-  font-size:13.5px;font-weight:750;color:var(--ok);margin-bottom:-2px}
+  font-size:13.5px;font-weight:750;color:var(--ink2);margin-bottom:-2px}
 .ttap svg{width:15px;height:15px;flex:none}
 .tnav > i:empty{flex:1;order:0}
 .tskip{flex:none;height:42px;padding:0 14px;border-radius:14px;color:var(--soft);
@@ -1649,7 +1677,11 @@ body.touring .toast{display:none}
   font-variant-numeric:tabular-nums}
 .cc-infos > span{display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cc-infos svg{width:14px;height:14px;flex:none;opacity:.8}
-/* les jetons d'identité (ui/jeton.js) : un rond pour une personne, un carré arrondi pour un groupe */
+/* les jetons d'identité (ui/jeton.js) : la forme dit ce que c'est, avant la
+   couleur — un rond et un visage pour une personne, un carré arrondi pour
+   une classe (ses repères dans les listes aussi : jamais un rond, qui est
+   la pastille d'une matière), un écusson pour un club (2026-10-27 : classe
+   et club avaient le même carré, on ne savait plus lequel était lequel) */
 .jt{--s:40px;flex:none;width:var(--s);height:var(--s);border-radius:50%;display:grid;place-items:center;
   background:var(--k,var(--ink2));color:#fff;font-style:normal;font-weight:700;font-size:calc(var(--s) * .38);
   line-height:1;letter-spacing:0;user-select:none;-webkit-user-select:none;overflow:hidden}
@@ -1665,6 +1697,9 @@ body.touring .toast{display:none}
 .med.m1{--mc:#D8A42C} .med.m2{--mc:#A3ACB6} .med.m3{--mc:#B97A47}
 
 .jt.groupe svg{width:56%;height:56%;color:#fff;stroke-width:1.9}
+.jt.club,.cl-emb{border-radius:0;-webkit-mask:var(--ecu) center/100% 100% no-repeat;mask:var(--ecu) center/100% 100% no-repeat}
+.jt.club svg{width:50%;height:50%;margin-top:-8%}
+.cl-emb svg{margin-top:-8%}
 .jt.xs{--s:24px} .jt.sm{--s:30px} .jt.lg{--s:54px} .jt.xl{--s:84px}
 .jt.vide{background:var(--surf);color:var(--ink2)}
 .jt.vide svg,.jt.groupe.vide svg{width:46%;height:46%;color:var(--ink2)}
@@ -1743,7 +1778,7 @@ body.touring .toast{display:none}
 .cc-defi-t b,.cc-ligne-t b,.cl-partie-t b{font-size:15px;font-weight:600;letter-spacing:-.15px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cc-ligne-t b small,.cc-rk-t b small{font-size:10.5px;font-weight:750;letter-spacing:.4px;text-transform:uppercase;
-  color:var(--ok);margin-left:6px}
+  color:var(--az5);margin-left:6px}
 .cc-defi-t i,.cc-ligne-t i,.cl-partie-t i{font-style:normal;font-size:13px;color:var(--soft);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cc-ligne > svg{width:16px;height:16px;color:var(--soft);flex:none}
@@ -1771,14 +1806,6 @@ body.touring .toast{display:none}
   background:var(--card);box-shadow:var(--edge);text-align:left;transition:transform .15s var(--sp),box-shadow .15s}
 .cc-club:active{transform:scale(.985)}
 .cc-club.neuf{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line)}
-.cc-emb{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-style:normal;
-  background:var(--k,var(--ink2));color:#fff;
-  background-image:linear-gradient(140deg,rgba(255,255,255,.14),rgba(0,0,0,.12))}
-.cc-emb svg{width:24px;height:24px;stroke-width:1.8}
-.cc-emb.gros{width:64px;height:64px;border-radius:19px;--k:#2F5D8A}
-.cc-emb.gros svg{width:32px;height:32px}
-.cc-emb.mini{width:34px;height:34px;border-radius:10px}
-.cc-emb.mini svg{width:18px;height:18px}
 .cc-club-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .cc-club-t b{font-size:15.5px;font-weight:650;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cc-club-t i{font-style:normal;font-size:13px;line-height:1.35;color:var(--soft)}
@@ -1791,14 +1818,15 @@ body.touring .toast{display:none}
 .cc-carte .cc-h{margin-bottom:8px}
 .cc-rank{display:flex;flex-direction:column;gap:2px}
 .cc-rk{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:11px;text-align:left}
-.cc-rk.moi{background:color-mix(in srgb,var(--ok) 8%,var(--card))}
+.cc-rk.moi{background:color-mix(in srgb,var(--az1) 70%,var(--card))}
 .cc-pl{flex:none;width:24px;text-align:center;font-size:14px;font-weight:700;color:var(--soft);font-variant-numeric:tabular-nums}
 .cc-rk-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .cc-rk-t b{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cc-rk-t i{font-style:normal;font-size:12px;color:var(--soft);margin-top:-3px}
-.cc-bar{height:4px;border-radius:2px;background:var(--surf);overflow:hidden}
-.cc-bar em{display:block;height:100%;border-radius:2px;background:var(--ink2)}
-.cc-rk.moi .cc-bar em{background:var(--ok)}
+/* un classement compte : les autres en azur clair, soi en azur franc */
+.cc-bar{height:4px;border-radius:2px;background:var(--az1);overflow:hidden}
+.cc-bar em{display:block;height:100%;border-radius:2px;background:var(--az3)}
+.cc-rk.moi .cc-bar em{background:var(--az5)}
 .cc-rk-n{flex:none;min-width:4ch;text-align:right;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
 .cc-amis{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:0 -6px;padding:2px 6px}
 .cc-amis::-webkit-scrollbar{display:none}
@@ -2026,7 +2054,7 @@ body.touring .toast{display:none}
 
 /* ══════════ appui long sur un livre ══════════ */
 /* l'appui long s'annonce : le livre s'enfonce et se détache du fond */
-.tile.hold,.lrow.hold{animation:holdin .5s var(--e) forwards}
+.tile.hold,.brow.hold{animation:holdin .5s var(--e) forwards}
 @keyframes holdin{to{transform:scale(.955);box-shadow:var(--s2)}}
 /* ranger sa bibliothèque : le livre pris sous le doigt, et les autres
    qui s'écartent pour lui faire place. Le déplacement se fait sur
@@ -2040,23 +2068,23 @@ body.touring .toast{display:none}
    partait au hasard entre « faire glisser le livre » et « scroller » ;
    posé au repos AVANT même le premier mouvement, il tranche d'emblée. */
 .grid.reord,.rows.lst.reord{touch-action:none}
-.grid.reord .tile,.rows.lst.reord .lrow{cursor:grab}
-.reord .tile.drag,.reord .lrow.drag{position:relative;z-index:5;animation:none;
+.grid.reord .tile,.rows.lst.reord .brow{cursor:grab}
+.reord .tile.drag,.reord .brow.drag{position:relative;z-index:5;animation:none;
   box-shadow:var(--s3);opacity:.95;transition:none}
 /* le livre tenu ne doit pas aussi se tasser au doigt : ce rétrécissement
    (hérité de l'état pressé) annulerait le grossissement qu'on lui donne
    en le soulevant */
 .reord .tile.drag:active{transform:none}
-.reord.dragging .tile:not(.drag),.reord.dragging .lrow:not(.drag){transition:translate .22s var(--e)}
+.reord.dragging .tile:not(.drag),.reord.dragging .brow:not(.drag){transition:translate .22s var(--e)}
 .reord .grip{opacity:.55}
 /* le tremblement, comme sur un écran d'accueil de téléphone : chaque
    livre penche à son propre rythme, décalé par --i pour ne pas trembler
    à l'unisson. Celui qu'on tient s'arrête d'osciller et flotte, net. */
 @keyframes wiggle{0%,100%{rotate:-1.4deg}50%{rotate:1.4deg}}
-.reord .tile:not(.drag),.reord .lrow:not(.drag){
+.reord .tile:not(.drag),.reord .brow:not(.drag){
   animation:wiggle .24s ease-in-out infinite;animation-delay:calc(var(--i,0) * -47ms)}
 @media (prefers-reduced-motion:reduce){
-  .reord .tile:not(.drag),.reord .lrow:not(.drag){animation:none}
+  .reord .tile:not(.drag),.reord .brow:not(.drag){animation:none}
 }
 /* Le rangement fige tout le reste : plus de recherche, de filtres, de
    balayage ni d'ouverture d'un livre — seuls les livres eux-mêmes
@@ -2169,7 +2197,7 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 .rlist{display:grid;gap:1px}
 .rlist .mi{height:48px;font-size:15px;font-weight:600}
 .rlist .mi.on{background:var(--surf2)}
-.rlist .mi.on svg{color:var(--ok)}
+.rlist .mi.on svg{color:var(--ink)}
 .mi[disabled]{opacity:.35}
 
 /* ---------- console de modération ----------
@@ -2371,7 +2399,7 @@ html.nav-haut .top [data-act="settings"],html.nav-haut .top [data-act="mail"]{di
 .el-note.pad{padding:0 18px 12px}
 .el-rep{margin:10px 0 0;padding:10px 12px;border-radius:12px;font-size:13.5px;line-height:1.45;color:var(--ink2);background:var(--surf)}
 .el-rep.ok{background:color-mix(in srgb,var(--ok) 12%,transparent)}
-.el-rep.attente{background:color-mix(in srgb,#A0640F 12%,transparent)}
+.el-rep.attente{background:color-mix(in srgb,var(--am) 12%,transparent)}
 .el-rep.ko{background:color-mix(in srgb,var(--ko) 11%,transparent)}
 .el-apercu.neuf{animation:pop .26s var(--e) both}
 .el-ap-h{display:flex;align-items:center;gap:12px}
@@ -2395,7 +2423,7 @@ button.el-dv:active,button.el-cl:active{transform:scale(.98)}
 .el-dvt i,.el-clt i{font-style:normal;font-size:12.5px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .el-pill{flex:none;font-style:normal;font-size:11.5px;font-weight:750;padding:3px 9px;border-radius:9px;background:var(--surf);color:var(--ink2)}
 .el-pill.ok{background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok)}
-.el-pill.am{background:color-mix(in srgb,#A0640F 13%,transparent);color:#A0640F}
+.el-pill.am{background:color-mix(in srgb,var(--am) 13%,transparent);color:var(--am)}
 .el-pill.ko{background:color-mix(in srgb,var(--ko) 12%,transparent);color:var(--ko)}
 .el-cl + .el-cl{margin-top:8px}
 .el-cl.attente{background:var(--bg);box-shadow:inset 0 0 0 1px var(--hair)}

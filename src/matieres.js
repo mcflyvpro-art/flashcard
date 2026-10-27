@@ -11,6 +11,7 @@
    identifiants : sans nom, un identifiant connu est gardé tel quel.
 
    Pur, testé dans test/matieres.test.js ; branché par core/matieres.js. */
+import { ALIAS } from './couleurs.js';
 import { cleNom } from './journal.js';
 
 export const slug = n => (n || '').normalize('NFKD').replace(/[̀-ͯ]/g, '')
@@ -23,11 +24,16 @@ export function idLibre(subjects, nom) {
   return id;
 }
 
-/* La couleur la moins employée, dans l'ordre de la palette : deux matières
-   créées l'une après l'autre ne se ressemblent pas. */
+/* La couleur la moins employée, dans l'ordre donné (SUCCESSION de
+   src/couleurs.js pour l'app) : deux matières créées l'une après l'autre ne
+   se ressemblent pas. Une ancienne clé compte pour la teinte qui l'a
+   remplacée (corail pour orange). */
 export function couleurLibre(subjects, couleurs) {
   const n = new Map(couleurs.map(c => [c, 0]));
-  for (const s of subjects || []) if (n.has(s.color)) n.set(s.color, n.get(s.color) + 1);
+  for (const s of subjects || []) {
+    const c = n.has(s.color) ? s.color : ALIAS[s.color];
+    if (n.has(c)) n.set(c, n.get(c) + 1);
+  }
   return [...n.entries()].reduce((b, e) => e[1] < b[1] ? e : b)[0];
 }
 

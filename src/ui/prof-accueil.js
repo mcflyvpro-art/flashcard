@@ -4,7 +4,7 @@ import { I, svg } from '../icones.js';
 import { prefs, prof } from '../data/etat.js';
 import {
   JOURS, MOIS, aTraiter, auJour, echeance, grilleMois, iso,
-  jourLong, parJour, rangerClasses, syntheseAccueil, tonReussite
+  jourLong, parJour, rangerClasses, syntheseAccueil
 } from '../classe.js';
 import { avatar as jeton, blason, couleurClasse } from './jeton.js';
 import { esc, plur } from '../core/coeur-sync.js';
@@ -124,14 +124,13 @@ function semaineHtml() {
 }
 
 function carteClasse(c) {
-  const ton = c.pct ? tonReussite(c.pct) : '';
   return `<button class="pf-kc" data-pf="classe" data-id="${esc(c.id)}" style="--k:${couleur(c.id)}">
     <span class="pf-kch">${pastilleClasse(c)}<span><b>${esc(c.name)}</b><i>${metaClasse(c) || '&nbsp;'}</i></span>
       ${c.attente ? `<em class="pf-badge" title="Demandes en attente">${c.attente}</em>` : ''}</span>
     <span class="pf-kcs">
       <span><b>${c.effectif}</b><i>élèves</i></span>
       <span class="${c.retard ? 'ko' : ''}"><b>${c.retard}</b><i>en retard</i></span>
-      <span class="${ton}"><b>${c.pct ? c.pct + '<small>%</small>' : '—'}</b><i>réussite</i></span>
+      <span><b>${c.pct ? c.pct + '<small>%</small>' : '—'}</b><i>réussite</i></span>
     </span>
     <span class="pf-kcd">${c.dernier ? `${svg(I.card)}<b>${esc(c.dernier)}</b><i>${esc(echeance(c.dernier_due))}</i>`
       : `<i>Aucun devoir</i>`}</span>

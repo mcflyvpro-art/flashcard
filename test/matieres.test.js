@@ -40,6 +40,8 @@ describe('les briques', () => {
     expect(idLibre([{ id: 'eco' }, { id: 'eco-2' }], 'Éco')).toBe('eco-3');
     expect(couleurLibre(mes, COULEURS)).toBe('orange');
     expect(couleurLibre([], COULEURS)).toBe('red');
+    // une ancienne clé (corail) compte pour la teinte qui l'a remplacée (orange)
+    expect(couleurLibre([{ color: 'coral' }], ['orange', 'blue'])).toBe('blue');
     expect(trouverParNom(mes, '')).toBe(null);
   });
 });

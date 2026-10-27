@@ -21,6 +21,9 @@ undefined/
 zz-*/
 *.log
 
+# la Folio Academy : environnement Python, voix, images et vidéos (tools/academie/README.md)
+.academie/
+
 # système et éditeurs
 .DS_Store
 .idea/

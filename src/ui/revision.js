@@ -117,11 +117,11 @@ function findCard(cid) {
   return [d ? d.cards.find(x => x.id === cid) : null, d];
 }
 
-const ringCol = p => p >= .8 ? 'var(--ok)' : p >= .5 ? '#C9A526' : 'var(--ko)';
-
+/* L'anneau du bilan compte, il ne juge pas : de l'azur, quel que soit le
+   score (il passait du vert au rouge, et 40 % s'affichait comme une faute). */
 const ring = (ok, total) => {
   const p = total ? ok / total : 0;
-  return `<div class="ring" style="--rc:${ringCol(p)}">
+  return `<div class="ring">
     <svg viewBox="0 0 172 172">
       <circle class="bgc" cx="86" cy="86" r="75"/>
       <circle class="fgc" cx="86" cy="86" r="75" style="stroke-dashoffset:471"/>
@@ -312,7 +312,10 @@ function cardFacesFor(c, tf) {
    l'air collées par-dessus. Elles appartiennent maintenant à chaque
    face, donc elles tournent avec. */
 function cardTagHtml(c, org) {
-  return `${org.subj ? `<div class="sbj"><i></i>${esc(org.subj.name)}</div>` : ''}${
+  // la matière de la fiche : celle de son livre en marathon, du livre ouvert sinon
+  const d = study.id === 'all' ? null : deck(study.id);
+  const m = org.subj || (d ? subj(d.subject) : null);
+  return `${m && m.id ? `<div class="sbj"><i></i>${esc(m.name)}</div>` : ''}${
     (c.g || []).length ? `<div class="ctags">${c.g.slice(0, 3).map(t =>
       `<i>${esc(t)}</i>`).join('')}</div>` : ''}`;
 }

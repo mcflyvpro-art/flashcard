@@ -47,7 +47,7 @@ function identiteHtml() {
       ${mats.length ? `<div class="cr-mat" role="group" aria-label="Matière">
         <button class="p ${comp.subject ? '' : 'on'}" data-nsubj="">Sans matière</button>
         ${mats.map(s => `<button class="p ${comp.subject === s.id ? 'on' : ''}" data-nsubj="${s.id}"
-          style="--d:${s.d}"><i></i>${esc(s.name)}</button>`).join('')}
+          style="${sty(s)}"><i></i>${esc(s.name)}</button>`).join('')}
       </div>` : ''}
     </section>`;
 }

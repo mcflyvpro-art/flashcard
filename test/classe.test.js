@@ -8,7 +8,7 @@ import {
   correspond, erreurPlaces, etatDevoir, etatDevoirEleve, etatEleve, etatInscriptions, filtrerEleves, finTexte,
   formatCode, grilleMois, iso, jourCourt, jourLong, joursEntre, lienCarte, lienRejoindre,
   lireCarte, lireListeEleves, messageStatut, nomPropre, nomValide, normCode, normIdentifiant, parJour,
-  rangerClasses, syntheseAccueil, syntheseClasse, tonReussite, trierEleves
+  rangerClasses, syntheseAccueil, syntheseClasse, trierEleves
 } from '../src/classe.js';
 
 describe('le code d’une classe', () => {
@@ -100,9 +100,6 @@ describe('l’état d’un élève', () => {
     expect(etatEleve(eleve('A', { rendus: 1 })).t).toBe('2 en cours');
     expect(etatEleve(eleve('A')).k).toBe('ok');
     expect(etatEleve(eleve('A', { donnes: 0, rendus: 0 })).k).toBe('neutre');
-  });
-  it('la réussite en trois tons', () => {
-    expect([tonReussite(90), tonReussite(50), tonReussite(10)]).toEqual(['ok', 'am', 'ko']);
   });
 });
 

@@ -20,107 +20,26 @@ CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      46 / 148
 DERNIER   2026-10-27 · Les pseudos ont des règles (20261027090000) : tout compte en a un,
-          donné d'office (le prénom, sinon « lecteur », et des chiffres) ; 3 à 20
-          caractères, minuscules, chiffres, point, tiret bas ; ni mot réservé ni
-          grossier ; unique au point et au tiret bas près ; deux changements par
-          semaine ; un pseudo quitté reste 30 jours à son titulaire. Il se change
-          de partout (Réglages pour tous les comptes, « Mon jeton », l'accueil),
-          élève de classe compris : on ne pouvait plus le changer nulle part (la
-          feuille ne s'ouvrait pas, et la base rendait en silence son ancien
-          pseudo à tout élève). L'accueil demande le pseudo à tous ; un élève de
-          lycée garde « Prénom NOM » en classe. Au téléphone, les titres des
-          onglets reviennent en haut, sans la ligne du logo ; médailles du
-          classement et icône des défis redessinées. Preuves : pseudos.sql 27/27,
-          identite_eleve 23/23, defis_direct 44/44, etablissement 72/72,
-          licence 51/51, jetons 23/23, profil 19/19, classe_eleve 12/12 ;
-          test/pseudo.test.js 18/18 (listes comparées à la migration) ;
-          e2e/pseudo 2/2, bienvenue 3/3.
-          Avant : Les visuels de l'app, tour 3 (docs/LANDING.md, T3.1 à T3.6) :
-          le logo du site dans l'app (barre, barre du haut, onglets au téléphone,
-          ouverture, icônes installées), les titres de page dans la serif du site,
-          un signet de la matière sur la fiche lue ; dix-neuf défauts réparés sur
-          79 captures des quatre rôles, dont « Jouer » qui débordait de la ligne
-          d'un défi (marge perdue, triangle sans taille), une lettre de la démo
-          qui ne s'ouvrait pas et la barre qui allumait « Mes classes » sur un
-          profil. Affiches, image de partage et captures du manifeste refaites.
-          Preuves : npm run check (431 tests), e2e 69/69, Lighthouse 100×4.
-          Avant : La licence du référent (20261026130000) : une place par élève
-          et par professeur (M14.T4), « Ajouter un professeur », « Retirer de
-          l'établissement » qui libère la place ; un onglet Licence (places, prix,
-          factures et avoirs à leur adresse, imprimables, coordonnées Chorus Pro,
-          échanges avec Folio, CGV, contrat de sous-traitance, fiche registre) ;
-          l'éditeur facture (numérotation sans trou, factures inaltérables, avoirs,
-          onglet Entreprise) — licence.sql 50/50, etablissement.sql 72/72,
-          test/facture.test.js 19/19, e2e referent 6/6 et editeur 5/5. Corrigé :
-          « 2 élèves en retard » ouvrait un filtre vide (élèves jamais connectés).
-          Avant : La page d'accueil publique : le site à `/` (index.html, src/site/),
-          l'app à ses adresses (app.html, réécriture de vercel.json ; `/app` pour
-          « l'app, sans plus de précision ») ; un aiguillage en tête de page envoie
-          dans l'app qui a une session, l'icône installée ou un lien de l'app (QR
-          imprimés compris). Les boutons mènent aux adresses du routeur
-          (/inscription, /connexion, /essayer, /demo/prof, /demande-demo…). B2C, Folio
-          Campus (B2B), tarifs Folio / Folio+ (mensuel ou annuel, prix à valider) /
-          Campus, tableau comparatif, FAQ, SEO (JSON-LD, robots,
-          sitemap, image de partage), logo redessiné en vrai SVG (tools/logo.py),
-          emplacements vidéo avec les vrais écrans en affiche (tools/affiches.js).
-          Reste à l'utilisateur : valider les prix, déposer les vidéos, décider des
-          icônes PNG de l'app. Tout est dans docs/LANDING.md (fichier de reprise).
-          Preuves : npm run check vert, e2e/site.e2e.js 6/6, e2e complets verts,
-          Lighthouse 100/100/100/100 (téléphone et ordinateur).
-          Avant : codes renouvelés seuls chaque semaine (20261026110000).
-          Avant : une adresse par écran et par espace (src/routes.js, ui/routeur.js) :
-          /eleve, /prof, /referent, /admin, /demo/<rôle> ; rafraîchir garde l'écran, le
-          retour du navigateur revient à l'écran d'avant, une adresse ouverte sans session
-          attend la connexion — e2e/adresses.e2e.js 4/4, test/routes.test.js 7/7. Le
-          référent et l'éditeur n'ont plus dans leur barre que leurs pages (onglets de la
-          console, réglages réduits), l'éditeur arrive sur sa console. La démo sans compte
-          devient la vraie app sur une base locale (src/base-locale/, le Supabase en mémoire
-          des parcours, sorti de e2e/) : tout s'écrit, d'un rôle à l'autre, rien ne part ;
-          l'IA, les photos et les fichiers grisés — e2e/demo.e2e.js 3/3,
-          test/monde-demo.test.js 6/6. Corrigé en chemin : la fiche d'un élève et « Ce qui
-          bloque » restaient en chargement chez un vrai professeur.
-          Avant : parcours B2B/B2C (docs/PARCOURS.md). Fait : « un seul
-          code » en base (20261026001000) et la feuille « J'ai un code » ; B2C sans onglet
-          Classe ; la console du référent refaite pour l'ordinateur (ui/ref-console.js, à
-          la demande : codes + QR projeté, licence, à régler, classes, élèves, profs,
-          journal, cartes élève cachées ; au téléphone les codes et la licence), sur
-          ref_personnes (20261026020000) — etablissement.sql 58/58, e2e/referent.e2e.js 4/4 ;
-          la console de l'éditeur (ui/admin-console.js : suivi prospect → démo → client,
-          prochain pas, démo en un geste, code référent par courriel, licence, comptes) et
-          « Demander une démo » sans compte depuis la connexion — e2e/editeur.e2e.js 4/4.
-          L'espace professeur au même modèle (20261026030000, ui/prof-etab.js) : le code à
-          donner en tête, choisir ses classes et former des groupes dans un établissement,
-          un seul code pour un professeur particulier — etablissement.sql 64/64,
-          e2e/prof-code.e2e.js 2/2, espace-prof.e2e.js refait au nouveau parcours.
-          Comptes de test : referent@folio.app (Lycée d'essai Folio). L'accueil d'un
-          nouveau compte (ui/bienvenue.js : prénom, pseudo, visage, niveau, matières,
-          objectif ; visage seul pour un élève de classe) — e2e/bienvenue.e2e.js 3/3.
-          La démo sans compte (« Essayer sans compte » : le Lycée Démo Folio, alors src/demo-etab.js,
-          servi en tête d'api() ; élève, professeur, référent, vrais écrans, aucune requête,
-          bandeau pour changer de rôle) — e2e/demo.e2e.js 4/4, test/demo-etab.test.js 6/6.
-          Reste : la page d'accueil publique (plus tard). Pas de Stripe (Capacitor, achats
-          Apple/Google).
-          Avant : 2026-10-25 (soir) · « Ma classe » rendue à tout compte personnel (onglet
-          au téléphone, entrée sur PC : c'est là qu'on tape le code du professeur ;
-          la refonte du cercle l'avait réservée à qui avait déjà une classe —
-          e2e classe-eleve, échoue sur l'ancien code). L'icône installée sur
-          l'ancienne adresse GitHub Pages ne bascule plus dans Safari : elle montre
-          la nouvelle adresse et comment réinstaller l'app (tools/pages-redirection).
-          Avant : Réglé comme Anki, sans curseur : rétention 90 %, journée à 4 h,
-          20 neuves par jour et par livre (« Lire +20 »), équilibreur de charge d'Anki
-          (fsrs.js equilibrer), entretien automatique (réparation + doublons, plus de
-          bouton) ; réglages du moteur et « Vérifier ma bibliothèque » retirés. Courrier
-          refait (boîte + page d'une lettre, ui/courrier.js), profil d'un lecteur
-          (profil_lecteur, ui/profil.js), page d'une classe pour l'élève (eleve_classe,
-          ui/classe-eleve.js), livre sur PC : seule la liste défile, recherche au
-          téléphone sans saut, heures du journal corrigées. Plus un seul émoji : avatars
-          dessinés et personnalisables (src/avatar.js, sans migration), médailles et
-          emblèmes en icônes Lucide. Liens sur le domaine unique (src/adresse.js), une
-          porte pour les liens entrants (prête pour Capacitor), carte de passage iPhone.
-          Textes juridiques chargés à la demande : démarrage 115,8 Ko / 120 (il était à
-          120,0). Preuves : 350 tests, e2e verts (courrier, profil, classe-eleve,
-          temoin…), supabase/tests/profil.sql et classe_eleve.sql verts. Le défi en
-          direct échoue parfois (joueurs au hasard) — à rendre déterministe.
+          donné d'office ; 3 à 20 caractères, minuscules, chiffres, point, tiret
+          bas ; ni mot réservé ni grossier ; unique au point et au tiret bas près ;
+          deux changements par semaine ; un pseudo quitté reste 30 jours à son
+          titulaire. Il se change de partout (Réglages, « Mon jeton », l'accueil),
+          élève de classe compris — on ne pouvait plus le changer nulle part ; son
+          « Prénom NOM » reste en classe. Au téléphone, les titres des onglets
+          reviennent en haut ; médailles et icône des défis redessinées.
+          Preuves : pseudos.sql 27/27 (et identite_eleve, defis_direct,
+          etablissement, licence, jetons, profil, classe_eleve verts),
+          test/pseudo.test.js 18/18, e2e/pseudo 2/2, e2e complets.
+Avant :   2026-10-27 · Les couleurs de l'app (src/couleurs.js, pur et testé) : une
+          couleur, un travail — l'azur compte (journal, profil, classement,
+          bilan, objectif, espace prof), les états jugent, un nuancier de 14
+          reliures relie une matière (deux teintes à 10 au moins d'écart
+          OKLab, contre 2,8 avant), l'encre habille. Un livre a un dos plein
+          et une couverture teintée (étagère, liste, tête de sa page), la
+          fiche lue le papier de son livre, sa matière en tête et un grand
+          signet ; une classe un carré, un club un écusson. Les réussites ne
+          virent plus au vert ou au rouge selon un seuil.
+          Preuves : npm run check, e2e, captures avant/après des trois rôles.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

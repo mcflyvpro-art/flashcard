@@ -48,14 +48,14 @@ function evol(x) {
 }
 
 function chiffres(a, avant) {
-  const tuile = (k, ic, val, nom, e = '', cls = '') =>
-    `<div class="jr-k ${cls}" data-k="${k}"><i>${svg(ic)}</i><b>${val}</b><span>${nom}</span>${e}</div>`;
+  const tuile = (k, ic, val, nom, e = '') =>
+    `<div class="jr-k" data-k="${k}"><i>${svg(ic)}</i><b>${val}</b><span>${nom}</span>${e}</div>`;
   return `<section class="jr-kpi">
     ${tuile('pages', I.book, nb(a.n), 'pages lues', avant ? evol(evolution(a.n, avant.n)) : '')}
     ${tuile('temps', I.clock, duree(a.ms), 'de lecture', avant ? evol(evolution(a.ms, avant.ms)) : '')}
     ${tuile('justes', I.check, pct(a.justesse), 'justes', avant && avant.justesse != null && a.justesse != null
       ? evol(a.justesse - avant.justesse) : '')}
-    ${tuile('serie', I.flame, nb(a.serie), a.serie > 1 ? 'jours d’affilée' : 'jour d’affilée', '', a.serie ? 'feu' : '')}
+    ${tuile('serie', I.flame, nb(a.serie), a.serie > 1 ? 'jours d’affilée' : 'jour d’affilée')}
   </section>`;
 }
 
