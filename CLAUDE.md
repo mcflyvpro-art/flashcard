@@ -48,7 +48,11 @@ l'air de marcher ».
     les liens fabriqués sur `SITE` continuent d'ouvrir l'app. `?site` force
     l'accueil. Son empreinte sha256 est dans la CSP de `vercel.json`
     (`test/site.test.js` le vérifie, avec l'absence de tiret cadratin dans le
-    texte affiché). Ses images dans `public/site/` (logo, image de partage
+    texte affiché et ses teintes : une page, un livre, une matière y prend
+    sa teinte du nuancier de l'app par `data-teinte`, recopiée de
+    `src/couleurs.js` dans `site.css` — les pages dessinées sont celles de
+    l'app, papier de la couverture et signet, et ce qui se compte est en
+    azur, depuis le 2026-10-27). Ses images dans `public/site/` (logo, image de partage
     `og.jpg`, affiches des emplacements vidéo, **hors du cache du service
     worker**) : le logo se calcule (`python3 tools/logo.py`, qui réécrit aussi
     son « sprite » dans `index.html`), les affiches, l'image de partage et

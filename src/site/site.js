@@ -71,21 +71,23 @@ function scene() {
    droite ; les suivantes avancent d'un rang. Tant que personne n'y touche,
    la pile se joue seule (à l'écran seulement) ; au premier geste, elle
    attend. Les quatre fiches du HTML sont recyclées : celle qui part revient
-   au fond avec la fiche suivante de la liste. */
+   au fond avec la fiche suivante de la liste. Chaque matière a sa teinte du
+   nuancier de l'app (data-teinte, src/couleurs.js), la même partout sur la
+   page ; les délais sont ceux qu'affiche l'app pour une page déjà lue. */
 const PILE = [
-  ['Histoire', '#A8483C', 'Prise de la Bastille', '14 juillet 1789'],
-  ['SVT', '#2E7A86', 'Mitochondrie', 'Centrale énergétique de la cellule'],
-  ['Anglais', '#3F7D55', 'to take for granted', 'tenir pour acquis'],
-  ['Philosophie', '#8A3F6B', 'Critique de la raison pure', 'Kant, 1781'],
-  ['Maths', '#2F5D8A', '∫ eˣ dx', 'eˣ + C'],
-  ['Droit', '#5E4E8A', 'Article 1240', 'Responsabilité pour faute'],
-  ['Géographie', '#6B7A2E', 'Capitale de la Norvège', 'Oslo'],
-  ['Espagnol', '#B0475F', 'la madrugada', 'le petit matin'],
-  ['Chimie', '#9A6512', 'pH de l’eau pure', '7, à 25 °C']
+  ['Histoire', 'yellow', 'Prise de la Bastille', '14 juillet 1789'],
+  ['SVT', 'green', 'Mitochondrie', 'Centrale énergétique de la cellule'],
+  ['Anglais', 'red', 'to take for granted', 'tenir pour acquis'],
+  ['Philosophie', 'purple', 'Critique de la raison pure', 'Kant, 1781'],
+  ['Maths', 'blue', '∫ eˣ dx', 'eˣ + C'],
+  ['Droit', 'indigo', 'Article 1240', 'Responsabilité pour faute'],
+  ['Géographie', 'lime', 'Capitale de la Norvège', 'Oslo'],
+  ['Espagnol', 'orange', 'la madrugada', 'le petit matin'],
+  ['Chimie', 'teal', 'pH de l’eau pure', '7, à 25 °C']
 ];
 const NOTES = [
-  { sens: -1, tour: -24, dans: 'Revient dans 1 min' },
-  { sens: -1, tour: -13, dans: 'Revient demain' },
+  { sens: -1, tour: -24, dans: 'Revient dans 10 min' },
+  { sens: -1, tour: -13, dans: 'Revient dans 2 jours' },
   { sens: 1, tour: 13, dans: 'Revient dans 4 jours' },
   { sens: 1, tour: 24, dans: 'Revient dans 9 jours' }
 ];
@@ -103,8 +105,8 @@ function essai() {
   let suivante = ordre.length, tour = 0, attente = false, auto = !reduit.matches, visible = false, minuteur = 0;
   const ranger = () => ordre.forEach((x, i) => { x.dataset.rang = String(Math.min(i, 3)); });
   const remplir = (c, i) => {
-    const [m, couleur, recto, verso] = PILE[i % PILE.length];
-    c.style.setProperty('--c', couleur);
+    const [m, teinte, recto, verso] = PILE[i % PILE.length];
+    c.dataset.teinte = teinte;
     c.querySelectorAll('small').forEach(s => { s.textContent = m; });
     const b = c.querySelectorAll('b');
     b[0].textContent = recto; b[1].textContent = verso;

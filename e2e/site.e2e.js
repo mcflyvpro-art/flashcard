@@ -116,7 +116,7 @@ test('la pile du héros se note : Facile l’envoie à droite, Encore à gauche,
   await expect(dessus()).toHaveText('Mitochondrie');
   await expect(essai.locator('.essai-indice')).toHaveCSS('opacity', '0');      // « Clique pour tester » a servi
   await essai.getByRole('button', { name: /^Encore/ }).click();
-  await expect(essai.locator('.essai-retour')).toHaveText('Revient dans 1 min');
+  await expect(essai.locator('.essai-retour')).toHaveText('Revient dans 10 min');
   await expect(dessus()).toHaveText('to take for granted', { timeout: 5000 });
 });
 

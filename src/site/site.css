@@ -1,23 +1,26 @@
 /* La page d'accueil du site (index.html, servie à la racine ; l'app est à
    /app). Elle n'a pas app.css : même charte que l'app (papier, encre,
-   couleurs de matières, titres en serif), en plus grand, éclairée par la
-   lumière de la marque, un bleu pervenche qui passe au rose. Tout ce qui
-   bouge n'anime que transform et opacity, s'arrête hors de l'écran (.dort)
-   et se tait sous « mouvement réduit ». docs/LANDING.md. */
+   titres en serif, et une couleur pour un seul travail, src/couleurs.js),
+   en plus grand, éclairée par la lumière de la marque, un bleu pervenche
+   qui passe au rose. Tout ce qui bouge n'anime que transform et opacity,
+   s'arrête hors de l'écran (.dort) et se tait sous « mouvement réduit ».
+   docs/LANDING.md. */
 
 :root{
   color-scheme:light;
-  --papier:#F7F5F0; --papier2:#EFECE4; --papier3:#E6E2D8;
+  --papier:#F6F5F1; --papier2:#EFECE4; --papier3:#E6E2D8;
   --encre:#1D1C19; --encre2:#4B4842; --doux:#6B675F;
   --carte:#FFFFFF; --filet:rgba(29,28,25,.09); --filet2:rgba(29,28,25,.15);
-  --vert:#3F7D55; --bleu:#2F5D8A; --prune:#8A3F6B; --brique:#A8483C; --ocre:#9A6512; --canard:#2E7A86;
+  /* comme dans l'app : l'azur dit ce qui se compte, les états jugent */
+  --az1:#E8EEFE; --az2:#C2D0F6; --az3:#91A8EB; --az4:#5B77D0; --az5:#3950A5; --az6:#243473;
+  --ok:#2A764A; --ko:#B24437; --am:#955C06;
   /* la lumière de la marque : jamais en aplat criard, en halos et en filets */
   --azur:#5A76D0; --lilas:#9A78CF; --rose:#D7648D;
   --degrade:linear-gradient(115deg,#5A76D0,#9A78CF 52%,#D7648D);
   --degrade-clair:linear-gradient(115deg,#8DA2F0,#B996EC 52%,#F38DB2);
   --degrade-texte:linear-gradient(100deg,#3E4FA0 8%,#80439C 55%,#B33F6C 94%);
   --nuit:#17161E; --nuit2:#23222C; --creme:#F3EEE3; --creme2:#CFC8BA;
-  --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --serif:ui-serif,"Iowan Old Style",Charter,"Bitstream Charter","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --e:cubic-bezier(.22,1,.36,1);
@@ -28,6 +31,32 @@
   --gout:20px;
   --large:1200px;
 }
+
+/* Le nuancier des matières, celui de l'app (src/couleurs.js, vérifié par
+   test/site.test.js) : la reliure (--d), la couverture (--c), son filet
+   (--b) et l'encre posée dessus (--ci). Une page, un livre ou une matière
+   prend sa teinte par data-teinte ; les pages d'un même livre ont la même. */
+[data-teinte="red"]{--d:#9F3D34;--c:#FEEAE7;--b:#FDCCC4;--ci:#6B2620}
+[data-teinte="orange"]{--d:#B66309;--c:#FDEBDF;--b:#FBCFAF;--ci:#613201}
+[data-teinte="yellow"]{--d:#CCA855;--c:#F9EED7;--b:#E9D7B0;--ci:#513C00}
+[data-teinte="lime"]{--d:#859E57;--c:#EAF3DD;--b:#D1DFBC;--ci:#364710}
+[data-teinte="green"]{--d:#2D8A4F;--c:#DFF6E4;--b:#BBE6C5;--ci:#024D24}
+[data-teinte="teal"]{--d:#1E6162;--c:#E1F3F4;--b:#C1E0E1;--ci:#093E3F}
+[data-teinte="cyan"]{--d:#4BA1C7;--c:#DEF3FE;--b:#B8E0F4;--ci:#03465E}
+[data-teinte="blue"]{--d:#0970A4;--c:#E3F2FD;--b:#B6DFFE;--ci:#024467}
+[data-teinte="indigo"]{--d:#1B2770;--c:#E9EFFF;--b:#CBD8FE;--ci:#070A41}
+[data-teinte="violet"]{--d:#9566C8;--c:#F3EBFE;--b:#E2CFFD;--ci:#4C306A}
+[data-teinte="purple"]{--d:#6A265A;--c:#FDE8F6;--b:#F4CBE7;--ci:#400D35}
+[data-teinte="pink"]{--d:#B56284;--c:#FFE8F0;--b:#F9CADB;--ci:#642842}
+[data-teinte="sand"]{--d:#6D381B;--c:#FFEBE1;--b:#F2D1C1;--ci:#441D06}
+[data-teinte="graphite"]{--d:#383838;--c:#EFEFEF;--b:#D9D9D9;--ci:#1A1B1B}
+
+/* Le signet de la reliure, accroché en haut à droite d'une page : le même
+   que sur la page qu'on lit dans l'app. --sw règle sa largeur. */
+.face::before,.mini-fiche::before,.paquet i::after,.fin-fiches span::before{content:'';position:absolute;top:0;right:var(--sr,15px);
+  width:var(--sw,13px);height:calc(var(--sw,13px) * 2);pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,.14),transparent 45%,rgba(0,0,0,.14)) var(--d);
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%)}
 
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--papier);scroll-behavior:smooth;scroll-padding-top:84px}
@@ -88,7 +117,7 @@ button{font:inherit;color:inherit}
 
 /* ---------- l'en-tête ---------- */
 .tete{position:sticky;top:0;z-index:50;transition:background-color .3s,box-shadow .3s}
-.tete.colle{background:rgba(247,245,240,.8);-webkit-backdrop-filter:saturate(170%) blur(16px);backdrop-filter:saturate(170%) blur(16px);box-shadow:0 1px 0 var(--filet)}
+.tete.colle{background:rgba(246,245,241,.8);-webkit-backdrop-filter:saturate(170%) blur(16px);backdrop-filter:saturate(170%) blur(16px);box-shadow:0 1px 0 var(--filet)}
 .tete-in{display:flex;align-items:center;gap:18px;height:68px}
 .marque{display:inline-flex;align-items:center;gap:10px;color:var(--encre);text-decoration:none;font:700 25px/1 var(--serif);letter-spacing:-.02em}
 .marque-livres{width:34px;height:36px}
@@ -98,7 +127,7 @@ button{font:inherit;color:inherit}
 .tete-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
 .tete-code{font-weight:600;font-size:15px;color:var(--encre2);text-decoration:none;padding:9px 10px}
 .burger{display:none;width:44px;height:44px;border:0;border-radius:50%;background:rgba(29,28,25,.06);align-items:center;justify-content:center;cursor:pointer}
-.menu-mobile{display:flex;flex-direction:column;gap:4px;padding:8px var(--gout) 18px;background:rgba(247,245,240,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 18px 30px -20px rgba(29,28,25,.35)}
+.menu-mobile{display:flex;flex-direction:column;gap:4px;padding:8px var(--gout) 18px;background:rgba(246,245,241,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 18px 30px -20px rgba(29,28,25,.35)}
 .menu-mobile[hidden]{display:none}
 .menu-mobile a:not(.bt),.menu-mobile .lien{padding:13px 4px;font-size:18px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--filet)}
 .menu-mobile .bt{margin-top:12px;height:52px}
@@ -176,7 +205,7 @@ button{font:inherit;color:inherit}
 .video{opacity:0;transition:opacity .6s var(--e);background:transparent}
 .ecran.joue .video{opacity:1}
 /* tant qu'une affiche manque, l'écran reste un papier qui respire */
-.ecran::after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,var(--papier2) 30%,#F7F5F0 50%,var(--papier2) 70%) 0 0/300% 100%;animation:attente 2.4s linear infinite}
+.ecran::after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,var(--papier2) 30%,var(--papier) 50%,var(--papier2) 70%) 0 0/300% 100%;animation:attente 2.4s linear infinite}
 @keyframes attente{to{background-position:-150% 0}}
 
 .telephone{position:absolute;right:1%;bottom:-3%;width:clamp(112px,21%,232px);z-index:2;
@@ -186,15 +215,18 @@ button{font:inherit;color:inherit}
 .telephone .ecran{aspect-ratio:390/844;border-radius:13% / 6%}
 .ilot{position:absolute;top:5.4%;left:50%;width:30%;height:3.3%;transform:translateX(-50%);background:#0A0A09;border-radius:99px}
 
-/* Une fiche, recto et verso dans la même case de grille : elle prend la
-   taille de la plus longue des deux faces, rien ne déborde jamais. */
+/* Une page, recto et verso dans la même case de grille : elle prend la
+   taille de la plus longue des deux faces, rien ne déborde jamais. C'est
+   une page de son livre, dessinée comme dans l'app : le papier de la
+   couverture, son filet, la matière en tête avec la pastille de sa
+   reliure, le signet ; le verso, plus clair. */
 .fiche-in,.carte-in{display:grid;transform-style:preserve-3d}
-.face{grid-area:1 / 1;display:flex;flex-direction:column;justify-content:center;gap:5px;min-height:84px;padding:13px 15px 14px;border-radius:15px;background:#FFF;
-  box-shadow:inset 4px 0 0 var(--c),var(--ombre2);-webkit-backface-visibility:hidden;backface-visibility:hidden}
-.face small{font:800 10.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--c)}
-.face b{font:700 clamp(15px,1.45vw,19px)/1.18 var(--serif);letter-spacing:-.01em;text-wrap:balance}
-.face.verso{transform:rotateY(180deg);background:#FFFDF8}
-.face.verso b{color:var(--c)}
+.face{position:relative;grid-area:1 / 1;display:flex;flex-direction:column;justify-content:center;gap:6px;min-height:84px;padding:13px 15px 14px;
+  border-radius:15px;background:var(--c);box-shadow:inset 0 0 0 1px var(--b),var(--ombre2);-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.face small{display:flex;align-items:center;gap:6px;padding-right:24px;font:800 10.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ci)}
+.face small::before{content:'';flex:none;width:7px;height:7px;border-radius:50%;background:var(--d)}
+.face b{font:700 clamp(15px,1.45vw,19px)/1.18 var(--serif);letter-spacing:-.01em;text-wrap:balance;color:var(--encre)}
+.face.verso{transform:rotateY(180deg);background:color-mix(in srgb,var(--c) 45%,#FFF)}
 .fiches{position:absolute;inset:0;pointer-events:none;z-index:3}
 .fiche{position:absolute;width:clamp(150px,15.5vw,206px);perspective:900px;
   translate:0 calc((1 - var(--p)) * var(--v,40px));animation:flotte 7s ease-in-out infinite alternate}
@@ -218,18 +250,22 @@ button{font:inherit;color:inherit}
 .carte.net{transition:none}
 .carte-in{height:100%;transition:transform .65s var(--e)}
 .carte.retournee .carte-in{transform:rotateY(180deg)}
-.carte .face{min-height:0;padding:16px 18px;border-radius:18px;gap:8px;
-  box-shadow:inset 5px 0 0 var(--c),0 2px 6px rgba(29,28,25,.07),0 24px 44px -18px rgba(29,28,25,.42)}
+.carte .face{--sr:20px;--sw:16px;min-height:0;padding:16px 18px;border-radius:18px;gap:9px;
+  box-shadow:inset 0 0 0 1px var(--b),0 2px 6px rgba(29,28,25,.07),0 24px 44px -18px rgba(29,28,25,.42)}
 .carte .face b{font-size:clamp(18px,1.7vw,21px)}
-.essai-notes{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:42px;padding:6px;border-radius:17px;
-  background:rgba(255,255,255,.93);box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
-.essai-notes button{height:42px;padding:0 2px;border:0;border-radius:11px;color:#FFF;font:700 13px/1 var(--sans);cursor:pointer;
-  transition:transform .25s var(--rebond),filter .2s}
+/* les quatre boutons, ceux de l'app : du papier, le mot dans sa couleur
+   d'état (l'azur pour Facile), le délai dessous */
+.essai-notes{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:42px;padding:6px;border-radius:18px;
+  background:rgba(246,245,241,.94);box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
+.essai-notes button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:52px;padding:0 2px;border:0;border-radius:12px;
+  background:#FFF;box-shadow:inset 0 0 0 1px var(--filet2);font:750 13.5px/1 var(--sans);letter-spacing:-.01em;cursor:pointer;
+  transition:transform .25s var(--rebond),box-shadow .2s}
+.essai-notes button i{font:700 11px/1 var(--sans);font-style:normal;color:var(--doux);font-variant-numeric:tabular-nums}
 .essai-notes button:active,.essai-notes .appuie{transform:scale(.88)}
-.n0{background:#B5473A}
-.n1{background:#9A6512}
-.n2{background:var(--vert)}
-.n3{background:var(--bleu)}
+.n0{color:var(--ko)}
+.n1{color:var(--am)}
+.n2{color:var(--ok)}
+.n3{color:var(--az5)}
 .essai-indice{display:flex;align-items:flex-end;margin:6px 0 0 12px;font:italic 600 17px/1 var(--serif);color:var(--encre2);transition:opacity .6s var(--e)}
 .essai-fleche{width:34px;height:30px;flex:none;margin-right:4px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
   animation:pointe-haut 2.2s ease-in-out infinite}
@@ -248,9 +284,12 @@ button{font:inherit;color:inherit}
 .defile{display:flex;width:max-content;animation:defile 60s linear infinite}
 .matieres:hover .defile{animation-play-state:paused}
 .defile-ligne{display:flex;gap:12px;margin:0;padding:0 6px;list-style:none}
-.defile-ligne li{display:flex;align-items:center;gap:9px;padding:11px 18px;border-radius:99px;background:#FFF;
-  box-shadow:inset 0 0 0 1px var(--filet);font-weight:650;font-size:15px;white-space:nowrap}
-.defile-ligne li::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--c)}
+/* chaque matière, un livre de l'étagère de l'app vu en liste : le dos de
+   sa reliure, sa couverture et son nom à l'encre de la couverture */
+.defile-ligne li{position:relative;display:flex;align-items:center;padding:11px 18px 11px 23px;border-radius:11px;overflow:hidden;
+  background:var(--c);box-shadow:inset 0 0 0 1px var(--b);color:var(--ci);font-weight:650;font-size:15px;white-space:nowrap}
+.defile-ligne li::before{content:'';position:absolute;left:0;top:0;bottom:0;width:8px;
+  background:linear-gradient(90deg,rgba(255,255,255,.16),transparent 38%,rgba(0,0,0,.1) 82%,rgba(0,0,0,.18)) var(--d)}
 @keyframes defile{to{transform:translateX(-50%)}}
 
 /* ---------- apparitions (site.js pose .vu ; sans lui, tout paraît au bout de 3 s) ---------- */
@@ -330,7 +369,8 @@ button{font:inherit;color:inherit}
 .bento .rv:nth-child(4){transition-delay:.12s}
 .bento .rv:nth-child(5){transition-delay:.2s}
 
-/* l'import : une feuille lue par l'IA, des fiches qui sortent */
+/* l'import : une feuille lue par l'IA, les pages d'un livre qui sortent
+   (toutes de sa teinte : les pages d'un livre ont la même reliure) */
 .t-import{background:radial-gradient(70% 90% at 50% 0%,rgba(154,120,207,.1),transparent 70%),#FFF}
 .t-import .tuile-dessin{gap:clamp(12px,3vw,40px)}
 .feuille{position:relative;width:118px;height:150px;padding:20px 16px;border-radius:10px;background:#FFFEFA;transform:rotate(-4deg);
@@ -347,10 +387,11 @@ button{font:inherit;color:inherit}
 .ia-orbe .ic{width:18px;height:18px;fill:rgba(255,255,255,.3)}
 @keyframes orbe{0%,30%{transform:scale(.94)}45%{transform:scale(1.08)}60%,100%{transform:scale(1)}}
 .paquet{position:relative;width:136px;height:96px}
-.paquet i{position:absolute;inset:0;border-radius:14px;background:#FFF;box-shadow:inset 4px 0 0 var(--c),0 10px 22px -10px rgba(29,28,25,.35),inset 0 0 0 1px var(--filet);
-  animation:sort 3.2s var(--rebond) infinite}
-.paquet i::before,.paquet i::after{content:'';position:absolute;left:18px;right:30px;top:24px;height:7px;border-radius:4px;background:#E7E2D7}
-.paquet i::after{top:42px;right:56px;background:var(--c);opacity:.35}
+.paquet i{--sr:16px;--sw:12px;position:absolute;inset:0;border-radius:14px;background:var(--c);
+  box-shadow:inset 0 0 0 1px var(--b),0 10px 22px -10px rgba(29,28,25,.35);animation:sort 3.2s var(--rebond) infinite}
+/* deux lignes de texte, à l'encre de la couverture */
+.paquet i::before{content:'';position:absolute;left:16px;right:40px;top:34px;height:22px;opacity:.26;
+  background:linear-gradient(var(--ci) 0 0) 0 0/100% 7px no-repeat,linear-gradient(var(--ci) 0 0) 0 15px/58% 7px no-repeat;border-radius:4px}
 .paquet i:nth-child(1){transform:translate(-10px,10px) rotate(-6deg);animation-delay:.55s}
 .paquet i:nth-child(2){transform:translate(-4px,4px) rotate(-2deg);animation-delay:.75s}
 .paquet i:nth-child(3){transform:rotate(3deg);animation-delay:.95s}
@@ -366,18 +407,19 @@ button{font:inherit;color:inherit}
 .sources .source-ia{background:var(--degrade);color:#FFF;box-shadow:0 8px 18px -10px rgba(154,86,170,.9)}
 .sources .source-ia .ic{color:#FFF;fill:rgba(255,255,255,.3)}
 
-/* hors ligne : l'avion passe, la fiche se retourne quand même */
+/* hors ligne : l'avion passe, la page se retourne quand même */
 .t-horsligne .tuile-dessin{overflow:hidden;border-radius:20px;background:linear-gradient(180deg,#EEEFF8,#F8F7F3)}
 .avion{position:absolute;left:-30px;top:22px;width:28px;height:28px;color:var(--azur);animation:vole 7s linear infinite}
 @keyframes vole{from{transform:translateX(0) rotate(45deg)}to{transform:translateX(360px) rotate(45deg)}}
-.mini-fiche{display:flex;align-items:center;justify-content:center;width:150px;height:84px;border-radius:14px;background:#FFF;
-  box-shadow:inset 4px 0 0 var(--canard),0 12px 24px -12px rgba(29,28,25,.35);font:700 17px var(--serif);animation:bascule 4s var(--e) infinite}
+.mini-fiche{--sr:14px;--sw:12px;position:relative;display:flex;align-items:center;justify-content:center;width:150px;height:84px;border-radius:14px;
+  background:var(--c);box-shadow:inset 0 0 0 1px var(--b),0 12px 24px -12px rgba(29,28,25,.35);font:700 17px var(--serif);animation:bascule 4s var(--e) infinite}
 @keyframes bascule{0%,40%{transform:perspective(500px) rotateY(0)}50%,90%{transform:perspective(500px) rotateY(360deg)}100%{transform:perspective(500px) rotateY(360deg)}}
 .synchro{position:absolute;right:16px;bottom:14px;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;
-  background:var(--vert);color:#FFF;animation:revient 7s var(--rebond) infinite}
+  background:var(--ok);color:#FFF;animation:revient 7s var(--rebond) infinite}
 @keyframes revient{0%,62%{opacity:0;transform:scale(.4)}70%,92%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.8)}}
 
-/* défis : le chrono tourne, quatre boutons, un seul juste */
+/* défis : le chrono tourne, quatre boutons, un seul juste ; les couleurs
+   et les formes d'une partie en direct dans l'app (src/ui/direct.css) */
 .t-defi .tuile-dessin{flex-direction:column;gap:12px}
 .chrono{position:relative;width:46px;height:46px}
 .chrono svg{width:46px;height:46px;transform:rotate(-90deg)}
@@ -388,35 +430,43 @@ button{font:inherit;color:inherit}
 .boutons4{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(240px,100%)}
 .boutons4 i{display:flex;align-items:center;justify-content:center;height:50px;border-radius:12px;animation:choix 6s var(--e) infinite}
 .boutons4 svg{width:22px;height:22px;fill:#FFF}
-.b-rouge{background:#C9483B}
-.b-bleu{background:#2F64B4;animation-delay:.2s!important}
-.b-jaune{background:#D49A1E;animation-delay:.4s!important}
-.b-vert{background:#3B8A4F;animation-name:juste!important}
+.b-rouge{background:#C9443A}
+.b-bleu{background:#2F68B8;animation-delay:.2s!important}
+.b-jaune{background:#C28A14;animation-delay:.4s!important}
+.b-vert{background:#2D8654;animation-name:juste!important}
 @keyframes choix{0%,55%{opacity:1;transform:none}62%,92%{opacity:.28;transform:scale(.96)}100%{opacity:1}}
-@keyframes juste{0%,55%{transform:none;box-shadow:none}62%{transform:scale(1.07);box-shadow:0 0 0 5px rgba(59,138,79,.25)}70%,92%{transform:scale(1.04);box-shadow:0 0 0 5px rgba(59,138,79,.18)}100%{transform:none}}
+@keyframes juste{0%,55%{transform:none;box-shadow:none}62%{transform:scale(1.07);box-shadow:0 0 0 5px rgba(45,134,84,.25)}70%,92%{transform:scale(1.04);box-shadow:0 0 0 5px rgba(45,134,84,.18)}100%{transform:none}}
 
-/* amis : le podium de la semaine */
+/* amis : le podium de la semaine. Un classement se compte : en azur, la
+   première marche la plus foncée ; les médailles et les visages sont ceux
+   de l'app (ui/jeton.js : medailleHtml, la couleur du jeton en --j) */
 .podium{display:flex;align-items:flex-end;gap:10px;height:150px;margin:0;padding:0;list-style:none}
-.podium li{position:relative;width:62px;height:var(--h);border-radius:14px 14px 6px 6px;background:var(--papier2);display:flex;justify-content:center;
+.podium li{position:relative;width:62px;height:var(--h);border-radius:14px 14px 6px 6px;background:var(--az1);display:flex;justify-content:center;
   transform-origin:bottom;animation:grandit 4.8s var(--e) infinite;animation-delay:var(--d)}
-.podium li:nth-child(2){background:#EEDDE9}
-.podium b{position:absolute;bottom:10px;font:800 18px var(--serif);color:var(--encre2)}
-.av{position:absolute;top:-24px;width:48px;height:48px;border-radius:50%;background:var(--c);overflow:hidden;box-shadow:0 0 0 3px #FFF,0 8px 18px -8px rgba(29,28,25,.4)}
+.podium li:nth-child(1){background:var(--az2)}
+.podium li:nth-child(2){background:var(--az3)}
+.med{position:absolute;bottom:8px;width:36px;height:36px;color:var(--mc)}
+.med svg{width:100%;height:100%}
+/* le chiffre à l'encre : en blanc, il ne se lisait pas sur l'or (2,3:1) */
+.med b{position:absolute;left:0;right:0;top:15.5px;text-align:center;font:800 13px/1 var(--sans);color:var(--encre)}
+.med.m1{--mc:#D8A42C}.med.m2{--mc:#A3ACB6}.med.m3{--mc:#B97A47}
+.av{position:absolute;top:-24px;width:48px;height:48px;border-radius:50%;background:var(--j);overflow:hidden;box-shadow:0 0 0 3px #FFF,0 8px 18px -8px rgba(29,28,25,.4)}
 @keyframes grandit{0%{transform:scaleY(.15)}22%,88%{transform:scaleY(1)}100%{transform:scaleY(.15)}}
 
-/* journal : la série et les jours qui s'allument */
+/* journal : la série et les jours qui s'allument, en azur comme le
+   journal de l'app (src/ui/journal.css) */
 .t-journal .tuile-dessin{flex-direction:column;align-items:stretch;gap:12px}
-.serie{display:flex;align-items:center;gap:6px;color:var(--brique)}
-.serie .ic{width:24px;height:24px;fill:rgba(168,72,60,.15);animation:vacille 1.6s ease-in-out infinite alternate}
+.serie{display:flex;align-items:center;gap:6px;color:var(--az5)}
+.serie .ic{width:24px;height:24px;fill:var(--az1);animation:vacille 1.6s ease-in-out infinite alternate}
 .serie b{font:800 26px/1 var(--serif);color:var(--encre)}
 .serie span{color:var(--doux);font-size:14px}
 @keyframes vacille{to{transform:scale(1.12) rotate(4deg)}}
 .calendrier{display:grid;grid-template-columns:repeat(14,1fr);grid-template-rows:repeat(7,1fr);grid-auto-flow:column;gap:4px;height:112px}
 .calendrier i{border-radius:3px;background:var(--papier2);animation:allume .5s var(--e) both;animation-delay:var(--d)}
-.calendrier i[data-n="1"]{background:#CFE3D3}
-.calendrier i[data-n="2"]{background:#97C3A2}
-.calendrier i[data-n="3"]{background:#5C9B6E}
-.calendrier i[data-n="4"]{background:#2F6A44}
+.calendrier i[data-n="1"]{background:var(--az2)}
+.calendrier i[data-n="2"]{background:var(--az3)}
+.calendrier i[data-n="3"]{background:var(--az4)}
+.calendrier i[data-n="4"]{background:var(--az5)}
 @keyframes allume{from{opacity:0;transform:scale(.4)}}
 .t-journal:not(.vu) .calendrier i{animation-play-state:paused}
 
@@ -427,7 +477,8 @@ button{font:inherit;color:inherit}
 .mini-pc::after{content:'';position:absolute;left:-10%;right:-10%;bottom:-8px;height:8px;border-radius:2px 2px 8px 8px;background:#C3BFB7}
 .mini-tel i,.mini-pc i{display:block;height:100%;border-radius:9px;background:linear-gradient(var(--papier),#FFF);position:relative;overflow:hidden}
 .mini-pc i{border-radius:4px}
-.mini-tel i::before,.mini-pc i::before{content:'';position:absolute;left:12%;right:12%;top:18%;height:30%;border-radius:6px;background:#FFF;box-shadow:inset 3px 0 0 var(--prune),0 4px 10px -4px rgba(29,28,25,.3);animation:passe 4s var(--e) infinite}
+.mini-tel i::before,.mini-pc i::before{content:'';position:absolute;left:12%;right:12%;top:18%;height:30%;border-radius:6px;background:var(--c);
+  box-shadow:inset 0 0 0 1px var(--b),0 4px 10px -4px rgba(29,28,25,.3);animation:passe 4s var(--e) infinite}
 .mini-pc i::before{animation-delay:2s;left:30%;right:30%}
 @keyframes passe{0%,10%{opacity:0;transform:translateY(8px)}25%,60%{opacity:1;transform:none}75%,100%{opacity:0;transform:translateY(-6px)}}
 .arc{width:min(170px,30%);height:auto;overflow:visible;margin:0 -2px;align-self:center;transform:translateY(-14px)}
@@ -471,7 +522,7 @@ button{font:inherit;color:inherit}
 .code-l b{grid-row:2;font:800 16px/1.3 var(--mono);letter-spacing:.1em;white-space:nowrap}
 .copier{grid-row:1 / 3;grid-column:2;position:relative;display:grid;height:30px;min-width:72px;border-radius:99px;background:var(--papier);font:700 12px/30px var(--sans);text-align:center}
 .copier i{grid-area:1 / 1;font-style:normal;padding:0 10px}
-.copier .fait{display:inline-flex;align-items:center;justify-content:center;gap:3px;border-radius:99px;background:var(--vert);color:#FFF;opacity:0}
+.copier .fait{display:inline-flex;align-items:center;justify-content:center;gap:3px;border-radius:99px;background:var(--ok);color:#FFF;opacity:0}
 .copier .fait .ic{width:13px;height:13px;stroke-width:3}
 .l1 .fait{animation:copie 6s var(--e) infinite}
 .l2 .fait{animation:copie2 6s var(--e) infinite}
@@ -490,7 +541,7 @@ button{font:inherit;color:inherit}
   white-space:nowrap;overflow:hidden}
 .tm-frappe{display:inline-block;vertical-align:top;overflow:hidden;width:0;animation:frappe 6s steps(9,end) infinite}
 @keyframes frappe{0%,6%{width:0}36%,100%{width:9ch}}
-.tm-ok{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:30px;border-radius:9px;background:var(--vert);color:#FFF;
+.tm-ok{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:30px;border-radius:9px;background:var(--ok);color:#FFF;
   font:700 12px var(--sans);opacity:0;animation:ok 6s var(--rebond) infinite}
 .tm-ok .ic{width:14px;height:14px;stroke-width:3}
 @keyframes ok{0%,38%{opacity:0;transform:scale(.6)}44%,92%{opacity:1;transform:none}100%{opacity:0}}
@@ -498,21 +549,22 @@ button{font:inherit;color:inherit}
 .classe-mini .mc-t{justify-content:space-between;align-items:baseline}
 .classe-mini small{font:600 11.5px var(--sans);color:var(--doux)}
 .arrives{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.arrives span{aspect-ratio:1;border-radius:50%;background:var(--c);overflow:hidden;opacity:0;animation:arrive 6s var(--rebond) infinite;
+.arrives span{aspect-ratio:1;border-radius:50%;background:var(--j);overflow:hidden;opacity:0;animation:arrive 6s var(--rebond) infinite;
   animation-delay:calc(var(--i) * .2s)}
 @keyframes arrive{0%,42%{opacity:0;transform:translateY(-14px) scale(.5)}50%,92%{opacity:1;transform:none}100%{opacity:0}}
 
-/* 3 · le devoir avance sous les yeux du professeur */
+/* 3 · le devoir avance sous les yeux du professeur (l'avancement se
+   compte : en azur, comme dans l'espace professeur) */
 .devoir-mini{width:min(272px,90%)}
 .devoir-mini .mc-t{flex-direction:column;align-items:flex-start;gap:3px}
 .devoir-mini .mc-t small{font:600 12px var(--sans)}
 .dm-l{display:grid;grid-template-columns:26px minmax(0,1fr) 18px;align-items:center;gap:9px;height:31px}
 .dm-l .av{position:static;width:26px;height:26px;box-shadow:none}
 .barre{display:block;height:7px;border-radius:4px;background:var(--papier3);overflow:hidden}
-.barre i{display:block;height:100%;width:calc(var(--w) * 100%);border-radius:4px;background:var(--degrade);transform-origin:left;
+.barre i{display:block;height:100%;width:calc(var(--w) * 100%);border-radius:4px;background:var(--az4);transform-origin:left;
   animation:remplit 6s var(--e) infinite;animation-delay:calc(var(--i) * .25s)}
 @keyframes remplit{0%,8%{transform:scaleX(0)}58%,92%{transform:scaleX(1)}100%{transform:scaleX(0)}}
-.dm-l .ok{width:18px;height:18px;color:var(--vert);stroke-width:3;opacity:0;animation:okv 6s var(--rebond) infinite;animation-delay:calc(var(--i) * .25s)}
+.dm-l .ok{width:18px;height:18px;color:var(--ok);stroke-width:3;opacity:0;animation:okv 6s var(--rebond) infinite;animation-delay:calc(var(--i) * .25s)}
 @keyframes okv{0%,56%{opacity:0;transform:scale(.4)}62%,92%{opacity:1;transform:none}100%{opacity:0}}
 
 /* les trois espaces : un rôle, son écran */
@@ -523,7 +575,7 @@ button{font:inherit;color:inherit}
   transition:background-color .35s,box-shadow .35s,transform .35s var(--e),color .35s}
 .roles button:hover{background:rgba(243,238,227,.09)}
 .roles button[aria-selected="true"]{background:var(--creme);color:var(--encre);box-shadow:0 20px 44px -20px rgba(0,0,0,.9),0 0 0 1.5px rgba(243,141,178,.55)}
-.role-av{flex:none;width:52px;height:52px;border-radius:50%;background:var(--c);overflow:hidden;box-shadow:0 0 0 3px rgba(243,238,227,.14);
+.role-av{flex:none;width:52px;height:52px;border-radius:50%;background:var(--j);overflow:hidden;box-shadow:0 0 0 3px rgba(243,238,227,.14);
   transition:transform .4s var(--rebond)}
 .roles [aria-selected="true"] .role-av{transform:scale(1.06)}
 .role-t{display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -561,7 +613,7 @@ button{font:inherit;color:inherit}
 .inclus{display:flex;flex-direction:column;gap:12px;list-style:none;margin:26px 0 0;padding:26px 0 0;border-top:1px solid var(--filet)}
 .inclus li{position:relative;padding-left:30px;line-height:1.35}
 .inclus li:not(:has(b))::before{content:'';position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;
-  background:rgba(63,125,85,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233F7D55' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/13px no-repeat}
+  background:rgba(42,118,74,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232A764A' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/13px no-repeat}
 .inclus li:has(b){padding-left:0}
 .offre-plus{border:2px solid transparent;color:var(--creme);box-shadow:var(--ombre3),0 30px 60px -30px rgba(215,100,141,.45);transform:translateY(-10px);
   background:linear-gradient(var(--nuit),var(--nuit)) padding-box,conic-gradient(from var(--angle,0deg),#8DA2F0,#B996EC,#F38DB2,#F6B59E,#8DA2F0) border-box;
@@ -592,7 +644,7 @@ button{font:inherit;color:inherit}
 .comparatif .col-plus{background:rgba(154,120,207,.09)}
 .comparatif thead .col-plus{border-radius:18px 18px 0 0}
 .comparatif .ic{margin:0 auto;width:22px;height:22px}
-.comparatif .oui{color:var(--vert);stroke-width:2.6}
+.comparatif .oui{color:var(--ok);stroke-width:2.6}
 .comparatif .non{color:#C8C3B9;stroke-width:2.4}
 .comparatif tbody th{position:sticky;left:0;background:#FFF;z-index:1}
 .js .comparatif tbody tr{opacity:0;transform:translateY(10px)}
@@ -626,8 +678,9 @@ button{font:inherit;color:inherit}
 .fin .titre{font-size:clamp(40px,6.6vw,88px);max-width:12em}
 .fin .actions-bis{color:var(--creme2)}
 .fin .lien{text-decoration-color:rgba(243,238,227,.3)}
-.fin-fiches span{position:absolute;left:var(--x);top:var(--y);z-index:-1;padding:12px 16px;border-radius:14px;background:#FFF;color:var(--encre);
-  box-shadow:inset 4px 0 0 var(--c),0 20px 40px -20px rgba(0,0,0,.6);font:700 16px var(--serif);opacity:.92;animation:flotte 8s ease-in-out infinite alternate}
+.fin-fiches span{--sr:12px;--sw:10px;position:absolute;left:var(--x);top:var(--y);z-index:-1;padding:13px 32px 13px 16px;border-radius:14px;
+  background:var(--c);color:var(--encre);box-shadow:inset 0 0 0 1px var(--b),0 20px 40px -20px rgba(0,0,0,.6);font:700 16px var(--serif);opacity:.94;
+  animation:flotte 8s ease-in-out infinite alternate}
 .fin-fiches span:nth-child(2){animation-delay:-3s}.fin-fiches span:nth-child(3){animation-delay:-5s;animation-duration:9s}.fin-fiches span:nth-child(4){animation-delay:-1s;animation-duration:7s}
 
 /* ---------- le pied de page ---------- */
@@ -656,7 +709,7 @@ button{font:inherit;color:inherit}
   font:800 26px/1 var(--mono);letter-spacing:.16em;text-align:center;text-transform:uppercase;color:var(--encre);transition:box-shadow .2s}
 .code-champ:focus{box-shadow:inset 0 0 0 1.5px var(--filet2),0 0 0 4px rgba(29,28,25,.09)}
 .code-champ::placeholder{color:#857F75}
-.code-erreur{min-height:20px;color:var(--brique);font-weight:650;font-size:14px}
+.code-erreur{min-height:20px;color:var(--ko);font-weight:650;font-size:14px}
 .code-carte{justify-content:center;margin-top:4px;color:var(--encre2);font-weight:650}
 .secoue{animation:secoue .4s var(--e)}
 @keyframes secoue{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
@@ -666,7 +719,7 @@ button{font:inherit;color:inherit}
 
 /* ---------- tailles ---------- */
 @media (hover:hover){
-  .essai-notes button:hover{transform:translateY(-2px);filter:brightness(1.1)}
+  .essai-notes button:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1.5px currentColor,0 10px 18px -12px rgba(29,28,25,.4)}
 }
 @media (max-width:1060px){
   .t-import{grid-column:span 6}

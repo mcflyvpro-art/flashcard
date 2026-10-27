@@ -58,6 +58,32 @@ describe('page d’accueil', () => {
   });
 });
 
+/* Les couleurs de la page sont celles de l'app : une matière a la même
+   reliure et la même couverture sur le site et dans l'app (src/couleurs.js,
+   la nouvelle charte du 2026-10-27). */
+describe('les teintes de la page', async () => {
+  const { NUANCIER } = await import('../src/couleurs.js');
+  const css = readFileSync('src/site/site.css', 'utf8');
+  const js = readFileSync('src/site/site.js', 'utf8');
+
+  it('chaque teinte de site.css est celle du nuancier de l’app', () => {
+    const regles = [...css.matchAll(/\[data-teinte="([a-z]+)"\]\{([^}]*)\}/g)];
+    expect(regles.map(r => r[1]).sort()).toEqual(Object.keys(NUANCIER).sort());
+    for (const [, cle, corps] of regles) {
+      const v = Object.fromEntries(corps.split(';').filter(Boolean).map(x => x.split(':').map(y => y.trim())));
+      for (const k of ['d', 'c', 'b', 'ci']) expect(v['--' + k], `${cle} ${k}`).toBe(NUANCIER[cle][k]);
+    }
+  });
+
+  it('la page et sa pile n’emploient que des teintes du nuancier', () => {
+    const page = [...html.matchAll(/data-teinte="([a-z]+)"/g)].map(m => m[1]);
+    const pile = [...js.matchAll(/^\s*\['[^']+', '([a-z]+)', /gm)].map(m => m[1]);
+    expect(page.length).toBeGreaterThan(20);
+    expect(pile.length).toBeGreaterThan(4);
+    for (const t of [...page, ...pile]) expect(Object.keys(NUANCIER)).toContain(t);
+  });
+});
+
 /* Le graphique du moteur (src/site/courbes.js) : ce qu'il affiche doit
    rester vrai pour le modèle qu'il prétend montrer. */
 describe('le graphique du moteur', async () => {
