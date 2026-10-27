@@ -166,7 +166,7 @@
     </ul>
     <div class="tete-actions">
       <button class="lien tete-code" type="button" data-code>J’ai un code</button>
-      <a class="bt bt-clair" href="/connexion">Se connecter</a>
+      <a class="bt bt-clair tete-connexion" href="/connexion">Se connecter</a>
       <a class="bt bt-encre tete-creer" href="/inscription">Créer un compte</a>
       <button class="burger" type="button" aria-expanded="false" aria-controls="menu-mobile" aria-label="Ouvrir le menu">
         <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg>
@@ -179,6 +179,7 @@
     <a href="#tarifs">Tarifs</a>
     <a href="/essayer">Essayer sans compte</a>
     <button class="lien" type="button" data-code>J’ai un code</button>
+    <a href="/connexion">Se connecter</a>
     <a class="bt bt-encre" href="/inscription">Créer un compte</a>
   </div>
 </header>
@@ -204,7 +205,7 @@
       <h1 id="titre" class="titre-heros"><span class="mot">Révise</span> <span class="mot">moins.</span> <span class="mot">Retiens</span> <span class="mot">tout.</span></h1>
       <p class="chapeau">L’IA fait de ton cours un livre de flashcards. Folio te repose chaque page juste avant que tu l’oublies.</p>
       <div class="actions">
-        <a class="bt bt-encre bt-grand" href="/inscription">Créer un compte<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="bt bt-encre bt-grand" href="/inscription">Commencer gratuitement<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
         <a class="bt bt-blanc bt-grand" href="/essayer"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer sans compte</a>
       </div>
       <p class="actions-bis"><button class="lien" type="button" data-code><svg class="ic" aria-hidden="true"><use href="#i-cle"/></svg>J’ai un code</button><span aria-hidden="true">·</span><a class="lien" href="/connexion">Se connecter</a></p>
@@ -406,6 +407,10 @@
         <p>Commence dans le bus, finis à ton bureau.</p>
       </article>
     </div>
+    <div class="relance rv">
+      <a class="bt bt-encre bt-grand" href="/inscription">Commencer gratuitement<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+      <a class="lien" href="#tarifs">Voir Folio+</a>
+    </div>
   </section>
 
   <!-- ══════════ Folio Campus : les établissements ══════════ -->
@@ -529,7 +534,7 @@
        docs/LANDING.md) : une proposition, à confirmer avant le paiement. -->
   <section class="tarifs enveloppe" id="tarifs" aria-labelledby="tarifs-t" data-periode="an">
     <div class="tarifs-tete rv">
-      <h2 id="tarifs-t" class="titre centre">Gratuit pour réviser.<br>Folio+ pour aller plus vite.</h2>
+      <h2 id="tarifs-t" class="titre centre">Gratuit pour réviser.<br>Folio<span class="plus">+</span> pour aller plus vite.</h2>
       <div class="bascule" role="radiogroup" aria-label="Paiement">
         <button type="button" role="radio" aria-checked="false" data-periode="mois">Mensuel</button>
         <button type="button" role="radio" aria-checked="true" data-periode="an">Annuel <span class="remise">−50&#8239;%</span></button>
@@ -554,7 +559,7 @@
 
       <article class="offre offre-plus rv">
         <p class="ruban">Conseillé</p>
-        <h3>Folio+</h3>
+        <h3>Folio<span class="plus">+</span></h3>
         <p class="prix"><b data-an="2,50&nbsp;€" data-mois="4,99&nbsp;€">2,50&nbsp;€</b><span>/mois</span></p>
         <p class="prix-note" data-an="29,99&nbsp;€ par an, au lieu de &lt;s&gt;59,88&nbsp;€&lt;/s&gt;" data-mois="Sans engagement, arrêt en un geste">29,99&nbsp;€ par an, au lieu de <s>59,88&nbsp;€</s></p>
         <a class="bt bt-encre bt-plein" href="/inscription">Passer à Folio+<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
@@ -585,7 +590,7 @@
       <table>
         <caption class="cache">Ce que contient chaque formule</caption>
         <thead>
-          <tr><th scope="col"><span class="cache">Fonction</span></th><th scope="col">Folio</th><th scope="col" class="col-plus">Folio+</th><th scope="col">Campus</th></tr>
+          <tr><th scope="col"><span class="cache">Fonction</span></th><th scope="col">Folio</th><th scope="col" class="col-plus">Folio<span class="plus">+</span></th><th scope="col">Campus</th></tr>
         </thead>
         <tbody>
           <tr><th scope="row">Le moteur de révision complet</th><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
@@ -632,10 +637,10 @@
     <div class="enveloppe fin-in rv">
       <h2 id="fin-t" class="titre">Ouvre ton premier livre ce soir.</h2>
       <div class="actions">
-        <a class="bt bt-creme bt-grand" href="/inscription">Créer un compte<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
-        <button class="bt bt-fantome bt-grand" type="button" data-code><svg class="ic" aria-hidden="true"><use href="#i-cle"/></svg>J’ai un code</button>
+        <a class="bt bt-creme bt-grand" href="/inscription">Commencer gratuitement<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="bt bt-fantome bt-grand" href="/essayer"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer sans compte</a>
       </div>
-      <p class="actions-bis"><a class="lien" href="/essayer">Essayer sans compte</a><span aria-hidden="true">·</span><a class="lien" href="/connexion">Se connecter</a></p>
+      <p class="actions-bis"><button class="lien" type="button" data-code><svg class="ic" aria-hidden="true"><use href="#i-cle"/></svg>J’ai un code</button><span aria-hidden="true">·</span><a class="lien" href="/connexion">Se connecter</a></p>
     </div>
   </section>
 </main>

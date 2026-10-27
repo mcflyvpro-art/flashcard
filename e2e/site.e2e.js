@@ -24,10 +24,13 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
   await expect(prix).toHaveText(/^4,99\s€$/);
   await expect(page.locator('.offre-plus .prix-note')).toHaveText(/Sans engagement/);
 
-  // le menu du téléphone
+  // au téléphone, l'inscription reste dans l'en-tête, « Se connecter » passe dans le menu
   await page.evaluate(() => scrollTo(0, 0));
+  await expect(page.locator('#tete nav').getByRole('link', { name: 'Créer un compte' })).toBeVisible();
+  await expect(page.locator('#tete nav').getByRole('link', { name: 'Se connecter' })).toBeHidden();
   await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
   await expect(page.locator('#menu-mobile').getByRole('link', { name: 'Créer un compte' })).toBeVisible();
+  await expect(page.locator('#menu-mobile').getByRole('link', { name: 'Se connecter' })).toBeVisible();
 
   const largeur = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(largeur).toBeLessThanOrEqual(390);
@@ -36,7 +39,7 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
 
 test('les boutons ouvrent l’app à l’adresse de chaque écran (src/routes.js)', async ({ page }) => {
   await page.goto('./');
-  await page.locator('.heros').getByRole('link', { name: 'Créer un compte' }).click();
+  await page.locator('.heros').getByRole('link', { name: 'Commencer gratuitement' }).click();
   await expect(page.getByRole('button', { name: 'Créer le compte' })).toBeVisible({ timeout: 10000 });
   await expect(page).toHaveURL(/\/inscription$/);
 
