@@ -452,10 +452,13 @@ button{font:inherit;color:inherit}
   transform-origin:bottom;animation:grandit 4.8s var(--e) infinite;animation-delay:var(--d)}
 .podium li:nth-child(1){background:var(--az2)}
 .podium li:nth-child(2){background:var(--az3)}
-.med{position:absolute;bottom:8px;width:36px;height:36px;color:var(--mc)}
-.med svg{width:100%;height:100%}
-/* le chiffre à l'encre : en blanc, il ne se lisait pas sur l'or (2,3:1) */
-.med b{position:absolute;left:0;right:0;top:15.5px;text-align:center;font:800 13px/1 var(--sans);color:var(--encre)}
+/* la médaille de l'app (ui/jeton.js, medailleHtml : un seul tracé, ses deux rubans) */
+.med{position:absolute;bottom:8px;width:31px;height:36px}
+.med circle{fill:var(--mc)}
+.med .med-f{fill:none;stroke:rgba(255,255,255,.5);stroke-width:1.1}
+.med .med-r{fill:color-mix(in srgb,var(--mc) 50%,var(--encre))}
+.med .med-r2{fill:color-mix(in srgb,var(--mc) 70%,var(--encre))}
+.med text{fill:#FFF;font:800 11px var(--sans)}
 .med.m1{--mc:#D8A42C}.med.m2{--mc:#A3ACB6}.med.m3{--mc:#B97A47}
 .av{position:absolute;top:-24px;width:48px;height:48px;border-radius:50%;background:var(--j);overflow:hidden;box-shadow:0 0 0 3px #FFF,0 8px 18px -8px rgba(29,28,25,.4)}
 @keyframes grandit{0%{transform:scaleY(.15)}22%,88%{transform:scaleY(1)}100%{transform:scaleY(.15)}}
@@ -820,7 +823,7 @@ button{font:inherit;color:inherit}
   .questions summary{padding-right:44px}
   .questions details p{padding-right:4px}
   .fin{padding-top:150px}
-  .fin-fiches span{font-size:13px;padding:9px 12px}
+  .fin-fiches span{--sw:9px;--sr:9px;font-size:13px;padding:9px 25px 9px 12px}
   .fin-fiches span:nth-child(1){left:5%;top:5%}
   .fin-fiches span:nth-child(2){left:auto;right:6%;top:9%}
   .fin-fiches span:nth-child(n+3){display:none}
