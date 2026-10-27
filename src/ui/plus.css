@@ -1,0 +1,90 @@
+/* ══════════ l'écran Folio+ (préfixe fp-, chargé avec ui/plus.js) ══════════
+   Le « + » prend la lumière de la marque (bleu, lilas, rose), comme sur la
+   page d'accueil ; le reste suit la charte de l'app : surfaces blanches
+   cernées d'un filet, l'encre pour habiller, l'azur pour ce qui se compte. */
+.fp{padding-bottom:40px}
+.fp-plus{background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);-webkit-background-clip:text;background-clip:text;
+  color:transparent;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:800;margin-left:1px}
+.fp-grille{display:flex;flex-direction:column;gap:18px}
+.fp-col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.fp-h2{margin:0 0 10px;font-size:15px;font-weight:750;letter-spacing:-.2px}
+
+/* ce que le compte a */
+.fp-etat{display:flex;flex-direction:column;gap:10px}
+.fp-ligne{display:flex;flex-direction:column;gap:4px;padding:16px 18px;border-radius:18px;background:var(--card);box-shadow:var(--edge)}
+.fp-titre{font:700 22px/1.15 var(--serif);letter-spacing:-.4px}
+.fp-ligne span{font-size:14px;font-weight:600;color:var(--soft)}
+.fp-alerte{display:flex;gap:10px;align-items:flex-start;margin:0;padding:12px 14px;border-radius:14px;font-size:14px;font-weight:600;
+  line-height:1.4;color:var(--am);background:color-mix(in srgb,var(--am) 13%,transparent)}
+.fp-alerte svg{width:18px;height:18px;flex:none;margin-top:1px}
+.fp-gerer{width:100%}
+
+/* les formules */
+.fp-offre{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:22px;background:var(--card);
+  box-shadow:var(--edge),var(--s2)}
+.fp-formules{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fp-f{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:14px 14px 13px;border:0;
+  border-radius:16px;background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--line);color:var(--ink);text-align:left;cursor:pointer;
+  transition:box-shadow .2s var(--e),background .2s var(--e)}
+.fp-f.on{background:var(--card);box-shadow:inset 0 0 0 2px var(--ink)}
+.fp-f-nom{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:750}
+.fp-f-nom em{font-style:normal;font-size:11.5px;font-weight:800;padding:2px 7px;border-radius:99px;color:#fff;
+  background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D)}
+.fp-f-prix{font-size:13px;font-weight:650;color:var(--soft)}
+.fp-f-prix b{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+.fp-f-note{font-size:12px;font-weight:600;color:var(--soft);line-height:1.35}
+.fp-inclus{display:flex;flex-direction:column;gap:8px;margin:2px 0 0;padding:0;list-style:none}
+.fp-inclus li{display:flex;gap:9px;align-items:flex-start;font-size:14px;font-weight:550;line-height:1.35}
+.fp-inclus svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--az5);stroke-width:2.4}
+.fp-payer{display:flex;align-items:center;justify-content:center;gap:8px;height:52px;border:0;border-radius:16px;color:#fff;
+  font:inherit;font-size:16px;font-weight:750;cursor:pointer;background:linear-gradient(135deg,#4D68C2,#8C6BC2 52%,#C9577F);
+  box-shadow:0 12px 24px -14px rgba(110,70,160,.9)}
+.fp-payer svg{width:18px;height:18px}
+.fp-payer:disabled{opacity:.6;cursor:default}
+.fp-note{margin:0;font-size:12.5px;font-weight:600;line-height:1.45;color:var(--soft);text-align:center;text-wrap:balance}
+.fp-note svg{display:inline-block;width:14px;height:14px;margin:0 6px 0 0;vertical-align:-2px}
+.fp-err{margin:0;font-size:14px;font-weight:650;color:var(--ko);text-align:center}
+.fp-annule{margin:-6px 0 14px;color:var(--ink2)}
+
+/* après le paiement */
+.fp-merci{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0;padding:24px 18px 22px;border-radius:24px;
+  text-align:center;background:var(--card);box-shadow:var(--edge),var(--s2)}
+.fp-merci h2{margin:4px 0 0;font:700 24px/1.15 var(--serif);letter-spacing:-.5px}
+.fp-merci p{margin:0;font-size:14.5px;font-weight:600;color:var(--soft);line-height:1.4}
+.fp-merci-ic{display:grid;place-items:center;width:56px;height:56px;border-radius:18px;color:#fff;
+  background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);box-shadow:0 12px 24px -12px rgba(120,70,160,.8)}
+.fp-merci-ic svg{width:28px;height:28px;stroke-width:2.4}
+.fp-attente .fp-merci-ic{background:var(--surf2);color:var(--ink2);box-shadow:none}
+.fp-attente .fp-merci-ic svg{animation:fp-tourne 1.2s linear infinite}
+@keyframes fp-tourne{to{transform:rotate(360deg)}}
+.fp-merci.neuf{animation:fp-arrive .45s var(--e) both}
+@keyframes fp-arrive{from{opacity:0;transform:translateY(6px) scale(.98)}}
+
+/* Folio partout */
+.fp-partout{display:flex;flex-direction:column;gap:10px}
+.fp-ici{display:flex;align-items:center;justify-content:center;gap:9px;height:50px;border-radius:15px;font:inherit;font-size:15px;
+  font-weight:700;text-decoration:none}
+.fp-ici svg{width:18px;height:18px}
+.fp-bouton{border:0;color:#fff;background:var(--ink);cursor:pointer}
+.fp-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.fp-qr{display:flex;align-items:center;gap:14px;padding:12px;border-radius:16px;background:var(--card);box-shadow:var(--edge)}
+.fp-qr svg.qr{width:96px;height:96px;flex:none;border-radius:8px;stroke:none}
+.fp-qr span{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;font-weight:600;line-height:1.4;color:var(--ink2)}
+.fp-qr span svg{width:18px;height:18px;flex:none;color:var(--soft)}
+.fp-autres{display:flex;flex-direction:column;margin:0;padding:0;list-style:none;border-radius:16px;background:var(--card);
+  box-shadow:var(--edge);overflow:hidden}
+.fp-autres li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;align-items:center;padding:12px 14px;
+  border-top:1px solid var(--hair)}
+.fp-autres li:first-child{border-top:0}
+.fp-autres li > svg{grid-row:span 2;width:20px;height:20px;color:var(--soft)}
+.fp-autres b{font-size:14.5px;font-weight:700}
+.fp-autres span{font-size:12.5px;font-weight:550;color:var(--soft);line-height:1.35}
+.fp-autres a{justify-self:start;font-size:13.5px;font-weight:700;color:var(--az5)}
+
+@media (min-width:900px){
+  .fp-grille{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start;gap:22px}
+  .fp-merci{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .fp-attente .fp-merci-ic svg,.fp-merci.neuf{animation:none}
+}

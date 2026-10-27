@@ -229,7 +229,12 @@ function clickDoDelacc(a, b) {
   err.textContent = 'Suppression…';
   deleteAccount()
     .then(() => { closeMenu(); logout(); })
-    .catch(() => { err.textContent = 'Suppression impossible'; });
+    .catch(e => {
+      /* un abonnement Folio+ qui court (delete_me, 20261027190000) : la base
+         dit quoi faire d'abord ; le reste reste une panne */
+      const m = /Résilie d'abord[^"]*/.exec(String(e && e.message || ''));
+      err.textContent = m ? m[0].replace(/''/g, '’').replace(/'/g, '’') : 'Suppression impossible';
+    });
 }
 
 function clickColor(a, b) { setSubjColor(b.dataset.color); return paintMenu(); }

@@ -299,6 +299,15 @@ export let school = null;                  // { org, classe, niveau, … } | fal
    changer — son nom est « Prénom NOM », et la base le garde ainsi. */
 export let compte = null;                  // { gere, nom, identifiant } | null
 
+/* Folio+ (2026-10-27) : ce que ce compte a le droit d'ouvrir, tel que la
+   base le dit (mon_offre, lu par core/abonnement.js, mis en forme par
+   src/abonnement.js) — null tant qu'on ne sait pas. Et l'écran Folio+ :
+   l'étape (merci, annule, retour : l'adresse de retour de Stripe), la
+   formule choisie, ce qui part (payer, gerer), l'erreur à dire. */
+export let offre = null;
+export const plusNeuf = () => ({ etape: null, formule: 'annuel', envoi: null, err: '', attente: 0 });
+export let plus = plusNeuf();
+
 /* ══════════ « Mes classes », côté élève ══════════
    Ce qu'il y a à faire d'abord — un devoir se rend, il ne se cherche pas —,
    puis ses classes, ses demandes en attente, et de quoi en rejoindre une
@@ -497,6 +506,8 @@ export const setAdm = v => adm = v;
 export const setMyRole = v => myRole = v;
 export const setSchool = v => school = v;
 export const setCompte = v => compte = v;
+export const setOffre = v => offre = v;
+export const setPlus = v => plus = v;
 export const setEleve = v => eleve = v;
 export const setMates2 = v => mates2 = v;
 export const setRef = v => ref = v;

@@ -153,3 +153,28 @@ describe('le graphique du moteur', async () => {
     expect(duree(365)).toBe('1 an');
   });
 });
+
+/* La page, l'app et Stripe disent les mêmes prix ; les gestes d'installation
+   de la section « Sur tous tes écrans » sont ceux que l'app montre après le
+   paiement ; le bouton de Folio+ ne mène au paiement que la vente ouverte. */
+describe('Folio+ et les appareils', async () => {
+  const { FORMULES, VENTE_OUVERTE, euros } = await import('../src/abonnement.js');
+  const { GESTES } = await import('../src/plateformes.js');
+  const plat = s => s.replace(/&nbsp;|&#8239;|\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ');
+  const page = plat(html);
+  it('les prix de la page sont ceux de l’app', () => {
+    for (const c of [FORMULES.annuel.prix, FORMULES.annuel.mois, FORMULES.annuel.sans, FORMULES.mensuel.prix]) {
+      expect(page).toContain(plat(euros(c)));
+    }
+  });
+  it('chaque appareil a sa carte, avec le geste de l’app', () => {
+    for (const os of ['ios', 'android', 'mac', 'windows']) {
+      expect(html).toContain(`data-os="${os}"`);
+      expect(page).toContain(plat(GESTES[os]).replace(/'/g, '’'));
+    }
+  });
+  it('« Passer à Folio+ » ne mène au paiement que la vente ouverte', () => {
+    const bouton = html.match(/<a [^>]*data-vente[^>]*>/)[0];
+    expect(/data-vente-an="\/app\?plus=annuel"/.test(bouton) && /data-vente-mois="\/app\?plus=mensuel"/.test(bouton)).toBe(VENTE_OUVERTE);
+  });
+});

@@ -85,6 +85,19 @@ Au lancement à froid par un lien, Capacitor fournit aussi l'URL par
 `App.getLaunchUrl()` : l'appeler une fois au démarrage et la passer à
 `traiterLienEntrant` si elle existe.
 
+## Payer, dans l'app des magasins
+
+**On n'y vend pas Folio+** : Apple et Google imposent leur propre paiement
+pour un abonnement numérique pris dans l'app (docs/VENTE.md, § 5). Le code
+le sait déjà : `plateforme()` (`src/plateformes.js`) lit
+`window.Capacitor.getPlatform()` et `peutVendre()` rend faux — l'écran Folio+
+n'y montre ni prix, ni formule, ni lien vers le portail de Stripe, seulement
+ce que le compte a. Un abonnement pris sur le site s'y ouvre. Vendre aussi
+dans l'app : l'achat intégré d'Apple et de Google, par RevenueCat, plus tard.
+
+Une fois l'app publiée, son lien va dans `MAGASINS` (`src/plateformes.js`) :
+le site et l'écran Folio+ montrent alors « Télécharger sur … ».
+
 ## Liens universels (iOS) et App Links (Android)
 
 Deux fichiers à servir depuis `https://www.folioflashcard.online/.well-known/`.

@@ -18,15 +18,18 @@
 ```
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
-FAIT      46 / 148
-DERNIER   2026-10-27 · Folio gratuit et Folio+ (docs/LANDING.md) : le graphique du moteur
-          trace aussi Memory Engine Lite (69 % à un an contre 96 % pour Ultra),
-          deux cartes courtes ; dans la démo d'un élève, 5 livres au plus, QCM,
-          associations, images et sons grisés, et le journal flouté hors série,
-          régularité et rythme — repris ligne à ligne dans le tableau comparatif
-          (« Tes statistiques »). La règle de chaque offre est écrite une fois,
-          src/offres.js, pour le paiement à venir (M12). Preuves : npm run
-          check, e2e (demo.e2e.js : volets floutés et fenêtre).
+FAIT      47 / 148
+DERNIER   2026-10-27 · Folio+ se paie sur le site (docs/VENTE.md) : Stripe Checkout et son
+          portail par la fonction paiement, l'abonnement écrit par
+          stripe-webhook (signé, idempotent), lu par mon_offre()
+          (20261027190000) ; l'écran Folio+ (…/folio-plus) : formules, retour
+          de Stripe, puis Folio partout (installer, QR, magasins quand l'app y
+          sera) ; rien ne se vend dans l'app des magasins. Page d'accueil :
+          « Sur tous tes écrans ». Vente fermée (VENTE_OUVERTE) tant que le
+          compte Stripe et la migration ne sont pas posés. Preuves : npm run
+          check, tools/paiement/essai.js 23/23, e2e folio-plus 5/5.
+Avant :   2026-10-27 · Folio gratuit et Folio+ : Lite à 69 % au graphique, démo à 5 livres,
+          journal flouté, src/offres.js.
 Avant :   2026-10-27 · Le tuto de première connexion remplace la visite guidée : il fait
           faire sur le vrai écran, selon le rôle et l'écran ; l'accueil d'un
           compte neuf est refait. Avant encore, la page d'accueil (tour 4) et
@@ -188,11 +191,11 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M11.T5 · registre des traitements + sous-traitants listés — preuve: document
 - [ ] M11.T6 · bandeau cookies inutile car 0 traceur — cible: 0 cookie non essentiel — preuve: inspection
 
-## M12 · Paiement B2C [P0] 0/5
-- [ ] M12.T1 · Stripe en test: abonnement mensuel et annuel — preuve: paiement test abouti
+## M12 · Paiement B2C [P0] 1/5
+- [~] M12.T1 · Stripe en test: abonnement mensuel et annuel — preuve: paiement test abouti — code prêt (fonctions paiement et stripe-webhook, migration 20261027190000, écran Folio+), attend le compte Stripe et ses clés : docs/VENTE.md § 1 à 3
 - [ ] M12.T2 · limites du gratuit appliquées côté serveur — cible: contournement impossible depuis le client — preuve: test d'attaque
 - [ ] M12.T3 · quotas IA par compte et par mois — cible: budget global jamais dépassé — preuve: simulation 100 comptes
-- [ ] M12.T4 · webhooks Stripe idempotents — cible: 0 double facturation sur 100 rejeux — preuve: test
+- [x] M12.T4 · webhooks Stripe idempotents — cible: 0 double facturation sur 100 rejeux — preuve: test — node tools/paiement/essai.js 23/23 (sous Deno, face à un faux Stripe : 100 rejeux sans écriture de plus, un évènement neuf livré 100 fois à la fois → une seule ligne juste, 20 appuis à la fois → une seule page de paiement)
 - [ ] M12.T5 · passage en clés réelles + première vente test — preuve: paiement réel remboursé
 
 ## M13 · Infrastructure de production [P0] 1/6

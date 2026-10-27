@@ -46,6 +46,27 @@ prévenir personne. Aux quotas actuels, un élève qui les consomme entièrement
 coûte environ 1,20 $ par jour. À remplacer par un pool de crédits par
 établissement avant toute vente.
 
+## Folio+ : Stripe (2026-10-27)
+
+Deux fonctions de plus, `paiement` (verify_jwt actif) et `stripe-webhook`
+(**verify_jwt coupé** : `supabase functions deploy stripe-webhook --no-verify-jwt`,
+la signature de Stripe remplace le jeton). Leurs secrets, et tout le pas à
+pas (produit et prix dans Stripe, portail client, point d'arrivée des
+évènements), dans **`docs/VENTE.md`** :
+
+| Secret | Rôle |
+|---|---|
+| `STRIPE_SECRET_KEY` | obligatoire, sinon `paiement` répond `nokey` (l'app dit « le paiement ouvre bientôt ») |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_…`, sinon `stripe-webhook` refuse tout |
+| `STRIPE_PRIX_ANNUEL`, `STRIPE_PRIX_MENSUEL` | les `price_…` de Folio+ (29,99 € par an, 4,99 € par mois) |
+| `STRIPE_TAXE` | `1` si Stripe Tax est activé |
+| `STRIPE_CGV` | `1` pour faire cocher les conditions de vente (leur adresse posée dans Stripe) |
+| `SITE_URL` | défaut `https://www.folioflashcard.online` (retours de Stripe) |
+
+La migration `20261027190000` pose la tâche pg_cron
+`purge-stripe-evenements` (03:41 UTC, évènements de plus de 30 jours) ;
+sans pg_cron, la lancer à la main comme les autres purges.
+
 ## Purge programmée
 
 La confidentialité promet un livre supprimé « effacé définitivement au bout

@@ -7,12 +7,14 @@ import { consumeRejoindre } from './eleve-classes.js';
 import { consumeDefi } from './direct-porte.js';
 import { consumeClub } from './cercle-feuilles.js';
 import { consumeGoto } from './raccourcis.js';
+import { consumePlus } from './plus-porte.js';
 
 /* ══════════ les liens qui entrent dans l'app ══════════
    Une seule porte pour tout lien qui ouvre l'app : « ?carte= » (le QR d'une
    carte élève), « #i= » / « #s= » (un livre partagé), « ?go= » (raccourci de
    l'icône), « ?rejoindre= » (une classe), « ?defi= » (une partie en
-   direct), « ?club= » (un club). Chacun a son consommateur, qui lit
+   direct), « ?club= » (un club), « ?plus= » (l'écran Folio+ : un bouton du
+   site, le retour de Stripe). Chacun a son consommateur, qui lit
    l'adresse et la nettoie ; ce fichier ne fait que les appeler dans le
    bon ordre — le même au démarrage (`boot()`) qu'à l'arrivée d'un lien
    alors que l'app tourne déjà.
@@ -34,6 +36,7 @@ export async function lienAvantSession() {
   consumeRejoindre();
   await consumeDefi(false);
   consumeClub(false);
+  consumePlus(false);
   return false;
 }
 
@@ -42,7 +45,8 @@ export async function lienAvantSession() {
 export async function lienApresRole() {
   if (consumeRejoindre()) return true;
   if (await consumeDefi(true)) return true;
-  return consumeClub(true);
+  if (consumeClub(true)) return true;
+  return consumePlus(true);
 }
 
 /* Un lien reçu alors que l'app est déjà ouverte (Capacitor, ou tout appel

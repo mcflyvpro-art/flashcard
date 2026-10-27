@@ -17,6 +17,7 @@ import { ouvrirClasse as ouvrirClasseEleve } from './eleve-classes.js';
 import { refAller } from './etablissement.js';
 import { admAller } from './classement.js';
 import { allerAccueil, allerAgenda, allerClasse } from './prof-porte.js';
+import { ouvrirPlus } from './plus-porte.js';
 
 /* ══════════ l'adresse suit l'écran, l'écran suit l'adresse (2026-10-26) ══════════
    src/routes.js traduit un écran en chemin et l'inverse ; ici on s'en sert.
@@ -113,6 +114,7 @@ const OUVRIR = {
   lettre: id => { go('lettre', id); mailPull().then(() => { if (view.name === 'lettre' && view.id === id) openMail(id); }); },
   find: () => { setFindQ(''); go('find'); },
   settings: () => go('settings'),
+  plus: () => ouvrirPlus(),
   trash: () => { trash.list = null; trashPull(); go('trash'); },
   mod: () => { if (!mods.list) modPull(); go('mod'); },
   classes: () => allerClasses(),
