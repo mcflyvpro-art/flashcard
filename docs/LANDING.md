@@ -5,9 +5,12 @@
 > **« Où on en est »** et fais la première case non cochée. Coche au fur et à
 > mesure, **commit + push après chaque case** (le conteneur peut disparaître
 > à tout moment) : c'est ce fichier qui permet à la session suivante de
-> reprendre sans rien relire d'autre. Branche de travail :
-> `claude/landing-page-seo-i6vu41` (puis `main`, règle 7 de CLAUDE.md, une
-> fois `npm run check` et les e2e verts).
+> reprendre sans rien relire d'autre. Branches de travail :
+> `claude/landing-page-seo-i6vu41` (tours 1 à 3), puis
+> `claude/funny-ramanujan-2wpbxi` (tour 4) ; chaque fois `main` ensuite,
+> règle 7 de CLAUDE.md, une fois `npm run check` et les e2e verts. Les tours
+> commencent à « Où on en est » ; le dernier non coché est le travail en
+> cours.
 
 ## La demande (2026-10-26, résumée fidèlement)
 
@@ -247,6 +250,44 @@ Référent
 Éditeur
 19. Téléphone : les chiffres du haut débordent (le quatrième coupé), le
     titre et « Établissement » se serrent sur une ligne.
+
+## Tour 4 : la page suit la nouvelle charte (2026-10-27)
+
+La demande : « une session a changé la colorimétrie de l'app ; reprends la
+page d'accueil pour tout faire correspondre (nouvelles captures, nouvelles
+couleurs des pages…) ». Et, point par point :
+- élever « Il apprend comment tu oublies, fiche par fiche, et te repose
+  chacune juste avant que tu la perdes » ;
+- « L'IA transforme ton cours en fiches » : **pas « fiches », c'est
+  trompeur** (en français, une fiche de révision est un résumé écrit) ;
+  garder le champ lexical de l'app (le livre) tout en faisant comprendre que
+  ce sont des flashcards ;
+- « Folio Campus · établissements » : l'élever, et **montrer que ce bloc est
+  B2B**, destiné aux établissements (un logo Folio Campus, par exemple) ;
+- « Cartes élève sans e-mail » (capture jointe : la tuile à l'icône QR rose)
+  n'est pas clair : une autre fonction, claire, sans technique ;
+- « Prêt en dix minutes, sans rien installer » : on doit comprendre que
+  c'est **le déploiement dans l'établissement** qui est rapide ;
+- « Gratuit pour réviser. Folio+ pour aller plus vite. » : le **« + » en
+  arc-en-ciel**, comme « tout. » dans le titre du héros ;
+- **les appels à l'action en avant, sans site toxique** : pousser à l'achat
+  (Folio+) ou à la démo (établissements), et une démo qui donne envie de
+  payer.
+
+Le vocabulaire retenu : **« un livre de flashcards »**, dont chaque
+**page** a la question au **recto** et la réponse au **verso** — recto et
+verso sont des mots du livre (un *folio* est une feuille, numérotée au
+recto), « flashcards » dit tout de suite ce que c'est. « Fiche » ne
+s'écrit plus nulle part sur la page.
+
+- [ ] T4.1 La charte de l'app sur la page : chaque fiche dessinée (héros, pile qu'on note, tuiles, appel final) devient une **page de son livre** (le papier de la couverture `c`, son filet `b`, la matière en petites capitales et la pastille de sa reliure `d`, le grand signet) ; les matières qui défilent sont de petits livres (dos et couverture) ; les teintes viennent du nuancier (`src/couleurs.js`) ; ce qui se compte est en azur (calendrier du journal, avancement d'un devoir, podium) ; les états en `--ok`/`--ko`/`--am` ; les boutons de note comme dans l'app (papier blanc, mot en couleur, délai dessous) ; les affiches et l'image de partage vérifiées, refaites si besoin.
+- [ ] T4.2 Le vocabulaire : « livre de flashcards », « page », « recto/verso » partout (chapeau, `description`, Open Graph, Twitter, JSON-LD, FAQ, `aria-label`, légende du graphique, tarifs, tableau).
+- [ ] T4.3 La phrase du moteur, élevée.
+- [ ] T4.4 Folio Campus : la marque (logo + « Campus » dans la lumière de la marque) et une étiquette « Pour les établissements » ; « Déployé dans tout votre établissement en dix minutes » ; « Cartes élève sans e-mail » remplacée par une fonction claire (tuile, offre, tableau) ; un appel à la démo en fin de bloc.
+- [ ] T4.5 Le « + » de Folio+ dans le dégradé de « tout. » (titre des tarifs, offre, tableau).
+- [ ] T4.6 Les appels à l'action : un seul geste principal par écran, honnête (« Commencer gratuitement », « Demander une démo »), rien de faux (ni compte à rebours, ni « le plus choisi »), le téléphone garde toujours un bouton d'inscription en vue.
+- [ ] T4.7 La démo donne envie de payer : son bandeau propose le geste suivant selon le rôle (créer un compte, demander une démo pour son établissement), une fonction grisée dit ce qu'elle ferait et comment l'avoir ; dans le budget du morceau de la démo.
+- [ ] T4.8 Vérifs (check, e2e, Lighthouse, captures 390 et 1440 px), docs, `main` fusionnée, push branche + `main`.
 
 ## Ce qui reste à décider (l'utilisateur)
 
