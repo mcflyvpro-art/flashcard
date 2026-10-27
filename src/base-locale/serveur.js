@@ -30,6 +30,7 @@ import { uuid as randomUUID } from './uuid.js';
 import { rpcClasses } from './classes.js';
 import { demanderDemoFaux } from './etablissement.js';
 import { rpcCercle } from './cercle.js';
+import { REFUS, ecritPseudo, pseudoNeuf, rpcPseudos } from './pseudos.js';
 import { contexteRevision, journalFaux } from './journal.js';
 
 const CARD_COLS = { f: 'front', b: 'back', st: 'state', sp: 'step', S: 'stability', D: 'difficulty',
@@ -140,6 +141,7 @@ function ecrit(store, name, body, prefer, user) {
     if (name === 'decks') r.rev = 1;
     const i = t.findIndex(x => cle(name, x) === cle(name, r));
     if (name === 'reviews' && i < 0) contexteRevision(store, r);
+    if (name === 'profiles' && i < 0) r.handle = pseudoNeuf(store, r.name || 'lecteur', r.id);   // un pseudo d'office
     if (i >= 0) {
       if (!/merge-duplicates/.test(prefer)) return [409, { message: 'duplicate key' }];
       if (name === 'decks') r.rev = (t[i].rev || 0) + 1;
@@ -189,8 +191,10 @@ function rest(store, req, url, path, body) {
   const prefer = req.headers.prefer || '';
   if (name === 'rpc/sync_deck_cards') return syncDeckCards(store, body, user);
   if (name === 'rpc/journal') return journalFaux(store, body || {}, user);
-  if (name.startsWith('rpc/')) return rpcClasses(store, name.slice(4), body, user) || rpcCercle(store, name.slice(4), body, user) || [200, []];
+  if (name.startsWith('rpc/')) return rpcPseudos(store, name.slice(4), body, user) || rpcClasses(store, name.slice(4), body, user)
+    || rpcCercle(store, name.slice(4), body, user) || [200, []];
   const m = req.method;
+  if (name === 'profiles' && (m === 'POST' || m === 'PATCH') && ecritPseudo(body)) return REFUS;
   if (m === 'GET') return lit(store, name, url, req, user);
   if (m === 'POST') return ecrit(store, name, body, prefer, user);
   if (m === 'PATCH') return modifie(store, name, url, body, prefer, user);

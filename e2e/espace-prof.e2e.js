@@ -154,8 +154,9 @@ for (const largeur of [390, 1440]) {
     await expect(alice.getByLabel('Code')).toHaveValue(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/);
     await voir(alice, '16-connexion-carte', 390);
     await alice.getByRole('button', { name: 'Se connecter' }).click();
-    // à sa première ouverture, il choisit son visage (ui/bienvenue.js), puis arrive sur ses devoirs
+    // à sa première ouverture, il choisit son pseudo puis son visage (ui/bienvenue.js), puis arrive sur ses devoirs
     await expect(alice.locator('#app')).toHaveAttribute('data-view', 'bienvenue', { timeout: 10000 });
+    await alice.getByRole('button', { name: 'Continuer' }).click();          // le pseudo donné d'office lui va
     await alice.getByRole('button', { name: 'C’est parti' }).click();
     // un élève à carte arrive sur ses devoirs, sous le nom de la liste de classe
     await expect(alice.getByText('Verbes irréguliers')).toBeVisible({ timeout: 10000 });

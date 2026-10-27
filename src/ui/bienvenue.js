@@ -1,38 +1,47 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
-import { auth, db, online, prefs, view } from '../data/etat.js';
+import { auth, compte, db, me, online, prefs, view } from '../data/etat.js';
 import { COLORS, delSubject, esc, pushSubject, save } from '../core/coeur-sync.js';
-import { envoyerPrefs, saveHandle } from '../core/reglages-corbeille.js';
+import { changerPseudo, envoyerPrefs, mePull, pseudoLibre } from '../core/reglages-corbeille.js';
 import { choisirMonJeton } from '../core/visuels.js';
 import { avatarSvg } from '../avatar.js';
 import { COULEURS } from '../jeton.js';
-import {
-  MATIERES, matieresApres, NIVEAUX_PERSO, OBJECTIFS, prenomValide, propositions, pseudoPropose, pseudoValide
-} from '../bienvenue.js';
+import { MATIERES, matieresApres, NIVEAUX_PERSO, OBJECTIFS, prenomValide, propositions } from '../bienvenue.js';
+import { MAX, message, motif, proposer, saisie } from '../pseudo.js';
 import { go } from './bibliotheque.js';
 import { ouvrirCode } from './code-entree.js';
-import { savePrefs } from './import-cartes.js';
+import { savePrefs, toast } from './import-cartes.js';
 import './bienvenue.css';
 
 /* ══════════ l'accueil d'un nouveau compte (2026-10-26) ══════════
    Chargé une fois par compte par ui/bienvenue-porte.js. Un particulier :
    « pour moi » ou « j'ai un code », puis son prénom et son pseudo, son
    visage, son niveau et ses matières, un objectif — et la visite guidée.
-   Un élève entré par son établissement : son visage seulement. Peu de
-   mots, de gros boutons, une étape par écran ; « Passer » à tout moment. */
+   Un élève entré par son établissement : son pseudo (son nom de classe,
+   « Prénom NOM », reste celui qu'on voit en classe), puis son visage
+   (2026-10-27). Le pseudo suit la règle de src/pseudo.js pendant la
+   frappe, et la base dit s'il est libre. Peu de mots, de gros boutons,
+   une étape par écran ; « Passer » à tout moment (le pseudo donné
+   d'office par la base reste alors). */
 
-const e = { mode: 'perso', etape: 0, apres: null, prenom: '', pseudo: '', pseudoTouche: false,
-  tour: 0, choix: null, niveau: '', matieres: new Set(), objectif: 20, envoi: false };
+const e = { mode: 'perso', etape: 0, apres: null, prenom: '', pseudo: '', pseudoTouche: false, libre: '', suggestion: '',
+  jeton: 0, tour: 0, choix: null, niveau: '', matieres: new Set(), objectif: 20, envoi: false };
 
 const ETAPES_PERSO = ['choix', 'nom', 'visage', 'matieres', 'objectif'];
-const etapes = () => (e.mode === 'classe' ? ['visage'] : ETAPES_PERSO);
+const etapes = () => (e.mode === 'classe' ? ['pseudo', 'visage'] : ETAPES_PERSO);
+const actuel = () => (me && me.handle) || '';
 
 export function commencer(mode, apres) {
   Object.assign(e, { mode, etape: 0, apres, prenom: String(prefs.name || '').trim(), pseudo: '', pseudoTouche: false,
-    tour: 0, choix: null, niveau: '', matieres: new Set(), objectif: prefs.goal || 20, envoi: false });
-  e.pseudo = pseudoPropose(e.prenom, auth && auth.email);
+    libre: '', suggestion: '', tour: 0, choix: null, niveau: '', matieres: new Set(), objectif: prefs.goal || 20, envoi: false });
+  e.pseudo = mode === 'perso' && e.prenom ? proposer(e.prenom) : actuel();
   go('bienvenue');
+  // le pseudo donné d'office par la base, s'il n'est pas encore là
+  if (!me) mePull().then(() => {
+    if (e.pseudoTouche || (mode === 'perso' && e.prenom) || !actuel()) return;
+    e.pseudo = actuel(); repeint();
+  });
 }
 
 const repeint = () => { if (view.name === 'bienvenue') bienvenueEcran(); };
@@ -48,14 +57,61 @@ function choix() {
     </div>`;
 }
 
+const champPseudo = () => `<label class="bv-ch"><span>Pseudo</span><span class="bv-arobase"><i>@</i><input id="bvpse"
+    data-bvin="pseudo" value="${esc(e.pseudo)}" maxlength="${MAX}" autocapitalize="none" autocorrect="off" spellcheck="false"
+    enterkeyhint="done" aria-describedby="bvpv"></span></label>
+  <p class="bv-pv" id="bvpv" aria-live="polite">${verdict()}</p>`;
+
 function nom() {
   return `<h1 class="bv-t">Comment t’appelles-tu&nbsp;?</h1>
     <div class="bv-champs">
       <label class="bv-ch"><span>Prénom</span><input id="bvpre" data-bvin="prenom" value="${esc(e.prenom)}" maxlength="40"
         autocomplete="given-name" enterkeyhint="next"></label>
-      <label class="bv-ch"><span>Pseudo</span><span class="bv-arobase"><i>@</i><input id="bvpse" data-bvin="pseudo"
-        value="${esc(e.pseudo)}" maxlength="20" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done"></span></label>
+      ${champPseudo()}
     </div>`;
+}
+
+/* L'élève de classe : son nom de classe, fixe, et le pseudo qu'il veut. */
+function pseudo() {
+  return `<h1 class="bv-t">Choisis ton pseudo</h1>
+    ${compte && compte.nom ? `<p class="bv-classe">${svg(I.lock)}<span>En classe : <b>${esc(compte.nom)}</b></span></p>` : ''}
+    <div class="bv-champs">${champPseudo()}</div>`;
+}
+
+/* ---------- le pseudo : la règle ici, la place à la base ---------- */
+function verdict() {
+  const m = motif(e.pseudo);
+  if (m !== 'ok') return e.pseudo ? `<span class="bv-non">${esc(message(m))}</span>` : '';
+  if (e.libre === 'ok') return `<span class="bv-oui">${svg(I.check)}Libre</span>`;
+  if (e.libre === 'verif') return '<span>…</span>';
+  if (!e.libre || e.libre === 'meme' || e.libre === 'hors_ligne') return '';
+  return `<span class="bv-non">${esc(message(e.libre))}</span>${e.suggestion
+    ? `<button class="bv-sug" data-bv="sug">@${esc(e.suggestion)}</button>` : ''}`;
+}
+
+const pseudoPret = () => motif(e.pseudo) === 'ok' && !['pris', 'trop', 'erreur'].includes(e.libre);
+const pretEtape = k => (k === 'nom' ? prenomValide(e.prenom) && pseudoPret() : k === 'pseudo' ? pseudoPret()
+  : k === 'matieres' ? !!e.niveau : true);
+
+function poserPseudo() {
+  const v = document.getElementById('bvpv'); if (v) v.innerHTML = verdict();
+  const b = document.getElementById('bvgo'); if (b) b.disabled = !pretEtape(etapes()[e.etape]) || e.envoi;
+}
+
+/* La dernière frappe seulement (`jeton`), 300 ms après. */
+function verifier() {
+  const v = e.pseudo, jeton = ++e.jeton;
+  e.suggestion = '';
+  e.libre = motif(v) !== 'ok' ? '' : v === actuel() ? 'meme' : online ? 'verif' : 'hors_ligne';
+  poserPseudo();
+  if (e.libre !== 'verif') return;
+  setTimeout(async () => {
+    if (jeton !== e.jeton) return;
+    const r = await pseudoLibre(v);
+    if (jeton !== e.jeton) return;
+    e.libre = r.statut || 'erreur'; e.suggestion = r.suggestion || '';
+    poserPseudo();
+  }, 300);
 }
 
 function visage() {
@@ -84,14 +140,14 @@ function objectif() {
       data-v="${o.n}"><b>${o.n}</b><span>${o.t}</span></button>`).join('')}</div>`;
 }
 
-const ECRANS = { choix, nom, visage, matieres, objectif };
+const ECRANS = { choix, nom, pseudo, visage, matieres, objectif };
 
 /* Le bouton du bas : « Continuer », ou « C'est parti » à la dernière étape.
    La première étape d'un particulier se choisit par ses deux gros boutons. */
 function suite() {
   const k = etapes()[e.etape], dernier = e.etape === etapes().length - 1;
   if (k === 'choix') return '';
-  const pret = k === 'nom' ? prenomValide(e.prenom) && pseudoValide(e.pseudo) : k === 'matieres' ? !!e.niveau : true;
+  const pret = pretEtape(k);
   return `<button class="cta bv-go" id="bvgo" data-bv="suivant" ${pret && !e.envoi ? '' : 'disabled'}>${
     dernier ? 'C’est parti' : 'Continuer'}${svg(I.arrow)}</button>`;
 }
@@ -108,6 +164,7 @@ export function bienvenueEcran() {
       <div class="bv-bas">${suite()}</div>
     </div>`;
   if (k === 'nom') setTimeout(() => { const i = document.getElementById(e.prenom ? 'bvpse' : 'bvpre'); if (i && !e.prenom) i.focus(); }, 80);
+  if ((k === 'nom' || k === 'pseudo') && !e.libre && motif(e.pseudo) === 'ok') verifier();
 }
 
 /* ---------- la fin : tout ce qu'on a choisi part d'un coup ---------- */
@@ -127,7 +184,11 @@ async function terminer(complet) {
   if (complet && e.mode === 'perso') {
     prefs.name = e.prenom.trim(); prefs.goal = e.objectif; if (e.niveau) prefs.niveau = e.niveau;
     await poserMatieres();
-    if (online && pseudoValide(e.pseudo)) await saveHandle(e.pseudo);
+  }
+  // le pseudo choisi ; refusé (pris entre-temps, hors ligne), celui d'office reste et l'écran le dit
+  if (complet && motif(e.pseudo) === 'ok' && e.pseudo !== actuel()) {
+    const r = await changerPseudo(e.pseudo);
+    if (r.statut !== 'ok') toast(I.x, message(r.statut));
   }
   await envoyerPrefs();                 // tout de suite : la visite guidée qui suit n'envoie plus rien
   if (complet && e.choix) await choisirMonJeton(e.choix.cle, e.choix.teinte);
@@ -142,7 +203,24 @@ const ACTIONS = {
   code: () => { prefs.bienvenue = 1; savePrefs(); go('home'); ouvrirCode(); },
   passer: () => terminer(false),
   retour: () => { e.etape = Math.max(0, e.etape - 1); repeint(); },
-  suivant: () => { if (e.etape >= etapes().length - 1) return terminer(true); e.etape++; repeint(); },
+  suivant: async () => {
+    const k = etapes()[e.etape];
+    // un pseudo pas encore vérifié l'est avant d'aller plus loin : on ne découvre pas « pris » à la fin
+    if ((k === 'nom' || k === 'pseudo') && online && e.pseudo !== actuel() && e.libre !== 'ok') {
+      e.envoi = true; poserPseudo();
+      const r = await pseudoLibre(e.pseudo);
+      e.envoi = false; e.jeton++;
+      e.libre = r.statut || 'erreur'; e.suggestion = r.suggestion || '';
+      if (!['ok', 'meme', 'hors_ligne'].includes(e.libre)) { poserPseudo(); return; }
+    }
+    if (e.etape >= etapes().length - 1) return terminer(true);
+    e.etape++; repeint();
+  },
+  sug: () => {
+    e.pseudo = e.suggestion; e.pseudoTouche = true;
+    const p = document.getElementById('bvpse'); if (p) { p.value = e.pseudo; p.focus(); }
+    verifier();
+  },
   visage: (b) => { e.choix = propositions(auth ? auth.uid : 'folio', e.tour)[+b.dataset.i]; repeint(); },
   autres: () => { e.tour++; e.choix = null; repeint(); },
   niveau: (b) => { if (e.niveau !== b.dataset.v) e.matieres = new Set(); e.niveau = b.dataset.v; repeint(); },
@@ -167,16 +245,20 @@ document.addEventListener('input', ev => {
   if (n.dataset.bvin === 'prenom') {
     e.prenom = n.value;
     if (!e.pseudoTouche) {
-      e.pseudo = pseudoPropose(e.prenom, auth && auth.email);
-      const p = document.getElementById('bvpse'); if (p) p.value = e.pseudo;
+      const p = proposer(e.prenom);
+      if (p !== e.pseudo) {
+        e.pseudo = p;
+        const c = document.getElementById('bvpse'); if (c) c.value = e.pseudo;
+        verifier();
+      }
     }
   } else {
     e.pseudoTouche = true;
-    e.pseudo = n.value.toLowerCase().replace(/[^a-z0-9_.-]/g, '').slice(0, 20);
-    if (n.value !== e.pseudo) n.value = e.pseudo;
+    const v = saisie(n.value);
+    if (n.value !== v) n.value = v;
+    if (v !== e.pseudo) { e.pseudo = v; verifier(); }
   }
-  const b = document.getElementById('bvgo');
-  if (b) b.disabled = !(prenomValide(e.prenom) && pseudoValide(e.pseudo));
+  poserPseudo();
 });
 
 document.addEventListener('keydown', ev => {

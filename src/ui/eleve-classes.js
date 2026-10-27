@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
-import { I, MARQUE, svg } from '../icones.js';
+import { I, svg } from '../icones.js';
 import { atSchool, isProf, isPupil } from './classement.js';
 import { auth, cercle, compte, db, duels, eleve, mates2, online, setAnimate, view } from '../data/etat.js';
 import { bindPager, go, render, tabs } from './bibliotheque.js';
@@ -119,7 +119,7 @@ export function mesClassesView() {
   const n = (eleve.classes || []).filter(c => c.statut === 'inscrit').length;
   $.innerHTML = `
     <div class="page el-page" id="page">
-      <div class="top">${MARQUE}<div class="hero">${n === 1 ? 'Ma classe' : 'Mes classes'}</div></div>
+      <div class="top"><div class="hero">${n === 1 ? 'Ma classe' : 'Mes classes'}</div></div>
       ${qui && nomConnu() ? `<p class="el-qui">${svg(I.user)}<b>${esc(qui)}</b>${compte && compte.gere ? '<i>carte élève</i>' : ''}</p>` : ''}
       <div class="el-grille">
         <div>${enDirectHtml((cercle.salles || []).filter(s => s.class_id))}

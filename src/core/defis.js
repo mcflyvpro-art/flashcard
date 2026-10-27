@@ -44,7 +44,7 @@ export async function duelMake(d, ou = {}) {
          name: d.name, total: cards.length, cards, group_id: ou.club || null, class_id: ou.classe || null }],
       { Prefer: 'return=minimal' });
     duels.list = null; duelsPull();
-    toast(I.flame, 'Défi lancé — ' + plur(cards.length, 'question'));
+    toast(I.bolt, 'Défi lancé · ' + plur(cards.length, 'question'));
     return true;
   } catch (e) { toast(I.x, 'Défi impossible'); return false; }
 }

@@ -49,11 +49,22 @@ même pour tous ses camarades) ; il peut en plus être dans des **groupes**
 1. Il s'inscrit (e-mail, mot de passe, « j'ai 15 ans ou plus »).
 2. L'accueil en quelques écrans, chacun passable (« Passer » en haut) :
    « Je révise pour moi » ou « **J'ai un code** » ; son prénom et un pseudo
-   (proposé depuis le prénom) ; son visage parmi six (« D'autres ») ; son
+   (proposé depuis le prénom, vérifié pendant la frappe : la règle, puis la
+   base dit s'il est libre) ; son visage parmi six (« D'autres ») ; son
    niveau et ses matières (elles remplacent les matières d'exemple) ; un
    objectif de pages par jour. Puis la visite guidée.
-   Un élève entré par son établissement ou avec une carte : seulement son
-   visage, puis ses classes.
+   Un élève entré par son établissement ou avec une carte : son pseudo (son
+   nom de classe, « Prénom NOM », s'affiche à côté, fixe), son visage, puis
+   ses classes.
+   **Les pseudos** (2026-10-27) : tout compte en a un, donné d'office par la
+   base (le prénom, sinon « lecteur », et des chiffres s'il est pris) ; 3 à
+   20 caractères, minuscules, chiffres, point, tiret bas, une lettre en tête,
+   ni mot réservé (« admin », « prof », « folio »…) ni grossier ; unique au
+   point et au tiret bas près ; deux changements par semaine ; un pseudo
+   quitté reste 30 jours à son ancien titulaire. Il se change dans les
+   Réglages (ligne « Pseudo ») ou « Mon jeton » du cercle, pour tous les
+   comptes. Un élève de classe garde « Prénom NOM » en classe ; son pseudo
+   sert ailleurs (amis, défis hors de sa classe).
 3. Il arrive sur ses **Livres**. Barre : Livres, Cercle — pas de Classe.
 4. Le jour où on lui donne un code : **Réglages → J'ai un code**. « Classe »
    apparaît dès qu'il est entré.

@@ -19,7 +19,18 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      46 / 148
-DERNIER   2026-10-27 · Les couleurs de l'app (src/couleurs.js, pur et testé) : une
+DERNIER   2026-10-27 · Les pseudos ont des règles (20261027090000) : tout compte en a un,
+          donné d'office ; 3 à 20 caractères, minuscules, chiffres, point, tiret
+          bas ; ni mot réservé ni grossier ; unique au point et au tiret bas près ;
+          deux changements par semaine ; un pseudo quitté reste 30 jours à son
+          titulaire. Il se change de partout (Réglages, « Mon jeton », l'accueil),
+          élève de classe compris — on ne pouvait plus le changer nulle part ; son
+          « Prénom NOM » reste en classe. Au téléphone, les titres des onglets
+          reviennent en haut ; médailles et icône des défis redessinées.
+          Preuves : pseudos.sql 27/27 (et identite_eleve, defis_direct,
+          etablissement, licence, jetons, profil, classe_eleve verts),
+          test/pseudo.test.js 18/18, e2e/pseudo 2/2, e2e complets.
+Avant :   2026-10-27 · Les couleurs de l'app (src/couleurs.js, pur et testé) : une
           couleur, un travail — l'azur compte (journal, profil, classement,
           bilan, objectif, espace prof), les états jugent, un nuancier de 14
           reliures relie une matière (deux teintes à 10 au moins d'écart

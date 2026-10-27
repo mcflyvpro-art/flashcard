@@ -27,6 +27,16 @@
 .bv-arobase{position:relative;display:block}
 .bv-arobase i{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-style:normal;font-size:17px;color:var(--soft)}
 .bv-arobase input{padding-left:32px}
+/* ce que la règle et la base disent du pseudo, sous le champ */
+.bv-pv{margin:-8px 0 0;min-height:26px;display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;font-size:13.5px;color:var(--soft)}
+.bv-oui{display:inline-flex;align-items:center;gap:5px;color:var(--ok);font-weight:600}
+.bv-oui svg{width:14px;height:14px}
+.bv-non{color:var(--ko)}
+.bv-sug{height:28px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);
+  font:inherit;font-weight:600;cursor:pointer}
+/* l'élève de classe : son nom de classe, qui ne change pas */
+.bv-classe{display:flex;align-items:center;gap:8px;margin:0 0 18px;font-size:15px;color:var(--ink2)}
+.bv-classe svg{width:16px;height:16px;color:var(--soft);flex:none}
 /* le visage */
 .bv-moi{display:flex;justify-content:center;padding:6px 0}
 .bv-moi .jt.xl{--s:112px}

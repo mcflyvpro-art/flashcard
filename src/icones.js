@@ -88,7 +88,6 @@ export const I = {
   sigma: '<path d="M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2"/>',
   hash: '<path d="M9.6 4.4L8 19.6M16 4.4l-1.6 15.2M5 9h14.6M4.4 15h14.6"/>',
   /* une médaille : ruban et disque (le disque prend la couleur du métal, `color`) */
-  medaille: '<path d="M8.3 2.6L11 9.2M15.7 2.6L13 9.2" stroke="#B9473C" stroke-width="2.4"/><circle cx="12" cy="14.6" r="6.6" fill="currentColor" stroke="rgba(0,0,0,.12)" stroke-width="1"/>',
   podium: '<path d="M9 9.4h6v10.2H9zM3.6 13.4H9v6.2H3.6zM15 15.4h5.4v4.2H15z"/><path d="M12 3.6l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z"/>',
   users: '<circle cx="9.4" cy="8.6" r="3.4"/><path d="M3.4 19.4a6 6 0 0 1 12 0"/><path d="M16.2 5.6a3.4 3.4 0 0 1 0 6.6M17.6 14.4a5.6 5.6 0 0 1 3.4 5"/>',
   build: '<path d="M4 20.4V9.6l7-4.2 7 4.2v10.8"/><path d="M2.4 20.4h19.2"/><rect x="8.2" y="12.4" width="5.6" height="8"/>',
@@ -104,7 +103,6 @@ export const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
 
 /* Le logo de Folio, le même dessin que la page d'accueil du site
    (public/site/logo.svg, tracé par tools/logo.py) : un fichier vectoriel
-   que le service worker garde aussi hors ligne. `MARQUE` : le logo et le
-   nom, en tête des onglets au téléphone, là où l'ordinateur a sa barre. */
+   que le service worker garde aussi hors ligne. Au téléphone, les onglets
+   gardent leur titre en haut, sans le logo (demandé le 2026-10-27). */
 export const LOGO = '<img class="logo" src="/site/logo.svg" alt="" width="24" height="26">';
-export const MARQUE = `<span class="marque-tel" aria-hidden="true">${LOGO}Folio</span>`;

@@ -53,7 +53,7 @@ function defisPane(g) {
   return `<section class="cl-pane" data-pane="defis">
     <h2 class="cc-h">Défis</h2>
     ${!duels.list ? '<div class="cc-load"></div>' : l.length ? `<div class="cc-list">${l.map(d => defiLigne(d, false)).join('')}</div>`
-      : `<p class="cc-vide">${svg(I.flame)}Aucun défi</p>`}
+      : `<p class="cc-vide">${svg(I.bolt)}Aucun défi</p>`}
     ${fin && fin.length ? `<h2 class="cc-h">Parties</h2><div class="cc-list">${fin.map(p => `
       <div class="cl-partie"><i class="cc-defi-i">${svg(I.podium)}</i>
         <span class="cl-partie-t"><b>${esc(p.titre)}</b>${infos([['bolt', JEUX[p.jeu] ? JEUX[p.jeu].nom : ''], ['play', p.joueurs, 'Joueurs'],

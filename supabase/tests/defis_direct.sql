@@ -246,8 +246,10 @@ begin
   select r.statut into t from public.salle_rejoindre(pin2) r;
   perform public.zz_root();
   select nom into gcode from public.salle_joueurs where salle_id = sid2 and user_id = b3;
+  -- tout compte a un pseudo depuis 20261027090000 : c'est sous lui qu'on joue ici
   insert into public.zz_res (nom, ok, vu) values ('salle ouverte d''un compte perso : pas d''élève de classe, les autres oui',
-    s = 'inconnu' and t = 'ok' and gcode = 'Inès', s || '/' || t || '/' || coalesce(gcode, '∅'));
+    s = 'inconnu' and t = 'ok' and gcode = (select handle from public.profiles where id = b3),
+    s || '/' || t || '/' || coalesce(gcode, '∅'));
 
   perform public.zz_comme(pa);
   select o.id, o.pin into sid3, pin3 from public.salle_ouvrir('Ouverte', 'vf', 10,

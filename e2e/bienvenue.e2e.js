@@ -1,7 +1,8 @@
 // L'accueil d'un nouveau compte (2026-10-26) : un particulier donne son
 // prénom, son pseudo, choisit son visage, son niveau, ses matières et un
 // objectif, puis la visite guidée part ; un élève entré par son
-// établissement choisit seulement son visage ; « J'ai un code » ouvre la
+// établissement choisit son pseudo et son visage (2026-10-27 ; son nom de
+// classe ne bouge pas, e2e/pseudo.e2e.js) ; « J'ai un code » ouvre la
 // porte d'entrée dans une école.
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore } from './faux-supabase.js';
@@ -32,7 +33,11 @@ test('un particulier : prénom, pseudo, visage, matières, objectif, puis la vis
   await page.getByLabel('Prénom').fill('Léa');
   await expect(page.getByLabel('Pseudo')).toHaveValue('lea');
   await page.getByLabel('Pseudo').fill('Lea_75 !');
+  await expect(page.getByLabel('Pseudo')).toHaveValue('lea_75.');          // l'espace devient un point…
+  await expect(page.getByRole('button', { name: 'Continuer' })).toBeDisabled();   // … qui ne finit pas un pseudo
+  await page.getByLabel('Pseudo').fill('Lea_75');
   await expect(page.getByLabel('Pseudo')).toHaveValue('lea_75');
+  await expect(page.locator('#bvpv')).toContainText('Libre');
   await page.getByRole('button', { name: 'Continuer' }).click();
 
   await expect(page.locator('.bv-vis')).toHaveCount(6);
@@ -64,7 +69,7 @@ test('un particulier : prénom, pseudo, visage, matières, objectif, puis la vis
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test('un élève de son lycée : son visage seulement, puis ses classes', async ({ page }) => {
+test('un élève de son lycée : son pseudo, son visage, puis ses classes', async ({ page }) => {
   const store = nouveauStore();
   const { org, classes } = semerEtablissement(store, { nom: 'Lycée Camus', classes: ['2nde A'] });
   const m = modele(store);
@@ -75,8 +80,10 @@ test('un élève de son lycée : son visage seulement, puis ses classes', async 
   await entrer(page, 'tom@lycee.fr');
 
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'bienvenue', { timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Choisis ton pseudo' })).toBeVisible();
+  await expect(page.locator('.bv-classe')).toContainText('Tom PETIT');
+  await page.getByRole('button', { name: 'Continuer' }).click();            // le pseudo donné d'office lui va
   await expect(page.getByRole('heading', { name: 'Choisis ton visage' })).toBeVisible();
-  await expect(page.locator('.bv-points')).toHaveCount(0);
   await page.locator('.bv-vis').nth(4).click();
   await page.getByRole('button', { name: 'C’est parti' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'classes');
