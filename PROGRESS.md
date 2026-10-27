@@ -20,7 +20,7 @@ CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      46 / 148
 DERNIER   2026-10-27 · Folio gratuit et Folio+ (docs/LANDING.md) : le graphique du moteur
-          trace aussi Memory Engine Lite (93 % à un an contre 96 % pour Ultra),
+          trace aussi Memory Engine Lite (69 % à un an contre 96 % pour Ultra),
           deux cartes courtes ; dans la démo d'un élève, 5 livres au plus, QCM,
           associations, images et sons grisés, et le journal flouté hors série,
           régularité et rythme — repris ligne à ligne dans le tableau comparatif

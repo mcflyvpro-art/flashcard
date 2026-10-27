@@ -81,8 +81,8 @@ l'air de marcher ».
     `/app?rejoindre=…` (`?defi=`, `?club=`). Le graphique du moteur de la
     page vient de `src/site/courbes.js` (pur et testé dans
     `test/site.test.js` : courbe d'oubli de FSRS, révision à 90 % ; Ultra en
-    plein, Lite en pointillés — sa stabilité surestimée du double, `JUSTE_LITE`
-    —, sans révision en dessous), la pile
+    plein, Lite en pointillés — rappelé bien trop tard, `JUSTE_LITE`, il tourne
+    autour de 65 à 70 % —, sans révision en dessous), la pile
     qu'on note dans le héros de `essai()` (`src/site/site.js`). **Sortir de
     l'app ramène au site, pas à la connexion** (demandé le 2026-10-26) :
     quitter la démo, se déconnecter (`logout()` attend la fin de `flush()`,

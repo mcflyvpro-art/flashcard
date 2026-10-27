@@ -30,9 +30,11 @@ export const versT = x => AN * x * x;
    première à la lecture) avec sa stabilité, et finit quand le moteur la
    rappelle. Ultra (`juste` = 1) connaît la mémoire de chacun : il rappelle
    la page quand le rappel retombe à 90 %. Lite garde les réglages de base,
-   qui prêtent ici à une page le double de sa vraie stabilité (`JUSTE_LITE`) : il rappelle trop
-   tard, le rappel est déjà tombé plus bas. */
-export const JUSTE_LITE = 0.5;
+   qui ne connaissent pas ta mémoire : il rappelle la page bien trop tard
+   (`JUSTE_LITE`, une stabilité prêtée plus de dix fois trop grande), quand
+   le rappel est déjà tombé vers 60 % ; il tourne autour de 65 à 70 % sur
+   l'année (demandé le 2026-10-27, pour que l'écart se voie). */
+export const JUSTE_LITE = 0.075;
 export function programme(S0, juste = 1) {
   const p = [{ debut: 0, S: S0 }];
   for (;;) {
