@@ -193,14 +193,14 @@ function moteur() {
   const trace = fig.querySelector('.trace'), svg = trace.querySelector('svg');
   const c = courbes();
   const traits = (sel, ds) => { svg.querySelector(sel).innerHTML = ds.map(d => `<path d="${d}"/>`).join(''); };
-  traits('.sans-g', c.sans); traits('.lueur-g', c.avec); traits('.avec-g', c.avec);
+  traits('.sans-g', c.sans); traits('.lite-g', c.lite); traits('.lueur-g', c.avec); traits('.avec-g', c.avec);
   svg.querySelector('.aire').setAttribute('d', c.aire);
   const points = trace.querySelector('.points');
   points.innerHTML = c.revisions.map(x => `<i style="--x:${x.toFixed(4)}"></i>`).join('');
   const pts = [...points.children];
   const voile = svg.querySelector('#revele rect');
   const lecture = trace.querySelector('.lecture');
-  const avec = fig.querySelector('.leg-avec b'), sans = fig.querySelector('.leg-sans b');
+  const avec = fig.querySelector('.leg-avec b'), lite = fig.querySelector('.leg-lite b'), sans = fig.querySelector('.leg-sans b');
   const temps = fig.querySelector('.courbe-temps');
   let image = 0;
 
@@ -211,7 +211,9 @@ function moteur() {
     lecture.style.setProperty('--x', x.toFixed(4));
     lecture.style.setProperty('--ya', (1 - r.avec).toFixed(4));
     lecture.style.setProperty('--ys', (1 - r.sans).toFixed(4));
+    lecture.style.setProperty('--yl', (1 - r.lite).toFixed(4));
     avec.textContent = pct(r.avec);
+    lite.textContent = pct(r.lite);
     sans.textContent = pct(r.sans);
     temps.textContent = duree(versT(x));
     pts.forEach((p, i) => p.classList.toggle('vu', c.revisions[i] <= x + 1e-9));

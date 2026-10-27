@@ -297,7 +297,8 @@
     <!-- Les courbes sont calculées par src/site/courbes.js et posées par site.js. -->
     <figure class="courbe rv" id="courbe" aria-labelledby="courbe-l">
       <div class="courbe-haut" aria-hidden="true">
-        <p class="leg leg-avec"><small>Avec Memory Engine Ultra</small><b>100&#8239;%</b></p>
+        <p class="leg leg-avec"><small>Ultra</small><b>100&#8239;%</b></p>
+        <p class="leg leg-lite"><small>Lite</small><b>100&#8239;%</b></p>
         <p class="leg leg-sans"><small>Sans révision</small><b>100&#8239;%</b></p>
         <b class="courbe-temps">Aujourd’hui</b>
       </div>
@@ -314,6 +315,7 @@
             <path class="seuil" d="M0 100H1000"/>
             <g clip-path="url(#revele)">
               <g class="sans-g"></g>
+              <g class="lite-g"></g>
               <path class="aire"/>
               <g class="lueur-g"></g>
               <g class="avec-g"></g>
@@ -321,12 +323,12 @@
           </svg>
           <div class="points" aria-hidden="true"></div>
           <div class="lecture" aria-hidden="true">
-            <i class="lecture-trait"></i><i class="lecture-pt pt-avec"></i><i class="lecture-pt pt-sans"></i>
+            <i class="lecture-trait"></i><i class="lecture-pt pt-avec"></i><i class="lecture-pt pt-lite"></i><i class="lecture-pt pt-sans"></i>
           </div>
         </div>
         <div class="axe-x" aria-hidden="true"><span class="x-j" style="--x:.0523">1 j</span><span style="--x:.1385">1 sem.</span><span style="--x:.2886">1 mois</span><span style="--x:.5">3 mois</span><span style="--x:.7071">6 mois</span><span style="--x:1">1 an</span></div>
       </div>
-      <figcaption id="courbe-l" class="cache">Ce que tu retiens de cinq pages pendant un an. Sans révision, le souvenir s’efface : la moitié est partie au bout d’un mois, et il en reste moins de deux sur dix au bout d’un an. Avec Memory Engine Ultra, le moteur de Folio+, chaque page revient juste avant l’oubli et le souvenir reste au-dessus de neuf sur dix toute l’année, avec des révisions de plus en plus espacées.</figcaption>
+      <figcaption id="courbe-l" class="cache">Ce que tu retiens de cinq pages pendant un an. Sans révision, le souvenir s’efface : la moitié est partie au bout d’un mois, et il en reste moins de deux sur dix au bout d’un an. Avec Memory Engine Ultra, le moteur de Folio+, chaque page revient juste avant l’oubli et le souvenir reste au-dessus de neuf sur dix toute l’année, avec des révisions de plus en plus espacées. Avec Memory Engine Lite, sa version allégée, les pages reviennent un peu trop tard et le souvenir descend plus bas entre deux révisions.</figcaption>
     </figure>
 
     <!-- Deux moteurs : Memory Engine Lite (Folio, gratuit) et Ultra (Folio+ et
@@ -335,12 +337,12 @@
       <article class="moteur-carte rv">
         <p class="moteur-offre">Folio, gratuit</p>
         <h3>Memory Engine <span>Lite</span></h3>
-        <p>La répétition espacée, avec des réglages faits pour tout le monde. Chaque page revient avant l’oubli.</p>
+        <p>La version allégée d’Ultra, avec ses réglages de base.</p>
       </article>
       <article class="moteur-carte moteur-plus rv">
         <p class="moteur-offre">Folio<span class="plus">+</span> et Campus</p>
         <h3>Memory Engine <span>Ultra</span></h3>
-        <p>Il apprend ta mémoire à toi&#8239;: après tes premières révisions, il se règle sur toi, page par page. Et il étale tes révisions, jamais une journée à 200&nbsp;pages.</p>
+        <p>Le meilleur moteur de révision espacée au monde. Des mois de développement, entraîné sur des centaines de millions de révisions, puis réglé sur ta mémoire à toi.</p>
         <a class="lien" href="#tarifs"><span>Passer à Folio<span class="plus">+</span></span><svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
       </article>
     </div>

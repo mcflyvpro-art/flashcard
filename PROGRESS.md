@@ -19,17 +19,15 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      46 / 148
-DERNIER   2026-10-27 · Page d'accueil, tour 4 (docs/LANDING.md) : la page suit la nouvelle
-          charte (pages teintées à signet, matières en petits livres, azur pour
-          ce qui se compte, médailles de l'app), parle de « livre de flashcards »
-          et de pages recto verso au lieu de « fiches » (refusé par test),
-          Folio Campus a sa marque et dit qu'il s'adresse aux établissements,
-          le « + » de Folio+ en couleur, « Commencer gratuitement » et l'en-tête
-          du téléphone qui garde l'inscription ; la démo propose le geste
-          d'après (créer son compte, l'essayer dans son établissement) et dit
-          comment avoir ce qu'elle grise. Affiches et image de partage refaites.
-          Preuves : npm run check (459 tests), e2e 70 + 1 intermittent connu
-          (pseudo.e2e.js, sur main aussi), Lighthouse 100×4 sur ordinateur.
+DERNIER   2026-10-27 · Folio gratuit et Folio+ (docs/LANDING.md) : le graphique du moteur
+          trace aussi Memory Engine Lite (93 % à un an contre 96 % pour Ultra),
+          deux cartes courtes ; dans la démo d'un élève, 5 livres au plus, QCM,
+          associations, images et sons grisés, et le journal flouté hors série,
+          régularité et rythme. La règle de chaque offre est écrite une fois,
+          src/offres.js, pour le paiement à venir (M12). Avant, le tour 4 de la
+          page (charte, vocabulaire, Folio Campus, appels à l'action).
+          Preuves : npm run check (462 tests), e2e 70 + 1 intermittent
+          (navigation.e2e.js, balayage, vert au second essai).
 Avant :   2026-10-27 · Les pseudos ont des règles (20261027090000) : tout compte en a un,
           donné d'office, unique, deux changements par semaine, changeable de
           partout ; au téléphone, les titres des onglets reviennent en haut.

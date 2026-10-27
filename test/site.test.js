@@ -123,6 +123,19 @@ describe('le graphique du moteur', async () => {
     expect(c.revisions.length).toBe(DEPART.reduce((n, S) => n + programme(S).length - 1, 0));
   });
 
+  it('Memory Engine Lite retient moins qu’Ultra, mais bien plus que sans révision', () => {
+    let lite = 0, ultra = 0, minLite = 1;
+    for (let i = 0; i <= 2000; i++) {
+      const r = c.lire(i / 2000);
+      lite += r.lite; ultra += r.avec; minLite = Math.min(minLite, r.lite);
+    }
+    expect(lite).toBeLessThan(ultra - 0.02 * 2001);          // au moins deux points de moins en moyenne
+    expect(minLite).toBeLessThan(0.9);                         // il laisse le rappel passer sous 90 %
+    expect(minLite).toBeGreaterThan(0.85);
+    expect(c.lire(1).lite).toBeGreaterThan(c.lire(1).sans + 0.6);
+    expect(c.lite.length).toBe(DEPART.length);
+  });
+
   it('le temps en racine carrée va et revient', () => {
     for (const t of [0, 1, 30, 365]) expect(versT(versX(t))).toBeCloseTo(t, 9);
   });
