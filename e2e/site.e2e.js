@@ -132,13 +132,22 @@ test('la pile du héros se note : Facile l’envoie à droite, Encore à gauche,
 test('Folio Campus : chaque rôle montre son espace et mène à sa démo', async ({ page }) => {
   await page.goto('./');
   const roles = page.locator('.roles');
+  const tel = page.locator('#tel-campus');
   await roles.scrollIntoViewIfNeeded();
   await expect(page.locator('#p-prof')).toBeVisible();
+  // le même espace au téléphone, posé contre l'ordinateur
+  await expect(tel.locator('[data-onglet="p-prof"]')).toBeVisible();
+  await expect(tel).not.toHaveClass(/range/);
   await roles.getByRole('tab', { name: /Référent de l’établissement/ }).click();
   await expect(page.locator('#p-ref')).toBeVisible();
   await expect(page.locator('#p-prof')).toBeHidden();
+  await expect(tel).toHaveClass(/range/);                       // sa console est faite pour l'ordinateur
+  await expect(tel.locator('.ecran:visible')).toHaveCount(0);
   await expect(page.locator('#essai-espace')).toHaveAttribute('href', '/demo/referent');
   await roles.getByRole('tab', { name: /Élève/ }).click();
+  await expect(tel).not.toHaveClass(/range/);
+  await expect(tel.locator('[data-onglet="p-eleve"]')).toBeVisible();
+  await expect(tel.locator('[data-onglet="p-prof"]')).toBeHidden();
   await expect(page.locator('#essai-espace')).toHaveAttribute('href', '/demo/eleve');
   await page.locator('#essai-espace').click();
   await expect(page).toHaveURL(/\/demo\/eleve/, { timeout: 10000 });

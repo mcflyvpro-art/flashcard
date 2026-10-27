@@ -296,22 +296,29 @@ function auClavier(groupe, sel, choisir) {
 }
 
 /* ---------- Folio Campus : un espace par rôle ----------
-   Chaque rôle est un onglet : il montre son écran, et « Essayer cet
-   espace » mène à la démo dans ce rôle. */
+   Chaque rôle est un onglet : il montre son écran sur l'ordinateur, le
+   même au téléphone posé à côté (`data-onglet`), et « Essayer cet
+   espace » mène à la démo dans ce rôle. Un rôle sans écran de téléphone
+   (le référent, dont la console est faite pour l'ordinateur) range le
+   téléphone. */
 function onglets() {
   const o = document.querySelector('.roles');
   if (!o) return;
   const essayer = document.getElementById('essai-espace');
+  const tel = document.getElementById('tel-campus');
   const choisir = b => {
+    const id = b.getAttribute('aria-controls');
     o.querySelectorAll('[role="tab"]').forEach(x => {
       const oui = x === b;
       x.setAttribute('aria-selected', String(oui));
       x.tabIndex = oui ? 0 : -1;
       document.getElementById(x.getAttribute('aria-controls')).hidden = !oui;
     });
+    document.querySelectorAll('[data-onglet]').forEach(x => { x.hidden = x.dataset.onglet !== id; });
+    if (tel) tel.classList.toggle('range', !tel.querySelector(`[data-onglet="${id}"]`));
     if (essayer) essayer.href = b.dataset.demo;
-    const v = document.querySelector(`#${b.getAttribute('aria-controls')} video[src]`);
-    if (v && !reduit.matches) v.play().catch(() => { /* lecture refusée : l'affiche reste */ });
+    if (!reduit.matches) document.querySelectorAll(`#${id} video[src], [data-onglet="${id}"] video[src]`)
+      .forEach(v => v.play().catch(() => { /* lecture refusée : l'affiche reste */ }));
   };
   o.addEventListener('click', e => { const b = e.target.closest('[role="tab"]'); if (b) choisir(b); });
   auClavier(o, '[role="tab"]', choisir);

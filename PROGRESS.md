@@ -19,22 +19,18 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      47 / 148
-DERNIER   2026-10-27 · Le tuto, v2 : il présente l'app pas à pas (l'élève : ses
-          livres, une flashcard, créer, son journal, sa classe, ses amis, son
-          courrier ; le professeur : tableau de bord, une classe, un élève, un
-          devoir donné, le bilan, l'agenda ; le référent : sa console onglet par
-          onglet) et rien ne le contourne sauf la croix, « Passer » et Échap
-          (une garde sur la fenêtre ; le retour du navigateur ramène à
-          l'étape). Dans la démo, chaque rôle a le sien la première fois ;
-          Folio Campus a la marque du site. Preuves : npm run check (tests du
-          tuto 32), e2e/tuto.e2e.js 8/8 (trois tours) et toute la suite.
-Avant :   2026-10-27 · Folio+ se paie sur le site (docs/VENTE.md) : Stripe Checkout et son
-          portail par la fonction paiement, l'abonnement écrit par
-          stripe-webhook, lu par mon_offre() (20261027190000) ; l'écran Folio+
-          (…/folio-plus) ; vente fermée (VENTE_OUVERTE) tant que le compte
-          Stripe et la migration ne sont pas posés. Avant encore : Lite à 69 %
-          au graphique, démo à 5 livres, journal flouté, src/offres.js ; le
-          premier tuto et l'accueil d'un compte neuf refait.
+DERNIER   2026-10-27 · Page d'accueil, Folio Campus : l'élève et le professeur
+          ont leur espace sur l'ordinateur ET au téléphone posé contre lui
+          (deux affiches neuves prises dans la démo ; rangé pour le référent) ;
+          le moteur sans sous-titre. tools/affiches.js et la Folio Academy
+          passent le tuto de la démo. Preuves : npm run check (page 46,1/48
+          Ko), e2e/site.e2e.js 9/9, suite e2e 81 + 3 repassés au second essai
+          (machine lente, verts seuls), captures 390 et 1440 px relues.
+Avant :   2026-10-27 · Le tuto, v2 : il présente l'app pas à pas (élève,
+          professeur, référent) et rien ne le contourne sauf la croix,
+          « Passer » et Échap ; dans la démo, chaque rôle a le sien la première
+          fois. Avant encore : Folio+ se paie sur le site (docs/VENTE.md),
+          vente fermée tant que Stripe n'est pas posé.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

@@ -295,9 +295,8 @@
   <!-- ══════════ le moteur ══════════ -->
   <section class="moteur enveloppe" id="moteur" aria-labelledby="moteur-t">
     <div class="moteur-tete rv">
-      <p class="surtitre">Memory Engine Ultra · le moteur de Folio+</p>
+      <p class="surtitre">Memory Engine Ultra&nbsp;· le moteur de Folio+</p>
       <h2 id="moteur-t" class="titre">Le meilleur moteur de révision <em>au&nbsp;monde.</em></h2>
-      <p class="texte">Il apprend ta mémoire, page après page, et te rend chacune au moment où elle allait s’effacer.</p>
     </div>
     <!-- Les courbes sont calculées par src/site/courbes.js et posées par site.js. -->
     <figure class="courbe rv" id="courbe" aria-labelledby="courbe-l">
@@ -510,29 +509,52 @@
             <span class="role-t"><b>Référent de l’établissement</b><small>Ouvre Folio à tous, garde la main</small></span>
           </button>
         </div>
-        <figure class="appareil portable portable-campus">
-          <div class="portable-ecran">
-            <div class="ecran" data-ecran="eleve" role="tabpanel" id="p-eleve" aria-labelledby="o-eleve" hidden>
-              <img class="affiche" src="/site/affiches/eleve.webp" width="1440" height="900" loading="lazy" decoding="async"
-                srcset="/site/affiches/eleve-petit.webp 720w, /site/affiches/eleve.webp 1440w" sizes="(max-width: 640px) 92vw, 940px"
-                alt="L’espace élève sur ordinateur : sa classe, ses devoirs à faire et leur avancement">
-              <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+        <div class="campus-appareils">
+          <figure class="appareil portable portable-campus">
+            <div class="portable-ecran">
+              <div class="ecran" data-ecran="eleve" role="tabpanel" id="p-eleve" aria-labelledby="o-eleve" hidden>
+                <img class="affiche" src="/site/affiches/eleve.webp" width="1440" height="900" loading="lazy" decoding="async"
+                  srcset="/site/affiches/eleve-petit.webp 720w, /site/affiches/eleve.webp 1440w" sizes="(max-width: 640px) 92vw, 940px"
+                  alt="L’espace élève sur ordinateur : sa classe, ses devoirs à faire et leur avancement">
+                <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+              </div>
+              <div class="ecran" data-ecran="prof" role="tabpanel" id="p-prof" aria-labelledby="o-prof">
+                <img class="affiche" src="/site/affiches/prof.webp" width="1440" height="900" loading="lazy" decoding="async"
+                  srcset="/site/affiches/prof-petit.webp 720w, /site/affiches/prof.webp 1440w" sizes="(max-width: 640px) 92vw, 940px"
+                  alt="L’espace professeur sur ordinateur : ses classes, les devoirs et l’avancement de chaque élève">
+                <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+              </div>
+              <div class="ecran" data-ecran="referent" role="tabpanel" id="p-ref" aria-labelledby="o-ref" hidden>
+                <img class="affiche" src="/site/affiches/referent.webp" width="1440" height="900" loading="lazy" decoding="async"
+                  srcset="/site/affiches/referent-petit.webp 720w, /site/affiches/referent.webp 1440w" sizes="(max-width: 640px) 92vw, 940px"
+                  alt="La console du référent de l’établissement : les codes, la licence, les classes et les comptes">
+                <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+              </div>
             </div>
-            <div class="ecran" data-ecran="prof" role="tabpanel" id="p-prof" aria-labelledby="o-prof">
-              <img class="affiche" src="/site/affiches/prof.webp" width="1440" height="900" loading="lazy" decoding="async"
-                srcset="/site/affiches/prof-petit.webp 720w, /site/affiches/prof.webp 1440w" sizes="(max-width: 640px) 92vw, 940px"
-                alt="L’espace professeur sur ordinateur : ses classes, les devoirs et l’avancement de chaque élève">
-              <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+            <div class="portable-socle" aria-hidden="true"></div>
+          </figure>
+          <!-- Le même espace au téléphone, posé contre l'ordinateur : site.js
+               montre l'écran du rôle choisi (data-onglet = son panneau) et range
+               le téléphone pour un rôle qui n'en a pas (le référent). -->
+          <figure class="appareil telephone telephone-campus" id="tel-campus">
+            <div class="telephone-corps">
+              <div class="ecran" data-ecran="eleve-mobile" data-onglet="p-eleve" hidden>
+                <img class="affiche" src="/site/affiches/eleve-mobile.webp" width="390" height="844" loading="lazy" decoding="async"
+                  srcset="/site/affiches/eleve-mobile-petit.webp 390w, /site/affiches/eleve-mobile.webp 780w" sizes="(max-width: 640px) 30vw, 210px"
+                  alt="L’espace élève sur téléphone : ses devoirs à faire et ses classes">
+                <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+              </div>
+              <div class="ecran" data-ecran="prof-mobile" data-onglet="p-prof">
+                <img class="affiche" src="/site/affiches/prof-mobile.webp" width="390" height="844" loading="lazy" decoding="async"
+                  srcset="/site/affiches/prof-mobile-petit.webp 390w, /site/affiches/prof-mobile.webp 780w" sizes="(max-width: 640px) 30vw, 210px"
+                  alt="L’espace professeur sur téléphone : le code de l’établissement, les élèves en retard et ce qui est à traiter">
+                <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+              </div>
+              <i class="ilot" aria-hidden="true"></i>
             </div>
-            <div class="ecran" data-ecran="referent" role="tabpanel" id="p-ref" aria-labelledby="o-ref" hidden>
-              <img class="affiche" src="/site/affiches/referent.webp" width="1440" height="900" loading="lazy" decoding="async"
-                srcset="/site/affiches/referent-petit.webp 720w, /site/affiches/referent.webp 1440w" sizes="(max-width: 640px) 92vw, 940px"
-                alt="La console du référent de l’établissement : les codes, la licence, les classes et les comptes">
-              <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
-            </div>
-          </div>
-          <div class="portable-socle" aria-hidden="true"></div>
-        </figure>
+            <figcaption class="cache">Le même espace sur téléphone</figcaption>
+          </figure>
+        </div>
         <a class="bt bt-fantome espace-essai" id="essai-espace" href="/demo/prof">Essayer cet espace<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
       </div>
 

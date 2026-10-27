@@ -58,7 +58,12 @@ l'air de marcher ».
     son « sprite » dans `index.html`), les affiches, l'image de partage et
     les captures du manifeste (`public/shots/`) se photographient dans la
     démo sans compte, à 10 h du matin (`node tools/affiches.js`, sur un
-    `vite preview` au port 4190). **Le même logo est celui de l'app**
+    `vite preview` au port 4190 ; des noms d'affiches pour n'en refaire que
+    quelques-unes ; il marque les tutos de la démo comme vus, la Folio
+    Academy aussi). Dans Folio Campus, l'ordinateur de chaque rôle a, pour
+    l'élève et le professeur, le même espace au téléphone posé contre lui
+    (`#tel-campus`, écrans `data-onglet`, rangé pour le référent :
+    `onglets()` de site.js, depuis le 2026-10-27). **Le même logo est celui de l'app**
     (2026-10-26) : `LOGO` de `src/icones.js` (`<img>` de `/site/logo.svg`,
     que le service worker garde hors ligne) en tête de la barre latérale et
     de la barre du haut (un bouton, `data-vers` : la première page du compte
@@ -824,7 +829,7 @@ npm run typecheck                    # tsc --noEmit, vérification douce sur src
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
 python3 tools/logo.py                # le logo (public/site/, public/favicon.svg, sprite de index.html)
-node tools/affiches.js               # affiches du site, image de partage, captures du manifeste, depuis la démo (vite preview --port 4190 d'abord)
+node tools/affiches.js               # affiches du site, image de partage, captures du manifeste, depuis la démo (vite preview --port 4190 d'abord) ; `node tools/affiches.js prof-mobile` : celles-là seules
 node tools/icones.js                 # icônes de l'app installée (public/icons/), depuis public/site/icone.svg
 node tools/paiement/essai.js         # les fonctions paiement et stripe-webhook sous Deno, face à un faux Stripe (DENO=chemin, sinon npx deno@2)
 bash tools/academie/installer.sh     # la Folio Academy, une fois : Python à part (.academie/), voix de repli Kokoro sans clé

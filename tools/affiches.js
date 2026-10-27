@@ -6,6 +6,7 @@
 //   npm run build && npx vite preview --port 4190 --strictPort &
 //   node tools/affiches.js            (AFFICHES_URL pour une autre adresse)
 //   node tools/affiches.js og         (l'image de partage seule, depuis les affiches déjà là)
+//   node tools/affiches.js prof-mobile (une ou plusieurs affiches, par leur nom)
 // Le WebP est encodé par le navigateur lui-même (canvas) : aucun outil de
 // plus à installer. docs/LANDING.md.
 import { chromium } from '@playwright/test';
@@ -37,14 +38,23 @@ const AFFICHES = [
   { nom: 'prof', role: 'prof', fenetre: { width: 1280, height: 800 }, densite: 1.125,
     async chemin(p) { await p.getByText(/^Bon(jour|soir), Marc$/).waitFor(); } },
   { nom: 'referent', role: 'ref', fenetre: { width: 1280, height: 800 }, densite: 1.125,
-    async chemin(p) { await p.getByText('PRFQ-WT58').waitFor(); } }
+    async chemin(p) { await p.getByText('PRFQ-WT58').waitFor(); } },
+  /* le téléphone posé à côté de l'ordinateur, dans Folio Campus : l'élève
+     sur ses devoirs à faire, le professeur sur son tableau de bord */
+  { nom: 'eleve-mobile', role: 'eleve', fenetre: { width: 390, height: 844 }, densite: 2, mobile: true,
+    async chemin(p) { await p.click('[data-act="tab-classes"]'); await p.waitForTimeout(600); } },
+  { nom: 'prof-mobile', role: 'prof', fenetre: { width: 390, height: 844 }, densite: 2, mobile: true,
+    async chemin(p) { await p.getByText(/^Bon(jour|soir), Marc$/).waitFor(); } }
 ];
 
 /* Au téléphone, une vraie barre d'état d'iPhone (l'heure, le réseau, la
    batterie) et le contenu poussé dessous, comme sur l'appareil : sans elle,
    l'îlot du cadre dessiné par la page tombait sur le titre de l'écran. */
 async function barreEtat(p) {
-  await p.addStyleTag({ content: '#app{padding-top:58px!important}.statusmask{height:54px!important}' });
+  // la barre du haut d'un compte de gestion (le professeur) est fixe : elle
+  // descend sous la barre d'état, et la page avec elle (64 px dans app.css)
+  await p.addStyleTag({ content: '#app{padding-top:58px!important}.statusmask{height:54px!important}'
+    + 'html.nav-haut #rail{top:54px!important}html.nav-haut #app{padding-top:118px!important}' });
   await p.evaluate(() => {
     const b = document.createElement('div');
     b.style.cssText = 'position:fixed;top:0;left:0;right:0;height:54px;z-index:999;display:flex;align-items:flex-end;'
@@ -100,6 +110,9 @@ async function ouvrir(a) {
   const p = await ctx.newPage();
   await p.route(/supabase\.co/, r => r.abort());
   await p.goto(URL_APP);
+  // le tuto de chaque rôle part à sa première entrée dans la démo : déjà vu
+  // (posé après le démarrage, qui efface ce qu'une démo précédente a laissé)
+  await p.evaluate(() => sessionStorage.setItem('folio.demo.tuto', JSON.stringify(['eleve', 'prof', 'ref'])));
   await p.click(`.dm-role[data-v="${a.role}"]`);
   await p.waitForTimeout(1500);
   // ni le bandeau de la démo ni un message passager sur une affiche
@@ -112,14 +125,16 @@ async function ouvrir(a) {
 const navigateur = await chromium.launch({ executablePath: chrome });
 mkdirSync(SORTIE, { recursive: true });
 const seulOg = process.argv.includes('og');
-for (const a of seulOg ? [] : CAPTURES) {
+// des noms d'affiches (node tools/affiches.js prof-mobile …) : celles-là seules
+const noms = process.argv.slice(2).filter(x => x !== 'og');
+for (const a of seulOg || noms.length ? [] : CAPTURES) {
   const { ctx, p } = await ouvrir(a);
   await p.waitForTimeout(1400);
   writeFileSync(`public/shots/${a.nom}.png`, await p.screenshot());
   console.log(`shots/${a.nom}.png`);
   await ctx.close();
 }
-for (const a of seulOg ? [] : AFFICHES) {
+for (const a of seulOg ? [] : AFFICHES.filter(x => !noms.length || noms.includes(x.nom))) {
   const { ctx, p } = await ouvrir(a);
   if (a.mobile) await barreEtat(p);
   await p.waitForTimeout(1400);
@@ -130,6 +145,7 @@ for (const a of seulOg ? [] : AFFICHES) {
   console.log(a.nom + '.webp', Math.round(image.length / 1024) + ' Ko,', '-petit', Math.round(petite.length / 1024) + ' Ko');
   await ctx.close();
 }
+if (noms.length) { await navigateur.close(); process.exit(0); }
 /* L'image de partage (Open Graph, 1200 × 630) : le logo, le titre, et les
    deux affiches qu'on vient de faire dans leurs appareils. Elle est figée
    en pixels : la police est celle de cette machine (Charter, à défaut le
