@@ -55,6 +55,18 @@ export async function admRole(cible, nouveau) {
   return r;
 }
 
+/* Folio+ offert à un compte, sans fin, ou repris (admin_offrir_plus,
+   20261027210000) : un ami, un testeur, un geste commercial. Ne touche
+   jamais un abonnement payé — il reste à Stripe ou au magasin. */
+export async function admOffrirPlus(cible, retirer) {
+  const r = await admAgir('admin_offrir_plus', { cible, jusqua: null, retirer: !!retirer });
+  if (r && r.offre) {
+    toast(I.check, r.offre === 'gratuit' ? 'Folio+ repris : le compte est en Folio gratuit'
+      : r.offre === 'campus' ? 'Enregistré : son établissement lui offre déjà tout' : 'Folio+ offert');
+  }
+  return r;
+}
+
 /* ══════════ la facturation (20261026130000) ══════════
    L'identité du vendeur (une seule ligne, l'éditeur), la licence d'un
    établissement (le même tableau que voit son référent), ses pièces. Les

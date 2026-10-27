@@ -1,8 +1,10 @@
 // Folio+ dans l'app : lire ce que dit la base, le dire en clair (src/abonnement.js),
 // et l'appareil, pour le bon téléchargement (src/plateformes.js).
 import { describe, expect, it } from 'vitest';
-import { FORMULES, VENTE_OUVERTE, dateLisible, erreurDe, euros, lireOffre, lireRetour, resume } from '../src/abonnement.js';
-import { GESTES, MAGASINS, installer, mobile, partout, peutVendre, plateforme } from '../src/plateformes.js';
+import { FORMULES, GERER, RAISONS, VENTE_OUVERTE, dateLisible, erreurDe, euros, gestion, lireOffre, lireRetour, resume }
+  from '../src/abonnement.js';
+import { PLUS_SEUL } from '../src/offres.js';
+import { GESTES, MAGASINS, installer, mobile, partout, plateforme, vente, versLeMagasin } from '../src/plateformes.js';
 
 describe('ce que dit la base', () => {
   it('une réponse absente ou d’une base sans la fonction : Folio gratuit', () => {
@@ -35,10 +37,27 @@ describe('ce que l’écran en dit', () => {
     expect(r.ligne).toBe('Paiement refusé : mets ta carte à jour');
     expect(r.alerte).toMatch(/carte/);
   });
-  it('acheté dans un magasin : géré là-bas, pas de portail Stripe', () => {
-    const r = resume({ offre: 'plus', abonnement: ab({ source: 'apple', formule: 'mensuel' }) });
+  it('acheté dans un magasin : géré là-bas, jamais par le portail Stripe', () => {
+    const a = ab({ source: 'apple', formule: 'mensuel' });
+    const r = resume({ offre: 'plus', abonnement: a });
     expect(r.ligne).toBe('Mensuel · renouvelé le 2 novembre 2027 · géré dans l’App Store');
-    expect(r.gerer).toBe(false);
+    expect(r.gerer).toBe(true);
+    expect(gestion(a, { os: 'ios', natif: true })).toEqual({ type: 'lien', lien: GERER.apple });
+    expect(gestion(a, { os: 'windows', natif: false }).type).toBe('texte');
+    expect(gestion(ab({ source: 'google' }), { os: 'android', natif: true })).toEqual({ type: 'lien', lien: GERER.google });
+  });
+  it('un abonnement Stripe : son portail, mais jamais depuis l’app des magasins', () => {
+    expect(gestion(ab(), { os: 'mac', natif: false })).toEqual({ type: 'stripe' });
+    expect(gestion(ab(), { os: 'ios', natif: true }).type).toBe('texte');
+  });
+  it('Folio+ offert (les comptes d’avant le 2026-10-27, l’éditeur) : rien à gérer', () => {
+    const a = ab({ source: 'offert', formule: null, fin: null });
+    expect(resume({ offre: 'plus', abonnement: a })).toEqual({ titre: 'Folio+', ligne: 'Offert', alerte: '', payer: false, gerer: false });
+    expect(gestion(a, { os: 'mac', natif: false })).toBeNull();
+  });
+  it('chaque geste bridé a sa raison, dite en tête de l’écran Folio+', () => {
+    for (const f of PLUS_SEUL.filter(x => x !== 'journal')) expect(RAISONS[f]).toBeTruthy();
+    expect(RAISONS.journal).toBeTruthy();
   });
   it('Campus : offert par l’établissement ; un abonnement qui court en double se signale', () => {
     expect(resume({ offre: 'campus', etablissement: 'Lycée Démo', licenceFin: '2027-07-31', abonnement: null }))
@@ -63,10 +82,11 @@ describe('les prix, les dates, les retours', () => {
     expect(euros(FORMULES.mensuel.prix)).toBe('4,99 €');
     expect(FORMULES.annuel.sans).toBe(FORMULES.mensuel.prix * 12);
   });
-  it('la vente n’ouvre qu’avec Stripe branché (docs/VENTE.md)', () => expect(VENTE_OUVERTE).toBe(false));
+  it('la vente est ouverte (2026-10-27) : un compte gratuit a l’onglet Folio+', () => expect(VENTE_OUVERTE).toBe(true));
   it('une date lisible, rien pour une date fausse', () => {
     expect(dateLisible('2027-02-01T12:00:00Z')).toBe('1 février 2027');
     expect(dateLisible('nimporte')).toBe('');
+    expect(dateLisible(null)).toBe('');
   });
   it('les erreurs dites en clair', () => {
     expect(erreurDe('nokey')).toBe('Le paiement ouvre bientôt');
@@ -100,20 +120,28 @@ describe('l’appareil', () => {
     expect(plateforme({ ua: UA.linux }).os).toBe('linux');
     expect(plateforme().os).toBe('autre');
   });
-  it('dans l’app des magasins : natif, et rien ne s’y vend', () => {
+  it('dans l’app des magasins : l’achat intégré ; ailleurs, Stripe', () => {
     const p = plateforme({ ua: UA.iphone, capacitor: 'ios' });
     expect(p).toEqual({ os: 'ios', natif: true });
-    expect(peutVendre(p)).toBe(false);
-    expect(peutVendre(plateforme({ ua: UA.iphone }))).toBe(true);
+    expect(vente(p)).toBe('magasin');
+    expect(vente(plateforme({ ua: UA.windows }))).toBe('stripe');
     expect(plateforme({ ua: UA.windows, capacitor: 'web' }).natif).toBe(false);
     expect(mobile(p)).toBe(true);
   });
-  it('installer : le magasin quand l’app y est, sinon le navigateur', () => {
+  it('installer : le magasin quand l’app y est ; un ordinateur, son navigateur ; un téléphone, jamais le web', () => {
     const p = plateforme({ ua: UA.android });
-    expect(installer(p)).toEqual({ type: 'navigateur', os: 'android' });
+    expect(installer(p)).toEqual({ type: 'bientot', os: 'android', nom: 'Google Play' });
+    expect(installer(plateforme({ ua: UA.windows }))).toEqual({ type: 'navigateur', os: 'windows' });
     expect(installer(p, { ...MAGASINS, android: 'https://play.google.com/store/apps/details?id=online.folioflashcard.app' }))
       .toEqual({ type: 'magasin', os: 'android', lien: 'https://play.google.com/store/apps/details?id=online.folioflashcard.app', nom: 'Google Play' });
     expect(installer({ os: 'ios', natif: true })).toEqual({ type: 'deja' });
+  });
+  it('un téléphone dans un navigateur part vers son magasin, une fois l’app publiée', () => {
+    const tel = plateforme({ ua: UA.iphone });
+    expect(versLeMagasin(tel)).toBe(false);                       // pas encore publiée : la version web reste
+    expect(versLeMagasin(tel, { ...MAGASINS, ios: 'https://apps.apple.com/app/id1' })).toBe(true);
+    expect(versLeMagasin({ os: 'ios', natif: true }, { ios: 'x' })).toBe(false);
+    expect(versLeMagasin(plateforme({ ua: UA.windows }), { windows: 'x' })).toBe(false);
   });
   it('partout : l’appareil qu’on tient d’abord, chacun avec son geste', () => {
     const l = partout(plateforme({ ua: UA.windows }));

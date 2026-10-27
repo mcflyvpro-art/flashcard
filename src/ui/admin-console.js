@@ -4,7 +4,7 @@ import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { accounts, adm, auth, setAnimate, view } from '../data/etat.js';
 import { esc, plur } from '../core/coeur-sync.js';
-import { admAgir, admCharger, admRole } from '../core/admin.js';
+import { admAgir, admCharger, admOffrirPlus, admRole } from '../core/admin.js';
 import { formatCode, iso } from '../classe.js';
 import {
   aRelancer, BESOINS, bilanSuivi, compterEtapes, courrielReferent, ETAPES, etatLicence, filtrerSuivi, GENRES,
@@ -255,6 +255,10 @@ function ficheCompte() {
       <div class="ed-seg" role="radiogroup">${Object.entries(ROLES).map(([k, t]) => `<button role="radio" aria-checked="${a.role === k}"
         class="${a.role === k ? 'on' : ''}" data-adm="role" data-id="${k}" ${moi && k !== 'admin' ? 'disabled' : ''}>${t}</button>`).join('')}</div>
       ${moi ? '<p class="ed-rien">C’est ton compte : tu ne peux pas te retirer ton rôle.</p>' : ''}
+      <h2 class="ed-h2">Folio+</h2>
+      <div class="ed-seg"><button data-adm="offrir">${svg(I.spark)}Offrir Folio+</button>
+        <button data-adm="reprendre">Reprendre</button></div>
+      <p class="ed-rien">Offert sans fin. Un abonnement payé reste à Stripe ou au magasin.</p>
     </div>`;
 }
 
@@ -330,6 +334,8 @@ const ACTIONS = {
   crole: k => { adm.crole = k; repeint(); },
   compte: id => { adm.copen = id; repeint(); },
   role: k => { const a = (accounts || []).find(x => x.id === adm.copen); if (a && a.role !== k) admRole(a.id, k); },
+  offrir: () => { if (adm.copen) admOffrirPlus(adm.copen, false); },
+  reprendre: () => { if (adm.copen) admOffrirPlus(adm.copen, true); },
   'copier-courriel': copierCourriel,
   'code-ref': () => admAgir('admin_code_ref', { org: adm.open }, 'Nouveau code référent : l’ancien ne marche plus'),
   supprimer: async (id, b) => {

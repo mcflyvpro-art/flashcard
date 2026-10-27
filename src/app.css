@@ -35,6 +35,9 @@
   /* ce qui s'en va accélère et disparaît : jamais plus long que l'entrée */
   --out:cubic-bezier(.4,0,1,1);
   --pad:20px;
+  /* la lumière de Folio+ (la page d'accueil, l'écran Folio+) et son « + » tracé */
+  --plus:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);
+  --plus-s:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 1.7v6.6M1.7 5h6.6' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{height:100%;background:var(--bg)}
@@ -1262,12 +1265,57 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   padding:8px 12px;border-radius:10px;transition:background .2s,color .2s}
 .lnk:hover{background:var(--surf);color:var(--ink)}
 .lnk svg{width:15px;height:15px;flex:none}
-/* ce que la démo sans compte n'ouvre pas : grisé, et dit pourquoi au survol */
+/* ce que la démo sans compte ou Folio gratuit n'ouvre pas : grisé, et dit pourquoi au survol */
 .payant{cursor:not-allowed;position:relative}
 .payant > *{opacity:.42}
 .payant[data-astuce]:hover::after,.payant[data-astuce]:focus-visible::after{content:attr(data-astuce);position:absolute;left:50%;
   bottom:calc(100% + 6px);transform:translateX(-50%);padding:5px 9px;border-radius:8px;background:var(--ink);color:#fff;
   font-size:12px;font-weight:650;white-space:nowrap;z-index:5;pointer-events:none}
+/* ---------- Folio gratuit (ui/bridage.js) ----------
+   Ce qui est dans Folio+ : un « + » tracé (centré au pixel, le signe d'une
+   police ne l'était pas), collé à l'étiquette — en ligne il suit le mot,
+   en colonne il coiffe l'icône. Les onglets de création (.payant), les
+   QCM, les associations, les images et les sons ; « Nouveau livre » quand
+   la bibliothèque est pleine ; les volets du journal, floutés. */
+.payant[data-offre="plus"]::before,html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"])::after,
+html.livres-plein [data-act="new"]::after,.plus-floute .jr-h::after{content:'';order:9;flex:none;width:16px;height:16px;border-radius:50%;
+  pointer-events:none;background:var(--plus-s),var(--plus)}
+html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"]){position:relative;color:var(--soft)}
+html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"]) svg{opacity:.45}
+.cr-tabs .payant[data-offre="plus"]::before,html.offre-gratuit .acts :is([data-act="mcq"],[data-act="match"])::after{position:absolute;top:5px;left:calc(50% + 3px)}
+html.offre-gratuit [data-mact^="med-"]::after{position:absolute;top:-4px;right:-4px}
+html.livres-plein [data-act="new"]:not(.fab){position:relative}
+html.livres-plein [data-act="new"]{background:var(--bg2)!important;color:var(--soft)!important;box-shadow:var(--edge)!important}
+html.livres-plein [data-act="new"] svg{opacity:.5}
+html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-3px}
+.plus-floute{position:relative;cursor:pointer}
+.plus-floute>:not(.jr-h){filter:blur(7px);opacity:.7;pointer-events:none;user-select:none}
+.plus-floute::after{content:'Avec Folio+';position:absolute;left:50%;top:calc(50% + 14px);transform:translate(-50%,-50%);
+  padding:9px 15px;border-radius:99px;background:var(--card);color:var(--ink);font-size:13px;font-weight:750;line-height:1;white-space:nowrap;
+  box-shadow:var(--edge),0 10px 24px -14px rgba(29,28,25,.5)}
+.plus-floute .jr-h::after{display:inline-block}
+@media (min-width:900px){
+  .cr-tabs .payant[data-offre="plus"]::before,html.offre-gratuit #app[data-view="deck"] > .acts :is([data-act="mcq"],[data-act="match"])::after{
+    position:static;margin-left:-2px}
+}
+/* ---------- Folio+ se voit (2026-10-27) ----------
+   Qui l'a (html.offre-plus, ui/bridage.js) le voit partout : le « + » à côté
+   du nom, sa lumière sur ce qui avance (onglet allumé, bouton principal,
+   barres de progression, bouton rond) — et son jeton, comme celui de ses
+   amis qui l'ont (visuels() le dit), porte le liseré de la marque. */
+.jt.jt-plus{border:2.5px solid transparent;background:linear-gradient(var(--k,var(--ink2)) 0 0) padding-box,var(--plus) border-box;
+  box-shadow:0 4px 14px -4px rgba(154,120,207,.8)}
+.jt.lg.jt-plus,.jt.xl.jt-plus{border-width:3.5px}
+.jt.vis.jt-plus{background:linear-gradient(color-mix(in srgb,var(--k) 30%,#fff) 0 0) padding-box,var(--plus) border-box}
+html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:var(--plus);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+html.offre-plus :is(.tabs .sl,.fab,.prog i){background:var(--plus)}
+html.offre-plus .cta:not(:disabled){background:var(--plus);color:#fff;box-shadow:0 10px 22px -12px rgba(120,70,160,.75)}
+html.offre-plus #rail nav button.on svg{color:#8A6BCB}
+/* l'onglet Folio+ d'un compte gratuit : son nom et son icône dans la lumière de la marque */
+.tabs .t-plus svg{color:#9A78CF;fill:rgba(154,120,207,.18)} .tabs .t-plus.on svg{color:var(--bg);fill:none}
+#rail nav .r-plus span{background:var(--plus);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:750}
+#rail nav .r-plus svg{color:#9A78CF}
 .ldemos{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair)}
 .ldemos .lnk{margin:0;border-radius:99px}
 

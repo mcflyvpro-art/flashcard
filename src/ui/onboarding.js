@@ -28,6 +28,7 @@ import { consumeGoto } from './raccourcis.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { openShared } from '../core/reglages-corbeille.js';
 import { oublierVisuels } from '../core/visuels.js';
+import { offreLocale } from '../core/abonnement.js';
 import { arreterTuto, maybeTuto } from './tuto-porte.js';
 
 /* ---------- lien d'injection ---------- */
@@ -323,6 +324,7 @@ export async function boot() {
   if (!(await lienAvantSession())) { setView({ name: 'login' }); render(); return armerSansSession(cibleDepart()); }
   desarmer();
   setDb(load());
+  offreLocale();                         // Folio gratuit ou Folio+ dès le premier écran, hors ligne aussi
   fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état
   if (!consumeHash()) render();          // le cache s'affiche tout de suite
   /* le raccourci attend d'avoir les paquets : « réviser » ne veut rien

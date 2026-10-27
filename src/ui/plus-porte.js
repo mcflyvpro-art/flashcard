@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
-import { demoEtab, myRole, plusNeuf, setPlus, view } from '../data/etat.js';
+import { demoEtab, myRole, offre, plusNeuf, setPlus, view } from '../data/etat.js';
 import { lireRetour } from '../abonnement.js';
 import { offrePull } from '../core/abonnement.js';
 import { go, render } from './bibliotheque.js';
@@ -32,9 +32,16 @@ export function plusView() {
 /* Le référent et l'éditeur gèrent un établissement : Folio+ ne les regarde pas. */
 export const sansFolioPlus = () => myRole === 'ref' || myRole === 'admin' || !!demoEtab;
 
-/* `o` : { etape, formule } — le retour de Stripe, la formule choisie sur le site. */
+/* L'onglet Folio+ (la barre au téléphone, la barre latérale sur
+   ordinateur) : pour un élève ou un professeur en Folio gratuit, la base
+   l'ayant dit — jamais sur une offre inconnue. Folio+ pris, il s'en va ;
+   l'écran reste dans les Réglages (gérer son abonnement). */
+export const ongletPlus = () => !sansFolioPlus() && !!offre && offre.offre === 'gratuit';
+
+/* `o` : { etape, formule, raison } — le retour de Stripe, la formule
+   choisie sur le site, ce que l'élève vient de toucher (ui/bridage.js). */
 export function ouvrirPlus(o = {}) {
-  setPlus({ ...plusNeuf(), formule: o.formule || 'annuel', etape: o.etape || null });
+  setPlus({ ...plusNeuf(), formule: o.formule || 'annuel', etape: o.etape || null, raison: o.raison || null });
   go('plus');
   offrePull().then(() => { if (view.name === 'plus') render(); });
 }

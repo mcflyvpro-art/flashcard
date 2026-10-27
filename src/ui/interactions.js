@@ -453,7 +453,7 @@ const CLICK_RULES = [
   [a => a === 'goalinfo' || a === 'stats', tapStats],
   [a => a === 'tuto', tapTuto],
   [a => a === 'install', tapInstall],
-  [a => a === 'plus', () => ouvrirPlus()],
+  [a => a === 'plus' || a === 'tab-plus', () => ouvrirPlus()],
   [a => a === 'duelquit', tapDuelquit],
   [a => a === 'addshared', tapAddshared],
   [a => a === 'expstats', tapExpstats],

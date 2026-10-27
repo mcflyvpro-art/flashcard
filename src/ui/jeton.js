@@ -1,11 +1,12 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
-import { visuels } from '../data/etat.js';
+import { auth, visuels } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
 import { voir } from '../core/visuels.js';
 import { COULEURS, EMBLEMES, embleme, jetonGroupe, jetonPersonne } from '../jeton.js';
 import { TRAITS, avatarSvg } from '../avatar.js';
 import { medaille } from '../club.js';
+import { aFolioPlus } from './bridage.js';
 
 /* ══════════ les jetons : un seul dessin, partout ══════════
    Une personne : un rond, ses initiales ou son avatar (src/avatar.js). Une
@@ -17,9 +18,13 @@ import { medaille } from '../club.js';
 
 const TAILLE = /^(xs|sm|lg|xl)$/;
 
+/* Folio+ se voit sur le jeton (app.css, .jt-plus) : le mien selon mon
+   offre, celui d'un autre selon visuels(), qui le dit. */
+const aPlus = (id, v) => (auth && id === auth.uid ? aFolioPlus() : !!(v && v.plus));
+
 function personneHtml(id, nom, v, taille) {
   const j = jetonPersonne(id, nom, v && { figure: v.cle, teinte: v.teinte });
-  return `<i class="jt${taille ? ' ' + taille : ''}${j.avatar ? ' vis' : ''}" data-jt="p:${esc(id || '')}"
+  return `<i class="jt${taille ? ' ' + taille : ''}${j.avatar ? ' vis' : ''}${aPlus(id, v) ? ' jt-plus' : ''}" data-jt="p:${esc(id || '')}"
     data-nom="${esc(nom || '')}" style="--k:${j.couleur}" aria-hidden="true">${j.avatar ? avatarSvg(j.avatar) : esc(j.texte)}</i>`;
 }
 

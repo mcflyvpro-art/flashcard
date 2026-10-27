@@ -4,7 +4,7 @@ import { SITE } from '../adresse.js';
 import {
   auth, cardEdit, db, dirty, duels, fnr, friends, gone,
   leaving, mailOpen, mailbox, mateOpen, mateProf, mates,
-  menu, prefs, previewOf, quiz, recKey, recorder, reportOn, sel, sendTo,
+  menu, offre, prefs, previewOf, quiz, recKey, recorder, reportOn, sel, sendTo,
   setAnimate, setDeckOpen, setDeckQ, setLeaving,
   setPendingGrade, setQuiz, setRecKey, setReorder, setReportWhy, setSel, setSendMsg,
   setSendTo, setSplitSize, setStudy, setSubjColor, splitSize, study, subjColor,
@@ -47,6 +47,16 @@ import { startStudy } from './revision.js';
    c'est un « non merci », pas une erreur à remonter. */
 const partager = o => navigator.share(o).catch(() => {});
 
+/* Supprimer son compte n'arrête pas un abonnement pris dans un magasin :
+   Apple et Google le prélèvent jusqu'à ce qu'on le résilie chez eux — on le
+   dit avant (règle 5.1.1 de l'App Store). Stripe, lui, est refusé par la
+   base tant qu'il court (delete_me). */
+function magasinCourt() {
+  const a = offre && offre.abonnement;
+  if (!a || !['actif', 'essai', 'impaye'].includes(a.statut) || a.finPrevue) return '';
+  return { apple: 'l’App Store', google: 'Google Play' }[a.source] || '';
+}
+
 export function paintMenuRename(w) {
   const conf = {
       rename: ['Nom affiché', I.user, 'text', 'Comment on t’appelle', prefs.name || '', 'Enregistrer'],
@@ -59,7 +69,8 @@ export function paintMenuRename(w) {
         ${conf[2] ? `<input class="tok" id="fld" type="${conf[2]}" placeholder="${esc(conf[3])}"
             value="${esc(conf[4])}" autocapitalize="none" autocorrect="off" spellcheck="false">`
           : `<div class="mi" style="font-size:13.5px;color:var(--soft);height:auto;padding:0 16px 12px;
-               line-height:1.45">Tes livres, tes matières et ton journal seront effacés définitivement.</div>`}
+               line-height:1.45">Tes livres, tes matières et ton journal seront effacés définitivement.${magasinCourt()
+                ? `<br><b>Ton abonnement Folio+ continue dans ${magasinCourt()} : résilie-le là-bas d’abord.</b>` : ''}</div>`}
         <div class="mrr" id="mrr"></div>
         <button class="mi ${menu === 'delacc' ? 'warn' : ''}" data-mact="do-${menu}"
           style="justify-content:center;font-weight:700">${svg(I.check)}<span>${conf[5]}</span></button>

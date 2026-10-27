@@ -64,10 +64,10 @@ function noter(genre, ids, rows, changes) {
   const vus = new Set();
   for (const r of rows) {
     if (r.genre !== genre) continue;
-    const k = genre + ':' + r.id, v = { cle: r.cle || null, teinte: r.teinte == null ? null : +r.teinte };
+    const k = genre + ':' + r.id, v = { cle: r.cle || null, teinte: r.teinte == null ? null : +r.teinte, plus: !!r.plus };
     vus.add(r.id);
     const avant = visuels[k];
-    if (!avant || avant.cle !== v.cle || avant.teinte !== v.teinte) { visuels[k] = v; changes.push(k); }
+    if (!avant || avant.cle !== v.cle || avant.teinte !== v.teinte || !!avant.plus !== v.plus) { visuels[k] = v; changes.push(k); }
   }
   // plus visible (ami retiré, classe quittée) : on revient au jeton par défaut
   for (const id of ids) if (!vus.has(id) && visuels[genre + ':' + id]) { delete visuels[genre + ':' + id]; changes.push(genre + ':' + id); }

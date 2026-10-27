@@ -101,14 +101,16 @@ function settingsMatieresHtml() {
    change d'ici, on les montre seulement. */
 const carteEleve = () => !!(compte && compte.gere);
 
-/* La ligne « Folio+ » : à qui l'a déjà (abonnement, établissement), et à
-   tous une fois la vente ouverte (VENTE_OUVERTE, src/abonnement.js). Jamais
-   au référent, à l'éditeur ni dans la démo. */
+/* La ligne « Folio+ » : à qui l'a déjà (abonnement, établissement, Folio+
+   offert aux comptes d'avant le 2026-10-27), et à tous une fois la vente
+   ouverte (VENTE_OUVERTE, src/abonnement.js). Jamais au référent, à
+   l'éditeur ni dans la démo. */
 function lignePlus() {
   if (sansFolioPlus() || !(VENTE_OUVERTE || (offre && offre.offre !== 'gratuit'))) return '';
   const r = offre ? resume(offre) : null;
   return `<button class="sr flat" data-act="plus">${svg(I.star)}<span class="n">Folio+</span>
-          <span class="c">${r ? esc(r.titre === 'Folio' ? 'Gratuit' : r.titre === 'Folio+' ? 'Actif' : 'Campus') : ''}</span>${svg(I.arrow)}</button>`;
+          <span class="c">${r ? esc(r.titre === 'Folio' ? 'Gratuit' : r.titre !== 'Folio+' ? 'Campus'
+            : offre.abonnement && offre.abonnement.source === 'offert' ? 'Offert' : 'Actif') : ''}</span>${svg(I.arrow)}</button>`;
 }
 
 function settingsCompteHtml() {

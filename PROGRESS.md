@@ -19,22 +19,17 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      47 / 148
-DERNIER   2026-10-27 · Le tuto, v2 : il présente l'app pas à pas (l'élève : ses
-          livres, une flashcard, créer, son journal, sa classe, ses amis, son
-          courrier ; le professeur : tableau de bord, une classe, un élève, un
-          devoir donné, le bilan, l'agenda ; le référent : sa console onglet par
-          onglet) et rien ne le contourne sauf la croix, « Passer » et Échap
-          (une garde sur la fenêtre ; le retour du navigateur ramène à
-          l'étape). Dans la démo, chaque rôle a le sien la première fois ;
-          Folio Campus a la marque du site. Preuves : npm run check (tests du
-          tuto 32), e2e/tuto.e2e.js 8/8 (trois tours) et toute la suite.
-Avant :   2026-10-27 · Folio+ se paie sur le site (docs/VENTE.md) : Stripe Checkout et son
-          portail par la fonction paiement, l'abonnement écrit par
-          stripe-webhook, lu par mon_offre() (20261027190000) ; l'écran Folio+
-          (…/folio-plus) ; vente fermée (VENTE_OUVERTE) tant que le compte
-          Stripe et la migration ne sont pas posés. Avant encore : Lite à 69 %
-          au graphique, démo à 5 livres, journal flouté, src/offres.js ; le
-          premier tuto et l'accueil d'un compte neuf refait.
+DERNIER   2026-10-27 · Folio+ pour de vrai : les comptes d'avant gardent
+          tout (Folio+ offert, migration 20261027210000) ; un compte neuf est
+          en Folio gratuit — 5 livres, ni IA ni QCM ni médias, journal
+          réduit, moteur Lite (ui/bridage.js) — avec l'onglet Folio+ (barre
+          du bas et barre latérale) qui s'en va une fois payé ; Folio+ se
+          voit (liseré du jeton, lumière de la marque). Médias et IA tenus
+          en base ; achat dans l'app des magasins par RevenueCat (fonction
+          magasins) ; un téléphone ira vers son magasin, jamais le web ; la
+          section « Sur tous tes écrans » du site est partie. Preuves :
+          npm run check, tools/paiement/essai.js 32/32, e2e/folio-plus 8/8
+          et toute la suite.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.
@@ -193,10 +188,10 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M11.T6 · bandeau cookies inutile car 0 traceur — cible: 0 cookie non essentiel — preuve: inspection
 
 ## M12 · Paiement B2C [P0] 1/5
-- [~] M12.T1 · Stripe en test: abonnement mensuel et annuel — preuve: paiement test abouti — code prêt (fonctions paiement et stripe-webhook, migration 20261027190000, écran Folio+), attend le compte Stripe et ses clés : docs/VENTE.md § 1 à 3
-- [ ] M12.T2 · limites du gratuit appliquées côté serveur — cible: contournement impossible depuis le client — preuve: test d'attaque
-- [ ] M12.T3 · quotas IA par compte et par mois — cible: budget global jamais dépassé — preuve: simulation 100 comptes
-- [x] M12.T4 · webhooks Stripe idempotents — cible: 0 double facturation sur 100 rejeux — preuve: test — node tools/paiement/essai.js 23/23 (sous Deno, face à un faux Stripe : 100 rejeux sans écriture de plus, un évènement neuf livré 100 fois à la fois → une seule ligne juste, 20 appuis à la fois → une seule page de paiement)
+- [~] M12.T1 · Stripe en test: abonnement mensuel et annuel — preuve: paiement test abouti — code prêt (fonctions paiement, stripe-webhook et magasins, migrations 20261027190000 et 20261027210000, écran et onglet Folio+), attend le compte Stripe, RevenueCat et leurs clés : docs/VENTE.md § 1 à 4
+- [~] M12.T2 · limites du gratuit appliquées côté serveur — cible: contournement impossible depuis le client — preuve: test d'attaque — ce qui coûte est tenu en base (médias : politiques restrictives, supabase/tests/folio_plus_pour_tous.sql ; IA : offre_de dans la fonction ai) ; livres, QCM et journal restent des règles d'écran (décidé le 2026-10-27 : refuser un livre en base bloquerait la synchro) ; reste à lancer les tests SQL en base
+- [~] M12.T3 · quotas IA par compte et par mois — cible: budget global jamais dépassé — preuve: simulation 100 comptes — 50 cours par mois avec Folio+ et Campus, 0 en gratuit (AI_MONTHLY_PLUS, fonction ai) ; reste la simulation et un pool par établissement
+- [x] M12.T4 · webhooks Stripe idempotents — cible: 0 double facturation sur 100 rejeux — preuve: test — node tools/paiement/essai.js 32/32 (sous Deno, face à un faux Stripe et un faux RevenueCat : 100 rejeux sans écriture de plus, un évènement neuf livré 100 fois à la fois → une seule ligne juste, 20 appuis à la fois → une seule page de paiement)
 - [ ] M12.T5 · passage en clés réelles + première vente test — preuve: paiement réel remboursé
 
 ## M13 · Infrastructure de production [P0] 1/6

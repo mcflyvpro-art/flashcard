@@ -162,3 +162,4 @@ button.ed-ligne:hover{background:var(--surf)}
 .ed-lien{font:inherit;color:inherit;text-decoration:underline}
 .ed-entreprise{max-width:760px}
 .ed-b[data-arme="1"]{background:color-mix(in srgb,var(--ko) 13%,var(--card))}
+.ed-seg button svg{width:15px;height:15px;vertical-align:-3px;margin-right:6px}

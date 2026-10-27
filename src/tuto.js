@@ -343,9 +343,16 @@ const PLUS = [['spark', 'Ton cours, une photo ou un PDF : l’IA en fait des pag
    référent d'un établissement qui a déjà sa licence. Un lien `href` est
    un chemin du site (`tarifs` : la page des tarifs, hors de l'app) ;
    `partir` : il quitte la démo (ui/demo.js l'efface comme « Quitter »). */
-/** @param {string} role @param {{ demo?: boolean }} [o] */
-export function finDe(role, { demo } = {}) {
+/** @param {string} role @param {{ demo?: boolean, aPlus?: boolean }} [o] */
+/* `aPlus` : le compte a déjà tout (Folio+ offert ou payé, Campus) — on ne
+   lui propose pas ce qu'il a. */
+export function finDe(role, { demo, aPlus } = {}) {
   const eleve = role === 'perso' || role === 'classe';
+  if (eleve && aPlus && !demo) {
+    return { cle: 'pret', titre: 'Tout est prêt', sous: 'Tes livres t’attendent',
+      points: [['layers', 'Tes livres, partout'], ['chart', 'Ton journal, chaque jour'], ['users', 'Tes amis et tes défis']],
+      actions: [{ t: 'Commencer', fin: 1, pri: 1 }], note: 'Revois ce tuto dans les Réglages.' };
+  }
   if (eleve && demo) {
     return { cle: 'plus', titre: 'Folio+', sous: 'Pour aller plus loin', points: PLUS,
       actions: [{ t: 'Créer mon compte', href: '/inscription', partir: 1, pri: 1 },

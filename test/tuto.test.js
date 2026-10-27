@@ -174,6 +174,8 @@ describe('les cartes du début et de la fin', () => {
     expect(finDe('classe', { demo: true }).cle).toBe('plus');
     expect(finDe('classe', { demo: true }).actions[0]).toMatchObject({ href: '/inscription', partir: 1 });
     expect(finDe('perso').actions[0].href).toBe('tarifs');
+    expect(finDe('perso', { aPlus: true }).cle).toBe('pret');            // Folio+ offert ou payé, Campus : rien à lui vendre
+    expect(finDe('classe', { aPlus: true, demo: true }).cle).toBe('plus');   // la démo essaie Folio gratuit
     expect(finDe('prof', { demo: true }).cle).toBe('campus');
     expect(finDe('ref', { demo: true }).actions[0].href).toBe('/demande-demo');
     expect(finDe('prof').cle).toBe('pret');

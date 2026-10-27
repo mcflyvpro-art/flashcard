@@ -20,7 +20,8 @@ import { STATE, cstate, paintMedia } from './carte-media.js';
 import { admAller, adminView, atSchool, isProf, isPupil, modView } from './classement.js';
 import { refAller, refView } from './etablissement.js';
 import { bienvenueView } from './bienvenue-porte.js';
-import { plusView } from './plus-porte.js';
+import { ongletPlus, ouvrirPlus, plusView } from './plus-porte.js';
+import { auMagasin, magasinView } from './magasin.js';
 import { admPull, boardPull, modPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { decouvrirView, deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
@@ -117,7 +118,8 @@ export function render() {
      arrive, une case cochée — ne rejoue rien. */
   const change = view.name + ':' + (view.id || '') !== ecranAvant;
   const glissiere = glissiereAvant();
-  (v[view.name] || home)();
+  // un téléphone connecté dans son navigateur, l'app de son magasin publiée : ce seul écran (ui/magasin.js)
+  (auMagasin() ? magasinView : v[view.name] || home)();
   $.dataset.view = view.name;
   placerDefilement();
   applyFont();
@@ -177,6 +179,7 @@ function railOnDe(name) {
   if (name === 'admin') return 'adm:' + (adm.tab || 'suivi');
   if (name === 'mod') return 'mod';
   if (name === 'mail' || name === 'lettre') return 'mail';
+  if (name === 'plus') return 'plus';
   if (name === 'stats') return 'stats';
   if (/^(classes|classe|prof|profagenda|profclasse)$/.test(name)) return 'classes';
   if (/^(commu|friends|club|defi|direct|shared)$/.test(name)) return 'commu';
@@ -191,6 +194,12 @@ function railClasseNom() {
 
 const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' : ''}" data-r="${k}">${
   svg(ic)}<span>${nom}</span>${badge ? `<i class="icb">${badge}</i>` : ''}</button>`;
+
+/* Folio+, pour un compte Folio gratuit (ongletPlus, ui/plus-porte.js) : une
+   entrée à part, dans la lumière de la marque ; elle s'en va une fois
+   Folio+ pris. */
+const railPlus = on => ongletPlus() ? `<button class="r-plus${on === 'plus' ? ' on' : ''}" data-r="plus">${
+  svg(I.spark)}<span>Folio+</span></button>` : '';
 
 /* Le logo en tête de la barre : un appui ramène à la première page du
    compte, comme partout ailleurs sur le web. */
@@ -231,6 +240,7 @@ function railNavBoulot(on, classeNom) {
       ${ent('classes', I.school, classeNom)}
       ${ent('home', I.layers, 'Livres')}
       ${ent('mail', I.mail, 'Courrier', railMailBadge())}
+      ${railPlus(on)}
       ${ent('settings', I.gear, 'Réglages')}
     </nav>
     <div class="sp"></div>
@@ -265,7 +275,7 @@ function railNavHome(on, classeNom) {
       ${ent('mail', I.mail, 'Courrier', railMailBadge())}
     </nav>
     <div class="sp"></div>
-    <nav>${ent('settings', I.gear, 'Réglages')}</nav>
+    <nav>${railPlus(on)}${ent('settings', I.gear, 'Réglages')}</nav>
     ${moiRail()}`;
 }
 
@@ -287,6 +297,7 @@ function railClick(e) {
   if (r === 'stats') { statsPull(); return go('stats'); }
   if (r === 'commu') { commuPull(); return go('commu'); }
   if (r === 'classes') return allerClasses();
+  if (r === 'plus') return ouvrirPlus();
   go(r === 'settings' ? 'settings' : 'home');
 }
 
@@ -309,7 +320,8 @@ function paintRail() {
   const on = railOn();
   const boulot = auBoulot();
   const base = monNomRail() + '\u0000' + mailbox.n + '\u0000' + (gestion() ? railCompte() : '')
-            + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v') + '\u0000' + aUneClasse() + (asks || []).length;
+            + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v') + '\u0000' + aUneClasse() + (asks || []).length
+            + '\u0000' + ongletPlus();
   if (r && r.dataset.sig === on + '\u0000' + base) return;      // rien n'a changé : on ne redessine pas
   /* seule l'entrée allumée change : on la déplace sur place, son fond glisse
      de l'une à l'autre au lieu que toute la barre soit refaite */
@@ -330,7 +342,8 @@ function paintRail() {
 /* Les écrans de premier niveau, en onglets nommés : Livres, Classe (pour
    qui en a une), Cercle. C'est la seule navigation horizontale de l'app :
    partout ailleurs on entre et on ressort par la flèche. */
-const ONGLETS = { home: [I.layers, 'Livres'], classes: [I.school, 'Classe'], commu: [I.users, 'Cercle des lecteurs'] };
+const ONGLETS = { home: [I.layers, 'Livres'], classes: [I.school, 'Classe'], commu: [I.users, 'Cercle des lecteurs'],
+  plus: [I.spark, 'Folio+'] };
 export const ordreOnglets = () => ['home', ...(aUneClasse() && !isProf() ? ['classes'] : []), 'commu'];
 export const vueOnglet = k => ({ home, classes: mesClassesView, commu: commuView })[k];
 
@@ -342,12 +355,15 @@ export function allerOnglet(k) {
   go(k, null, 0, true);
 }
 
+/* Folio+ ferme la rangée tant que le compte est en Folio gratuit : un
+   onglet qu'on touche, pas une page qu'on glisse (il n'est pas dans
+   ordreOnglets, que suit le balayage). */
 export const tabs = on => {
-  const l = ordreOnglets().map(k => [k, ...ONGLETS[k]]);
+  const l = [...ordreOnglets(), ...(ongletPlus() ? ['plus'] : [])].map(k => [k, ...ONGLETS[k]]);
   const i = Math.max(0, l.findIndex(t => t[0] === on)), n = (asks || []).length;
   return `<nav class="tabs" data-k="tabs" aria-label="Navigation principale">
   <div class="sl" style="transform:translateX(${i * 74}px)"></div>
-  ${l.map(([k, ic, nom]) => `<button class="${on === k ? 'on' : ''}" data-act="tab-${k}" aria-label="${nom}"
+  ${l.map(([k, ic, nom]) => `<button class="${on === k ? 'on' : ''}${k === 'plus' ? ' t-plus' : ''}" data-act="tab-${k}" aria-label="${nom}"
     aria-current="${on === k ? 'page' : 'false'}">${svg(ic)}${
       k === 'commu' && n ? `<i class="icb">${n}</i>` : ''}</button>`).join('')}
 </nav>`;

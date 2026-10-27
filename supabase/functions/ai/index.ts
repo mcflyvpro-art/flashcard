@@ -7,6 +7,13 @@
      AI_BUDGET_USD       plafond de dépense sur le mois en cours (défaut 20)
      AI_DAILY_CALLS      appels max par compte et par jour (défaut 30)
      AI_DAILY_FILES      photos et PDF max par compte et par jour (défaut 10)
+     AI_MONTHLY_PLUS     cours mis en flashcards par compte et par mois avec
+                         Folio+ ou Campus (défaut 50 : src/offres.js, IA_PAR_MOIS)
+
+   L'IA est dans Folio+ (2026-10-27) : un compte Folio gratuit reçoit
+   « plus » (402), ce qui ouvre l'écran Folio+ dans l'app. L'offre vient de
+   la base (offre_de, rôle service) ; une base qui n'a pas encore la
+   fonction laisse passer, aux seuls quotas du jour.
 
    verify_jwt est actif : seul un compte connecté peut appeler la fonction. */
 
@@ -26,6 +33,7 @@ const DAILY_CALLS = Number(Deno.env.get("AI_DAILY_CALLS") ?? 30);
 /* Une photo ou un PDF coûte bien plus cher qu'un texte collé : quota
    séparé, plus serré, en plus du quota général. */
 const DAILY_FILES = Number(Deno.env.get("AI_DAILY_FILES") ?? 10);
+const MONTHLY_PLUS = Number(Deno.env.get("AI_MONTHLY_PLUS") ?? 50);
 const MAX_CHARS = 24000;
 const MAX_CARDS = 120;
 /* en octets une fois décodé — l'API accepte 5 Mo par image, 32 Mo par PDF,
@@ -160,15 +168,21 @@ Deno.serve(async (req) => {
     .toISOString().slice(0, 10);
   const today = now.toISOString().slice(0, 10);
 
-  const [{ data: month }, { count: mine }, { count: myFiles }] = await Promise.all([
-    admin.from("ai_usage").select("cents").gte("day", firstOfMonth),
-    admin.from("ai_usage").select("id", { count: "exact", head: true })
-      .eq("user_id", uid).eq("day", today),
-    isFile
-      ? admin.from("ai_usage").select("id", { count: "exact", head: true })
-        .eq("user_id", uid).eq("day", today).in("op", ["ocr", "pdf"])
-      : Promise.resolve({ count: 0 }),
-  ]);
+  const [{ data: month }, { count: mine }, { count: myFiles }, { count: myMonth }, { data: offre, error: sansOffre }] =
+    await Promise.all([
+      admin.from("ai_usage").select("cents").gte("day", firstOfMonth),
+      admin.from("ai_usage").select("id", { count: "exact", head: true })
+        .eq("user_id", uid).eq("day", today),
+      isFile
+        ? admin.from("ai_usage").select("id", { count: "exact", head: true })
+          .eq("user_id", uid).eq("day", today).in("op", ["ocr", "pdf"])
+        : Promise.resolve({ count: 0 }),
+      admin.from("ai_usage").select("id", { count: "exact", head: true })
+        .eq("user_id", uid).gte("day", firstOfMonth),
+      admin.rpc("offre_de", { u: uid }),
+    ]);
+  if (!sansOffre && offre === "gratuit") return json({ error: "plus" }, 402);
+  if (!sansOffre && (myMonth ?? 0) >= MONTHLY_PLUS) return json({ error: "mquota" }, 429);
   const spent = (month ?? []).reduce((a, r) => a + Number(r.cents), 0);
   if (spent >= BUDGET_CENTS) return json({ error: "budget" }, 402);
   if ((mine ?? 0) >= DAILY_CALLS) return json({ error: "quota" }, 429);

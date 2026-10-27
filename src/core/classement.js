@@ -1,7 +1,7 @@
 import { I } from '../icones.js';
 import {
   adm, auth, blocks, board, cercle, duels, iAmMod, mailbox,
-  mods, myRole, ref, reportOn, reportWhy,
+  mods, myRole, offre, ref, reportOn, reportWhy,
   setAnimate, setAsks, setBlocks,
   setFriends, setIAmMod, setMates, setMates2, setMyRole, setReportOn, setReportWhy,
   setSchool, view
@@ -18,6 +18,7 @@ import { lienApresRole } from '../ui/liens-entrants.js';
 import { cibleEnAttente } from '../ui/routeur.js';
 import { friendsPull, mailPull } from './reglages-corbeille.js';
 import { sallesPull } from './cercle.js';
+import { offrePull } from './abonnement.js';
 
 /* ---------- classement ----------
    Les révisions de chacun restent privées : la fonction côté serveur ne
@@ -123,7 +124,9 @@ export async function schoolPull() {
    classe veut ses devoirs. On ne le sait qu'après le rôle, donc on attend :
    rediriger après coup ferait clignoter un écran qu'on n'a pas demandé. */
 export async function accueil() {
-  await Promise.all([rolePull(), schoolPull(), comptePull()]);
+  // l'offre avec le rôle : l'onglet Folio+ et ce que Folio gratuit grise se savent dès l'arrivée
+  const avant = JSON.stringify(offre);
+  await Promise.all([rolePull(), schoolPull(), comptePull(), offrePull()]);
   /* Un lien ou un QR « rejoindre », une partie en direct (« ?defi= »), une
      invitation dans un club (« ?club= ») attendait — ouvert avant la
      connexion, ou à l'instant : il passe avant l'écran d'arrivée habituel. */
@@ -137,6 +140,11 @@ export async function accueil() {
   if (myRole === 'admin') { admPull(); return go('admin'); }      // l'éditeur arrive sur sa console
   if (isProf()) return allerAccueil();
   if (isPupil()) { eleveClassesPull(); matesPull(); return go('classes'); }
+  /* on reste sur ses livres : l'offre arrivée (l'onglet Folio+, ce que Folio
+     gratuit grise) se montre ; un écran vers lequel on part la montre de
+     lui-même — repeindre avant d'y aller dérangeait la suite (le tuto d'un
+     professeur, 2026-10-27) */
+  if (JSON.stringify(offre) !== avant) render();
 }
 
 /* Le rôle, les coupures et les signalements arrivent ensemble, et l'écran

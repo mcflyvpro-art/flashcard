@@ -24,6 +24,7 @@ export const AIERR = {
   long: 'Texte trop long', short: 'Texte trop court',
   big: 'Fichier trop lourd', mime: 'Format non reconnu',
   nokey: 'IA non configurée', empty: 'Rien à extraire',
+  plus: 'L’IA est dans Folio+', mquota: '50 cours ce mois-ci : la suite le 1er',
   demo: 'Avec un compte Folio'
 };
 

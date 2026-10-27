@@ -305,7 +305,7 @@ export let compte = null;                  // { gere, nom, identifiant } | null
    l'étape (merci, annule, retour : l'adresse de retour de Stripe), la
    formule choisie, ce qui part (payer, gerer), l'erreur à dire. */
 export let offre = null;
-export const plusNeuf = () => ({ etape: null, formule: 'annuel', envoi: null, err: '', attente: 0 });
+export const plusNeuf = () => ({ etape: null, formule: 'annuel', envoi: null, err: '', attente: 0, raison: null });
 export let plus = plusNeuf();
 
 /* ══════════ « Mes classes », côté élève ══════════

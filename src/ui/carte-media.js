@@ -12,6 +12,7 @@ import {
 import { fsrsTune } from '../core/carte-media.js';
 import { norm } from './quiz.js';
 import { debutJour, estNeuve } from '../file.js';
+import { moteurLite } from './bridage.js';
 
 /* ---------- rendu du contenu d'une carte ----------
    Sous-ensemble volontairement étroit : ce qu'on écrit vraiment sur une fiche.
@@ -381,7 +382,11 @@ export function markDups(cards, target) {
    Le moteur lui-même est dans src/fsrs.js — voir son bandeau. Ici ne
    restent que les trois choses qu'il ne peut pas savoir : les réglages du
    compte, et ce que l'app en fait. */
-export const fsrsW = () => (prefs.w && (prefs.w.length === 34 || prefs.w.length === 21)) ? prefs.w : W6;
+/* Memory Engine Lite (Folio gratuit, src/offres.js) : les paramètres par
+   défaut, sans équilibreur ni réoptimisation ; Ultra (Folio+, Campus) : les
+   paramètres réglés sur l'élève, et l'équilibreur de charge d'Anki. Les
+   paramètres appris restent rangés : repasser à Folio+ les retrouve. */
+export const fsrsW = () => (!moteurLite() && prefs.w && (prefs.w.length === 34 || prefs.w.length === 21)) ? prefs.w : W6;
 
 /* La rétention visée et l'intervalle plafond sont figés sur les réglages
    d'Anki (90 %, 36 500 jours) : plus de curseur (2026-10-25). Un élève doit
@@ -411,7 +416,7 @@ function chargeDes(now) {
   return charge.f;
 }
 
-const fsrsCfg = now => ({ w: fsrsW(), dr: fsrsDR(), maxIvl: fsrsMax(), charge: chargeDes(now || Date.now()) });
+const fsrsCfg = now => ({ w: fsrsW(), dr: fsrsDR(), maxIvl: fsrsMax(), charge: moteurLite() ? null : chargeDes(now || Date.now()) });
 
 /* Probabilité de se rappeler la fiche à l'instant t : c'est la grandeur
    que FSRS optimise, et celle qui décide de l'échéance. */
@@ -593,7 +598,7 @@ export function fsrsOptimize(items) {
 /* Anki réoptimise tout seul ; ici pareil, sans rien demander ni afficher :
    au calme après le démarrage, quand l'historique a assez bougé. */
 export function fsrsAuto() {
-  if (prefs.simple || !auth.uid) return;
+  if (prefs.simple || !auth.uid || moteurLite()) return;
   const age = Date.now() - (prefs.wAt || 0);
   const lues = stats.rep && stats.rep.toujours ? +stats.rep.toujours.n : 0;
   const grown = !prefs.wN || lues > prefs.wN * OPT_GROWTH;

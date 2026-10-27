@@ -177,3 +177,65 @@ export async function signatureValide(corps, entete, secret, maintenant = Date.n
   const attendue = await signer(corps, secret, t);
   return v1.some(s => egales(s, attendue));
 }
+
+/* ══════════ l'app des magasins : Apple et Google, par RevenueCat ══════════
+   Dans l'app des magasins (Capacitor), Folio+ s'achète par Apple ou Google —
+   leurs règles — au travers de RevenueCat, qui parle aux deux et unifie
+   leurs reçus. Le compte RevenueCat d'un élève est son identifiant Folio
+   (Purchases.logIn, core/abonnement.js). La fonction magasins relit chez
+   RevenueCat l'abonné tout entier (GET /v1/subscribers/<compte>) à chaque
+   évènement et au retour d'un achat : comme pour Stripe, l'état du moment,
+   jamais l'évènement cru sur parole — l'ordre d'arrivée ne compte pas. */
+
+// le droit (« entitlement ») qui ouvre Folio+, créé dans RevenueCat
+export const DROIT = 'plus';
+const MAGASINS = { app_store: 'apple', mac_app_store: 'apple', play_store: 'google' };
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/* La formule d'un produit des magasins, d'après son identifiant (créé dans
+   App Store Connect et la Play Console : folio_plus_annuel, folio_plus:mensuel…). */
+export function formuleDuProduit(id) {
+  const s = String(id || '').toLowerCase();
+  return /annu|year|p1y/.test(s) ? 'annuel' : /mens|month|p1m/.test(s) ? 'mensuel' : null;
+}
+
+const iso = d => (d ? new Date(d).toISOString() : null);
+
+/* La ligne de la table abonnements que décrit l'abonné RevenueCat — sa
+   ligne « apple » ou « google » ; rien pour un achat qui ne vient pas d'un
+   magasin (Stripe a sa propre fonction). Un délai de grâce (paiement refusé,
+   le magasin réessaie) garde l'accès jusqu'à sa fin, comme « past_due » de
+   Stripe ; un remboursement le ferme aussitôt. */
+export function ligneMagasin(abonne, userId, maintenant = Date.now(), droit = DROIT) {
+  const ent = abonne && abonne.entitlements && abonne.entitlements[droit];
+  if (!ent || !ent.product_identifier) return null;
+  const sub = (abonne.subscriptions || {})[ent.product_identifier] || {};
+  const source = MAGASINS[sub.store];
+  if (!source) return null;
+  const fin = iso(sub.grace_period_expires_date || ent.grace_period_expires_date || sub.expires_date || ent.expires_date);
+  const fini = !!sub.refunded_at || (!!fin && Date.parse(fin) <= maintenant);
+  return {
+    user_id: userId,
+    offre: 'plus',
+    statut: fini ? 'fini' : sub.billing_issues_detected_at ? 'impaye' : sub.period_type === 'trial' ? 'essai' : 'actif',
+    source,
+    formule: formuleDuProduit(ent.product_identifier),
+    client_stripe: null,
+    abonnement_stripe: null,
+    fin_periode: fin,
+    fin_prevue: !!sub.unsubscribe_detected_at,
+    maj_le: new Date(maintenant).toISOString()
+  };
+}
+
+/* Les comptes Folio dont parle un évènement RevenueCat (un transfert d'achat
+   d'un compte à l'autre en nomme deux) ; un identifiant anonyme de
+   RevenueCat ($RCAnonymousID:…) n'est pas un compte Folio. */
+export function comptesDeLEvenementRC(corps) {
+  const e = (corps && corps.event) || {};
+  const ids = [e.app_user_id, e.original_app_user_id, ...(e.transferred_from || []), ...(e.transferred_to || [])];
+  return [...new Set(ids.filter(x => typeof x === 'string' && UUID.test(x)))];
+}
+
+// l'en-tête Authorization que RevenueCat envoie, comparé sans fuite de temps
+export const autorise = (entete, secret) => !!secret && egales(String(entete || ''), secret);

@@ -154,12 +154,12 @@ describe('le graphique du moteur', async () => {
   });
 });
 
-/* La page, l'app et Stripe disent les mêmes prix ; les gestes d'installation
-   de la section « Sur tous tes écrans » sont ceux que l'app montre après le
-   paiement ; le bouton de Folio+ ne mène au paiement que la vente ouverte. */
+/* La page, l'app et Stripe disent les mêmes prix ; le bouton de Folio+ ne
+   mène à l'écran Folio+ de l'app que la vente ouverte. La section « Sur
+   tous tes écrans » est partie le 2026-10-27 : un téléphone a l'app de son
+   magasin, un ordinateur son navigateur (src/plateformes.js). */
 describe('Folio+ et les appareils', async () => {
   const { FORMULES, VENTE_OUVERTE, euros } = await import('../src/abonnement.js');
-  const { GESTES } = await import('../src/plateformes.js');
   const plat = s => s.replace(/&nbsp;|&#8239;|\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ');
   const page = plat(html);
   it('les prix de la page sont ceux de l’app', () => {
@@ -167,11 +167,10 @@ describe('Folio+ et les appareils', async () => {
       expect(page).toContain(plat(euros(c)));
     }
   });
-  it('chaque appareil a sa carte, avec le geste de l’app', () => {
-    for (const os of ['ios', 'android', 'mac', 'windows']) {
-      expect(html).toContain(`data-os="${os}"`);
-      expect(page).toContain(plat(GESTES[os]).replace(/'/g, '’'));
-    }
+  it('plus de section pour installer : ni ses cartes, ni son lien', () => {
+    expect(html).not.toContain('id="telecharger"');
+    expect(html).not.toContain('href="#telecharger"');
+    expect(html).not.toMatch(/data-os=/);
   });
   it('« Passer à Folio+ » ne mène au paiement que la vente ouverte', () => {
     const bouton = html.match(/<a [^>]*data-vente[^>]*>/)[0];

@@ -38,6 +38,7 @@ heures.
 | `AI_BUDGET_USD` | plafond de dépense sur le mois en cours (défaut 20) |
 | `AI_DAILY_CALLS` | appels maximum par compte et par jour (défaut 30) |
 | `AI_DAILY_FILES` | photos et PDF maximum par compte et par jour (défaut 10) |
+| `AI_MONTHLY_PLUS` | cours par compte et par mois avec Folio+ ou Campus (défaut 50, `IA_PAR_MOIS` de `src/offres.js`) ; un compte Folio gratuit reçoit `plus` (402) |
 
 ⚠️ **Ces trois plafonds ne tiennent pas à l'échelle d'un établissement.** Le
 budget est global à tous les comptes : un seul lycée actif l'épuise en
@@ -66,6 +67,25 @@ pas (produit et prix dans Stripe, portail client, point d'arrivée des
 La migration `20261027190000` pose la tâche pg_cron
 `purge-stripe-evenements` (03:41 UTC, évènements de plus de 30 jours) ;
 sans pg_cron, la lancer à la main comme les autres purges.
+
+## Folio+ : l'app des magasins, par RevenueCat (2026-10-27)
+
+La fonction `magasins` (**verify_jwt coupé** :
+`supabase functions deploy magasins --no-verify-jwt`) reçoit le webhook de
+RevenueCat (secret partagé) et le retour d'achat de l'app (jeton vérifié
+auprès de Supabase Auth), relit l'abonné et écrit la ligne `apple` ou
+`google` d'`abonnements`. Pas à pas : `docs/VENTE.md`, § 2.
+
+| Secret | Rôle |
+|---|---|
+| `RC_SECRET` | la clé secrète de l'API RevenueCat (`sk_…`), sinon `magasins` répond `nokey` |
+| `RC_WEBHOOK_AUTH` | la valeur exacte de l'en-tête Authorization du webhook RevenueCat |
+| `RC_DROIT` | le droit (« entitlement ») de Folio+, défaut `plus` |
+
+La migration `20261027210000` réserve aussi les écritures du seau `media` à
+Folio+ et Campus (politiques restrictives `media_folio_plus` et
+`media_folio_plus_maj`, qui s'ajoutent à celles du tableau de bord) et donne
+Folio+ offert à tous les comptes qui existent quand on l'applique.
 
 ## Purge programmée
 

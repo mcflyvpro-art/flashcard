@@ -100,7 +100,7 @@ async function jusqua(page, but) {
 
 test('un particulier : son premier livre, une page lue et notée, son journal, ses amis, son courrier, Folio+', async ({ page }) => {
   test.setTimeout(120000);
-  const store = nouveauStore();
+  const store = { ...nouveauStore(), parDefaut: 'gratuit' };             // un compte neuf : Folio gratuit
   const lea = semerCompte(store, 'lea@exemple.fr');
   faireEleve(store, 'lea@exemple.fr');
   await brancher(page, store);
@@ -136,6 +136,8 @@ test('un particulier : son premier livre, une page lue et notée, son journal, s
   await bulle(page).getByRole('button', { name: 'Remplir pour moi' }).click();
   await expect(page.locator('#cn')).toHaveText('3');
   await expect(page.locator('#nm')).toHaveValue('Verbes irréguliers');   // la matière choisie à l'accueil
+  // l'étape a porté : le tuto laisse voir les pages (320 ms), puis passe à « Crée-le »
+  await expect(page.locator('#tu .tu-bulle.vue .tu-t')).not.toHaveText('Écris ta première page', { timeout: 5000 });
 
   expect(await jusqua(page, 'Folio s’en souvient')).toEqual(['Crée-le', 'Lis-le', 'Retourne la page', 'Dis si tu savais']);
   await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'centre');
@@ -144,14 +146,13 @@ test('un particulier : son premier livre, une page lue et notée, son journal, s
   expect(await jusqua(page, '')).toEqual(['Ton journal', 'Tes progrès', 'Le cercle', 'Tes amis', 'Ton courrier', 'Ta boîte']);
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'mail');
 
-  // la fin : Folio+, la page des tarifs dans un autre onglet
+  // la fin : Folio+, l'écran Folio+ de l'app (la vente est ouverte depuis le 2026-10-27)
   const fin = page.locator('#tu .tu-fin.plus');
   await expect(fin).toBeVisible({ timeout: 10000 });
-  const lien = fin.getByRole('link', { name: 'Découvrir Folio+' });
-  await expect(lien).toHaveAttribute('href', /\?site#tarifs$/);
-  await expect(lien).toHaveAttribute('target', '_blank');
-  await fin.getByRole('button', { name: 'Terminer' }).click();
+  await expect(fin.getByRole('button', { name: 'Terminer' })).toBeVisible();
+  await fin.getByRole('button', { name: 'Découvrir Folio+' }).click();
   await expect(page.locator('#tu')).toHaveCount(0);
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'plus', { timeout: 10000 });
 
   // tout est vrai : le livre, ses trois pages, la page lue au journal
   const livre = (store.tables.decks || []).find(d => d.user_id === lea && d.name === 'Verbes irréguliers');

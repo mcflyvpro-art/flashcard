@@ -6,7 +6,6 @@
 import { codeComplet, normCode } from '../classe.js';
 import { pinComplet, pinDepuisTexte } from '../defi.js';
 import { courbes, duree, versT } from './courbes.js';
-import { MAGASINS, NOMS, plateforme } from '../plateformes.js';
 
 const doc = document.documentElement;
 const reduit = matchMedia('(prefers-reduced-motion: reduce)');
@@ -359,48 +358,6 @@ function relierVente(t) {
   t.querySelectorAll('[data-vente-an][data-vente-mois]').forEach(a => { a.href = mois ? a.dataset.venteMois : a.dataset.venteAn; });
 }
 
-/* ---------- sur chaque appareil ----------
-   L'appareil qu'on tient passe en premier, marqué ; le lien du magasin
-   apparaît quand l'app y est (MAGASINS) ; sinon, quand le navigateur sait
-   installer (Chrome, Edge : beforeinstallprompt), un bouton le fait en un
-   clic — l'app installée s'ouvre sur /app (le manifeste). */
-let invite = null;
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); invite = e; montrerInstaller(); });
-
-function montrerInstaller() {
-  const ici = document.querySelector('.tl-carte.tl-ici');
-  if (!ici || !invite || ici.querySelector('[data-installer]') || MAGASINS[ici.dataset.os]) return;   // le magasin passe avant
-  const b = document.createElement('button');
-  b.type = 'button'; b.className = 'bt bt-encre'; b.dataset.installer = '';
-  b.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-telecharger"/></svg>Installer Folio';
-  b.addEventListener('click', async () => {
-    if (!invite) return;
-    invite.prompt();
-    const { outcome } = await invite.userChoice.catch(() => ({}));
-    if (outcome === 'accepted') { invite = null; b.replaceWith(Object.assign(document.createElement('p'), { className: 'tl-ok', textContent: 'Folio est installé' })); }
-  });
-  ici.appendChild(b);
-}
-
-function appareils() {
-  const l = document.querySelector('.tl-liste');
-  if (!l) return;
-  const p = plateforme({ ua: navigator.userAgent, touches: navigator.maxTouchPoints || 0 });
-  for (const li of l.querySelectorAll('.tl-carte')) {
-    const lien = MAGASINS[li.dataset.os];
-    if (!lien) continue;
-    const a = Object.assign(document.createElement('a'), { className: 'bt bt-encre', href: lien, target: '_blank', rel: 'noopener' });
-    a.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-telecharger"/></svg>' + NOMS[li.dataset.os];
-    li.appendChild(a);
-  }
-  const ici = l.querySelector(`.tl-carte[data-os="${p.os}"]`);
-  if (!ici) return;
-  ici.classList.add('tl-ici');
-  ici.insertAdjacentHTML('afterbegin', '<span class="tl-ici-pastille">Ton appareil</span>');
-  l.prepend(ici);
-  montrerInstaller();
-}
-
 /* ---------- « J'ai un code » ----------
    Une classe, un établissement ou un professeur particulier : 8 signes
    (classe.js) ; une partie en direct : 6 chiffres (defi.js) ; un club :
@@ -484,7 +441,6 @@ function demarrer() {
   videos();
   onglets();
   tarifs();
-  appareils();
   fenetreCode();
 }
 

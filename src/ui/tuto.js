@@ -2,7 +2,7 @@
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import {
-  auth, comp, compte, db, demoEtab, eleve, mailbox, me, menu, myRole, prefs, prof, ref, setTuto, study, tuto, view
+  auth, comp, compte, db, demoEtab, eleve, mailbox, me, menu, myRole, offre, prefs, prof, ref, setTuto, study, tuto, view
 } from '../data/etat.js';
 import { deck, esc } from '../core/coeur-sync.js';
 import { refPull } from '../core/classement.js';
@@ -113,7 +113,7 @@ const cleFeuille = () => `${menu}:${menu === 'pf' ? prof.feuille : ''}`;
 const TANT = {
   aLire: () => view.name === 'deck' && !!document.querySelector('.cta.read b'),
   /* dans la démo d'un élève, Folio gratuit garde 5 livres : au-delà, « Nouveau livre » ouvre une fenêtre (ui/demo.js) */
-  creable: () => !document.documentElement.classList.contains('en-demo-plein'),
+  creable: () => !document.documentElement.classList.contains('livres-plein'),
   feuille: () => !!menu && !!document.querySelector(FEUILLE) && (!t.feuille || cleFeuille() === t.feuille),
   classes: () => (prof.classes ? aDesClasses() : null),
   eleves: () => (view.name !== 'profclasse' ? false : prof.roster == null ? null : prof.roster.length > 0)
@@ -562,7 +562,7 @@ function actionHtml(a) {
 }
 
 function carteFin() {
-  const f = finDe(t.role, { demo: t.demo });
+  const f = finDe(t.role, { demo: t.demo, aPlus: !!offre && offre.offre !== 'gratuit' });
   return `<div class="tu-c tu-fin ${f.cle}" role="dialog" aria-modal="true" aria-labelledby="tuct">
       ${titreFin(f)}
       <p class="tu-sous">${esc(f.sous)}</p>

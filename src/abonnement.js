@@ -5,12 +5,19 @@
    d'accueil (index.html, tarifs) et des prix créés dans Stripe : les trois
    doivent dire la même chose (test/site.test.js compare la page à FORMULES).
 
-   La vente ouvre quand Stripe est branché (docs/VENTE.md) : d'ici là,
-   VENTE_OUVERTE reste faux — l'entrée « Folio+ » des Réglages ne se montre
-   qu'à qui a déjà Folio+ ou Campus, et l'écran (adresse …/folio-plus) ne
-   propose rien à acheter. */
+   La vente est ouverte (2026-10-27) : un compte Folio gratuit a l'onglet
+   Folio+, les boutons du site mènent à l'écran Folio+ de l'app. Tant que
+   Stripe (sur ordinateur) ou RevenueCat (dans l'app des magasins) n'est pas
+   branché, « Passer à Folio+ » répond « le paiement ouvre bientôt »
+   (docs/VENTE.md) ; repasser VENTE_OUVERTE à faux rend aux boutons du site
+   le chemin de l'inscription. */
 
-export const VENTE_OUVERTE = false;
+export const VENTE_OUVERTE = true;
+
+/* Les clés PUBLIQUES de RevenueCat (appl_…, goog_…), faites pour vivre dans
+   l'app comme la clé anon de Supabase ; vides tant que l'app des magasins
+   n'existe pas (docs/VENTE.md). */
+export const REVENUECAT = { ios: '', android: '' };
 
 // en centimes, TVA comprise
 export const FORMULES = {
@@ -29,12 +36,25 @@ export const AVANTAGES = [
   'Toutes tes stats : mémoire, matières, pages qui résistent'
 ];
 
+/* Ce que l'élève vient de toucher, quand l'écran Folio+ s'ouvre sur un
+   geste bridé (ui/bridage.js) : dit en tête, au-dessus des formules. */
+export const RAISONS = {
+  ia: 'L’IA écrit tes livres pour toi',
+  photo: 'Ton cahier en photo, et c’est un livre',
+  fichier: 'Ton PDF devient un livre',
+  exercices: 'QCM et associations',
+  media: 'Des images et des sons sur tes pages',
+  livres: 'Ta bibliothèque est pleine : 5 livres avec Folio gratuit',
+  journal: 'Ton journal complet'
+};
+
 // 2999 → « 29,99 € » (espace insécable : le prix ne se coupe jamais)
 export const euros = c => (c / 100).toFixed(2).replace('.', ',') + ' €';
 
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre',
   'novembre', 'décembre'];
 export function dateLisible(iso) {
+  if (!iso) return '';                 // sans date (Folio+ offert sans fin) : new Date(null) serait le 1er janvier 1970
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? '' : `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`;
 }
@@ -79,7 +99,7 @@ function resumeCampus(o) {
     titre: 'Folio Campus',
     ligne: (o.etablissement ? `Offert par ${o.etablissement}` : 'Offert par ton établissement') + (fin ? ` jusqu’au ${fin}` : ''),
     alerte: double ? 'Ton abonnement Folio+ continue d’être prélevé : ton établissement t’offre déjà tout.' : '',
-    payer: false, gerer: !!a && a.source === 'stripe'
+    payer: false, gerer: !!a && a.source !== 'offert' && court(a)
   };
 }
 
@@ -90,8 +110,8 @@ function resumeGratuit(a) {
 }
 
 /* Ce que l'écran dit du compte : un titre, une ligne, et ce qu'on peut y
-   faire — payer (Folio gratuit), gérer (un abonnement Stripe : carte,
-   formule, résiliation, factures, par le portail de Stripe), et une alerte
+   faire — payer (Folio gratuit), gérer (un abonnement payé : carte,
+   formule, résiliation, là où il a été pris — gestion()), et une alerte
    quand quelque chose demande un geste. */
 export function resume(o) {
   const a = o.abonnement;
@@ -101,9 +121,30 @@ export function resume(o) {
   return {
     titre: 'Folio+',
     ligne: ligneAbonne(a) + (MAGASIN[a.source] ? ` · géré dans ${MAGASIN[a.source]}` : ''),
-    alerte: a.statut === 'impaye' ? 'Stripe va réessayer ta carte : mets-la à jour pour garder Folio+.' : '',
-    payer: false, gerer: a.source === 'stripe'
+    alerte: a.statut === 'impaye' ? (a.source === 'stripe' ? 'Stripe va réessayer ta carte : mets-la à jour pour garder Folio+.'
+      : `Mets à jour ton moyen de paiement dans ${MAGASIN[a.source] || 'le magasin'} pour garder Folio+.`) : '',
+    payer: false, gerer: a.source !== 'offert'
   };
+}
+
+/* Où se gère un abonnement, vu de CET appareil (`p` : plateforme(), src/
+   plateformes.js). Chacun là où il a été pris : Stripe par son portail —
+   jamais depuis l'app des magasins, où un lien vers un paiement hors
+   d'Apple et de Google est interdit —, Apple dans les réglages de l'iPhone,
+   Google dans Google Play. Ailleurs, on dit où. */
+export const GERER = {
+  apple: 'https://apps.apple.com/account/subscriptions',
+  google: 'https://play.google.com/store/account/subscriptions'
+};
+export function gestion(a, p) {
+  if (!a || a.source === 'offert') return null;
+  if (a.source === 'stripe') return p.natif ? { type: 'texte', texte: 'Se gère sur folioflashcard.online, depuis un ordinateur' }
+    : { type: 'stripe' };
+  if (a.source === 'apple') return p.os === 'ios' ? { type: 'lien', lien: GERER.apple }
+    : { type: 'texte', texte: 'Se gère sur ton iPhone ou ton iPad : Réglages, ton nom, Abonnements' };
+  if (a.source === 'google') return p.os === 'android' ? { type: 'lien', lien: GERER.google }
+    : { type: 'texte', texte: 'Se gère dans Google Play, sur ton téléphone Android' };
+  return null;
 }
 
 /* Ce que rend la fonction paiement quand elle ne peut pas, dit à l'élève. */
@@ -113,6 +154,9 @@ const ERREURS = {
   campus: 'Ton établissement t’offre déjà tout Folio+',
   aucun: 'Aucun abonnement à gérer sur ce compte',
   hors: 'Hors ligne : le paiement attend le réseau',
+  magasin: 'Le magasin ne répond pas : réessaie dans un instant',
+  annule: 'Achat annulé : rien n’a été prélevé',
+  rien: 'Aucun achat Folio+ à restaurer sur ce compte',
   demo: 'Dans la démo, rien ne se paie : crée ton compte',
   auth: 'Reconnecte-toi pour continuer',
   stripe: 'Le paiement ne répond pas : réessaie dans un instant'

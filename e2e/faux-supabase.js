@@ -1,9 +1,15 @@
 // Le Supabase en mémoire des parcours (M07) : il vit dans src/base-locale/
 // (serveur.js et ses voisins), où la démo sans compte le sert aussi, dans le
 // navigateur. Ici, seulement ce qui le branche sur une page Playwright.
-import { repondre } from '../src/base-locale/serveur.js';
+import { nouveauStore as storeNeuf, repondre } from '../src/base-locale/serveur.js';
 
-export { nouveauStore, semerLivre, semerPaquetDu } from '../src/base-locale/serveur.js';
+export { semerLivre, semerPaquetDu } from '../src/base-locale/serveur.js';
+
+/* Les comptes des parcours sont ceux d'avant le 2026-10-27, qui ont reçu
+   Folio+ offert (migration 20261027210000) : un parcours écrit avant le
+   bridage ne bute pas sur lui. Celui qui essaie Folio gratuit pose
+   `store.parDefaut = 'gratuit'` (e2e/folio-plus.e2e.js). */
+export const nouveauStore = () => ({ ...storeNeuf(), parDefaut: 'plus' });
 
 /* Branche le faux serveur sur une page (ou un contexte). Couper le réseau
    (`store.online = false`) fait échouer chaque requête comme une vraie

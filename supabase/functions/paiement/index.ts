@@ -75,7 +75,7 @@ async function stripe(chemin: string, donnees: Record<string, string>, cle: stri
 /* La ligne d'abonnement du compte (le client Stripe y est rangé), lue avec
    le rôle service : mon_offre() ne le rend pas, l'app n'a pas à le connaître. */
 async function ligneDe(uid: string) {
-  const r = await fetch(`${URL_SB}/rest/v1/abonnements?user_id=eq.${uid}&select=*`, {
+  const r = await fetch(`${URL_SB}/rest/v1/abonnements?user_id=eq.${uid}&source=eq.stripe&select=*`, {
     headers: { apikey: SERVICE, Authorization: "Bearer " + SERVICE },
   });
   if (!r.ok) throw new Error("base " + r.status);
@@ -127,11 +127,13 @@ Deno.serve(async (req) => {
     const prix = Deno.env.get(formule === "annuel" ? "STRIPE_PRIX_ANNUEL" : "STRIPE_PRIX_MENSUEL");
     if (!prix) return json({ error: "noprix" }, 503);
 
-    /* Payer deux fois la même chose : jamais. Folio+ court déjà → le
-       portail ; l'établissement l'offre → rien à acheter. */
+    /* Payer deux fois la même chose : jamais. Folio+ court déjà — payé
+       ici, dans un magasin, ou offert → rien à acheter ; l'établissement
+       l'offre → rien non plus. */
     if (ligne && ouvre(ligne.statut, ligne.fin_periode)) return json({ error: "deja" }, 409);
     const offre = await offreDe(req);
     if (offre?.offre === "campus") return json({ error: "campus" }, 409);
+    if (offre?.offre === "plus") return json({ error: "deja" }, 409);
 
     /* Deux appuis dans la même minute rendent la même page (clé
        d'idempotence) : jamais deux abonnements pour un double clic. */

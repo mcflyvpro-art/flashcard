@@ -1,22 +1,34 @@
-// Folio+ (2026-10-27) : l'écran, le paiement et son retour, puis Folio sur
-// tous les écrans. La fonction `paiement` est jouée par la base locale
+// Folio+ (2026-10-27) : l'onglet d'un compte gratuit, ce qu'il grise,
+// l'écran, le paiement et son retour, puis Folio sur tous les écrans ; un
+// compte d'avant le 2026-10-27, qui a Folio+ offert ; l'app des magasins.
+// Les fonctions `paiement` et `magasins` sont jouées par la base locale
 // (src/base-locale/abonnements.js) : « payer » y écrit l'abonnement comme le
 // ferait stripe-webhook et renvoie à l'adresse de retour de Stripe. Les
-// vraies fonctions, face à un faux Stripe : tools/paiement/essai.js.
+// vraies fonctions, face à un faux Stripe et un faux RevenueCat :
+// tools/paiement/essai.js.
 import { test, expect } from '@playwright/test';
-import { brancher, nouveauStore } from './faux-supabase.js';
+import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
 import { semerCompte } from './faux-cercle.js';
 import { etab, semerEtablissement } from './faux-etablissement.js';
 import { inscrire } from './aide.js';
 
 const ecran = page => page.locator('#app[data-view="plus"]');
+// un compte créé après le 2026-10-27 : Folio gratuit (les comptes des parcours ont sinon Folio+ offert)
+const gratuit = () => ({ ...nouveauStore(), parDefaut: 'gratuit' });
+const pages = i => [1, 2, 3, 4].map(k => [`question ${i}.${k}`, `réponse ${i}.${k}`]);
 
-test('un compte gratuit passe à Folio+ : la formule, le paiement, le retour, puis Folio partout', async ({ page }) => {
-  const store = nouveauStore();
+test('un compte gratuit : l’onglet Folio+, le paiement, le retour ; l’onglet s’en va, Folio+ se voit', async ({ page }) => {
+  const store = gratuit();
   await brancher(page, store);
   await inscrire(page);
-  await page.goto('./eleve/folio-plus');
+  const onglet = page.locator('.tabs [data-act="tab-plus"]');
+  await expect(onglet).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('html')).toHaveClass(/offre-gratuit/);
+  await onglet.click();
   await expect(ecran(page)).toBeVisible({ timeout: 10000 });
+  await expect(page).toHaveURL(/\/eleve\/folio-plus$/);
+  await expect(page.locator('[data-fp="retour"]')).toHaveCount(0);             // un onglet : la barre du bas, pas de retour
+  await expect(page.locator('.tabs [data-act="tab-plus"]')).toHaveClass(/on/);
   await expect(page.locator('.fp-ligne')).toContainText('Gratuit');
   await expect(page.getByRole('radio', { name: /Annuel/ })).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('29,99');
@@ -31,13 +43,20 @@ test('un compte gratuit passe à Folio+ : la formule, le paiement, le retour, pu
   const u = store.users.find(x => x.email === 'lea@exemple.fr');
   expect(store.tables.abonnements.find(a => a.user_id === u.id)).toMatchObject({ statut: 'actif', formule: 'mensuel' });
 
-  // Folio partout : installer ici, et les autres appareils
+  // Folio partout : un téléphone attend l'app de son magasin (jamais le web), et les autres appareils
   await expect(page.locator('.fp-partout')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Installer sur cet appareil' })).toBeVisible();
+  await expect(page.locator('.fp-ici')).toContainText('Bientôt sur Google Play');
   await expect(page.locator('.fp-autres li')).toHaveCount(3);
+  await expect(page.locator('html')).toHaveClass(/offre-plus/);
+
+  // l'onglet Folio+ s'en est allé ; mon jeton porte le liseré de la marque
+  await page.getByRole('button', { name: 'Retour' }).click();
+  await expect(page.locator('.tabs button')).toHaveCount(2, { timeout: 10000 });   // Livres, Cercle
+  await expect(page.locator('.tabs [data-act="tab-plus"]')).toHaveCount(0);
+  await page.goto('./eleve/cercle');
+  await expect(page.locator(`.jt.jt-plus[data-jt="p:${u.id}"]`).first()).toBeVisible({ timeout: 10000 });
 
   // les Réglages montrent maintenant Folio+, qui mène au portail de Stripe
-  await page.getByRole('button', { name: 'Retour' }).click();
   await page.goto('./eleve/reglages');
   const ligne = page.locator('[data-act="plus"]');
   await expect(ligne).toContainText('Actif', { timeout: 10000 });
@@ -48,14 +67,14 @@ test('un compte gratuit passe à Folio+ : la formule, le paiement, le retour, pu
   await expect(ecran(page)).toBeVisible();
 });
 
-test('le paiement pas encore ouvert, hors ligne : chaque cas dit ce qu’il en est', async ({ page }) => {
-  const store = nouveauStore();
+test('le paiement pas encore branché, hors ligne : chaque cas dit ce qu’il en est', async ({ page }) => {
+  const store = gratuit();
   await brancher(page, store);
   await inscrire(page);
-  // la vente n'est pas ouverte : aucune ligne Folio+ dans les Réglages d'un compte gratuit
+  // la vente est ouverte : les Réglages d'un compte gratuit ont leur ligne Folio+
   await page.goto('./eleve/reglages');
   await expect(page.getByRole('button', { name: 'Se déconnecter' })).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('[data-act="plus"]')).toHaveCount(0);
+  await expect(page.locator('[data-act="plus"]')).toContainText('Gratuit');
 
   await page.goto('./eleve/folio-plus');
   await expect(ecran(page)).toBeVisible({ timeout: 10000 });
@@ -74,7 +93,7 @@ test('le paiement pas encore ouvert, hors ligne : chaque cas dit ce qu’il en e
 });
 
 test('Stripe ramène avant que l’abonnement soit écrit : l’écran attend, puis l’ouvre', async ({ page }) => {
-  const store = nouveauStore();
+  const store = gratuit();
   await brancher(page, store);
   await inscrire(page);
   store.paiement = 'lent';
@@ -85,7 +104,7 @@ test('Stripe ramène avant que l’abonnement soit écrit : l’écran attend, p
 });
 
 test('le site envoie vers Folio+ sans session : la formule attend la connexion', async ({ page }) => {
-  const store = nouveauStore();
+  const store = gratuit();
   semerCompte(store, 'lea@exemple.fr');
   await brancher(page, store);
   await page.goto('./app?plus=mensuel');
@@ -114,4 +133,62 @@ test('un élève d’un établissement sous licence : Folio Campus, rien à ache
   await expect(page.getByRole('button', { name: 'Passer à Folio+' })).toHaveCount(0);
   await page.goto('./eleve/reglages');
   await expect(page.locator('[data-act="plus"]')).toContainText('Campus', { timeout: 10000 });
+});
+
+test('Folio gratuit grise ce qui est dans Folio+ ; le toucher ouvre Folio+ et dit pourquoi', async ({ page }) => {
+  const store = gratuit();
+  await brancher(page, store);
+  await inscrire(page);
+  for (let i = 1; i <= 5; i++) semerLivre(store, 'lea@exemple.fr', 'Livre ' + i, pages(i));
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/livres-plein/, { timeout: 10000 });
+
+  // la bibliothèque est pleine : « Nouveau livre » ouvre Folio+ et dit pourquoi
+  await page.locator('[data-act="new"]:visible').first().click();
+  await expect(ecran(page)).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.fp-raison')).toContainText('Ta bibliothèque est pleine');
+
+  // un QCM : dans Folio+
+  await page.goto('./eleve/livres');
+  await page.getByText('Livre 1', { exact: true }).first().click();
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'deck', { timeout: 10000 });
+  await page.locator('[data-act="mcq"]').first().click();
+  await expect(page.locator('.fp-raison')).toContainText('QCM et associations', { timeout: 10000 });
+
+  // le journal : la série reste, la mémoire se floute
+  await page.goto('./eleve/journal');
+  await expect(page.locator('[data-volet="memoire"]')).toHaveClass(/plus-floute/, { timeout: 10000 });
+});
+
+test('un compte d’avant le 2026-10-27 : Folio+ offert, rien de grisé, pas d’onglet', async ({ page }) => {
+  const store = nouveauStore();                       // parDefaut « plus » : le compte a reçu Folio+ offert
+  await brancher(page, store);
+  await inscrire(page);
+  for (let i = 1; i <= 6; i++) semerLivre(store, 'lea@exemple.fr', 'Livre ' + i, pages(i));
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/offre-plus/, { timeout: 10000 });
+  await expect(page.locator('html')).not.toHaveClass(/offre-gratuit|livres-plein/);
+  await expect(page.locator('.tabs [data-act="tab-plus"]')).toHaveCount(0);
+  await page.locator('[data-act="new"]:visible').first().click();
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'import', { timeout: 10000 });
+  await page.goto('./eleve/reglages');
+  await expect(page.locator('[data-act="plus"]')).toContainText('Offert', { timeout: 10000 });
+});
+
+test('dans l’app des magasins : l’achat intégré, jamais Stripe', async ({ page }) => {
+  const store = gratuit();
+  // l'enveloppe native (Capacitor) et le greffon RevenueCat, sans les clés : l'achat « ouvre bientôt »
+  await page.addInitScript(() => {
+    window.Capacitor = { getPlatform: () => 'android', isNativePlatform: () => true, Plugins: { Purchases: {} } };
+  });
+  await brancher(page, store);
+  await inscrire(page);
+  await page.goto('./eleve/folio-plus');
+  await expect(ecran(page)).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.fp-offre')).toContainText('Paiement par Google Play');
+  await expect(page.locator('.fp-offre')).not.toContainText('Stripe');
+  await expect(page.getByRole('button', { name: 'Restaurer mes achats' })).toBeVisible();
+  await page.getByRole('button', { name: 'Passer à Folio+' }).click();
+  await expect(page.locator('.fp-err')).toHaveText('Le paiement ouvre bientôt');
+  expect(store.tables.abonnements || []).toHaveLength(0);
 });

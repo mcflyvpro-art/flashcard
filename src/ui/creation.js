@@ -9,7 +9,7 @@ import { MAXB, MAXF, markDups, markOver } from './carte-media.js';
 import { deck, esc, plur, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
 import { askPages } from './ecran-groupe.js';
 import { AIERR, addDeck, aiCards, aiFromFile, toast } from './import-cartes.js';
-import { ouvrirEnvie } from './demo-porte.js';
+import { bride, envie } from './bridage.js';
 
 /* ---------- création / import ----------
    Un seul écran pour toutes les façons de remplir un livre. Il y en avait
@@ -53,14 +53,13 @@ function identiteHtml() {
     </section>`;
 }
 
-/* Ce qui coûte (l'IA lit les photos, les PDF et le cours) n'existe qu'avec
-   un compte : dans la démo sans compte, ces onglets sont grisés et le
-   disent au survol (`data-astuce`, app.css) ; les toucher ouvre la
-   fenêtre de la démo qui dit ce qu'ils feraient et comment les avoir
-   (`ouvrirEnvie`, ui/demo.js). Toute l'IA (cours, photo, PDF) est dans
-   Folio+ (décidé le 2026-10-27) : un « + » le dit (`data-offre`). */
+/* Toute l'IA (cours, photo, PDF) est dans Folio+ (décidé le 2026-10-27) :
+   avec Folio gratuit, et dans la démo sans compte, ces onglets sont grisés,
+   le disent au survol (`data-astuce`, app.css) et d'un « + » (`data-offre`) ;
+   les toucher dit ce qu'ils feraient et comment les avoir — l'écran Folio+,
+   ou la fenêtre de la démo (`envie`, ui/bridage.js). */
 const PAYANTS = new Set(['fichier', 'photo', 'ia']);
-const payant = id => !!demoEtab && PAYANTS.has(id);
+const payant = id => PAYANTS.has(id) && (!!demoEtab || bride(id));
 export const ASTUCE_PAYANT = 'Avec Folio+';
 
 const ongletsHtml = mode => `<div class="cr-tabs" role="tablist" aria-label="Façon de créer les pages">
@@ -148,7 +147,7 @@ export function importView() {
   const nm = document.getElementById('nm');
   if (nm) nm.addEventListener('input', () => comp.name = nm.value);
   $.querySelectorAll('[data-cmode]').forEach(b => b.onclick = () => {
-    if (payant(b.dataset.cmode)) return ouvrirEnvie(b.dataset.cmode);
+    if (payant(b.dataset.cmode)) return envie(b.dataset.cmode);
     if (b.dataset.cmode === comp.mode) return;
     comp.mode = b.dataset.cmode; comp.edit = -1; render();
   });

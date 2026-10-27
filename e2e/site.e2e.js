@@ -32,11 +32,10 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
   await expect(page.locator('#menu-mobile').getByRole('link', { name: 'Créer un compte' })).toBeVisible();
   await expect(page.locator('#menu-mobile').getByRole('link', { name: 'Se connecter' })).toBeVisible();
 
-  // sur tous tes écrans : l'appareil qu'on tient vient en premier, marqué
-  await page.locator('#telecharger').scrollIntoViewIfNeeded();
-  await expect(page.locator('.tl-carte.tl-ici')).toHaveCount(1);
-  await expect(page.locator('.tl-liste > li').first()).toHaveClass(/tl-ici/);
-  await expect(page.locator('.tl-ici')).toContainText('Ton appareil');
+  // « Passer à Folio+ » : l'écran Folio+ de l'app, la formule choisie déjà cochée (2026-10-27 : la vente est ouverte)
+  await expect(page.locator('[data-vente]')).toHaveAttribute('href', /^\/app\?plus=(annuel|mensuel)$/);
+  // plus de section « Sur tous tes écrans » : un téléphone a son magasin, un ordinateur son navigateur
+  await expect(page.locator('#telecharger')).toHaveCount(0);
 
   const largeur = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(largeur).toBeLessThanOrEqual(390);

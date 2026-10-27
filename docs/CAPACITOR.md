@@ -87,16 +87,39 @@ Au lancement à froid par un lien, Capacitor fournit aussi l'URL par
 
 ## Payer, dans l'app des magasins
 
-**On n'y vend pas Folio+** : Apple et Google imposent leur propre paiement
-pour un abonnement numérique pris dans l'app (docs/VENTE.md, § 5). Le code
-le sait déjà : `plateforme()` (`src/plateformes.js`) lit
-`window.Capacitor.getPlatform()` et `peutVendre()` rend faux — l'écran Folio+
-n'y montre ni prix, ni formule, ni lien vers le portail de Stripe, seulement
-ce que le compte a. Un abonnement pris sur le site s'y ouvre. Vendre aussi
-dans l'app : l'achat intégré d'Apple et de Google, par RevenueCat, plus tard.
+**Folio+ s'y achète par l'achat intégré d'Apple ou de Google**, au travers
+de RevenueCat. Ce sont leurs règles : jamais Stripe dans l'app (le détail et
+la mise en place sont dans docs/VENTE.md, § 2).
 
-Une fois l'app publiée, son lien va dans `MAGASINS` (`src/plateformes.js`) :
-le site et l'écran Folio+ montrent alors « Télécharger sur … ».
+Le code est prêt :
+
+- `plateforme()` (`src/plateformes.js`) lit `window.Capacitor.getPlatform()`,
+  et `vente()` répond alors « magasin ».
+- L'écran Folio+ propose « Passer à Folio+ » et « Restaurer mes achats ». Il
+  ne mentionne ni Stripe ni le site. Un abonnement se gère là où il a été pris
+  (`gestion()`, `src/abonnement.js`) :
+  - Apple : les réglages de l'iPhone ;
+  - Google : Google Play ;
+  - Stripe : « se gère sur folioflashcard.online, depuis un ordinateur », sans
+    lien.
+- `versMagasin()` et `restaurerAchats()` (`src/core/abonnement.js`)
+  appellent le greffon `@revenuecat/purchases-capacitor` sous
+  `Capacitor.Plugins.Purchases` : il n'y a rien à importer dans l'app web.
+  - `configure` se fait avec la clé publique de `REVENUECAT`
+    (`src/abonnement.js`), et `logIn` avec l'identifiant Folio du compte.
+  - Ensuite viennent `getOfferings` (`current.annual`, `current.monthly`),
+    puis `purchasePackage`.
+  - Enfin, la fonction `magasins` relit l'abonné et écrit l'abonnement.
+- Sans clé, ou sans produits dans les magasins : « Le paiement ouvre
+  bientôt ». Le parcours e2e « dans l'app des magasins » le vérifie.
+
+À l'installation : `npm install @revenuecat/purchases-capacitor`, puis
+`npx cap sync`, et poser les deux clés publiques dans `REVENUECAT`.
+
+Une fois l'app publiée, son lien va dans `MAGASINS` (`src/plateformes.js`).
+Un téléphone connecté dans son navigateur est alors envoyé vers son magasin
+(`ui/magasin.js` : mobile jamais web), et l'écran Folio+ montre
+« Télécharger sur … ».
 
 ## Liens universels (iOS) et App Links (Android)
 

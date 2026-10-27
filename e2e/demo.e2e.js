@@ -120,14 +120,14 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
 
   // Folio gratuit garde 5 livres : Léa en a 4, elle en crée un, puis « Nouveau livre » se grise et ouvre la fenêtre
   await aller(page, '/demo/eleve/livres');
-  await expect(page.locator('html')).not.toHaveClass(/en-demo-plein/);
+  await expect(page.locator('html')).not.toHaveClass(/livres-plein/);
   await page.locator('[data-act="new"]:visible').first().click();
   await page.locator('#nm').fill('Mon livre');
   await page.locator('[data-cmode="coller"]').click();
   await page.locator('textarea:visible').first().fill('Bonjour\tHello\nMerci\tThank you');
   await page.locator('#bulkadd').evaluate(e => e.click());
   await page.locator('#ok').evaluate(e => e.click());
-  await expect(page.locator('html')).toHaveClass(/en-demo-plein/, { timeout: 10000 });   // le livre créé s'ouvre
+  await expect(page.locator('html')).toHaveClass(/livres-plein/, { timeout: 10000 });   // le livre créé s'ouvre
   await page.getByRole('button', { name: 'Retour' }).first().click();
   await page.locator('[data-act="new"]:visible').first().click();
   await expect(fenetre.getByRole('heading')).toHaveText('Ta bibliothèque est pleine');

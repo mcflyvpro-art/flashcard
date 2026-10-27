@@ -2,8 +2,8 @@
 // et retiennent de lui (supabase/functions/_shared/abonnement.js).
 import { describe, expect, it } from 'vitest';
 import {
-  aEcrire, abonnementDe, compteDeLEvenement, demandePaiement, demandePortail, finPeriode, formuleDe,
-  formulaire, ligneAbonnement, lireSignature, ouvre, signatureValide, signer, statutDe
+  aEcrire, abonnementDe, autorise, compteDeLEvenement, comptesDeLEvenementRC, demandePaiement, demandePortail, finPeriode,
+  formuleDe, formuleDuProduit, formulaire, ligneAbonnement, ligneMagasin, lireSignature, ouvre, signatureValide, signer, statutDe
 } from '../supabase/functions/_shared/abonnement.js';
 
 const PRIX = { annuel: 'price_an', mensuel: 'price_mois' };
@@ -152,5 +152,61 @@ describe('la signature d’un évènement Stripe', () => {
     expect(await signatureValide(corps, `t=${t},v1=${s}`, secret, MAINTENANT + 301e3)).toBe(false); // trop vieux : rejoué
     expect(await signatureValide(corps, `t=${t},v1=${s}`, '', MAINTENANT)).toBe(false);
     expect(await signatureValide(corps, '', secret, MAINTENANT)).toBe(false);
+  });
+});
+
+describe('l’app des magasins : un abonné RevenueCat devient sa ligne apple ou google', () => {
+  const U = '11111111-2222-4333-8444-555555555555';
+  const abonne = (sub, produit = 'folio_plus_annuel') => ({
+    entitlements: { plus: { product_identifier: produit, expires_date: sub.expires_date } },
+    subscriptions: { [produit]: sub }
+  });
+  const an = '2027-11-01T10:00:00Z';
+
+  it('un achat sur l’iPhone : Folio+ annuel, ligne apple', () => {
+    const l = ligneMagasin(abonne({ store: 'app_store', expires_date: an, period_type: 'normal' }), U, MAINTENANT);
+    expect(l).toEqual({ user_id: U, offre: 'plus', statut: 'actif', source: 'apple', formule: 'annuel', client_stripe: null,
+      abonnement_stripe: null, fin_periode: '2027-11-01T10:00:00.000Z', fin_prevue: false, maj_le: '2026-11-01T10:00:00.000Z' });
+  });
+  it('Google, mensuel, à l’essai puis résilié', () => {
+    const l = ligneMagasin(abonne({ store: 'play_store', expires_date: an, period_type: 'trial',
+      unsubscribe_detected_at: '2026-10-30T00:00:00Z' }, 'folio_plus:mensuel'), U, MAINTENANT);
+    expect([l.source, l.formule, l.statut, l.fin_prevue]).toEqual(['google', 'mensuel', 'essai', true]);
+  });
+  it('un paiement refusé : le délai de grâce garde l’accès jusqu’à sa fin', () => {
+    const l = ligneMagasin(abonne({ store: 'app_store', expires_date: '2026-10-31T00:00:00Z',
+      billing_issues_detected_at: '2026-10-31T00:00:00Z', grace_period_expires_date: '2026-11-15T00:00:00Z' }), U, MAINTENANT);
+    expect([l.statut, l.fin_periode]).toEqual(['impaye', '2026-11-15T00:00:00.000Z']);
+    expect(ouvre(l.statut, l.fin_periode, MAINTENANT)).toBe(true);
+  });
+  it('expiré ou remboursé : fini', () => {
+    expect(ligneMagasin(abonne({ store: 'app_store', expires_date: '2026-10-01T00:00:00Z' }), U, MAINTENANT).statut).toBe('fini');
+    expect(ligneMagasin(abonne({ store: 'play_store', expires_date: an, refunded_at: '2026-10-31T00:00:00Z' }), U, MAINTENANT).statut)
+      .toBe('fini');
+  });
+  it('rien à écrire : jamais acheté, ou acheté hors des magasins (Stripe, une promotion)', () => {
+    expect(ligneMagasin({ entitlements: {}, subscriptions: {} }, U, MAINTENANT)).toBeNull();
+    expect(ligneMagasin(null, U, MAINTENANT)).toBeNull();
+    expect(ligneMagasin(abonne({ store: 'stripe', expires_date: an }), U, MAINTENANT)).toBeNull();
+    expect(ligneMagasin(abonne({ store: 'promotional', expires_date: an }), U, MAINTENANT)).toBeNull();
+  });
+  it('la formule d’après l’identifiant du produit', () => {
+    expect(formuleDuProduit('folio_plus_annuel')).toBe('annuel');
+    expect(formuleDuProduit('folio.plus.yearly')).toBe('annuel');
+    expect(formuleDuProduit('folio_plus:mensuel')).toBe('mensuel');
+    expect(formuleDuProduit('folio_plus_monthly')).toBe('mensuel');
+    expect(formuleDuProduit('autre')).toBeNull();
+  });
+  it('les comptes Folio d’un évènement, sans les identifiants anonymes', () => {
+    const V = '99999999-2222-4333-8444-555555555555';
+    expect(comptesDeLEvenementRC({ event: { app_user_id: U, original_app_user_id: '$RCAnonymousID:abc' } })).toEqual([U]);
+    expect(comptesDeLEvenementRC({ event: { type: 'TRANSFER', transferred_from: [U], transferred_to: [V] } })).toEqual([U, V]);
+    expect(comptesDeLEvenementRC({})).toEqual([]);
+  });
+  it('le secret du webhook : exact, jamais vide', () => {
+    expect(autorise('Bearer rc_secret', 'Bearer rc_secret')).toBe(true);
+    expect(autorise('Bearer rc_autre', 'Bearer rc_secret')).toBe(false);
+    expect(autorise('', '')).toBe(false);
+    expect(autorise(null, 'x')).toBe(false);
   });
 });

@@ -2,7 +2,8 @@
    Stripe appelle cette adresse à chaque évènement (paiement abouti,
    renouvellement, échec, résiliation) ; on vérifie qu'il vient bien de lui
    (signature), puis on relit l'abonnement chez Stripe et on écrit sa ligne
-   dans la table abonnements. C'est le seul écrivain de cette table.
+   dans la table abonnements — la ligne « stripe » du compte, dont c'est le
+   seul écrivain (Apple et Google ont la leur : la fonction magasins).
 
    Relire plutôt que croire l'évènement : Stripe ne garantit pas l'ordre
    d'arrivée ; l'abonnement relu est toujours l'état du moment. Le
@@ -88,10 +89,10 @@ Deno.serve(async (req) => {
       } else {
         const prix = { annuel: Deno.env.get("STRIPE_PRIX_ANNUEL"), mensuel: Deno.env.get("STRIPE_PRIX_MENSUEL") };
         const nouvelle = ligneAbonnement(sub, uid, prix);
-        const [actuelle] = (await base(`abonnements?select=*&user_id=eq.${uid}`)) ?? [];
+        const [actuelle] = (await base(`abonnements?select=*&user_id=eq.${uid}&source=eq.stripe`)) ?? [];
         if (aEcrire(actuelle, nouvelle)) {
           try {
-            await base("abonnements?on_conflict=user_id", {
+            await base("abonnements?on_conflict=user_id,source", {
               method: "POST",
               headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
               body: JSON.stringify(nouvelle),

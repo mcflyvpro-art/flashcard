@@ -8,6 +8,7 @@ import { consumeDefi } from './direct-porte.js';
 import { consumeClub } from './cercle-feuilles.js';
 import { consumeGoto } from './raccourcis.js';
 import { consumePlus } from './plus-porte.js';
+import { auMagasin } from './magasin.js';
 
 /* ══════════ les liens qui entrent dans l'app ══════════
    Une seule porte pour tout lien qui ouvre l'app : « ?carte= » (le QR d'une
@@ -43,6 +44,7 @@ export async function lienAvantSession() {
 /* Une fois le rôle connu (un code de classe ne veut pas dire la même chose
    pour un professeur et pour un élève) : la classe, la partie, le club. */
 export async function lienApresRole() {
+  if (auMagasin()) return false;       // un téléphone envoyé vers son magasin : le code attend, montré à recopier dans l'app
   if (consumeRejoindre()) return true;
   if (await consumeDefi(true)) return true;
   if (consumeClub(true)) return true;
