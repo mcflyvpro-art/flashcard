@@ -43,6 +43,7 @@
 /* pendant une révision, un quiz ou une partie, les boutons du bas sont à l'élève : le bandeau s'efface */
 #app:is([data-view="study"],[data-view="run"],[data-view="duel"],[data-view="direct"],[data-view="bienvenue"]) ~ .dm-bandeau{display:none}
 .dm-bandeau .dm-neuf{width:32px;padding:0;justify-content:center;background:rgba(255,255,255,.14);color:#fff}
+.dm-bandeau .dm-tuto{background:rgba(255,255,255,.14);color:#fff}
 /* le geste d'après (créer son compte, l'essayer dans son établissement) :
    dans la lumière de la marque, la seule couleur du bandeau */
 .dm-bandeau .dm-cta{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:16px;
@@ -99,12 +100,13 @@ html.en-demo-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:
   .dm-bandeau{gap:6px;padding-left:12px}
   .dm-long,.dm-bandeau .dm-cta svg{display:none}
   .dm-court{display:inline}
-  .dm-bandeau [data-dm="quitter"]{width:32px;padding:0;justify-content:center}
-  .dm-bandeau [data-dm="quitter"] span{display:none}
+  .dm-bandeau :is([data-dm="quitter"],[data-dm="tuto"]){width:32px;padding:0;justify-content:center}
+  .dm-bandeau :is([data-dm="quitter"],[data-dm="tuto"]) span{display:none}
   html.nav-haut .dm-bandeau{bottom:calc(14px + env(safe-area-inset-bottom))}   /* prof et référent : pas d'onglets en bas */
   html.en-demo:not(.nav-haut) .fab{bottom:calc(140px + env(safe-area-inset-bottom))}   /* le « + » des livres passe au-dessus du bandeau */
 }
-@media (max-width:379px){
+/* « Revoir le tuto » passe avant « Recommencer » quand la place manque */
+@media (max-width:429px){
   .dm-bandeau .dm-neuf{display:none}
 }
 @media (min-width:900px){

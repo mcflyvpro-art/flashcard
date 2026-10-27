@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
 import { semerCompte } from './faux-cercle.js';
 import { faireProfesseur, rpcClasses } from './faux-classes.js';
-import { connecter } from './aide.js';
+import { connecter, sansTuto } from './aide.js';
 
 /* Les animations d'entrée en cours, avec ce qu'elles animent (pour lire
    l'échec) : une transition (un fond qui s'éclaire sous le doigt) n'en est
@@ -27,6 +27,7 @@ function professeur() {
   semerCompte(store, 'lea@exemple.fr');
   const prof = semerCompte(store, 'prof@exemple.fr');
   faireProfesseur(store, 'prof@exemple.fr', 'Claire DURAND');
+  sansTuto(store, 'prof@exemple.fr');
   rpcClasses(store, 'prof_creer_classe', { nom: '2nde 4' }, { id: prof });
   rpcClasses(store, 'prof_creer_classe', { nom: '1re 2' }, { id: prof });
   semerLivre(store, 'prof@exemple.fr', 'Verbes irréguliers', [['be', 'été'], ['go', 'aller'], ['see', 'voir']]);

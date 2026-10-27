@@ -44,6 +44,7 @@ import {
   answerTF, cardOf, cardOrigin, commit, fling, isTF, loadResume, paintQ, pickMCQ, pickMatch,
   saveResume, startStudy
 } from './revision.js';
+import { lancerTuto } from './tuto-porte.js';
 
 
 
@@ -193,7 +194,7 @@ const tapMcqMatch = a => startStudy(view.id, false, null, { mode: a });
    menu « … » le connaissait et le bouton ne faisait rien. */
 const tapSharepick = () => { if (!friends) friendsPull(); return openMenu('sharepick'); };
 const tapStats = () => { statsPull(); return go('stats'); };
-const tapHelpTuto = () => openMenu('tuto');
+const tapTuto = () => lancerTuto({ rejoue: true });
 const tapInstall = () => openInstall();
 /* quitter un défi à son rythme : revenir d'où on l'avait ouvert */
 const tapDuelquit = () => { setDuelRun(null); const r = cercle.retour || { name: 'commu' }; return go(r.name, r.id); };
@@ -449,7 +450,7 @@ const CLICK_RULES = [
   [a => a === 'mcq' || a === 'match', tapMcqMatch],
   [a => a === 'sharepick', tapSharepick],
   [a => a === 'goalinfo' || a === 'stats', tapStats],
-  [a => a === 'help', tapHelpTuto],
+  [a => a === 'tuto', tapTuto],
   [a => a === 'install', tapInstall],
   [a => a === 'duelquit', tapDuelquit],
   [a => a === 'addshared', tapAddshared],

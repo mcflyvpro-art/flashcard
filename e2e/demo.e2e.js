@@ -6,7 +6,7 @@
 // photos, les fichiers) est grisé et le dit. « Quitter » ne laisse rien.
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore } from './faux-supabase.js';
-import { noter } from './aide.js';
+import { noter, passerTuto } from './aide.js';
 
 const BASE = /supabase\.co\//;
 
@@ -17,6 +17,7 @@ async function ouvrirDemo(page, role) {
   await aller(page, '/essayer');
   await expect(page.locator('.dm-role')).toHaveCount(3, { timeout: 10000 });
   await page.locator(`.dm-role[data-v="${role}"]`).click();
+  await passerTuto(page);              // la première entrée a son tuto (e2e/tuto.e2e.js le joue) ; changer de rôle, non
   return parties;
 }
 

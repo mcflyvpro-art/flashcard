@@ -1,39 +1,34 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
-import { I, SWIPE, svg } from '../icones.js';
+import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { DAY } from '../fsrs.js';
 import {
-  DECKPAGE, DEFPREFS, asks, auth, bip, board, cercle, cercleNeuf, db, defiNeuf, demo, demoEtab, directNeuf, duels,
-  filter, friends, mates, me, mediaCache, menu, myRole, peek, prefs, quiz,
+  DECKPAGE, DEFPREFS, auth, bip, cercleNeuf, defiNeuf, demoEtab, directNeuf,
+  mediaCache, menu, quiz,
   setAccounts, setAddQ, setAdm, setAnimate, setAsks, setBip, setBlocks, setBoard,
   setCardEdit, setCercle, setComp, setCompte, setConflicts, setDb, setDeckOpen, setDeckQ, setDefi, setDirect,
-  setDeckShow, setDemo, setDirty, setDuelRun, setDuels, setEleve, setFilter, setFindQ, setFriends,
+  setDeckShow, setDirty, setDuelRun, setDuels, setEleve, setFilter, setFindQ, setFriends,
   setGone, setIAmMod, setLeaving, setLoginMode,
   setMailOpen, setMailbox, setMateOpen, setMateProf, setMates, setMates2, setMe,
   setMenu, setMods, setMyRole, setPeek, setPrefs, setPreviewOf, setProf,
   setQuiz, setRef, setReorder, setReportOn, setReportWhy, setSchool,
   setSel, setSendMsg, setSendTo, setShared, setStats, setStudy, setSubjEdit,
-  setTour, setTourPoll, setTourSave, setTrash, setUndos, setVers, setView,
-  admNeuf, eleveNeuf, profNeuf, refNeuf, study, tour, tourPoll, tourSave, view
+  setTrash, setUndos, setVers, setView,
+  admNeuf, eleveNeuf, profNeuf, refNeuf, study, tuto, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { dec, fsrsMigrate } from './carte-media.js';
 import { accueil } from '../core/classement.js';
-import { cacheKey, esc, flush, load, plur, pull, refreshToken, save, saveAuth, setOnline } from '../core/coeur-sync.js';
-import { selOff } from './connexion.js';
+import { cacheKey, flush, load, plur, pull, refreshToken, save, saveAuth, setOnline } from '../core/coeur-sync.js';
 import { lienAvantSession } from './liens-entrants.js';
 import { armer, armerSansSession, cibleDepart, desarmer, installee } from './routeur.js';
 import { effacerDemo, ouvrirDemo } from './demo-porte.js';
-import { isPupil } from './classement.js';
-import { ouvrirBienvenue } from './bienvenue-porte.js';
-import { beep, importPayload, savePrefs, toast } from './import-cartes.js';
+import { importPayload, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
-import { startQuiz } from './quiz.js';
-import { resetComp } from './creation.js';
 import { openShared } from '../core/reglages-corbeille.js';
 import { oublierVisuels } from '../core/visuels.js';
-import { startStudy } from './revision.js';
+import { arreterTuto, maybeTuto } from './tuto-porte.js';
 
 /* ---------- lien d'injection ---------- */
 export function consumeHash() {
@@ -66,6 +61,8 @@ export function consumeHash() {
    ailleurs et oubliée ici recrée le bug : quand on en déclare une nouvelle
    qui parle du compte, elle vient dans cette liste. */
 export function resetSession() {
+  arreterTuto();                         // un tuto commencé appartenait au compte d'avant
+
   /* la bibliothèque et ce qui attend d'être envoyé */
   setDb({ subjects: [], decks: [], hist: {} });
   setPrefs({ ...DEFPREFS });
@@ -124,398 +121,6 @@ export function logout() {
   if (installee()) return;
   const partir = () => location.replace('/');
   Promise.race([envoi, new Promise(r => setTimeout(r, 2500))]).then(partir, partir);
-}
-
-const DEMOSUBJ = [
-  { id: 'italien', name: 'Italien', color: 'red', pos: 0 },
-  { id: 'droit', name: 'Droit', color: 'pink', pos: 1 },
-  { id: 'anglais', name: 'Anglais', color: 'blue', pos: 2 },
-  { id: 'geo', name: 'Géographie', color: 'green', pos: 3 }
-];
-
-const DEMOCARDS = {
-  italien: [['la casa', 'la maison'], ['il cane', 'le chien'], ['il gatto', 'le chat'],
-    ['il libro', 'le livre'], ['l’acqua', 'l’eau'], ['il pane', 'le pain'],
-    ['il sole', 'le soleil'], ['la luna', 'la lune'], ['il mare', 'la mer'],
-    ['la città', 'la ville'], ['il vino', 'le vin'], ['la strada', 'la rue']],
-  droit: [['Contrat', 'Accord de volontés créant des obligations'],
-    ['Dol', 'Manœuvre trompeuse qui provoque le consentement'],
-    ['Cause', 'La raison pour laquelle on s’engage'],
-    ['Solidarité', 'Chaque débiteur peut être poursuivi pour le tout'],
-    ['Prescription', 'Extinction d’un droit par l’écoulement du temps'],
-    ['Novation', 'Remplacement d’une obligation par une autre'],
-    ['Subrogation', 'Transfert d’une créance à celui qui a payé'],
-    ['Astreinte', 'Somme due par jour de retard'],
-    ['Résolution', 'Anéantissement rétroactif du contrat'],
-    ['Nullité', 'Sanction d’une condition de formation manquante']],
-  anglais: [['to bring', 'brought'], ['to catch', 'caught'], ['to teach', 'taught'],
-    ['to seek', 'sought'], ['to buy', 'bought'], ['to think', 'thought'],
-    ['to fight', 'fought'], ['to leave', 'left'], ['to feel', 'felt'], ['to keep', 'kept']],
-  geo: [['Portugal', 'Lisbonne'], ['Hongrie', 'Budapest'], ['Norvège', 'Oslo'],
-    ['Croatie', 'Zagreb'], ['Finlande', 'Helsinki'], ['Irlande', 'Dublin'],
-    ['Autriche', 'Vienne'], ['Slovénie', 'Ljubljana']]
-};
-
-/* Des états variés, sinon les barres de couleur n'ont rien à montrer :
-   quelques cartes dues aujourd'hui, des jeunes, des mûres, une coriace. */
-function demoDeck(id, name, subject, pat) {
-  const now = Date.now();
-  const cards = DEMOCARDS[subject].map(([f, b], i) => {
-    const k = pat[i % pat.length];
-    const c = { id: id + 'c' + i, f, b };
-    if (k === 'new') return c;
-    if (k === 'due') return { ...c, n: 2, i: 3, e: 2.4, d: now - 6 * 3600e3 };
-    if (k === 'learn') return { ...c, n: 1, i: 1, e: 2.3, d: now + 14 * 3600e3 };
-    if (k === 'leech') return { ...c, n: 2, i: 2, e: 1.5, l: 5, d: now - 2 * 3600e3 };
-    if (k === 'young') return { ...c, n: 4, i: 9, e: 2.6, d: now + 5 * DAY };
-    return { ...c, n: 7, i: 42, e: 2.8, d: now + 28 * DAY };
-  });
-  return { id, name, subject, hidden: false, pinned: false, pos: 0, meta: {}, rev: 1, cards };
-}
-
-export function demoDB() {
-  const mid = new Date(); mid.setHours(0, 0, 0, 0);
-  const decks = [
-    demoDeck('dmo1', 'Italien — les bases', 'italien', ['due', 'young', 'due', 'mature', 'learn', 'due']),
-    demoDeck('dmo2', 'Droit civil — définitions', 'droit', ['young', 'due', 'leech', 'mature', 'young']),
-    demoDeck('dmo3', 'Verbes irréguliers', 'anglais', ['mature', 'mature', 'young', 'due', 'mature']),
-    demoDeck('dmo4', 'Capitales d’Europe', 'geo', ['mature', 'mature', 'young', 'mature'])
-  ];
-  decks[0].meta = { langf: 'it-IT', langb: 'fr-FR' };
-  const hist = {};
-  for (const d of decks) hist[d.id + ':quiz'] = [{ t: Date.now() - 3 * DAY, p: .62 }, { t: Date.now() - DAY, p: .81 }];
-  return { subjects: DEMOSUBJ.map(x => ({ ...x })), decks, hist, today: { d: +mid, n: 14 } };
-}
-
-/* ---------- le fil des chapitres ----------
-   Chaque étape : où aller (go), quoi montrer (sel), quoi dire, et
-   éventuellement le geste qui la fait avancer toute seule (done). */
-const nav = (name, id) => () => { closeMenu(); setView({ name, id }); };
-
-const CHAPTERS = [
-  { id: 'bases', name: 'Ta bibliothèque', icon: 'layers', steps: [
-    { go: nav('home'), title: 'Bienvenue',
-      text: 'Tout ce que tu vas voir appartient à Léa, un compte d’essai. Tes livres à toi ne bougent pas.' },
-    { go: nav('home'), sel: '.grid .tile', title: 'Un livre',
-      text: 'Chaque livre porte ses pages. Le signet dit combien sont à lire aujourd’hui.' },
-    { go: nav('home'), sel: '.sbar', title: 'Les couleurs',
-      text: 'Orange : tu viens de commencer. Vert clair : tu sais depuis peu. Vert foncé : tu sais depuis longtemps.' },
-    { go: nav('home'), sel: '.goal', title: 'L’objectif du jour',
-      text: 'L’anneau se remplit à chaque carte revue. Tu choisis le nombre dans les réglages.' },
-    { go: nav('home'), sel: '.grid .tile', pass: 1, tap: 'Touche le livre', wait: 400,
-      done: () => view.name === 'deck', title: 'Entrons dedans',
-      text: 'Touche « Italien — les bases ».' }
-  ] },
-  { id: 'revi', name: 'Lire', icon: 'play', steps: [
-    { go: nav('deck', 'dmo1'), sel: '.mixwrap', title: 'Le détail du livre',
-      text: 'Les mêmes couleurs, page par page. « Coriaces » : celles que tu rates à chaque fois.' },
-    { go: nav('deck', 'dmo1'), sel: '.duo .prim', pass: 1, tap: 'Touche Lire', wait: 500,
-      done: () => view.name === 'study', title: 'On y va',
-      text: 'Les pages arrivent une par une.' },
-    { go: () => { if (view.name !== 'study' || !study) startStudy('dmo1'); study.flip = false; },
-      sel: '#top', pass: 1, tap: 'Touche la page', wait: 1100,
-      done: () => study && study.flip, title: 'Retourne-la',
-      text: 'Tu lis, tu cherches dans ta tête, puis tu touches pour voir le verso.' },
-    { go: () => { if (view.name !== 'study' || !study) startStudy('dmo1'); prefs.simple = true; },
-      sel: '#top', swipe: 1, pass: 1, lock: 1, tap: 'Balaie vers la droite', wait: 450,
-      done: () => study && study.i > 0, title: 'À droite : je sais',
-      text: 'À gauche quand c’est à revoir. Les deux pastilles apparaissent sous ton doigt.' },
-    { go: () => { prefs.simple = false; if (view.name !== 'study' || !study) startStudy('dmo1'); study.flip = true; },
-      sel: '.grades', title: 'Ou tu dis si c’était dur',
-      text: 'Plus c’était facile, plus la page mettra de temps à revenir. La date est sous chaque bouton.' },
-    { go: nav('home'), sel: '.marathon', title: 'Tout revoir d’un coup',
-      text: 'Les pages dues de tous tes livres, dans une seule séance.' }
-  ] },
-  { id: 'creer', name: 'Écrire un livre', icon: 'plus', steps: [
-    { go: nav('home'), sel: '.fab', pass: 1, tap: 'Touche le +', wait: 450,
-      done: () => view.name === 'import', title: 'Un nouveau livre',
-      text: 'Le bouton rond en bas à droite.' },
-    { go: () => { resetComp({ mode: 'coller' }); setView({ name: 'import' }); setMenu(null); },
-      sel: '#tx', title: 'Colle une liste',
-      text: 'Une ligne par page : le mot, une tabulation ou un tiret, la réponse. Le découpage se fait tout seul.' },
-    { go: () => { resetComp({ mode: 'coller' }); setView({ name: 'import' }); setMenu(null); },
-      sel: '.cr-tabs', title: 'Ou pars de ton cours',
-      text: 'Photo d’une page, PDF, ou passage de cours : les pages sont écrites pour toi.' }
-  ] },
-  { id: 'jeux', name: 'Réciter', icon: 'pen', steps: [
-    { go: nav('deck', 'dmo1'), sel: '[data-act="quizdeck"]', pass: 1, tap: 'Touche Récitation', wait: 500,
-      done: () => view.name === 'run', title: 'La récitation',
-      text: 'Tu écris la réponse au lieu de la reconnaître. C’est plus dur, et ça retient mieux.' },
-    { go: () => { if (view.name !== 'run' || !quiz) startQuiz('dmo1'); }, sel: '.arow, .qcard',
-      title: 'Tape ta réponse',
-      text: 'Les accents et les majuscules sont pardonnés. Tu règles la sévérité paquet par paquet.' },
-    { go: nav('deck', 'dmo1'), sel: '[data-act="menu"]', title: 'Et aussi',
-      text: 'QCM, association, vrai ou faux : tout est dans ce menu.' }
-  ] },
-  { id: 'ranger', name: 'Ranger', icon: 'search', steps: [
-    { go: nav('deck', 'dmo2'), sel: '[data-act="selmode"]', title: 'Plusieurs pages à la fois',
-      text: 'Coche des pages pour les déplacer dans un autre livre, les mettre de côté ou les supprimer ensemble.' },
-    { go: nav('home'), sel: '[data-act="find"]', title: 'Retrouver un mot',
-      text: 'Cherché dans les titres et dans les deux faces de toutes tes pages.' },
-    { go: nav('settings'), sel: '[data-act="trash"]', title: 'Rien ne se perd',
-      text: 'Un livre supprimé attend trente jours ici. Et la dernière action reste annulable.' }
-  ] },
-  { id: 'commu', name: 'Le cercle des lecteurs', icon: 'user', steps: [
-    { go: nav('home'), sel: '.tabs button:last-child', pass: 1, tap: 'Touche « Cercle »', wait: 450,
-      done: () => view.name === 'commu', title: 'Le cercle',
-      text: 'Tes amis, tes clubs, tes défis. Tu peux aussi glisser l’écran vers la gauche.' },
-    { go: nav('commu'), sel: '.cc-moi', title: 'Ton pseudo',
-      text: 'C’est ce que tes amis taperont pour t’ajouter. Personne ne voit ton adresse e-mail.' },
-    { go: nav('commu'), sel: '.cc-act.pri', title: 'Lancer un défi',
-      text: 'Un livre, un jeu, et c’est parti : en direct avec un code à 6 chiffres, ou chacun à son rythme.' },
-    { go: nav('commu'), sel: '.cc-act:not(.pri)', title: 'Entrer un code',
-      text: 'Quelqu’un a lancé une partie en direct ? Tape son code et tu joues depuis ton téléphone.' },
-    { go: nav('commu'), sel: '.cc-clubs', title: 'Les clubs',
-      text: 'Ta bande : un emblème, une couleur, un classement et des défis entre vous. Tu crées, tu donnes le code.' },
-    { go: nav('commu'), sel: '.cc-rank', title: 'Le classement des amis',
-      text: 'Le nombre de pages lues par chacun cette semaine, et rien d’autre : ni tes livres, ni tes erreurs.' }
-  ] },
-  { id: 'fin', name: 'Pour finir', icon: 'chart', steps: [
-    { go: nav('settings'), sel: '[data-act="stats"]', title: 'Ton journal',
-      text: 'Pages lues, réussite, régularité : de quoi voir si le rythme tient.' },
-    { go: nav('settings'), sel: '[data-act="help"]', title: 'Revoir tout ça',
-      text: 'Réglages, puis Aide. Chaque chapitre se rejoue seul, toujours sur le compte d’essai.' }
-  ] }
-];
-
-function tourSteps(chapId) {
-  const list = chapId ? CHAPTERS.filter(c => c.id === chapId) : CHAPTERS;
-  return list.flatMap((c, ci) => c.steps.map(s => ({ ...s, chap: c.name, ci, cn: list.length })));
-}
-
-export function startTour(chapId) {
-  if (tour) return;
-  const steps = tourSteps(chapId);
-  if (!steps.length) return;
-  setTourSave({ db, prefs, view, study, quiz, filter, peek,
-               me, mates, asks, friends, cercle, duels, board });
-  setDemo(true);
-  closeMenu(); selOff();
-  setDb(demoDB());
-  setPrefs({ ...DEFPREFS, name: 'Léa', goal: 40, sound: true, tuto: 1 });
-  setMe({ id: 'demo', handle: 'lea' });
-  setMates([{ id: 'f1', handle: 'thibault', name: 'Thibault', status: 'ok', sens: 'envoyee' },
-           { id: 'f2', handle: 'ibti', name: 'Ibti', status: 'ok', sens: 'recue' }]);
-  setAsks([]); setFriends(mates.slice());
-  setCercle({ ...cercleNeuf(), salles: [], clubs: [{ id: 'g1', nom: 'Prépa D1', code: 'K7PQR2XM', chef: true,
-    embleme: 'chouette', teinte: 0, devise: 'On lit la nuit', membres: 4, pages: 412, mes_pages: 92, mon_rang: 2, en_direct: null }] });
-  setDuels({ list: [{ id: 'du1', owner: 'f1', who: 'thibault', name: 'Droit civil',
-                     total: 10, cards: [], created_at: new Date(Date.now() - 3600e3).toISOString() }],
-            scores: [], err: 0, open: null });
-  setBoard({ rows: [{ uid: 'f1', who: 'Thibault', handle: 'thibault', n: 185, ok: 127, jours: 5 },
-                   { uid: auth.uid, who: 'Léa', handle: 'lea', n: 92, ok: 70, jours: 4 },
-                   { uid: 'f2', who: 'Ibti', handle: 'ibti', n: 31, ok: 28, jours: 2 }],
-            err: 0, range: 7 });
-  setStudy(null); setQuiz(null); setFilter(''); setPeek(false); setDeckQ(''); setReorder(false);
-  setTour({ i: 0, steps });
-  document.body.classList.add('touring');
-  runStep();
-}
-
-function runStep() {
-  if (!tour) return;
-  const s = tour.steps[tour.i];
-  if (!s) return endTour(true);
-  tour.lock = s.lock || 0;
-  try { if (s.go) s.go(); } catch (e) { /* une étape de la visite guidée qui échoue ne doit pas bloquer les suivantes */ }
-  setAnimate(false); render();
-  /* La cible peut être plus bas que l'écran — l'entrée « Aide » est en
-     fin de réglages. On l'amène au centre avant de mesurer, sinon le halo
-     se pose dans le vide et l'étape ne montre rien. */
-  requestAnimationFrame(() => {
-    const el = s.sel && document.querySelector(s.sel);
-    if (el) {
-      const r = el.getBoundingClientRect();
-      if (r.top < 70 || r.bottom > innerHeight - 70) el.scrollIntoView({ block: 'center' });
-    } else document.body.scrollTop = 0;     // c'est <body> qui défile, pas la fenêtre
-    requestAnimationFrame(paintTour);
-  });
-  clearInterval(tourPoll);
-  setTourPoll(setInterval(() => {
-    if (!tour) return clearInterval(tourPoll);
-    paintTour();
-    if (s.done && !tour.hold) {
-      try {
-        if (s.done()) {
-          /* on laisse voir le résultat du geste avant d'enchaîner */
-          tour.hold = 1;
-          setTimeout(() => { if (tour) { tour.hold = 0; nextStep(); } }, s.wait || 250);
-        }
-      } catch (e) { /* la condition de fin d'étape ne doit jamais coincer la visite guidée */ }
-    }
-  }, 140));
-}
-
-function nextStep() {
-  if (!tour) return;
-  tour.hold = 0;
-  beep(true, true);
-  tour.i++;
-  runStep();
-}
-
-function endTour(done) {
-  clearInterval(tourPoll); setTourPoll(0);
-  const o = document.getElementById('tour'); if (o) o.remove();
-  document.body.classList.remove('touring');
-  setTour(null);
-  const sv = tourSave; setTourSave(null);
-  setDemo(false);
-  if (sv) {
-    setDb(sv.db); setPrefs(sv.prefs); setView(sv.view); setStudy(sv.study); setQuiz(sv.quiz);
-    setFilter(sv.filter); setPeek(sv.peek);
-    setMe(sv.me); setMates(sv.mates); setAsks(sv.asks); setFriends(sv.friends);
-    setCercle(sv.cercle); setDuels(sv.duels); setBoard(sv.board);
-  }
-  closeMenu();
-  if (!prefs.tuto) { prefs.tuto = 1; savePrefs(); }
-  setAnimate(true); render();
-  if (done) toast(I.check, 'Visite terminée');
-}
-
-function ensureTourOverlay() {
-  let o = document.getElementById('tour');
-  if (o) return o;
-  o = document.createElement('div');
-  o.id = 'tour'; o.className = 'tour';
-  o.innerHTML = '<i class="tspot"></i><i class="tring"></i>' +
-    '<i class="tblk t" data-t="1"></i><i class="tblk r" data-t="1"></i>' +
-    '<i class="tblk b" data-t="1"></i><i class="tblk l" data-t="1"></i>' +
-    '<i class="tblk h" data-t="1"></i><div class="tbub"></div>';
-  document.body.appendChild(o);
-  o.addEventListener('click', e => {
-    const b = e.target.closest('[data-tour]');
-    if (!b) return;
-    e.stopPropagation();
-    if (b.dataset.tour === 'next') nextStep();
-    else endTour(false);
-  });
-  return o;
-}
-
-function tourTargetBox(s, W, H) {
-  const el = s.sel ? document.querySelector(s.sel) : null;
-  const r = el && el.getBoundingClientRect();
-  const hasTarget = !!(r && r.width > 2 && r.height > 2 && r.bottom > 0 && r.top < H);
-  if (hasTarget) {
-    const p = s.pad == null ? 9 : s.pad;
-    return { r, hasTarget, box: { x: Math.max(4, r.left - p), y: Math.max(4, r.top - p),
-            w: Math.min(W - 8, r.width + p * 2), h: r.height + p * 2 } };
-  }
-  /* pas de cible : le voile couvre tout, le halo se réduit au centre */
-  return { r, hasTarget, box: { x: W / 2, y: H / 2, w: 0, h: 0 } };
-}
-
-/* les quatre volets bloquent tout sauf la zone montrée ; le cinquième
-   ferme le trou quand l'étape n'attend aucun geste */
-function paintTourBlockers(o, box, W, H, pass) {
-  const set = (k, x, y, w, h) => { const n = o.querySelector('.tblk.' + k);
-    n.style.left = x + 'px'; n.style.top = y + 'px';
-    n.style.width = Math.max(0, w) + 'px'; n.style.height = Math.max(0, h) + 'px'; };
-  set('t', 0, 0, W, box.y);
-  set('b', 0, box.y + box.h, W, H - box.y - box.h);
-  set('l', 0, box.y, box.x, box.h);
-  set('r', box.x + box.w, box.y, W - box.x - box.w, box.h);
-  set('h', box.x, box.y, pass ? 0 : box.w, pass ? 0 : box.h);
-}
-
-function tourBubbleHtml(s, last, pct) {
-  return `<i class="tprog"><b style="width:${pct}%"></b></i>
-    <i class="tchap">${esc(s.chap)} · ${tour.i + 1}/${tour.steps.length}
-      <b class="tdemo">compte d’essai</b></i>
-    <b>${esc(s.title)}</b><p>${esc(s.text)}</p>
-    ${s.swipe ? '<i class="tswipe">' + SWIPE + '</i>' : ''}
-    <div class="tnav">
-      ${s.tap ? `<i class="ttap">${svg(I.pick)}${esc(s.tap)}</i>` : ''}<i></i>
-      <button class="tskip" data-tour="skip">Passer</button>
-      <button class="tnext" data-tour="next">${last ? 'Terminer' : 'Suivant'}${svg(I.arrow)}</button>
-    </div>`;
-}
-
-/* sous la zone si ça tient, sinon au-dessus, sinon collée en bas : une
-   carte de révision occupe presque tout l'écran et ne laisse le choix
-   qu'entre recouvrir un peu ou sortir de l'écran */
-function positionBubble(bub, r, box, H) {
-  const bh = bub.offsetHeight || 190;
-  const below = box.y + box.h + 14;
-  const above = box.y - bh - 14;
-  const top = (!r || box.h === 0) ? Math.round((H - bh) / 2)
-    : below + bh < H - 12 ? below
-    : above > 12 ? above
-    : H - bh - 14;
-  bub.style.top = top + 'px';
-}
-
-/* ---------- l'habillage ----------
-   Un halo qui se déplace d'une zone à l'autre plutôt que d'apparaître et
-   disparaître : l'œil suit le mouvement et sait d'où il vient. Le reste de
-   l'écran s'assombrit par l'ombre portée de ce même halo — un seul élément
-   à animer, donc rien ne saccade. */
-function paintTour() {
-  if (!tour) return;
-  const s = tour.steps[tour.i];
-  const o = ensureTourOverlay();
-  const W = innerWidth, H = innerHeight;
-  const spot = o.querySelector('.tspot'), ring = o.querySelector('.tring');
-  const { r, hasTarget, box } = tourTargetBox(s, W, H);
-  spot.style.opacity = 1; ring.style.opacity = hasTarget ? 1 : 0;
-  for (const n of [spot, ring]) {
-    n.style.left = box.x + 'px'; n.style.top = box.y + 'px';
-    n.style.width = box.w + 'px'; n.style.height = box.h + 'px';
-  }
-  paintTourBlockers(o, box, W, H, s.pass);
-
-  const bub = o.querySelector('.tbub');
-  const last = tour.i === tour.steps.length - 1;
-  const pct = Math.round((tour.i + 1) / tour.steps.length * 100);
-  const html = tourBubbleHtml(s, last, pct);
-  if (bub.dataset.k !== String(tour.i)) { bub.dataset.k = String(tour.i); bub.innerHTML = html; }
-  /* la bulle se met du côté où il reste de la place, cf. positionBubble() */
-  positionBubble(bub, r, box, H);
-}
-
-/* ---------- l'aide, chapitre par chapitre ---------- */
-export function helpSheet(w) {
-  w.innerHTML = `<div class="scrim" data-mact="close"></div>
-    <div class="menu">
-      <div class="mhd">${svg(I.bulb)}<span class="mhx"><b>Aide</b></span></div>
-      <button class="mi" data-chap="" style="font-weight:700">${svg(I.play)}Revoir toute la visite
-        <span class="tail">${CHAPTERS.reduce((a, c) => a + c.steps.length, 0)} étapes</span></button>
-      <div class="msep"></div>
-      <div class="mscroll">${CHAPTERS.map(c => `<button class="mi" data-chap="${c.id}">
-        ${svg(I[c.icon] || I.bulb)}${esc(c.name)}<span class="tail">${c.steps.length}</span></button>`).join('')}</div>
-    </div>`;
-  mountMenu(w);
-}
-
-/* Premier lancement d'un compte : la visite part toute seule. Elle ne
-   coupe jamais un lien de partage ou un raccourci en train de s'ouvrir —
-   on est venu pour autre chose, ce serait la pire des interruptions. */
-/* La visite guidée apprend à réviser : à retourner une fiche, à la lancer
-   à gauche ou à droite, à s'en fabriquer. Un professeur, un référent ou
-   l'éditeur ne font rien de tout cela — et elle leur reprenait l'écran
-   600 ms après la connexion, en les ramenant sur une bibliothèque vide
-   juste après que leur console se soit affichée. Elle ne part donc que
-   pour ceux à qui elle s'adresse, et seulement une fois le rôle connu :
-   au moment où on l'appelle, on ne le sait pas encore. */
-export function maybeTour(pret) {
-  if (prefs.tuto || tour || location.hash || location.search.includes('go=')) return;
-  // `pret` : la promesse d'accueil() — le rôle et l'établissement connus, pas un délai qui parie sur le réseau
-  Promise.resolve(pret).catch(() => { /* accueil() a échoué : on décide quand même, sur ce qu'on sait */ }).then(() => setTimeout(() => {
-    if (tour || prefs.tuto) return;
-    /* Un élève de classe (carte ou établissement) arrive sur ses devoirs :
-       la visite de la bibliothèque, avec ses livres d'exemple, viendrait
-       les recouvrir. C'est son professeur qui l'accompagne. */
-    if (myRole !== 'eleve') return;
-    // un nouveau compte passe d'abord par l'accueil (ui/bienvenue.js) ; un élève de classe, son visage seulement —
-    // jamais sous les doigts : déjà parti ailleurs (son devoir ouvert), il l'aura à l'ouverture suivante
-    if (!prefs.bienvenue) {
-      if (menu || !['home', 'classes'].includes(view.name)) return;
-      return ouvrirBienvenue(isPupil() ? 'classe' : 'perso', isPupil() ? null : () => startTour());
-    }
-    if (isPupil()) return;
-    startTour();
-  }, 600));
 }
 
 /* ══════════ l'écran d'accueil ══════════
@@ -585,7 +190,7 @@ function instCtx() {
 const WEEK = 7 * DAY;
 
 function canAsk() {
-  if (installed() || demo || tour) return false;
+  if (installed() || demoEtab || tuto) return false;
   if (menu || study || quiz || view.name === 'login') return false;
   const s = instLoad();
   if (s.done) return false;
@@ -748,7 +353,7 @@ export async function boot() {
     if (!(shortcut && consumeGoto())) { render(); pret = accueil(); }
     Promise.resolve(pret).then(r => armer(!!pret && r !== 'lien'), () => armer(false));
     flush();
-    maybeTour(pret);
+    maybeTuto(pret);
   } catch (e) {
     if (/JWT|401/i.test(String(e.message || e))) { saveAuth(null); setView({ name: 'login' }); render(); }
     else setOnline(false);

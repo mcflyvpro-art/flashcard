@@ -24,13 +24,12 @@ DERNIER   2026-10-27 · Folio gratuit et Folio+ (docs/LANDING.md) : le graphique
           deux cartes courtes ; dans la démo d'un élève, 5 livres au plus, QCM,
           associations, images et sons grisés, et le journal flouté hors série,
           régularité et rythme. La règle de chaque offre est écrite une fois,
-          src/offres.js, pour le paiement à venir (M12). Avant, le tour 4 de la
-          page (charte, vocabulaire, Folio Campus, appels à l'action).
-          Preuves : npm run check (462 tests), e2e 70 + 1 intermittent
-          (navigation.e2e.js, balayage, vert au second essai).
-Avant :   2026-10-27 · Les pseudos ont des règles (20261027090000) : tout compte en a un,
-          donné d'office, unique, deux changements par semaine, changeable de
-          partout ; au téléphone, les titres des onglets reviennent en haut.
+          src/offres.js, pour le paiement à venir (M12). Preuves : npm run
+          check, e2e (demo.e2e.js : volets floutés et fenêtre).
+Avant :   2026-10-27 · Le tuto de première connexion remplace la visite guidée : il fait
+          faire sur le vrai écran, selon le rôle et l'écran ; l'accueil d'un
+          compte neuf est refait. Avant encore, la page d'accueil (tour 4) et
+          les pseudos (20261027090000).
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

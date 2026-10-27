@@ -4,8 +4,8 @@ import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import { buildQueue, garderNeuves, neuvesPermises, shuffle } from '../file.js';
 import {
-  auth, db, demo, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
-  study, tour
+  auth, db, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
+  study
 } from '../data/etat.js';
 import { go, liveBump } from './bibliotheque.js';
 import {
@@ -85,10 +85,6 @@ export function startStudy(id, rev, subset, opt) {
 
 /* Reprise : l'état de la session survit à la fermeture de l'app */
 export function saveResume() {
-  /* La séance de démonstration ne laisse pas de trace : sans ça, le
-     bandeau « Reprendre Italien — les bases » s'affichait sur le vrai
-     compte, qui n'a jamais eu ce paquet. */
-  if (demo) return;
   try {
     /* QCM et association sont des exercices courts, et leur état porte des
        références de cartes : on ne les met pas en reprise. */
@@ -98,7 +94,6 @@ export function saveResume() {
 }
 
 export function loadResume() {
-  if (demo) return null;
   try {
     const r = JSON.parse(localStorage.getItem('cartes.resume.' + auth.uid));
     if (r && Date.now() - r.t < 3 * DAY && r.i < r.queue.length
@@ -611,14 +606,6 @@ function bindDrag(el) {
    part à l'horizontale, comme avant. */
 export function fling(dir, v, fx, fy) {
   const el = document.getElementById('top'); if (!el || el.dataset.gone) return;
-  /* Pendant l'étape qui apprend le geste, seul le bon sens passe : partir
-     du mauvais côté pendant qu'on lit « balaie à droite » embrouille plus
-     qu'autre chose. */
-  if (tour && tour.lock && dir !== tour.lock) {
-    el.style.transition = ''; el.style.transform = '';
-    el.style.setProperty('--sw', 0);
-    return;
-  }
   el.dataset.gone = 1; el.classList.add('gone');
   /* Partie au bouton plutôt qu'au doigt, la fiche n'a jamais été teintée :
      on l'allume au départ, sinon les deux façons de répondre ne donnent

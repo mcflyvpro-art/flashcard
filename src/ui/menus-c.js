@@ -7,7 +7,7 @@ import {
   menu, prefs, previewOf, quiz, recKey, recorder, reportOn, sel, sendTo,
   setAnimate, setDeckOpen, setDeckQ, setLeaving,
   setPendingGrade, setQuiz, setRecKey, setReorder, setReportWhy, setSel, setSendMsg,
-  setSendTo, setSplitSize, setStudy, setSubjColor, splitSize, study, demo, subjColor,
+  setSendTo, setSplitSize, setStudy, setSubjColor, splitSize, study, subjColor,
   subjEdit, subjName, view
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
@@ -33,7 +33,7 @@ import {
 } from './import-cartes.js';
 import { closeMenu, mountMenu, openMenu, paintMenu, vientDOuvrir } from './menus-a.js';
 import { changePassword, deleteAccount, mateProfPull } from '../core/menus-c.js';
-import { copyLink, doPrompt, logout, startTour } from './onboarding.js';
+import { copyLink, doPrompt, logout } from './onboarding.js';
 import { versRestore } from './reglages-corbeille.js';
 import {
   addMail, backupData, backupRestore, delMail, dropFriend, lireSauvegarde
@@ -77,7 +77,6 @@ function clickCopy(a, b) {
 }
 
 const clickVers = (a, b) => versRestore(+b.dataset.vers);
-function clickChap(a, b) { closeMenu(); return startTour(b.dataset.chap || null); }
 function clickMsubj(a, b, d) { d.subject = b.dataset.msubj; saveDeck(d); render(); }
 function clickFside(a, b) { fnr.side = b.dataset.fside; return paintMenu(); }
 function clickFriendPick(a, b) { setSendTo(b.dataset.friend); return paintMenu(); }
@@ -481,7 +480,6 @@ function clickDel(a, b, d) {
 const CLICK_RULES = [
   [(a, b) => b.dataset.copy !== undefined, clickCopy],
   [(a, b) => b.dataset.vers !== undefined, clickVers],
-  [(a, b) => b.dataset.chap !== undefined, clickChap],
   [(a, b) => b.dataset.msubj !== undefined, clickMsubj],
   [(a, b) => b.dataset.fside !== undefined, clickFside],
   [(a, b) => b.dataset.friend !== undefined, clickFriendPick],
@@ -563,7 +561,7 @@ const CLICK_RULES = [
    tout bouton de feuille portant un `data-` absent de la liste restait
    muet. Il attrape maintenant les boutons, comme celui de la page. */
 document.addEventListener('click', async e => {
-  const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-vers],[data-copy],[data-chap],[data-lend],[data-mrange],[data-why],[data-unblock]');
+  const b = e.target.closest('button,[data-mact],[data-msubj],[data-color],[data-tol],[data-lgf],[data-lgb],[data-tm],[data-ct],[data-merge],[data-move],[data-fside],[data-friend],[data-sortby],[data-vers],[data-copy],[data-lend],[data-mrange],[data-why],[data-unblock]');
   if (!b) return;
   const a = b.dataset.mact;
   const d = deck(view.id);
@@ -578,7 +576,7 @@ document.addEventListener('click', async e => {
    prochains jours, la reprise sauvegardée (qui appartenait à l'autre mode)
    part. Jamais pendant une séance : pas de bascule à chaud. */
 export function rallumerMoteur() {
-  if (!prefs.simple || study || demo) return;
+  if (!prefs.simple || study) return;
   setPendingGrade(null);
   try { localStorage.removeItem('cartes.resume.' + auth.uid); } catch (e) { /* stockage indisponible : rien à nettoyer alors */ }
   const days = spreadBacklog();

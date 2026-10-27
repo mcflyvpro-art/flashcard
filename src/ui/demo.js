@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
-import { db, setAuth, setDb, setDemo, setDemoEtab, demoEtab } from '../data/etat.js';
+import { db, setAuth, setDb, setDemoEtab, demoEtab } from '../data/etat.js';
 import { deDevoir } from '../file.js';
 import { JOURNAL_PLUS, LIVRES_GRATUITS } from '../offres.js';
 import { esc, flush, pull, setOnline } from '../core/coeur-sync.js';
@@ -14,6 +14,7 @@ import { go } from './bibliotheque.js';
 import { resetSession } from './onboarding.js';
 import { pubTete } from './connexion.js';
 import { armerSur, desarmer } from './routeur.js';
+import { lancerTuto } from './tuto-porte.js';
 import './demo.css';
 
 /* ══════════ « Essayer Folio », sans compte (2026-10-26) ══════════
@@ -49,6 +50,10 @@ const ROLES = [
   { k: 'ref', n: 3, t: 'Référent de l’établissement', c: 'Référent', s: 'Claire · le lycée', q: 'Les codes, les classes, les comptes', suite: POUR_L_ETAB }
 ];
 const CLE = 'folio.demo';
+/* Le tuto se joue à la première entrée dans la démo, pas à chaque rôle :
+   changer d'élève à professeur ne le relance pas ; « Revoir le tuto », dans
+   le bandeau, le rejoue pour le rôle du moment. Quitter la démo l'oublie. */
+const CLE_TUTO = 'folio.demo.tuto';
 
 export function decouvrirEcran() {
   $.innerHTML = `<div class="pub pub-essai">${pubTete()}
@@ -119,6 +124,7 @@ function bandeau(role) {
   b.innerHTML = `<b>Démo</b>
     <select data-dm-role aria-label="Rôle">${ROLES.map(r => `<option value="${r.k}"${r.k === role ? ' selected' : ''}>${r.c}</option>`).join('')}</select>
     <a class="dm-cta" href="${suite.href}" data-dm="partir">${svg(I[suite.icone])}<span class="dm-long">${suite.long}</span><span class="dm-court">${suite.court}</span></a>
+    <button data-dm="tuto" class="dm-tuto" aria-label="Revoir le tuto" title="Revoir le tuto">${svg(I.play)}<span>Tuto</span></button>
     <button data-dm="neuf" class="dm-neuf" aria-label="Recommencer la démo" title="Recommencer">${svg(I.refresh)}</button>
     <button data-dm="quitter" aria-label="Quitter la démo">${svg(I.exit)}<span>Quitter</span></button>`;
   document.documentElement.classList.add('en-demo');
@@ -200,11 +206,26 @@ export function envie(cle) {
   if (!d.open) d.showModal();
 }
 
-export function quitter() {
+/* Partir (quitter, ou un lien vers le compte, les tarifs) : le lycée, ce
+   que l'app a rangé sous ses comptes et le tuto déjà vu s'en vont. */
+function oublier() {
   monde = null;                        // plus rien ne se range, même pendant que la page part
   nettoyer();
-  try { sessionStorage.removeItem(CLE); } catch (e) { /* rien à effacer */ }
+  try { sessionStorage.removeItem(CLE); sessionStorage.removeItem(CLE_TUTO); } catch (e) { /* rien à effacer */ }
+}
+
+export function quitter() {
+  oublier();
   location.replace('/');               // le site : tout repart de zéro, plus de session, plus de lycée
+}
+
+/* La première entrée de la visite : le tuto du rôle choisi. */
+function premiereEntree() {
+  try {
+    if (sessionStorage.getItem(CLE_TUTO)) return;
+    sessionStorage.setItem(CLE_TUTO, '1');
+  } catch (e) { /* stockage refusé : le tuto se joue, il se rejouera peut-être à un rafraîchissement */ }
+  lancerTuto();
 }
 
 /* Entrer (ou changer de rôle) : une connexion comme une autre, sur un
@@ -214,8 +235,7 @@ export async function lancer(role, adresse) {
   desarmer();
   if (!monde) { nettoyer(); monde = chargerMonde(); }
   setDemoEtab(servir);
-  setDemo(false);
-  resetSession();                      // ce qui appartenait au rôle d'avant
+  resetSession();                      // ce qui appartenait au rôle d'avant (un tuto en cours aussi)
   setAuth({ uid, email: `${r.k}@demo.folio.invalid`, token: `tok-${uid}-demo`, refresh: '', exp: Date.now() + 365 * 864e5 });
   bandeau(r.k);
   setDb({ subjects: [], decks: [], hist: {} });
@@ -225,6 +245,7 @@ export async function lancer(role, adresse) {
   await accueil();                     // son rôle, son établissement, son écran d'arrivée
   flush();
   armerSur(adresse && adresse.name && !adresse.racine ? adresse : null);
+  premiereEntree();
 }
 
 document.addEventListener('click', e => {
@@ -234,14 +255,10 @@ document.addEventListener('click', e => {
      tarifs) : comme « Quitter », rien de la démo ne reste ; le lien fait
      le reste. Sans preventDefault : un appui long ou un clic du milieu
      l'ouvrent ailleurs et la démo continue ici. */
-  if (b.dataset.dm === 'partir') {
-    monde = null;
-    nettoyer();
-    try { sessionStorage.removeItem(CLE); } catch (x) { /* rien à effacer */ }
-    return;
-  }
+  if (b.dataset.dm === 'partir') return oublier();
   e.preventDefault();
   if (b.dataset.dm === 'rester') b.closest('dialog').close();
+  if (b.dataset.dm === 'tuto') lancerTuto({ rejoue: true });
   if (b.dataset.dm === 'lancer') lancer(b.dataset.v);
   if (b.dataset.dm === 'quitter') quitter();
   if (b.dataset.dm === 'neuf') {

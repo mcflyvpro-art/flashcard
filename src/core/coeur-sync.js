@@ -1,5 +1,5 @@
 import {
-  DEFPREFS, auth, bases, conflicts, db, demo, demoEtab, dirty, flushAgain, flushTimer, flushing, gone, mailbox,
+  DEFPREFS, auth, bases, conflicts, db, demoEtab, dirty, flushAgain, flushTimer, flushing, gone, mailbox,
   menu, online, outbox, prefs, refreshing, setAnimate, setAuth, setBases, setDirty, setFlushAgain,
   setFlushTimer, setFlushing, setGone, setOnlineState, setOutbox, setPrefs, setRefreshing,
   study, trash, undos, view
@@ -141,7 +141,7 @@ export function load() {
 }
 
 export function save() {
-  if (demo || demoEtab) return;           // la démonstration n'écrase pas le cache du compte
+  if (demoEtab) return;                   // la démonstration n'écrase pas le cache d'un vrai compte
   if (auth) localStorage.setItem(cacheKey(), JSON.stringify({ ...db, prefs, dirty, gone, outbox }));
 }
 
@@ -256,9 +256,6 @@ async function throwIfError(r) {
 const envoyer = (url, init) => (demoEtab ? demoEtab(url, init) : fetch(url, init));
 
 export async function api(path, method = 'GET', body, extra = {}) {
-  /* Pendant la visite guidée, aucune requête ne part : ni lecture, ni
-     écriture. Le compte de démonstration n'existe que dans cet onglet. */
-  if (demo) return [];
   if (!demoEtab && tokenExpiring()) await refreshToken();
   const r = await envoyer(SB.url + path,
     { method, headers: authHeaders(extra), body: body ? JSON.stringify(body) : undefined });
@@ -282,7 +279,6 @@ async function throwIfPageError(r) {
 }
 
 async function apiPage(path, from, to) {
-  if (demo) return { rows: [], total: 0 };
   if (!demoEtab && tokenExpiring()) await refreshToken();
   const h = { apikey: SB.key, Range: `${from}-${to}`, Prefer: 'count=exact' };
   if (auth && auth.token) h.Authorization = 'Bearer ' + auth.token;
@@ -579,7 +575,7 @@ async function flushDeck(id) {
 }
 
 export async function flush() {
-  if (demo || !auth) return;
+  if (!auth) return;
   if (flushing) { setFlushAgain(true); return; }
   setFlushing(true);
   setFlushAgain(false);

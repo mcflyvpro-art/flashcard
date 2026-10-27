@@ -24,7 +24,7 @@ export function chargerDemo() {
    Appelé par boot() pour toute adresse qui n'est pas /demo/…. */
 export function effacerDemo() {
   try {
-    sessionStorage.removeItem('folio.demo');
+    sessionStorage.removeItem('folio.demo'); sessionStorage.removeItem('folio.demo.tuto');
     Object.keys(localStorage).filter(k => k.includes('dece0000-')).forEach(k => localStorage.removeItem(k));
   } catch (e) { /* stockage indisponible : il n'y a alors rien à effacer */ }
 }

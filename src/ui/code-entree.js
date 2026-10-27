@@ -12,6 +12,7 @@ import { toast } from './import-cartes.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { allerAccueil, rejoindreCollegue } from './prof-porte.js';
 import { versClasse } from './eleve-classes.js';
+import { apresEntree } from './tuto-porte.js';
 
 /* ══════════ « J'ai un code » ══════════
    La seule porte d'entrée dans une école (docs/PARCOURS.md) : le code d'un
@@ -106,16 +107,18 @@ async function lire() {
 }
 
 /* Entré : on relit le rôle et l'établissement, puis on va là où l'on est
-   attendu — sa classe, son espace professeur, sa console de référent. */
+   attendu — sa classe, son espace professeur, sa console de référent. Un
+   compte neuf y trouve ensuite son accueil et son tuto (ui/tuto-porte.js). */
 async function arriver(r) {
   toast(I.check, bienvenue(r));
   Object.assign(E(), { code: '', fiche: null, reponse: null, classe: '' });
   closeMenu();
   await cerclePull();
   eleveClassesPull();
-  if (r.quel === 'ref') { refPull(); return go('ref'); }
-  if (r.quel === 'prof') return allerAccueil();
-  return go('classes');
+  if (r.quel === 'ref') { refPull(); go('ref'); }
+  else if (r.quel === 'prof') allerAccueil();
+  else go('classes');
+  apresEntree();
 }
 
 async function entrer() {

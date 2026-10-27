@@ -138,8 +138,7 @@ function settingsDonneesHtml() {
           <span class="n">Annuler ${esc(undoLabel().toLowerCase())}</span></button>` : ''}
         <button class="sr flat" data-act="trash">${svg(I.trash)}<span class="n">Corbeille</span>
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="help">${svg(I.bulb)}<span class="n">Aide</span>
-          <span class="c">revoir la visite</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="tuto">${svg(I.play)}<span class="n">Revoir le tuto</span>${svg(I.arrow)}</button>
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
           <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
         ${settingsRoleRowsHtml()}
@@ -175,6 +174,7 @@ function settingsGestionHtml() {
         <button class="sr flat" data-act="handle">${svg(I.hash)}<span class="n">Pseudo</span>
           <span class="c">${me && me.handle ? '@' + esc(me.handle) : ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
+        ${myRole === 'ref' ? `<button class="sr flat" data-act="tuto">${svg(I.play)}<span class="n">Revoir le tuto</span>${svg(I.arrow)}</button>` : ''}
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
           <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}
         <button class="sr flat" data-legal="cgu">${svg(I.file)}

@@ -395,9 +395,11 @@ export let comp = { subject: '', cards: [], edit: -1, mode: 'ecrire', text: '', 
 
 export let aiBusy = false;
 
-export let tour = null, tourSave = null, tourPoll = 0;
+/* Le tuto en cours (ui/tuto.js, 2026-10-27) : son scénario et son étape,
+   null sinon. Il se joue sur le vrai compte — le livre qu'on y crée est le
+   sien —, la démo sans compte comprise : plus de compte d'essai à part. */
+export let tuto = null;
 
-export let demo = false;                       // pendant la visite : plus rien ne sort de l'appareil
 /* La démo sans compte (ui/demo.js, 2026-10-26) : la base locale qui sert, à
    la place du réseau, chaque requête d'api() — un `fetch` dans l'onglet,
    sur le « Lycée Démo Folio » de src/base-locale/. Rien ne part. */
@@ -508,10 +510,7 @@ export const setAsrRec = v => asrRec = v;
 export const setQuizTick = v => quizTick = v;
 export const setComp = v => comp = v;
 export const setAiBusy = v => aiBusy = v;
-export const setTour = v => tour = v;
-export const setTourSave = v => tourSave = v;
-export const setTourPoll = v => tourPoll = v;
-export const setDemo = v => demo = v;
+export const setTuto = v => tuto = v;
 export const setDemoEtab = v => demoEtab = v;
 export const setBip = v => bip = v;
 /* `online` a déjà un « setter » avec un vrai sens : `setOnline` (app.js) fait
