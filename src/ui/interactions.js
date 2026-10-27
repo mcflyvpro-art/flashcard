@@ -11,6 +11,7 @@ import {
   setPeek, setPendingGrade, setQuiz, setReorder, setSel, setShared,
   setStudy, shared, study, trash, view
 } from '../data/etat.js';
+import { retourPublic } from './routeur.js';
 import { allerClasses, gestion, go, render, retourLivre } from './bibliotheque.js';
 import { commuPull, doAdd, ouvrirProfil } from './cercle.js';
 import { plain, play, say } from './carte-media.js';
@@ -68,7 +69,10 @@ const tapYes = (a, ds) => answerFriend(ds.yes, true);
 const tapNo = (a, ds) => answerFriend(ds.no, false);
 /* toucher un ami ouvre son profil (ses gestes d'ami y sont, en bas) */
 const tapMate = (a, ds) => ouvrirProfil(ds.mate);
-const tapMail = (a, ds) => openMail(+ds.mail);
+/* l'identifiant d'une lettre est un nombre dans la base (bigint), une
+   chaîne dans la base locale de la démo : `+id` donnait NaN, et la lettre
+   ne s'ouvrait pas (2026-10-26) */
+const tapMail = (a, ds) => openMail(/^\d+$/.test(ds.mail) ? +ds.mail : ds.mail);
 const tapDpick = (a, ds) => duelPick(+ds.dpick);
 function tapDuel(a, ds) { duels.open = ds.duel; return openMenu('duelitem'); }
 
@@ -229,7 +233,7 @@ function tapResume() {
 }
 
 const tapSettings = () => go('settings');
-const tapTolog = () => go('login');
+const tapTolog = () => retourPublic();          // l'écran d'avant, ou le site (routeur.js)
 const tapDemande = () => go('demande');
 const tapDecouvrir = () => go('decouvrir');
 const tapMod = () => { if (!mods.list) modPull(); return go('mod'); };

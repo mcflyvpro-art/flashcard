@@ -119,14 +119,16 @@ test('la démo a ses adresses, et rafraîchir ne la quitte plus', async ({ page 
   await page.getByRole('button', { name: 'Essayer sans compte' }).click();
   await expect(page).toHaveURL(/\/essayer$/);
   await page.locator('.dm-role[data-v="prof"]').click();
-  await expect(page.getByText('Bonjour, Marc')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText(/^Bon(jour|soir), Marc$/)).toBeVisible({ timeout: 10000 });
   await expect(page).toHaveURL(/\/demo\/prof$/);
 
   await page.reload();
-  await expect(page.getByText('Bonjour, Marc')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText(/^Bon(jour|soir), Marc$/)).toBeVisible({ timeout: 10000 });
   await expect(page.locator('.dm-bandeau')).toBeVisible();
   await expect(page).toHaveURL(/\/demo\/prof$/);
 
+  // la quitter ramène au site : la connexion, c'est quand on veut se connecter
   await page.locator('.dm-bandeau').getByRole('button', { name: 'Quitter' }).click();
-  await expect(page).toHaveURL(/\/connexion$/, { timeout: 10000 });
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Révise moins. Retiens tout.', { timeout: 10000 });
+  await expect(page).toHaveURL(/\/$/);
 });

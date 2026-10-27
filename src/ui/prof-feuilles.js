@@ -151,7 +151,7 @@ function eleveFiche(w) {
   if (!c || !m) return setMenu(null);
   const e = etatEleve(m);
   feuille(w, 'pf-tiroir', `<span class="pf-sh-av">${avatar(m.user_id, m.who)}<span><b>${esc(m.who)}</b>${pill(ETATS[e.k], e.t)}</span></span>`,
-    `${m.carte ? `Carte · ${esc(m.identifiant)}` : '@' + esc(m.handle || '')} · inscrit ${timeAgo(m.inscrit)}`,
+    `${m.carte ? `Carte · ${esc(m.identifiant)} · ` : m.handle ? '@' + esc(m.handle) + ' · ' : ''}inscrit ${timeAgo(m.inscrit)}`,
     `${chiffresEleve(m)}<h3 class="pf-h3">Devoirs</h3>${devoirsEleve()}`,
     `<div class="pf-acts">${actionsEleve(c, m)}</div>`);
 }

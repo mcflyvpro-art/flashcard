@@ -283,7 +283,7 @@ export function consoleAdmin() {
       : `<div class="ed-liste">${ouvert ? fiche : liste}</div>`;
   $.innerHTML = `<div class="page ed" id="page">
       <div class="top"><div class="hero">Administration</div>
-        ${suivi ? `<button class="ed-b pri" data-adm="nouveau">${svg(I.plus)}Établissement</button>` : ''}</div>
+        ${suivi ? `<button class="ed-b pri ed-nouveau" data-adm="nouveau">${svg(I.plus)}<span>Établissement</span></button>` : ''}</div>
       ${adm.err && !adm.orgs?.length && !accounts?.length ? vide(I.lock, 'Réservé à l’éditeur') : `${chiffres()}
       <section class="ed-corps">${corps}</section>`}
     </div>`;

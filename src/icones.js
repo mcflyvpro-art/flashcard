@@ -101,3 +101,10 @@ export const I = {
 export const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
 
 export const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
+
+/* Le logo de Folio, le même dessin que la page d'accueil du site
+   (public/site/logo.svg, tracé par tools/logo.py) : un fichier vectoriel
+   que le service worker garde aussi hors ligne. `MARQUE` : le logo et le
+   nom, en tête des onglets au téléphone, là où l'ordinateur a sa barre. */
+export const LOGO = '<img class="logo" src="/site/logo.svg" alt="" width="24" height="26">';
+export const MARQUE = `<span class="marque-tel" aria-hidden="true">${LOGO}Folio</span>`;

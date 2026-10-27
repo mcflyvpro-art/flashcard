@@ -123,7 +123,15 @@ svg.qr{display:block;width:100%;height:auto;stroke:none}
 .pf-kpis{display:flex;gap:8px;margin:0 calc(-1 * var(--pad)) 16px;padding:1px var(--pad);overflow-x:auto;
   scroll-snap-type:x proximity;scroll-padding-inline:var(--pad);scrollbar-width:none}
 .pf-kpis::-webkit-scrollbar{display:none}
-.pf-kpis > *{flex:0 0 150px;scroll-snap-align:start}
+.pf-kpis > *{flex:0 0 auto;min-width:142px;scroll-snap-align:start}
+/* la bande s'efface sur son bord droit : on voit qu'elle continue, au lieu
+   d'une carte coupée net (« Jam… ») ; ses filtres, eux, passent à la ligne */
+@media (max-width:699px){
+  .pf-kpis{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+  .pf-seg.pf-filtres{flex-wrap:wrap;gap:6px;padding:0;background:none;overflow:visible}
+  .pf-seg.pf-filtres button{background:var(--surf);border-radius:999px}
+  .pf-seg.pf-filtres button.on{background:var(--ink);color:var(--bg);box-shadow:none}
+}
 @media (min-width:700px){
   .pf-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:0 0 16px;padding:0;overflow:visible}
   .pf-kpis > *{flex:none}
@@ -176,13 +184,17 @@ button.pf-kpi:active{transform:scale(.98)}
 .pf-wi span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pf-wi em{font-style:normal;font-size:11px;color:var(--soft);font-variant-numeric:var(--tab)}
 .pf-wplus{font-size:11px;font-weight:700;color:var(--soft);padding-left:4px}
-@media (min-width:700px){
+/* sept colonnes seulement si son panneau a la place : à côté de « À
+   traiter », une colonne faisait 70 px et un devoir s'y lisait « Fonct… » */
+.pf-semaine{container-type:inline-size}
+@container (min-width:640px){
   .pf-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
   .pf-wd{flex-direction:column;align-items:stretch;flex-wrap:nowrap;min-height:112px;padding:7px 5px}
   .pf-wd.vide,.pf-wd.vide:not(.auj){display:flex;opacity:1}
   .pf-wdh{width:auto;padding:0 2px 3px}
   .pf-wi{flex:none;padding:4px 6px;font-size:11.5px}
   .pf-wi em{display:none}
+  .pf-wi span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;line-height:1.3}
 }
 /* les classes */
 .pf-grid{display:grid;grid-template-columns:1fr;gap:12px}
@@ -255,9 +267,12 @@ button.pf-kpi:active{transform:scale(.98)}
 @media (min-width:700px){
   .pf-agj{min-height:108px;padding:6px}
   .pf-agenda.petit .pf-agj{min-height:78px}
-  .pf-agi{display:flex;align-items:center;gap:5px;height:auto;padding:2px 5px;border-radius:5px;min-width:0;
-    background:color-mix(in srgb,var(--k) 12%,transparent);font-size:11px;font-weight:650;color:var(--ink);white-space:nowrap}
-  .pf-agi i{display:block;width:6px;height:6px;border-radius:2px;background:var(--k);flex:none}
+  .pf-agi{display:flex;align-items:flex-start;gap:5px;height:auto;padding:3px 5px;border-radius:5px;min-width:0;
+    background:color-mix(in srgb,var(--k) 12%,transparent);font-size:11px;font-weight:650;line-height:1.3;color:var(--ink)}
+  .pf-agi i{display:block;width:6px;height:6px;margin-top:4px;border-radius:2px;background:var(--k);flex:none}
+  /* deux lignes et des points de suspension : coupé net, un devoir se lisait « Vocabulaire : la » */
+  .pf-agi span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+    white-space:normal;line-height:1.3;min-width:0}
 }
 .pf-list{display:flex;flex-direction:column;border-radius:14px;overflow:hidden;background:var(--card);box-shadow:inset 0 0 0 1px var(--line)}
 .pf-panel .pf-list,.pf-sb .pf-list{border-radius:0;background:none;box-shadow:none;overflow:visible}
@@ -353,6 +368,7 @@ button.pf-kpi:active{transform:scale(.98)}
 .pf-c-due b{font-size:13.5px;font-weight:700}
 .pf-c-due i{font-style:normal;font-size:12px;color:var(--soft)}
 .pf-c-due.ko b,.pf-c-due.ko i{color:var(--ko)}
+.pf-c-po{gap:5px}
 .pf-c-po.am b{color:var(--am)}
 .pf-cb{position:relative;width:20px;height:20px;border-radius:6px;display:grid;place-items:center;flex:none;cursor:pointer;
   background:var(--card);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 28%,transparent)}

@@ -5,6 +5,7 @@ import { auth, online, view } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
 import { demanderDemo } from '../core/demande.js';
 import { FONCTIONS, messageDemande } from '../etablissement.js';
+import { pubTete } from './connexion.js';
 import './demande-demo.css';
 
 /* ══════════ « Demander une démo » (2026-10-26) ══════════
@@ -44,17 +45,23 @@ function merci() {
     <button class="cta" data-act="tolog">Retour${svg(I.arrow)}</button></div>`;
 }
 
+/* Sans compte, l'écran public (le site, la lumière, le logo) ; ouvert
+   depuis les Réglages d'un compte, une page de l'app comme une autre. */
 export function demandeEcran() {
-  $.innerHTML = `<div class="bar"><button class="ic" data-act="${auth ? 'settings' : 'tolog'}" aria-label="Retour">${svg(I.back)}</button></div>
-    <div class="page dd" id="page">
-      <div class="top"><div class="hero">Folio pour votre établissement</div></div>
-      <ul class="dd-points">
-        <li>${svg(I.school)}<span>Un code pour tout l’établissement</span></li>
-        <li>${svg(I.rocket)}<span>Une démo de 30 jours, avec vos classes</span></li>
-        <li>${svg(I.lock)}<span>Données d’élèves protégées (RGPD)</span></li>
-      </ul>
-      ${etat.fini ? merci() : formulaire()}
-    </div>`;
+  const corps = `<div class="dd-pitch">
+        <p class="dd-sur">Folio Campus</p>
+        <h1 class="dd-t">Folio pour votre <em>établissement.</em></h1>
+        <ul class="dd-points">
+          <li>${svg(I.school)}<span>Un code pour tout l’établissement</span></li>
+          <li>${svg(I.rocket)}<span>Une démo de 30 jours, avec vos classes</span></li>
+          <li>${svg(I.lock)}<span>Données d’élèves protégées (RGPD)</span></li>
+        </ul>
+      </div>
+      ${etat.fini ? merci() : formulaire()}`;
+  $.innerHTML = auth
+    ? `<div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button></div>
+      <div class="page dd" id="page">${corps}</div>`
+    : `<div class="pub pub-demande">${pubTete()}<div class="dd">${corps}</div></div>`;
 }
 
 const repeint = () => { if (view.name === 'demande') demandeEcran(); };

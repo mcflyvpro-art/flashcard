@@ -22,9 +22,10 @@ function serviceWorker(base) {
       const abs = p => base + p.replace(/^\//, '');
       /* Ni les captures du manifeste (elles ne servent qu'à l'installation),
          ni les images et vidéos de la page d'accueil (site/) : l'app hors
-         ligne n'en a pas besoin. */
+         ligne n'en a pas besoin — sauf le logo, que ses écrans publics
+         (connexion, essai, demande de démo) affichent aussi hors ligne. */
       const statics = walk(pub).map(p => abs(relative(pub, p)))
-        .filter(p => !p.startsWith(base + 'shots/') && !p.startsWith(base + 'site/'));
+        .filter(p => !p.startsWith(base + 'shots/') && (!p.startsWith(base + 'site/') || p === base + 'site/logo.svg'));
       /* Ni les cartes de source (.map : plus d'un Mo, que personne ne lit
          hors ligne), ni les pages HTML sous leur nom de fichier, ni le
          morceau vide qu'une page sans script laisse dans le paquet : il

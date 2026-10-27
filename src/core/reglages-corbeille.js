@@ -189,7 +189,7 @@ export async function mailPull() {
 
 export async function openMail(id) {
   setMailOpen(id);
-  const it = mailbox.list && mailbox.list.find(x => x.id === id);
+  const it = mailbox.list && mailbox.list.find(x => String(x.id) === String(id));
   go('lettre', id);
   if (it && !it.read_at) {
     it.read_at = new Date().toISOString();

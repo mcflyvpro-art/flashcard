@@ -57,3 +57,47 @@ describe('page d’accueil', () => {
     }
   });
 });
+
+/* Le graphique du moteur (src/site/courbes.js) : ce qu'il affiche doit
+   rester vrai pour le modèle qu'il prétend montrer. */
+describe('le graphique du moteur', async () => {
+  const { AN, DEPART, courbes, duree, programme, rappel, versT, versX } = await import('../src/site/courbes.js');
+  const c = courbes();
+
+  it('la courbe d’oubli vaut 90 % quand t = S', () => {
+    for (const S of [0.5, 3, 40]) expect(rappel(S, S)).toBeCloseTo(0.9, 10);
+  });
+
+  it('avec Folio, chaque fiche reste au-dessus de 90 % toute l’année', () => {
+    for (let i = 0; i <= 4000; i++) expect(c.lire(i / 4000).avec).toBeGreaterThanOrEqual(0.9 - 1e-9);
+  });
+
+  it('sans révision, il en reste moins de 20 % au bout d’un an, et la moitié s’en va dans le mois', () => {
+    expect(c.lire(1).sans).toBeLessThan(0.2);
+    expect(c.lire(versX(30.4)).sans).toBeLessThan(0.55);
+    for (let i = 1; i <= 100; i++) expect(c.lire(i / 100).sans).toBeLessThan(c.lire((i - 1) / 100).sans);
+  });
+
+  it('les révisions s’espacent, et chacune tombe dans l’année', () => {
+    for (const S of DEPART) {
+      const p = programme(S);
+      const ecarts = p.slice(1).map((d, i) => d.debut - p[i].debut);
+      for (let i = 1; i < ecarts.length; i++) expect(ecarts[i]).toBeGreaterThan(ecarts[i - 1]);
+      expect(p[p.length - 1].debut).toBeLessThanOrEqual(AN);
+    }
+    expect(c.revisions.length).toBe(DEPART.reduce((n, S) => n + programme(S).length - 1, 0));
+  });
+
+  it('le temps en racine carrée va et revient', () => {
+    for (const t of [0, 1, 30, 365]) expect(versT(versX(t))).toBeCloseTo(t, 9);
+  });
+
+  it('dit le temps comme on le dit', () => {
+    expect(duree(0)).toBe('Aujourd’hui');
+    expect(duree(1)).toBe('1 jour');
+    expect(duree(4)).toBe('4 jours');
+    expect(duree(14)).toBe('2 semaines');
+    expect(duree(91)).toBe('3 mois');
+    expect(duree(365)).toBe('1 an');
+  });
+});

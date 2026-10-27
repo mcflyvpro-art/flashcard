@@ -92,8 +92,8 @@ function ligneEleve(m) {
       data-nom="${esc((m.who + ' ' + (m.handle || '') + ' ' + (m.identifiant || '')).toLowerCase())}">
     <span class="pf-cb" role="checkbox" aria-checked="${sel}" aria-label="Sélectionner ${esc(m.who)}" data-pf="coche"
       data-id="${esc(m.user_id)}"><i>${svg(I.check)}</i></span>
-    <span class="pf-who">${avatar(m.user_id, m.who)}<span><b>${esc(m.who)}</b><i>${
-      m.carte ? `${svg(I.key)}${esc(m.identifiant)}` : '@' + esc(m.handle || '')}</i></span></span>
+    <span class="pf-who">${avatar(m.user_id, m.who)}<span><b>${esc(m.who)}</b>${
+      m.carte ? `<i>${svg(I.key)}${esc(m.identifiant)}</i>` : m.handle ? `<i>@${esc(m.handle)}</i>` : ''}</span></span>
     <span class="pf-c-etat">${pill(ETATS[e.k], e.t)}</span>
     <span class="pf-num pf-c-rendu"><b>${m.rendus}</b><i>/${m.donnes}</i>
       <span class="pf-mb"><i class="${tonReussite(taux)}" style="width:${m.rendus ? Math.max(4, taux) : 0}%"></i></span></span>
@@ -137,7 +137,7 @@ function elevesOnglet(c) {
   return `<div class="pf-tool">
       <label class="pf-search">${svg(I.search)}<input id="pfq" type="search" placeholder="Rechercher un élève"
         value="${esc(prof.q)}" autocomplete="off" spellcheck="false" data-pfin="q" aria-label="Rechercher un élève"><kbd>/</kbd></label>
-      <div class="pf-seg" role="group" aria-label="Filtrer">${Object.entries(FILTRES).map(([k, t]) =>
+      <div class="pf-seg pf-filtres" role="group" aria-label="Filtrer">${Object.entries(FILTRES).map(([k, t]) =>
         `<button class="${prof.filtre === k ? 'on' : ''}" data-pf="filtre" data-v="${k}">${t}<em>${n(k)}</em></button>`).join('')}</div>
       <select class="pf-sel" data-pfch="tri" aria-label="Trier">${Object.entries(TRIS).map(([k, t]) =>
         `<option value="${k}"${prof.tri === k ? ' selected' : ''}>${t}</option>`).join('')}</select>
@@ -166,7 +166,7 @@ function demandesOnglet(c) {
       <span>Un nom inconnu ? Refusez-le, et bloquez-le.</span>
       ${btn('admettre-tout', I.check, 'Tout admettre', 'pri')}</div>
     <div class="pf-list">${l.map(d => `<div class="pf-li pf-dem">
-      ${avatar(d.user_id, d.who)}<span class="pf-lit"><b>${esc(d.who)}</b><i>@${esc(d.handle || '')} · ${timeAgo(d.depuis)}</i></span>
+      ${avatar(d.user_id, d.who)}<span class="pf-lit"><b>${esc(d.who)}</b><i>${d.handle ? '@' + esc(d.handle) + ' · ' : ''}${timeAgo(d.depuis)}</i></span>
       ${btn('admettre', I.check, 'Admettre', 'sm pri', `data-id="${esc(d.user_id)}"`)}
       ${btn('refuser', I.x, 'Refuser', 'sm', `data-id="${esc(d.user_id)}"`)}
       ${btn('bloquer', I.lock, '', 'sm ic warn', `data-id="${esc(d.user_id)}" aria-label="Refuser et bloquer" title="Refuser et bloquer"`)}

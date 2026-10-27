@@ -20,15 +20,21 @@ const AFFICHES = [
   { nom: 'pc', role: 'eleve', fenetre: { width: 1152, height: 720 }, densite: 1.25,
     async chemin(p) {
       await p.locator('aside, nav, .rail').getByText('Livres', { exact: true }).first().click();
-      await p.getByText(/Dates d.histoire/).first().click();
+      await p.getByText('La cellule', { exact: true }).first().click();
       await p.locator('[data-act="study"]:visible').first().click();
       await p.waitForTimeout(900);
       await p.keyboard.press('Space');               // la fiche retournée : la réponse et les quatre boutons
     } },
   { nom: 'mobile', role: 'eleve', fenetre: { width: 390, height: 844 }, densite: 2, mobile: true,
     async chemin(p) { await p.click('[data-act="tab-home"]'); } },
+  { nom: 'eleve', role: 'eleve', fenetre: { width: 1280, height: 800 }, densite: 1.125,
+    async chemin(p) {
+      await p.locator('aside, nav, .rail').getByText('Mes classes', { exact: true }).first().click();
+      await p.locator('[data-el="classe"]:visible').first().click();   // sa classe : devoirs, professeurs, camarades
+      await p.waitForTimeout(600);
+    } },
   { nom: 'prof', role: 'prof', fenetre: { width: 1280, height: 800 }, densite: 1.125,
-    async chemin(p) { await p.getByText('Bonjour, Marc').waitFor(); } },
+    async chemin(p) { await p.getByText(/^Bon(jour|soir), Marc$/).waitFor(); } },
   { nom: 'referent', role: 'ref', fenetre: { width: 1280, height: 800 }, densite: 1.125,
     async chemin(p) { await p.getByText('PRFQ-WT58').waitFor(); } }
 ];
@@ -71,11 +77,25 @@ async function webp(page, png, qualite, echelle = 1) {
   return Buffer.from(b64, 'base64');
 }
 
-const navigateur = await chromium.launch({ executablePath: chrome });
-mkdirSync(SORTIE, { recursive: true });
-for (const a of AFFICHES) {
+/* Les captures du manifeste (public/shots/) : ce que Chrome montre avant
+   d'installer l'app, la bibliothèque de Léa sur ordinateur et au téléphone.
+   La taille en pixels doit être celle que déclare le manifeste. */
+const CAPTURES = [
+  { nom: 'wide', role: 'eleve', fenetre: { width: 1440, height: 900 }, densite: 1,
+    async chemin(p) { await p.locator('aside, nav, .rail').getByText('Livres', { exact: true }).first().click(); } },
+  { nom: 'narrow', role: 'eleve', fenetre: { width: 414, height: 896 }, densite: 1, mobile: true,
+    async chemin(p) { await p.click('[data-act="tab-home"]'); } }
+];
+
+/* Dix heures du matin, aujourd'hui : l'accueil du professeur dit
+   « Bonjour », quelle que soit l'heure où l'on photographie (la démo se
+   sème autour de cette heure-là, rien d'autre ne bouge). */
+const matin = new Date(); matin.setHours(10, 0, 0, 0);
+
+async function ouvrir(a) {
   const ctx = await navigateur.newContext({ viewport: a.fenetre, deviceScaleFactor: a.densite, locale: 'fr-FR',
     isMobile: !!a.mobile, hasTouch: !!a.mobile });
+  await ctx.clock.install({ time: matin });
   const p = await ctx.newPage();
   await p.route(/supabase\.co/, r => r.abort());
   await p.goto(URL_APP);
@@ -84,6 +104,21 @@ for (const a of AFFICHES) {
   // ni le bandeau de la démo ni un message passager sur une affiche
   await p.addStyleTag({ content: '.dm-bandeau,.toast{display:none!important}' });
   await a.chemin(p);
+  if (!a.mobile) await p.mouse.move(0, 0);   // rien de survolé sur l'image
+  return { ctx, p };
+}
+
+const navigateur = await chromium.launch({ executablePath: chrome });
+mkdirSync(SORTIE, { recursive: true });
+for (const a of CAPTURES) {
+  const { ctx, p } = await ouvrir(a);
+  await p.waitForTimeout(1400);
+  writeFileSync(`public/shots/${a.nom}.png`, await p.screenshot());
+  console.log(`shots/${a.nom}.png`);
+  await ctx.close();
+}
+for (const a of AFFICHES) {
+  const { ctx, p } = await ouvrir(a);
   if (a.mobile) await barreEtat(p);
   await p.waitForTimeout(1400);
   const png = await p.screenshot();
@@ -102,16 +137,16 @@ const logo = readFileSync('public/site/logo.svg', 'utf8');
 const og = await (await navigateur.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 })).newPage();
 await og.setContent(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
   body{margin:0;width:1200px;height:630px;overflow:hidden;font-family:Inter,system-ui,sans-serif;color:#1D1C19;
-    background:radial-gradient(45% 60% at 8% 0%,rgba(47,93,138,.16),transparent),radial-gradient(40% 55% at 100% 30%,rgba(168,72,60,.12),transparent),
-    radial-gradient(50% 50% at 60% 110%,rgba(63,125,85,.14),transparent),#F7F5F0}
+    background:radial-gradient(48% 64% at 6% 0%,rgba(90,118,208,.30),transparent),radial-gradient(44% 60% at 100% 24%,rgba(215,100,141,.26),transparent),
+    radial-gradient(40% 50% at 42% 30%,rgba(154,120,207,.16),transparent),radial-gradient(50% 50% at 60% 110%,rgba(215,100,141,.12),transparent),#F7F5F0}
   .g{position:absolute;left:72px;top:70px;width:560px}
   .m{display:flex;align-items:center;gap:14px;font:700 44px 'Bitstream Charter',Charter,Georgia,serif;letter-spacing:-1px}
   .m svg{width:74px;height:auto}
   .p{display:inline-flex;align-items:center;gap:8px;margin-top:34px;padding:9px 16px;border-radius:99px;background:#fff;
     box-shadow:inset 0 0 0 1px rgba(29,28,25,.14);font-weight:700;font-size:19px}
-  .p i{width:10px;height:10px;border-radius:50%;background:#3F7D55}
+  .p i{width:10px;height:10px;border-radius:50%;background:linear-gradient(115deg,#5A76D0,#9A78CF,#D7648D)}
   h1{margin:24px 0 0;font:700 78px/0.98 'Bitstream Charter',Charter,Georgia,serif;letter-spacing:-2.5px}
-  h1 em{font-style:italic}
+  h1 em{font-style:italic;background:linear-gradient(100deg,#3E4FA0 8%,#80439C 55%,#B33F6C 94%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
   .s{margin-top:22px;font-size:25px;color:#4B4842;line-height:1.4}
   .pc{position:absolute;left:640px;top:118px;width:600px;background:#121211;border-radius:16px 16px 4px 4px;padding:9px 9px 13px;
     box-shadow:0 40px 80px -30px rgba(29,28,25,.5)}
@@ -127,9 +162,9 @@ await og.setContent(`<!doctype html><html lang="fr"><head><meta charset="utf-8">
   .f b{display:block;margin-top:5px;font:700 21px 'Bitstream Charter',Georgia,serif}
 </style></head><body>
   <div class="g"><div class="m">${logo}<span>Folio</span></div>
-    <div class="p"><i></i>Éprouvé en classe prépa</div>
+    <div class="p"><i></i>Testé et validé en prépa · boosté à l’IA</div>
     <h1>Révise moins.<br>Retiens <em>tout.</em></h1>
-    <p class="s">Tes fiches reviennent juste avant<br>que tu les oublies.</p></div>
+    <p class="s">L’IA fait tes fiches. Folio te les repose<br>juste avant que tu les oublies.</p></div>
   <div class="pc"><img src="${dataUri(SORTIE + 'pc.webp', 'image/webp')}"></div><div class="socle"></div>
   <div class="tel"><img src="${dataUri(SORTIE + 'mobile.webp', 'image/webp')}"><i></i></div>
   <div class="f"><small>Histoire</small><b>14 juillet 1789</b></div>

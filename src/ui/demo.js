@@ -5,9 +5,12 @@ import { setAuth, setDb, setDemo, setDemoEtab, demoEtab } from '../data/etat.js'
 import { esc, flush, pull, setOnline } from '../core/coeur-sync.js';
 import { accueil } from '../core/classement.js';
 import { nouveauStore, repondre } from '../base-locale/serveur.js';
-import { COMPTES, ETAB, PREFIXE, semerMonde } from '../base-locale/monde.js';
+import { COMPTES, ETAB, PREFIXE, semerMonde, teinteDemo, visageDemo } from '../base-locale/monde.js';
+import { avatarSvg, ecrireAvatar, lireAvatar } from '../avatar.js';
+import { COULEURS } from '../jeton.js';
 import { go } from './bibliotheque.js';
 import { resetSession } from './onboarding.js';
+import { pubTete } from './connexion.js';
 import { armerSur, desarmer } from './routeur.js';
 import './demo.css';
 
@@ -30,22 +33,28 @@ import './demo.css';
    rôle, c'est se reconnecter sur un autre compte du même lycée : ce que
    Marc donne, Léa le reçoit. */
 
+/* n : le numéro de la personne dans monde.js (son visage, sa couleur) ;
+   t : le rôle sur la porte, c : dans le bandeau, q : ce qu'on y verra. */
 const ROLES = [
-  { k: 'eleve', t: 'Élève', s: 'Léa · 2nde B', ic: I.user },
-  { k: 'prof', t: 'Professeur', s: 'Marc · mathématiques', ic: I.school },
-  { k: 'ref', t: 'Référent', s: 'Claire · le lycée', ic: I.build }
+  { k: 'eleve', n: 1, t: 'Élève', c: 'Élève', s: 'Léa · 2nde B', q: 'Ses devoirs, ses livres, sa série' },
+  { k: 'prof', n: 2, t: 'Professeur', c: 'Professeur', s: 'Marc · mathématiques', q: 'Ses classes, un devoir à donner' },
+  { k: 'ref', n: 3, t: 'Référent de l’établissement', c: 'Référent', s: 'Claire · le lycée', q: 'Les codes, les classes, les comptes' }
 ];
 const CLE = 'folio.demo';
 
 export function decouvrirEcran() {
-  $.innerHTML = `<div class="bar"><button class="ic" data-act="tolog" aria-label="Retour">${svg(I.back)}</button></div>
-    <div class="page dm" id="page">
-      <div class="top"><div class="hero">Essayer Folio</div></div>
+  $.innerHTML = `<div class="pub pub-essai">${pubTete()}
+    <div class="dm">
       <span class="dm-etab">${svg(I.school)}${esc(ETAB.nom)}</span>
+      <h1 class="dm-t">Essaie <em>Folio.</em></h1>
+      <p class="dm-s">Choisis qui tu es. Rien ne s’enregistre.</p>
       <div class="dm-roles">${ROLES.map(r => `<button class="dm-role" data-dm="lancer" data-v="${r.k}">
-        <i class="dm-ic">${svg(r.ic)}</i><b>${r.t}</b><span>${r.s}</span></button>`).join('')}</div>
-      <button class="lnk" data-act="demande" type="button">${svg(I.mail)}Une démo pour mon établissement</button>
-    </div>`;
+        <i class="dm-av" style="--c:${COULEURS[teinteDemo(r.n)]}">${avatarSvg(lireAvatar(ecrireAvatar(visageDemo(r.n))))}</i>
+        <span class="dm-qui"><b>${r.t}</b><span>${r.s}</span><small>${r.q}</small></span>
+        <i class="dm-go">${svg(I.arrow)}</i></button>`).join('')}</div>
+      <button class="lnk dm-lien" data-act="demande" type="button">${svg(I.mail)}Une démo pour mon établissement</button>
+    </div>
+  </div>`;
 }
 
 /* ---------- le lycée, gardé le temps de l'onglet ---------- */
@@ -97,7 +106,7 @@ function bandeau(role) {
   let b = document.getElementById('dmbandeau');
   if (!b) { b = document.createElement('div'); b.id = 'dmbandeau'; b.className = 'dm-bandeau'; document.body.appendChild(b); }
   b.innerHTML = `<b>Démo</b>
-    <select data-dm-role aria-label="Rôle">${ROLES.map(r => `<option value="${r.k}"${r.k === role ? ' selected' : ''}>${r.t}</option>`).join('')}</select>
+    <select data-dm-role aria-label="Rôle">${ROLES.map(r => `<option value="${r.k}"${r.k === role ? ' selected' : ''}>${r.c}</option>`).join('')}</select>
     <button data-dm="neuf" class="dm-neuf" aria-label="Recommencer la démo" title="Recommencer">${svg(I.refresh)}</button>
     <button data-dm="quitter">${svg(I.exit)}<span>Quitter</span></button>`;
   document.documentElement.classList.add('en-demo');
@@ -107,7 +116,7 @@ export function quitter() {
   monde = null;                        // plus rien ne se range, même pendant que la page part
   nettoyer();
   try { sessionStorage.removeItem(CLE); } catch (e) { /* rien à effacer */ }
-  location.replace('/connexion');      // tout repart de zéro : plus de session, plus de lycée
+  location.replace('/');               // le site : tout repart de zéro, plus de session, plus de lycée
 }
 
 /* Entrer (ou changer de rôle) : une connexion comme une autre, sur un

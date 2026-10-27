@@ -22,7 +22,7 @@ import { accueil } from '../core/classement.js';
 import { cacheKey, esc, flush, load, plur, pull, refreshToken, save, saveAuth, setOnline } from '../core/coeur-sync.js';
 import { selOff } from './connexion.js';
 import { lienAvantSession } from './liens-entrants.js';
-import { armer, armerSansSession, cibleDepart, desarmer } from './routeur.js';
+import { armer, armerSansSession, cibleDepart, desarmer, installee } from './routeur.js';
 import { effacerDemo, ouvrirDemo } from './demo-porte.js';
 import { isPupil } from './classement.js';
 import { ouvrirBienvenue } from './bienvenue-porte.js';
@@ -110,14 +110,20 @@ export function resetSession() {
 
 export function logout() {
   // dans la démo sans compte, se déconnecter c'est la quitter (ui/demo.js) : rien ne doit rester branché
-  if (demoEtab) { try { sessionStorage.removeItem('folio.demo'); } catch (e) { /* rien à effacer */ } return location.replace('/connexion'); }
-  flush();
+  if (demoEtab) { try { sessionStorage.removeItem('folio.demo'); } catch (e) { /* rien à effacer */ } return location.replace('/'); }
+  const envoi = flush();
   const key = cacheKey();
   saveAuth(null);
   if (key) { try { localStorage.removeItem(key); } catch (e) { /* stockage indisponible : la déconnexion continue sans ce nettoyage */ } }
   resetSession();
   setLoginMode('in');
   setAnimate(true); render();
+  /* puis le site (routeur.js, installee) ; ce qui partait encore finit
+     d'abord : une requête coupée en vol par le changement de page serait
+     perdue, et on n'attend jamais plus de deux secondes et demie */
+  if (installee()) return;
+  const partir = () => location.replace('/');
+  Promise.race([envoi, new Promise(r => setTimeout(r, 2500))]).then(partir, partir);
 }
 
 const DEMOSUBJ = [

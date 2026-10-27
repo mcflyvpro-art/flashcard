@@ -112,7 +112,7 @@ function accueil() {
 /* ---------- les classes ---------- */
 function ligneClasse(c) {
   return `<button class="rf-ligne${ref.open === c.id ? ' on' : ''}" data-rf="classe" data-id="${esc(c.id)}">
-      <span class="rf-l1"><b>${esc(c.name)}</b><i>${esc(c.genre === 'groupe' ? 'groupe · ' + (c.pp || '') : c.pp || 'pas de professeur principal')}</i></span>
+      <span class="rf-l1"><b>${esc(c.name)}</b><i>${esc(c.genre === 'groupe' ? (c.pp ? 'groupe · ' + c.pp : 'groupe') : c.pp || 'pas de professeur principal')}</i></span>
       <span class="rf-l2">${plur(c.effectif, 'élève')}</span>${svg(I.arrow)}</button>`;
 }
 

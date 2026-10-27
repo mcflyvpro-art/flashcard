@@ -12,6 +12,7 @@ import {
 import { norm } from './quiz.js';
 import { snapVersion } from '../core/reglages-corbeille.js';
 import { matiereLocale } from '../core/matieres.js';
+import { installee } from './routeur.js';
 
 /* ---------- génération de cartes ----------
    La clé Anthropic n'est jamais ici. app.js est servi par GitHub Pages, donc
@@ -389,7 +390,11 @@ export function dropBoot() {
   const n = document.getElementById('boot');
   if (!n || booted) return;
   setBooted(1);
-  const rest = Math.max(0, BOOTMS - performance.now());
+  /* Sans session, dans un navigateur, il n'y a ni compte ni livres à
+     attendre : on arrive du site (se connecter, essayer, demander une
+     démo), qui vient de montrer la marque. L'ouverture ne dure alors que
+     le temps d'un fondu. */
+  const rest = Math.max(0, (auth || installee() ? BOOTMS : 450) - performance.now());
   setTimeout(() => { n.classList.add('off'); setTimeout(() => n.remove(), 520); }, rest);
 }
 
