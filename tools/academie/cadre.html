@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Folio Academy</title>
+<style>
+:root{--bg:#F6F5F1;--bg2:#EEECE6;--ink:#1D1C19;--ink2:#4B4842;--soft:#8A867E;--card:#fff;--line:rgba(29,28,25,.11);
+  --acc:#2F7A4E;--or:#E3A21A;--e:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:Inter,"DejaVu Sans",sans-serif;color:var(--ink);
+  -webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1200px 700px at 85% -10%,#fff 0,rgba(255,255,255,0) 70%),var(--bg)}
+
+/* ---------- en-tête ---------- */
+header{position:absolute;left:0;top:0;right:0;height:80px;display:flex;align-items:center;gap:18px;padding:0 40px;z-index:5}
+.marque{display:flex;align-items:center;gap:12px;font-weight:800;font-size:25px;letter-spacing:-.3px}
+.marque img{width:42px;height:42px}
+.marque i{font-style:normal;font-weight:600;color:var(--soft)}
+.module{padding:7px 16px;border-radius:999px;background:var(--ink);color:#fff;font-weight:650;font-size:17px}
+.fil{color:var(--ink2);font-size:19px;font-weight:600;display:flex;align-items:center;gap:10px}
+.fil b{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 8px;border-radius:9px;background:var(--bg2);font-size:16px}
+.temps{margin-left:auto;font-size:16px;font-weight:600;color:var(--soft);font-variant-numeric:tabular-nums}
+.prog{position:absolute;left:0;top:78px;height:3px;width:100%;background:rgba(29,28,25,.06)}
+.prog i{display:block;height:100%;width:0;background:var(--ink);transition:width .8s var(--e)}
+
+/* ---------- l'appareil ---------- */
+.scene{position:absolute;inset:0}
+.tel{position:absolute;left:290px;top:96px;transform:scale(1.1);transform-origin:0 0;width:418px;height:872px;padding:14px;border-radius:58px;background:#151413;
+  box-shadow:0 0 0 2px #2b2a28 inset,0 30px 80px rgba(29,28,25,.28),0 8px 20px rgba(29,28,25,.12)}
+.tel iframe{width:390px;height:844px;border:0;border-radius:44px;background:var(--bg);display:block}
+
+.pc{position:absolute;left:32px;top:100px;width:1280px;height:844px;border-radius:14px;overflow:hidden;background:#fff;
+  box-shadow:0 0 0 1px rgba(29,28,25,.12),0 30px 80px rgba(29,28,25,.20),0 6px 16px rgba(29,28,25,.08)}
+.chrome{height:44px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#ECEAE4;border-bottom:1px solid rgba(29,28,25,.08)}
+.chrome i{width:12px;height:12px;border-radius:50%;background:#D5D2CA}
+.url{margin-left:18px;flex:1;max-width:760px;height:28px;display:flex;align-items:center;gap:8px;padding:0 14px;border-radius:8px;
+  background:#fff;font-size:14px;color:var(--ink2);font-weight:500}
+.url svg{width:13px;height:13px;color:var(--soft)}
+.vue{position:relative;width:1280px;height:800px;overflow:hidden;background:var(--bg)}
+.pc iframe{width:1280px;height:800px;border:0;display:block;background:var(--bg);transform-origin:0 0;transition:transform 1s var(--e)}
+
+/* ---------- le panneau ---------- */
+.panneau{position:absolute;display:flex;flex-direction:column;gap:22px}
+.m-tel .panneau{left:820px;top:150px;width:1020px}
+.m-pc .panneau{left:1344px;top:108px;width:544px}
+.chap-n{font-size:17px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--soft)}
+.chap-t{font-size:54px;line-height:1.08;font-weight:800;letter-spacing:-1.2px}
+.m-pc .chap-t{font-size:36px;letter-spacing:-.6px}
+.etapes{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.etapes li{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:14px;font-size:22px;font-weight:600;color:var(--soft);
+  transition:background .4s,color .4s,box-shadow .4s}
+.m-pc .etapes li{font-size:18px;padding:10px 14px;gap:12px}
+.etapes li b{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:var(--bg2);color:var(--ink2);font-size:16px}
+.m-pc .etapes li b{width:28px;height:28px;font-size:14px}
+.etapes li.fait{color:var(--ink2)}
+.etapes li.fait b{background:var(--acc);color:#fff}
+.etapes li.on{background:#fff;color:var(--ink);box-shadow:0 0 0 1px var(--line),0 8px 24px rgba(29,28,25,.08)}
+.etapes li.on b{background:var(--ink);color:#fff}
+.astuce{display:none;gap:14px;align-items:flex-start;padding:18px 20px;border-radius:16px;background:#FFF7E3;box-shadow:0 0 0 1px #F1DFAE inset;
+  font-size:20px;line-height:1.4;font-weight:550;color:#5A4410}
+.m-pc .astuce{font-size:17px}
+.astuce.vu{display:flex;animation:monte .5s var(--e)}
+.astuce svg{flex:none;width:24px;height:24px;margin-top:2px;color:#B7820E}
+
+/* ---------- sous-titres ---------- */
+.st{position:absolute;display:flex;justify-content:center;pointer-events:none;z-index:6}
+.m-pc .st{left:32px;right:32px;top:958px;height:110px;align-items:center}
+.m-tel .st{left:820px;width:1020px;top:800px;height:180px;align-items:flex-end;justify-content:flex-start}
+.st p{max-width:100%;padding:14px 26px;border-radius:16px;background:rgba(29,28,25,.9);color:#fff;font-size:28px;line-height:1.36;font-weight:550;
+  text-align:center;opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s var(--e)}
+.m-tel .st p{text-align:left;font-size:29px}
+.st p.vu{opacity:1;transform:none}
+
+/* ---------- curseur, toucher, halo ---------- */
+.couche{position:absolute;inset:0;pointer-events:none;z-index:4}
+.curseur{position:absolute;left:0;top:0;width:34px;height:34px;transition:transform .7s var(--e),opacity .3s;will-change:transform}
+.curseur svg{width:34px;height:34px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+.doigt{position:absolute;left:0;top:0;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(29,28,25,.18);
+  box-shadow:0 0 0 2px rgba(255,255,255,.9),0 4px 14px rgba(0,0,0,.18);opacity:0;transition:transform .55s var(--e),opacity .25s;will-change:transform}
+.doigt.vu{opacity:1}
+.doigt.appui{background:rgba(29,28,25,.32)}
+.onde{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:3px solid var(--or);animation:onde .6s ease-out forwards}
+@keyframes onde{from{transform:scale(.4);opacity:1}to{transform:scale(3.2);opacity:0}}
+.halo{position:absolute;border-radius:14px;box-shadow:0 0 0 4px var(--or),0 0 0 9999px rgba(29,28,25,0);opacity:0;
+  transition:left .5s var(--e),top .5s var(--e),width .5s var(--e),height .5s var(--e),opacity .3s,box-shadow .5s}
+.halo.vu{opacity:1;animation:pulse 1.6s ease-in-out infinite}
+.halo.voile{box-shadow:0 0 0 4px var(--or),0 0 0 9999px rgba(29,28,25,.28)}
+@keyframes pulse{50%{outline:6px solid rgba(227,162,26,.25);outline-offset:4px}}
+.etiq{position:absolute;padding:8px 14px;border-radius:10px;background:var(--or);color:#2B1D00;font-weight:750;font-size:18px;white-space:nowrap;
+  opacity:0;transition:opacity .3s,left .5s var(--e),top .5s var(--e);box-shadow:0 6px 16px rgba(0,0,0,.15)}
+.etiq.vu{opacity:1}
+
+/* ---------- cartes plein écran ---------- */
+.carte{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;justify-content:center;padding:0 160px;background:var(--bg);
+  opacity:0;pointer-events:none;transition:opacity .6s ease}
+.carte.vu{opacity:1}
+.carte .fond{position:absolute;inset:0;background:radial-gradient(900px 600px at 80% 20%,#fff 0,rgba(255,255,255,0) 70%)}
+.carte > *{position:relative}
+.carte .logo{display:flex;align-items:center;gap:16px;font-size:30px;font-weight:800;margin-bottom:56px}
+.carte .logo img{width:64px;height:64px}
+.carte .logo i{font-style:normal;color:var(--soft);font-weight:600}
+.carte .sur{font-size:24px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--soft);margin-bottom:18px}
+.carte h1{font-size:104px;line-height:1.02;font-weight:850;letter-spacing:-3px;max-width:1500px}
+.carte .txt{margin-top:28px;font-size:34px;line-height:1.4;color:var(--ink2);font-weight:500;max-width:1300px}
+.carte .num{position:absolute;right:160px;top:50%;transform:translateY(-50%);font-size:420px;font-weight:900;color:rgba(29,28,25,.05);letter-spacing:-20px}
+.carte .puces{margin-top:36px;display:flex;gap:14px;flex-wrap:wrap}
+.carte .puces span{padding:10px 18px;border-radius:999px;background:#fff;box-shadow:0 0 0 1px var(--line);font-size:22px;font-weight:600;color:var(--ink2)}
+.recap{margin-top:34px;display:grid;grid-template-columns:1fr 1fr;gap:14px 40px;max-width:1500px}
+.recap div{display:flex;gap:14px;align-items:flex-start;font-size:27px;line-height:1.35;font-weight:550;color:var(--ink2)}
+.recap svg{flex:none;width:30px;height:30px;color:var(--acc);margin-top:2px}
+
+/* ---------- le sommaire ---------- */
+.som{position:absolute;inset:0;z-index:11;pointer-events:none;display:grid;grid-template-columns:640px 1fr;gap:80px;padding:110px 120px;background:var(--bg);opacity:0;transition:opacity .6s}
+.som.vu{opacity:1}
+.som .g .logo{display:flex;align-items:center;gap:14px;font-size:28px;font-weight:800;margin-bottom:60px}
+.som .g .logo img{width:58px;height:58px}
+.som .g .logo i{font-style:normal;color:var(--soft);font-weight:600}
+.som .g .sur{font-size:22px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--soft);margin-bottom:14px}
+.som .g h1{font-size:88px;line-height:1.02;font-weight:850;letter-spacing:-2.6px}
+.som .g p{margin-top:26px;font-size:28px;line-height:1.45;color:var(--ink2);font-weight:500}
+.som .g .duree{margin-top:34px;display:inline-flex;gap:10px;align-items:center;padding:10px 18px;border-radius:999px;background:#fff;
+  box-shadow:0 0 0 1px var(--line);font-size:22px;font-weight:650}
+.som ol{list-style:none;display:flex;flex-direction:column;gap:8px;align-self:center}
+.som li{display:grid;grid-template-columns:110px 1fr;align-items:center;gap:20px;padding:14px 22px;border-radius:16px;background:#fff;
+  box-shadow:0 0 0 1px var(--line);font-size:27px;font-weight:650;opacity:0;transform:translateX(16px);transition:opacity .5s,transform .5s var(--e)}
+.som li.vu{opacity:1;transform:none}
+.som li time{font-variant-numeric:tabular-nums;font-weight:800;color:var(--acc);font-size:28px}
+.som li span small{display:block;font-size:19px;font-weight:550;color:var(--soft);margin-top:2px}
+
+.rideau{position:absolute;z-index:3;background:var(--bg);opacity:0;pointer-events:none;transition:opacity .45s ease}
+.tel .rideau{inset:14px;border-radius:44px}
+.pc .rideau{left:0;right:0;top:44px;bottom:0}
+.rideau.vu{opacity:1}
+@keyframes monte{from{opacity:0;transform:translateY(8px)}}
+</style>
+</head>
+<body class="m-pc">
+<div class="scene">
+  <header>
+    <div class="marque"><img src="/site/icone.svg" alt="">Folio <i>Academy</i></div>
+    <span class="module" id="module"></span>
+    <span class="fil" id="fil"></span>
+    <span class="temps" id="temps"></span>
+    <div class="prog"><i id="prog"></i></div>
+  </header>
+  <div id="appareil"></div>
+  <div class="panneau">
+    <div class="chap-n" id="chapn"></div>
+    <div class="chap-t" id="chapt"></div>
+    <ol class="etapes" id="etapes"></ol>
+    <div class="astuce" id="astuce"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg><span></span></div>
+  </div>
+  <div class="st"><p id="st"></p></div>
+  <div class="couche" id="couche">
+    <div class="halo" id="halo"></div>
+    <div class="etiq" id="etiq"></div>
+    <div class="doigt" id="doigt"></div>
+    <div class="curseur" id="curseur"><svg viewBox="0 0 24 24"><path d="M4 2.5l15 10.2-6.6 1.2 3.9 7.4-2.6 1.3-3.9-7.4L4 20z" fill="#1D1C19" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+  </div>
+</div>
+<div class="carte" id="carte"><div class="fond"></div><div class="num" id="cnum"></div><div class="logo"><img src="/site/icone.svg" alt="">Folio <i>Academy</i></div>
+  <div class="sur" id="csur"></div><h1 id="ctitre"></h1><div class="txt" id="ctxt"></div><div class="puces" id="cpuces"></div><div class="recap" id="crecap"></div></div>
+<div class="som" id="som"><div class="g"><div class="logo"><img src="/site/icone.svg" alt="">Folio <i>Academy</i></div>
+  <div class="sur" id="ssur"></div><h1 id="stitre"></h1><p id="stxt"></p><div class="duree" id="sduree"></div></div><ol id="sliste"></ol></div>
+<script>
+const $ = id => document.getElementById(id);
+const COCHE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.7L16 9.6"/></svg>';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+window.A = {
+  monter(mode, src, module) {
+    document.body.className = 'm-' + mode;
+    $('module').textContent = module;
+    $('appareil').innerHTML = mode === 'tel'
+      ? `<div class="tel" id="dev"><iframe id="app" src="${src}"></iframe><div class="rideau" id="rideau"></div></div>`
+      : `<div class="pc" id="dev"><div class="chrome"><i></i><i></i><i></i><div class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span id="url">www.folioflashcard.online</span></div></div><div class="vue" id="vue"><iframe id="app" src="${src}"></iframe></div><div class="rideau" id="rideau"></div></div>`;
+    const c = $('curseur'); c.style.display = mode === 'tel' ? 'none' : '';
+    c.style.transform = 'translate(700px,560px)';
+  },
+  rideau(on) { $('rideau').classList.toggle('vu', on); },
+  /* la caméra (ordinateur) : grossit l'app autour d'une zone, sans jamais montrer ce qui est hors de l'écran ;
+     b est la boîte de la zone dans la page, telle qu'on la voit (zoom en cours compris) */
+  z: { s: 1, x: 0, y: 0 },
+  zoom(b, s) {
+    const v = $('vue'); if (!v) return;
+    const r = v.getBoundingClientRect(), z = this.z;
+    if (!b || s <= 1) Object.assign(z, { s: 1, x: 0, y: 0 });
+    else {
+      const cx = (b.x + b.width / 2 - r.left - z.x) / z.s, cy = (b.y + b.height / 2 - r.top - z.y) / z.s;
+      const x = Math.min(0, Math.max(r.width - r.width * s, r.width / 2 - cx * s));
+      const y = Math.min(0, Math.max(r.height - r.height * s, r.height / 2 - cy * s));
+      Object.assign(z, { s, x, y });
+    }
+    $('app').style.transform = `translate(${z.x}px,${z.y}px) scale(${z.s})`;
+  },
+  taille(w, h) { const f = $('app'); f.style.width = w ? w + 'px' : ''; f.style.height = h ? h + 'px' : ''; },
+  url(u) { const e = $('url'); if (e) e.textContent = u; },
+  chapitre(n, total, titre, etapes) {
+    $('fil').innerHTML = `<b>${n}</b>${esc(titre)}`;
+    $('chapn').textContent = `Étape ${n} sur ${total}`;
+    $('chapt').textContent = titre;
+    $('etapes').innerHTML = etapes.map((e, i) => `<li><b>${i + 1}</b>${esc(e)}</li>`).join('');
+    $('astuce').classList.remove('vu');
+  },
+  etape(i) {
+    [...$('etapes').children].forEach((li, k) => { li.className = k < i ? 'fait' : k === i ? 'on' : ''; });
+  },
+  astuce(t) { const a = $('astuce'); if (!t) { a.classList.remove('vu'); return; } a.querySelector('span').textContent = t; a.classList.remove('vu'); void a.offsetWidth; a.classList.add('vu'); },
+  progres(x, temps) { $('prog').style.width = (x * 100).toFixed(2) + '%'; if (temps != null) $('temps').textContent = temps; },
+  st(t) { const p = $('st'); if (!t) { p.classList.remove('vu'); return; } p.textContent = t; p.classList.add('vu'); },
+  carte({ sur = '', titre = '', txt = '', num = '', puces = [], recap = [] }) {
+    $('csur').textContent = sur; $('ctitre').textContent = titre; $('ctxt').textContent = txt; $('cnum').textContent = num;
+    $('cpuces').innerHTML = puces.map(p => `<span>${esc(p)}</span>`).join('');
+    $('crecap').innerHTML = recap.map(p => `<div>${COCHE}<span>${esc(p)}</span></div>`).join('');
+    $('carte').classList.add('vu');
+  },
+  sansCarte() { $('carte').classList.remove('vu'); },
+  sommaire({ sur, titre, txt, duree, chapitres }) {
+    $('ssur').textContent = sur; $('stitre').textContent = titre; $('stxt').textContent = txt; $('sduree').textContent = duree;
+    $('sliste').innerHTML = chapitres.map(c => `<li><time>${c.t}</time><span>${esc(c.titre)}${c.sous ? `<small>${esc(c.sous)}</small>` : ''}</span></li>`).join('');
+    $('som').classList.add('vu');
+    [...$('sliste').children].forEach((li, k) => setTimeout(() => li.classList.add('vu'), 500 + k * 140));
+  },
+  curseur(x, y, ms = 700) { const c = $('curseur'); c.style.transitionDuration = ms + 'ms'; c.style.transform = `translate(${x - 6}px,${y - 4}px)`; },
+  doigt(x, y, vu = true) { const d = $('doigt'); d.style.transform = `translate(${x}px,${y}px)`; d.classList.toggle('vu', vu); },
+  appui(x, y) {
+    const d = $('doigt'); d.classList.add('appui'); setTimeout(() => d.classList.remove('appui'), 220);
+    const o = document.createElement('div'); o.className = 'onde'; o.style.left = x + 'px'; o.style.top = y + 'px';
+    $('couche').appendChild(o); setTimeout(() => o.remove(), 700);
+  },
+  halo(b, { voile = false, etiq = '' } = {}) {
+    const h = $('halo'), e = $('etiq');
+    if (!b) { h.classList.remove('vu', 'voile'); e.classList.remove('vu'); return; }
+    const p = 8;
+    Object.assign(h.style, { left: (b.x - p) + 'px', top: (b.y - p) + 'px', width: (b.width + 2 * p) + 'px', height: (b.height + 2 * p) + 'px' });
+    h.classList.add('vu'); h.classList.toggle('voile', voile);
+    if (etiq) {
+      e.textContent = etiq; e.classList.add('vu');
+      const haut = b.y - p - 50 > 90;
+      e.style.left = Math.max(10, b.x - p) + 'px'; e.style.top = (haut ? b.y - p - 50 : b.y + b.height + p + 10) + 'px';
+    } else e.classList.remove('vu');
+  }
+};
+</script>
+</body>
+</html>
