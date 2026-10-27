@@ -457,12 +457,17 @@ l'air de marcher ».
     téléphone) ; partir par un tel lien (`data-dm="partir"`) efface la démo
     comme « Quitter ». **Ce qui coûte** — l'IA (onglets Fichier, Photo, Cours de
     la création), les images et les sons — est grisé en démo (`.payant`,
-    pastille `data-astuce` au survol : « Avec un compte Folio » pour le cours
-    par l'IA, qui est dans le compte gratuit, « Avec Folio+ » et un « + »
-    dessiné, `data-offre="plus"`, pour la photo et le PDF) ; le toucher ouvre
+    pastille `data-astuce` « Avec Folio+ » au survol et un « + » tracé,
+    `data-offre="plus"` : toute l'IA est dans Folio+) ; le toucher ouvre
     une fenêtre qui dit ce que ferait la fonction et mène au compte ou à
     Folio+ (`envie()` de `ui/demo.js`, par `ouvrirEnvie` de
     `ui/demo-porte.js`), et `aiCall`/`upload` refusent d'eux-mêmes (`demo`).
+    **La démo d'un élève est Folio gratuit** (`html.en-demo-libre`, posé par
+    le bandeau) : ce qui est dans Folio+ selon les tarifs de la page
+    d'accueil — QCM et associations d'un livre, images et sons d'une page —
+    porte le « + », se grise et ouvre la même fenêtre (`PLUS_SEUL`, écouté
+    avant l'app). La vraie app ne bride encore rien : ce sera avec le
+    paiement (M12).
     Preuve : `e2e/demo.e2e.js` (un devoir lu par Léa rendu chez Marc, un mot
     de Marc dans le courrier de Léa, une classe de Claire après un
     rafraîchissement, les onglets payants et leur fenêtre, le bandeau qui

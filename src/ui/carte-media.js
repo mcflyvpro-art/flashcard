@@ -231,7 +231,7 @@ export function upErr(x) {
   const m = String((x && x.message) || '');
   if (m === 'big') return 'Fichier trop lourd';
   if (m === 'auth') return 'Reconnecte-toi pour envoyer';
-  if (m === 'demo') return 'Images et sons : avec un compte Folio';
+  if (m === 'demo') return 'Images et sons : avec Folio+';
   const code = (m.match(/^up:(\d+)$/) || [])[1];
   if (code === '415') return 'Ce format de fichier n’est pas accepté';
   if (code === '413') return 'Fichier trop lourd pour le serveur';

@@ -109,6 +109,8 @@ function nettoyer() {
 }
 
 function bandeau(role) {
+  // un élève essaie Folio gratuit : ce qui est dans Folio+ se grise (demo.css, `plusSeul`)
+  document.documentElement.classList.toggle('en-demo-libre', role === 'eleve');
   let b = document.getElementById('dmbandeau');
   if (!b) { b = document.createElement('div'); b.id = 'dmbandeau'; b.className = 'dm-bandeau'; document.body.appendChild(b); }
   const suite = (ROLES.find(x => x.k === role) || ROLES[0]).suite;
@@ -124,16 +126,36 @@ function bandeau(role) {
    Les onglets grisés de la création (ui/creation.js) : au lieu d'un simple
    « non », ce qu'ils feraient, et comment les avoir, au moment où on en a
    envie. Une fenêtre, une fois par geste, qu'on ferme d'un appui : rien
-   ne revient tout seul. Les offres sont celles de la page d'accueil. */
-const PRIX = 'dès 2,50\u00a0€ par mois';
+   ne revient tout seul. Les offres sont celles de la page d'accueil (le
+   prix ne se coupe jamais : espaces insécables). */
+const PRIX = 'dès 2,50\u00a0€\u00a0par\u00a0mois';
 const ENVIES = {
   ia: { t: 'L’IA écrit le livre pour toi',
-    s: 'Colle ton cours\u202f: elle en tire les questions et les réponses, une par page. 3 cours par mois avec un compte gratuit, 50 avec Folio+.' },
+    s: `Colle ton cours\u202f: elle en tire les questions et les réponses, une par page. Avec Folio+, 50\u00a0cours par mois, ${PRIX}.` },
   photo: { t: 'Ton cahier en photo, et c’est un livre',
     s: `Prends ton cours en photo\u202f: l’IA le lit et en fait des flashcards. Avec Folio+, ${PRIX}.` },
   fichier: { t: 'Ton PDF devient un livre',
-    s: `Dépose le PDF d’un cours\u202f: l’IA en tire les flashcards. Avec Folio+, ${PRIX}.` }
+    s: `Dépose le PDF d’un cours\u202f: l’IA en tire les flashcards. Avec Folio+, ${PRIX}.` },
+  exercices: { t: 'QCM et associations',
+    s: `Quatre réponses au choix, ou des paires à relier, tirées de tes pages\u202f: de quoi t’entraîner avant le contrôle. Avec Folio+, ${PRIX}.` },
+  media: { t: 'Des images et des sons sur tes pages',
+    s: `Un schéma, une carte, la prononciation d’un mot\u202f: ils se glissent sur tes pages. Avec Folio+, ${PRIX}.` }
 };
+
+/* Ce que Folio gratuit n'a pas, dans la démo d'un élève : le geste ouvre la
+   fenêtre au lieu de la fonction (écouté avant le gestionnaire de l'app). La
+   vraie app ne bride encore rien : ce sera avec le paiement. */
+const PLUS_SEUL = {
+  exercices: '[data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"]',
+  media: '[data-mact^="med-"]'
+};
+document.addEventListener('click', ev => {
+  if (!demoEtab || !document.documentElement.classList.contains('en-demo-libre')) return;
+  const cle = Object.keys(PLUS_SEUL).find(k => ev.target.closest(PLUS_SEUL[k]));
+  if (!cle) return;
+  ev.stopPropagation(); ev.preventDefault();
+  envie(cle);
+}, true);
 
 export function envie(cle) {
   const e = ENVIES[cle] || ENVIES.ia;

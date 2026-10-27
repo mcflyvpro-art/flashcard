@@ -91,7 +91,7 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await aller(page, '/demo/eleve/livres/nouveau');
   const cours = page.getByRole('tab', { name: 'Cours' });
   await expect(cours).toHaveClass(/payant/, { timeout: 10000 });
-  await expect(cours).toHaveAttribute('data-astuce', 'Avec un compte Folio');
+  await expect(cours).toHaveAttribute('data-astuce', 'Avec Folio+');               // toute l'IA est dans Folio+ (2026-10-27)
   await expect(page.getByRole('tab', { name: 'Photo' })).toHaveClass(/payant/);
   await expect(page.getByRole('tab', { name: 'Photo' })).toHaveAttribute('data-astuce', 'Avec Folio+');
   await expect(page.getByRole('tab', { name: 'Fichier' })).toHaveClass(/payant/);
@@ -107,6 +107,14 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await expect(fenetre).toBeHidden();
   await expect(page.getByRole('tab', { name: 'Écrire' })).toHaveAttribute('aria-selected', 'true');
   expect(parties).toEqual([]);
+
+  // un élève essaie Folio gratuit : le QCM d'un livre est dans Folio+, il ouvre la même fenêtre
+  await aller(page, '/demo/eleve/livres');
+  await page.getByText('La cellule', { exact: true }).first().click();
+  await page.locator('[data-act="mcq"]').first().click();
+  await expect(fenetre.getByRole('heading')).toHaveText('QCM et associations');
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'deck');            // l'exercice ne s'est pas ouvert
+  await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
 
   // le bandeau propose le geste d'après : pour un élève, son compte ; la démo ne laisse rien
   await page.locator('.dm-bandeau').getByRole('link', { name: 'Créer mon compte' }).click();

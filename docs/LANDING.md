@@ -63,6 +63,7 @@ présente l'app en **B2C** (élèves, étudiants) et en **B2B** (établissements
 | Les titres de l'app (tour 3) | la serif du site pour les titres de page (`.hero`, `.bar h1`, le titre d'un livre), le reste en sans-serif ; un signet de la couleur de la matière sur la fiche lue | une seule voix du site à l'app ; l'espace prof était seul en serif |
 | Le vocabulaire (tour 4) | « un livre de flashcards », des **pages** avec la question au **recto** et la réponse au **verso** ; jamais « fiche » (`test/site.test.js` le refuse) | une fiche de révision est un résumé écrit : le mot trompait ; « flashcards » dit ce que c'est, le livre reste la langue de l'app (et un *folio* est une feuille) |
 | Folio Campus (tour 4) | une marque (le logo sur son carré de papier, une toque en écusson, « Folio *Campus* »), seule en tête du bloc (l'étiquette « Pour les établissements scolaires » retirée le 2026-10-27, à la demande) ; « Dix minutes pour ouvrir Folio à tous vos élèves et professeurs » | le bloc ne disait pas qu'il s'adressait à un établissement, ni que les dix minutes étaient celles du déploiement |
+| Folio et Folio+ (2026-10-27, après le tour 4) | Folio gratuit : le moteur complet, **5 livres** (écrire, coller, importer), hors ligne et synchro, défis, clubs, amis. Folio+ : **toute l'IA** (cours, photo, PDF, 50 par mois), les livres sans limite, **QCM et associations**, **images et sons**, les nouveautés. La récitation reste gratuite. Dans la démo d'un élève, ce qui est Folio+ se grise (« + » tracé, fenêtre « ce que ça ferait ») ; la vraie app ne bride rien encore | « je veux vraiment des contraintes sur Folio, et être obligé de passer à Folio+ » ; le bridage dans l'app viendra avec le paiement |
 | Appels à l'action (tour 4) | « Commencer gratuitement » (héros, après les tuiles, appel final), « Équiper mon établissement » en fin de Campus, l'inscription toujours dans l'en-tête du téléphone ; dans la démo, le geste d'après selon le rôle ; rien de faux (ni compte à rebours, ni « le plus choisi », ni avis inventés) | pousser à l'achat et à la démo sans site toxique |
 | Les couleurs de l'app (2026-10-27, hors tour) | une couleur, un travail (`src/couleurs.js`) : l'**azur** de la page d'accueil dit tout ce qui se compte (journal, profil, classement, espace prof), les états jugent, un **nuancier de 14 reliures** relie une matière ; un livre a un dos plein et une couverture teintée, la fiche lue le papier de son livre, le nom de sa matière et un grand signet ; une classe a un carré, un club un écusson | « des couleurs dans tous les sens », des livres « trop blancs », un signet « pas assez reconnaissable » : les liserés de gauche du tour 3 sont devenus des dos de reliure. Les affiches du site sont à rephotographier (`node tools/affiches.js`) |
 
@@ -299,9 +300,11 @@ s'écrit plus nulle part sur la page.
   29,99 €/an ; Campus 3 € HT/élève/an (300 € minimum, déjà dans
   PARCOURS.md). Ils vivent dans `index.html` (cartes `.offre`, attributs
   `data-an`/`data-mois`, tableau) **et** dans le JSON-LD du `<head>`.
-- **Les quotas IA** du tableau (Folio : 3 cours par mois ; Folio+ : 50 ; Campus :
-  pour les profs) ne sont **pas encore appliqués** côté serveur (M12.T2/T3) ;
-  aujourd'hui tout compte a les mêmes quotas (`supabase/functions/ai`).
+- **La répartition Folio / Folio+** du tableau (IA, 5 livres, QCM et
+  associations, images et sons ; Campus : l'IA pour les profs) n'est **pas
+  encore appliquée** dans l'app ni côté serveur (M12.T2/T3) : seule la démo
+  d'un élève la montre. Aujourd'hui tout compte a les mêmes droits et les
+  mêmes quotas d'IA (`supabase/functions/ai`).
 - **Le paiement** n'existe pas (M12) : « Passer à Folio+ » mène à la création
   de compte.
 - **Le nom « Folio Campus »** pour l'offre établissement.
