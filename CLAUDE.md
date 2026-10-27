@@ -655,6 +655,8 @@ grep -n -- "---------- " src/ui/*.js # table des matières des écrans
 python3 tools/logo.py                # le logo (public/site/, public/favicon.svg, sprite de index.html)
 node tools/affiches.js               # affiches du site, image de partage, captures du manifeste, depuis la démo (vite preview --port 4190 d'abord)
 node tools/icones.js                 # icônes de l'app installée (public/icons/), depuis public/site/icone.svg
+bash tools/academie/installer.sh     # la Folio Academy, une fois : Python à part (.academie/), voix de repli Kokoro sans clé
+node tools/academie/tourner.js tout  # les trois vidéos de formation, filmées dans la démo (.academie/sortie/) ; --rep pour répéter
 supabase db diff / supabase migration new <nom>   # si la CLI est installée
 CI=1 npx playwright test -c tools/pw-local.config.js   # e2e dans une session cloud (Chromium préinstallé, /opt/pw-browsers/chromium)
 CI=1 npx playwright test -c tools/pw-webkit.config.js  # e2e sous Safari (WebKit, iPhone 13 + Safari bureau) — installation en tête du fichier
@@ -678,5 +680,17 @@ politique réseau de la session refusait l'hôte de téléchargement
 réseau de l'environnement pour s'en servir. Les scripts de revue visuelle
 `e2e/zz-*.e2e.js` (captures dans `SHOTS=dossier`) ne sont jamais versionnés
 (`.gitignore`) ; sans `SHOTS`, ils écrivent dans `undefined/` ou `zz-…/`.
+
+**La Folio Academy** (2026-10-27, `tools/academie/README.md`) : trois vidéos de
+formation courtes (élève, professeur, référent : l'essentiel, le reste en
+« À découvrir »), filmées dans la démo sans compte — un scénario par vidéo dans
+`tools/academie/formations/`, à reprendre quand un écran change (`--rep` dit
+où il casse). La voix : Gemini TTS si `GEMINI_API_KEY` (clé gratuite
+Google AI Studio, à ranger dans les variables de l'environnement, jamais
+dans le dépôt ; `generativelanguage.googleapis.com` est joignable),
+Google Cloud Chirp 3 HD si `GOOGLE_TTS_API_KEY`, Kokoro hors ligne sinon.
+Tout ce qui est lourd (Python, modèles, images, vidéos) vit dans `.academie/`,
+ignoré par git. `fetch` de Node refuse le port 4190 (« port interdit » de la
+norme Fetch) : `tourner.js` passe par `node:http`.
 
 Comptes de test : `supabase/comptes_test.sql` (admin, prof, élève, et le référent du « Lycée d'essai Folio », créé par le vrai chemin : fiche et démo par l'éditeur, puis le code référent).
