@@ -306,6 +306,19 @@ Folio+ offert.
 
 ## 3. Supabase : la base, les fonctions, les secrets
 
+> **Fait le 2026-10-28** : les deux migrations sont appliquées (dans l'ordre,
+> l'une juste après l'autre), les advisors relus (rien à corriger : la table
+> de service sans politique et les fonctions ouvertes aux comptes connectés
+> sont voulues), `abonnements.sql` 17/17 et `folio_plus_pour_tous.sql` 15/15
+> en base, les quatre fonctions déployées (`ai` et `paiement` avec
+> vérification du jeton, `stripe-webhook` et `magasins` sans), chacune
+> vérifiée identique au dépôt. 11 comptes ont reçu Folio+ offert (10 élèves,
+> 1 professeur), aucun référent ni éditeur. **Il ne reste que les secrets**
+> (point 3) : `ANTHROPIC_API_KEY` est posé ; manquent `STRIPE_SECRET_KEY` et
+> `RC_SECRET` (les fonctions répondent `nokey`), et donc sans doute
+> `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRIX_ANNUEL`, `STRIPE_PRIX_MENSUEL`,
+> `RC_WEBHOOK_AUTH`, que les fonctions ne lisent qu'après les deux premiers.
+
 1. **Les migrations**, dans l'ordre :
    - `20261027190000_folio_plus_abonnements.sql` ;
    - `20261027210000_folio_plus_pour_tous.sql` (Folio+ offert à tous les

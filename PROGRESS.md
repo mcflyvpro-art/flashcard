@@ -18,21 +18,19 @@
 ```
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
-FAIT      47 / 148
-DERNIER   2026-10-27 · Folio+ pour de vrai : les comptes d'avant gardent
-          tout (Folio+ offert, migration 20261027210000) ; un compte neuf est
-          en Folio gratuit — 5 livres, ni IA ni QCM ni médias, journal
-          réduit, moteur Lite (ui/bridage.js) — avec l'onglet Folio+ (barre
-          du bas et barre latérale) qui s'en va une fois payé ; Folio+ se
-          voit (liseré du jeton, lumière de la marque). Médias et IA tenus
-          en base ; achat dans l'app des magasins par RevenueCat (fonction
-          magasins) ; un téléphone ira vers son magasin, jamais le web ; la
-          section « Sur tous tes écrans » du site est partie. Preuves :
-          npm run check, tools/paiement/essai.js 32/32, e2e/folio-plus 8/8
-          et toute la suite.
-Avant :   2026-10-27 · Le moteur compte les jours écoulés comme Anki (jours
-          de calendrier, bascule à 4 h, le même compte pour noter, rejouer
-          et optimiser). Avant encore : la page d'accueil, le tuto v2.
+FAIT      48 / 148
+DERNIER   2026-10-28 · Folio+ en base : les migrations 20261027190000 et
+          20261027210000 appliquées (11 comptes en Folio+ offert, aucun
+          référent ni éditeur), les tests SQL verts (abonnements 17/17 —
+          un cas corrigé : la lecture des évènements Stripe est refusée,
+          pas vide —, folio_plus_pour_tous 15/15), les advisors relus, les
+          fonctions ai, paiement, stripe-webhook et magasins déployées.
+          M12.T2 cochée. Manquent les secrets STRIPE_SECRET_KEY et RC_SECRET
+          (et ceux qu'ils ouvrent) : docs/VENTE.md § 3.
+Avant :   2026-10-27 · Folio+ pour de vrai : les comptes d'avant gardent
+          tout ; un compte neuf est en Folio gratuit, bridé (ui/bridage.js) ;
+          achat dans l'app des magasins par RevenueCat. Avant encore : le
+          moteur compte les jours comme Anki.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.
@@ -191,8 +189,8 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M11.T6 · bandeau cookies inutile car 0 traceur — cible: 0 cookie non essentiel — preuve: inspection
 
 ## M12 · Paiement B2C [P0] 1/5
-- [~] M12.T1 · Stripe en test: abonnement mensuel et annuel — preuve: paiement test abouti — code prêt (fonctions paiement, stripe-webhook et magasins, migrations 20261027190000 et 20261027210000, écran et onglet Folio+), attend le compte Stripe, RevenueCat et leurs clés : docs/VENTE.md § 1 à 4
-- [~] M12.T2 · limites du gratuit appliquées côté serveur — cible: contournement impossible depuis le client — preuve: test d'attaque — ce qui coûte est tenu en base (médias : politiques restrictives, supabase/tests/folio_plus_pour_tous.sql ; IA : offre_de dans la fonction ai) ; livres, QCM et journal restent des règles d'écran (décidé le 2026-10-27 : refuser un livre en base bloquerait la synchro) ; reste à lancer les tests SQL en base
+- [~] M12.T1 · Stripe en test: abonnement mensuel et annuel — preuve: paiement test abouti — code prêt et en ligne (migrations 20261027190000 et 20261027210000 appliquées, fonctions paiement, stripe-webhook et magasins déployées le 2026-10-28, écran et onglet Folio+), attend le compte Stripe, RevenueCat et leurs clés (STRIPE_SECRET_KEY et RC_SECRET manquent) : docs/VENTE.md § 1 à 4
+- [x] M12.T2 · limites du gratuit appliquées côté serveur — cible: contournement impossible depuis le client — preuve: test d'attaque — ce qui coûte est tenu en base (médias : politiques restrictives ; IA : offre_de dans la fonction ai, redéployée le 2026-10-28) ; livres, QCM et journal restent des règles d'écran (décidé le 2026-10-27 : refuser un livre en base bloquerait la synchro). Preuve en base, le 2026-10-28 : supabase/tests/abonnements.sql 17/17 et folio_plus_pour_tous.sql 15/15 (s'offrir ou rallonger Folio+ par l'API brute, déposer un média en gratuit, lire l'offre d'un autre, offrir Folio+ sans être l'éditeur : tous refusés en 42501)
 - [~] M12.T3 · quotas IA par compte et par mois — cible: budget global jamais dépassé — preuve: simulation 100 comptes — 50 cours par mois avec Folio+ et Campus, 0 en gratuit (AI_MONTHLY_PLUS, fonction ai) ; reste la simulation et un pool par établissement
 - [x] M12.T4 · webhooks Stripe idempotents — cible: 0 double facturation sur 100 rejeux — preuve: test — node tools/paiement/essai.js 32/32 (sous Deno, face à un faux Stripe et un faux RevenueCat : 100 rejeux sans écriture de plus, un évènement neuf livré 100 fois à la fois → une seule ligne juste, 20 appuis à la fois → une seule page de paiement)
 - [ ] M12.T5 · passage en clés réelles + première vente test — preuve: paiement réel remboursé

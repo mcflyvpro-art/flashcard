@@ -86,8 +86,13 @@ begin
   insert into public.zz_res (nom, ok, vu) values ('se rallonger son abonnement : refusé', refus = '42501', refus);
   select count(*) into n from public.abonnements;
   insert into public.zz_res (nom, ok, vu) values ('on ne lit que sa ligne', n = 1, n::text);
-  select count(*) into n from public.stripe_evenements;
-  insert into public.zz_res (nom, ok, vu) values ('les évènements Stripe : aucune ligne visible', n = 0, n::text);
+  -- table de service : un compte n'a aucun droit dessus, la lecture même est refusée
+  begin
+    select count(*) into n from public.stripe_evenements;
+    refus := 'lu : ' || n;
+  exception when others then refus := sqlstate;
+  end;
+  insert into public.zz_res (nom, ok, vu) values ('les évènements Stripe : lecture refusée', refus = '42501', refus);
 
   -- ══════════ supprimer son compte ══════════
   perform public.zz_root();
