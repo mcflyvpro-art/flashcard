@@ -9,7 +9,7 @@ import { pubTete } from './connexion.js';
 import './demande-demo.css';
 
 /* ══════════ « Demander une démo » (2026-10-26) ══════════
-   Un établissement qui découvre Folio laisse ses coordonnées, sans compte :
+   Un établissement qui découvre Mirandola laisse ses coordonnées, sans compte :
    la demande arrive dans la console de l'éditeur, étape Prospect
    (docs/PARCOURS.md, § 3). Chargé à la demande par ui/connexion.js
    (`demandeView`), ouvert depuis l'écran de connexion. Téléphone et PC. */
@@ -49,8 +49,8 @@ function merci() {
    depuis les Réglages d'un compte, une page de l'app comme une autre. */
 export function demandeEcran() {
   const corps = `<div class="dd-pitch">
-        <p class="dd-marque"><span class="dd-ic" aria-hidden="true"><img src="/site/logo.svg" alt="" width="26" height="28"><i>${svg(I.school)}</i></span><span>Folio <em>Campus</em></span></p>
-        <h1 class="dd-t">Folio pour votre <em>établissement.</em></h1>
+        <p class="dd-marque"><span class="dd-ic" aria-hidden="true"><img src="/site/logo.svg" alt="" width="26" height="28"><i>${svg(I.school)}</i></span><span>Mirandola <em>Campus</em></span></p>
+        <h1 class="dd-t">Mirandola pour votre <em>établissement.</em></h1>
         <ul class="dd-points">
           <li>${svg(I.school)}<span>Un code pour tout l’établissement</span></li>
           <li>${svg(I.rocket)}<span>Une démo de 30 jours, avec vos classes</span></li>

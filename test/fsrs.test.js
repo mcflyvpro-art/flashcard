@@ -285,7 +285,7 @@ describe('équilibreur de charge', () => {
 });
 
 /* Anki compte l'écart entre deux lectures en jours de calendrier, avec un
-   jour qui change à 4 h. Folio comptait des fenêtres de 24 h en notant :
+   jour qui change à 4 h. Mirandola comptait des fenêtres de 24 h en notant :
    lue à 22 h puis à 8 h le lendemain, une page passait par la formule de
    court terme (0 jour) au lieu de celle de long terme (1 jour). */
 describe('les jours écoulés, comptés comme Anki', () => {

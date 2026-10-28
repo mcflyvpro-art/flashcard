@@ -215,7 +215,7 @@ function copier(t, ok) {
 function partagerClub() {
   const g = clubOuvert(); if (!g) return;
   const url = lienClub(SITE, g.code);
-  const text = `Rejoins « ${g.nom} » sur Folio : code ${codeClubLisible(g.code)}`;
+  const text = `Rejoins « ${g.nom} » sur Mirandola : code ${codeClubLisible(g.code)}`;
   if (navigator.share) navigator.share({ title: g.nom, text, url }).catch(() => {});   // annulé par l'utilisateur : rien à dire
   else copier(url, 'Lien copié');
 }

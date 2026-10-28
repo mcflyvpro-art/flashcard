@@ -1,4 +1,4 @@
-// Tourner la Folio Academy (tools/academie/README.md).
+// Tourner la Mirandola Academy (tools/academie/README.md).
 //   node tools/academie/tourner.js [eleve|prof|referent|tout] [--rep] [--sec] [--depuis=N]
 //   node tools/academie/tourner.js echantillons      (la même phrase dans plusieurs voix, pour choisir)
 // --rep : répétition rapide (voix accélérée, une capture par réplique dans

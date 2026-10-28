@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I } from '../icones.js';
 import {
-  mailbox, menu, pendingGrade, prefs, setPendingGrade, study, view
+  menu, pendingGrade, prefs, setPendingGrade, study, view
 } from '../data/etat.js';
 import { allDue, go } from './bibliotheque.js';
 import { commuPull } from './cercle.js';
@@ -71,7 +71,7 @@ const GOTO = {
   study: () => { if (!allDue()) { go('home'); return toast(I.check, 'Rien à revoir pour l’instant'); }
                  startStudy('all', false, null, { only: 'due', both: prefs.both }); },
   new: () => { resetComp(); go('import'); },
-  mail: () => { mailbox.list = null; mailPull(); go('mail'); },
+  mail: () => { mailPull(); go('mail'); },
   commu: () => { commuPull(); go('commu'); },
   stats: () => { statsPull(); go('stats'); }
 };

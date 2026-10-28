@@ -295,7 +295,7 @@ function stepReview(st, g, w, m, dr, maxIvl) {
    jour change à 4 h, pas à minuit (« le jour suivant commence à ») : une
    page lue à 22 h puis le lendemain à 8 h a un jour d'écart, et passe par
    la formule de long terme ; lue à 23 h puis à 3 h, c'est encore le même
-   jour, et la formule de court terme. Folio comptait des fenêtres de 24 h
+   jour, et la formule de court terme. Mirandola comptait des fenêtres de 24 h
    glissantes en notant (0 jour dans le premier cas) et coupait à minuit en
    rejouant : les deux ne s'accordaient ni entre eux ni avec Anki. Un seul
    compte désormais, partout. La file de révision (src/file.js) bascule à

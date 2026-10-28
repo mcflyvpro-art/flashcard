@@ -1,4 +1,4 @@
-// Folio Academy — Élève : l'essentiel en trois étapes (téléphone, tutoiement, comme l'app).
+// Mirandola Academy — Élève : l'essentiel en trois étapes (téléphone, tutoiement, comme l'app).
 // Ce qui bloque un élève : entrer dans sa classe, faire un devoir, réviser
 // chaque jour. Le reste (créer ses livres, journal, Cercle, courrier) se
 // découvre : la carte de fin le nomme.
@@ -6,9 +6,9 @@
 async function scenario(t) {
   let monde = null;
 
-  await t.carte({ sur: 'Folio Academy · Élève', titre: 'Bien démarrer avec Folio',
+  await t.carte({ sur: 'Mirandola Academy · Élève', titre: 'Bien démarrer avec Mirandola',
     txt: 'Entrer dans ta classe, faire un devoir, réviser chaque jour.' });
-  await t.dire('Folio, c’est ton carnet de révision : l’application te fait relire tes cours au bon moment, pour que tu les retiennes vraiment.', async () => {
+  await t.dire('Mirandola, c’est ton carnet de révision : l’application te fait relire tes cours au bon moment, pour que tu les retiennes vraiment.', async () => {
     // en coulisse : Léa quitte son lycée, pour y entrer pour de vrai avec le code à l'étape 1
     await t.taille(1280, 800);
     await t.aller('/essayer', 600);
@@ -34,7 +34,7 @@ async function scenario(t) {
   await t.dire('D’abord, rejoindre ta classe.');
   await t.sansCarte();
   await t.etape(0);
-  await t.dire('Ouvre Folio et touche Créer un compte : ton adresse mail, un mot de passe, et c’est parti.', async () => {
+  await t.dire('Ouvre Mirandola et touche Créer un compte : ton adresse mail, un mot de passe, et c’est parti.', async () => {
     await t.toucher('[data-lm="up"]');
     await t.pause(300);
     await t.taper('#em', 'lea.martin@exemple.fr', { delai: 45 });
@@ -94,7 +94,7 @@ async function scenario(t) {
   await t.dire('Maintenant, sois honnête : Encore si tu ne savais pas, Difficile, Correct, ou Facile.', async () => {
     for (const g of ['g0', 'g1', 'g2', 'g3']) { await t.montrer(`.gr.${g}`); await t.pause(950); }
   });
-  await t.dire('Folio te reposera la page au bon moment : plus c’était facile, plus elle reviendra tard.', async () => {
+  await t.dire('Mirandola te reposera la page au bon moment : plus c’était facile, plus elle reviendra tard.', async () => {
     await t.montrer('.grades');
   });
   await t.cacher();
@@ -120,7 +120,7 @@ async function scenario(t) {
   });
   await t.sansCarte();
   await t.etape(0);
-  await t.dire('Dans l’onglet Livres, touche Lecture du jour : Folio rassemble les pages à revoir aujourd’hui, dans tous tes livres.', async () => {
+  await t.dire('Dans l’onglet Livres, touche Lecture du jour : Mirandola rassemble les pages à revoir aujourd’hui, dans tous tes livres.', async () => {
     await t.montrer('[data-act="marathon"]');
     await t.pause(3200);
     await t.toucher('[data-act="marathon"]');
@@ -140,12 +140,12 @@ async function scenario(t) {
     await t.montrer('[data-act="goalinfo"]', { etiq: 'Objectif du jour' });
   });
   await t.cacher();
-  await t.astuce('Pas de réseau ? Folio marche aussi hors ligne.');
-  await t.dire('Et même sans réseau, Folio fonctionne : tes réponses partent dès que la connexion revient.');
+  await t.astuce('Pas de réseau ? Mirandola marche aussi hors ligne.');
+  await t.dire('Et même sans réseau, Mirandola fonctionne : tes réponses partent dès que la connexion revient.');
 
   /* ---------- fin ---------- */
   await t.taire();
-  await t.carte({ sur: 'Folio Academy · Élève', titre: 'À toi de jouer !', txt: 'À découvrir quand tu veux :',
+  await t.carte({ sur: 'Mirandola Academy · Élève', titre: 'À toi de jouer !', txt: 'À découvrir quand tu veux :',
     puces: ['Créer tes livres', 'Ton journal de progrès', 'Défier tes amis', 'Ton courrier'] });
   await t.dire('Tu connais l’essentiel. Le reste, tu le découvriras en chemin : créer tes propres livres, suivre tes progrès, défier tes amis.');
   await t.dire('Bonnes révisions !');
@@ -153,9 +153,9 @@ async function scenario(t) {
 }
 
 export default {
-  nom: 'eleve', fichier: 'Folio-Academy-1-Eleve.mp4', mode: 'tel', module: 'Élève', depart: '/essayer',
-  titre: 'Folio Academy — Élève : bien démarrer',
-  intro: { sur: 'Folio Academy · Élève', titre: 'Bien démarrer', txt: 'L’essentiel en trois étapes. Chacune a son minutage.',
-    repliques: ['Bienvenue dans la Folio Academy !', 'En trois étapes, tu vas apprendre l’essentiel. Voici le programme.'] },
+  nom: 'eleve', fichier: 'Mirandola-Academy-1-Eleve.mp4', mode: 'tel', module: 'Élève', depart: '/essayer',
+  titre: 'Mirandola Academy — Élève : bien démarrer',
+  intro: { sur: 'Mirandola Academy · Élève', titre: 'Bien démarrer', txt: 'L’essentiel en trois étapes. Chacune a son minutage.',
+    repliques: ['Bienvenue dans la Mirandola Academy !', 'En trois étapes, tu vas apprendre l’essentiel. Voici le programme.'] },
   scenario
 };

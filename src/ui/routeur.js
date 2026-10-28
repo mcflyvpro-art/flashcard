@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import {
-  adm, auth, cercle, demoEtab, friends, legalTab, loginMode, mailbox, mods, myRole, prof, ref, setFindQ,
+  adm, auth, cercle, demoEtab, friends, legalTab, loginMode, mods, myRole, prof, ref, setFindQ,
   setLegalBack, setLegalTab, setLoginMode, trash, view
 } from '../data/etat.js';
 import { ARRIVEE, aRouvrir, chemin, lireChemin } from '../routes.js';
@@ -110,7 +110,7 @@ const OUVRIR = {
   deck: id => (deck(id) ? go('deck', id) : go('home')),
   import: id => { resetComp(); go('import', id && deck(id) ? id : null); },
   stats: () => { statsPull(); go('stats'); },
-  mail: () => { mailbox.list = null; mailPull(); go('mail'); },
+  mail: () => { mailPull(); go('mail'); },
   lettre: id => { go('lettre', id); mailPull().then(() => { if (view.name === 'lettre' && view.id === id) openMail(id); }); },
   find: () => { setFindQ(''); go('find'); },
   settings: () => go('settings'),
@@ -221,6 +221,9 @@ export const installee = () => !!(window.Capacitor || navigator.standalone
 /* « Retour » d'un écran public (essai, demande de démo, mentions) : l'écran
    d'avant s'il est dans l'app (rang > 0 : une entrée que l'app a posée), le
    site sinon. */
+// un écran de l'app derrière soi, dans l'historique (l'écran Mirandola+ s'ouvre de partout)
+export const aDerriere = () => rang > 0;
+
 export function retourPublic() {
   if (rang > 0) return history.back();
   if (installee()) return go('login');

@@ -13,14 +13,15 @@
 export const MIN = 3, MAX = 20;
 
 /* Ce qui imite l'équipe ou un rôle : réservé quand c'est un mot du pseudo
-   (« lea.admin », « folio_officiel »), ou son début pour ces trois-là. */
+   (« lea.admin », « mirandola_officiel »), ou son début pour ces quatre-là
+   (« folio » reste : c'était le nom, jusqu'au 2026-10-28). */
 export const RESERVES = ['admin', 'administrateur', 'administratrice', 'administration', 'moderateur', 'moderatrice',
-  'moderation', 'modo', 'folio', 'support', 'staff', 'equipe', 'team', 'officiel', 'officielle', 'official', 'system',
+  'moderation', 'modo', 'folio', 'mirandola', 'support', 'staff', 'equipe', 'team', 'officiel', 'officielle', 'official', 'system',
   'systeme', 'root', 'anthropic', 'claude', 'prof', 'professeur', 'professeure', 'referent', 'referente', 'editeur',
   'proviseur', 'proviseure', 'principal', 'principale', 'directeur', 'directrice', 'securite', 'security', 'aide',
   'help', 'contact', 'service', 'null', 'undefined', 'anonyme', 'inconnu', 'utilisateur', 'compte', 'eleve',
   'enseignant', 'enseignante', 'cpe', 'bot'];
-export const PREFIXES = ['folio', 'admin', 'moderat'];
+export const PREFIXES = ['folio', 'mirandola', 'admin', 'moderat'];
 
 /* Ce qui ne se dit pas, surtout entre élèves. Deux listes, pour ne pas
    refuser « calcul » à cause de « cul » : les MOTS ne comptent que seuls

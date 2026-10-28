@@ -1,9 +1,9 @@
-/* ══════════ poser Folio sur l'écran d'accueil d'un téléphone (2026-10-28) ══════════
+/* ══════════ poser Mirandola sur l'écran d'accueil d'un téléphone (2026-10-28) ══════════
    Module pur, sans dépendance, testé (test/installation.test.js) : lu par
    la porte d'installation (ui/pwa.js, chargée à la demande), jamais au
    démarrage.
 
-   Sur un téléphone, Folio ne s'ouvre que depuis son icône (src/plateformes.js,
+   Sur un téléphone, Mirandola ne s'ouvre que depuis son icône (src/plateformes.js,
    `porte`). Le geste qui la pose n'est pas le même partout, et c'est là que
    tout se perd : l'élève cherche « Sur l'écran d'accueil » dans le mauvais
    menu, ne trouve pas, abandonne. Chaque navigateur a donc ses étapes, dans
@@ -56,11 +56,11 @@ const E = (ic, texte, s) => ({ ic, texte, s });
 const AJOUTER = E('ajouter', 'Fais défiler, choisis **Sur l’écran d’accueil**', 2);
 const CONFIRMER = E('ok', 'Touche **Ajouter**', 2);
 
-/* La dernière étape : ouvrir Folio par son icône. Sur iPhone, l'app de
+/* La dernière étape : ouvrir Mirandola par son icône. Sur iPhone, l'app de
    l'écran d'accueil n'a pas le stockage de Safari : on s'y connecte. Sur
    Android elle partage celui du navigateur : une session ouverte suit. */
-const ouvrir = (ios, session) => E('folio', session && !ios ? 'Ouvre **Folio** sur ton écran d’accueil : ton compte t’y attend'
-  : 'Ouvre **Folio** sur ton écran d’accueil et connecte-toi', 3);
+const ouvrir = (ios, session) => E('folio', session && !ios ? 'Ouvre **Mirandola** sur ton écran d’accueil : ton compte t’y attend'
+  : 'Ouvre **Mirandola** sur ton écran d’accueil et connecte-toi', 3);
 
 /* Ce que la porte montre : `cas`, `titre`, les `etapes`, la `fleche`
    (bas, bas-droite, haut-droite ou rien : là où se trouve le bouton du
@@ -80,11 +80,11 @@ export function guide(os, n, { invite = false, session = false } = {}) {
 function sortir(ios) {
   const nav = ios ? 'Safari' : 'Chrome';
   return {
-    cas: 'integre', titre: `Ouvre Folio dans ${nav}`, fleche: 'haut-droite', ligne: `Ouvrir dans ${nav}`,
+    cas: 'integre', titre: `Continue dans ${nav}`, fleche: 'haut-droite', ligne: `Ouvrir dans ${nav}`,
     bouton: ios ? 'copier' : 'chrome', secours: ios ? null : 'copier',
     etapes: [E('points', 'Touche **•••**, en haut à droite', 1),
       E('sortir', `Choisis **Ouvrir dans ${nav}** ou **dans le navigateur**`, 2),
-      E('folio', 'Folio t’y montrera la suite', 3)]
+      E('folio', 'Mirandola t’y montrera la suite', 3)]
   };
 }
 
@@ -97,7 +97,7 @@ function guideIos(n, session) {
     : n.nom === 'chrome' ? ['ios-chrome', 'haut-droite', E('partager', 'Touche **Partager**, dans la barre d’adresse', 1)]
       : n.nom === 'firefox' ? ['ios-firefox', 'bas-droite', E('menu3', 'Touche **≡** en bas à droite, puis **Partager**', 1)]
         : ['ios-autre', null, E('partager', 'Dans le menu de ton navigateur, touche **Partager**', 1)];
-  return { cas, titre: 'Installe Folio', fleche, ligne: 'Sur l’écran d’accueil', bouton: null, secours: 'safari',
+  return { cas, titre: 'Installe Mirandola', fleche, ligne: 'Sur l’écran d’accueil', bouton: null, secours: 'safari',
     etapes: [premiere, AJOUTER, CONFIRMER, ouvrir(true, session)] };
 }
 
@@ -116,11 +116,11 @@ const ANDROID = {
 };
 function guideAndroid(n, invite, session) {
   const fin = ouvrir(false, session);
-  if (invite) return { cas: 'invite', titre: 'Installe Folio', fleche: null, ligne: 'Installer', bouton: 'installer', secours: null,
-    etapes: [E('installer', 'Touche **Installer Folio**', 1), E('ok', 'Confirme : **Installer**', 2), fin] };
+  if (invite) return { cas: 'invite', titre: 'Installe Mirandola', fleche: null, ligne: 'Installer', bouton: 'installer', secours: null,
+    etapes: [E('installer', 'Touche **Installer Mirandola**', 1), E('ok', 'Confirme : **Installer**', 2), fin] };
   const cle = ANDROID[n.nom] ? n.nom : 'autre';
   const [fleche, ligne, etapes] = ANDROID[cle];
-  return { cas: { chrome: 'android', autre: 'android-autre' }[cle] || cle, titre: 'Installe Folio', fleche, ligne, bouton: null,
+  return { cas: { chrome: 'android', autre: 'android-autre' }[cle] || cle, titre: 'Installe Mirandola', fleche, ligne, bouton: null,
     secours: cle === 'autre' ? 'chrome' : null, etapes: [...etapes, fin] };
 }
 

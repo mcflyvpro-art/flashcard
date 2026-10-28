@@ -1,4 +1,4 @@
-/* Folio+ dans la base locale (2026-10-27) : mon_offre(), comme les
+/* Mirandola+ dans la base locale (2026-10-27) : mon_offre(), comme les
    migrations 20261027190000 et 20261027210000 (une ligne par source), et
    les fonctions `paiement` et `magasins` jouées sans Stripe ni RevenueCat —
    pour les parcours (e2e/folio-plus.e2e.js) et la démo, qui n'appelle
@@ -7,7 +7,7 @@
    `store.parDefaut` : l'offre d'un compte sans aucune ligne. « gratuit »,
    comme un compte créé après le 2026-10-27 ; les parcours e2e passent
    « plus » (e2e/faux-supabase.js) : leurs comptes sont ceux d'avant, qui
-   ont reçu Folio+ offert — un parcours qui essaie Folio gratuit le dit.
+   ont reçu Mirandola+ offert — un parcours qui essaie Mirandola gratuit le dit.
 
    La page de paiement de Stripe n'existe pas ici : « payer » écrit
    l'abonnement comme le ferait stripe-webhook, puis rend l'adresse de
@@ -53,7 +53,8 @@ export function monOffre(store, uid) {
     offre: offreDe(store, uid),
     etablissement: campus ? o.nom : null,
     licence_fin: campus ? o.fin || null : null,
-    abonnement: a ? { statut: a.statut, formule: a.formule, source: a.source, fin_periode: a.fin_periode, fin_prevue: a.fin_prevue } : null
+    abonnement: a ? { statut: a.statut, formule: a.formule, source: a.source, fin_periode: a.fin_periode, fin_prevue: a.fin_prevue,
+      montant: a.montant ?? null } : null
   };
 }
 
@@ -86,7 +87,8 @@ function payer(store, b, uid) {
   if (offre === 'campus') return [409, { error: 'campus' }];
   const ligne = { user_id: uid, offre: 'plus', statut: 'actif', source: 'stripe', formule: b.formule,
     client_stripe: 'cus_' + uid.slice(0, 8), abonnement_stripe: 'sub_' + uid.slice(0, 8),
-    fin_periode: new Date(Date.now() + (b.formule === 'annuel' ? 365 : 31) * 864e5).toISOString(), fin_prevue: false };
+    fin_periode: new Date(Date.now() + (b.formule === 'annuel' ? 365 : 31) * 864e5).toISOString(), fin_prevue: false,
+    montant: b.formule === 'annuel' ? 4999 : 699 };
   store.tables.abonnements = table(store).filter(x => !(x.user_id === uid && x.source === 'stripe'));
   if (store.paiement === 'lent') store.enRetard = { uid, ligne, n: 3 };
   else ecrire(store, ligne);
@@ -97,9 +99,11 @@ export function paiementFaux(store, body, user) {
   if (store.paiement === 'absent') return [404, null];
   if (store.paiement && store.paiement !== 'lent') return [503, { error: store.paiement }];
   const b = body || {};
-  if (b.action === 'gerer') {
+  if (b.action === 'gerer' || b.action === 'resilier') {
     const a = table(store).find(x => x.user_id === user.id && x.source === 'stripe');
-    return a && a.client_stripe ? [200, { url: '/app?plus=retour' }] : [404, { error: 'aucun' }];
+    if (!a || !a.client_stripe) return [404, { error: 'aucun' }];
+    if (b.action === 'resilier') a.fin_prevue = true;   // le portail de Stripe, résilié d'un geste (le webhook l'écrirait)
+    return [200, { url: '/app?plus=retour' }];
   }
   return b.action === 'payer' ? payer(store, b, user.id) : [400, { error: 'body' }];
 }

@@ -6,6 +6,7 @@ import { accounts, adm, auth, setAnimate, view } from '../data/etat.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import { admAgir, admCharger, admOffrirPlus, admRole } from '../core/admin.js';
 import { formatCode, iso } from '../classe.js';
+import { prixCampus } from '../tarifs.js';
 import {
   aRelancer, BESOINS, bilanSuivi, compterEtapes, courrielReferent, ETAPES, etatLicence, filtrerSuivi, GENRES,
   lienCourriel, nouvelleDemande, OFFRES, ORDRE_ETAPES, prochainPas, trierSuivi
@@ -151,6 +152,9 @@ function blocPas(o) {
 /* La date de fin proposée : le 31 août qui suit (l'année scolaire). */
 const finAnnee = () => { const d = new Date(), a = d.getFullYear() + (d.getMonth() >= 6 ? 1 : 0); return `${a}-08-31`; };
 
+// le prix de la grille (src/tarifs.js), en euros HT : celui que propose « Passer en licence »
+const grille = places => (+places ? Math.round(prixCampus(+places) / 100) : '');
+
 /* `p` préfixe les identifiants : la fiche d'une démo montre les deux formulaires à la fois. */
 function champsLicence(o, passer, p) {
   const places = passer ? Math.max(+o.eleves_estimes || 0, +o.eleves || 0, +o.places || 0) || '' : o.places;
@@ -159,7 +163,8 @@ function champsLicence(o, passer, p) {
         `<option value="${k}"${(o.offre || 'demo') === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`}
       ${champ(p + '-pl', 'Places', places, 'inputmode="numeric" maxlength="6"')}
       ${champ(p + '-fin', 'Fin', passer ? finAnnee() : o.licence_fin, 'type="date"')}
-      ${passer ? champ(p + '-prix', 'Prix annuel (€)', o.prix_euros, 'inputmode="numeric" maxlength="7"') : ''}
+      ${passer ? champ(p + '-prix', 'Prix annuel HT (€)', o.prix_euros || grille(places),
+        `inputmode="numeric" maxlength="7" title="La grille : ${grille(places) || '…'} € HT pour ${places || '…'} places"`) : ''}
       <button class="ed-b pri" type="submit">${svg(I.check)}${passer ? 'Passer en licence' : 'Enregistrer'}</button>
     </div>`;
 }
@@ -255,8 +260,8 @@ function ficheCompte() {
       <div class="ed-seg" role="radiogroup">${Object.entries(ROLES).map(([k, t]) => `<button role="radio" aria-checked="${a.role === k}"
         class="${a.role === k ? 'on' : ''}" data-adm="role" data-id="${k}" ${moi && k !== 'admin' ? 'disabled' : ''}>${t}</button>`).join('')}</div>
       ${moi ? '<p class="ed-rien">C’est ton compte : tu ne peux pas te retirer ton rôle.</p>' : ''}
-      <h2 class="ed-h2">Folio+</h2>
-      <div class="ed-seg"><button data-adm="offrir">${svg(I.spark)}Offrir Folio+</button>
+      <h2 class="ed-h2">Mirandola+</h2>
+      <div class="ed-seg"><button data-adm="offrir">${svg(I.spark)}Offrir Mirandola+</button>
         <button data-adm="reprendre">Reprendre</button></div>
       <p class="ed-rien">Offert sans fin. Un abonnement payé reste à Stripe ou au magasin.</p>
     </div>`;

@@ -159,13 +159,13 @@ describe('le suivi commercial — ce qui presse, ce qu’on compte', () => {
   });
   it('le courriel du code référent : le code lisible, la date en clair, un lien mailto encodé', () => {
     const c = courrielReferent({ etab: 'Lycée Camus', contact: 'Mme Roux', code: 'ABCD2345', fin: '2026-11-25T10:00:00Z',
-      site: 'https://www.folioflashcard.online/' });
-    expect(c.sujet).toBe('Folio · l’accès de Lycée Camus');
+      site: 'https://mirandola.fr/' });
+    expect(c.sujet).toBe('Mirandola · l’accès de Lycée Camus');
     expect(c.corps).toContain('Bonjour Mme Roux,');
     expect(c.corps).toContain('ABCD-2345');
     expect(c.corps).toContain('jusqu’au 25/11/2026');
     const l = lienCourriel('dir@camus.fr', c);
-    expect(l.startsWith('mailto:dir%40camus.fr?subject=Folio')).toBe(true);
+    expect(l.startsWith('mailto:dir%40camus.fr?subject=Mirandola')).toBe(true);
     expect(decodeURIComponent(l.split('body=')[1])).toBe(c.corps);
   });
 });

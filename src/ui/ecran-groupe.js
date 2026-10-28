@@ -16,6 +16,9 @@ import { norm } from './quiz.js';
    ne doit importer `ui/journal-ecran.js` — passer par ici. */
 let ecranJournal = null, chargeJournal = null;
 
+// au calme dès l'arrivée (ui/synchro-ecran.js) : toucher « Journal » ne montre plus un écran vide
+export const prechargerJournal = () => chargerJournal().catch(() => null);
+
 function chargerJournal() {
   if (ecranJournal) return Promise.resolve(ecranJournal);
   if (!chargeJournal) {

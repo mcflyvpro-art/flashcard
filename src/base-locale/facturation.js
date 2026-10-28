@@ -54,7 +54,7 @@ function tableau(store, et, m, o) {
     factures: et.factures.filter(x => x.org_id === o.id)
       .sort((a, b) => b.emise_le.localeCompare(a.emise_le) || b.numero.localeCompare(a.numero)).map(sansLignes),
     echanges: et.echanges.filter(e => e.org_id === o.id).map(e => ({ id: e.id, de: e.de, sujet: e.sujet, message: e.message,
-      cree: e.cree, lu: e.lu, auteur: e.de === 'folio' ? 'Folio' : m.noms[e.auteur] || '' })),
+      cree: e.cree, lu: e.lu, auteur: e.de === 'folio' ? 'Mirandola' : m.noms[e.auteur] || '' })),
     vendeur: v ? { raison_sociale: v.raison_sociale, forme: v.forme, adresse: v.adresse, code_postal: v.code_postal, ville: v.ville,
       siret: v.siret, email: v.email, regime_tva: v.regime_tva } : null
   };
@@ -102,7 +102,7 @@ function avoir(et, m, uid, b) {
 function nouveauCompte(store, et, m, uid, b) {
   const o = referent(et, m, uid);
   if (!['eleve', 'prof'].includes(b.qrole)) erreur('Un référent ouvre des comptes d’élève et de professeur.');
-  if (placesLibres(et, m, o) === 0) erreur('Toutes les places de la licence sont prises : demande-en d’autres à Folio, ou retire un compte parti');
+  if (placesLibres(et, m, o) === 0) erreur('Toutes les places de la licence sont prises : demande-en d’autres à Mirandola, ou retire un compte parti');
   if (String(b.pw || '').length < 10) erreur('Au moins dix caractères');
   const ad = String(b.adresse || '').trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ad)) erreur('Adresse e-mail invalide');

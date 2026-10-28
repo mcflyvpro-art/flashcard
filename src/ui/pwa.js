@@ -19,7 +19,7 @@ import './pwa.css';
    navigateur d'un téléphone. Une seule chose à faire, montrée trois fois :
    les étapes dans les mots du navigateur (src/installation.js), un
    téléphone dessiné qui les rejoue en boucle — la barre du navigateur et
-   son bouton, le menu et sa ligne, l'écran d'accueil où Folio apparaît —,
+   son bouton, le menu et sa ligne, l'écran d'accueil où Mirandola apparaît —,
    et une flèche posée au bord de l'écran, vers le vrai bouton. Les étapes
    s'allument au rythme de l'animation.
 
@@ -71,19 +71,19 @@ const touche = g => (GLYPHES[g.etapes[0].ic] || GLYPHES.partager)();
 /* ---------- le téléphone qui rejoue le geste ----------
    Trois scènes en boucle (pw.css) : 1 la page dans le navigateur et le
    bouton qu'on touche, 2 le menu et sa ligne, 3 l'écran d'accueil où
-   Folio arrive — ou, pour sortir d'une autre app, le navigateur. Le doigt
+   Mirandola arrive — ou, pour sortir d'une autre app, le navigateur. Le doigt
    va de l'un à l'autre ; `data-fleche` dit où est le bouton. */
 function scene(g) {
   const b = touche(g);
   const fin = g.cas === 'integre'
-    ? `<div class="pw-nav">${svg(I.globe)}<b>${g.titre.replace('Ouvre Folio dans ', '')}</b></div>`
-    : `<div class="pw-grille">${'<i></i>'.repeat(7)}<span class="pw-app"><img src="/site/icone.svg" alt=""><small>Folio</small></span><i></i></div>`;
+    ? `<div class="pw-nav">${svg(I.globe)}<b>${g.titre.replace('Continue dans ', '')}</b></div>`
+    : `<div class="pw-grille">${'<i></i>'.repeat(7)}<span class="pw-app"><img src="/site/icone.svg" alt=""><small>Mirandola</small></span><i></i></div>`;
   const page = g.cas === 'invite'
-    ? '<span class="pw-pbouton">Installer Folio</span>' : '<b></b><b></b><b class="court"></b>';
+    ? '<span class="pw-pbouton">Installer Mirandola</span>' : '<b></b><b></b><b class="court"></b>';
   return `<div class="pw-scene" data-fleche="${g.cas === 'invite' ? 'invite' : g.fleche || 'bas'}" aria-hidden="true">
       <div class="pw-tel"><div class="pw-ecran">
         <div class="pw-s pw-s1">
-          <div class="pw-haut"><span class="pw-url">folioflashcard.online</span><i class="pw-b">${b}</i></div>
+          <div class="pw-haut"><span class="pw-url">mirandola.fr</span><i class="pw-b">${b}</i></div>
           <div class="pw-page"><img src="/site/logo.svg" alt="">${page}</div>
           <div class="pw-bas"><i></i><i></i><i class="pw-b pw-bc">${b}</i><i></i><i class="pw-b pw-bd">${b}</i></div>
         </div>
@@ -105,7 +105,7 @@ const copier = (cls = 'cta pw-cta') => `<button class="${cls}" type="button" dat
 
 function bouton(g, attente) {
   if (g.bouton === 'installer') {
-    return `<button class="cta pw-cta" type="button" data-pw="installer" ${attente ? 'disabled' : ''}>${svg(I.down)}Installer Folio</button>`;
+    return `<button class="cta pw-cta" type="button" data-pw="installer" ${attente ? 'disabled' : ''}>${svg(I.down)}Installer Mirandola</button>`;
   }
   if (g.bouton === 'chrome') return versChrome();
   if (g.bouton === 'copier') return copier();
@@ -115,7 +115,7 @@ function bouton(g, attente) {
 function secours(g) {
   if (!g.secours) return '';
   const corps = g.secours === 'safari' ? `<p>Copie le lien et colle-le dans Safari : c’est lui qui installe le mieux.</p>${copier('pw-lien')}`
-    : g.secours === 'chrome' ? `<p>Ouvre Folio dans Chrome : il l’installe en un geste.</p>${versChrome()}`
+    : g.secours === 'chrome' ? `<p>Ouvre Mirandola dans Chrome : il l’installe en un geste.</p>${versChrome()}`
       : `<p>Copie le lien et colle-le dans Chrome.</p>${copier('pw-lien')}`;
   return `<details class="pw-secours"><summary>Tu ne trouves pas&#8239;?</summary>${corps}</details>`;
 }
@@ -124,7 +124,7 @@ function secours(g) {
 function guideHtml(passe) {
   const attente = INVITE && !bip && performance.now() - DEBUT < PATIENCE;
   const g = guide(ici.os, nav, { invite: !!bip || attente, session: !!auth });
-  const sous = g.cas === 'integre' ? 'Ici, rien ne s’installe.' : 'Folio s’ouvre depuis ton écran d’accueil.';
+  const sous = g.cas === 'integre' ? 'Ici, rien ne s’installe.' : 'Mirandola s’ouvre depuis ton écran d’accueil.';
   return {
     cle: g.cas + (attente ? '…' : ''), fleche: g.cas === 'invite' ? null : g.fleche,
     html: `<h1 class="lt">${esc(g.titre)}</h1><p class="lsub">${sous}</p>
@@ -137,10 +137,10 @@ function installeHtml(passe) {
   return {
     cle: etat, fleche: null,
     html: `<i class="pw-ok">${svg(I.check)}</i>
-      <h1 class="lt">${etat === 'deja' ? 'Folio est déjà là' : 'C’est installé'}</h1>
-      <p class="lsub">Ouvre Folio depuis ton écran d’accueil${auth && android ? ' : ton compte t’y attend' : ', puis connecte-toi'}.</p>
+      <h1 class="lt">${etat === 'deja' ? 'Mirandola est déjà là' : 'C’est installé'}</h1>
+      <p class="lsub">Ouvre Mirandola depuis ton écran d’accueil${auth && android ? ' : ton compte t’y attend' : ', puis connecte-toi'}.</p>
       <div class="pw-scene pw-fige" aria-hidden="true"><div class="pw-tel"><div class="pw-ecran"><div class="pw-s pw-s3">
-        <div class="pw-grille">${'<i></i>'.repeat(7)}<span class="pw-app"><img src="/site/icone.svg" alt=""><small>Folio</small></span><i></i></div>
+        <div class="pw-grille">${'<i></i>'.repeat(7)}<span class="pw-app"><img src="/site/icone.svg" alt=""><small>Mirandola</small></span><i></i></div>
       </div></div></div></div>
       ${passe}`
   };
@@ -150,7 +150,7 @@ function installeHtml(passe) {
 function magasinHtml(i, passe) {
   return {
     cle: 'magasin', fleche: null,
-    html: `<h1 class="lt">Folio est une app</h1><p class="lsub">Télécharge-la, connecte-toi : tout t’y attend.</p>
+    html: `<h1 class="lt">Mirandola est une app</h1><p class="lsub">Télécharge-la, connecte-toi : tout t’y attend.</p>
       ${passe}<a class="cta pw-cta" href="${esc(i.lien)}" rel="noopener">${svg(I.down)}Télécharger sur ${esc(i.nom)}</a>`
   };
 }
@@ -158,7 +158,7 @@ function magasinHtml(i, passe) {
 const FLECHE = '<svg viewBox="0 0 24 24"><path d="M12 3.5v15M5.5 12.5 12 19l6.5-6.5"/></svg>';
 
 export function pwaEcran() {
-  /* Les codes de l'adresse (une classe, une partie, un club, Folio+)
+  /* Les codes de l'adresse (une classe, une partie, un club, Mirandola+)
      attendent l'app installée : rangés, confiés à son stockage (Android),
      montrés à recopier (iPhone) */
   if (!range) {

@@ -1,4 +1,4 @@
-/* ══════════ Folio+ : ce qu'on dit à Stripe, ce qu'on retient de lui ══════════
+/* ══════════ Mirandola+ : ce qu'on dit à Stripe, ce qu'on retient de lui ══════════
    Partagé par les fonctions `paiement` et `stripe-webhook`, et testé par
    vitest (test/paiement.test.js) : rien ici ne touche au réseau ni à la
    base. Les fonctions ne font que transporter.
@@ -22,7 +22,7 @@ const STATUTS = {
 };
 export const statutDe = s => STATUTS[s] || 'fini';
 
-/* Ce qui ouvre Folio+ : la même règle que abonnement_ouvre() en base. */
+/* Ce qui ouvre Mirandola+ : la même règle que abonnement_ouvre() en base. */
 export const ouvre = (statut, fin, maintenant = Date.now()) =>
   ['actif', 'essai', 'impaye'].includes(statut) && (!fin || Date.parse(fin) > maintenant);
 
@@ -40,13 +40,21 @@ export function formuleDe(sub, prix = {}) {
   return r === 'year' ? 'annuel' : r === 'month' ? 'mensuel' : null;
 }
 
+/* Le prix d'une période, en centimes : celui du prix Stripe de
+   l'abonnement (quantité comprise), ce que l'écran Mirandola+ montre à
+   l'abonné — le sien, pas celui du jour. */
+export function montantDe(sub) {
+  const l = ligne(sub) || {}, p = l.price || {};
+  return Number.isInteger(p.unit_amount) ? p.unit_amount * (l.quantity || 1) : null;
+}
+
 /* La fin de la période payée, en ISO. */
 export function finPeriode(sub) {
   const s = (sub && sub.current_period_end) || (ligne(sub) || {}).current_period_end;
   return s ? new Date(s * 1000).toISOString() : null;
 }
 
-/* Le compte Folio d'un abonnement : posé dans ses métadonnées par la page
+/* Le compte Mirandola d'un abonnement : posé dans ses métadonnées par la page
    de paiement (`subscription_data[metadata][user_id]`). */
 export const compteDe = sub => (sub && sub.metadata && sub.metadata.user_id) || null;
 
@@ -64,6 +72,7 @@ export function ligneAbonnement(sub, userId, prix = {}, maintenant = Date.now())
     abonnement_stripe: sub.id,
     fin_periode: finPeriode(sub),
     fin_prevue: !!(sub.cancel_at_period_end || sub.cancel_at),
+    montant: montantDe(sub),
     maj_le: new Date(maintenant).toISOString()
   };
 }
@@ -123,7 +132,7 @@ export function demandePaiement({ formule, prix, userId, email, client, site, ta
     allow_promotion_codes: 'true',
     locale: 'fr',
     billing_address_collection: 'auto',
-    'custom_text[submit][message]': 'Sans engagement : résiliable à tout moment, depuis Folio.'
+    'custom_text[submit][message]': 'Sans engagement : résiliable à tout moment, depuis Mirandola.'
   };
   /* l'adresse technique d'un élève à carte (…@eleves.folio.invalid) n'en
      est pas une : Stripe demandera la vraie sur sa page */
@@ -137,8 +146,22 @@ export function demandePaiement({ formule, prix, userId, email, client, site, ta
   return d;
 }
 
-/* Le portail de Stripe : changer de carte, de formule, résilier, ses factures. */
-export const demandePortail = ({ client, site }) => ({ customer: client, return_url: `${site}/app?plus=retour` });
+/* Le portail de Stripe : changer de carte, de formule, résilier, ses factures.
+   `resilier` (l'abonnement Stripe) : le portail s'ouvre droit sur sa
+   résiliation — « Résilier l'abonnement » de l'écran Mirandola+ —, puis
+   ramène dans l'app (2026-10-28). */
+export function demandePortail({ client, site, resilier }) {
+  const retour = `${site}/app?plus=retour`;
+  const d = { customer: client, return_url: retour };
+  if (!resilier) return d;
+  return {
+    ...d,
+    'flow_data[type]': 'subscription_cancel',
+    'flow_data[subscription_cancel][subscription]': resilier,
+    'flow_data[after_completion][type]': 'redirect',
+    'flow_data[after_completion][redirect][return_url]': retour
+  };
+}
 
 /* Stripe parle en formulaire, pas en JSON. */
 export const formulaire = d => new URLSearchParams(Object.entries(d).filter(([, v]) => v != null && v !== '')).toString();
@@ -179,15 +202,15 @@ export async function signatureValide(corps, entete, secret, maintenant = Date.n
 }
 
 /* ══════════ l'app des magasins : Apple et Google, par RevenueCat ══════════
-   Dans l'app des magasins (Capacitor), Folio+ s'achète par Apple ou Google —
+   Dans l'app des magasins (Capacitor), Mirandola+ s'achète par Apple ou Google —
    leurs règles — au travers de RevenueCat, qui parle aux deux et unifie
-   leurs reçus. Le compte RevenueCat d'un élève est son identifiant Folio
+   leurs reçus. Le compte RevenueCat d'un élève est son identifiant Mirandola
    (Purchases.logIn, core/abonnement.js). La fonction magasins relit chez
    RevenueCat l'abonné tout entier (GET /v1/subscribers/<compte>) à chaque
    évènement et au retour d'un achat : comme pour Stripe, l'état du moment,
    jamais l'évènement cru sur parole — l'ordre d'arrivée ne compte pas. */
 
-// le droit (« entitlement ») qui ouvre Folio+, créé dans RevenueCat
+// le droit (« entitlement ») qui ouvre Mirandola+, créé dans RevenueCat
 export const DROIT = 'plus';
 const MAGASINS = { app_store: 'apple', mac_app_store: 'apple', play_store: 'google' };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -206,6 +229,9 @@ const iso = d => (d ? new Date(d).toISOString() : null);
    magasin (Stripe a sa propre fonction). Un délai de grâce (paiement refusé,
    le magasin réessaie) garde l'accès jusqu'à sa fin, comme « past_due » de
    Stripe ; un remboursement le ferme aussitôt. */
+// le prix que RevenueCat rend pour un abonnement ({ amount: 49.99, currency: 'EUR' }), en euros seulement
+const prixRC = p => (p && p.currency === 'EUR' && Number.isFinite(p.amount) ? Math.round(p.amount * 100) : null);
+
 export function ligneMagasin(abonne, userId, maintenant = Date.now(), droit = DROIT) {
   const ent = abonne && abonne.entitlements && abonne.entitlements[droit];
   if (!ent || !ent.product_identifier) return null;
@@ -224,13 +250,14 @@ export function ligneMagasin(abonne, userId, maintenant = Date.now(), droit = DR
     abonnement_stripe: null,
     fin_periode: fin,
     fin_prevue: !!sub.unsubscribe_detected_at,
+    montant: prixRC(sub.price),
     maj_le: new Date(maintenant).toISOString()
   };
 }
 
-/* Les comptes Folio dont parle un évènement RevenueCat (un transfert d'achat
+/* Les comptes Mirandola dont parle un évènement RevenueCat (un transfert d'achat
    d'un compte à l'autre en nomme deux) ; un identifiant anonyme de
-   RevenueCat ($RCAnonymousID:…) n'est pas un compte Folio. */
+   RevenueCat ($RCAnonymousID:…) n'est pas un compte Mirandola. */
 export function comptesDeLEvenementRC(corps) {
   const e = (corps && corps.event) || {};
   const ids = [e.app_user_id, e.original_app_user_id, ...(e.transferred_from || []), ...(e.transferred_to || [])];

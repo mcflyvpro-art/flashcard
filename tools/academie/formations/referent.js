@@ -1,19 +1,19 @@
-// Folio Academy — Référent : l'essentiel en quatre étapes (ordinateur, vouvoiement).
+// Mirandola Academy — Référent : l'essentiel en quatre étapes (ordinateur, vouvoiement).
 // Ce qui bloque un référent : activer sa console, créer les classes,
 // distribuer les codes, corriger un compte. Le reste (licence et factures,
 // ajouter un professeur, historique, cartes élève) se découvre.
 
 async function scenario(t) {
-  await t.carte({ sur: 'Folio Academy · Référent', titre: 'Mettre en place Folio',
+  await t.carte({ sur: 'Mirandola Academy · Référent', titre: 'Mettre en place Mirandola',
     txt: 'Votre console, vos classes, vos codes, vos corrections.' });
-  await t.dire('En tant que référent, vous organisez Folio pour tout l’établissement : les classes, les codes, et les comptes.');
+  await t.dire('En tant que référent, vous organisez Mirandola pour tout l’établissement : les classes, les codes, et les comptes.');
 
   /* ---------- 1 ---------- */
   await t.chapitre('Activer votre console', ['Le code référent', 'L’accueil'], { sous: 'Le code référent, à usage unique.' });
   await t.dire('Première étape : activer votre console.');
   await t.sansCarte();
   await t.etape(0);
-  await t.dire('Créez votre compte, puis, dans les Réglages, touchez J’ai un code et tapez le code référent que Folio vous a envoyé. Il ne sert qu’une fois.', async () => {
+  await t.dire('Créez votre compte, puis, dans les Réglages, touchez J’ai un code et tapez le code référent que Mirandola vous a envoyé. Il ne sert qu’une fois.', async () => {
     await t.toucher('[data-lm="up"]');
     await t.pause(300);
     await t.taper('#em', 'claire.roux@lycee-demo.fr', { delai: 40 });
@@ -111,17 +111,17 @@ async function scenario(t) {
 
   /* ---------- fin ---------- */
   await t.taire();
-  await t.carte({ sur: 'Folio Academy · Référent', titre: 'Votre établissement est prêt', txt: 'À découvrir ensuite :',
+  await t.carte({ sur: 'Mirandola Academy · Référent', titre: 'Votre établissement est prêt', txt: 'À découvrir ensuite :',
     puces: ['Licence et factures', 'Ajouter un professeur', 'Historique', 'Cartes élève'] });
-  await t.dire('C’est tout pour l’essentiel. Dans l’onglet Licence, vous retrouverez vos places, vos factures, et vos échanges avec Folio.');
+  await t.dire('C’est tout pour l’essentiel. Dans l’onglet Licence, vous retrouverez vos places, vos factures, et vos échanges avec Mirandola.');
   await t.dire('Bonne rentrée !');
   await t.pause(1200);
 }
 
 export default {
-  nom: 'referent', fichier: 'Folio-Academy-3-Referent.mp4', mode: 'pc', module: 'Référent', depart: '/connexion',
-  titre: 'Folio Academy — Référent : mettre en place Folio',
-  intro: { sur: 'Folio Academy · Référent', titre: 'Mettre en place Folio', txt: 'L’essentiel en quatre étapes. Chacune a son minutage.',
-    repliques: ['Bienvenue dans la Folio Academy !', 'Voici, en quatre étapes, comment mettre en place Folio dans votre établissement.'] },
+  nom: 'referent', fichier: 'Mirandola-Academy-3-Referent.mp4', mode: 'pc', module: 'Référent', depart: '/connexion',
+  titre: 'Mirandola Academy — Référent : mettre en place Mirandola',
+  intro: { sur: 'Mirandola Academy · Référent', titre: 'Mettre en place Mirandola', txt: 'L’essentiel en quatre étapes. Chacune a son minutage.',
+    repliques: ['Bienvenue dans la Mirandola Academy !', 'Voici, en quatre étapes, comment mettre en place Mirandola dans votre établissement.'] },
   scenario
 };

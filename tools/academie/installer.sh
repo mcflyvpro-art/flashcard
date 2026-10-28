@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ce qu'il faut pour tourner la Folio Academy, rangé hors du suivi git
+# Ce qu'il faut pour tourner la Mirandola Academy, rangé hors du suivi git
 # (.academie/ à la racine, ou ACADEMIE_DIR) : un Python à part pour la voix,
 # et, faute de clé de voix (GEMINI_API_KEY, GOOGLE_TTS_API_KEY), la voix de
 # repli Kokoro (Apache 2.0, ~350 Mo, depuis GitHub). ffmpeg doit être là.

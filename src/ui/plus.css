@@ -1,4 +1,4 @@
-/* ══════════ l'écran Folio+ (préfixe fp-, chargé avec ui/plus.js) ══════════
+/* ══════════ l'écran Mirandola+ (préfixe fp-, chargé avec ui/plus.js) ══════════
    Le « + » prend la lumière de la marque (bleu, lilas, rose), comme sur la
    page d'accueil ; le reste suit la charte de l'app : surfaces blanches
    cernées d'un filet, l'encre pour habiller, l'azur pour ce qui se compte. */
@@ -10,15 +10,40 @@
 .fp-col{display:flex;flex-direction:column;gap:18px;min-width:0}
 .fp-h2{margin:0 0 10px;font-size:15px;font-weight:750;letter-spacing:-.2px}
 
-/* ce que le compte a */
-.fp-etat{display:flex;flex-direction:column;gap:10px}
-.fp-ligne{display:flex;flex-direction:column;gap:4px;padding:16px 18px;border-radius:18px;background:var(--card);box-shadow:var(--edge)}
-.fp-titre{font:700 22px/1.15 var(--serif);letter-spacing:-.4px}
-.fp-ligne span{font-size:14px;font-weight:600;color:var(--soft)}
+/* ma licence : une pastille d'état, des lignes, l'engagement, les gestes */
+.fp-campus{font-style:italic;background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);-webkit-background-clip:text;
+  background-clip:text;color:transparent;padding-right:.08em}
+.fp-licence{display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:22px;background:var(--card);
+  box-shadow:var(--edge),var(--s2)}
+.fp-charge{min-height:220px}
+.fp-l-tete{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fp-l-tete .fp-h2{margin:0}
+.fp-pastille{flex:none;padding:4px 10px;border-radius:99px;font-size:12.5px;font-weight:750}
+.fp-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+.fp-am{color:var(--am);background:color-mix(in srgb,var(--am) 13%,transparent)}
+.fp-ko{color:var(--ko);background:color-mix(in srgb,var(--ko) 13%,transparent)}
+.fp-l{display:flex;flex-direction:column;margin:0}
+.fp-l > div{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 0;border-top:1px solid var(--hair)}
+.fp-l > div:first-child{border-top:0;padding-top:2px}
+.fp-l dt{font-size:13.5px;font-weight:600;color:var(--soft)}
+.fp-l dd{margin:0;font-size:14.5px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.fp-ia dd{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.fp-jauge{display:block;width:120px;height:6px;border-radius:99px;background:var(--az1);overflow:hidden}
+.fp-jauge b{display:block;height:100%;border-radius:inherit;background:var(--az5);transition:width .4s var(--e)}
+.fp-engage{margin:0;padding:12px 14px;border-radius:14px;font-size:13.5px;font-weight:600;line-height:1.45;color:var(--ink2);
+  background:var(--bg)}
+.fp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fp-act{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 12px;border:0;border-radius:14px;
+  font:inherit;font-size:14px;font-weight:700;color:var(--ink);background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);
+  text-decoration:none;cursor:pointer}
+.fp-act:only-child{grid-column:1 / -1}
+.fp-act svg{width:17px;height:17px;flex:none}
+.fp-act:disabled{opacity:.6;cursor:default}
+.fp-resilier{color:var(--ko)}
+.fp-ou{text-align:left}
 .fp-alerte{display:flex;gap:10px;align-items:flex-start;margin:0;padding:12px 14px;border-radius:14px;font-size:14px;font-weight:600;
   line-height:1.4;color:var(--am);background:color-mix(in srgb,var(--am) 13%,transparent)}
 .fp-alerte svg{width:18px;height:18px;flex:none;margin-top:1px}
-.fp-gerer{width:100%;text-decoration:none}
 /* ce que l'élève vient de toucher (ui/bridage.js) */
 .fp-raison{display:flex;gap:10px;align-items:center;margin:-4px 0 16px;padding:12px 16px;border-radius:16px;font-size:15px;font-weight:700;
   line-height:1.35;color:#fff;background:var(--plus);box-shadow:0 12px 24px -16px rgba(120,70,160,.9)}
@@ -39,9 +64,6 @@
 .fp-f-prix{font-size:13px;font-weight:650;color:var(--soft)}
 .fp-f-prix b{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--ink);font-variant-numeric:tabular-nums}
 .fp-f-note{font-size:12px;font-weight:600;color:var(--soft);line-height:1.35}
-.fp-inclus{display:flex;flex-direction:column;gap:8px;margin:2px 0 0;padding:0;list-style:none}
-.fp-inclus li{display:flex;gap:9px;align-items:flex-start;font-size:14px;font-weight:550;line-height:1.35}
-.fp-inclus svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--az5);stroke-width:2.4}
 .fp-payer{display:flex;align-items:center;justify-content:center;gap:8px;height:52px;border:0;border-radius:16px;color:#fff;
   font:inherit;font-size:16px;font-weight:750;cursor:pointer;background:linear-gradient(135deg,#4D68C2,#8C6BC2 52%,#C9577F);
   box-shadow:0 12px 24px -14px rgba(110,70,160,.9)}
@@ -66,22 +88,34 @@
 .fp-merci.neuf{animation:fp-arrive .45s var(--e) both}
 @keyframes fp-arrive{from{opacity:0;transform:translateY(6px) scale(.98)}}
 
-/* sur tous ses écrans : cet appareil, puis le QR du téléphone */
+/* les avantages, en détail */
+.fp-avantages{padding:18px;border-radius:22px;background:var(--card);box-shadow:var(--edge)}
+.fp-av{display:flex;flex-direction:column;gap:14px;margin:4px 0 0;padding:0;list-style:none}
+.fp-av li{display:flex;gap:12px;align-items:flex-start}
+.fp-av-ic{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:11px;color:#fff;
+  background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D)}
+.fp-av-ic svg{width:18px;height:18px}
+.fp-av span{display:flex;flex-direction:column;gap:2px;font-size:13.5px;font-weight:550;line-height:1.4;color:var(--soft)}
+.fp-av b{font-size:14.5px;font-weight:750;color:var(--ink)}
+
+/* sur cet ordinateur : installer, puis le QR du téléphone */
 .fp-partout{display:flex;flex-direction:column;gap:10px}
 .fp-ici{display:flex;align-items:center;justify-content:center;gap:9px;height:50px;border-radius:15px;font:inherit;font-size:15px;
   font-weight:700;text-decoration:none}
 .fp-ici svg{width:18px;height:18px}
 .fp-bouton{border:0;color:#fff;background:var(--ink);cursor:pointer}
-.fp-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
 .fp-qr{display:flex;align-items:center;gap:14px;padding:12px;border-radius:16px;background:var(--card);box-shadow:var(--edge)}
 .fp-qr svg.qr{width:96px;height:96px;flex:none;border-radius:8px;stroke:none}
 .fp-qr span{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;font-weight:600;line-height:1.4;color:var(--ink2)}
 .fp-qr span svg{width:18px;height:18px;flex:none;color:var(--soft)}
-.fp-adresse span{flex-direction:column;gap:2px}
-.fp-adresse span b{font-size:14.5px;color:var(--ink)}
-.fp-adresse > svg{width:22px;height:22px;flex:none;color:var(--soft)}
 
+/* au téléphone, les deux gestes l'un sous l'autre : côte à côte, leurs mots se coupaient */
+@media (max-width:520px){
+  .fp-actions{grid-template-columns:1fr}
+}
 @media (min-width:900px){
+  /* une entrée de la barre latérale : pas de retour, comme les autres pages de premier niveau */
+  #app[data-view="plus"] > .bar{display:none}
   .fp-grille{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start;gap:22px}
   .fp-merci{max-width:none}
 }

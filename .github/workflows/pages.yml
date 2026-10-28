@@ -1,7 +1,7 @@
 name: Pages
 
 # L'app ne se publie plus sur GitHub Pages : elle vit sur
-# https://www.folioflashcard.online/ (Vercel). Ce déploiement ne sert qu'à
+# https://mirandola.fr/ (Vercel). Ce déploiement ne sert qu'à
 # faire suivre les anciens liens (https://mcflyvpro-art.github.io/flashcard/…)
 # vers le domaine, code de classe, de partie ou livre partagé compris, et à
 # désinscrire l'ancien service worker des téléphones qui l'avaient en cache.

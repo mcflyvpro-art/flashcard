@@ -1,6 +1,6 @@
 {
-  "name": "Folio",
-  "short_name": "Folio",
+  "name": "Mirandola",
+  "short_name": "Mirandola",
   "id": "/",
   "start_url": "/app",
   "scope": "/",
@@ -14,7 +14,7 @@
   "related_applications": [
     {
       "platform": "webapp",
-      "url": "https://www.folioflashcard.online/manifest.webmanifest"
+      "url": "https://mirandola.fr/manifest.webmanifest"
     }
   ],
   "display": "standalone",

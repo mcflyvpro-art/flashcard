@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { MAX, MESSAGES, MOTS, PREFIXES, RACINES, RESERVES, cle, message, motif, proposer, saisie, valide } from '../src/pseudo.js';
 import { ecritPseudo, pseudoNeuf, rpcPseudos } from '../src/base-locale/pseudos.js';
 
-/* La base tranche avec `pseudo_motif` (migration 20261027090000) : ses
-   listes doivent être celles de l'écran, mot pour mot, sinon l'écran dit
-   « libre » à un pseudo que la base refuse (ou l'inverse). */
-const sql = readFileSync('supabase/migrations/20261027090000_les_pseudos_ont_des_regles.sql', 'utf8');
+/* La base tranche avec `pseudo_motif` (sa dernière définition : la
+   migration la plus récente qui la crée) : ses listes doivent être celles
+   de l'écran, mot pour mot, sinon l'écran dit « libre » à un pseudo que la
+   base refuse (ou l'inverse). */
+const dossier = 'supabase/migrations/';
+const sql = readdirSync(dossier).sort().map(f => readFileSync(dossier + f, 'utf8'))
+  .filter(t => t.includes('function public.pseudo_motif(h text)')).at(-1);
 const listeSql = nom => {
   const m = sql.match(new RegExp(nom + ' constant text\\[\\] := array\\[([^\\]]*)\\]'));
   return m[1].match(/'([^']*)'/g).map(x => x.slice(1, -1));

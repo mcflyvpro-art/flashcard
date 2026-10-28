@@ -1,4 +1,4 @@
-/* Les couleurs de Folio (2026-10-27) — module pur, sans dépendance, testé
+/* Les couleurs de Mirandola (2026-10-27) — module pur, sans dépendance, testé
    dans test/couleurs.test.js. Une couleur fait UN travail, jamais deux :
 
    - l'encre (les neutres de app.css) habille l'interface ;

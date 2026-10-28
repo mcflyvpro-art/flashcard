@@ -8,5 +8,8 @@
    ouvrait le navigateur au lieu de l'app. Sous Capacitor, `location`
    vaudra `capacitor://localhost` : un lien partagé ne mènerait nulle part.
    Un seul domaine, donc, celui où l'app est installée et où les liens
-   universels (iOS) et App Links (Android) seront déclarés. */
-export const SITE = 'https://www.folioflashcard.online/';
+   universels (iOS) et App Links (Android) seront déclarés : mirandola.fr
+   depuis le 2026-10-28 (l'ancien, folioflashcard.online, sert toujours
+   l'app à qui l'y a installée, sans redirection — son stockage local, et
+   les écritures pas encore envoyées, sont propres à son origine). */
+export const SITE = 'https://mirandola.fr/';

@@ -169,13 +169,13 @@ describe('les cartes du début et de la fin', () => {
     expect(debutDe('ref', {}).passe).toMatch(/Réglages/);
     expect(debutDe('classe', { demo: true }).passe).toMatch(/bandeau/);
   });
-  it('un élève finit sur Folio+, un prof de la démo sur Folio Campus, un établissement client sur « tout est prêt »', () => {
+  it('un élève finit sur Mirandola+, un prof de la démo sur Mirandola Campus, un établissement client sur « tout est prêt »', () => {
     expect(finDe('perso').cle).toBe('plus');
     expect(finDe('classe', { demo: true }).cle).toBe('plus');
     expect(finDe('classe', { demo: true }).actions[0]).toMatchObject({ href: '/inscription', partir: 1 });
     expect(finDe('perso').actions[0].href).toBe('tarifs');
-    expect(finDe('perso', { aPlus: true }).cle).toBe('pret');            // Folio+ offert ou payé, Campus : rien à lui vendre
-    expect(finDe('classe', { aPlus: true, demo: true }).cle).toBe('plus');   // la démo essaie Folio gratuit
+    expect(finDe('perso', { aPlus: true }).cle).toBe('pret');            // Mirandola+ offert ou payé, Campus : rien à lui vendre
+    expect(finDe('classe', { aPlus: true, demo: true }).cle).toBe('plus');   // la démo essaie Mirandola gratuit
     expect(finDe('prof', { demo: true }).cle).toBe('campus');
     expect(finDe('ref', { demo: true }).actions[0].href).toBe('/demande-demo');
     expect(finDe('prof').cle).toBe('pret');

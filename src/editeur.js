@@ -1,4 +1,4 @@
-/* L'éditeur de Folio et son contact — un fichier sans aucune dépendance,
+/* L'éditeur de Mirandola et son contact — un fichier sans aucune dépendance,
    comme racine.js : les textes du cadre (ui/legal-textes.js, chargés à la
    demande) s'en servent au niveau module, et ui/connexion.js vérifie dès le
    démarrage qu'ils sont remplis.

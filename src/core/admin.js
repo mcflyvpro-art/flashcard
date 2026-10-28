@@ -55,14 +55,14 @@ export async function admRole(cible, nouveau) {
   return r;
 }
 
-/* Folio+ offert à un compte, sans fin, ou repris (admin_offrir_plus,
+/* Mirandola+ offert à un compte, sans fin, ou repris (admin_offrir_plus,
    20261027210000) : un ami, un testeur, un geste commercial. Ne touche
    jamais un abonnement payé — il reste à Stripe ou au magasin. */
 export async function admOffrirPlus(cible, retirer) {
   const r = await admAgir('admin_offrir_plus', { cible, jusqua: null, retirer: !!retirer });
   if (r && r.offre) {
-    toast(I.check, r.offre === 'gratuit' ? 'Folio+ repris : le compte est en Folio gratuit'
-      : r.offre === 'campus' ? 'Enregistré : son établissement lui offre déjà tout' : 'Folio+ offert');
+    toast(I.check, r.offre === 'gratuit' ? 'Mirandola+ repris : le compte est en Mirandola gratuit'
+      : r.offre === 'campus' ? 'Enregistré : son établissement lui offre déjà tout' : 'Mirandola+ offert');
   }
   return r;
 }

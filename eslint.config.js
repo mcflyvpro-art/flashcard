@@ -50,7 +50,7 @@ export default [
     files: ['tools/affiches.js'],
     languageOptions: { sourceType: 'module', globals: { ...globals.node, ...globals.browser } }
   },
-  /* la Folio Academy : Node, et la page cadre dans page.evaluate() (son objet A) */
+  /* la Mirandola Academy : Node, et la page cadre dans page.evaluate() (son objet A) */
   {
     files: ['tools/academie/**/*.js'],
     languageOptions: { sourceType: 'module', globals: { ...globals.node, ...globals.browser, A: 'readonly' } }

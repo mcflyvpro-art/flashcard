@@ -1,11 +1,29 @@
-# Folio — consignes pour Claude
+# Mirandola — consignes pour Claude
 
-Folio est une PWA de révision (flashcards + moteur FSRS d'Anki) vendue en
+Mirandola est une PWA de révision (flashcards + moteur FSRS d'Anki) vendue en
 **B2C** (élèves, étudiants) et en **B2B** (licences établissement : élèves,
 professeurs, référents, éditeurs — modèle « à la Pronote »). Tout ce qui est
 écrit ici doit tenir quand un lycée entier se connecte le même matin.
 
 Langue : **français** partout — code commenté, messages de commit, réponses.
+
+## Le nom : Mirandola (depuis le 2026-10-28)
+
+L'app s'appelait **Folio** ; elle s'appelle **Mirandola** (d'après Pic de la
+Mirandole), ses offres **Mirandola gratuit**, **Mirandola+** et **Mirandola
+Campus**, son domaine **`https://mirandola.fr/`**. Partout où un humain lit
+— app, démo, site, consoles, factures, e-mails, messages de la base
+(migration `20261028090000`) —, plus un « Folio ». **Mais les noms internes
+restent**, exprès : clés de stockage (`folio.*`, `cartes.*`), identifiants
+de code (`aFolioPlus`, `sansFolioPlus`, `history.state.folio`, le cache
+`folio-` du service worker), format de sauvegarde (`folio-bibliotheque`),
+valeurs rangées en base (`org_echanges.de = 'folio'`), e-mails techniques
+(`@eleves.folio.invalid`), noms des migrations et des tests SQL d'avant. Les
+renommer couperait un appareil de ses données ou un fichier de son import :
+ne jamais le faire. « folio » reste un pseudo réservé, « mirandola » aussi.
+L'adresse de l'écran Mirandola+ est `…/mirandola-plus` (`…/folio-plus` se lit
+encore). Ce qui suit dit « Mirandola » pour le produit ; un nom de fichier ou
+d'identifiant en `folio` est exact tel qu'il est écrit.
 
 ## Chantier en cours : la page d'accueil publique
 
@@ -59,8 +77,8 @@ l'air de marcher ».
     les captures du manifeste (`public/shots/`) se photographient dans la
     démo sans compte, à 10 h du matin (`node tools/affiches.js`, sur un
     `vite preview` au port 4190 ; des noms d'affiches pour n'en refaire que
-    quelques-unes ; il marque les tutos de la démo comme vus, la Folio
-    Academy aussi). Dans Folio Campus, l'ordinateur de chaque rôle a, pour
+    quelques-unes ; il marque les tutos de la démo comme vus, la Mirandola
+    Academy aussi). Dans Mirandola Campus, l'ordinateur de chaque rôle a, pour
     l'élève et le professeur, le même espace au téléphone posé contre lui
     (`#tel-campus`, écrans `data-onglet`, rangé pour le référent :
     `onglets()` de site.js, depuis le 2026-10-27). **Le même logo est celui de l'app**
@@ -71,6 +89,13 @@ l'air de marcher ».
     et sur l'écran d'ouverture ; les onglets du téléphone gardent leur titre
     en haut, sans logo (demandé le 2026-10-27) ; les icônes installées (`public/icons/*.png`) se
     photographient depuis `public/site/icone.svg` (`node tools/icones.js`).
+    **Référencement** (2026-10-28, mirandola.fr) : titre et description
+    sur les mots qu'on cherche (flashcards, IA, répétition espacée), balise
+    canonique et `hreflang` vers `https://mirandola.fr/`, données
+    structurées (Organization, WebSite, SoftwareApplication avec ses offres
+    — Mirandola+ au mois et à l'année, Campus par place —, ses fonctions et
+    ses captures, et la FAQ entière, mot pour mot celle de la page),
+    `public/sitemap.xml`, `public/robots.txt`.
     Parcours : `e2e/site.e2e.js`. **Tout est dans `docs/LANDING.md`** (dont
     comment insérer les vidéos).
     `app.html` — l'app (`noindex`) : écran d'ouverture inline, charge
@@ -90,11 +115,11 @@ l'air de marcher ».
     autour de 65 à 70 % —, sans révision en dessous), la pile
     qu'on note dans le héros de `essai()` (`src/site/site.js`). La section
     « Sur tous tes écrans » (`#telecharger`) est **partie le 2026-10-27** ;
-    depuis le 2026-10-28, un téléphone pose Folio sur son écran d'accueil
+    depuis le 2026-10-28, un téléphone pose Mirandola sur son écran d'accueil
     depuis le navigateur (la porte d'installation, plus bas), sans magasin,
     un ordinateur l'ouvre dans son navigateur (la FAQ le dit, visible et
     JSON-LD ; `test/site.test.js` vérifie qu'elle ne parle plus de magasin
-    et que la section ne revient pas). Le bouton « Passer à Folio+ » (`data-vente`) porte
+    et que la section ne revient pas). Le bouton « Passer à Mirandola+ » (`data-vente`) porte
     `data-vente-an`/`data-vente-mois` (`/app?plus=…`) tant que la vente est
     ouverte (sinon il mène à l'inscription) — site.js n'importe pas
     `src/abonnement.js` (partagé avec le démarrage de l'app, il ferait
@@ -125,7 +150,7 @@ l'air de marcher ».
     tout lien entrant** : `lienAvantSession()` au démarrage — carte élève,
     puis sans session les codes `?rejoindre=`/`?defi=`/`?club=` rangés en
     `sessionStorage` (`folio.rejoindre`, `folio.defi`, `folio.club`) —,
-    `lienApresRole()` depuis `accueil()` — et `?plus=` (l'écran Folio+ : un
+    `lienApresRole()` depuis `accueil()` — et `?plus=` (l'écran Mirandola+ : un
     bouton du site, le retour de Stripe, `consumePlus`, rangé en
     `folio.plus` sans session) —, et `traiterLienEntrant(url)` pour un
     lien reçu app ouverte : c'est là que se branche `appUrlOpen` de Capacitor ;
@@ -137,7 +162,7 @@ l'air de marcher ».
     Safari ; sur Android, `confierPassage`/`reprendrePassage` font passer le
     code à l'app installée par `localStorage['folio.passage']`, une heure au
     plus), `ui/bridage.js`
-    (ce que Folio gratuit n'ouvre pas, voir « Folio+ » plus bas),
+    (ce que Mirandola gratuit n'ouvre pas, voir « Mirandola+ » plus bas),
     `ui/pwa-porte.js` (**la porte d'installation**, voir plus bas), et trois morceaux chargés à la demande, l'espace professeur,
     l'écran d'une partie en direct et le journal de lecture — voir plus bas).
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
@@ -207,7 +232,7 @@ l'air de marcher ».
     — une par élève ET par professeur — et le prix convenu, les factures et
     avoirs, chacun à son adresse `/referent/licence/factures/<id>` et
     imprimable, les coordonnées de facturation pour Chorus Pro, le fil des
-    échanges avec Folio — « Des places », « Renouveler » préremplissent le
+    échanges avec Mirandola — « Des places », « Renouveler » préremplissent le
     sujet —, et les documents du contrat : conditions générales de vente,
     contrat de sous-traitance (art. 28 RGPD) avec les sous-traitants, fiche
     pour le registre — `ui/documents-etab.js` + `documents-etab.css`, préfixe
@@ -462,13 +487,13 @@ l'air de marcher ».
     Scénarios : **l'élève** (particulier et de classe) — ses livres (un
     livre qui a des pages à lire, ou le premier qu'il crée : « Remplir pour
     moi », trois pages de sa première matière), une flashcard lue, retournée,
-    notée (voile léger : la réponse se lit), « Folio s'en souvient » (un mot
+    notée (voile léger : la réponse se lit), « Mirandola s'en souvient » (un mot
     au centre), comment créer (« Nouveau livre », les cinq façons — dans la
     démo d'un élève, bibliothèque pleine : un mot seulement), son journal,
     sa classe et ses devoirs (s'il en a une), ses amis ou camarades, son
-    courrier, puis **Folio+** (la page des tarifs, `?site#tarifs`, dans un
+    courrier, puis **Mirandola+** (la page des tarifs, `?site#tarifs`, dans un
     autre onglet ; une fois la vente ouverte, `VENTE_OUVERTE`, l'écran
-    Folio+ de l'app, `ouvrirPlus`) ; **le professeur**, pas à pas — son code, ses classes
+    Mirandola+ de l'app, `ouvrirPlus`) ; **le professeur**, pas à pas — son code, ses classes
     choisies (établissement : sa matière, « Ajouter », « Terminé ») ou sa
     classe créée (particulier) et la feuille du code, le tableau de bord,
     « À traiter », une classe, son suivi, un élève et sa fiche, l'onglet
@@ -478,9 +503,9 @@ l'air de marcher ».
     licence, puis sur ordinateur les onglets Classes, Élèves, Professeurs,
     Licence, Historique (au téléphone, les codes et la licence) ; « Tout est
     prêt » ; **l'éditeur** — rien. La fin de la démo d'un professeur ou d'un
-    référent : **Folio Campus**, la marque du site (le logo sur son carré de
+    référent : **Mirandola Campus**, la marque du site (le logo sur son carré de
     papier, l'école en écusson dégradé, « Campus » en italique dégradée, la
-    carte sombre au liseré qui tourne, comme Folio+). Il part une fois : à
+    carte sombre au liseré qui tourne, comme Mirandola+). Il part une fois : à
     la fin de l'accueil d'un élève, à la première connexion d'un professeur
     ou d'un référent (`maybeTuto(pret)` après `accueil()`, seulement sur
     l'écran d'arrivée et sans feuille ouverte), après une entrée par code
@@ -503,63 +528,101 @@ l'air de marcher ».
     contre ceux des autres, au moment même — hors ligne, l'écran le dit).
     L'ancien `saveHandle` (un POST de `profiles` avec `handle`) n'existe
     plus : la base le refuse. Parcours `e2e/pseudo.e2e.js`.
-    **Folio+** (2026-10-27, tous les parcours et le pas à pas dans
-    **`docs/VENTE.md`**) : **les comptes d'avant le 2026-10-27 ont Folio+
+    **Mirandola+** (2026-10-27, tous les parcours et le pas à pas dans
+    **`docs/VENTE.md`**) : **les comptes d'avant le 2026-10-27 ont Mirandola+
     offert** (migration `20261027210000`, sans fin : certains ont plus de 5
-    livres) ; un compte neuf est en **Folio gratuit, bridé pour de vrai**
+    livres) ; un compte neuf est en **Mirandola gratuit, bridé pour de vrai**
     (`ui/bridage.js`, au démarrage : les règles de `src/offres.js` —
     `offreActive()`, `bride(f)`, `plein()`, `moteurLite()`, `aFolioPlus()` —
     appliquées par trois marques de la racine, `html.offre-gratuit`,
     `html.livres-plein`, `html.offre-plus`, et un écouteur en capture : un
-    geste bridé ouvre l'écran Folio+ avec sa raison, `RAISONS`, ou la
+    geste bridé ouvre l'écran Mirandola+ avec sa raison, `RAISONS`, ou la
     fenêtre de la démo). **Une offre inconnue ne bride rien** (pas encore lue,
     base sans la fonction, hors ligne sans copie) : `offrePull` ne retombe
     jamais sur « gratuit », `offreLocale()` lit au démarrage la copie
     `folio.offre.<uid>`, `accueil()` la redemande avec le rôle et repeint si
-    elle a changé. **L'onglet Folio+** (`ongletPlus()` de `ui/plus-porte.js` :
-    élève ou professeur en Folio gratuit, la base l'ayant dit) ferme la
-    barre du bas au téléphone (`tabs()`, `.t-plus`, hors du balayage) et a
-    son entrée dans la barre latérale (`railPlus`, `.r-plus`) ; Folio+ pris,
-    il s'en va. **Folio+ se voit** (`html.offre-plus`, `app.css`) : le « + »
-    après « Folio » dans la barre, la lumière de la marque (`--plus`) sur
+    elle a changé. **L'onglet Mirandola+** (`ongletPlus()` de `ui/plus-porte.js` :
+    élève ou professeur en Mirandola gratuit, la base l'ayant dit) ferme la
+    barre du bas au téléphone (`tabs()`, `.t-plus`, hors du balayage) ;
+    Mirandola+ pris, il s'en va, et l'écran s'ouvre des Réglages. **Sur
+    ordinateur, l'entrée de la barre latérale reste** (2026-10-28,
+    `entreePlus()`, `railPlus`, `.r-plus` : en bas, au-dessus des Réglages,
+    pour tout élève ou professeur — « Campus » pour un compte
+    d'établissement). **Mirandola+ se voit** (`html.offre-plus`, `app.css`) : le « + »
+    après « Mirandola » dans la barre, la lumière de la marque (`--plus`) sur
     l'onglet allumé, le bouton principal, les barres de progression et le
     bouton rond, et le **liseré du jeton** (`.jt-plus` : le mien selon mon
     offre, celui d'un autre selon `visuels()`, qui rend `plus`) — pas pour
-    Campus, qui ne s'achète pas. L'écran Folio+ (vue `plus`, adresse
-    `…/folio-plus` pour l'élève et le professeur, jamais le référent,
+    Campus, qui ne s'achète pas. L'écran Mirandola+ (vue `plus`, adresse
+    `…/mirandola-plus` pour l'élève et le professeur, jamais le référent,
     l'éditeur ni la démo — `sansFolioPlus`), chargé à la demande par
     `ui/plus-porte.js` (`plusView`, `ouvrirPlus({ etape, formule, raison })`,
     `consumePlus` pour `?plus=annuel|mensuel|merci|annule|retour`) :
     `ui/plus.js` + `plus.css` (préfixe `fp-`) — rien d'autre ne doit
     importer `ui/plus.js`. Pour un compte gratuit c'est un onglet (pas de
-    retour, la barre du bas). Ce que le compte a (`mon_offre`, dit par
-    `resume()` de `src/abonnement.js`), « Gérer mon abonnement » là où il a
-    été pris (`gestion()` : le portail de Stripe, les réglages de l'iPhone,
-    Google Play ; depuis l'app des magasins, jamais de lien vers Stripe), les
-    deux formules et « Passer à Folio+ » : **par Stripe dans un navigateur**
+    retour, la barre du bas) ; sur ordinateur, une page de premier niveau
+    (pas de retour non plus). Refait le 2026-10-28 : à gauche, pour un
+    compte gratuit, les deux formules ; pour Mirandola+ ou Campus, **« Ma
+    licence »** (`licence()` de `src/abonnement.js`, pur et testé : une
+    pastille d'état — Actif, Résilié, Paiement refusé, Essai, Offert —, la
+    formule, le **prix payé** — `montant` de la ligne d'abonnement, celui de
+    Stripe ou du magasin, sinon celui de la formule —, la prochaine échéance
+    ou la fin, le moyen de paiement, **l'IA du mois** — `iaMoisPull()` de
+    `core/abonnement.js`, la table `ai_usage` que chacun lit pour lui seul,
+    `iaDuMois()` : « 12 sur 30 », sans compter pour un professeur — et
+    **l'engagement** en une phrase : annuel payé d'avance, mensuel sans
+    engagement, résilié sans nouveau prélèvement) et ses gestes là où
+    l'abonnement a été pris (`gestion()` : Stripe, « Carte et factures » et
+    **« Résilier l'abonnement »**, qui ouvre le portail droit sur la
+    résiliation — action `resilier` de la fonction `paiement`, `flow_data`
+    de Stripe ; résilié, « Reprendre l'abonnement » ; les réglages de
+    l'iPhone, Google Play ; depuis l'app des magasins, jamais de lien vers
+    Stripe ; offert ou Campus, rien). À droite, **les avantages en détail**
+    (`AVANTAGES_DETAIL` : une icône, un titre, une ligne, et la ligne d'un
+    professeur), puis, **sur un ordinateur où Mirandola n'est pas installé
+    seulement**, « Installer Mirandola » et le QR du téléphone (au
+    téléphone, rien à installer : la porte d'installation y a déjà mené).
+    « Passer à Mirandola+ » : **par Stripe dans un navigateur**
     (`versStripe`, la fonction `paiement`, puis `location.assign`), **par
     l'achat intégré dans l'app des magasins** (`vente(p)` de
     `src/plateformes.js` ; `versMagasin`/`restaurerAchats` de
     `core/abonnement.js` : le greffon RevenueCat sous
     `Capacitor.Plugins.Purchases`, les clés publiques dans `REVENUECAT`,
-    puis la fonction `magasins` relit l'abonné ; « Restaurer mes achats »),
-    et **Sur tous tes écrans** (`ecransHtml`, 2026-10-28 : plus aucun
-    magasin — « Installer sur cet ordinateur » ou « Installé », et le QR du
-    téléphone, qui ouvre Folio dans son navigateur, donc la porte
-    d'installation et son animation ; au téléphone, l'adresse pour
-    l'ordinateur). Au
+    puis la fonction `magasins` relit l'abonné ; « Restaurer mes achats »).
+    Au
     retour d'un paiement (`?plus=merci`, ou la feuille du magasin refermée),
     l'écran relit la base toutes les 2 s, 30 s au plus. La vente est ouverte
-    (`VENTE_OUVERTE`, `src/abonnement.js`) : la ligne « Folio+ » des Réglages
-    pour tous (« Gratuit », « Actif », « Offert », « Campus »). Supprimer son
+    (`VENTE_OUVERTE`, `src/abonnement.js`) : la ligne « Mirandola+ » des Réglages
+    pour tous (« Gratuit », « Actif », « Résilié », « Offert », « Campus »,
+    lus sur `resume().cle`, jamais sur un titre). Supprimer son
     compte avec un abonnement Stripe qui court : la base refuse et dit de le
     résilier d'abord (`delete_me`) ; un abonnement des magasins : la feuille
     prévient qu'il continue là-bas (`magasinCourt`, `ui/menus-c.js`).
-    L'éditeur offre ou reprend Folio+ depuis la fiche d'un compte
-    (`admin_offrir_plus`, `admOffrirPlus`). Parcours `e2e/folio-plus.e2e.js` (8 : un
-    compte gratuit qui paie et voit l'onglet partir, le bridage et ses
-    raisons, un compte d'avant, Campus, l'app des magasins, hors ligne,
-    webhook en retard, lien du site sans session).
+    L'éditeur offre ou reprend Mirandola+ depuis la fiche d'un compte
+    (`admin_offrir_plus`, `admOffrirPlus`). Parcours `e2e/mirandola-plus.e2e.js` (9 : un
+    compte gratuit qui paie, voit l'onglet partir, lit sa licence puis la
+    résilie ; l'entrée de la barre latérale qui reste, sur ordinateur ; le
+    bridage et ses raisons, un compte d'avant, Campus, l'app des magasins,
+    hors ligne, webhook en retard, lien du site sans session).
+    **Les prix** (2026-10-28) : Mirandola+ **6,99 € par mois, 49,99 € par
+    an** (−40 %, `FORMULES` de `src/abonnement.js`, la page d'accueil et les
+    prix Stripe disent la même chose — `test/site.test.js`) ; l'IA **30 cours
+    par mois** pour un élève (Mirandola+ ou Campus), **400** pour un
+    professeur — un garde-fou, pas une limite (`IA_PAR_MOIS`,
+    `IA_PROF_PAR_MOIS`, `iaParMois` de `src/offres.js` ; la fonction `ai` lit
+    le rôle dans `user_roles` : `AI_MONTHLY_PLUS`, `AI_MONTHLY_PROF`,
+    `AI_DAILY_PROF`, `AI_DAILY_FILES_PROF`) ; **Campus dégressif par
+    tranches** (`src/tarifs.js`, pur et testé, `test/tarifs.test.js` : une
+    place par élève et par professeur, 5 € HT jusqu'à 100 places, 3,50 €
+    jusqu'à 500, 2,50 € jusqu'à 1 500, 2 € au-delà, chaque place au prix de
+    sa tranche, 100 € HT minimum — un professeur particulier et ses élèves) :
+    le calculateur de la page d'accueil (`calcul()` de `src/site/site.js`,
+    `#calcul-campus`), le prix proposé par la console de l'éditeur en
+    passant en licence (`grille`, `ui/admin-console.js`) et la licence de la
+    démo (1 200 € HT pour 300 places) s'en servent. Un professeur
+    particulier : son espace gratuit (sur demande), Mirandola+ pour lui au
+    prix d'un élève avec l'IA sans compter, Campus pour lui et ses élèves
+    (le bloc `.particulier` des tarifs, la FAQ).
     **La porte d'installation** (2026-10-28, demandé : « bloquer la suite
     si le mobile n'est pas en PWA » ; remplace « mobile jamais web » et
     `ui/magasin.js`, supprimé) : sur un téléphone ou une tablette, dans le
@@ -581,18 +644,18 @@ l'air de marcher ».
     d'ENT —, d'où l'on sort : « Copier le lien » vers Safari, « Ouvrir dans
     Chrome » par un lien `intent:`) : un téléphone dessiné rejoue le geste
     en trois scènes (la barre et son bouton, le menu et sa ligne, l'écran
-    d'accueil où Folio apparaît), les étapes s'allument avec lui, une
+    d'accueil où Mirandola apparaît), les étapes s'allument avec lui, une
     flèche se pose au bord de l'écran vers le vrai bouton ; sur Android,
     l'invite du navigateur (`beforeinstallprompt`, rangée dans `bip` par
     `ui/onboarding.js`, attendue 2 s) donne un seul bouton « Installer
-    Folio », puis « C'est installé » (`appinstalled`) ; « Folio est déjà
+    Mirandola », puis « C'est installé » (`appinstalled`) ; « Mirandola est déjà
     là » si `getInstalledRelatedApps` le dit (`related_applications` du
     manifeste) ; « Tu ne trouves pas ? » propose Safari ou Chrome. Le code
     d'un lien (`rangerLiens` de `ui/liens-entrants.js`) y est montré à
     recopier et confié à l'app (Android) ; une session ouverte dans le
     navigateur continue d'envoyer ses écritures (`boot()` suit son cours,
     seul l'écran change ; ni `lienApresRole`, ni tuto, ni accueil). Puis on
-    ouvre Folio par son icône et l'on s'y connecte : à sa première
+    ouvre Mirandola par son icône et l'on s'y connecte : à sa première
     ouverture sans session, l'écran de connexion dit « C'est installé. Plus
     qu'à te connecter. » (`premiereOuverture`, jusqu'à la première
     connexion, `noterConnexion`, `folio.install.connecte`). Si un jour une
@@ -618,7 +681,7 @@ l'air de marcher ».
     adresse `/demo/<rôle>/…` rechargée : la démo reprend sur cet écran —
     rien d'autre ne doit importer `ui/demo.js`) ; on
     choisit élève (Léa, 2nde B), professeur (Marc) ou référent (Claire) du
-    **Lycée Démo Folio** — chacun avec son visage, le même dans la démo et
+    **Lycée Démo Mirandola** — chacun avec son visage, le même dans la démo et
     sur les trois rôles de la page d'accueil (`visageDemo`, `teinteDemo` de
     `monde.js`) — et la **vraie app** tourne : seul le réseau est
     remplacé. `setDemoEtab(servir)` branche dans `api()`/`apiPage()`
@@ -626,7 +689,7 @@ l'air de marcher ».
     **base locale** (`src/base-locale/`, le même Supabase en mémoire que les
     parcours e2e), semée par `src/base-locale/monde.js` (établissement en
     licence — 300 places, 900 € par an, deux factures dont une à régler, un
-    échange avec Folio, ses coordonnées de facturation, un vendeur d'exemple
+    échange avec Mirandola, ses coordonnées de facturation, un vendeur d'exemple
     qui se dit tel —, 4 classes et un groupe, 3 professeurs et leurs services, 20
     élèves qui ont travaillé — devoirs rendus, commencés, en retard —, la
     bibliothèque et dix semaines de journal de Léa, ses amis et une demande,
@@ -657,17 +720,17 @@ l'air de marcher ».
     `folio.demo.tuto` en `sessionStorage`, oubliés avec la démo et par
     `effacerDemo` ; « Recommencer » ne le relance pas) ; « Tuto » dans le bandeau
     le rejoue pour le rôle du moment (`data-dm="tuto"` ; sous 430 px il prend
-    la place de « Recommencer ») ; sa fin mène au compte (l'élève : Folio+,
-    « Créer mon compte ») ou à l'établissement (Folio Campus, « Essayer dans
+    la place de « Recommencer ») ; sa fin mène au compte (l'élève : Mirandola+,
+    « Créer mon compte ») ou à l'établissement (Mirandola Campus, « Essayer dans
     mon établissement »), en partant comme `data-dm="partir"`.
     **Ce qui coûte** — l'IA (onglets Fichier, Photo, Cours de
     la création), les images et les sons — est grisé en démo (`.payant`,
-    pastille `data-astuce` « Avec Folio+ » au survol et un « + » tracé,
-    `data-offre="plus"` : toute l'IA est dans Folio+) ; le toucher ouvre
+    pastille `data-astuce` « Avec Mirandola+ » au survol et un « + » tracé,
+    `data-offre="plus"` : toute l'IA est dans Mirandola+) ; le toucher ouvre
     une fenêtre qui dit ce que ferait la fonction et mène au compte ou à
-    Folio+ (`envie()` de `ui/demo.js`, par `ouvrirEnvie` de
+    Mirandola+ (`envie()` de `ui/demo.js`, par `ouvrirEnvie` de
     `ui/demo-porte.js`), et `aiCall`/`upload` refusent d'eux-mêmes (`demo`).
-    **La démo d'un élève est Folio gratuit** (`html.en-demo-libre`, posé par
+    **La démo d'un élève est Mirandola gratuit** (`html.en-demo-libre`, posé par
     le bandeau ; `offreActive()` de `ui/bridage.js` y rend « gratuit », le
     professeur et le référent de la démo « campus ») : le même bridage qu'un
     vrai compte gratuit — QCM et associations d'un livre, images et sons
@@ -725,12 +788,52 @@ l'air de marcher ».
     avant le premier appel à cette fonction dans le fichier, pas seulement
     avant son usage syntaxique.
   - `src/data/etat.js` — tout l'état mutable de l'app (`db`,
-    `view`, `study`, `animate`, `mediaCache`..., `tuto`, le tuto en cours, `offre` et `plus` (ce que le compte ouvre selon `mon_offre`, l'écran Folio+), et `demoEtab`, le lycée fictif qui répond à `api()` pendant « Essayer sans compte »), une liaison vive ES
+    `view`, `study`, `animate`, `mediaCache`..., `tuto`, le tuto en cours, `offre` et `plus` (ce que le compte ouvre selon `mon_offre`, l'écran Mirandola+), et `demoEtab`, le lycée fictif qui répond à `api()` pendant « Essayer sans compte »), une liaison vive ES
     (`export let`) par variable et un « setter » générique par variable pour
     la réaffectation (`setDb`, `setView`...) — lire ses champs reste direct (`db.decks.push`),
     seule une réaffectation complète passe par le setter (M06.T3/M06.T4)
-  - `src/fsrs.js` — le moteur, pur et testé (`test/fsrs.test.js`). **Réglé comme Anki, sans aucun curseur** (2026-10-25) : rétention visée figée à 90 % (`RETENTION`, `ui/carte-media.js` — `prefs.dr` n'est plus lu), intervalle plafond 36 500 j, paliers 1 min/10 min (rechute 10 min), les jours écoulés entre deux lectures comptés comme Anki — jours de calendrier, bascule à 4 h (`dayNo`, `BASCULE`, partagés avec `src/file.js`), le même compte pour noter, rejouer et optimiser (avant le 2026-10-27 : 24 h glissantes en notant, minuit en rejouant) —, flou d'Anki, et **l'équilibreur de charge d'Anki** (24.11+, actif par défaut : `equilibrer()`, jusqu'à 90 j, poids (1/n)^2,15 × (1/j)^3, 1 pour un jour vide, nourri par `chargeDes()` de `ui/carte-media.js`) ; les paramètres `w` se réoptimisent seuls (`fsrsAuto`). La page d'accueil annonce deux moteurs (2026-10-27, docs/LANDING.md) : **Memory Engine Lite** pour Folio gratuit (paramètres par défaut, sans équilibreur) et **Memory Engine Ultra** pour Folio+ et Campus (`fsrsAuto` + `equilibrer`) ; l'app les distingue depuis le 2026-10-27 : en Folio gratuit (`moteurLite()`, `ui/bridage.js`), `fsrsW()` rend les paramètres par défaut, `fsrsCfg` n'a pas de charge (pas d'équilibreur) et `fsrsAuto` ne réoptimise pas — les paramètres appris restent rangés. Le mode simple n'est plus proposé : un compte qui l'avait gardé retrouve le moteur au démarrage (`rallumerMoteur`, `ui/menus-c.js`, arriéré étalé) — le code du mode reste, sans plus personne pour s'en servir (la visite guidée qui l'employait est partie le 2026-10-27)
+  - `src/fsrs.js` — le moteur, pur et testé (`test/fsrs.test.js`). **Réglé comme Anki, sans aucun curseur** (2026-10-25) : rétention visée figée à 90 % (`RETENTION`, `ui/carte-media.js` — `prefs.dr` n'est plus lu), intervalle plafond 36 500 j, paliers 1 min/10 min (rechute 10 min), les jours écoulés entre deux lectures comptés comme Anki — jours de calendrier, bascule à 4 h (`dayNo`, `BASCULE`, partagés avec `src/file.js`), le même compte pour noter, rejouer et optimiser (avant le 2026-10-27 : 24 h glissantes en notant, minuit en rejouant) —, flou d'Anki, et **l'équilibreur de charge d'Anki** (24.11+, actif par défaut : `equilibrer()`, jusqu'à 90 j, poids (1/n)^2,15 × (1/j)^3, 1 pour un jour vide, nourri par `chargeDes()` de `ui/carte-media.js`) ; les paramètres `w` se réoptimisent seuls (`fsrsAuto`). La page d'accueil annonce deux moteurs (2026-10-27, docs/LANDING.md) : **Memory Engine Lite** pour Mirandola gratuit (paramètres par défaut, sans équilibreur) et **Memory Engine Ultra** pour Mirandola+ et Campus (`fsrsAuto` + `equilibrer`) ; l'app les distingue depuis le 2026-10-27 : en Mirandola gratuit (`moteurLite()`, `ui/bridage.js`), `fsrsW()` rend les paramètres par défaut, `fsrsCfg` n'a pas de charge (pas d'équilibreur) et `fsrsAuto` ne réoptimise pas — les paramètres appris restent rangés. Le mode simple n'est plus proposé : un compte qui l'avait gardé retrouve le moteur au démarrage (`rallumerMoteur`, `ui/menus-c.js`, arriéré étalé) — le code du mode reste, sans plus personne pour s'en servir (la visite guidée qui l'employait est partie le 2026-10-27)
   - `src/fusion.js` — fusion à trois versions d'un paquet (M03.T4), pur et testé (`test/fusion.test.js`, `test/concurrence.test.js`). **Branchée dans la synchro depuis le 2026-10-16** (`reconcile()` dans `src/core/coeur-sync.js`, appelée par `flush()` quand le contrôle de `rev` échoue et par `pull()` pour un paquet en attente) : la base commune est la dernière version serveur connue de chaque paquet (`bases` dans `src/data/etat.js`, clé `cartes.bases.<uid>` du stockage local). Serveur inchangé → envoi ; changé avec base → fusion sans rien demander ; changé sans base fiable → la boîte de choix (`raiseConflict`), jamais d'écrasement muet. Ne jamais redonner à un paquet en attente le `rev` du serveur sans passer par `reconcile()` : c'était l'écrasement silencieux corrigé ce jour-là (preuve : `e2e/deux-appareils.e2e.js` échoue sur l'ancien code)
+  - **La synchro entre appareils, sans recharger** (2026-10-28) : avant, la
+    bibliothèque ne se relisait qu'à l'ouverture — l'ordinateur restait sur
+    l'ancienne version de ce que le téléphone venait d'écrire, et écrivait
+    ensuite par-dessus (la boîte de conflit). `ui/synchro-ecran.js` lance un
+    coup d'œil (`syncBibliotheque` de `core/synchro.js`) au retour sur l'app
+    (focus, onglet visible, réseau revenu ; pas deux fois en 5 s) et une fois
+    par minute tant qu'on s'en sert (un geste dans les 5 dernières minutes) :
+    ce qui attend part d'abord (`flush`), puis le `rev` de chaque livre, les
+    matières, le courrier non lu et les pages du jour ; seuls les livres qui
+    ont bougé ailleurs sont relus (`ecarts` de `src/synchro.js`, pur et
+    testé, `test/synchro.test.js` ; deux requêtes par paquet de 40), un livre
+    supprimé ailleurs part, les matières se posent comme à l'ouverture
+    (`fusionnerMatieres`). **Jamais la relecture complète `pull()`** : elle
+    relit tout le compte et repasse par `cerclePull()`, qui repeint l'écran
+    quel qu'il soit. **L'écran de création** garde le recto et le verso en
+    cours (`comp.f`, `comp.b`) et le champ où l'on était (`comp.champ`) : un
+    rendu de fond n'efface plus rien, et son focus d'ouverture (60 ms après
+    l'affichage) ne prend jamais un champ où l'on tape déjà (`enSaisie`) —
+    il envoyait la touche Entrée du verso au recto, et la page ne s'ajoutait
+    pas (l'échec intermittent de « creerLivre » dans les parcours, trouvé par
+    une sonde des rendus le 2026-10-28). Rien ne se relit tant qu'un
+    envoi attend (la fusion à trois tranchera), ni dans la démo, ni pendant
+    une lecture, un quiz, une création, une partie ou le tuto, et rien ne se
+    pose ni ne se repeint sous les doigts (`peutRepeindre` : feuille ouverte,
+    sélection, page en modification, champ actif). Preuve :
+    `e2e/deux-appareils.e2e.js` (un livre créé et une page corrigée sur A
+    paraissent sur B au retour, sans recharger).
+  - **Des écrans prêts avant qu'on les touche** (2026-10-28) : `accueil()`
+    (`core/classement.js`) finit par `prechauffer()` (`ui/synchro-ecran.js`)
+    — au calme, les morceaux du courrier et du journal se chargent
+    (`prechargerCourrier`, `prechargerJournal`) et les données des onglets
+    voisins se lisent (courrier, journal, cercle, et la classe d'un élève) ;
+    la démo aussi, chaque rôle repassant par `accueil()`. Ouvrir le Courrier
+    ne vide plus sa liste (`mailbox.list = null` est parti des cinq portes
+    qui le faisaient) : ce qui est là s'affiche, la relecture arrive
+    par-dessus. `resetSession()` remet la synchro à zéro (`oublierSynchro`).
+  - `src/tarifs.js` — le prix d'une licence d'établissement (2026-10-28),
+    sans dépendance : `TRANCHES`, `MINIMUM`, `detailCampus`, `prixCampus`,
+    `parPlace`, `eurosHT` — pur et testé (`test/tarifs.test.js` : une place
+    de plus ne fait jamais baisser la facture)
   - `src/file.js` — construction de la file de révision : sélection, quota de cartes neuves, ordre (M01.T3). **Comme Anki** (2026-10-25) : la journée bascule à 4 h (`debutJour`/`finJour`) ; une carte en révision (st 2) est due dès le début de son jour ; une carte neuve est une carte **jamais lue** (`estNeuve` : ni `n`, ni `lr`, ni `S` — une page ratée d'emblée n'est plus « neuve ») ; **20 neuves par jour et par livre** (`neuvesPermises`, comptées sur `c.fl`, l'heure de la première lecture posée par `grade()` et rangée dans `cards.meta`), aucun quota pour un devoir (cartes `a:`), « Lire +20 » pour aller plus loin (`studyplus`), « Tout lire » et les exercices sans quota ; le bouton « Lire » compte `aLire()` ; ordre `ordreAnki` (paliers, puis révisions par jour d'échéance au hasard dans un jour, neuves dans l'ordre du livre réparties parmi elles, `entrelacer`) ; pur et testé (`test/file.test.js`)
   - `src/parseur.js` — parseur de cartes : collage, Quizlet, Anki texte brut, CSV/TSV, JSON (M01.T4), pur et testé (`test/parseur.test.js`)
   - `src/invariants.js` — les 12 invariants qu'une carte doit toujours respecter (S>0, 1≤D≤10, cohérence de l'état FSRS...), pour l'entretien automatique de la bibliothèque (M04.T2) et la contrainte CHECK en base (M04.T3 : 7 contraintes `cards_*` sur `public.cards`, seulement celles que le moteur garantit par construction — une ligne refusée bloquerait la synchro de tout le paquet) — pur et testé (`test/invariants.test.js`). Attention : `n` compte les **réussites**, pas les passages (`grade()`, `fsrsReplayCard()`), donc une carte ratée d'emblée a une mémoire avec n = 0, et l > n est sain
@@ -746,12 +849,12 @@ l'air de marcher ».
   - `src/defi.js` — les règles d'un défi en direct : jeux (QCM, vrai ou faux, réponse écrite), durées, nombre de questions, fabrication des questions depuis un livre, code à 6 chiffres et lien `?defi=`, statuts de la base, phase et chrono (décalage d'horloge compensé), places et podium — pur et testé (`test/defi.test.js`)
   - `src/journal.js` — le journal de lecture (2026-10-25), deux questions jamais mélangées : **ce que tu as fait** se lit dans le journal des révisions, où chaque ligne garde son contexte du moment (matière, livre, écart) — supprimer, fusionner, scinder, renommer un livre ou changer sa matière ne réécrit jamais le passé ; **ce que tu sais** se lit sur les cartes d'aujourd'hui (`savoir` : âges, maîtrise, rappel estimé FSRS, échéances). Une matière se reconnaît à son NOM (`cleNom`, sans casse ni accents) : un identifiant disparu garde le nom qu'il avait, deux matières du même nom n'en font qu'une. `PALIERS` (écarts 1/3/14/90 j) est passé à la base, qui ne fait que compter ; `rassembler` réunit la réponse de `journal()` et les révisions locales sans double compte (`connus`) ; jours en chaînes « AAAA-MM-JJ » dans le fuseau de l'appareil. `etatCarte` (l'âge d'une carte) y vit ; `cstate` de `ui/carte-media.js` en est l'équivalent historique. Pur et testé (`test/journal.test.js`, dont le scénario « 3 h de droit → changement de matière → fusion → suppression → recréation depuis un partage en anglais »)
   - `src/matieres.js` — une matière qui arrive d'un autre compte (devoir, lien, envoi à un ami) : retrouvée par son nom, créée sinon (identifiant libre, couleur la moins employée) ; sans nom, un identifiant n'est gardé que s'il existe ici (lien de sauvegarde du même compte). Pur et testé (`test/matieres.test.js`)
-  - `src/base-locale/` — **un Supabase en mémoire** (2026-10-26, sorti de `e2e/`), servi aux parcours e2e (`e2e/faux-*.js` le réexportent, `brancher` le pose sur `page.route`) et à la démo sans compte (dans le navigateur) : `serveur.js` (`nouveauStore`, `repondre(store, { method, url, headers, body })` → `[statut, corps, en-têtes]` : auth, filtres PostgREST, `order`, `Range`, cloisonnement par `user_id` des tables personnelles et par `to_user` du courrier, `rev` des paquets, `sync_deck_cards`), `classes.js` (classes, devoirs et leur avancement comme le déclencheur `avancement_devoir` — dernière réponse par page, `pct`, rendu, retard —, `prof_eleve`, `prof_cartes`, `prof_message_classe` qui écrit dans le courrier, l'équipe par les services), `etablissement.js` (un seul code, consoles du référent et de l'éditeur, espace prof, une place par élève et par professeur : `placesPrises`/`placesLibres`), `facturation.js` (`licence_tableau`, factures et avoirs numérotés, échanges, `ref_retirer`, `ref_new_account`), `cercle.js`, `journal.js`, `pseudos.js` (2026-10-27 : `pseudo_libre`, `changer_pseudo`, `find_user`, un pseudo d'office à chaque ligne de profil neuve, et un POST ou PATCH de `profiles` qui porte `handle` refusé en 403 `42501` comme en vrai), `abonnements.js` (2026-10-27 : `mon_offre`, `offreDe` (lu aussi par `visuels`), `admin_offrir_plus`, une ligne par source, et les fonctions `paiement` et `magasins` jouées sans Stripe ni RevenueCat — « payer » écrit l'abonnement comme le webhook et renvoie à `/app?plus=merci` ; `store.paiement` : `absent` = fonction pas déployée, un code = cette erreur, `lent` = webhook en retard ; `store.magasin` : ce que RevenueCat dirait d'un compte ; `store.parDefaut` : l'offre d'un compte sans ligne — « gratuit » ici, « plus » dans les parcours e2e (`nouveauStore` de `e2e/faux-supabase.js` : leurs comptes sont ceux d'avant, Folio+ offert ; un parcours qui essaie Folio gratuit pose `parDefaut: 'gratuit'`) ; `serveur.js` route `/functions/v1/`), `monde.js` (le Lycée Démo Folio, chacun avec son pseudo) et `uuid.js` (sans `crypto.randomUUID` hors contexte sûr). Un `store` est un objet sans Set ni Map : il se range en JSON. On émule ce que l'app appelle et lit, jamais la sécurité (elle se prouve en base). Une fonction SQL nouvelle dont un écran a besoin s'y ajoute — sinon, en démo et dans les parcours, l'écran reste vide. ESLint y coupe la seule règle de complexité (on y rejoue des fonctions SQL au plus près de leur texte)
+  - `src/base-locale/` — **un Supabase en mémoire** (2026-10-26, sorti de `e2e/`), servi aux parcours e2e (`e2e/faux-*.js` le réexportent, `brancher` le pose sur `page.route`) et à la démo sans compte (dans le navigateur) : `serveur.js` (`nouveauStore`, `repondre(store, { method, url, headers, body })` → `[statut, corps, en-têtes]` : auth, filtres PostgREST, `order`, `Range`, cloisonnement par `user_id` des tables personnelles et par `to_user` du courrier, `rev` des paquets, `sync_deck_cards`), `classes.js` (classes, devoirs et leur avancement comme le déclencheur `avancement_devoir` — dernière réponse par page, `pct`, rendu, retard —, `prof_eleve`, `prof_cartes`, `prof_message_classe` qui écrit dans le courrier, l'équipe par les services), `etablissement.js` (un seul code, consoles du référent et de l'éditeur, espace prof, une place par élève et par professeur : `placesPrises`/`placesLibres`), `facturation.js` (`licence_tableau`, factures et avoirs numérotés, échanges, `ref_retirer`, `ref_new_account`), `cercle.js`, `journal.js`, `pseudos.js` (2026-10-27 : `pseudo_libre`, `changer_pseudo`, `find_user`, un pseudo d'office à chaque ligne de profil neuve, et un POST ou PATCH de `profiles` qui porte `handle` refusé en 403 `42501` comme en vrai), `abonnements.js` (2026-10-27 : `mon_offre`, `offreDe` (lu aussi par `visuels`), `admin_offrir_plus`, une ligne par source, et les fonctions `paiement` et `magasins` jouées sans Stripe ni RevenueCat — « payer » écrit l'abonnement comme le webhook et renvoie à `/app?plus=merci` ; `store.paiement` : `absent` = fonction pas déployée, un code = cette erreur, `lent` = webhook en retard ; `store.magasin` : ce que RevenueCat dirait d'un compte ; `store.parDefaut` : l'offre d'un compte sans ligne — « gratuit » ici, « plus » dans les parcours e2e (`nouveauStore` de `e2e/faux-supabase.js` : leurs comptes sont ceux d'avant, Mirandola+ offert ; un parcours qui essaie Mirandola gratuit pose `parDefaut: 'gratuit'`) ; `serveur.js` route `/functions/v1/`), `monde.js` (le Lycée Démo Mirandola, chacun avec son pseudo) et `uuid.js` (sans `crypto.randomUUID` hors contexte sûr). Un `store` est un objet sans Set ni Map : il se range en JSON. On émule ce que l'app appelle et lit, jamais la sécurité (elle se prouve en base). Une fonction SQL nouvelle dont un écran a besoin s'y ajoute — sinon, en démo et dans les parcours, l'écran reste vide. ESLint y coupe la seule règle de complexité (on y rejoue des fonctions SQL au plus près de leur texte)
   - `src/facture.js` — la licence d'un établissement, ses factures et ses échanges (2026-10-26) : montants en euros (`euros`, centimes partout), saisie (`enCentimes`), les totaux d'une facture avec la même règle que la base (`totaux` : arrondi par ligne, TVA sur le total HT, franchise de l'art. 293 B sinon), prix d'une place (`prixPlace`), ligne de licence proposée (`lignesLicence`), état d'une pièce (`etatFacture` : à payer, échue, payée, annulée par avoir, avoir ; `resteDu`), ce qu'une facture imprime (`enteteVendeur` — la forme accolée au nom, « EI » obligatoire —, `enteteClient` — SIRET, UAI, code service et bon de commande pour Chorus Pro —, `mentionsLegales` — TVA, échéance, virement, escompte, intérêts moratoires d'un acheteur public, pénalités, indemnité de 40 €), `SUJETS` et `nonLus` des échanges, `siretValide` (Luhn, et la règle de La Poste) — pur et testé (`test/facture.test.js`)
-  - `src/offres.js` — ce que chaque offre ouvre (2026-10-27), sans dépendance : Folio gratuit (`gratuit`), Folio+ (`plus`), un compte d'établissement (`campus`) ; le moteur (Lite ou Ultra), 5 livres en gratuit, l'IA par mois, ce qui n'est que dans Folio+, les volets du journal réservés — la seule source de la règle, pour la démo aujourd'hui et le paiement demain — pur et testé (`test/offres.test.js`)
-  - `src/abonnement.js` — Folio+ dans l'app (2026-10-27), sans dépendance : `VENTE_OUVERTE` (vrai depuis le 2026-10-27), `REVENUECAT` (les clés publiques de l'achat intégré, vides tant que l'app des magasins n'existe pas), `FORMULES` (les prix, en centimes TTC : ceux de la page d'accueil, de Stripe et des magasins), `AVANTAGES`, `RAISONS` (ce que dit l'écran Folio+ ouvert par un geste bridé), `euros`, `dateLisible` (rien pour une date nulle : un Folio+ offert sans fin disait « 1 janvier 1970 »), `lireOffre` (la réponse de `mon_offre`, quelle qu'elle soit, en forme sûre), `resume` (ce que l'écran en dit : titre, ligne, alerte, payer, gérer), `gestion` (où se gère un abonnement, vu de cet appareil ; `GERER`), `erreurDe` (les erreurs de `paiement` et du magasin en clair), `lireRetour` (`?plus=`) — pur et testé (`test/abonnement.test.js`)
-  - `src/plateformes.js` — l'appareil (2026-10-27, 2026-10-28), sans dépendance : `plateforme` (iOS — l'iPad qui se dit Mac compris —, Android, Mac, Windows, ChromeOS, Linux ; natif sous Capacitor), `vente` (« stripe » dans un navigateur, « magasin » dans l'app des magasins), `porte` (un téléphone ou une tablette dans son navigateur n'entre pas dans l'app ; `SANS_PORTE` : la démo, les textes du cadre, la demande de démo), `MAGASINS` (les fiches des magasins, vides : Folio n'y est pas), `installer` (le magasin s'il y en avait un ; l'écran d'accueil au téléphone ; le navigateur sur ordinateur) — lu par la porte d'installation et l'écran Folio+, pur et testé (`test/abonnement.test.js`)
-  - `src/installation.js` — poser Folio sur l'écran d'accueil (2026-10-28), sans dépendance, chargé avec la porte seulement : `navigateur` (Safari et sa vraie version, Chrome, Firefox, Edge, Samsung Internet, le navigateur enfermé dans une autre app, la tablette), `guide` (titre, étapes dans les mots du navigateur — `ic` ce qu'on touche, `texte` avec ses mots d'écran entre `**`, `s` la scène de l'animation —, `fleche`, bouton, secours, ligne du menu), `lienChrome` (sortir d'une app vers Chrome, `intent:`), `enGras` — pur et testé (`test/installation.test.js`)
+  - `src/offres.js` — ce que chaque offre ouvre (2026-10-27), sans dépendance : Mirandola gratuit (`gratuit`), Mirandola+ (`plus`), un compte d'établissement (`campus`) ; le moteur (Lite ou Ultra), 5 livres en gratuit, l'IA par mois, ce qui n'est que dans Mirandola+, les volets du journal réservés — la seule source de la règle, pour la démo aujourd'hui et le paiement demain — pur et testé (`test/offres.test.js`)
+  - `src/abonnement.js` — Mirandola+ dans l'app (2026-10-27), sans dépendance : `VENTE_OUVERTE` (vrai depuis le 2026-10-27), `REVENUECAT` (les clés publiques de l'achat intégré, vides tant que l'app des magasins n'existe pas), `FORMULES` (les prix, en centimes TTC : ceux de la page d'accueil, de Stripe et des magasins), `AVANTAGES`, `RAISONS` (ce que dit l'écran Mirandola+ ouvert par un geste bridé), `euros`, `dateLisible` (rien pour une date nulle : un Mirandola+ offert sans fin disait « 1 janvier 1970 »), `lireOffre` (la réponse de `mon_offre`, quelle qu'elle soit, en forme sûre), `resume` (ce que l'écran en dit : titre, ligne, alerte, payer, gérer), `gestion` (où se gère un abonnement, vu de cet appareil ; `GERER`), `erreurDe` (les erreurs de `paiement` et du magasin en clair), `lireRetour` (`?plus=`) — pur et testé (`test/abonnement.test.js`)
+  - `src/plateformes.js` — l'appareil (2026-10-27, 2026-10-28), sans dépendance : `plateforme` (iOS — l'iPad qui se dit Mac compris —, Android, Mac, Windows, ChromeOS, Linux ; natif sous Capacitor), `vente` (« stripe » dans un navigateur, « magasin » dans l'app des magasins), `porte` (un téléphone ou une tablette dans son navigateur n'entre pas dans l'app ; `SANS_PORTE` : la démo, les textes du cadre, la demande de démo), `MAGASINS` (les fiches des magasins, vides : Mirandola n'y est pas), `installer` (le magasin s'il y en avait un ; l'écran d'accueil au téléphone ; le navigateur sur ordinateur) — lu par la porte d'installation et l'écran Mirandola+, pur et testé (`test/abonnement.test.js`)
+  - `src/installation.js` — poser Mirandola sur l'écran d'accueil (2026-10-28), sans dépendance, chargé avec la porte seulement : `navigateur` (Safari et sa vraie version, Chrome, Firefox, Edge, Samsung Internet, le navigateur enfermé dans une autre app, la tablette), `guide` (titre, étapes dans les mots du navigateur — `ic` ce qu'on touche, `texte` avec ses mots d'écran entre `**`, `s` la scène de l'animation —, `fleche`, bouton, secours, ligne du menu), `lienChrome` (sortir d'une app vers Chrome, `intent:`), `enGras` — pur et testé (`test/installation.test.js`)
   - `src/club.js` — un club : nom (2–40), devise (≤ 90), code d'invitation lisible et lien `?club=`, classements (places partagées, barre relative, ma ligne), médailles — pur et testé (`test/club.test.js`)
   - `src/qr.js` — encodeur QR sans bibliothèque (octets, niveau M, versions 1–10, `qrSvg()`), pour projeter le code d'une classe et imprimer les cartes de connexion — pur et testé (`test/qr.test.js` ; relu 10/10 par le décodeur d'OpenCV le 2026-10-24). Le SVG porte ses couleurs : `svg.qr{stroke:none}` (sinon le trait que l'app donne à tout SVG grossit les modules)
   - `src/app.css` — ~2 400 lignes ; l'espace professeur a la sienne, `src/ui/prof-espace.css` (~620 lignes, préfixe `pf-`, chargée avec son morceau), la partie en direct aussi (`src/ui/direct.css`, préfixe `dx-`) ; le journal de lecture aussi (`src/ui/journal.css`, préfixe `jr-` : tout en azur — l'activité, la régularité, la mémoire du plus clair « à lire » au plus foncé « sue » —, chaque matière à sa reliure, le rouge pour les pages qui résistent) ; l'écran élève « Mes classes » est dans `app.css` (préfixe `el-`), le cercle aussi (`cc-`, `cl-` pour un club, `dn-` pour « Nouveau défi », `jt` pour les jetons). **Le moins de texte possible** (demandé le 2026-10-25) : des icônes et des chiffres plutôt que des phrases, aucun sous-titre explicatif sous un titre ou une carte, onglets du bas en icônes seules ; une explication vraiment nécessaire va dans une pastille « ? » (`hlp(clé)` et la table `HELP` de `ui/connexion.js`) ou un `title`, jamais en paragraphe sous l'élément. **Charte visuelle (refaite le 2026-10-24)**, sobre et la même partout : jetons dans `:root` (`--bg` #F6F5F1, `--bg2`, `--ink` #1D1C19, `--ink2`, `--soft`, `--card` blanc, `--hair`/`--line` pour les filets, `--edge` = filet intérieur de 1 px, `--ring` = halo gris du focus) ; titres de page dans la serif de la page d'accueil (`.hero`, `.bar h1`, le titre d'un livre, l'accueil du professeur : `--serif`, Charter avant Palatino — décidé le 2026-10-26, une seule voix du site à l'app), tout le reste en sans-serif, surfaces blanches cernées d'un filet, ombres à peine visibles. **Une couleur, un travail** (2026-10-27, `src/couleurs.js`) : l'azur compte, les états jugent, le nuancier relie une matière, l'encre habille — un chiffre reste à l'encre, la couleur va à la marque à côté (barre, pastille, icône). **Un livre a une reliure et une couverture** : sur l'étagère, en liste et en tête de sa page, le dos plein de sa matière (11 px, le léger dégradé d'une toile tendue), la couverture teintée (`--c`) cernée de son filet (`--b`), le nom de la matière en petites capitales quand plusieurs se côtoient (`.mixte`), le nombre à lire en chiffre blanc sur la reliure foncée (`--f`) ; chaque page de la liste garde un liseré de 4 px de sa reliure ; la fiche qu'on lit est une page de ce livre : le papier de la couverture, le nom de la matière en tête (`.sbj`, sur chaque face, marathon compris) et le grand signet de la reliure (le petit d'avant, sur une fiche blanche, ne se reconnaissait pas) — le QCM aussi. La pastille d'une matière choisie (filtre, création) prend sa couverture. **La forme dit ce que c'est** : un rond et un visage pour une personne, un carré arrondi pour une classe (ses repères dans les listes aussi : jamais un rond, réservé à la pastille d'une matière), un écusson pour un club. Les interrupteurs et les choix cochés sont à l'encre, jamais au vert. **Aucun contour noir** : `:focus` n'a pas d'outline, `:focus-visible` un trait gris clair (clavier seulement), les champs n'en ont pas du tout — c'est leur cadre qui s'éclaire (`:focus-within` + `--ring`). Sur ordinateur (≥ 900 px) : barre latérale de 236 px (entrées groupées en haut, Réglages et compte en bas), contenu centré à 1 120 px (1 240 ≥ 1 500 px) ; **gabarit unique** (2026-10-25) : toutes les pages de premier niveau (Livres, Journal, Ma classe, Cercle des lecteurs, Courrier, Réglages) ont la même largeur et leur titre au même endroit (`.top`, 52 px de haut) — plus de colonne étroite centrée, c'est le contenu qui se range en colonnes (Réglages en deux colonnes de sections `.rg`, Ma classe « à faire » | « mes classes » `.el-grille`, Courrier et Corbeille en grille, Journal en tableau de bord) ; **les feuilles ne sont plus des tiroirs de téléphone** : `placerSurPC()` (`ui/menus-a.js`) accroche une feuille légère — une bulle « ? », une liste d'actions comme le menu d'un livre — sous le bouton qui l'a ouverte (`.menu.pop`, elle défile si elle est longue, jamais sous la barre latérale), et fait d'un formulaire une boîte de dialogue (`.menu.dlg`, sans poignée ni geste de glisser) — jamais une fiche en tiroir (`.pf-tiroir`), un tableau, une grande feuille (`.large`) ni un calendrier (`.pf-cal`), qui s'accrochait en petit menu coupé sous sa ligne ; mises en page à deux colonnes (livre, création, bilan) ; **le livre sur PC tient dans l'écran** (2026-10-25) : seule la liste des pages défile (`.rows` défile seule, `minmax(0,1fr)` en dernière rangée de la grille — sans ce plancher la page entière défilait de nouveau), sa position est gardée quand le livre se repeint (`retenirListe`/`rendreListe`, `ui/connexion.js`) et « Plus… » s'y observe (`root` de l'IntersectionObserver) ; **la recherche dans un livre ne repeint que la liste** (`repeindrePages`, jamais `render()` pendant la frappe : le clavier d'iPhone sautait) et son champ est `flex:none` (dans la colonne flex de la page, `.fld` s'étirait sur tout l'écran) ; une barre qui ne porte qu'un retour à l'accueil est masquée, la barre latérale y mène déjà. Plus de mode zen (retiré le 2026-10-25). **Le mouvement (2026-10-25) : ne s'anime que ce qui ARRIVE, une seule fois** — l'app redessine en `innerHTML`, et un nœud neuf rejouait son entrée : un jour choisi dans le calendrier d'un devoir, une case cochée, dix appuis sur le même onglet relançaient la page, la feuille, la barre du bas. `src/ui/mouvement.js` (sans autre import que la racine) : `entreeEcran()`, appelée par `render()`, ne pose `.fade` qu'à un vrai changement d'écran (`view.name:id`) et l'ôte après 560 ms ; un redessin pendant l'entrée la prolonge au même point (`--retard`, délai négatif), redemander l'écran où l'on est ne rejoue rien. Un élément qui apparaît au milieu d'un écran porte une clé `data-k` (barre du bas, bouton flottant, barre de sélection `.selb`/`.pf-bulk`, onglet d'une classe `.pf-corps`, onglet de création `.cr-panel`, page ajoutée `.dc`, question d'un quiz `.qz`, bilan `.rev`, joueur d'une partie `.dx-chip`, étape d'une partie `.dx`) : un observateur lui donne `.neuf` — et donc son animation — seulement si aucun élément de même clé n'était à l'écran. **Toute nouvelle animation d'entrée s'écrit sous `.fade` ou `.neuf`, jamais nue.** La glissière des onglets glisse depuis là où on la voyait, une barre de progression (`avancer()`) depuis sa largeur d'avant (elle repartait de 0 à chaque réponse), le chrono d'un quiz ne repart plus à zéro sur un redessin, l'entrée allumée de la barre latérale change sur place. Les feuilles (`menus-a.js`, `poser`) : redessinées, elles gardent leur point d'entrée, leur défilement et le champ actif ; leur hauteur glisse, une autre étape (`data-etape`) fond le contenu ; à la fermeture (`sortirFeuilles`) elles repartent par où elles sont venues (animations web, depuis leur position du moment) en `.sort` — `inert`, `aria-hidden`, sans identifiants, sans gestes —, et une feuille qui s'ouvre retire aussitôt les sortantes ; le voile ignore un tap dans les 350 ms qui suivent l'ouverture (`vientDOuvrir`, un double appui refermait la feuille). Un toast identique déjà affiché reste en place, un autre change de texte sans rejouer son entrée. Durées : 0,2 à 0,4 s, six pixels, courbe `--e` (entrées), `--ios` (feuilles), `--out` (sorties), échelonnement plafonné à 11 éléments ; mouvement réduit : ni entrée ni boucle. Preuve : `e2e/animations.e2e.js` (aucune animation d'entrée en cours après chaque geste, défilement de la feuille gardé ; échoue sur l'ancien code)
@@ -777,7 +880,7 @@ l'air de marcher ».
   - Auth : `signIn` / `signUp` / `refreshToken` (un seul rafraîchissement à la fois — ne pas casser ce verrou). L'écran de connexion a trois portes : e-mail, création de compte, **« Carte élève »** (identifiant + code → `signIn(emailCarte(id), code)`) ; le QR imprimé sur la carte ouvre `?carte=identifiant-CODE`, consommé par `consumeCarte()` (`ui/connexion.js`) au tout début de `boot()` — il ne ferme un autre compte ouvert que si celui-ci n'a plus rien à envoyer, et retire le code de l'adresse. Un élève de classe (`isPupil()`) arrive sur ses devoirs : son accueil (pseudo, visage) puis son tuto partent de là.
   - Données : PostgREST (`/rest/v1/...`), RLS stricte `user_id = auth.uid()` + rôles établissement.
   - Cache local `localStorage`, écritures en file (`dirty`, `gone`) rejouées par `flush()`.
-  - Edge Functions : `supabase/functions/ai/index.ts` (Anthropic, quotas dans `ai_usage`) ; `paiement` (Folio+ : une page Stripe Checkout ou le portail client, refuse un second abonnement — Folio+ offert ou d'un magasin compris — et Campus), `stripe-webhook` (verify_jwt coupé, signature Stripe vérifiée, l'abonnement relu chez Stripe puis sa ligne `stripe` écrite ; idempotent, l'ordre d'arrivée sans importance) et `magasins` (verify_jwt coupé : le webhook de RevenueCat, secret partagé `RC_WEBHOOK_AUTH`, et le retour d'achat de l'app, jeton vérifié auprès de Supabase Auth ; l'abonné relu chez RevenueCat, sa ligne `apple` ou `google` écrite), leurs règles pures dans `supabase/functions/_shared/abonnement.js` (testées : `test/paiement.test.js`), le tout lancé sous Deno face à un faux Stripe et un faux RevenueCat par `tools/paiement/essai.js` (32 vérifications). La fonction `ai` est réservée à Folio+ et Campus (`offre_de`, rôle service : `plus` en 402 pour un compte gratuit, `mquota` au-delà de `AI_MONTHLY_PLUS`, 50 cours par mois ; une base sans la fonction laisse passer). Du `fetch` brut, aucun SDK. Secrets : `supabase/REGLAGES.md`, pas à pas : `docs/VENTE.md`.
+  - Edge Functions : `supabase/functions/ai/index.ts` (Anthropic, quotas dans `ai_usage`) ; `paiement` (Mirandola+ : une page Stripe Checkout ou le portail client, refuse un second abonnement — Mirandola+ offert ou d'un magasin compris — et Campus), `stripe-webhook` (verify_jwt coupé, signature Stripe vérifiée, l'abonnement relu chez Stripe puis sa ligne `stripe` écrite ; idempotent, l'ordre d'arrivée sans importance) et `magasins` (verify_jwt coupé : le webhook de RevenueCat, secret partagé `RC_WEBHOOK_AUTH`, et le retour d'achat de l'app, jeton vérifié auprès de Supabase Auth ; l'abonné relu chez RevenueCat, sa ligne `apple` ou `google` écrite), leurs règles pures dans `supabase/functions/_shared/abonnement.js` (testées : `test/paiement.test.js`), le tout lancé sous Deno face à un faux Stripe et un faux RevenueCat par `tools/paiement/essai.js` (32 vérifications). La fonction `ai` est réservée à Mirandola+ et Campus (`offre_de`, rôle service : `plus` en 402 pour un compte gratuit, `mquota` au-delà de `AI_MONTHLY_PLUS`, 30 cours par mois pour un élève, `AI_MONTHLY_PROF`, 400, pour un professeur — rôle lu dans `user_roles` ; une base sans la fonction laisse passer). Du `fetch` brut, aucun SDK. Secrets : `supabase/REGLAGES.md`, pas à pas : `docs/VENTE.md`.
 - **Schéma** : uniquement par migrations dans `supabase/migrations/` (horodatage `YYYYMMDDHHMMSS_nom_en_francais.sql`). Jamais de changement de schéma à la main dans le tableau de bord.
   - **Fonctions `security definer`** : Postgres accorde `execute` à PUBLIC (donc à `anon`) à toute fonction créée — retirer `anon` seul ne sert à rien. Depuis `20261024122609`, les privilèges par défaut ne le font plus, mais chaque nouvelle fonction écrit quand même `revoke all ... from public, anon; grant execute ... to authenticated;` (rien pour les fonctions internes, ni pour une fonction de déclencheur : un déclencheur s'exécute sans ce droit — `20261024213744` l'a retiré aux deux qui l'avaient encore). Seules `shared_deck` et `demander_demo` (le formulaire « Demander une démo », freiné en base) restent ouvertes à `anon`.
   - **Rejoindre une classe** (`20261024113815`, matrice des droits en tête du fichier) : uniquement par `class_preview(code)` / `class_join(code)` (l'ancienne `join_class` y renvoie). Elles **renvoient un statut au lieu de lever** quand l'essai doit être compté (une exception annulerait la ligne de `class_join_attempts`, et la limite de 10 codes faux/h ne verrait rien). Frontière d'établissement, salle d'attente (`class_requests`), exclusion (`class_bans`), places, durée, code changeable : tout est vérifié en base. L'élève ne lit plus la ligne `classes` (donc jamais le code).
@@ -785,8 +888,9 @@ l'air de marcher ».
   - **Comptes à carte** (`20261024125435`) : un professeur crée les comptes de ses élèves depuis une liste (`prof_creer_eleves`, 60 par appel, homonymes signalés) ; chacun a un identifiant `prenom.nom` (e-mail technique `identifiant@eleves.folio.invalid`, jamais affiché) et un code secret de 8 caractères qui est son mot de passe GoTrue, montré une seule fois (jamais stocké en clair ; `prof_nouvelles_cartes` en refait un et déconnecte l'ancien). Table `comptes_geres` (RLS : chacun ne lit que sa ligne). Le nom « Prénom NOM » d'un élève à carte ou d'établissement est **verrouillé en base** (déclencheur `lock_identite_scolaire`) : seul son professeur le corrige (`prof_nommer_eleve`). Un compte personnel qui rejoint une classe donne son vrai prénom et son nom (`class_join(code, prénom, nom)`, statut `nom` sinon). `mon_compte()` dit à l'app si le compte est géré.
   - **Clubs et parties en direct** (`20261024232855`, `20261024233015`) : un club se crée, se rejoint (code, 10 faux/h, 100 membres) et se gère par fonctions (`club_creer`, `join_group`, `club_membres`, `club_nouveau_code`, `mes_clubs`) ; un élève de classe n'en crée ni n'en rejoint. Une partie : `salle_ouvrir`, `salle_rejoindre` (statuts : ok, format, inconnu, trop, classe, club, exclu…), `salle_etat` (jsonb : ce que chacun a le droit de voir — jamais la bonne réponse avant la correction), `salle_repondre` (points calculés en base : 500 à 1 000 selon la vitesse depuis que CE joueur a vu les choix, + 50 par bonne réponse d'affilée), `salle_avancer` (idempotent, double clic sans effet), `salle_exclure`, `salle_fermer`, `salles_ouvertes`, `salles_terminees` ; purge quotidienne (`purge-salles-quotidienne`). Nom d'un joueur : « Prénom NOM » dans une salle de sa classe, « Prénom N. » pour un élève ailleurs, le pseudo sinon.
   - **Pseudos** (`20261027090000`) : **tout compte a un pseudo** (`profiles.handle` non nul), donné d'office à la création de sa ligne de profil par le déclencheur `profiles_pseudo` (`pseudo_neuf` : le prénom, sinon « lecteur », et des chiffres s'il est pris ; un pseudo hors de la règle ou pris à l'insertion est remplacé, jamais refusé — `prof_creer_eleves`, `ref_new_account`, `rejoindre` passent sans y penser). La règle `pseudo_motif` (contrainte `profiles_pseudo_regle`), l'unicité sur `cle_pseudo(handle)` (index `profiles_pseudo_unique` : « lea.martin » = « lea_martin »). **L'API brute n'écrit plus le pseudo** (droits par colonne : `insert (id, email, name, figure, teinte)`, `update (… , updated_at)`) : il ne se change que par `changer_pseudo(p)` (jsonb : `ok`, un verdict de la règle, `meme`, `pris`, `trop` avec `jusqua` — deux changements par semaine), `pseudo_libre(p)` dit ce qu'il en est pendant la frappe (avec `suggestion` si c'est pris) ; un pseudo quitté reste 30 jours à son ancien titulaire (`pseudo_journal`, RLS : chacun lit le sien, aucune écriture ; purgé à 60 jours par `purge-pseudos-quotidienne`). `lock_identite_scolaire` ne verrouille plus que le nom et l'adresse d'un élève d'établissement : son pseudo a sa porte. `find_user` cherche au point et au tiret bas près. `pseudo_pris`, `pseudo_neuf`, `profiles_pseudo` sont internes.
-  - **Folio+ : les abonnements** (`20261027190000`) : `abonnements` (une ligne par compte : `statut` actif/essai/impaye/incomplet/fini, `source` stripe/apple/google/offert, `formule`, `client_stripe`, `abonnement_stripe`, `fin_periode`, `fin_prevue` ; RLS : chacun lit la sienne, **aucune écriture** sauf le webhook au rôle service) et `stripe_evenements` (service seul, purgée à 30 jours par `purge-stripe-evenements`). `mon_offre()` (jsonb : `offre` gratuit/plus/campus — un établissement dont la licence court passe avant —, `etablissement`, `licence_fin`, `abonnement`) est la seule lecture de l'app ; `abonnement_ouvre` est interne. `delete_me()` refuse tant qu'un abonnement Stripe court sans résiliation (sinon Stripe continuerait de prélever).
-  - **Folio+ pour de vrai** (`20261027210000`) : **une ligne par source** (clé primaire `(user_id, source)` : chaque écrivain a la sienne — `stripe-webhook`, `magasins`, l'éditeur —, aucune n'écrase une autre) ; `offre_de(u)` (interne, `service_role` seul : la fonction `ai`) ; `mon_offre()` en dérive et rend l'abonnement qui court d'abord ; **les médias** : politiques RESTRICTIVES `media_folio_plus`/`media_folio_plus_maj` sur `storage.objects` (écrire dans le seau `media` demande Folio+ ou Campus ; lire et effacer restent permis) ; **Folio+ offert, sans fin, à tous les comptes qui existaient** quand la migration a été appliquée (sauf référent et éditeur) ; `admin_offrir_plus(cible, jusqua, retirer)` (l'éditeur : la ligne `offert` seule) ; `visuels()` recréée avec une colonne `plus` (Folio+, pas Campus). Les livres, les QCM et le journal ne sont pas tenus en base, exprès : refuser un livre bloquerait la synchro de tout un appareil.
+  - **Mirandola+ : les abonnements** (`20261027190000`) : `abonnements` (une ligne par compte : `statut` actif/essai/impaye/incomplet/fini, `source` stripe/apple/google/offert, `formule`, `client_stripe`, `abonnement_stripe`, `fin_periode`, `fin_prevue` ; RLS : chacun lit la sienne, **aucune écriture** sauf le webhook au rôle service) et `stripe_evenements` (service seul, purgée à 30 jours par `purge-stripe-evenements`). `mon_offre()` (jsonb : `offre` gratuit/plus/campus — un établissement dont la licence court passe avant —, `etablissement`, `licence_fin`, `abonnement`) est la seule lecture de l'app ; `abonnement_ouvre` est interne. `delete_me()` refuse tant qu'un abonnement Stripe court sans résiliation (sinon Stripe continuerait de prélever).
+  - **Mirandola+ pour de vrai** (`20261027210000`) : **une ligne par source** (clé primaire `(user_id, source)` : chaque écrivain a la sienne — `stripe-webhook`, `magasins`, l'éditeur —, aucune n'écrase une autre) ; `offre_de(u)` (interne, `service_role` seul : la fonction `ai`) ; `mon_offre()` en dérive et rend l'abonnement qui court d'abord ; **les médias** : politiques RESTRICTIVES `media_folio_plus`/`media_folio_plus_maj` sur `storage.objects` (écrire dans le seau `media` demande Mirandola+ ou Campus ; lire et effacer restent permis) ; **Mirandola+ offert, sans fin, à tous les comptes qui existaient** quand la migration a été appliquée (sauf référent et éditeur) ; `admin_offrir_plus(cible, jusqua, retirer)` (l'éditeur : la ligne `offert` seule) ; `visuels()` recréée avec une colonne `plus` (Mirandola+, pas Campus). Les livres, les QCM et le journal ne sont pas tenus en base, exprès : refuser un livre bloquerait la synchro de tout un appareil.
+  - **Mirandola** (`20261028090000`) : `abonnements.montant` (centimes TTC d'une période, écrit par `stripe-webhook` — `montantDe`, le prix Stripe de l'abonnement — et `magasins` — le prix que dit RevenueCat, en euros seulement ; nul si offert), rendu par `mon_offre()` ; les fonctions dont le texte disait « Folio » réécrites depuis leur propre définition (`pg_get_functiondef`, le mot seul remplacé : rien d'autre ne bouge) ; `pseudo_motif` réserve aussi « mirandola » (mot et début). **À appliquer avant de redéployer `stripe-webhook` et `magasins`**, qui écrivent `montant`.
   - **Jetons d'identité** (`20261025111500`, correctif `20261025113100`) : `profiles.figure`/`teinte` et `classes.embleme`/`teinte` (clés `^[a-z]{2,16}$`, rang 0–11, contraintes CHECK). Une seule porte de lecture, `visuels(personnes, classes)` (200 et 100 au plus), qui ne rend un choix qu'à qui partage quelque chose (amis même en demande, club, classe — camarades, professeurs, salle d'attente —, partie en direct, référent de l'établissement) ; `mon_jeton(cle, rang)` pour soi (un élève à carte aussi : son nom reste verrouillé) ; `prof_jeton_classe(cid, cle, rang)` pour qui gère la classe. `voit_personne`/`voit_classe` sont internes : **révoquer aussi `authenticated`** (les privilèges par défaut de Supabase le lui donnent, révoquer PUBLIC et anon n'y touche pas).
   - **Journal des révisions** (`20261025170855`) : chaque ligne de `reviews` porte sa photographie — `subject`, `subject_name`, `deck_name`, `ecart` (jours depuis la lecture précédente de la page, -1 la première fois) — et son `created_at` est l'heure de la lecture, envoyée par l'app (hors ligne compris), pas celle de l'envoi. Le déclencheur `contexte_revision` complète ce qu'une app ancienne n'envoie pas (depuis le paquet et le journal), sans jamais remplacer ce que l'app a dit, et ramène une date future à maintenant. **Ne jamais réécrire ces colonnes après coup.** Les statistiques passent par `journal(p_depuis, p_tz, p_bornes, p_locaux)` (security invoker, jsonb : `jours` regroupés par jour/matière/livre/palier, `heures`, `matieres` et `livres` = noms du moment, `toujours`, `connus`). `shared_deck` rend aussi `subject_name`, `mail.subject_name` voyage avec un livre envoyé : c'est le nom qui voyage, jamais l'identifiant.
   - **Profil d'un lecteur** (`20261025200000`) : `profil_lecteur(u, p_tz)` (jsonb) — statut `ok` (soi, ami accepté, membre d'un même club : décomptes et noms de matières, jamais un livre ni une carte), `prive` (quelqu'un qu'on voit déjà par `voit_personne` — camarade, professeur, joueur, demande en attente : nom, pseudo, ancienneté, clubs en commun, pas de chiffres), `inconnu` (personne d'autre, ou un blocage dans un sens ou l'autre).
@@ -796,14 +900,17 @@ l'air de marcher ».
   - **Codes renouvelés seuls** (`20261026110000`) : un code élèves ou professeurs fait entrer sans validation, il ne doit pas traîner. `org_codes.rythme` (`semaine` par défaut — décidé le 2026-10-26 —, `mois`, `trimestre` ; jamais « jamais »), `eleve_au`/`prof_au` (date du code) ; la tâche pg_cron `renouveler-codes-quotidien` (02:53 UTC) appelle `renouveler_codes()` (interne, aucun droit pour `authenticated`), qui tire un code neuf pour chaque code échu et l'écrit au journal du référent (`ref_audit`, « code renouvelé », sans auteur) ; ceux qui sont entrés restent. `ref_codes()` rend aussi `rythme`, `eleve_jusqua`, `prof_jusqua` ; `ref_nouveau_code` repart d'une période pleine ; `ref_rythme(p)` pour le référent seul. La console montre « Nouveau code le … » sous chaque code et le rythme en dessous (`RYTHMES`, `renouvellement`, `changeLe` de `src/etablissement.js`). Le code référent n'est pas concerné (usage unique, 30 j).
   - **Licence, factures, échanges** (`20261026130000`, décidé le 2026-10-26 : « même licence peu importe ») : **une place par élève ET par professeur** (le référent n'en prend pas) — `etab_places_prises`/`etab_libres` (internes), le même plafond pour le code professeurs (`etab_verdict`), le compte qu'ouvre le référent (`ref_new_account`, plus d'adresse au journal) et les cartes élève (`prof_creer_eleves`) ; `ref_retirer(cible)` sort quelqu'un de l'établissement (ses classes et groupes d'ici, ses services ; les groupes qu'un professeur avait formés sont archivés ; le compte et ses livres restent) et libère sa place. **Factures** : `vendeur` (une ligne, l'éditeur : `admin_vendeur`, `admin_vendeur_enregistrer`), `org_facturation` (les coordonnées du client : `facturation_enregistrer(fiche, org)`, le référent pour le sien, l'éditeur pour n'importe lequel), `factures` (facture ou avoir, totaux en centimes calculés par `admin_facturer(org, lignes, debut, fin, objet)`, TVA selon le régime du vendeur, photographie du vendeur et du client à l'émission ; **inaltérables** — déclencheur `factures_inalterables` : ni modification ni suppression, seules `deposee_le` et `payee_le` bougent par `admin_facture_dates` ; une erreur se corrige par `admin_avoir`, un seul par facture), numérotée sans trou par série et par année (`facture_compteurs`, `numero_suivant` interne : F-AAAA-0001, A-AAAA-0001) ; un établissement facturé ne s'efface plus (`admin_supprimer_etab`, conservation dix ans). `licence_tableau(org)` rend tout au référent (places, prix convenu de `org_suivi` — le seul chiffre du suivi qu'il voit —, coordonnées, pièces sans leurs lignes, échanges, vendeur sans IBAN), `facture(fid)` une pièce entière ; `licence_org` (interne) dit de quel établissement on parle. **Échanges** : `org_echanges` (de `etab` ou `folio`, sujet `places`/`renouvellement`/`facture`/`question`), `ref_ecrire` (20 par jour), `admin_repondre` (répondre, c'est avoir lu), `echanges_lus`, `admin_echanges_attente`. Tables à RLS, lecture par le référent de l'établissement et l'éditeur, aucune écriture directe. À l'appliquer, le seul établissement réel n'avait aucun compte : personne ne s'est retrouvé « plein ».
   - **Console du référent** (`20261026020000`) : `ref_personnes(q, qrole, qclass, sans_classe, lim, off)` rend **une ligne par personne** (sa classe de rattachement, jamais un groupe ; filtre sur une classe ou un groupe ; les élèves sans classe ; recherche sans casse ni accent ; `carte` pour un compte à carte ; `total` pour la pagination) — `ref_people` reste pour les anciennes apps installées. Les cartes élève du référent passent par `prof_creer_eleves` (`class_manager` l'admet sur une classe de son établissement).
-  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `execute_sql` ne rend que le résultat de la **dernière** instruction (le `rollback`, donc rien) : pour lire le bilan, remplacer le `select … from zz_res` final et le `rollback` par un `do $$ begin raise exception 'RESULTATS %', (select … from public.zz_res); end $$;` — l'erreur porte le bilan et annule tout. `classes_securisees.sql` (56 cas), `identite_eleve.sql` (23 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas), `journal.sql` (18 cas), `profil.sql` (19 cas), `classe_eleve.sql` (12 cas), `etablissement.sql` (72 cas : du prospect au client, les quatre codes et leur renouvellement, classes et groupes, la liste du référent, l'espace professeur, licence, anon) `licence.sql` (51 cas : une place par professeur, retirer, coordonnées, factures — totaux, numérotation, photographie, inaltérables, avoirs —, échanges, qui lit quoi) `abonnements.sql` (17 cas : ce que chacun ouvre, personne ne s'offre Folio+ par l'API brute, la suppression d'un compte abonné, les droits), `folio_plus_pour_tous.sql` (15 cas : les comptes d'avant ont Folio+ offert, une ligne par source, `offre_de` interne, les médias refusés à Folio gratuit, `admin_offrir_plus`, `visuels` qui dit Folio+, les droits) et `pseudos.sql` (27 cas : un pseudo pour tous, la règle et l'unicité même en base, l'API brute refusée, `pseudo_libre` dans l'ordre de la règle, deux changements par semaine, la réserve de 30 jours, l'élève d'établissement, `find_user`, le journal, le référent, les droits).
+  - **Tests SQL** : `supabase/tests/*.sql`, à lancer tels quels (MCP `execute_sql`) — tout se passe dans une transaction annulée, avec des comptes jetables et le vrai rôle `authenticated` (RLS et droits réels). `execute_sql` ne rend que le résultat de la **dernière** instruction (le `rollback`, donc rien) : pour lire le bilan, remplacer le `select … from zz_res` final et le `rollback` par un `do $$ begin raise exception 'RESULTATS %', (select … from public.zz_res); end $$;` — l'erreur porte le bilan et annule tout. `classes_securisees.sql` (56 cas), `identite_eleve.sql` (23 cas), `defis_direct.sql` (44 cas), `jetons.sql` (23 cas), `journal.sql` (18 cas), `profil.sql` (19 cas), `classe_eleve.sql` (12 cas), `etablissement.sql` (72 cas : du prospect au client, les quatre codes et leur renouvellement, classes et groupes, la liste du référent, l'espace professeur, licence, anon) `licence.sql` (51 cas : une place par professeur, retirer, coordonnées, factures — totaux, numérotation, photographie, inaltérables, avoirs —, échanges, qui lit quoi) `abonnements.sql` (17 cas : ce que chacun ouvre, personne ne s'offre Mirandola+ par l'API brute, la suppression d'un compte abonné, les droits), `folio_plus_pour_tous.sql` (15 cas : les comptes d'avant ont Mirandola+ offert, une ligne par source, `offre_de` interne, les médias refusés à Mirandola gratuit, `admin_offrir_plus`, `visuels` qui dit Mirandola+, les droits) `mirandola.sql` (9 cas : le montant rendu par `mon_offre`, refusé négatif, plus une fonction qui dise « Folio », les droits gardés, « mirandola » réservé) et `pseudos.sql` (27 cas : un pseudo pour tous, la règle et l'unicité même en base, l'API brute refusée, `pseudo_libre` dans l'ordre de la règle, deux changements par semaine, la réserve de 30 jours, l'élève d'établissement, `find_user`, le journal, le référent, les droits).
 - Réglages non-SQL (auth, storage, secrets, pg_cron) : `supabase/REGLAGES.md`, à tenir à jour.
-- **Hébergement : une seule cible, Vercel, un seul domaine :
-  `https://www.folioflashcard.online/`** (projet Vercel `flashcard`, équipe
-  `massam-17-s-projects` ; l'apex `folioflashcard.online` redirige en 308 vers
-  `www` ; l'alias `flashcard-roan-chi.vercel.app` reste servi, ne PAS le
-  rediriger : qui y aurait installé l'app perdrait ses écritures pas encore
-  envoyées, le stockage local étant propre à chaque origine). Vercel déploie
+- **Hébergement : une seule cible, Vercel, un domaine :
+  `https://mirandola.fr/`** (depuis le 2026-10-28 ; projet Vercel
+  `flashcard`, équipe `massam-17-s-projects` ; `www.mirandola.fr` redirige
+  vers l'apex). **L'ancien domaine `www.folioflashcard.online` (et son
+  apex) reste servi, sans redirection**, comme l'alias
+  `flashcard-roan-chi.vercel.app` : qui y a installé l'app perdrait ses
+  écritures pas encore envoyées, le stockage local étant propre à chaque
+  origine ; la page d'accueil y porte la balise canonique de mirandola.fr,
+  pour les moteurs de recherche. Vercel déploie
   `main`. **Tout lien qui sort de l'app** (partage, QR, invitation, carte de
   connexion) se fabrique sur `SITE` (`src/adresse.js`, sans dépendance),
   jamais sur `location.origin` : une préversion ou Capacitor
@@ -824,7 +931,7 @@ l'air de marcher ».
   (`navigator.standalone` ou `display-mode: standalone`) : une app installée
   ne change pas d'origine — sur iPhone la redirection l'ouvrait dans Safari,
   sans session (« le PWA est cassé », 2026-10-25) — ; la page montre alors
-  la nouvelle adresse, « Ouvrir Folio » et comment réinstaller l'app depuis
+  la nouvelle adresse, « Ouvrir Mirandola » et comment réinstaller l'app depuis
   elle (Safari : Partager → Sur l'écran d'accueil ; Chrome : Installer
   l'application), puis supprimer l'ancienne icône. Les journaux le
   confirment : l'origine `mcflyvpro-art.github.io` parlait encore à la base
@@ -909,7 +1016,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 30, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; la page d'accueil du site (HTML + CSS + JS) ≤ 48 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 30, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 48 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
@@ -917,7 +1024,7 @@ python3 tools/logo.py                # le logo (public/site/, public/favicon.svg
 node tools/affiches.js               # affiches du site, image de partage, captures du manifeste, depuis la démo (vite preview --port 4190 d'abord) ; `node tools/affiches.js prof-mobile` : celles-là seules
 node tools/icones.js                 # icônes de l'app installée (public/icons/), depuis public/site/icone.svg
 node tools/paiement/essai.js         # les fonctions paiement, stripe-webhook et magasins sous Deno, face à un faux Stripe et un faux RevenueCat (DENO=chemin, sinon npx deno@2)
-bash tools/academie/installer.sh     # la Folio Academy, une fois : Python à part (.academie/), voix de repli Kokoro sans clé
+bash tools/academie/installer.sh     # la Mirandola Academy, une fois : Python à part (.academie/), voix de repli Kokoro sans clé
 node tools/academie/tourner.js tout  # les trois vidéos de formation, filmées dans la démo (.academie/sortie/) ; --rep pour répéter
 supabase db diff / supabase migration new <nom>   # si la CLI est installée
 CI=1 npx playwright test -c tools/pw-local.config.js   # e2e dans une session cloud (Chromium préinstallé, /opt/pw-browsers/chromium)
@@ -943,7 +1050,7 @@ réseau de l'environnement pour s'en servir. Les scripts de revue visuelle
 `e2e/zz-*.e2e.js` (captures dans `SHOTS=dossier`) ne sont jamais versionnés
 (`.gitignore`) ; sans `SHOTS`, ils écrivent dans `undefined/` ou `zz-…/`.
 
-**La Folio Academy** (2026-10-27, `tools/academie/README.md`) : trois vidéos de
+**La Mirandola Academy** (2026-10-27, `tools/academie/README.md`) : trois vidéos de
 formation courtes (élève, professeur, référent : l'essentiel, le reste en
 « À découvrir »), filmées dans la démo sans compte — un scénario par vidéo dans
 `tools/academie/formations/`, à reprendre quand un écran change (`--rep` dit
@@ -955,4 +1062,4 @@ Tout ce qui est lourd (Python, modèles, images, vidéos) vit dans `.academie/`,
 ignoré par git. `fetch` de Node refuse le port 4190 (« port interdit » de la
 norme Fetch) : `tourner.js` passe par `node:http`.
 
-Comptes de test : `supabase/comptes_test.sql` (admin, prof, élève, et le référent du « Lycée d'essai Folio », créé par le vrai chemin : fiche et démo par l'éditeur, puis le code référent).
+Comptes de test : `supabase/comptes_test.sql` (admin, prof, élève, et le référent du « Lycée d'essai Mirandola », créé par le vrai chemin : fiche et démo par l'éditeur, puis le code référent).

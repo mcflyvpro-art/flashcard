@@ -55,7 +55,7 @@ const gros = (act, ic, titre, sous) => `<button class="bv-gros" data-bv="${act}"
 
 /* ---------- les étapes ---------- */
 function choix() {
-  return `<h1 class="bv-t">Bienvenue sur <em>Folio.</em></h1>
+  return `<h1 class="bv-t">Bienvenue sur <em>Mirandola.</em></h1>
     <p class="bv-s">Tu révises pour toi, ou avec ta classe&nbsp;?</p>
     <div class="bv-duo">
       ${gros('pour-moi', I.book, 'Je révise pour moi', 'Mes livres, mon rythme')}
@@ -177,7 +177,7 @@ export function bienvenueEcran() {
   $.innerHTML = `<div class="pub bv-pub"><div class="bv" data-etape="${k}">
       <header class="bv-haut">
         ${e.etape > 0 ? `<button class="ic" data-bv="retour" aria-label="Retour">${svg(I.back)}</button>`
-          : '<span class="bv-logo"><img src="/site/logo.svg" alt="" width="26" height="28"><span>Folio</span></span>'}
+          : '<span class="bv-logo"><img src="/site/logo.svg" alt="" width="26" height="28"><span>Mirandola</span></span>'}
         <span class="bv-fil" role="progressbar" aria-label="Avancement" aria-valuemin="1" aria-valuemax="${l.length}"
           aria-valuenow="${e.etape + 1}"><i id="bvfil"></i></span>
         <button class="bv-passer" data-bv="passer">Passer</button>

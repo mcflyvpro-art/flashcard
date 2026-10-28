@@ -101,16 +101,17 @@ function settingsMatieresHtml() {
    change d'ici, on les montre seulement. */
 const carteEleve = () => !!(compte && compte.gere);
 
-/* La ligne « Folio+ » : à qui l'a déjà (abonnement, établissement, Folio+
+/* La ligne « Mirandola+ » : à qui l'a déjà (abonnement, établissement, Mirandola+
    offert aux comptes d'avant le 2026-10-27), et à tous une fois la vente
    ouverte (VENTE_OUVERTE, src/abonnement.js). Jamais au référent, à
    l'éditeur ni dans la démo. */
 function lignePlus() {
   if (sansFolioPlus() || !(VENTE_OUVERTE || (offre && offre.offre !== 'gratuit'))) return '';
   const r = offre ? resume(offre) : null;
-  return `<button class="sr flat" data-act="plus">${svg(I.star)}<span class="n">Folio+</span>
-          <span class="c">${r ? esc(r.titre === 'Folio' ? 'Gratuit' : r.titre !== 'Folio+' ? 'Campus'
-            : offre.abonnement && offre.abonnement.source === 'offert' ? 'Offert' : 'Actif') : ''}</span>${svg(I.arrow)}</button>`;
+  const etat = !r ? '' : r.cle === 'gratuit' ? 'Gratuit' : r.cle === 'campus' ? 'Campus'
+    : offre.abonnement && offre.abonnement.source === 'offert' ? 'Offert' : offre.abonnement && offre.abonnement.finPrevue ? 'Résilié' : 'Actif';
+  return `<button class="sr flat" data-act="plus">${svg(I.star)}<span class="n">Mirandola+</span>
+          <span class="c">${esc(etat)}</span>${svg(I.arrow)}</button>`;
 }
 
 function settingsCompteHtml() {
@@ -201,7 +202,7 @@ function settingsGestionHtml() {
 export function settingsView() {
   // le pseudo de la ligne « Pseudo » : lu une fois, l'écran se repeint à son arrivée
   if (!me && auth) mePull().then(() => { if (view.name === 'settings') render(); });
-  // l'offre du compte, pour la ligne « Folio+ » : lue une fois, comme le pseudo
+  // l'offre du compte, pour la ligne « Mirandola+ » : lue une fois, comme le pseudo
   if (!offre && auth && !sansFolioPlus()) offrePull().then(() => { if (view.name === 'settings') render(); });
   const sections = gestion() ? [settingsGestionHtml, () => settingsAffichageHtml(true), settingsQuitterHtml]
     : [settingsRevisionHtml, settingsAffichageHtml, settingsMatieresHtml, settingsCompteHtml, settingsDonneesHtml, settingsQuitterHtml];
@@ -262,12 +263,22 @@ export function timeAgo(iso) {
    La boîte et les lettres vivent dans ui/courrier.js, chargé à la demande
    avec sa feuille de style (le démarrage n'a pas de marge, tools/budget.js).
    Rien d'autre ne doit importer ui/courrier.js. */
-let courrier = null;
+let courrier = null, chargeCourrier = null;
+
+/* Le morceau, chargé une fois : au calme dès l'arrivée (ui/synchro-ecran.js),
+   ou au premier toucher s'il n'est pas encore là. */
+export function prechargerCourrier() {
+  if (courrier) return Promise.resolve(courrier);
+  if (!chargeCourrier) {
+    chargeCourrier = import('./courrier.js').then(m => (courrier = m)).catch(e => { chargeCourrier = null; throw e; });
+  }
+  return chargeCourrier;
+}
+
 function attendreCourrier() {
   $.innerHTML = `<div class="page"><div class="top"><div class="hero">Courrier</div></div>
     <div class="empty">${svg(I.mail)}<p>Chargement…</p></div></div>`;
-  import('./courrier.js').then(m => {
-    courrier = m;
+  prechargerCourrier().then(() => {
     if (view.name === 'mail' || view.name === 'lettre') render();
   }).catch(() => toast(I.x, 'Le courrier n’a pas pu s’ouvrir : vérifie ta connexion'));
 }

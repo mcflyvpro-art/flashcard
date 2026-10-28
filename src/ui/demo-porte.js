@@ -33,7 +33,7 @@ export function effacerDemo() {
    comment l'avoir (ui/demo.js). Sans le morceau, l'ancien message. */
 export function ouvrirEnvie(cle) {
   return chargerDemo().then(m => m.envie(cle))
-    .catch(() => toast(I.lock, 'Avec un compte Folio'));
+    .catch(() => toast(I.lock, 'Avec un compte Mirandola'));
 }
 
 /* Une adresse /demo/<rôle>/… : la démo reprend avec ce rôle, sur cet écran. */

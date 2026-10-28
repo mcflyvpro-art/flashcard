@@ -165,9 +165,9 @@ test.describe('la licence, sur ordinateur', () => {
       service: '', engagement: 'BC-118', email: '' };
     const editeur = semerCompte(store, 'editeur@folio.fr'); m.roles[editeur] = 'admin';
     const f = fonctionsFacturation(store, et, m, editeur);
-    f.admin_vendeur_enregistrer({ fiche: { raison_sociale: 'Folio', forme: 'EI', adresse: '1 rue des Livres', code_postal: '30000',
+    f.admin_vendeur_enregistrer({ fiche: { raison_sociale: 'Mirandola', forme: 'EI', adresse: '1 rue des Livres', code_postal: '30000',
       ville: 'Nîmes', siret: '91234567800011', regime_tva: 'franchise', delai_jours: '30' } });
-    const piece = f.admin_facturer({ org: l.org.id, lignes: [{ libelle: 'Licence Folio — 4 places', quantite: 1, prix_ht: 30000 }] });
+    const piece = f.admin_facturer({ org: l.org.id, lignes: [{ libelle: 'Licence Mirandola — 4 places', quantite: 1, prix_ht: 30000 }] });
     return { ...l, piece };
   }
 

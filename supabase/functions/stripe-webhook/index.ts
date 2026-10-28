@@ -1,4 +1,4 @@
-/* Folio — ce que Stripe nous apprend d'un abonnement.
+/* Mirandola — ce que Stripe nous apprend d'un abonnement.
    Stripe appelle cette adresse à chaque évènement (paiement abouti,
    renouvellement, échec, résiliation) ; on vérifie qu'il vient bien de lui
    (signature), puis on relit l'abonnement chez Stripe et on écrit sa ligne
@@ -19,7 +19,7 @@
      STRIPE_API              défaut https://api.stripe.com/v1/ (essais locaux)
 
    verify_jwt DOIT être coupé pour cette fonction (Stripe n'a pas de compte
-   Folio) : `supabase functions deploy stripe-webhook --no-verify-jwt`. La
+   Mirandola) : `supabase functions deploy stripe-webhook --no-verify-jwt`. La
    signature remplace le jeton.
 
    Rien de personnel dans les journaux : identifiants techniques seulement
@@ -49,7 +49,7 @@ async function abonnementStripe(id: string, cle: string) {
   return r.json();
 }
 
-/* Le compte Folio de l'abonnement : ses métadonnées, sinon l'évènement
+/* Le compte Mirandola de l'abonnement : ses métadonnées, sinon l'évènement
    (client_reference_id de la page de paiement), sinon une ligne déjà
    connue pour cet abonnement ou ce client. */
 async function compte(sub: any, ev: any): Promise<string | null> {

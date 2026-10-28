@@ -25,7 +25,7 @@ const comptes = new Set(['u1', 'u2', 'u3', 'u5', R1]);    // u4 et R4 ont suppri
 const abonnements = [{ user_id: 'u2', statut: 'actif', source: 'stripe', client_stripe: 'cus_u2', abonnement_stripe: 'sub_u2',
   fin_periode: new Date(AN * 1000).toISOString(), fin_prevue: false }];
 const evenements = [], sessions = new Map(), recu = { checkout: [], ecritures: 0 };
-const offres = { u3: 'campus', u5: 'plus' };             // u5 : Folio+ offert (un compte d'avant le 2026-10-27)
+const offres = { u3: 'campus', u5: 'plus' };             // u5 : Mirandola+ offert (un compte d'avant le 2026-10-27)
 const RC_AN = new Date((AN + 86400) * 1000).toISOString();
 const abonnesRC = {
   [R1]: { entitlements: { plus: { product_identifier: 'folio_plus_annuel', expires_date: RC_AN } },
@@ -125,14 +125,14 @@ const serveur = createServer(async (req, res) => {
 const ENV = {
   SUPABASE_URL: ICI, SUPABASE_ANON_KEY: 'anon', SUPABASE_SERVICE_ROLE_KEY: 'service', STRIPE_API: ICI + '/v1/',
   STRIPE_SECRET_KEY: 'sk_test_essai', STRIPE_WEBHOOK_SECRET: SECRET, STRIPE_PRIX_ANNUEL: 'price_an',
-  STRIPE_PRIX_MENSUEL: 'price_mois', SITE_URL: 'https://www.folioflashcard.online',
+  STRIPE_PRIX_MENSUEL: 'price_mois', SITE_URL: 'https://mirandola.fr',
   RC_SECRET: 'sk_rc_essai', RC_WEBHOOK_AUTH: 'Bearer rc_webhook_essai', RC_API: ICI + '/rc/v1/'
 };
 
 function lancer(nom) {
   const [cmd, ...args] = process.env.DENO ? [process.env.DENO] : ['npx', '--yes', 'deno@2'];
   const p = spawn(cmd, [...args, 'run', '--quiet', '--no-lock', '--allow-net', '--allow-env',
-    `supabase/functions/${nom}/index.ts`], { env: { ...process.env, ...ENV }, stdio: ['ignore', 'pipe', 'pipe'] });
+    `supabase/functions/${nom}/index.ts`], { env: { ...process.env, ...ENV }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   p.journal = '';
   p.stdout.on('data', d => (p.journal += d)); p.stderr.on('data', d => (p.journal += d));
   return p;
@@ -167,8 +167,8 @@ async function essaisPaiement() {
   verifie('payer : une page de paiement Stripe', r.statut === 200 && /^https:\/\/checkout\.stripe\.com\//.test(r.j.url), r);
   verifie('… pour ce compte, au prix annuel, en abonnement', f.mode === 'subscription' && f['line_items[0][price]'] === 'price_an'
     && f.client_reference_id === 'u1' && f['subscription_data[metadata][user_id]'] === 'u1' && f.customer_email === 'u1@exemple.fr', f);
-  verifie('… qui revient dans l’app', f.success_url === 'https://www.folioflashcard.online/app?plus=merci&session={CHECKOUT_SESSION_ID}'
-    && f.cancel_url === 'https://www.folioflashcard.online/app?plus=annule', f);
+  verifie('… qui revient dans l’app', f.success_url === 'https://mirandola.fr/app?plus=merci&session={CHECKOUT_SESSION_ID}'
+    && f.cancel_url === 'https://mirandola.fr/app?plus=annule', f);
   const r2 = await appel({ action: 'payer', formule: 'annuel' }, 'u1');
   verifie('un double appui : la même page, une seule session', r2.j.url === r.j.url && recu.checkout.length === 1, recu.checkout.length);
   const rafale = await Promise.all(Array.from({ length: 20 }, () => appel({ action: 'payer', formule: 'annuel' }, 'u1')));
@@ -179,11 +179,11 @@ async function essaisPaiement() {
   r = await appel({ action: 'payer', formule: 'a-vie' }, 'u1');
   verifie('une formule inconnue : refusée', r.statut === 400 && r.j.error === 'formule', r);
   r = await appel({ action: 'payer', formule: 'annuel' }, 'u2');
-  verifie('Folio+ court déjà : pas de second abonnement', r.statut === 409 && r.j.error === 'deja', r);
+  verifie('Mirandola+ court déjà : pas de second abonnement', r.statut === 409 && r.j.error === 'deja', r);
   r = await appel({ action: 'payer', formule: 'annuel' }, 'u3');
   verifie('l’établissement l’offre : rien à payer', r.statut === 409 && r.j.error === 'campus', r);
   r = await appel({ action: 'payer', formule: 'annuel' }, 'u5');
-  verifie('Folio+ offert, ou pris dans un magasin : rien à payer ici', r.statut === 409 && r.j.error === 'deja', r);
+  verifie('Mirandola+ offert, ou pris dans un magasin : rien à payer ici', r.statut === 409 && r.j.error === 'deja', r);
   r = await appel({ action: 'gerer' }, 'u1');
   verifie('gérer sans abonnement : rien à gérer', r.statut === 404 && r.j.error === 'aucun', r);
   r = await appel({ action: 'gerer' }, 'u2');
@@ -201,7 +201,7 @@ async function essaisWebhook() {
     data: { object: { mode: 'subscription', subscription: 'sub_u1', client_reference_id: 'u1' } } };
   r = await evenement(paye);
   const l = ligne('u1') || {};
-  verifie('paiement abouti : Folio+ annuel écrit pour ce compte', r.statut === 200 && l.statut === 'actif' && l.formule === 'annuel'
+  verifie('paiement abouti : Mirandola+ annuel écrit pour ce compte', r.statut === 200 && l.statut === 'actif' && l.formule === 'annuel'
     && l.client_stripe === 'cus_u1' && l.abonnement_stripe === 'sub_u1' && !l.fin_prevue, l);
   const avant = recu.ecritures;
   r = await evenement(paye);
@@ -244,7 +244,7 @@ async function essaisMagasins() {
   verifie('un webhook sans le bon secret : refusé, rien d’écrit', r.statut === 401 && lignes(R1).length === 1, r);
   r = await versRC({}, 'Bearer ' + jeton(R1));
   const apple = lignes(R1).find(x => x.source === 'apple') || {};
-  verifie('l’app, au retour d’un achat sur l’iPhone : Folio+ annuel, ligne apple', r.statut === 200 && r.j.ecrit === true
+  verifie('l’app, au retour d’un achat sur l’iPhone : Mirandola+ annuel, ligne apple', r.statut === 200 && r.j.ecrit === true
     && apple.statut === 'actif' && apple.formule === 'annuel' && apple.fin_periode === RC_AN, apple);
   verifie('… sans toucher à la ligne Stripe du compte', lignes(R1).length === 2
     && lignes(R1).find(x => x.source === 'stripe').statut === 'fini', lignes(R1));
@@ -267,7 +267,14 @@ async function essaisMagasins() {
 async function avec(nom, essais) {
   const p = lancer(nom);
   try { await attendre(); await essais(); }
-  finally { p.kill(); await new Promise(r => p.once('exit', r)); }
+  /* Tout le groupe : lancée par `npx`, la fonction est un petit-enfant
+     qu'un simple kill() laissait sur le port 8000 — la fonction suivante
+     ne démarrait pas, et ses essais parlaient à la précédente. */
+  finally {
+    const fini = new Promise(r => p.once('exit', r));
+    try { process.kill(-p.pid); } catch { p.kill(); }
+    await fini;
+  }
   if (/error/i.test(p.journal)) console.log(`  (journal de ${nom})\n` + p.journal.trim().split('\n').map(x => '  ' + x).join('\n'));
 }
 

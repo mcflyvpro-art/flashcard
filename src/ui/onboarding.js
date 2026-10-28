@@ -28,6 +28,7 @@ import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { openShared } from '../core/reglages-corbeille.js';
 import { oublierVisuels } from '../core/visuels.js';
 import { offreLocale } from '../core/abonnement.js';
+import { oublierSynchro } from './synchro-ecran.js';
 import { arreterTuto, maybeTuto } from './tuto-porte.js';
 
 /* ---------- lien d'injection ---------- */
@@ -61,6 +62,7 @@ export function consumeHash() {
    ailleurs et oubliée ici recrée le bug : quand on en déclare une nouvelle
    qui parle du compte, elle vient dans cette liste. */
 export function resetSession() {
+  oublierSynchro();
   arreterTuto();                         // un tuto commencé appartenait au compte d'avant
 
   /* la bibliothèque et ce qui attend d'être envoyé */
@@ -124,7 +126,7 @@ export function logout() {
   Promise.race([envoi, new Promise(r => setTimeout(r, 2500))]).then(partir, partir);
 }
 
-/* ══════════ installer Folio sur l'ordinateur ══════════
+/* ══════════ installer Mirandola sur l'ordinateur ══════════
    Une app web n'est vraiment installée que le jour où elle a son icône :
    avant, ni stockage durable, ni rappels, ni place dans les habitudes.
    Sur un téléphone, c'est la porte d'installation qui s'en charge — l'app
@@ -147,7 +149,7 @@ window.addEventListener('appinstalled', () => {
   setBip(null);
   instSave({ ...instLoad(), done: 1 });
   closeMenu();
-  toast(I.check, 'Folio est installé');
+  toast(I.check, 'Mirandola est installé');
 });
 
 /* Quand se permettre de demander. Trois règles, et aucune n'est
@@ -175,7 +177,7 @@ export function maybeAskInstall() {
   setTimeout(() => { if (!menu && !study && !quiz) openMenu('install'); }, 900);
 }
 
-/* Ouverture explicite, depuis les Réglages ou l'écran Folio+ : ni
+/* Ouverture explicite, depuis les Réglages ou l'écran Mirandola+ : ni
    compteur, ni délai — c'est demandé, donc c'est montré. */
 export function openInstall() { openMenu('install'); }
 
@@ -200,7 +202,7 @@ const instep = (n, txt) => `<div class="instep"><i>${n}</i><span>${txt}</span></
 /* Pourquoi on le demande, dit une seule fois et honnêtement : les
    rappels et le hors-ligne complet n'existent qu'une fois installée.
    Une raison vraie convainc mieux qu'une insistance. */
-const INSTWHY = 'Installée, Folio s’ouvre en un clic, dans sa fenêtre, '
+const INSTWHY = 'Installée, Mirandola s’ouvre en un clic, dans sa fenêtre, '
   + 'et fonctionne entièrement hors ligne.';
 
 /* Safari sur Mac n'a pas d'invite : « Ajouter au Dock », dans le menu Fichier. */
@@ -209,14 +211,14 @@ const SAFARI_MAC = /Macintosh/.test(navigator.userAgent || '') && !/Chrome|Edg\/
 export function installSheet(w) {
   const head = (icon, t, s) => `<div class="mhd">${svg(icon)}<span class="mhx">
     <b>${t}</b><span class="msub">${s}</span></span></div>`;
-  const inner = installed() ? head(I.check, 'Folio est installé', 'Ouvre-le depuis ton Dock, ta barre des tâches ou tes applications.')
-    : bip ? head(I.plus, 'Installer Folio', INSTWHY)
+  const inner = installed() ? head(I.check, 'Mirandola est installé', 'Ouvre-le depuis ton Dock, ta barre des tâches ou tes applications.')
+    : bip ? head(I.plus, 'Installer Mirandola', INSTWHY)
       + `<button class="cta" data-mact="instgo" style="margin:6px 7px 8px;width:calc(100% - 14px)">
           ${svg(I.down)}Installer</button>`
-      : head(I.plus, 'Installer Folio', INSTWHY) + `<div class="insteps">${SAFARI_MAC
+      : head(I.plus, 'Installer Mirandola', INSTWHY) + `<div class="insteps">${SAFARI_MAC
         ? instep(1, 'Dans le menu <b>Fichier</b>, choisis <b>Ajouter au Dock</b>')
         : instep(1, 'Clique sur l’icône d’installation, à droite de la barre d’adresse')
-          + instep(2, 'Ou, dans le menu du navigateur, <b>Installer Folio</b>')}</div>`;
+          + instep(2, 'Ou, dans le menu du navigateur, <b>Installer Mirandola</b>')}</div>`;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">${inner}
       <div class="msep"></div>
@@ -237,7 +239,7 @@ export async function boot() {
   desarmer();
   noterConnexion();
   setDb(load());
-  offreLocale();                         // Folio gratuit ou Folio+ dès le premier écran, hors ligne aussi
+  offreLocale();                         // Mirandola gratuit ou Mirandola+ dès le premier écran, hors ligne aussi
   fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état
   if (!consumeHash()) render();          // le cache s'affiche tout de suite
   /* le raccourci attend d'avoir les paquets : « réviser » ne veut rien
@@ -303,7 +305,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) save(
    périmée après une mise à jour du magasin (docs/CAPACITOR.md). */
 if (import.meta.env.PROD && 'serviceWorker' in navigator && !window.Capacitor) {
   navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js')
-    .catch(e => console.warn('Folio : service worker non enregistré, pas de hors-ligne', e && e.message));
+    .catch(e => console.warn('Mirandola : service worker non enregistré, pas de hors-ligne', e && e.message));
   /* Recharger seulement si un service worker tenait déjà la page : c'est
      alors une mise à jour. À la toute première visite il n'y en a aucun,
      le nouveau prend la main (clients.claim) et `controllerchange` part

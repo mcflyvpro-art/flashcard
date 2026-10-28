@@ -1,14 +1,14 @@
-# Folio Academy — les vidéos de formation
+# Mirandola Academy — les vidéos de formation
 
 Trois vidéos courtes, filmées dans la vraie app (la démo sans compte, le
-Lycée Démo Folio : rien ne part vers la base), avec voix off, sous-titres,
+Lycée Démo Mirandola : rien ne part vers la base), avec voix off, sous-titres,
 curseur, surlignages, zoom de caméra et sommaire minuté en tête :
 
 | Vidéo | Pour | Les étapes (l'essentiel seulement) |
 |---|---|---|
-| `Folio-Academy-1-Eleve.mp4` | élèves, au téléphone | entrer dans sa classe, faire un devoir, réviser chaque jour |
-| `Folio-Academy-2-Professeur.mp4` | professeurs, sur ordinateur | choisir ses classes, faire entrer ses élèves, donner un devoir, suivre |
-| `Folio-Academy-3-Referent.mp4` | référent, sur ordinateur | activer sa console, créer les classes, distribuer les codes, corriger un compte |
+| `Mirandola-Academy-1-Eleve.mp4` | élèves, au téléphone | entrer dans sa classe, faire un devoir, réviser chaque jour |
+| `Mirandola-Academy-2-Professeur.mp4` | professeurs, sur ordinateur | choisir ses classes, faire entrer ses élèves, donner un devoir, suivre |
+| `Mirandola-Academy-3-Referent.mp4` | référent, sur ordinateur | activer sa console, créer les classes, distribuer les codes, corriger un compte |
 
 Le reste (créer ses livres, journal, Cercle, groupes, défis en direct,
 licence…) n'y est pas exprès : chaque vidéo finit par une carte « À

@@ -312,7 +312,7 @@ export const LEGAL_TITRES = { cgu: 'Conditions d’utilisation', vie: 'Confident
    que le remplacement n'est pas fait (les autres crochets des textes sont
    signalés à leur ouverture, ui/legal-textes.js). */
 if (/⟦/.test(EDITEUR + CONTACT)) {
-  console.error('Folio : mentions légales incomplètes — des ⟦placeholders⟧ sont encore '
+  console.error('Mirandola : mentions légales incomplètes — des ⟦placeholders⟧ sont encore '
     + 'servis aux utilisateurs (identité/coordonnées du responsable de traitement, art. 13 RGPD). '
     + 'Voir EDITEUR et CONTACT dans src/editeur.js.');
 }
@@ -323,15 +323,15 @@ if (/⟦/.test(EDITEUR + CONTACT)) {
    la même lumière bleu-rose derrière (app.css, #app:has(> .pub)). Le logo
    ramène au site, sauf dans l'app installée, qui n'en a pas. */
 export function pubTete(retour = true) {
-  const m = '<img src="/site/logo.svg" alt="" width="30" height="32"><span>Folio</span>';
+  const m = '<img src="/site/logo.svg" alt="" width="30" height="32"><span>Mirandola</span>';
   return `<header class="pub-tete">
       ${retour ? `<button class="ic" data-act="tolog" aria-label="Retour">${svg(I.back)}</button>` : ''}
-      ${installee() ? `<span class="pub-marque">${m}</span>` : `<a class="pub-marque" href="/" aria-label="Folio, la page d’accueil">${m}</a>`}
+      ${installee() ? `<span class="pub-marque">${m}</span>` : `<a class="pub-marque" href="/" aria-label="Mirandola, la page d’accueil">${m}</a>`}
     </header>`;
 }
 const attente = () => `<div class="pub">${pubTete()}<div class="pub-attente">${svg(I.school)}</div></div>`;
 
-/* « Demander une démo » : un établissement qui découvre Folio, sans compte
+/* « Demander une démo » : un établissement qui découvre Mirandola, sans compte
    (ui/demande-demo.js et sa feuille, chargés à l'ouverture). */
 let demande = null;
 export function demandeView() {

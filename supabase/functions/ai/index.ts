@@ -1,17 +1,22 @@
 /* Cartes — passerelle IA.
    La clé Anthropic vit ici, côté serveur, et nulle part ailleurs :
-   l'app est publiée sur GitHub Pages, donc tout ce qui est dans app.js est public.
+   tout ce qui part avec l'app est public.
 
    Secrets à définir sur le projet Supabase (Edge Functions → Secrets) :
      ANTHROPIC_API_KEY   obligatoire
      AI_BUDGET_USD       plafond de dépense sur le mois en cours (défaut 20)
      AI_DAILY_CALLS      appels max par compte et par jour (défaut 30)
      AI_DAILY_FILES      photos et PDF max par compte et par jour (défaut 10)
-     AI_MONTHLY_PLUS     cours mis en flashcards par compte et par mois avec
-                         Folio+ ou Campus (défaut 50 : src/offres.js, IA_PAR_MOIS)
+     AI_MONTHLY_PLUS     cours mis en flashcards par élève et par mois avec
+                         Mirandola+ ou Campus (défaut 30 : src/offres.js, IA_PAR_MOIS)
+     AI_MONTHLY_PROF     la même chose pour un professeur, qui prépare pour
+                         toute une classe (défaut 400 : IA_PROF_PAR_MOIS) —
+                         un garde-fou contre un compte volé, pas une limite
+     AI_DAILY_PROF       appels par jour d'un professeur (défaut 80)
+     AI_DAILY_FILES_PROF photos et PDF par jour d'un professeur (défaut 30)
 
-   L'IA est dans Folio+ (2026-10-27) : un compte Folio gratuit reçoit
-   « plus » (402), ce qui ouvre l'écran Folio+ dans l'app. L'offre vient de
+   L'IA est dans Mirandola+ (2026-10-27) : un compte Mirandola gratuit reçoit
+   « plus » (402), ce qui ouvre l'écran Mirandola+ dans l'app. L'offre vient de
    la base (offre_de, rôle service) ; une base qui n'a pas encore la
    fonction laisse passer, aux seuls quotas du jour.
 
@@ -33,7 +38,13 @@ const DAILY_CALLS = Number(Deno.env.get("AI_DAILY_CALLS") ?? 30);
 /* Une photo ou un PDF coûte bien plus cher qu'un texte collé : quota
    séparé, plus serré, en plus du quota général. */
 const DAILY_FILES = Number(Deno.env.get("AI_DAILY_FILES") ?? 10);
-const MONTHLY_PLUS = Number(Deno.env.get("AI_MONTHLY_PLUS") ?? 50);
+const MONTHLY_PLUS = Number(Deno.env.get("AI_MONTHLY_PLUS") ?? 30);
+/* Un professeur (rôle prof, référent ou éditeur, table user_roles) met en
+   flashcards les cours de toutes ses classes : ses quotas sont d'un autre
+   ordre (2026-10-28). */
+const MONTHLY_PROF = Number(Deno.env.get("AI_MONTHLY_PROF") ?? 400);
+const DAILY_PROF = Number(Deno.env.get("AI_DAILY_PROF") ?? 80);
+const DAILY_FILES_PROF = Number(Deno.env.get("AI_DAILY_FILES_PROF") ?? 30);
 const MAX_CHARS = 24000;
 const MAX_CARDS = 120;
 /* en octets une fois décodé — l'API accepte 5 Mo par image, 32 Mo par PDF,
@@ -168,7 +179,8 @@ Deno.serve(async (req) => {
     .toISOString().slice(0, 10);
   const today = now.toISOString().slice(0, 10);
 
-  const [{ data: month }, { count: mine }, { count: myFiles }, { count: myMonth }, { data: offre, error: sansOffre }] =
+  const [{ data: month }, { count: mine }, { count: myFiles }, { count: myMonth }, { data: offre, error: sansOffre },
+    { data: roles }] =
     await Promise.all([
       admin.from("ai_usage").select("cents").gte("day", firstOfMonth),
       admin.from("ai_usage").select("id", { count: "exact", head: true })
@@ -180,13 +192,15 @@ Deno.serve(async (req) => {
       admin.from("ai_usage").select("id", { count: "exact", head: true })
         .eq("user_id", uid).gte("day", firstOfMonth),
       admin.rpc("offre_de", { u: uid }),
+      admin.from("user_roles").select("role").eq("user_id", uid),
     ]);
+  const prof = (roles ?? []).some((r: { role: string }) => ["prof", "ref", "admin"].includes(r.role));
   if (!sansOffre && offre === "gratuit") return json({ error: "plus" }, 402);
-  if (!sansOffre && (myMonth ?? 0) >= MONTHLY_PLUS) return json({ error: "mquota" }, 429);
+  if (!sansOffre && (myMonth ?? 0) >= (prof ? MONTHLY_PROF : MONTHLY_PLUS)) return json({ error: "mquota" }, 429);
   const spent = (month ?? []).reduce((a, r) => a + Number(r.cents), 0);
   if (spent >= BUDGET_CENTS) return json({ error: "budget" }, 402);
-  if ((mine ?? 0) >= DAILY_CALLS) return json({ error: "quota" }, 429);
-  if (isFile && (myFiles ?? 0) >= DAILY_FILES) return json({ error: "fquota" }, 429);
+  if ((mine ?? 0) >= (prof ? DAILY_PROF : DAILY_CALLS)) return json({ error: "quota" }, 429);
+  if (isFile && (myFiles ?? 0) >= (prof ? DAILY_FILES_PROF : DAILY_FILES)) return json({ error: "fquota" }, 429);
 
   const hint = String(body.hint ?? "").slice(0, 200).trim();
   const pages = String(body.pages ?? "").slice(0, 60).trim();

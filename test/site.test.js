@@ -103,7 +103,7 @@ describe('le graphique du moteur', async () => {
     for (const S of [0.5, 3, 40]) expect(rappel(S, S)).toBeCloseTo(0.9, 10);
   });
 
-  it('avec Folio, chaque fiche reste au-dessus de 90 % toute l’année', () => {
+  it('avec Mirandola, chaque fiche reste au-dessus de 90 % toute l’année', () => {
     for (let i = 0; i <= 4000; i++) expect(c.lire(i / 4000).avec).toBeGreaterThanOrEqual(0.9 - 1e-9);
   });
 
@@ -154,12 +154,12 @@ describe('le graphique du moteur', async () => {
   });
 });
 
-/* La page, l'app et Stripe disent les mêmes prix ; le bouton de Folio+ ne
-   mène à l'écran Folio+ de l'app que la vente ouverte. La section « Sur
+/* La page, l'app et Stripe disent les mêmes prix ; le bouton de Mirandola+ ne
+   mène à l'écran Mirandola+ de l'app que la vente ouverte. La section « Sur
    tous tes écrans » est partie le 2026-10-27 ; depuis le 2026-10-28, un
-   téléphone pose Folio sur son écran d'accueil depuis le navigateur (la
+   téléphone pose Mirandola sur son écran d'accueil depuis le navigateur (la
    porte d'installation, src/plateformes.js), sans magasin. */
-describe('Folio+ et les appareils', async () => {
+describe('Mirandola+ et les appareils', async () => {
   const { FORMULES, VENTE_OUVERTE, euros } = await import('../src/abonnement.js');
   const plat = s => s.replace(/&nbsp;|&#8239;|\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ');
   const page = plat(html);
@@ -178,8 +178,32 @@ describe('Folio+ et les appareils', async () => {
     expect(html).not.toContain('href="#telecharger"');
     expect(html).not.toMatch(/data-os=/);
   });
-  it('« Passer à Folio+ » ne mène au paiement que la vente ouverte', () => {
+  it('« Passer à Mirandola+ » ne mène au paiement que la vente ouverte', () => {
     const bouton = html.match(/<a [^>]*data-vente[^>]*>/)[0];
     expect(/data-vente-an="\/app\?plus=annuel"/.test(bouton) && /data-vente-mois="\/app\?plus=mensuel"/.test(bouton)).toBe(VENTE_OUVERTE);
+  });
+});
+
+/* La grille Campus de la page (le calculateur, son tableau, la FAQ) est
+   celle de src/tarifs.js, la même que la console de l'éditeur. */
+describe('le prix d’une licence d’établissement', async () => {
+  const { TRANCHES, MINIMUM } = await import('../src/tarifs.js');
+  const plat = s => s.replace(/&nbsp;|&#8239;|\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ');
+  const page = plat(html);
+  const euro = c => (c / 100).toFixed(2).replace('.', ',').replace(',00', '') + ' €';
+  it('chaque tranche du tableau a le prix de la grille', () => {
+    const lignes = [...html.matchAll(/<tr data-tranche="(\d)"><td>[^<]*<\/td><td>([^<]*)<\/td><\/tr>/g)];
+    expect(lignes).toHaveLength(TRANCHES.length);
+    for (const [, i, prix] of lignes) expect(plat(prix)).toBe(euro(TRANCHES[+i].prix) + ' HT');
+  });
+  it('le total écrit dans la page (avant tout script) est celui de sa valeur de départ', async () => {
+    const { prixCampus } = await import('../src/tarifs.js');
+    const places = +html.match(/id="calcul-places"[^>]*value="(\d+)"/)[1];
+    const total = plat(html.match(/<b id="calcul-prix">([^<]*)<\/b>/)[1]);
+    expect(total).toBe(euro(prixCampus(places)).replace(/(\d)(\d{3}) €/, '$1 $2 €') + ' HT');
+  });
+  it('le minimum et les bornes des tranches sont ceux de la grille', () => {
+    expect(page).toContain(euro(MINIMUM) + ' HT minimum');
+    for (const t of TRANCHES.slice(0, -1)) expect(page).toMatch(new RegExp(`à ${t.jusqua.toLocaleString('fr-FR').replace(/\s/g, ' ')}\\b`));
   });
 });

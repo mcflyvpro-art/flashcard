@@ -2,7 +2,7 @@
 // src/tuto.js) : un guide qui fait faire, sur le vrai écran, et que rien ne
 // contourne sauf la croix, « Passer » et Échap. Un particulier finit son
 // accueil, crée son premier livre, lit et note une page, voit son journal,
-// ses amis, son courrier, et finit sur Folio+ ; un élève entré par un code a
+// ses amis, son courrier, et finit sur Mirandola+ ; un élève entré par un code a
 // le sien, qui se passe et se rejoue des Réglages ; un professeur fait le
 // tour de son espace, sa classe créée pour de vrai ; un référent celui de sa
 // console ; l'éditeur n'en a pas. Dans la démo, chaque rôle a son tuto la
@@ -98,9 +98,9 @@ async function jusqua(page, but) {
   throw new Error(`le tuto n’arrive pas à « ${but} » : ${vus.join(' → ')}`);
 }
 
-test('un particulier : son premier livre, une page lue et notée, son journal, ses amis, son courrier, Folio+', async ({ page }) => {
+test('un particulier : son premier livre, une page lue et notée, son journal, ses amis, son courrier, Mirandola+', async ({ page }) => {
   test.setTimeout(120000);
-  const store = { ...nouveauStore(), parDefaut: 'gratuit' };             // un compte neuf : Folio gratuit
+  const store = { ...nouveauStore(), parDefaut: 'gratuit' };             // un compte neuf : Mirandola gratuit
   const lea = semerCompte(store, 'lea@exemple.fr');
   faireEleve(store, 'lea@exemple.fr');
   await brancher(page, store);
@@ -139,18 +139,18 @@ test('un particulier : son premier livre, une page lue et notée, son journal, s
   // l'étape a porté : le tuto laisse voir les pages (320 ms), puis passe à « Crée-le »
   await expect(page.locator('#tu .tu-bulle.vue .tu-t')).not.toHaveText('Écris ta première page', { timeout: 5000 });
 
-  expect(await jusqua(page, 'Folio s’en souvient')).toEqual(['Crée-le', 'Lis-le', 'Retourne la page', 'Dis si tu savais']);
+  expect(await jusqua(page, 'Mirandola s’en souvient')).toEqual(['Crée-le', 'Lis-le', 'Retourne la page', 'Dis si tu savais']);
   await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'centre');
   await suivant(page);
 
   expect(await jusqua(page, '')).toEqual(['Ton journal', 'Tes progrès', 'Le cercle', 'Tes amis', 'Ton courrier', 'Ta boîte']);
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'mail');
 
-  // la fin : Folio+, l'écran Folio+ de l'app (la vente est ouverte depuis le 2026-10-27)
+  // la fin : Mirandola+, l'écran Mirandola+ de l'app (la vente est ouverte depuis le 2026-10-27)
   const fin = page.locator('#tu .tu-fin.plus');
   await expect(fin).toBeVisible({ timeout: 10000 });
   await expect(fin.getByRole('button', { name: 'Terminer' })).toBeVisible();
-  await fin.getByRole('button', { name: 'Découvrir Folio+' }).click();
+  await fin.getByRole('button', { name: 'Découvrir Mirandola+' }).click();
   await expect(page.locator('#tu')).toHaveCount(0);
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'plus', { timeout: 10000 });
 
@@ -271,6 +271,7 @@ test('un professeur d’établissement : ses classes choisies dans le tuto, puis
   await expect(feuille.locator('.pf-li', { hasText: '2nde A' })).toContainText('J’y enseigne');
   await feuille.getByRole('button', { name: 'Terminé' }).click();
   expect(store.et.services.some(s => s.cid === classes[0] && s.prof === marc && s.matiere === 'Mathématiques')).toBe(true);
+  await etape(page, 'Votre tableau de bord');                         // l'étape avance à la réponse de la base, pas au clic
 
   expect(await jusqua(page, 'Sa fiche')).toEqual(['Votre tableau de bord', 'À traiter', 'Une classe', 'Son suivi', 'Ses élèves']);
   await expect(feuille).toContainText('Léa MARTIN');
@@ -406,7 +407,7 @@ test('la démo : un tuto par rôle la première fois, et rien ne le contourne', 
 test.describe('la démo sur ordinateur', () => {
   test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false });
 
-  test('un professeur de la démo finit sur Folio Campus, la marque du site', async ({ page }) => {
+  test('un professeur de la démo finit sur Mirandola Campus, la marque du site', async ({ page }) => {
     test.setTimeout(120000);
     await brancher(page, nouveauStore());
     await page.goto('./essayer');
@@ -417,7 +418,7 @@ test.describe('la démo sur ordinateur', () => {
     const vus = await jusqua(page, '');
     expect(vus.slice(-4)).toEqual(['Défi en direct', 'L’agenda', 'Vos livres', 'Le courrier']);
     const fin = page.locator('#tu .tu-fin.campus');
-    await expect(fin.locator('h2')).toHaveText(/Folio\s+Campus/);
+    await expect(fin.locator('h2')).toHaveText(/Mirandola\s+Campus/);
     await expect(fin.locator('.tu-campus-ic img')).toHaveAttribute('src', '/site/logo.svg');
     await expect(fin.getByRole('link', { name: 'Essayer dans mon établissement' })).toHaveAttribute('href', '/demande-demo');
     await fin.getByRole('button', { name: 'Continuer la démo' }).click();

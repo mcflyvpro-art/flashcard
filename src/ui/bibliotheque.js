@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, LOGO, svg } from '../icones.js';
 import { isLeech } from '../file.js';
 import {
-  DECKPAGE, adm, animate, asks, auth, compte, db, dirty, eleve, filter, iAmMod, liveAt, me,
+  DECKPAGE, adm, animate, asks, auth, compte, db, dirty, eleve, filter, iAmMod, liveAt, me, offre,
   liveSoon, liveT, mailbox, menu, mods, myRole, online, pageDir, peek, prefs, ref,
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
   setPageDir, setPreviewOf, setView, view
@@ -20,7 +20,7 @@ import { STATE, cstate, paintMedia } from './carte-media.js';
 import { admAller, adminView, atSchool, isProf, isPupil, modView } from './classement.js';
 import { refAller, refView } from './etablissement.js';
 import { bienvenueView } from './bienvenue-porte.js';
-import { ongletPlus, ouvrirPlus, plusView } from './plus-porte.js';
+import { entreePlus, ongletPlus, ouvrirPlus, plusView } from './plus-porte.js';
 import { aInstaller, porteView } from './pwa-porte.js';
 import { admPull, boardPull, modPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
@@ -198,15 +198,16 @@ function railClasseNom() {
 const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' : ''}" data-r="${k}">${
   svg(ic)}<span>${nom}</span>${badge ? `<i class="icb">${badge}</i>` : ''}</button>`;
 
-/* Folio+, pour un compte Folio gratuit (ongletPlus, ui/plus-porte.js) : une
-   entrée à part, dans la lumière de la marque ; elle s'en va une fois
-   Folio+ pris. */
-const railPlus = on => ongletPlus() ? `<button class="r-plus${on === 'plus' ? ' on' : ''}" data-r="plus">${
-  svg(I.spark)}<span>Folio+</span></button>` : '';
+/* Mirandola+ (entreePlus, ui/plus-porte.js) : une entrée à part, dans la
+   lumière de la marque, en bas au-dessus des Réglages — ce qu'on peut
+   prendre, ou sa licence une fois prise (2026-10-28 : elle ne s'en va
+   plus). Pour un compte d'établissement, « Campus ». */
+const railPlus = on => entreePlus() ? `<button class="r-plus${on === 'plus' ? ' on' : ''}" data-r="plus">${
+  svg(I.spark)}<span>${offre && offre.offre === 'campus' ? 'Campus' : 'Mirandola+'}</span></button>` : '';
 
 /* Le logo en tête de la barre : un appui ramène à la première page du
    compte, comme partout ailleurs sur le web. */
-const marqueRail = k => `<button class="brand" data-vers="${k}" aria-label="Folio : accueil">${LOGO}<span>Folio</span></button>`;
+const marqueRail = k => `<button class="brand" data-vers="${k}" aria-label="Mirandola : accueil">${LOGO}<span>Mirandola</span></button>`;
 
 const railMailBadge = () => mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0;
 
@@ -296,7 +297,7 @@ function railClick(e) {
   if (quoi === 'ref') return refAller(k);
   if (quoi === 'adm') return admAller(k);
   if (quoi === 'mod') { if (!mods.list) modPull(); return go('mod'); }
-  if (r === 'mail') { mailbox.list = null; mailPull(); return go('mail'); }
+  if (r === 'mail') { mailPull(); return go('mail'); }      // ce qu'on a s'affiche aussitôt, la relecture arrive par-dessus
   if (r === 'stats') { statsPull(); return go('stats'); }
   if (r === 'commu') { commuPull(); return go('commu'); }
   if (r === 'classes') return allerClasses();
@@ -324,7 +325,7 @@ function paintRail() {
   const boulot = auBoulot();
   const base = monNomRail() + '\u0000' + mailbox.n + '\u0000' + (gestion() ? railCompte() : '')
             + '\u0000' + myRole + '\u0000' + (boulot ? 'h' : 'v') + '\u0000' + aUneClasse() + (asks || []).length
-            + '\u0000' + ongletPlus();
+            + '\u0000' + (entreePlus() ? offre.offre : '');
   if (r && r.dataset.sig === on + '\u0000' + base) return;      // rien n'a changé : on ne redessine pas
   /* seule l'entrée allumée change : on la déplace sur place, son fond glisse
      de l'une à l'autre au lieu que toute la barre soit refaite */
@@ -346,7 +347,7 @@ function paintRail() {
    qui en a une), Cercle. C'est la seule navigation horizontale de l'app :
    partout ailleurs on entre et on ressort par la flèche. */
 const ONGLETS = { home: [I.layers, 'Livres'], classes: [I.school, 'Classe'], commu: [I.users, 'Cercle des lecteurs'],
-  plus: [I.spark, 'Folio+'] };
+  plus: [I.spark, 'Mirandola+'] };
 export const ordreOnglets = () => ['home', ...(aUneClasse() && !isProf() ? ['classes'] : []), 'commu'];
 export const vueOnglet = k => ({ home, classes: mesClassesView, commu: commuView })[k];
 
@@ -358,7 +359,7 @@ export function allerOnglet(k) {
   go(k, null, 0, true);
 }
 
-/* Folio+ ferme la rangée tant que le compte est en Folio gratuit : un
+/* Mirandola+ ferme la rangée tant que le compte est en Mirandola gratuit : un
    onglet qu'on touche, pas une page qu'on glisse (il n'est pas dans
    ordreOnglets, que suit le balayage). */
 export const tabs = on => {

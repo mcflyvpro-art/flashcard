@@ -1,4 +1,4 @@
-# PROGRESS — Folio
+# PROGRESS — Mirandola (Folio jusqu'au 2026-10-28)
 
 <!-- PROTOCOLE (Claude, lis ceci avant tout) :
      · état courant      : sed -n '1,24p' PROGRESS.md
@@ -19,17 +19,18 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-28 · la porte d'installation : sur un téléphone, Folio
-          ne s'ouvre plus que depuis l'écran d'accueil (ui/pwa-porte.js,
-          ui/pwa.js, src/installation.js) — le geste de chaque navigateur,
-          animé, une flèche vers son bouton, « Installer Folio » en un
-          geste sur Android, puis « C'est installé, plus qu'à te
-          connecter » dans l'app. Plus de magasins à l'écran Folio+ (le QR
-          du téléphone, l'installation sur l'ordinateur). Aucune tâche
-          cochée (M08.T5/T6 restent à prouver sur un vrai iPhone).
-Avant :   2026-10-28 · Folio+ en base : migrations appliquées, tests SQL
-          verts, fonctions déployées ; manquent STRIPE_SECRET_KEY et
-          RC_SECRET (docs/VENTE.md § 3).
+DERNIER   2026-10-28 · Folio devient Mirandola (mirandola.fr) : le nom
+          partout où il se lit, les clés internes gardées (CLAUDE.md, « Le
+          nom ») ; référencement de la page d'accueil. Les prix : Mirandola+
+          6,99 €/mois ou 49,99 €/an, l'IA 30 cours/mois (400 pour un prof),
+          Campus dégressif (src/tarifs.js, calculateur). L'écran Mirandola+ :
+          sa licence en détail, « Résilier », l'entrée de la barre latérale
+          qui reste. La synchro entre appareils sans recharger, des onglets
+          préchargés. Migration 20261028090000 à appliquer, puis redéployer
+          ai, paiement, stripe-webhook, magasins. Aucune tâche cochée.
+Avant :   2026-10-28 · la porte d'installation : sur un téléphone, l'app ne
+          s'ouvre plus que depuis l'écran d'accueil (M08.T5/T6 restent à
+          prouver sur un vrai iPhone).
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.
@@ -190,7 +191,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 ## M12 · Paiement B2C [P0] 1/5
 - [~] M12.T1 · Stripe en test: abonnement mensuel et annuel — preuve: paiement test abouti — code prêt et en ligne (migrations 20261027190000 et 20261027210000 appliquées, fonctions paiement, stripe-webhook et magasins déployées le 2026-10-28, écran et onglet Folio+), attend le compte Stripe, RevenueCat et leurs clés (STRIPE_SECRET_KEY et RC_SECRET manquent) : docs/VENTE.md § 1 à 4
 - [x] M12.T2 · limites du gratuit appliquées côté serveur — cible: contournement impossible depuis le client — preuve: test d'attaque — ce qui coûte est tenu en base (médias : politiques restrictives ; IA : offre_de dans la fonction ai, redéployée le 2026-10-28) ; livres, QCM et journal restent des règles d'écran (décidé le 2026-10-27 : refuser un livre en base bloquerait la synchro). Preuve en base, le 2026-10-28 : supabase/tests/abonnements.sql 17/17 et folio_plus_pour_tous.sql 15/15 (s'offrir ou rallonger Folio+ par l'API brute, déposer un média en gratuit, lire l'offre d'un autre, offrir Folio+ sans être l'éditeur : tous refusés en 42501)
-- [~] M12.T3 · quotas IA par compte et par mois — cible: budget global jamais dépassé — preuve: simulation 100 comptes — 50 cours par mois avec Folio+ et Campus, 0 en gratuit (AI_MONTHLY_PLUS, fonction ai) ; reste la simulation et un pool par établissement
+- [~] M12.T3 · quotas IA par compte et par mois — cible: budget global jamais dépassé — preuve: simulation 100 comptes — 30 cours par mois pour un élève en Mirandola+ ou Campus, 400 pour un professeur (rôle lu dans user_roles, 2026-10-28), 0 en gratuit (AI_MONTHLY_PLUS, AI_MONTHLY_PROF, fonction ai) ; reste la simulation et un pool par établissement
 - [x] M12.T4 · webhooks Stripe idempotents — cible: 0 double facturation sur 100 rejeux — preuve: test — node tools/paiement/essai.js 32/32 (sous Deno, face à un faux Stripe et un faux RevenueCat : 100 rejeux sans écriture de plus, un évènement neuf livré 100 fois à la fois → une seule ligne juste, 20 appuis à la fois → une seule page de paiement)
 - [ ] M12.T5 · passage en clés réelles + première vente test — preuve: paiement réel remboursé
 

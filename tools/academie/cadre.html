@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Folio Academy</title>
+<title>Mirandola Academy</title>
 <style>
 :root{--bg:#F6F5F1;--bg2:#EEECE6;--ink:#1D1C19;--ink2:#4B4842;--soft:#8A867E;--card:#fff;--line:rgba(29,28,25,.11);
   --acc:#2F7A4E;--or:#E3A21A;--e:cubic-bezier(.22,1,.36,1)}
@@ -137,7 +137,7 @@ header{position:absolute;left:0;top:0;right:0;height:80px;display:flex;align-ite
 <body class="m-pc">
 <div class="scene">
   <header>
-    <div class="marque"><img src="/site/icone.svg" alt="">Folio <i>Academy</i></div>
+    <div class="marque"><img src="/site/icone.svg" alt="">Mirandola <i>Academy</i></div>
     <span class="module" id="module"></span>
     <span class="fil" id="fil"></span>
     <span class="temps" id="temps"></span>
@@ -158,9 +158,9 @@ header{position:absolute;left:0;top:0;right:0;height:80px;display:flex;align-ite
     <div class="curseur" id="curseur"><svg viewBox="0 0 24 24"><path d="M4 2.5l15 10.2-6.6 1.2 3.9 7.4-2.6 1.3-3.9-7.4L4 20z" fill="#1D1C19" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
   </div>
 </div>
-<div class="carte" id="carte"><div class="fond"></div><div class="num" id="cnum"></div><div class="logo"><img src="/site/icone.svg" alt="">Folio <i>Academy</i></div>
+<div class="carte" id="carte"><div class="fond"></div><div class="num" id="cnum"></div><div class="logo"><img src="/site/icone.svg" alt="">Mirandola <i>Academy</i></div>
   <div class="sur" id="csur"></div><h1 id="ctitre"></h1><div class="txt" id="ctxt"></div><div class="puces" id="cpuces"></div><div class="recap" id="crecap"></div></div>
-<div class="som" id="som"><div class="g"><div class="logo"><img src="/site/icone.svg" alt="">Folio <i>Academy</i></div>
+<div class="som" id="som"><div class="g"><div class="logo"><img src="/site/icone.svg" alt="">Mirandola <i>Academy</i></div>
   <div class="sur" id="ssur"></div><h1 id="stitre"></h1><p id="stxt"></p><div class="duree" id="sduree"></div></div><ol id="sliste"></ol></div>
 <script>
 const $ = id => document.getElementById(id);
@@ -172,7 +172,7 @@ window.A = {
     $('module').textContent = module;
     $('appareil').innerHTML = mode === 'tel'
       ? `<div class="tel" id="dev"><iframe id="app" src="${src}"></iframe><div class="rideau" id="rideau"></div></div>`
-      : `<div class="pc" id="dev"><div class="chrome"><i></i><i></i><i></i><div class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span id="url">www.folioflashcard.online</span></div></div><div class="vue" id="vue"><iframe id="app" src="${src}"></iframe></div><div class="rideau" id="rideau"></div></div>`;
+      : `<div class="pc" id="dev"><div class="chrome"><i></i><i></i><i></i><div class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span id="url">mirandola.fr</span></div></div><div class="vue" id="vue"><iframe id="app" src="${src}"></iframe></div><div class="rideau" id="rideau"></div></div>`;
     const c = $('curseur'); c.style.display = mode === 'tel' ? 'none' : '';
     c.style.transform = 'translate(700px,560px)';
   },

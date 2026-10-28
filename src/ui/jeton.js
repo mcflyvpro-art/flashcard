@@ -18,7 +18,7 @@ import { aFolioPlus } from './bridage.js';
 
 const TAILLE = /^(xs|sm|lg|xl)$/;
 
-/* Folio+ se voit sur le jeton (app.css, .jt-plus) : le mien selon mon
+/* Mirandola+ se voit sur le jeton (app.css, .jt-plus) : le mien selon mon
    offre, celui d'un autre selon visuels(), qui le dit. */
 const aPlus = (id, v) => (auth && id === auth.uid ? aFolioPlus() : !!(v && v.plus));
 

@@ -155,13 +155,13 @@ function loadBases() {
   catch (e) { setBases({}); /* illisibles : sans base, une divergence repasse par la boîte de choix, rien n'est écrasé */ }
 }
 
-function saveBases() {
+export function saveBases() {
   if (demoEtab) return;                   // la démo ne laisse rien sur l'appareil
   try { localStorage.setItem(baseKey(), JSON.stringify(bases)); }
   catch (e) { /* quota plein : même filet que ci-dessus, la boîte de choix au lieu d'une fusion */ }
 }
 
-const snapOf = (d, rev) => JSON.parse(JSON.stringify({ rev, name: d.name, subject: d.subject,
+export const snapOf = (d, rev) => JSON.parse(JSON.stringify({ rev, name: d.name, subject: d.subject,
   hidden: !!d.hidden, pinned: !!d.pinned, meta: d.meta || {}, cards: d.cards }));
 
 /* Le paquet `d` (modifié ici depuis `localRev`) face à la version du serveur
@@ -278,7 +278,7 @@ async function throwIfPageError(r) {
   throw apiError(await r.text().catch(() => String(r.status)), r.status);
 }
 
-async function apiPage(path, from, to) {
+export async function apiPage(path, from, to) {
   if (!demoEtab && tokenExpiring()) await refreshToken();
   const h = { apikey: SB.key, Range: `${from}-${to}`, Prefer: 'count=exact' };
   if (auth && auth.token) h.Authorization = 'Bearer ' + auth.token;
@@ -484,7 +484,7 @@ async function flushOutbox() {
          et 429 veut dire « plus tard ». Le reste (réseau, 5xx) attend. */
       const st = e && e.status;
       if (st >= 400 && st < 500 && st !== 401 && st !== 403 && st !== 429) {
-        console.error('Folio : ligne refusée par le serveur, abandonnée', path, row, e.message);
+        console.error('Mirandola : ligne refusée par le serveur, abandonnée', path, row, e.message);
         if (row && row.client_id) oublierLocale(row.client_id);     // elle n'arrivera jamais : le journal l'oublie
         outbox.shift(); save();
         continue;
@@ -554,7 +554,7 @@ async function pushSynced(d) {
    ou null s'il n'existe plus (ou est à la corbeille). */
 async function remoteDeck(id) {
   const q = encodeURIComponent(id);
-  const rows = await api(`/rest/v1/decks?id=eq.${q}&deleted_at=is.null&select=id,name,subject,hidden,pinned,meta,rev,updated_at`);
+  const rows = await api(`/rest/v1/decks?id=eq.${q}&deleted_at=is.null&select=id,name,subject,hidden,pos,pinned,meta,rev,updated_at`);
   const row = rows && rows[0];
   if (!row) return null;
   const cards = cardsParDeck(await apiAll(`/rest/v1/cards?deck_id=eq.${q}&select=${CARDS_SELECT}`)).get(row.id) || [];
@@ -627,11 +627,11 @@ export function setOnline(v) {
    qu'une carte pèse plus sur le réseau qu'avant : les noms de colonnes,
    lisibles en base, redeviennent les clés courtes que le reste de l'app
    attend, sans passer par une conversion côté client. */
-const CARDS_SELECT = 'deck_id,id,f:front,b:back,st:state,sp:step,'
+export const CARDS_SELECT = 'deck_id,id,f:front,b:back,st:state,sp:step,'
   + 'S:stability,D:difficulty,F:trace2,d:due,lr:last_review,i:interval_days,'
   + 'n:reviews_count,l:lapses,meta';
 
-function cardsParDeck(rows) {
+export function cardsParDeck(rows) {
   const m = new Map();
   for (const r of rows) {
     const { deck_id, meta, ...c } = r;
@@ -737,7 +737,7 @@ function entretenir() {
   if (entretenue) return;
   entretenue = true;
   const idle = window.requestIdleCallback || (f => setTimeout(f, 5000));
-  idle(() => entretienAuto().catch(e => console.warn('Folio : entretien de la bibliothèque impossible', e && e.message)),
+  idle(() => entretienAuto().catch(e => console.warn('Mirandola : entretien de la bibliothèque impossible', e && e.message)),
     { timeout: 20000 });
 }
 

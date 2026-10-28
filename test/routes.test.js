@@ -33,12 +33,13 @@ describe('chemin — un écran, son adresse', () => {
     expect(chemin({ name: 'ref', sous: 'classes' }, 'prof')).toBeNull();
     expect(chemin({ name: 'classes' }, 'prof')).toBeNull();
   });
-  it('Folio+ : pour qui révise, pas pour qui gère un établissement', () => {
-    expect(chemin({ name: 'plus' }, 'eleve')).toBe('/eleve/folio-plus');
-    expect(chemin({ name: 'plus' }, 'prof')).toBe('/prof/folio-plus');
+  it('Mirandola+ : pour qui révise, pas pour qui gère un établissement', () => {
+    expect(chemin({ name: 'plus' }, 'eleve')).toBe('/eleve/mirandola-plus');
+    expect(chemin({ name: 'plus' }, 'prof')).toBe('/prof/mirandola-plus');
     expect(chemin({ name: 'plus' }, 'ref')).toBeNull();
     expect(chemin({ name: 'plus' }, 'admin')).toBeNull();
-    expect(lireChemin('/eleve/folio-plus')).toMatchObject({ role: 'eleve', name: 'plus' });
+    expect(lireChemin('/eleve/mirandola-plus')).toMatchObject({ role: 'eleve', name: 'plus' });
+    expect(lireChemin('/eleve/folio-plus')).toMatchObject({ role: 'eleve', name: 'plus' });   // l'adresse d'avant
   });
   it('la démo a ses propres adresses', () => {
     expect(chemin({ name: 'prof' }, 'prof', true)).toBe('/demo/prof');

@@ -6,6 +6,7 @@
 import { codeComplet, normCode } from '../classe.js';
 import { pinComplet, pinDepuisTexte } from '../defi.js';
 import { courbes, duree, versT } from './courbes.js';
+import { TRANCHES, eurosHT, parPlace, prixCampus } from '../tarifs.js';
 
 const doc = document.documentElement;
 const reduit = matchMedia('(prefers-reduced-motion: reduce)');
@@ -294,7 +295,7 @@ function auClavier(groupe, sel, choisir) {
   });
 }
 
-/* ---------- Folio Campus : un espace par rôle ----------
+/* ---------- Mirandola Campus : un espace par rôle ----------
    Chaque rôle est un onglet : il montre son écran sur l'ordinateur, le
    même au téléphone posé à côté (`data-onglet`), et « Essayer cet
    espace » mène à la démo dans ce rôle. Un rôle sans écran de téléphone
@@ -352,9 +353,32 @@ function tarifs() {
   t.querySelectorAll('.comparatif tbody tr').forEach((r, i) => r.style.setProperty('--i', String(i)));
 }
 
+/* ---------- combien pour mon établissement ----------
+   La grille de src/tarifs.js, la même que la console de l'éditeur : le
+   champ et le curseur se suivent, le total et le prix moyen d'une place
+   suivent les deux, et la tranche où l'on tombe s'allume. */
+function calcul() {
+  const c = document.getElementById('calcul-campus');
+  if (!c) return;
+  const champ = c.querySelector('#calcul-places'), curseur = c.querySelector('#calcul-curseur');
+  const prix = c.querySelector('#calcul-prix'), moyen = c.querySelector('#calcul-moyen');
+  const poser = n => {
+    const places = Math.min(20000, Math.max(1, Math.round(+n) || 1));
+    prix.textContent = eurosHT(prixCampus(places), false) + '\u00a0HT';
+    moyen.textContent = `, soit ${eurosHT(parPlace(places))}\u00a0HT la place`;
+    const t = TRANCHES.findIndex(x => places <= x.jusqua);
+    c.querySelectorAll('[data-tranche]').forEach(r => r.classList.toggle('ici', +r.dataset.tranche === t));
+    return places;
+  };
+  champ.addEventListener('input', () => { if (champ.value !== '') curseur.value = String(poser(champ.value)); });
+  champ.addEventListener('change', () => { champ.value = String(poser(champ.value)); });
+  curseur.addEventListener('input', () => { champ.value = curseur.value; poser(curseur.value); });
+  poser(champ.value);
+}
+
 /* La vente ouverte (VENTE_OUVERTE de src/abonnement.js, et dans
    index.html les adresses data-vente-an et data-vente-mois du bouton),
-   « Passer à Folio+ » mène à l'écran Folio+ de l'app, la formule choisie
+   « Passer à Mirandola+ » mène à l'écran Mirandola+ de l'app, la formule choisie
    ici déjà cochée ; sans session, elle attend la connexion
    (ui/plus-porte.js). D'ici là, le bouton n'a pas ces adresses et mène à
    l'inscription. Le module n'est pas importé ici : partagé avec le
@@ -448,6 +472,7 @@ function demarrer() {
   videos();
   onglets();
   tarifs();
+  calcul();
   fenetreCode();
 }
 

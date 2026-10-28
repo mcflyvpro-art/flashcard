@@ -45,7 +45,7 @@ describe('la licence', () => {
   });
   it('la ligne proposée pour facturer une licence', () => {
     expect(lignesLicence({ places: 300, prix: 900, debut: '2026-09-01', fin: '2027-08-31' })).toEqual([{
-      libelle: 'Licence Folio — 300 places (élèves et professeurs), du 01/09/2026 au 31/08/2027', quantite: 1, prix_ht: 90000 }]);
+      libelle: 'Licence Mirandola — 300 places (élèves et professeurs), du 01/09/2026 au 31/08/2027', quantite: 1, prix_ht: 90000 }]);
   });
 });
 
@@ -71,10 +71,10 @@ describe('etatFacture — où en est une pièce', () => {
 });
 
 describe('ce qu’une facture imprime', () => {
-  const v = { raison_sociale: 'Folio', forme: 'EI', adresse: '1 rue des Livres', code_postal: '30000', ville: 'Nîmes',
+  const v = { raison_sociale: 'Mirandola', forme: 'EI', adresse: '1 rue des Livres', code_postal: '30000', ville: 'Nîmes',
     siret: '91234567800011', immatriculation: 'RCS Nîmes 912 345 678', iban: 'FR7612345', bic: 'AGRIFRPP' };
   it('le vendeur : la forme accolée au nom (EI obligatoire), son SIRET, son immatriculation', () => {
-    expect(enteteVendeur(v)).toEqual(['Folio (EI)', '1 rue des Livres', '30000 Nîmes', 'SIRET 91234567800011', 'RCS Nîmes 912 345 678']);
+    expect(enteteVendeur(v)).toEqual(['Mirandola (EI)', '1 rue des Livres', '30000 Nîmes', 'SIRET 91234567800011', 'RCS Nîmes 912 345 678']);
   });
   it('le client : SIRET, UAI, code service et bon de commande pour Chorus Pro', () => {
     expect(enteteClient({ nom: 'Lycée Camus', adresse: '51 av. Kennedy', code_postal: '30000', ville: 'Nîmes', siret: '19300001500012',

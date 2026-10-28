@@ -282,7 +282,7 @@ export let adm = admNeuf();
 export let myRole = 'eleve';
 
 /* ══════════ scolaire ou personnel ══════════
-   Folio sert deux publics dans la même app : quelqu'un qui révise pour lui,
+   Mirandola sert deux publics dans la même app : quelqu'un qui révise pour lui,
    et un élève inscrit par son établissement. Le second n'est pas le premier
    avec moins de boutons — c'est un autre produit. Il n'a ni club, ni
    annuaire ouvert, ni pseudo à choisir : son identité, sa classe et ses
@@ -299,13 +299,13 @@ export let school = null;                  // { org, classe, niveau, … } | fal
    changer — son nom est « Prénom NOM », et la base le garde ainsi. */
 export let compte = null;                  // { gere, nom, identifiant } | null
 
-/* Folio+ (2026-10-27) : ce que ce compte a le droit d'ouvrir, tel que la
+/* Mirandola+ (2026-10-27) : ce que ce compte a le droit d'ouvrir, tel que la
    base le dit (mon_offre, lu par core/abonnement.js, mis en forme par
-   src/abonnement.js) — null tant qu'on ne sait pas. Et l'écran Folio+ :
+   src/abonnement.js) — null tant qu'on ne sait pas. Et l'écran Mirandola+ :
    l'étape (merci, annule, retour : l'adresse de retour de Stripe), la
    formule choisie, ce qui part (payer, gerer), l'erreur à dire. */
 export let offre = null;
-export const plusNeuf = () => ({ etape: null, formule: 'annuel', envoi: null, err: '', attente: 0, raison: null });
+export const plusNeuf = () => ({ etape: null, formule: 'annuel', envoi: null, err: '', attente: 0, raison: null, ia: null });
 export let plus = plusNeuf();
 
 /* ══════════ « Mes classes », côté élève ══════════
@@ -411,7 +411,7 @@ export let tuto = null;
 
 /* La démo sans compte (ui/demo.js, 2026-10-26) : la base locale qui sert, à
    la place du réseau, chaque requête d'api() — un `fetch` dans l'onglet,
-   sur le « Lycée Démo Folio » de src/base-locale/. Rien ne part. */
+   sur le « Lycée Démo Mirandola » de src/base-locale/. Rien ne part. */
 /** @type {null | ((url: string, init: any) => Promise<Response>)} */
 export let demoEtab = null;
 

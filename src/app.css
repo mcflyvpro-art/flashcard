@@ -1,4 +1,4 @@
-/* ══════════ Folio ══════════
+/* ══════════ Mirandola ══════════
    Papier, encre, toile de reliure. Le fond n'est pas blanc mais crème,
    l'encre n'est pas noire mais brun très sombre : c'est ce qui fait la
    différence entre un écran et une page. Les titres sont en romain à
@@ -35,7 +35,7 @@
   /* ce qui s'en va accélère et disparaît : jamais plus long que l'entrée */
   --out:cubic-bezier(.4,0,1,1);
   --pad:20px;
-  /* la lumière de Folio+ (la page d'accueil, l'écran Folio+) et son « + » tracé */
+  /* la lumière de Mirandola+ (la page d'accueil, l'écran Mirandola+) et son « + » tracé */
   --plus:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);
   --plus-s:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 1.7v6.6M1.7 5h6.6' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat;
 }
@@ -1268,14 +1268,14 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   padding:8px 12px;border-radius:10px;transition:background .2s,color .2s}
 .lnk:hover{background:var(--surf);color:var(--ink)}
 .lnk svg{width:15px;height:15px;flex:none}
-/* ce que la démo sans compte ou Folio gratuit n'ouvre pas : grisé, et dit pourquoi au survol */
+/* ce que la démo sans compte ou Mirandola gratuit n'ouvre pas : grisé, et dit pourquoi au survol */
 .payant{cursor:not-allowed;position:relative}
 .payant > *{opacity:.42}
 .payant[data-astuce]:hover::after,.payant[data-astuce]:focus-visible::after{content:attr(data-astuce);position:absolute;left:50%;
   bottom:calc(100% + 6px);transform:translateX(-50%);padding:5px 9px;border-radius:8px;background:var(--ink);color:#fff;
   font-size:12px;font-weight:650;white-space:nowrap;z-index:5;pointer-events:none}
-/* ---------- Folio gratuit (ui/bridage.js) ----------
-   Ce qui est dans Folio+ : un « + » tracé (centré au pixel, le signe d'une
+/* ---------- Mirandola gratuit (ui/bridage.js) ----------
+   Ce qui est dans Mirandola+ : un « + » tracé (centré au pixel, le signe d'une
    police ne l'était pas), collé à l'étiquette — en ligne il suit le mot,
    en colonne il coiffe l'icône. Les onglets de création (.payant), les
    QCM, les associations, les images et les sons ; « Nouveau livre » quand
@@ -1293,7 +1293,7 @@ html.livres-plein [data-act="new"] svg{opacity:.5}
 html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-3px}
 .plus-floute{position:relative;cursor:pointer}
 .plus-floute>:not(.jr-h){filter:blur(7px);opacity:.7;pointer-events:none;user-select:none}
-.plus-floute::after{content:'Avec Folio+';position:absolute;left:50%;top:calc(50% + 14px);transform:translate(-50%,-50%);
+.plus-floute::after{content:'Avec Mirandola+';position:absolute;left:50%;top:calc(50% + 14px);transform:translate(-50%,-50%);
   padding:9px 15px;border-radius:99px;background:var(--card);color:var(--ink);font-size:13px;font-weight:750;line-height:1;white-space:nowrap;
   box-shadow:var(--edge),0 10px 24px -14px rgba(29,28,25,.5)}
 .plus-floute .jr-h::after{display:inline-block}
@@ -1301,7 +1301,7 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
   .cr-tabs .payant[data-offre="plus"]::before,html.offre-gratuit #app[data-view="deck"] > .acts :is([data-act="mcq"],[data-act="match"])::after{
     position:static;margin-left:-2px}
 }
-/* ---------- Folio+ se voit (2026-10-27) ----------
+/* ---------- Mirandola+ se voit (2026-10-27) ----------
    Qui l'a (html.offre-plus, ui/bridage.js) le voit partout : le « + » à côté
    du nom, sa lumière sur ce qui avance (onglet allumé, bouton principal,
    barres de progression, bouton rond) — et son jeton, comme celui de ses
@@ -1315,7 +1315,7 @@ html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:
 html.offre-plus :is(.tabs .sl,.fab,.prog i){background:var(--plus)}
 html.offre-plus .cta:not(:disabled){background:var(--plus);color:#fff;box-shadow:0 10px 22px -12px rgba(120,70,160,.75)}
 html.offre-plus #rail nav button.on svg{color:#8A6BCB}
-/* l'onglet Folio+ d'un compte gratuit : son nom et son icône dans la lumière de la marque */
+/* l'onglet Mirandola+ d'un compte gratuit : son nom et son icône dans la lumière de la marque */
 .tabs .t-plus svg{color:#9A78CF;fill:rgba(154,120,207,.18)} .tabs .t-plus.on svg{color:var(--bg);fill:none}
 #rail nav .r-plus span{background:var(--plus);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:750}
 #rail nav .r-plus svg{color:#9A78CF}

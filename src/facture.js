@@ -48,7 +48,7 @@ export function prixPlace(prixAnnuel, places) {
    annuel. L'éditeur la change à sa guise avant d'émettre. */
 export function lignesLicence({ places, prix, debut, fin }) {
   const periode = debut && fin ? `, du ${dateFr(debut)} au ${dateFr(fin)}` : fin ? `, jusqu’au ${dateFr(fin)}` : '';
-  return [{ libelle: `Licence Folio — ${places || 0} places (élèves et professeurs)${periode}`, quantite: 1,
+  return [{ libelle: `Licence Mirandola — ${places || 0} places (élèves et professeurs)${periode}`, quantite: 1,
     prix_ht: Math.round((+prix || 0) * 100) }];
 }
 
@@ -72,7 +72,7 @@ export function resteDu(liste, auj) {
 /* ---------- ce qu'une facture doit dire ---------- */
 const ligne = (...l) => l.filter(Boolean).join(' ');
 
-/* Le vendeur, tel qu'imprimé en tête : la forme accolée au nom (« Folio
+/* Le vendeur, tel qu'imprimé en tête : la forme accolée au nom (« Mirandola
    (EI) » — la mention EI est obligatoire pour un entrepreneur individuel). */
 export function enteteVendeur(v = {}) {
   return [
@@ -111,7 +111,7 @@ export function mentionsLegales(f = {}) {
 /* ---------- les échanges ---------- */
 export const SUJETS = { places: 'Des places', renouvellement: 'Le renouvellement', facture: 'Une facture', question: 'Une question' };
 
-/* Les messages de l'autre côté pas encore lus : Folio pour le référent
+/* Les messages de l'autre côté pas encore lus : Mirandola pour le référent
    (`moi` = 'etab'), l'établissement pour l'éditeur (`moi` = 'folio'). */
 export const nonLus = (echanges, moi) => (echanges || []).filter(e => e.de !== moi && !e.lu).length;
 

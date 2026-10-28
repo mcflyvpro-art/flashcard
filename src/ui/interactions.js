@@ -4,7 +4,7 @@ import { I } from '../icones.js';
 import { shuffle } from '../file.js';
 import {
   board, cercle, comp, deckOpen, duels, friends, leaving,
-  mailbox, mods, online, peek, prefs, quiz,
+  mods, online, peek, prefs, quiz,
   reorder, sel, setAnimate, setCardEdit,
   setDeckOpen, setDeckQ, setDuelRun, setFilter, setFindQ,
   setHelpKey, setLeaving, setLegalBack, setLegalTab, setMates2,
@@ -261,7 +261,7 @@ function tapPretour() {
 
 const tapBackup2 = () => openMenu('backup');
 const tapUndo2 = () => { doUndo(); };
-const tapMailScreen = () => { mailbox.list = null; mailPull(); return go('mail'); };
+const tapMailScreen = () => { mailPull(); return go('mail'); };
 const tapTrash = () => { trash.list = null; trashPull(); return go('trash'); };
 
 /* ---- sélection multiple ---- */

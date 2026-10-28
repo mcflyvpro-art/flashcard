@@ -41,7 +41,7 @@ begin
   -- ══════════ ce que chacun ouvre ══════════
   perform public.zz_comme(lea);
   j := public.mon_offre();
-  insert into public.zz_res (nom, ok, vu) values ('un abonnement actif : Folio+',
+  insert into public.zz_res (nom, ok, vu) values ('un abonnement actif : Mirandola+',
     j->>'offre' = 'plus' and j->'abonnement'->>'formule' = 'annuel' and j->'abonnement'->>'statut' = 'actif', j::text);
   perform public.zz_comme(tom);
   j := public.mon_offre();
@@ -49,7 +49,7 @@ begin
     j->>'offre' = 'gratuit' and j->'abonnement'->>'statut' = 'fini', j::text);
   perform public.zz_comme(ana);
   j := public.mon_offre();
-  insert into public.zz_res (nom, ok, vu) values ('impayé pendant les relances : Folio+ reste ouvert', j->>'offre' = 'plus', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('impayé pendant les relances : Mirandola+ reste ouvert', j->>'offre' = 'plus', j::text);
   perform public.zz_comme(zed);
   j := public.mon_offre();
   insert into public.zz_res (nom, ok, vu) values ('aucun abonnement : gratuit, abonnement nul',
@@ -76,7 +76,7 @@ begin
     refus := 'passe';
   exception when others then refus := sqlstate;
   end;
-  insert into public.zz_res (nom, ok, vu) values ('s''offrir Folio+ par l''API brute : refusé', refus = '42501', refus);
+  insert into public.zz_res (nom, ok, vu) values ('s''offrir Mirandola+ par l''API brute : refusé', refus = '42501', refus);
   perform public.zz_comme(tom);
   begin
     update public.abonnements set statut = 'actif', fin_periode = now() + interval '1 year' where user_id = tom;

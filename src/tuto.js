@@ -5,7 +5,7 @@
    flashcard lue et notée, comment créer, son journal, sa classe, ses amis,
    son courrier ; à un professeur son tableau de bord, une classe, un élève,
    un devoir donné, le bilan, l'agenda ; à un référent ses codes et sa
-   console. La fin présente Folio+ (Folio Campus pour un professeur ou un
+   console. La fin présente Mirandola+ (Mirandola Campus pour un professeur ou un
    référent de la démo).
 
    Il s'adapte au rôle, à ce que le compte a déjà (des livres, des classes)
@@ -92,7 +92,7 @@ const lecture = [
     clavier: ['1', '2', '3', '4', ' ', 'ArrowLeft', 'ArrowRight'], geste: 1, voile: 'leger', attend: { notee: 1 },
     titre: 'Dis si tu savais', texte: 'Facile : elle reviendra tard. Dur : bientôt.', aide: 'Choisis une réponse' },
   { id: 'retenue', ecran: 'study', centre: 1,
-    titre: 'Folio s’en souvient', texte: 'Il te rendra chaque page juste avant que tu l’oublies.' }
+    titre: 'Mirandola s’en souvient', texte: 'Il te rendra chaque page juste avant que tu l’oublies.' }
 ];
 
 /* avec des livres : comment on en crée (dans la démo d'un élève, une bibliothèque pleine se dit seulement) */
@@ -155,7 +155,7 @@ const professeur = [
     permis: ['.menu:not(.sort) .pf-form', '[data-pf="creer-go"]'], geste: 1, saisie: 1, attend: { classes: 1 }, passable: 1,
     titre: 'Nommez-la', texte: 'Son nom suffit, le reste est facultatif.', aide: 'Puis « Créer la classe »' },
   { id: 'inviter', si: ['!classes', '!etab'], tant: 'feuille', cible: FEUILLE, ferme: 1,
-    titre: 'Ajoutez vos élèves', texte: 'Ils tapent votre code dans Folio, et ils sont là.' },
+    titre: 'Ajoutez vos élèves', texte: 'Ils tapent votre code dans Mirandola, et ils sont là.' },
   /* le tableau de bord, puis une classe : ses élèves, un devoir donné, son bilan */
   { id: 'tableau', tant: 'classes', ecran: 'prof', cible: ['.pf-main > .pf-kpis'],
     titre: 'Votre tableau de bord', texte: 'Vos élèves, leurs retards, les devoirs en cours.' },
@@ -244,7 +244,7 @@ export const SCENARIOS = {
     { id: 'profs', si: ['pc'], cible: ONGLET('ref:profs'), geste: 1, attend: { ref: 'profs' },
       titre: 'Les professeurs', texte: 'Leurs classes, leurs services, un compte à ouvrir.', aide: 'Touchez « Professeurs »' },
     { id: 'licence', si: ['pc'], cible: ONGLET('ref:licence'), geste: 1, attend: { ref: 'licence' },
-      titre: 'La licence', texte: 'Places, factures, et un fil avec Folio.', aide: 'Touchez « Licence »' },
+      titre: 'La licence', texte: 'Places, factures, et un fil avec Mirandola.', aide: 'Touchez « Licence »' },
     { id: 'historique', si: ['pc'], cible: ONGLET('ref:journal'), geste: 1, attend: { ref: 'journal' },
       titre: 'L’historique', texte: 'Qui a fait quoi, et quand.', aide: 'Touchez « Historique »' },
     { id: 'licence-tel', si: ['!pc'], ecran: 'ref:accueil', cible: ['.rf-tel .rf-licence'],
@@ -308,15 +308,15 @@ const prenom = p => String(p || '').trim().split(/\s+/)[0];
 /* Ce que dit la carte du début : à qui l'on parle (dans la démo, le rôle
    qu'on vient de prendre), et le temps que ça prend. */
 const DEBUTS = {
-  perso: [p => (p ? `Bienvenue, ${p}` : 'Bienvenue sur Folio'), 'Deux minutes pour faire le tour de Folio.'],
-  classe: [p => (p ? `Bienvenue, ${p}` : 'Bienvenue'), 'Deux minutes pour faire le tour de Folio.'],
+  perso: [p => (p ? `Bienvenue, ${p}` : 'Bienvenue sur Mirandola'), 'Deux minutes pour faire le tour de Mirandola.'],
+  classe: [p => (p ? `Bienvenue, ${p}` : 'Bienvenue'), 'Deux minutes pour faire le tour de Mirandola.'],
   prof: [p => (p ? `Bonjour, ${p}` : 'Bonjour'), 'Deux minutes pour faire le tour de votre espace.'],
   ref: [p => (p ? `Bonjour, ${p}` : 'Bonjour'), 'Une minute pour faire le tour de votre console.']
 };
 const DEBUTS_DEMO = {
-  classe: [(p, c) => `Tu es ${p || 'Léa'}${c ? `, en ${c}` : ''}`, 'Deux minutes pour voir Folio côté élève.'],
-  prof: [p => `Vous êtes ${p || 'Marc'}, professeur`, 'Deux minutes pour voir Folio côté professeur.'],
-  ref: [p => `Vous êtes ${p || 'Claire'}, référente`, 'Une minute pour voir Folio côté établissement.']
+  classe: [(p, c) => `Tu es ${p || 'Léa'}${c ? `, en ${c}` : ''}`, 'Deux minutes pour voir Mirandola côté élève.'],
+  prof: [p => `Vous êtes ${p || 'Marc'}, professeur`, 'Deux minutes pour voir Mirandola côté professeur.'],
+  ref: [p => `Vous êtes ${p || 'Claire'}, référente`, 'Une minute pour voir Mirandola côté établissement.']
 };
 
 function quiEst(role, p, demo, classe) {
@@ -334,17 +334,17 @@ export function debutDe(role, ctx = {}) {
   return { ...quiEst(role, prenom(ctx.prenom), demo, ctx.classe), oui: 'C’est parti', non: 'Passer', passe };
 }
 
-/* Ce que Folio+ ajoute (la page d'accueil, #tarifs), en quatre lignes. */
+/* Ce que Mirandola+ ajoute (la page d'accueil, #tarifs), en quatre lignes. */
 const PLUS = [['spark', 'Ton cours, une photo ou un PDF : l’IA en fait des pages'],
   ['layers', 'Des livres sans limite'], ['grid', 'QCM et associations'], ['image', 'Images et sons sur tes pages']];
 
-/* La fin : Folio+ pour un élève ; Folio Campus pour un professeur ou un
+/* La fin : Mirandola+ pour un élève ; Mirandola Campus pour un professeur ou un
    référent de la démo ; « tout est prêt » pour un professeur ou un
    référent d'un établissement qui a déjà sa licence. Un lien `href` est
    un chemin du site (`tarifs` : la page des tarifs, hors de l'app) ;
    `partir` : il quitte la démo (ui/demo.js l'efface comme « Quitter »). */
 /** @param {string} role @param {{ demo?: boolean, aPlus?: boolean }} [o] */
-/* `aPlus` : le compte a déjà tout (Folio+ offert ou payé, Campus) — on ne
+/* `aPlus` : le compte a déjà tout (Mirandola+ offert ou payé, Campus) — on ne
    lui propose pas ce qu'il a. */
 export function finDe(role, { demo, aPlus } = {}) {
   const eleve = role === 'perso' || role === 'classe';
@@ -354,18 +354,18 @@ export function finDe(role, { demo, aPlus } = {}) {
       actions: [{ t: 'Commencer', fin: 1, pri: 1 }], note: 'Revois ce tuto dans les Réglages.' };
   }
   if (eleve && demo) {
-    return { cle: 'plus', titre: 'Folio+', sous: 'Pour aller plus loin', points: PLUS,
+    return { cle: 'plus', titre: 'Mirandola+', sous: 'Pour aller plus loin', points: PLUS,
       actions: [{ t: 'Créer mon compte', href: '/inscription', partir: 1, pri: 1 },
-        { t: 'Voir Folio+', href: '/#tarifs', partir: 1 }, { t: 'Continuer la démo', fin: 1 }],
+        { t: 'Voir Mirandola+', href: '/#tarifs', partir: 1 }, { t: 'Continuer la démo', fin: 1 }],
       note: 'Revois ce tuto depuis le bandeau, en bas.' };
   }
   if (eleve) {
-    return { cle: 'plus', titre: 'Folio+', sous: 'Pour aller plus loin', points: PLUS,
-      actions: [{ t: 'Découvrir Folio+', href: 'tarifs', pri: 1 }, { t: 'Terminer', fin: 1 }],
+    return { cle: 'plus', titre: 'Mirandola+', sous: 'Pour aller plus loin', points: PLUS,
+      actions: [{ t: 'Découvrir Mirandola+', href: 'tarifs', pri: 1 }, { t: 'Terminer', fin: 1 }],
       note: 'Revois ce tuto dans les Réglages.' };
   }
   if (demo) {
-    return { cle: 'campus', titre: 'Folio Campus', sous: 'Pour tout votre établissement',
+    return { cle: 'campus', titre: 'Mirandola Campus', sous: 'Pour tout votre établissement',
       points: [['users', 'Espace professeur et devoirs suivis'], ['build', 'Console du référent'],
         ['spark', 'Mise en place accompagnée'], ['cal', 'Démo gratuite de 30 jours']],
       actions: [{ t: 'Essayer dans mon établissement', href: '/demande-demo', partir: 1, pri: 1 },

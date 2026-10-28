@@ -25,14 +25,16 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Folio : l’app de révision boostée à l’IA, testée et validée en prépa</title>
-<meta name="description" content="L’IA fait de ton cours un livre de flashcards, et Folio te repose chaque page juste avant l’oubli. Gratuit, hors ligne, pour élèves, profs et établissements.">
-<link rel="canonical" href="https://www.folioflashcard.online/">
-<meta name="robots" content="index,follow,max-image-preview:large">
+<title>Mirandola : flashcards IA et répétition espacée pour réviser</title>
+<meta name="description" content="L’IA fait de ton cours des flashcards, et Mirandola te les repose juste avant l’oubli, avec l’algorithme d’Anki. Gratuit, hors ligne, pour élèves, profs et lycées.">
+<link rel="canonical" href="https://mirandola.fr/">
+<link rel="alternate" hreflang="fr" href="https://mirandola.fr/">
+<link rel="alternate" hreflang="x-default" href="https://mirandola.fr/">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
 <meta name="theme-color" content="#F6F5F1">
 <meta name="color-scheme" content="light">
-<meta name="application-name" content="Folio">
-<meta name="apple-mobile-web-app-title" content="Folio">
+<meta name="application-name" content="Mirandola">
+<meta name="apple-mobile-web-app-title" content="Mirandola">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -40,78 +42,245 @@
 <link rel="apple-touch-icon" href="/icons/icon-180.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Folio">
+<meta property="og:site_name" content="Mirandola">
 <meta property="og:locale" content="fr_FR">
-<meta property="og:url" content="https://www.folioflashcard.online/">
-<meta property="og:title" content="Folio : révise moins, retiens tout">
-<meta property="og:description" content="L’IA fait de ton cours un livre de flashcards, et Folio te repose chaque page juste avant l’oubli. Gratuit, hors ligne, sur téléphone et ordinateur.">
-<meta property="og:image" content="https://www.folioflashcard.online/site/og.jpg">
+<meta property="og:url" content="https://mirandola.fr/">
+<meta property="og:title" content="Mirandola : révise moins, retiens tout">
+<meta property="og:description" content="L’IA fait de ton cours un livre de flashcards, et Mirandola te repose chaque page juste avant l’oubli. Gratuit, hors ligne, sur téléphone et ordinateur.">
+<meta property="og:image" content="https://mirandola.fr/site/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Folio, l’app de révision : trois livres empilés, l’app sur ordinateur et téléphone, et une page de flashcard">
+<meta property="og:image:alt" content="Mirandola, l’app de révision : trois livres empilés, l’app sur ordinateur et téléphone, et une page de flashcard">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Folio : révise moins, retiens tout">
-<meta name="twitter:description" content="L’IA fait de ton cours un livre de flashcards, et Folio te repose chaque page juste avant l’oubli. Gratuit, hors ligne, sur téléphone et ordinateur.">
-<meta name="twitter:image" content="https://www.folioflashcard.online/site/og.jpg">
+<meta name="twitter:title" content="Mirandola : révise moins, retiens tout">
+<meta name="twitter:description" content="L’IA fait de ton cours un livre de flashcards, et Mirandola te repose chaque page juste avant l’oubli. Gratuit, hors ligne, sur téléphone et ordinateur.">
+<meta name="twitter:image" content="https://mirandola.fr/site/og.jpg">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://www.folioflashcard.online/#organisation",
-      "name": "Folio",
-      "url": "https://www.folioflashcard.online/",
-      "logo": "https://www.folioflashcard.online/icons/icon-512.png"
+      "@id": "https://mirandola.fr/#organisation",
+      "name": "Mirandola",
+      "url": "https://mirandola.fr/",
+      "logo": "https://mirandola.fr/icons/icon-512.png",
+      "description": "Mirandola fait de chaque cours un livre de flashcards et le fait réviser au bon moment, pour les élèves, les professeurs et les établissements.",
+      "areaServed": "FR",
+      "knowsLanguage": "fr"
     },
     {
       "@type": "WebSite",
-      "@id": "https://www.folioflashcard.online/#site",
-      "url": "https://www.folioflashcard.online/",
-      "name": "Folio",
+      "@id": "https://mirandola.fr/#site",
+      "url": "https://mirandola.fr/",
+      "name": "Mirandola",
       "inLanguage": "fr-FR",
-      "publisher": { "@id": "https://www.folioflashcard.online/#organisation" }
+      "publisher": {
+        "@id": "https://mirandola.fr/#organisation"
+      }
     },
     {
       "@type": "SoftwareApplication",
-      "@id": "https://www.folioflashcard.online/#app",
-      "name": "Folio",
-      "url": "https://www.folioflashcard.online/",
-      "image": "https://www.folioflashcard.online/site/og.jpg",
-      "description": "Application de révision boostée à l’IA : elle fait d’un cours un livre de flashcards, et chaque page revient juste avant d’être oubliée. Testée et validée en classe prépa. Gratuite, hors ligne, sur téléphone et ordinateur.",
+      "@id": "https://mirandola.fr/#app",
+      "name": "Mirandola",
+      "url": "https://mirandola.fr/",
+      "image": "https://mirandola.fr/site/og.jpg",
+      "screenshot": [
+        "https://mirandola.fr/shots/wide.png", "https://mirandola.fr/shots/narrow.png"
+      ],
+      "description": "Application de révision boostée à l’IA : elle fait d’un cours un livre de flashcards, et chaque page revient juste avant d’être oubliée, avec FSRS, l’algorithme de répétition espacée d’Anki. Testée et validée en classe prépa. Gratuite, hors ligne, sur téléphone et ordinateur.",
       "applicationCategory": "EducationalApplication",
-      "operatingSystem": "Web, iOS, Android, Windows, macOS",
+      "applicationSubCategory": "Flashcards et répétition espacée",
+      "operatingSystem": "Web, iOS, Android, Windows, macOS, ChromeOS",
       "inLanguage": "fr-FR",
-      "publisher": { "@id": "https://www.folioflashcard.online/#organisation" },
+      "isAccessibleForFree": true,
+      "audience": {
+        "@type": "EducationalAudience",
+        "educationalRole": [
+          "student",
+          "teacher"
+        ]
+      },
+      "featureList": [
+        "L’IA fait d’un cours, d’une photo ou d’un PDF un livre de flashcards",
+        "Répétition espacée FSRS, l’algorithme d’Anki",
+        "Hors ligne, synchronisé sur tous les écrans",
+        "QCM et associations",
+        "Images et sons sur les pages",
+        "Journal de révision et statistiques de mémoire",
+        "Défis en direct, clubs et amis",
+        "Classes, devoirs suivis et espace professeur",
+        "Import d’Anki, de Quizlet et de CSV"
+      ],
+      "publisher": {
+        "@id": "https://mirandola.fr/#organisation"
+      },
       "offers": [
-        { "@type": "Offer", "name": "Folio", "price": "0", "priceCurrency": "EUR" },
-        { "@type": "Offer", "name": "Folio+ au mois", "price": "4.99", "priceCurrency": "EUR",
-          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "4.99", "priceCurrency": "EUR", "billingDuration": "P1M" } },
-        { "@type": "Offer", "name": "Folio+ à l’année", "price": "29.99", "priceCurrency": "EUR",
-          "priceSpecification": { "@type": "UnitPriceSpecification", "price": "29.99", "priceCurrency": "EUR", "billingDuration": "P1Y" } }
+        {
+          "@type": "Offer",
+          "name": "Mirandola",
+          "price": "0",
+          "priceCurrency": "EUR",
+          "url": "https://mirandola.fr/#tarifs"
+        },
+        {
+          "@type": "Offer",
+          "name": "Mirandola+ au mois",
+          "price": "6.99",
+          "priceCurrency": "EUR",
+          "url": "https://mirandola.fr/#tarifs",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "6.99",
+            "priceCurrency": "EUR",
+            "billingDuration": "P1M",
+            "valueAddedTaxIncluded": true
+          }
+        },
+        {
+          "@type": "Offer",
+          "name": "Mirandola+ à l’année",
+          "price": "49.99",
+          "priceCurrency": "EUR",
+          "url": "https://mirandola.fr/#tarifs",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "49.99",
+            "priceCurrency": "EUR",
+            "billingDuration": "P1Y",
+            "valueAddedTaxIncluded": true
+          }
+        },
+        {
+          "@type": "Offer",
+          "name": "Mirandola Campus, par place et par an",
+          "price": "5.00",
+          "priceCurrency": "EUR",
+          "url": "https://mirandola.fr/#calcul-campus",
+          "businessFunction": "http://purl.org/goodrelations/v1#Sell",
+          "eligibleCustomerType": "http://purl.org/goodrelations/v1#Business",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "5.00",
+            "priceCurrency": "EUR",
+            "billingDuration": "P1Y",
+            "valueAddedTaxIncluded": false,
+            "referenceQuantity": {
+              "@type": "QuantitativeValue",
+              "value": 1,
+              "unitText": "place"
+            }
+          }
+        }
       ]
     },
     {
       "@type": "FAQPage",
       "mainEntity": [
-        { "@type": "Question", "name": "C’est quoi, un livre de flashcards ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Ton cours, mis en questions. Chaque page porte une question au recto et sa réponse au verso : tu lis, tu cherches, tu retournes la page. Folio range tes pages en livres, un par chapitre ou par matière." } },
-        { "@type": "Question", "name": "Folio est-il vraiment gratuit ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Oui. Le Memory Engine Lite, 5 livres, la synchro et les défis sont gratuits, sans publicité. Folio+ ouvre le Memory Engine Ultra, réglé sur ta mémoire, l’IA (50 cours par mois, photos et PDF compris), les livres sans limite, les QCM et associations, les images et les sons." } },
-        { "@type": "Question", "name": "Comment l’IA transforme-t-elle mon cours en flashcards ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Avec Folio+, donne-lui ton cours, en texte, en photo ou en PDF. Elle en tire les questions et les réponses, une par page, la question au recto et la réponse au verso. Tu relis et tu gardes ce qui te va." } },
-        { "@type": "Question", "name": "Comment Folio sait-il quand me reposer une page ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "À chaque page, tu dis si c’était facile ou non. Folio en déduit le moment où tu commencerais à l’oublier, et te la repose juste avant. C’est la répétition espacée, réglée pour que tu retiennes 9 pages sur 10. Avec Folio+, le Memory Engine Ultra se règle en plus sur ta mémoire à toi." } },
-        { "@type": "Question", "name": "Folio existe-t-il en application ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Oui, sans passer par un magasin. Sur iPhone, iPad et Android, ouvre Folio dans ton navigateur : il te montre comment le poser sur ton écran d’accueil, puis tu t’y connectes. Sur ordinateur, ouvre-le dans ton navigateur, ou installe-le en un clic depuis Chrome ou Edge (dans Safari : Fichier, puis Ajouter au Dock). Un seul compte : tes livres te suivent d’un écran à l’autre, même hors ligne." } },
-        { "@type": "Question", "name": "Ça marche sans connexion ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Oui. Tu révises dans le métro ou en avion, et tout se synchronise dès que le réseau revient." } },
-        { "@type": "Question", "name": "Je peux reprendre mes anciennes flashcards ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Oui. Colle-les ou importe le fichier, un CSV marche aussi. Folio en fait un livre en quelques secondes." } },
-        { "@type": "Question", "name": "Comment équiper mon établissement ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Avec Folio Campus, ouvert en dix minutes à tous vos élèves et professeurs. Demandez une démo : 30 jours gratuits pour 60 élèves, sans engagement. Ensuite, c’est 3 € HT par élève et par an, 300 € HT minimum." } },
-        { "@type": "Question", "name": "Où vont mes données ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Elles sont hébergées dans l’Union européenne. Folio n’affiche aucune publicité et n’utilise aucun traceur." } }
+        {
+          "@type": "Question",
+          "name": "C’est quoi, un livre de flashcards ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ton cours, mis en questions. Chaque page porte une question au recto et sa réponse au verso : tu lis, tu cherches, tu retournes la page. Mirandola range tes pages en livres, un par chapitre ou par matière."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Mirandola est-il vraiment gratuit ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Le Memory Engine Lite, 5 livres, la synchro et les défis sont gratuits, sans publicité. Mirandola+ ouvre le Memory Engine Ultra, réglé sur ta mémoire, l’IA (30 cours par mois, photos et PDF compris), les livres sans limite, les QCM et associations, les images et les sons."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment l’IA transforme-t-elle mon cours en flashcards ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Avec Mirandola+, donne-lui ton cours, en texte, en photo ou en PDF. Elle en tire les questions et les réponses, une par page, la question au recto et la réponse au verso. Tu relis et tu gardes ce qui te va."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment Mirandola sait-il quand me reposer une page ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "À chaque page, tu dis si c’était facile ou non. Mirandola en déduit le moment où tu commencerais à l’oublier, et te la repose juste avant. C’est la répétition espacée, réglée pour que tu retiennes 9 pages sur 10. Avec Mirandola+, le Memory Engine Ultra se règle en plus sur ta mémoire à toi."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Mirandola existe-t-il en application ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, sans passer par un magasin. Sur iPhone, iPad et Android, ouvre Mirandola dans ton navigateur : il te montre comment le poser sur ton écran d’accueil, puis tu t’y connectes. Sur ordinateur, ouvre-le dans ton navigateur, ou installe-le en un clic depuis Chrome ou Edge (dans Safari : Fichier, puis Ajouter au Dock). Un seul compte : tes livres te suivent d’un écran à l’autre, même hors ligne."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Ça marche sans connexion ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Tu révises dans le métro ou en avion, et tout se synchronise dès que le réseau revient."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Je peux reprendre mes anciennes flashcards ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Colle-les ou importe le fichier, un CSV marche aussi. Mirandola en fait un livre en quelques secondes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment équiper mon établissement ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Avec Mirandola Campus, ouvert en dix minutes à tous vos élèves et professeurs. Demandez une démo : 30 jours gratuits pour 60 élèves, sans engagement. Ensuite, une place par élève et par professeur, de 5 à 2 € HT par an selon votre taille (5 € jusqu’à 100 places, 3,50 € jusqu’à 500, 2,50 € jusqu’à 1 500, 2 € au-delà), 100 € HT minimum."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Mirandola ou Anki, Quizlet ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mirandola fait tourner FSRS, l’algorithme de répétition espacée d’Anki, réglé comme lui et sans un seul réglage à faire. Comme Quizlet, tout se fait au doigt, sur téléphone et sur ordinateur. Tes paquets Anki et tes listes Quizlet s’importent en texte : colle-les, c’est un livre."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Puis-je résilier quand je veux ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, en un geste depuis l’app : Mirandola+, puis Résilier l’abonnement. Au mois, rien ne t’engage : Mirandola+ reste ouvert jusqu’à la fin du mois payé. À l’année, payée d’avance, il reste ouvert jusqu’au bout de l’année, puis ne se renouvelle pas."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Je donne des cours particuliers : combien ça coûte ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ton espace professeur est gratuit : ton code, tes classes, les devoirs suivis et les défis en direct, pour toi et tes élèves. Mirandola+ pour toi, au prix d’un élève, t’ouvre l’IA sans compter pour préparer tes livres. Pour que tes élèves aient aussi Mirandola+ : 100 € HT par an jusqu’à 20 places."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Où vont mes données ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Elles sont hébergées dans l’Union européenne. Mirandola n’affiche aucune publicité et n’utilise aucun traceur."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Pourquoi Mirandola ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "En hommage à Pic de la Mirandole, le savant de la Renaissance à la mémoire prodigieuse : on dit encore d’un érudit que c’est un Pic de la Mirandole. Mirandola veut t’en donner une : tout retenir, sans réviser plus."
+          }
+        }
       ]
     }
   ]
@@ -156,8 +325,8 @@
 
 <header class="tete" id="tete">
   <nav class="tete-in enveloppe" aria-label="Navigation principale">
-    <a class="marque" href="/" aria-label="Folio, retour en haut de l’accueil">
-      <svg class="marque-livres" aria-hidden="true"><use href="#logo"/></svg><span>Folio</span>
+    <a class="marque" href="/" aria-label="Mirandola, retour en haut de l’accueil">
+      <svg class="marque-livres" aria-hidden="true"><use href="#logo"/></svg><span>Mirandola</span>
     </a>
     <ul class="tete-liens">
       <li><a href="#moteur">Le moteur</a></li>
@@ -191,7 +360,7 @@
   <section class="heros" aria-labelledby="titre">
     <div class="heros-fond" aria-hidden="true"><i class="tache t1"></i><i class="tache t2"></i><i class="tache t3"></i><i class="tache t4"></i></div>
     <div class="enveloppe heros-texte">
-      <svg class="pile" viewBox="-28.1 -280.5 358.2 408.3" role="img" aria-label="Le logo de Folio : trois livres qui se posent l’un sur l’autre">
+      <svg class="pile" viewBox="-28.1 -280.5 358.2 408.3" role="img" aria-label="Le logo de Mirandola : trois livres qui se posent l’un sur l’autre">
         <defs><radialGradient id="ombre-pile"><stop offset="0" stop-color="#1D1C19" stop-opacity=".22"/><stop offset=".6" stop-color="#1D1C19" stop-opacity=".08"/><stop offset="1" stop-color="#1D1C19" stop-opacity="0"/></radialGradient></defs>
         <ellipse class="pile-ombre" cx="148" cy="66" rx="176" ry="58" fill="url(#ombre-pile)"/>
         <use class="l l-noir" href="#livre-noir"/>
@@ -204,7 +373,7 @@
         <li class="pastille pastille-ia"><svg class="ic" aria-hidden="true"><use href="#i-etincelle"/></svg><span>Boosté à l’IA</span></li>
       </ul>
       <h1 id="titre" class="titre-heros"><span class="mot">Révise</span> <span class="mot">moins.</span> <span class="mot">Retiens</span> <span class="mot">tout.</span></h1>
-      <p class="chapeau">L’IA fait de ton cours un livre de flashcards. Folio te repose chaque page juste avant que tu l’oublies.</p>
+      <p class="chapeau">L’IA fait de ton cours un livre de flashcards. Mirandola te repose chaque page juste avant que tu l’oublies.</p>
       <div class="actions">
         <a class="bt bt-encre bt-grand" href="/inscription">Commencer gratuitement<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
         <a class="bt bt-blanc bt-grand" href="/essayer"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer sans compte</a>
@@ -220,24 +389,24 @@
               <div class="ecran" data-ecran="pc">
                 <img class="affiche" src="/site/affiches/pc.webp" width="1440" height="900" fetchpriority="high" decoding="async"
                   srcset="/site/affiches/pc-petit.webp 720w, /site/affiches/pc.webp 1440w" sizes="(max-width: 640px) 86vw, 900px"
-                  alt="Folio sur ordinateur : une page du livre « La cellule » retournée, la réponse au verso et les quatre boutons Encore, Difficile, Correct, Facile">
+                  alt="Mirandola sur ordinateur : une page du livre « La cellule » retournée, la réponse au verso et les quatre boutons Encore, Difficile, Correct, Facile">
                 <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
               </div>
             </div>
             <div class="portable-socle" aria-hidden="true"></div>
-            <figcaption class="cache">Folio sur ordinateur</figcaption>
+            <figcaption class="cache">Mirandola sur ordinateur</figcaption>
           </figure>
           <figure class="appareil telephone">
             <div class="telephone-corps">
               <div class="ecran" data-ecran="mobile">
                 <img class="affiche" src="/site/affiches/mobile.webp" width="390" height="844" decoding="async"
                   srcset="/site/affiches/mobile-petit.webp 390w, /site/affiches/mobile.webp 780w" sizes="(max-width: 640px) 30vw, 232px"
-                  alt="Folio sur téléphone : la bibliothèque d’un élève, ses livres rangés par matière et la lecture du jour">
+                  alt="Mirandola sur téléphone : la bibliothèque d’un élève, ses livres rangés par matière et la lecture du jour">
                 <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
               </div>
               <i class="ilot" aria-hidden="true"></i>
             </div>
-            <figcaption class="cache">Folio sur téléphone</figcaption>
+            <figcaption class="cache">Mirandola sur téléphone</figcaption>
           </figure>
           <div class="fiches" aria-hidden="true">
             <div class="fiche f1" data-teinte="blue"><div class="fiche-in"><div class="face"><small>Maths</small><b>∫ eˣ dx</b></div><div class="face verso"><small>Maths</small><b>eˣ + C</b></div></div></div>
@@ -292,7 +461,7 @@
   <!-- ══════════ le moteur ══════════ -->
   <section class="moteur enveloppe" id="moteur" aria-labelledby="moteur-t">
     <div class="moteur-tete rv">
-      <p class="surtitre">Memory Engine Ultra&nbsp;· le moteur de Folio+</p>
+      <p class="surtitre">Memory Engine Ultra&nbsp;· le moteur de Mirandola+</p>
       <h2 id="moteur-t" class="titre">Le meilleur moteur de révision <em>au&nbsp;monde.</em></h2>
     </div>
     <!-- Les courbes sont calculées par src/site/courbes.js et posées par site.js. -->
@@ -329,22 +498,22 @@
         </div>
         <div class="axe-x" aria-hidden="true"><span class="x-j" style="--x:.0523">1 j</span><span style="--x:.1385">1 sem.</span><span style="--x:.2886">1 mois</span><span style="--x:.5">3 mois</span><span style="--x:.7071">6 mois</span><span style="--x:1">1 an</span></div>
       </div>
-      <figcaption id="courbe-l" class="cache">Ce que tu retiens de cinq pages pendant un an. Sans révision, le souvenir s’efface : la moitié est partie au bout d’un mois, et il en reste moins de deux sur dix au bout d’un an. Avec Memory Engine Ultra, le moteur de Folio+, chaque page revient juste avant l’oubli et le souvenir reste au-dessus de neuf sur dix toute l’année, avec des révisions de plus en plus espacées. Avec Memory Engine Lite, sa version allégée, les pages reviennent trop tard : le souvenir tourne autour de sept sur dix.</figcaption>
+      <figcaption id="courbe-l" class="cache">Ce que tu retiens de cinq pages pendant un an. Sans révision, le souvenir s’efface : la moitié est partie au bout d’un mois, et il en reste moins de deux sur dix au bout d’un an. Avec Memory Engine Ultra, le moteur de Mirandola+, chaque page revient juste avant l’oubli et le souvenir reste au-dessus de neuf sur dix toute l’année, avec des révisions de plus en plus espacées. Avec Memory Engine Lite, sa version allégée, les pages reviennent trop tard : le souvenir tourne autour de sept sur dix.</figcaption>
     </figure>
 
-    <!-- Deux moteurs : Memory Engine Lite (Folio, gratuit) et Ultra (Folio+ et
-         Campus). docs/LANDING.md, « Folio et Folio+ ». -->
+    <!-- Deux moteurs : Memory Engine Lite (Mirandola, gratuit) et Ultra (Mirandola+ et
+         Campus). docs/LANDING.md, « Mirandola et Mirandola+ ». -->
     <div class="moteurs">
       <article class="moteur-carte rv">
-        <p class="moteur-offre">Folio, gratuit</p>
+        <p class="moteur-offre">Mirandola, gratuit</p>
         <h3>Memory Engine <span>Lite</span></h3>
         <p>La version allégée d’Ultra, avec ses réglages de base.</p>
       </article>
       <article class="moteur-carte moteur-plus rv">
-        <p class="moteur-offre">Folio<span class="plus">+</span> et Campus</p>
+        <p class="moteur-offre">Mirandola<span class="plus">+</span> et Campus</p>
         <h3>Memory Engine <span>Ultra</span></h3>
         <p>Le meilleur moteur de révision espacée au monde. Des mois de développement, entraîné sur des centaines de millions de révisions, puis réglé sur ta mémoire à toi.</p>
-        <a class="lien" href="#tarifs"><span>Passer à Folio<span class="plus">+</span></span><svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="lien" href="#tarifs"><span>Passer à Mirandola<span class="plus">+</span></span><svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
       </article>
     </div>
   </section>
@@ -427,17 +596,17 @@
     </div>
     <div class="relance rv">
       <a class="bt bt-encre bt-grand" href="/inscription">Commencer gratuitement<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
-      <a class="lien" href="#tarifs">Voir Folio+</a>
+      <a class="lien" href="#tarifs">Voir Mirandola+</a>
     </div>
   </section>
 
-  <!-- ══════════ Folio Campus : les établissements ══════════ -->
+  <!-- ══════════ Mirandola Campus : les établissements ══════════ -->
   <section class="campus" id="campus" aria-labelledby="campus-t">
     <div class="enveloppe">
       <div class="campus-tete rv">
-        <p class="campus-marque"><span class="campus-ic" aria-hidden="true"><svg class="marque-livres"><use href="#logo"/></svg><i class="campus-ecole"><svg class="ic"><use href="#i-ecole"/></svg></i></span><span>Folio <em>Campus</em></span></p>
+        <p class="campus-marque"><span class="campus-ic" aria-hidden="true"><svg class="marque-livres"><use href="#logo"/></svg><i class="campus-ecole"><svg class="ic"><use href="#i-ecole"/></svg></i></span><span>Mirandola <em>Campus</em></span></p>
         <h2 id="campus-t" class="titre">Tout l’établissement, en deux codes.</h2>
-        <p class="texte">Dix minutes pour ouvrir Folio à tous vos élèves et professeurs&#8239;: un code, et chacun entre dans sa classe.</p>
+        <p class="texte">Dix minutes pour ouvrir Mirandola à tous vos élèves et professeurs&#8239;: un code, et chacun entre dans sa classe.</p>
         <div class="actions">
           <a class="bt bt-creme bt-grand" href="/demande-demo">Demander une démo<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
           <a class="bt bt-fantome bt-grand" href="/demo/prof"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer en professeur</a>
@@ -503,7 +672,7 @@
           </button>
           <button type="button" role="tab" id="o-ref" aria-selected="false" aria-controls="p-ref" data-demo="/demo/referent" tabindex="-1">
             <span class="role-av" style="--j:#5E4E8A"><svg class="visage" aria-hidden="true"><use href="#visage-ref"/></svg></span>
-            <span class="role-t"><b>Référent de l’établissement</b><small>Ouvre Folio à tous, garde la main</small></span>
+            <span class="role-t"><b>Référent de l’établissement</b><small>Ouvre Mirandola à tous, garde la main</small></span>
           </button>
         </div>
         <div class="campus-appareils">
@@ -564,7 +733,7 @@
 
       <div class="campus-fin rv">
         <a class="bt bt-creme bt-grand" href="/demande-demo">Équiper mon établissement<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
-        <p class="petit">30 jours gratuits pour 60 élèves, puis 3&nbsp;€&nbsp;HT par élève et par an.</p>
+        <p class="petit">30 jours gratuits pour 60 élèves, puis de 5 à 2&nbsp;€&nbsp;HT par place et par an, dégressif.</p>
       </div>
     </div>
   </section>
@@ -574,17 +743,17 @@
        docs/LANDING.md) : une proposition, à confirmer avant le paiement. -->
   <section class="tarifs enveloppe" id="tarifs" aria-labelledby="tarifs-t" data-periode="an">
     <div class="tarifs-tete rv">
-      <h2 id="tarifs-t" class="titre centre">Gratuit pour réviser.<br>Folio<span class="plus">+</span> pour aller plus vite.</h2>
+      <h2 id="tarifs-t" class="titre centre">Gratuit pour réviser.<br>Mirandola<span class="plus">+</span> pour aller plus vite.</h2>
       <div class="bascule" role="radiogroup" aria-label="Paiement">
         <button type="button" role="radio" aria-checked="false" data-periode="mois">Mensuel</button>
-        <button type="button" role="radio" aria-checked="true" data-periode="an">Annuel <span class="remise">−50&#8239;%</span></button>
+        <button type="button" role="radio" aria-checked="true" data-periode="an">Annuel <span class="remise">−40&#8239;%</span></button>
         <i class="bascule-curseur" aria-hidden="true"></i>
       </div>
     </div>
 
     <div class="offres">
       <article class="offre rv">
-        <h3>Folio</h3>
+        <h3>Mirandola</h3>
         <p class="prix"><b>0&nbsp;€</b></p>
         <p class="prix-note">Sans carte bancaire</p>
         <a class="bt bt-clair bt-plein" href="/inscription">Créer un compte</a>
@@ -598,14 +767,14 @@
 
       <article class="offre offre-plus rv">
         <p class="ruban">Conseillé</p>
-        <h3>Folio<span class="plus">+</span></h3>
-        <p class="prix"><b data-an="2,50&nbsp;€" data-mois="4,99&nbsp;€">2,50&nbsp;€</b><span>/mois</span></p>
-        <p class="prix-note" data-an="29,99&nbsp;€ par an, au lieu de &lt;s&gt;59,88&nbsp;€&lt;/s&gt;" data-mois="Sans engagement, arrêt en un geste">29,99&nbsp;€ par an, au lieu de <s>59,88&nbsp;€</s></p>
-        <a class="bt bt-encre bt-plein" href="/app?plus=annuel" data-vente data-vente-an="/app?plus=annuel" data-vente-mois="/app?plus=mensuel">Passer à Folio+<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <h3>Mirandola<span class="plus">+</span></h3>
+        <p class="prix"><b data-an="4,17&nbsp;€" data-mois="6,99&nbsp;€">4,17&nbsp;€</b><span>/mois</span></p>
+        <p class="prix-note" data-an="49,99&nbsp;€ par an, au lieu de &lt;s&gt;83,88&nbsp;€&lt;/s&gt;" data-mois="Sans engagement, arrêt en un geste">49,99&nbsp;€ par an, au lieu de <s>83,88&nbsp;€</s></p>
+        <a class="bt bt-encre bt-plein" href="/app?plus=annuel" data-vente data-vente-an="/app?plus=annuel" data-vente-mois="/app?plus=mensuel">Passer à Mirandola+<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
         <ul class="inclus">
-          <li><b>Tout Folio, et&#8239;:</b></li>
+          <li><b>Tout Mirandola, et&#8239;:</b></li>
           <li>Le Memory Engine Ultra, réglé sur ta mémoire</li>
-          <li>L’IA&#8239;: ton cours, une photo ou un PDF en flashcards, 50 par mois</li>
+          <li>L’IA&#8239;: ton cours, une photo ou un PDF en flashcards, 30 par mois</li>
           <li>Des livres sans limite</li>
           <li>QCM et associations pour t’entraîner</li>
           <li>Images et sons sur tes pages</li>
@@ -615,13 +784,14 @@
       </article>
 
       <article class="offre offre-campus rv">
-        <h3><span class="campus-ic" aria-hidden="true"><svg class="marque-livres"><use href="#logo"/></svg><i class="campus-ecole"><svg class="ic"><use href="#i-ecole"/></svg></i></span>Folio Campus</h3>
-        <p class="prix"><b>3&nbsp;€&nbsp;HT</b><span>/élève/an</span></p>
-        <p class="prix-note">300&nbsp;€&nbsp;HT minimum par an</p>
+        <h3><span class="campus-ic" aria-hidden="true"><svg class="marque-livres"><use href="#logo"/></svg><i class="campus-ecole"><svg class="ic"><use href="#i-ecole"/></svg></i></span>Mirandola Campus</h3>
+        <p class="prix"><b>5&nbsp;€&nbsp;HT</b><span>/place/an</span></p>
+        <p class="prix-note">Dégressif jusqu’à 2&nbsp;€&nbsp;HT, professeurs compris</p>
         <a class="bt bt-clair bt-plein" href="/demande-demo">Demander une démo</a>
         <ul class="inclus">
           <li><b>Pour tout l’établissement&#8239;:</b></li>
           <li>Le Memory Engine Ultra pour chaque élève</li>
+          <li>L’IA&#8239;: 30 cours par élève et par mois, sans compter pour les profs</li>
           <li>Espace professeur et devoirs suivis</li>
           <li>Console du référent de l’établissement</li>
           <li>Mise en place accompagnée</li>
@@ -630,11 +800,47 @@
       </article>
     </div>
 
+    <!-- Le prix d'une licence : la grille de src/tarifs.js (site.js en fait
+         le calcul ; test/site.test.js garde ce tableau d'accord avec elle). -->
+    <div class="calcul rv" id="calcul-campus">
+      <div class="calcul-tete">
+        <h3>Combien pour mon établissement&#8239;?</h3>
+        <p>Une place par élève et par professeur. Chaque tranche a son prix&#8239;: plus vous êtes nombreux, moins la place coûte.</p>
+      </div>
+      <div class="calcul-corps">
+        <label class="calcul-champ" for="calcul-places"><span>Élèves et professeurs</span>
+          <input id="calcul-places" type="number" inputmode="numeric" min="1" max="20000" value="500"></label>
+        <input id="calcul-curseur" type="range" min="10" max="3000" step="10" value="500" aria-label="Élèves et professeurs">
+        <p class="calcul-total" aria-live="polite"><b id="calcul-prix">1&#8239;900&nbsp;€&nbsp;HT</b> par an<span id="calcul-moyen">, soit 3,80&nbsp;€&nbsp;HT la place</span></p>
+      </div>
+      <table class="tranches">
+        <caption class="cache">Le prix d’une place, tranche par tranche</caption>
+        <thead><tr><th scope="col">Places</th><th scope="col">Par place et par an</th></tr></thead>
+        <tbody>
+          <tr data-tranche="0"><td>1 à 100</td><td>5&nbsp;€&nbsp;HT</td></tr>
+          <tr data-tranche="1"><td>101 à 500</td><td>3,50&nbsp;€&nbsp;HT</td></tr>
+          <tr data-tranche="2"><td>501 à 1&#8239;500</td><td>2,50&nbsp;€&nbsp;HT</td></tr>
+          <tr data-tranche="3"><td>Au-delà</td><td>2&nbsp;€&nbsp;HT</td></tr>
+        </tbody>
+      </table>
+      <p class="petit calcul-pied">100&nbsp;€&nbsp;HT minimum par an. Démo gratuite de 30 jours pour 60 élèves, sans engagement.</p>
+    </div>
+
+    <div class="particulier rv">
+      <h3>Tu donnes des cours particuliers&#8239;?</h3>
+      <ul>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Gratuit&#8239;:</b> ton espace professeur, ton code, tes classes, les devoirs suivis et les défis en direct.</span></li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Mirandola<span class="plus">+</span> pour toi&#8239;:</b> l’IA sans compter pour préparer tes livres, au prix d’un élève.</span></li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Toi et tes élèves en Mirandola<span class="plus">+</span>&#8239;:</b> 100&nbsp;€&nbsp;HT par an jusqu’à 20 places.</span></li>
+      </ul>
+      <a class="bt bt-clair" href="/demande-demo">Ouvrir mon espace professeur<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+    </div>
+
     <div class="comparatif rv">
       <table>
         <caption class="cache">Ce que contient chaque formule</caption>
         <thead>
-          <tr><th scope="col"><span class="cache">Fonction</span></th><th scope="col">Folio</th><th scope="col" class="col-plus">Folio<span class="plus">+</span></th><th scope="col">Campus</th></tr>
+          <tr><th scope="col"><span class="cache">Fonction</span></th><th scope="col">Mirandola</th><th scope="col" class="col-plus">Mirandola<span class="plus">+</span></th><th scope="col">Campus</th></tr>
         </thead>
         <tbody>
           <tr><th scope="row">Moteur de révision</th><td>Lite</td><td class="col-plus"><b>Ultra</b></td><td>Ultra</td></tr>
@@ -642,7 +848,7 @@
           <tr><th scope="row">Hors ligne et synchro</th><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row">Reprendre tes anciennes flashcards</th><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row">Défis en direct, clubs, amis</th><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row">Cours en flashcards avec l’IA</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><b>50 par mois</b></td><td>Pour les profs</td></tr>
+          <tr><th scope="row">Cours en flashcards avec l’IA</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><b>30 par mois</b></td><td>30 par élève, profs sans compter</td></tr>
           <tr><th scope="row">Photo ou PDF en flashcards</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row">QCM et associations</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row">Images et sons sur les pages</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
@@ -656,7 +862,7 @@
           <tr><th scope="row">Les pages qui résistent</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
           <tr class="groupe"><th scope="colgroup" colspan="4">Et aussi</th></tr>
           <tr><th scope="row">Nouveautés en avant-première</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
-          <tr><th scope="row">Classes et devoirs suivis</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
+          <tr><th scope="row">Classes et devoirs d’un établissement</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row">Console du référent</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row">Points faibles de la classe repérés</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
           <tr><th scope="row">Mise en place accompagnée</th><td><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td class="col-plus"><svg class="ic non" role="img" aria-label="Non inclus"><use href="#i-non"/></svg></td><td><svg class="ic oui" role="img" aria-label="Inclus"><use href="#i-ok"/></svg></td></tr>
@@ -669,15 +875,19 @@
   <section class="faq enveloppe" id="faq" aria-labelledby="faq-t">
     <h2 id="faq-t" class="titre centre rv">Questions fréquentes</h2>
     <div class="questions">
-      <details class="rv"><summary>C’est quoi, un livre de flashcards&#8239;?</summary><p>Ton cours, mis en questions. Chaque page porte une question au recto et sa réponse au verso&#8239;: tu lis, tu cherches, tu retournes la page. Folio range tes pages en livres, un par chapitre ou par matière.</p></details>
-      <details class="rv"><summary>Folio est-il vraiment gratuit&#8239;?</summary><p>Oui. Le Memory Engine Lite, 5 livres, la synchro et les défis sont gratuits, sans publicité. Folio+ ouvre le Memory Engine Ultra, réglé sur ta mémoire, l’IA (50 cours par mois, photos et PDF compris), les livres sans limite, les QCM et associations, les images et les sons.</p></details>
-      <details class="rv"><summary>Comment l’IA transforme-t-elle mon cours en flashcards&#8239;?</summary><p>Avec Folio+, donne-lui ton cours, en texte, en photo ou en PDF. Elle en tire les questions et les réponses, une par page, la question au recto et la réponse au verso. Tu relis et tu gardes ce qui te va.</p></details>
-      <details class="rv"><summary>Comment Folio sait-il quand me reposer une page&#8239;?</summary><p>À chaque page, tu dis si c’était facile ou non. Folio en déduit le moment où tu commencerais à l’oublier, et te la repose juste avant. C’est la répétition espacée, réglée pour que tu retiennes 9 pages sur 10. Avec Folio+, le Memory Engine Ultra se règle en plus sur ta mémoire à toi.</p></details>
-      <details class="rv"><summary>Folio existe-t-il en application&#8239;?</summary><p>Oui, sans passer par un magasin. Sur iPhone, iPad et Android, ouvre Folio dans ton navigateur&#8239;: il te montre comment le poser sur ton écran d’accueil, puis tu t’y connectes. Sur ordinateur, ouvre-le dans ton navigateur, ou installe-le en un clic depuis Chrome ou Edge (dans Safari&#8239;: Fichier, puis «&nbsp;Ajouter au Dock&nbsp;»). Un seul compte&#8239;: tes livres te suivent d’un écran à l’autre, même hors ligne.</p></details>
+      <details class="rv"><summary>C’est quoi, un livre de flashcards&#8239;?</summary><p>Ton cours, mis en questions. Chaque page porte une question au recto et sa réponse au verso&#8239;: tu lis, tu cherches, tu retournes la page. Mirandola range tes pages en livres, un par chapitre ou par matière.</p></details>
+      <details class="rv"><summary>Mirandola est-il vraiment gratuit&#8239;?</summary><p>Oui. Le Memory Engine Lite, 5 livres, la synchro et les défis sont gratuits, sans publicité. Mirandola+ ouvre le Memory Engine Ultra, réglé sur ta mémoire, l’IA (30 cours par mois, photos et PDF compris), les livres sans limite, les QCM et associations, les images et les sons.</p></details>
+      <details class="rv"><summary>Comment l’IA transforme-t-elle mon cours en flashcards&#8239;?</summary><p>Avec Mirandola+, donne-lui ton cours, en texte, en photo ou en PDF. Elle en tire les questions et les réponses, une par page, la question au recto et la réponse au verso. Tu relis et tu gardes ce qui te va.</p></details>
+      <details class="rv"><summary>Comment Mirandola sait-il quand me reposer une page&#8239;?</summary><p>À chaque page, tu dis si c’était facile ou non. Mirandola en déduit le moment où tu commencerais à l’oublier, et te la repose juste avant. C’est la répétition espacée, réglée pour que tu retiennes 9 pages sur 10. Avec Mirandola+, le Memory Engine Ultra se règle en plus sur ta mémoire à toi.</p></details>
+      <details class="rv"><summary>Mirandola existe-t-il en application&#8239;?</summary><p>Oui, sans passer par un magasin. Sur iPhone, iPad et Android, ouvre Mirandola dans ton navigateur&#8239;: il te montre comment le poser sur ton écran d’accueil, puis tu t’y connectes. Sur ordinateur, ouvre-le dans ton navigateur, ou installe-le en un clic depuis Chrome ou Edge (dans Safari&#8239;: Fichier, puis «&nbsp;Ajouter au Dock&nbsp;»). Un seul compte&#8239;: tes livres te suivent d’un écran à l’autre, même hors ligne.</p></details>
       <details class="rv"><summary>Ça marche sans connexion&#8239;?</summary><p>Oui. Tu révises dans le métro ou en avion, et tout se synchronise dès que le réseau revient.</p></details>
-      <details class="rv"><summary>Je peux reprendre mes anciennes flashcards&#8239;?</summary><p>Oui. Colle-les ou importe le fichier, un CSV marche aussi. Folio en fait un livre en quelques secondes.</p></details>
-      <details class="rv"><summary>Comment équiper mon établissement&#8239;?</summary><p>Avec Folio Campus, ouvert en dix minutes à tous vos élèves et professeurs. Demandez une démo&#8239;: 30 jours gratuits pour 60 élèves, sans engagement. Ensuite, c’est 3&nbsp;€&nbsp;HT par élève et par an, 300&nbsp;€&nbsp;HT minimum.</p></details>
-      <details class="rv"><summary>Où vont mes données&#8239;?</summary><p>Elles sont hébergées dans l’Union européenne. Folio n’affiche aucune publicité et n’utilise aucun traceur.</p></details>
+      <details class="rv"><summary>Je peux reprendre mes anciennes flashcards&#8239;?</summary><p>Oui. Colle-les ou importe le fichier, un CSV marche aussi. Mirandola en fait un livre en quelques secondes.</p></details>
+      <details class="rv"><summary>Comment équiper mon établissement&#8239;?</summary><p>Avec Mirandola Campus, ouvert en dix minutes à tous vos élèves et professeurs. Demandez une démo&#8239;: 30 jours gratuits pour 60 élèves, sans engagement. Ensuite, une place par élève et par professeur, de 5 à 2&nbsp;€&nbsp;HT par an selon votre taille (5&nbsp;€ jusqu’à 100 places, 3,50&nbsp;€ jusqu’à 500, 2,50&nbsp;€ jusqu’à 1&#8239;500, 2&nbsp;€ au-delà), 100&nbsp;€&nbsp;HT minimum.</p></details>
+      <details class="rv"><summary>Mirandola ou Anki, Quizlet&#8239;?</summary><p>Mirandola fait tourner FSRS, l’algorithme de répétition espacée d’Anki, réglé comme lui et sans un seul réglage à faire. Comme Quizlet, tout se fait au doigt, sur téléphone et sur ordinateur. Tes paquets Anki et tes listes Quizlet s’importent en texte&#8239;: colle-les, c’est un livre.</p></details>
+      <details class="rv"><summary>Puis-je résilier quand je veux&#8239;?</summary><p>Oui, en un geste depuis l’app&#8239;: Mirandola+, puis «&nbsp;Résilier l’abonnement&nbsp;». Au mois, rien ne t’engage&#8239;: Mirandola+ reste ouvert jusqu’à la fin du mois payé. À l’année, payée d’avance, il reste ouvert jusqu’au bout de l’année, puis ne se renouvelle pas.</p></details>
+      <details class="rv"><summary>Je donne des cours particuliers&#8239;: combien ça coûte&#8239;?</summary><p>Ton espace professeur est gratuit&#8239;: ton code, tes classes, les devoirs suivis et les défis en direct, pour toi et tes élèves. Mirandola+ pour toi, au prix d’un élève, t’ouvre l’IA sans compter pour préparer tes livres. Pour que tes élèves aient aussi Mirandola+&#8239;: 100&nbsp;€&nbsp;HT par an jusqu’à 20 places.</p></details>
+      <details class="rv"><summary>Où vont mes données&#8239;?</summary><p>Elles sont hébergées dans l’Union européenne. Mirandola n’affiche aucune publicité et n’utilise aucun traceur.</p></details>
+      <details class="rv"><summary>Pourquoi Mirandola&#8239;?</summary><p>En hommage à Pic de la Mirandole, le savant de la Renaissance à la mémoire prodigieuse&#8239;: on dit encore d’un érudit que c’est «&nbsp;un Pic de la Mirandole&nbsp;». Mirandola veut t’en donner une&#8239;: tout retenir, sans réviser plus.</p></details>
     </div>
   </section>
 
@@ -704,12 +914,12 @@
 <footer class="pied">
   <div class="enveloppe pied-in">
     <div class="pied-marque">
-      <a class="marque" href="/" aria-label="Folio, retour en haut de l’accueil"><svg class="marque-livres" aria-hidden="true"><use href="#logo"/></svg><span>Folio</span></a>
+      <a class="marque" href="/" aria-label="Mirandola, retour en haut de l’accueil"><svg class="marque-livres" aria-hidden="true"><use href="#logo"/></svg><span>Mirandola</span></a>
       <p>Tes cours, reliés en livres.</p>
     </div>
     <nav class="pied-liens" aria-label="Pied de page">
       <div>
-        <h2>Folio</h2>
+        <h2>Mirandola</h2>
         <a href="/connexion">Se connecter</a>
         <a href="/inscription">Créer un compte</a>
         <button class="lien" type="button" data-code>J’ai un code</button>
@@ -718,7 +928,7 @@
       </div>
       <div>
         <h2>Établissements</h2>
-        <a href="#campus">Folio Campus</a>
+        <a href="#campus">Mirandola Campus</a>
         <a href="/demande-demo">Demander une démo</a>
         <a href="#tarifs">Tarifs</a>
       </div>
@@ -730,7 +940,7 @@
       </div>
     </nav>
   </div>
-  <p class="enveloppe pied-bas">© 2026 Folio</p>
+  <p class="enveloppe pied-bas">© 2026 Mirandola</p>
 </footer>
 
 <dialog class="fenetre" id="fenetre-code" aria-labelledby="code-t">

@@ -1,6 +1,6 @@
 // Les affiches des emplacements vidéo de la page d'accueil
 // (public/site/affiches/*.webp) : les vrais écrans de l'app, pris dans la
-// démo sans compte (« Essayer sans compte », le Lycée Démo Folio — aucune
+// démo sans compte (« Essayer sans compte », le Lycée Démo Mirandola — aucune
 // requête ne part vers la base, et celles qui essaieraient sont coupées).
 // À relancer quand ces écrans changent de visage :
 //   npm run build && npx vite preview --port 4190 --strictPort &
@@ -39,7 +39,7 @@ const AFFICHES = [
     async chemin(p) { await p.getByText(/^Bon(jour|soir), Marc$/).waitFor(); } },
   { nom: 'referent', role: 'ref', fenetre: { width: 1280, height: 800 }, densite: 1.125,
     async chemin(p) { await p.getByText('PRFQ-WT58').waitFor(); } },
-  /* le téléphone posé à côté de l'ordinateur, dans Folio Campus : l'élève
+  /* le téléphone posé à côté de l'ordinateur, dans Mirandola Campus : l'élève
      sur ses devoirs à faire, le professeur sur son tableau de bord */
   { nom: 'eleve-mobile', role: 'eleve', fenetre: { width: 390, height: 844 }, densite: 2, mobile: true,
     async chemin(p) { await p.click('[data-act="tab-classes"]'); await p.waitForTimeout(600); } },
@@ -183,10 +183,10 @@ await og.setContent(`<!doctype html><html lang="fr"><head><meta charset="utf-8">
   .f small::before{content:'';width:7px;height:7px;border-radius:50%;background:#CCA855}
   .f b{display:block;margin-top:6px;font:700 21px 'Bitstream Charter',Georgia,serif}
 </style></head><body>
-  <div class="g"><div class="m">${logo}<span>Folio</span></div>
+  <div class="g"><div class="m">${logo}<span>Mirandola</span></div>
     <div class="p"><i></i>Testé et validé en prépa · boosté à l’IA</div>
     <h1>Révise moins.<br>Retiens <em>tout.</em></h1>
-    <p class="s">L’IA fait de ton cours un livre<br>de flashcards. Folio te repose chaque<br>page juste avant que tu l’oublies.</p></div>
+    <p class="s">L’IA fait de ton cours un livre<br>de flashcards. Mirandola te repose chaque<br>page juste avant que tu l’oublies.</p></div>
   <div class="pc"><img src="${dataUri(SORTIE + 'pc.webp', 'image/webp')}"></div><div class="socle"></div>
   <div class="tel"><img src="${dataUri(SORTIE + 'mobile.webp', 'image/webp')}"><i></i></div>
   <div class="f"><small>Histoire</small><b>14 juillet 1789</b></div>

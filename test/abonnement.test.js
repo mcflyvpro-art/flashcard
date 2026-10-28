@@ -1,32 +1,36 @@
-// Folio+ dans l'app : lire ce que dit la base, le dire en clair (src/abonnement.js),
+// Mirandola+ dans l'app : lire ce que dit la base, le dire en clair (src/abonnement.js),
 // et l'appareil : la porte d'installation, le bon geste (src/plateformes.js).
 import { describe, expect, it } from 'vitest';
 import { FORMULES, GERER, RAISONS, VENTE_OUVERTE, dateLisible, erreurDe, euros, gestion, lireOffre, lireRetour, resume }
   from '../src/abonnement.js';
+import { AVANTAGES_DETAIL, iaDuMois, licence } from '../src/licence.js';
 import { PLUS_SEUL } from '../src/offres.js';
 import { MAGASINS, installer, mobile, plateforme, porte, vente } from '../src/plateformes.js';
 
 describe('ce que dit la base', () => {
-  it('une réponse absente ou d’une base sans la fonction : Folio gratuit', () => {
+  it('une réponse absente ou d’une base sans la fonction : Mirandola gratuit', () => {
     for (const r of [null, undefined, [], 'x', {}]) expect(lireOffre(r)).toEqual({ offre: 'gratuit', etablissement: '', licenceFin: null, abonnement: null });
   });
   it('un abonnement', () => {
     const o = lireOffre({ offre: 'plus', abonnement: { statut: 'actif', formule: 'annuel', source: 'stripe',
       fin_periode: '2027-11-02T10:00:00Z', fin_prevue: false } });
     expect(o.offre).toBe('plus');
-    expect(o.abonnement).toEqual({ statut: 'actif', formule: 'annuel', source: 'stripe', fin: '2027-11-02T10:00:00Z', finPrevue: false });
+    expect(o.abonnement).toEqual({ statut: 'actif', formule: 'annuel', source: 'stripe', fin: '2027-11-02T10:00:00Z', finPrevue: false,
+      montant: null });
+    expect(lireOffre({ offre: 'plus', abonnement: { statut: 'actif', montant: 2999 } }).abonnement.montant).toBe(2999);
+    expect(lireOffre({ offre: 'plus', abonnement: { statut: 'actif', montant: -4 } }).abonnement.montant).toBeNull();
   });
   it('une offre inconnue ne donne rien', () => expect(lireOffre({ offre: 'illimite' }).offre).toBe('gratuit'));
 });
 
 describe('ce que l’écran en dit', () => {
   const ab = (x = {}) => ({ statut: 'actif', formule: 'annuel', source: 'stripe', fin: '2027-11-02T10:00:00Z', finPrevue: false, ...x });
-  it('Folio gratuit : on peut payer', () => {
-    expect(resume(lireOffre(null))).toEqual({ titre: 'Folio', ligne: 'Gratuit', alerte: '', payer: true, gerer: false });
+  it('Mirandola gratuit : on peut payer', () => {
+    expect(resume(lireOffre(null))).toEqual({ cle: 'gratuit', titre: 'Mirandola', ligne: 'Gratuit', alerte: '', payer: true, gerer: false });
   });
-  it('Folio+ annuel : la date de renouvellement, et le portail', () => {
+  it('Mirandola+ annuel : la date de renouvellement, et le portail', () => {
     const r = resume({ offre: 'plus', abonnement: ab() });
-    expect(r.titre).toBe('Folio+');
+    expect(r.titre).toBe('Mirandola+');
     expect(r.ligne).toBe('Annuel · renouvelé le 2 novembre 2027');
     expect(r.payer).toBe(false);
     expect(r.gerer).toBe(true);
@@ -50,39 +54,83 @@ describe('ce que l’écran en dit', () => {
     expect(gestion(ab(), { os: 'mac', natif: false })).toEqual({ type: 'stripe' });
     expect(gestion(ab(), { os: 'ios', natif: true }).type).toBe('texte');
   });
-  it('Folio+ offert (les comptes d’avant le 2026-10-27, l’éditeur) : rien à gérer', () => {
+  it('Mirandola+ offert (les comptes d’avant le 2026-10-27, l’éditeur) : rien à gérer', () => {
     const a = ab({ source: 'offert', formule: null, fin: null });
-    expect(resume({ offre: 'plus', abonnement: a })).toEqual({ titre: 'Folio+', ligne: 'Offert', alerte: '', payer: false, gerer: false });
+    expect(resume({ offre: 'plus', abonnement: a })).toEqual({ cle: 'plus', titre: 'Mirandola+', ligne: 'Offert', alerte: '', payer: false,
+      gerer: false });
     expect(gestion(a, { os: 'mac', natif: false })).toBeNull();
   });
-  it('chaque geste bridé a sa raison, dite en tête de l’écran Folio+', () => {
+  it('chaque geste bridé a sa raison, dite en tête de l’écran Mirandola+', () => {
     for (const f of PLUS_SEUL.filter(x => x !== 'journal')) expect(RAISONS[f]).toBeTruthy();
     expect(RAISONS.journal).toBeTruthy();
   });
   it('Campus : offert par l’établissement ; un abonnement qui court en double se signale', () => {
     expect(resume({ offre: 'campus', etablissement: 'Lycée Démo', licenceFin: '2027-07-31', abonnement: null }))
-      .toEqual({ titre: 'Folio Campus', ligne: 'Offert par Lycée Démo jusqu’au 31 juillet 2027', alerte: '', payer: false, gerer: false });
+      .toEqual({ cle: 'campus', titre: 'Mirandola Campus', ligne: 'Offert par Lycée Démo jusqu’au 31 juillet 2027', alerte: '', payer: false,
+        gerer: false });
     const r = resume({ offre: 'campus', etablissement: 'Lycée Démo', abonnement: ab() });
     expect(r.alerte).toMatch(/continue d’être prélevé/);
     expect(r.gerer).toBe(true);
     expect(resume({ offre: 'campus', etablissement: 'L', abonnement: ab({ finPrevue: true }) }).alerte).toBe('');
   });
-  it('un abonnement fini : de nouveau Folio gratuit, les factures restent', () => {
+  it('un abonnement fini : de nouveau Mirandola gratuit, les factures restent', () => {
     const r = resume({ offre: 'gratuit', abonnement: ab({ statut: 'fini' }) });
-    expect(r.ligne).toBe('Ton abonnement Folio+ a pris fin');
+    expect(r.ligne).toBe('Ton abonnement Mirandola+ a pris fin');
     expect(r.payer).toBe(true);
     expect(r.gerer).toBe(true);
   });
 });
 
-describe('les prix, les dates, les retours', () => {
-  it('les prix de la page d’accueil', () => {
-    expect(euros(FORMULES.annuel.prix)).toBe('29,99 €');
-    expect(euros(FORMULES.annuel.mois)).toBe('2,50 €');
-    expect(euros(FORMULES.mensuel.prix)).toBe('4,99 €');
-    expect(FORMULES.annuel.sans).toBe(FORMULES.mensuel.prix * 12);
+describe('la licence, ligne par ligne', () => {
+  const ab = (x = {}) => ({ statut: 'actif', formule: 'annuel', source: 'stripe', fin: '2027-11-02T10:00:00Z', finPrevue: false,
+    montant: null, ...x });
+  const lignes = l => Object.fromEntries(l.lignes);
+  it('rien pour un compte gratuit : l’écran montre les formules', () => expect(licence(lireOffre(null))).toBeNull());
+  it('annuel : le prix payé, la prochaine échéance, l’engagement d’un an', () => {
+    const l = licence({ offre: 'plus', abonnement: ab({ montant: 2999 }) });
+    expect(l.etat).toEqual({ k: 'ok', t: 'Actif' });
+    expect(lignes(l)).toEqual({ Formule: 'Annuelle', Prix: '29,99\u00a0€ par an', 'Prochain prélèvement': '2 novembre 2027',
+      Paiement: 'Carte bancaire, par Stripe' });
+    expect(l.engagement).toMatch(/^Engagement d’un an.*2 novembre 2027/);
   });
-  it('la vente est ouverte (2026-10-27) : un compte gratuit a l’onglet Folio+', () => expect(VENTE_OUVERTE).toBe(true));
+  it('mensuel sans montant connu : le prix de sa formule, sans engagement', () => {
+    const l = licence({ offre: 'plus', abonnement: ab({ formule: 'mensuel', source: 'google' }) });
+    expect(lignes(l).Prix).toBe('6,99\u00a0€ par mois');
+    expect(lignes(l).Paiement).toBe('Google Play');
+    expect(l.engagement).toMatch(/^Sans engagement/);
+  });
+  it('résilié : la fin, sans nouveau prélèvement ; impayé : la pastille le dit', () => {
+    const l = licence({ offre: 'plus', abonnement: ab({ finPrevue: true }) });
+    expect(l.etat.t).toBe('Résilié');
+    expect(lignes(l).Fin).toBe('2 novembre 2027');
+    expect(l.engagement).toMatch(/sans nouveau prélèvement/);
+    expect(licence({ offre: 'plus', abonnement: ab({ statut: 'impaye' }) }).etat).toEqual({ k: 'ko', t: 'Paiement refusé' });
+  });
+  it('offert, avec ou sans fin ; Campus : l’établissement et son échéance', () => {
+    expect(lignes(licence({ offre: 'plus', abonnement: ab({ source: 'offert', fin: null, formule: null }) })).Échéance).toBe('Sans fin');
+    const c = licence({ offre: 'campus', etablissement: 'Lycée Démo', licenceFin: '2027-08-31', abonnement: null });
+    expect(lignes(c)).toEqual({ Licence: 'Offerte par Lycée Démo', Échéance: '31 août 2027', Prix: 'Rien à payer' });
+  });
+  it('l’IA du mois : compté pour un élève, pas pour un professeur', () => {
+    expect(iaDuMois(12, 30, false)).toEqual({ t: '12 sur 30', pc: 40 });
+    expect(iaDuMois(45, 30, false).pc).toBe(100);
+    expect(iaDuMois(120, 400, true)).toEqual({ t: '120 ce mois-ci', pc: 0 });
+  });
+  it('chaque avantage a son icône, son titre et sa ligne', () => {
+    for (const a of AVANTAGES_DETAIL) expect(a.ic && a.t && a.s).toBeTruthy();
+  });
+});
+
+describe('les prix, les dates, les retours', () => {
+  it('les prix de la page d’accueil (2026-10-28)', () => {
+    expect(euros(FORMULES.annuel.prix)).toBe('49,99\u00a0€');
+    expect(euros(FORMULES.annuel.mois)).toBe('4,17\u00a0€');
+    expect(euros(FORMULES.mensuel.prix)).toBe('6,99\u00a0€');
+    expect(FORMULES.annuel.sans).toBe(FORMULES.mensuel.prix * 12);
+    expect(FORMULES.annuel.mois).toBe(Math.round(FORMULES.annuel.prix / 12));
+    expect(FORMULES.annuel.remise).toBe(Math.round((1 - FORMULES.annuel.prix / FORMULES.annuel.sans) * 100));
+  });
+  it('la vente est ouverte (2026-10-27) : un compte gratuit a l’onglet Mirandola+', () => expect(VENTE_OUVERTE).toBe(true));
   it('une date lisible, rien pour une date fausse', () => {
     expect(dateLisible('2027-02-01T12:00:00Z')).toBe('1 février 2027');
     expect(dateLisible('nimporte')).toBe('');
@@ -133,8 +181,8 @@ describe('l’appareil', () => {
     expect(installer(p)).toEqual({ type: 'ecran', os: 'android' });
     expect(installer(plateforme({ ua: UA.iphone }))).toEqual({ type: 'ecran', os: 'ios' });
     expect(installer(plateforme({ ua: UA.windows }))).toEqual({ type: 'navigateur', os: 'windows' });
-    expect(installer(p, { ...MAGASINS, android: 'https://play.google.com/store/apps/details?id=online.folioflashcard.app' }))
-      .toEqual({ type: 'magasin', os: 'android', lien: 'https://play.google.com/store/apps/details?id=online.folioflashcard.app', nom: 'Google Play' });
+    expect(installer(p, { ...MAGASINS, android: 'https://play.google.com/store/apps/details?id=fr.mirandola.app' }))
+      .toEqual({ type: 'magasin', os: 'android', lien: 'https://play.google.com/store/apps/details?id=fr.mirandola.app', nom: 'Google Play' });
     expect(installer({ os: 'ios', natif: true })).toEqual({ type: 'deja' });
   });
   it('la porte : un téléphone ou une tablette n’entre dans l’app qu’installée (2026-10-28)', () => {

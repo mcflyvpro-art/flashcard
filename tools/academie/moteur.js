@@ -1,4 +1,4 @@
-// Le moteur de tournage de la Folio Academy (2026-10-27).
+// Le moteur de tournage de la Mirandola Academy (2026-10-27).
 //
 // Une formation est un scénario : une fonction async (t) => {...} qui ne
 // parle à l'app que par `t`. Elle tourne deux fois : d'abord à vide (une
@@ -99,7 +99,7 @@ class Tournage {
     await this.p.evaluate(() => setInterval(() => {
       try {
         const l = document.getElementById('app').contentWindow.location;
-        A.url('www.folioflashcard.online' + l.pathname.replace(/^\/demo\//, '/'));
+        A.url('mirandola.fr' + l.pathname.replace(/^\/demo\//, '/'));
       } catch { /* pas encore chargée : l'adresse suivra */ }
     }, 200));
     await this.pret();
@@ -327,7 +327,7 @@ function monter(res, voix, sortie, titre) {
   // les chapitres dans le fichier (VLC, QuickTime, la plupart des lecteurs)
   const ms = s => { const [m, ss] = s.split(':').map(Number); return (m * 60 + ss) * 1000; };
   const fin = Math.round(res.total * 1000);
-  let meta = `;FFMETADATA1\ntitle=${titre}\nartist=Folio Academy\n`;
+  let meta = `;FFMETADATA1\ntitle=${titre}\nartist=Mirandola Academy\n`;
   res.chapitres.forEach((c, i) => {
     const debut = ms(c.t), suite = i + 1 < res.chapitres.length ? ms(res.chapitres[i + 1].t) : fin;
     meta += `\n[CHAPTER]\nTIMEBASE=1/1000\nSTART=${debut}\nEND=${suite}\ntitle=${c.titre}\n`;

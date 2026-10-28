@@ -198,14 +198,14 @@ export function prochainPas(o, auj = iso(new Date())) {
 }
 
 /* Le courriel qui transmet le code référent, prêt à partir de la
-   messagerie de l'éditeur (un lien mailto:, rien ne passe par Folio). */
+   messagerie de l'éditeur (un lien mailto:, rien ne passe par Mirandola). */
 export function courrielReferent({ etab, contact, code, fin, site }) {
   const bonjour = contact ? `Bonjour ${contact},` : 'Bonjour,';
   return {
-    sujet: `Folio · l’accès de ${etab}`,
+    sujet: `Mirandola · l’accès de ${etab}`,
     corps: `${bonjour}
 
-Voici l’accès de ${etab} à Folio.
+Voici l’accès de ${etab} à Mirandola.
 
 1. Ouvrez ${site} sur un ordinateur et créez votre compte.
 2. Réglages → « J’ai un code » → ${formatCode(code)}

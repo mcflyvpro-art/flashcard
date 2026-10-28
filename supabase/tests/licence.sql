@@ -2,7 +2,7 @@
 -- élève et par professeur, retirer quelqu'un libère sa place ; les
 -- coordonnées de facturation ; les factures (totaux calculés en base,
 -- numérotation continue sans trou, photographie du vendeur et du client,
--- inaltérables, avoirs) ; les échanges entre le référent et Folio ; qui lit
+-- inaltérables, avoirs) ; les échanges entre le référent et Mirandola ; qui lit
 -- quoi. Même mode que etablissement.sql : transaction ANNULÉE, comptes
 -- jetables, vrais rôles `authenticated` et `anon`.
 
@@ -143,12 +143,12 @@ begin
   perform public.admin_vendeur_enregistrer('{"raison_sociale":"","adresse":""}'::jsonb);
   s := public.zz_leve('select public.admin_facturer(''' || o || ''', ''[{"libelle":"Licence","quantite":1,"prix_ht":100}]''::jsonb)');
   insert into public.zz_res (nom, ok, vu) values ('pas de facture sans l''identité du vendeur', s like '%Remplis d''abord ton entreprise%', s);
-  perform public.admin_vendeur_enregistrer(jsonb_build_object('raison_sociale', 'Folio', 'forme', 'EI', 'adresse', '1 rue des Livres',
+  perform public.admin_vendeur_enregistrer(jsonb_build_object('raison_sociale', 'Mirandola', 'forme', 'EI', 'adresse', '1 rue des Livres',
     'code_postal', '30000', 'ville', 'Nîmes', 'siret', '912 345 678 00011', 'immatriculation', 'RCS Nîmes 912 345 678',
-    'regime_tva', 'franchise', 'email', 'Contact@Folio.zz', 'delai_jours', '30'));
+    'regime_tva', 'franchise', 'email', 'Contact@Mirandola.zz', 'delai_jours', '30'));
   s := public.zz_leve('select public.admin_facturer(''' || o3 || ''', ''[{"libelle":"Licence","quantite":1,"prix_ht":100}]''::jsonb)');
   insert into public.zz_res (nom, ok, vu) values ('pas de facture sans les coordonnées du client', s like '%coordonnées de facturation%', s);
-  j := public.admin_facturer(o, '[{"libelle":"Licence Folio — 3 places, année 2026-2027","quantite":3,"prix_ht":30000}]'::jsonb,
+  j := public.admin_facturer(o, '[{"libelle":"Licence Mirandola — 3 places, année 2026-2027","quantite":3,"prix_ht":30000}]'::jsonb,
     current_date, current_date + 300, 'Licence annuelle');
   f1 := (j->>'id')::uuid; n1 := j->>'numero';
   j := public.facture(f1);
@@ -160,7 +160,7 @@ begin
   insert into public.zz_res (nom, ok, vu) values ('la facture photographie le vendeur et le client, et le bon de commande',
     j->'vendeur'->>'siret' = '91234567800011' and j->'client'->>'nom' = 'Lycée Albert Camus'
     and j->>'engagement' = 'BC-2026-118' and j->'lignes'->0->>'total_ht' = '90000', j::text);
-  perform public.admin_vendeur_enregistrer(jsonb_build_object('raison_sociale', 'Folio SAS', 'forme', 'SAS au capital de 1 000 €',
+  perform public.admin_vendeur_enregistrer(jsonb_build_object('raison_sociale', 'Mirandola SAS', 'forme', 'SAS au capital de 1 000 €',
     'adresse', '1 rue des Livres', 'code_postal', '30000', 'ville', 'Nîmes', 'siret', '91234567800011',
     'tva_intracom', 'fr 12 912345678', 'regime_tva', 'normal', 'taux_tva', '20', 'delai_jours', '45'));
   s := public.zz_leve('select public.admin_facturer(''' || o || ''', ''[{"libelle":"","quantite":1,"prix_ht":100}]''::jsonb)');
@@ -213,7 +213,7 @@ begin
   j := public.licence_tableau();
   insert into public.zz_res (nom, ok, vu) values ('le référent voit ses trois pièces, sans leurs lignes, la plus récente d''abord',
     jsonb_array_length(j->'factures') = 3 and not (j->'factures'->0 ? 'lignes') and not (j->'factures'->0 ? 'client')
-    and j->'vendeur'->>'raison_sociale' = 'Folio SAS' and not (j->'vendeur' ? 'iban'), j::text);
+    and j->'vendeur'->>'raison_sociale' = 'Mirandola SAS' and not (j->'vendeur' ? 'iban'), j::text);
   s := public.zz_leve('select public.facture(''' || f3 || ''')');
   insert into public.zz_res (nom, ok, vu) values ('il ne lit pas la facture d''un autre établissement', s like '%Réservé%', s);
   s := public.zz_leve('select public.admin_facturer(''' || o || ''', ''[{"libelle":"x","quantite":1,"prix_ht":1}]''::jsonb)');
@@ -242,9 +242,9 @@ begin
     not exists (select 1 from public.admin_echanges_attente() a where a.org_id = o), 'lu');
   perform public.zz_comme(dir);
   j := public.licence_tableau();
-  insert into public.zz_res (nom, ok, vu) values ('le référent lit le fil dans l''ordre, la réponse de Folio pas encore lue',
+  insert into public.zz_res (nom, ok, vu) values ('le référent lit le fil dans l''ordre, la réponse de Mirandola pas encore lue',
     jsonb_array_length(j->'echanges') = 2 and j->'echanges'->0->>'de' = 'etab' and j->'echanges'->0->>'auteur' = 'Marie CURIE'
-    and j->'echanges'->1->>'auteur' = 'Folio' and j->'echanges'->1->>'lu' is null, j->'echanges'::text);
+    and j->'echanges'->1->>'auteur' = 'Mirandola' and j->'echanges'->1->>'lu' is null, j->'echanges'::text);
   perform public.echanges_lus();
   insert into public.zz_res (nom, ok, vu) values ('il l''a lue',
     public.licence_tableau()->'echanges'->1->>'lu' is not null, 'lu');

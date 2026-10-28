@@ -1,4 +1,4 @@
-// Folio+ : ce que les fonctions paiement et stripe-webhook disent à Stripe
+// Mirandola+ : ce que les fonctions paiement et stripe-webhook disent à Stripe
 // et retiennent de lui (supabase/functions/_shared/abonnement.js).
 import { describe, expect, it } from 'vitest';
 import {
@@ -14,7 +14,7 @@ const sec = iso => Math.floor(Date.parse(iso) / 1000);
 const ancien = {
   id: 'sub_1', status: 'active', customer: 'cus_1', cancel_at_period_end: false, cancel_at: null,
   current_period_end: sec('2027-11-01T10:00:00Z'), metadata: { user_id: 'u1' },
-  items: { data: [{ price: { id: 'price_an', recurring: { interval: 'year' } } }] }
+  items: { data: [{ price: { id: 'price_an', unit_amount: 4999, recurring: { interval: 'year' } } }] }
 };
 // …et d'après (« basil » : la période est sur la ligne)
 const basil = {
@@ -47,15 +47,17 @@ describe('un abonnement Stripe devient une ligne de la table abonnements', () =>
   it('la ligne entière', () => {
     expect(ligneAbonnement(ancien, 'u1', PRIX, MAINTENANT)).toEqual({
       user_id: 'u1', offre: 'plus', statut: 'actif', source: 'stripe', formule: 'annuel', client_stripe: 'cus_1',
-      abonnement_stripe: 'sub_1', fin_periode: '2027-11-01T10:00:00.000Z', fin_prevue: false, maj_le: '2026-11-01T10:00:00.000Z'
+      abonnement_stripe: 'sub_1', fin_periode: '2027-11-01T10:00:00.000Z', fin_prevue: false, montant: 4999,
+      maj_le: '2026-11-01T10:00:00.000Z'
     });
     const l = ligneAbonnement(basil, 'u2', PRIX, MAINTENANT);
     expect(l.client_stripe).toBe('cus_2');           // un client développé (objet) ou un simple identifiant
     expect(l.fin_prevue).toBe(true);                 // une résiliation datée (cancel_at)
     expect(l.statut).toBe('impaye');
+    expect(l.montant).toBeNull();                    // un prix sans montant lisible : l'app montre celui de la formule
   });
 
-  it('ce qui ouvre Folio+ : la même règle que la base', () => {
+  it('ce qui ouvre Mirandola+ : la même règle que la base', () => {
     expect(ouvre('actif', '2027-01-01T00:00:00Z', MAINTENANT)).toBe(true);
     expect(ouvre('impaye', '2027-01-01T00:00:00Z', MAINTENANT)).toBe(true);
     expect(ouvre('actif', '2026-10-01T00:00:00Z', MAINTENANT)).toBe(false);
@@ -76,7 +78,7 @@ describe('deux abonnements pour un compte : l’ancien ne remplace jamais celui 
     expect(aEcrire({ ...court, statut: 'fini', fin_periode: '2026-01-01T00:00:00Z' },
       { abonnement_stripe: 'sub_x', statut: 'incomplet' }, MAINTENANT)).toBe(true);
   });
-  it('un Folio+ offert ou acheté dans un magasin qui court n’est pas écrasé par Stripe', () => {
+  it('un Mirandola+ offert ou acheté dans un magasin qui court n’est pas écrasé par Stripe', () => {
     expect(aEcrire({ ...court, source: 'apple' }, { abonnement_stripe: 'sub_x', statut: 'actif', fin_periode: '2028-01-01T00:00:00Z' },
       MAINTENANT)).toBe(false);
   });
@@ -100,7 +102,7 @@ describe('les évènements', () => {
 });
 
 describe('ce qu’on demande à Stripe', () => {
-  const base = { formule: 'annuel', prix: 'price_an', userId: 'u1', site: 'https://www.folioflashcard.online' };
+  const base = { formule: 'annuel', prix: 'price_an', userId: 'u1', site: 'https://mirandola.fr' };
   it('la page de paiement : l’abonnement, le compte, les retours', () => {
     const d = demandePaiement({ ...base, email: 'lea@exemple.fr' });
     expect(d.mode).toBe('subscription');
@@ -109,8 +111,8 @@ describe('ce qu’on demande à Stripe', () => {
     expect(d['subscription_data[metadata][user_id]']).toBe('u1');
     expect(d.customer_email).toBe('lea@exemple.fr');
     expect(d.customer).toBeUndefined();
-    expect(d.success_url).toBe('https://www.folioflashcard.online/app?plus=merci&session={CHECKOUT_SESSION_ID}');
-    expect(d.cancel_url).toBe('https://www.folioflashcard.online/app?plus=annule');
+    expect(d.success_url).toBe('https://mirandola.fr/app?plus=merci&session={CHECKOUT_SESSION_ID}');
+    expect(d.cancel_url).toBe('https://mirandola.fr/app?plus=annule');
     expect(d['automatic_tax[enabled]']).toBeUndefined();
     expect(d['consent_collection[terms_of_service]']).toBeUndefined();
     expect(d['custom_text[submit][message]']).toMatch(/résiliable/);
@@ -130,6 +132,14 @@ describe('ce qu’on demande à Stripe', () => {
   });
   it('le portail ramène dans l’app', () => {
     expect(demandePortail({ client: 'cus_1', site: 'https://s.fr' })).toEqual({ customer: 'cus_1', return_url: 'https://s.fr/app?plus=retour' });
+  });
+  it('« Résilier » ouvre le portail droit sur la résiliation, puis revient dans l’app', () => {
+    const d = demandePortail({ client: 'cus_1', site: 'https://s.fr', resilier: 'sub_1' });
+    expect(d['flow_data[type]']).toBe('subscription_cancel');
+    expect(d['flow_data[subscription_cancel][subscription]']).toBe('sub_1');
+    expect(d['flow_data[after_completion][type]']).toBe('redirect');
+    expect(d['flow_data[after_completion][redirect][return_url]']).toBe('https://s.fr/app?plus=retour');
+    expect(d.customer).toBe('cus_1');
   });
   it('le formulaire encode les crochets et laisse tomber le vide', () => {
     expect(formulaire({ 'a[b]': 'x y', vide: '', nul: null, n: '1' })).toBe('a%5Bb%5D=x+y&n=1');
@@ -163,10 +173,15 @@ describe('l’app des magasins : un abonné RevenueCat devient sa ligne apple ou
   });
   const an = '2027-11-01T10:00:00Z';
 
-  it('un achat sur l’iPhone : Folio+ annuel, ligne apple', () => {
+  it('un achat sur l’iPhone : Mirandola+ annuel, ligne apple', () => {
     const l = ligneMagasin(abonne({ store: 'app_store', expires_date: an, period_type: 'normal' }), U, MAINTENANT);
     expect(l).toEqual({ user_id: U, offre: 'plus', statut: 'actif', source: 'apple', formule: 'annuel', client_stripe: null,
-      abonnement_stripe: null, fin_periode: '2027-11-01T10:00:00.000Z', fin_prevue: false, maj_le: '2026-11-01T10:00:00.000Z' });
+      abonnement_stripe: null, fin_periode: '2027-11-01T10:00:00.000Z', fin_prevue: false, montant: null,
+      maj_le: '2026-11-01T10:00:00.000Z' });
+    const prix = ligneMagasin(abonne({ store: 'app_store', expires_date: an, price: { amount: 49.99, currency: 'EUR' } }), U, MAINTENANT);
+    expect(prix.montant).toBe(4999);                 // le prix que dit RevenueCat, en euros seulement
+    expect(ligneMagasin(abonne({ store: 'app_store', expires_date: an, price: { amount: 54.99, currency: 'USD' } }), U, MAINTENANT)
+      .montant).toBeNull();
   });
   it('Google, mensuel, à l’essai puis résilié', () => {
     const l = ligneMagasin(abonne({ store: 'play_store', expires_date: an, period_type: 'trial',
@@ -197,7 +212,7 @@ describe('l’app des magasins : un abonné RevenueCat devient sa ligne apple ou
     expect(formuleDuProduit('folio_plus_monthly')).toBe('mensuel');
     expect(formuleDuProduit('autre')).toBeNull();
   });
-  it('les comptes Folio d’un évènement, sans les identifiants anonymes', () => {
+  it('les comptes Mirandola d’un évènement, sans les identifiants anonymes', () => {
     const V = '99999999-2222-4333-8444-555555555555';
     expect(comptesDeLEvenementRC({ event: { app_user_id: U, original_app_user_id: '$RCAnonymousID:abc' } })).toEqual([U]);
     expect(comptesDeLEvenementRC({ event: { type: 'TRANSFER', transferred_from: [U], transferred_to: [V] } })).toEqual([U, V]);

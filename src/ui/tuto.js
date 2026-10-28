@@ -2,7 +2,7 @@
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import {
-  auth, comp, compte, db, demoEtab, eleve, mailbox, me, menu, myRole, offre, prefs, prof, ref, setTuto, study, tuto, view
+  auth, comp, compte, db, demoEtab, eleve, me, menu, myRole, offre, prefs, prof, ref, setTuto, study, tuto, view
 } from '../data/etat.js';
 import { deck, esc } from '../core/coeur-sync.js';
 import { refPull } from '../core/classement.js';
@@ -112,7 +112,7 @@ const cleFeuille = () => `${menu}:${menu === 'pf' ? prof.feuille : ''}`;
    sait pas encore (une liste qui se charge). */
 const TANT = {
   aLire: () => view.name === 'deck' && !!document.querySelector('.cta.read b'),
-  /* dans la démo d'un élève, Folio gratuit garde 5 livres : au-delà, « Nouveau livre » ouvre une fenêtre (ui/demo.js) */
+  /* dans la démo d'un élève, Mirandola gratuit garde 5 livres : au-delà, « Nouveau livre » ouvre une fenêtre (ui/demo.js) */
   creable: () => !document.documentElement.classList.contains('livres-plein'),
   feuille: () => !!menu && !!document.querySelector(FEUILLE) && (!t.feuille || cleFeuille() === t.feuille),
   classes: () => (prof.classes ? aDesClasses() : null),
@@ -140,7 +140,7 @@ const ALLER = {
   classes: () => allerClasses(),
   commu: () => { commuPull(); go('commu'); },
   stats: () => { statsPull(); go('stats'); },
-  mail: () => { mailbox.list = null; mailPull(); go('mail'); },
+  mail: () => { mailPull(); go('mail'); },
   deck: () => { if (!t.deck || !deck(t.deck)) return false; go('deck', t.deck); },
   prof: () => allerAccueil(),
   profclasse: () => { if (!t.classe) return false; allerClasse(t.classe); },
@@ -537,18 +537,18 @@ function carteDebut() {
     </div>`;
 }
 
-/* Folio+ et Folio Campus portent la marque du site : le « + » dans la
+/* Mirandola+ et Mirandola Campus portent la marque du site : le « + » dans la
    lumière de la marque ; le logo sur son carré de papier, l'école en
    écusson dégradé, « Campus » en italique dégradée. */
-const titreFin = f => (f.cle === 'plus' ? '<h2 id="tuct" class="tu-marque">Folio<span class="tu-plus">+</span></h2>'
+const titreFin = f => (f.cle === 'plus' ? '<h2 id="tuct" class="tu-marque">Mirandola<span class="tu-plus">+</span></h2>'
   : f.cle === 'campus' ? `<h2 id="tuct" class="tu-campus"><span class="tu-campus-ic" aria-hidden="true">
-        <img src="/site/logo.svg" alt="" width="30" height="33"><i>${svg(I.school)}</i></span><span>Folio <em>Campus</em></span></h2>`
+        <img src="/site/logo.svg" alt="" width="30" height="33"><i>${svg(I.school)}</i></span><span>Mirandola <em>Campus</em></span></h2>`
   : `<span class="tu-ok">${svg(I.check)}</span><h2 id="tuct">${esc(f.titre)}</h2>`);
 
 /* « tarifs » : la page des tarifs du site, dans un autre onglet — l'app
    reste ouverte derrière (?site : l'aiguillage du site garde la page
    d'accueil même avec une session) ; une fois la vente ouverte
-   (VENTE_OUVERTE, src/abonnement.js), l'écran Folio+ de l'app, où l'on
+   (VENTE_OUVERTE, src/abonnement.js), l'écran Mirandola+ de l'app, où l'on
    s'abonne. */
 function actionHtml(a) {
   const c = `tu-a${a.pri ? ' pri' : ''}`;

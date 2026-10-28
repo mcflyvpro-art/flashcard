@@ -1,7 +1,7 @@
 -- Tests de la migration 20261027210000_folio_plus_pour_tous : une ligne par
 -- source, l'offre d'un compte (offre_de, interne), les médias réservés à
--- Folio+ et Campus, les comptes d'avant la migration qui gardent tout,
--- Folio+ offert par l'éditeur et vu sur le jeton. Même mode que
+-- Mirandola+ et Campus, les comptes d'avant la migration qui gardent tout,
+-- Mirandola+ offert par l'éditeur et vu sur le jeton. Même mode que
 -- abonnements.sql : transaction ANNULÉE, comptes jetables, vrai rôle
 -- `authenticated`.
 
@@ -39,7 +39,7 @@ begin
   where x.created_at < (select min(a.cree_le) from public.abonnements a where a.source = 'offert')
     and not exists (select 1 from public.user_roles r where r.user_id = x.id and r.role in ('ref', 'admin'))
     and not exists (select 1 from public.abonnements a where a.user_id = x.id and a.source = 'offert');
-  insert into public.zz_res (nom, ok, vu) values ('chaque compte d''avant la migration a Folio+ offert', n = 0, n::text);
+  insert into public.zz_res (nom, ok, vu) values ('chaque compte d''avant la migration a Mirandola+ offert', n = 0, n::text);
 
   -- ══════════ une ligne par source ══════════
   insert into public.abonnements (user_id, statut, source, formule, client_stripe, abonnement_stripe, fin_periode) values
@@ -48,11 +48,11 @@ begin
     (lea, 'actif', 'apple', 'annuel', now() + interval '200 days');
   perform public.zz_comme(lea);
   j := public.mon_offre();
-  insert into public.zz_res (nom, ok, vu) values ('Stripe fini, Apple qui court : Folio+, et l''abonnement Apple dit',
+  insert into public.zz_res (nom, ok, vu) values ('Stripe fini, Apple qui court : Mirandola+, et l''abonnement Apple dit',
     j->>'offre' = 'plus' and j->'abonnement'->>'source' = 'apple' and j->'abonnement'->>'formule' = 'annuel', j::text);
   perform public.zz_comme(zed);
   j := public.mon_offre();
-  insert into public.zz_res (nom, ok, vu) values ('un compte neuf : Folio gratuit', j->>'offre' = 'gratuit', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('un compte neuf : Mirandola gratuit', j->>'offre' = 'gratuit', j::text);
 
   -- ══════════ offre_de est interne ══════════
   begin
@@ -68,22 +68,22 @@ begin
     refus := 'passe';
   exception when others then refus := sqlstate;
   end;
-  insert into public.zz_res (nom, ok, vu) values ('Folio gratuit : déposer une image refusé', refus = '42501', refus);
+  insert into public.zz_res (nom, ok, vu) values ('Mirandola gratuit : déposer une image refusé', refus = '42501', refus);
   insert into public.zz_res (nom, ok, vu) values ('la règle des médias : une politique restrictive par écriture',
     (select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects'
        and policyname in ('media_folio_plus', 'media_folio_plus_maj') and permissive = 'RESTRICTIVE') = 2, 'politiques');
 
-  -- ══════════ offrir Folio+ ══════════
+  -- ══════════ offrir Mirandola+ ══════════
   perform public.zz_comme(lea);
   begin
     perform public.admin_offrir_plus(zed);
     refus := 'passe';
   exception when others then refus := sqlstate;
   end;
-  insert into public.zz_res (nom, ok, vu) values ('offrir Folio+ : l''éditeur seul', refus = '42501', refus);
+  insert into public.zz_res (nom, ok, vu) values ('offrir Mirandola+ : l''éditeur seul', refus = '42501', refus);
   perform public.zz_comme(adm);
   j := public.admin_offrir_plus(zed, now() + interval '30 days');
-  insert into public.zz_res (nom, ok, vu) values ('l''éditeur offre Folio+ pour 30 jours', j->>'offre' = 'plus', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('l''éditeur offre Mirandola+ pour 30 jours', j->>'offre' = 'plus', j::text);
   perform public.zz_comme(zed);
   j := public.mon_offre();
   insert into public.zz_res (nom, ok, vu) values ('le compte le voit : offert, avec sa fin',
@@ -98,10 +98,10 @@ begin
   end;
   insert into public.zz_res (nom, ok, vu) values ('offrir jusqu''à une date passée : refusé', refus = '22023', refus);
 
-  -- ══════════ Folio+ sur le jeton ══════════
+  -- ══════════ Mirandola+ sur le jeton ══════════
   perform public.zz_comme(lea);
   select v.plus into b from public.visuels(array[lea], '{}') v where v.id = lea;
-  insert into public.zz_res (nom, ok, vu) values ('visuels dit Folio+', b is true, coalesce(b::text, 'nul'));
+  insert into public.zz_res (nom, ok, vu) values ('visuels dit Mirandola+', b is true, coalesce(b::text, 'nul'));
 
   -- ══════════ les droits ══════════
   insert into public.zz_res (nom, ok, vu) values ('offre_de : ni authenticated ni anon',

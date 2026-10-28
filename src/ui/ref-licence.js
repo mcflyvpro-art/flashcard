@@ -15,7 +15,7 @@ import { timeAgo } from './reglages-corbeille.js';
    — un élève ou un professeur, une place chacun —, le prix convenu, les
    factures et les avoirs (chacun à son adresse, /referent/licence/factures/<id>,
    imprimable), les coordonnées de facturation que demandent les factures et
-   Chorus Pro, les échanges avec Folio, et les documents du contrat. Tout
+   Chorus Pro, les échanges avec Mirandola, et les documents du contrat. Tout
    vient de licence_tableau (20261026130000) ; rien ne se calcule ici. */
 
 const repeint = () => { if (view.name === 'ref') { setAnimate(false); render(); } };
@@ -83,7 +83,7 @@ function tuileDocuments() {
 
 function tuileEchanges(l) {
   const e = l.echanges || [], s = ref.sujet || 'question';
-  return `<div class="rf-tuile rf-fil-t"><h2>Échanges avec Folio</h2>
+  return `<div class="rf-tuile rf-fil-t"><h2>Échanges avec Mirandola</h2>
       <div class="rf-fil">${e.length ? e.map(m => `<div class="rf-msg ${m.de === 'folio' ? 'folio' : 'moi'}">
           <span class="rf-msg-t"><b>${esc(m.auteur || '')}</b><em>${esc(SUJETS[m.sujet] || '')}</em><i>${timeAgo(m.cree)}</i></span>
           <p>${esc(m.message)}</p></div>`).join('') : '<p class="rf-rien">Rien encore</p>'}</div>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Le logo de Folio, tracé à partir de sa géométrie (et non détouré d'une image).
+"""Le logo de Mirandola, tracé à partir de sa géométrie (et non détouré d'une image).
 
 Trois livres reliés empilés, vus de trois quarts : crème en haut (avec son
 étiquette sombre), gris au milieu, presque noir en bas — le dessin de
@@ -260,7 +260,7 @@ def svg_marque():
     cx = P(W * .5 - 6, L * .55, 0)
     ombre = (f'<ellipse cx="{f(cx[0])}" cy="{f(y1 - 2)}" rx="{f((x1 - x0) * .44)}" ry="8" '
              f'fill="#1D1C19" opacity=".14" filter="url(#flou)"/>')
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}" role="img" aria-label="Folio">'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}" role="img" aria-label="Mirandola">'
             f'<defs>{OMBRE.format(s=6)}</defs>{ombre}{corps}</svg>')
 
 

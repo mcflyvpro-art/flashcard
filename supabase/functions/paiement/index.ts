@@ -1,8 +1,8 @@
-/* Folio — passer à Folio+, gérer son abonnement.
+/* Mirandola — passer à Mirandola+, gérer son abonnement.
    L'app appelle cette fonction ; elle demande à Stripe une page de paiement
    (Checkout) ou une page de gestion (le portail client), et rend son
    adresse : l'app y envoie le navigateur. La carte bancaire ne passe jamais
-   par Folio. Ce qui suit le paiement (l'abonnement écrit en base) est le
+   par Mirandola. Ce qui suit le paiement (l'abonnement écrit en base) est le
    travail de stripe-webhook.
 
    Secrets à définir sur le projet Supabase (Edge Functions → Secrets) :
@@ -12,7 +12,7 @@
      STRIPE_TAXE           « 1 » si Stripe Tax est activé (TVA du pays de l'acheteur)
      STRIPE_CGV            « 1 » pour faire cocher les conditions de vente (leur
                            adresse posée dans Stripe → Paramètres → Détails publics)
-     SITE_URL              défaut https://www.folioflashcard.online
+     SITE_URL              défaut https://mirandola.fr
      STRIPE_API            défaut https://api.stripe.com/v1/ (les essais locaux
                            pointent ailleurs : tools/paiement/essai.js)
    SUPABASE_URL, SUPABASE_ANON_KEY et SUPABASE_SERVICE_ROLE_KEY sont
@@ -22,8 +22,10 @@
    Pas de SDK (ni Stripe ni supabase-js) : du fetch brut, comme le reste de
    l'app — rien à télécharger au démarrage, rien qui casse au déploiement.
 
+   Actions : payer (avec une formule), gerer (le portail), resilier (le
+   portail ouvert sur la résiliation).
    Réponses : { url } ; sinon { error } parmi nokey, noprix, auth, body,
-   formule, deja (Folio+ court déjà : gérer plutôt que payer), campus
+   formule, deja (Mirandola+ court déjà : gérer plutôt que payer), campus
    (l'établissement l'offre déjà), aucun (rien à gérer), stripe. */
 
 import { FORMULES, demandePaiement, demandePortail, formulaire, ouvre } from "../_shared/abonnement.js";
@@ -39,7 +41,7 @@ const json = (body: unknown, status = 200) =>
 const URL_SB = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
-const SITE = (Deno.env.get("SITE_URL") || "https://www.folioflashcard.online").replace(/\/$/, "");
+const SITE = (Deno.env.get("SITE_URL") || "https://mirandola.fr").replace(/\/$/, "");
 const STRIPE = Deno.env.get("STRIPE_API") || "https://api.stripe.com/v1/";
 
 /* le gateway a déjà validé le JWT ; on n'en lit que le sujet et l'adresse */
@@ -115,9 +117,14 @@ Deno.serve(async (req) => {
   try {
     const ligne = await ligneDe(uid);
 
-    if (body.action === "gerer") {
+    if (body.action === "gerer" || body.action === "resilier") {
       if (!ligne?.client_stripe) return json({ error: "aucun" }, 404);
-      const s = await stripe("billing_portal/sessions", demandePortail({ client: ligne.client_stripe, site: SITE }), cle);
+      /* « Résilier » ouvre le portail sur la résiliation de l'abonnement qui
+         court ; déjà résilié (ou fini), le portail tout court : on peut y
+         reprendre l'abonnement. */
+      const resilier = body.action === "resilier" && ligne.abonnement_stripe && !ligne.fin_prevue
+        && ouvre(ligne.statut, ligne.fin_periode) ? ligne.abonnement_stripe : undefined;
+      const s = await stripe("billing_portal/sessions", demandePortail({ client: ligne.client_stripe, site: SITE, resilier }), cle);
       return json({ url: s.url });
     }
 
@@ -127,7 +134,7 @@ Deno.serve(async (req) => {
     const prix = Deno.env.get(formule === "annuel" ? "STRIPE_PRIX_ANNUEL" : "STRIPE_PRIX_MENSUEL");
     if (!prix) return json({ error: "noprix" }, 503);
 
-    /* Payer deux fois la même chose : jamais. Folio+ court déjà — payé
+    /* Payer deux fois la même chose : jamais. Mirandola+ court déjà — payé
        ici, dans un magasin, ou offert → rien à acheter ; l'établissement
        l'offre → rien non plus. */
     if (ligne && ouvre(ligne.statut, ligne.fin_periode)) return json({ error: "deja" }, 409);

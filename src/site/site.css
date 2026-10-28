@@ -79,7 +79,7 @@ button{font:inherit;color:inherit}
 
 /* ---------- textes ---------- */
 .titre{font-family:var(--serif);font-weight:700;font-size:clamp(34px,5.2vw,64px);line-height:1.02;letter-spacing:-.03em;text-wrap:balance}
-/* un mot du titre, éclairé par la marque ; le « + » de Folio+ aussi, partout */
+/* un mot du titre, éclairé par la marque ; le « + » de Mirandola+ aussi, partout */
 .titre em,.titre-heros .mot:nth-child(4){font-style:italic;background:var(--degrade-texte);-webkit-background-clip:text;background-clip:text;color:transparent;
   padding-right:.1em;margin-right:-.06em}
 /* en biais et plus épais (le « + » de la serif est un trait fin) : sur un
@@ -360,7 +360,7 @@ button{font:inherit;color:inherit}
 .pt-sans{top:calc(var(--ys) * 100%);background:#C9C3D3}
 .pt-lite{top:calc(var(--yl) * 100%);background:#AEB8DA}
 
-/* les deux moteurs : Memory Engine Lite (gratuit), Ultra (Folio+ et Campus), mis en avant */
+/* les deux moteurs : Memory Engine Lite (gratuit), Ultra (Mirandola+ et Campus), mis en avant */
 .moteurs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;max-width:1100px;margin:18px auto 0}
 .moteur-carte{display:flex;flex-direction:column;gap:8px;padding:24px 26px 26px;border-radius:26px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
 /* un nom de moteur, à la façon d'une fiche technique : « Memory Engine » et son rang */
@@ -517,7 +517,7 @@ button{font:inherit;color:inherit}
 .arc path{fill:none;stroke:var(--lilas);stroke-width:2.4;stroke-dasharray:5 7;stroke-linecap:round;animation:flux 1.2s linear infinite}
 @keyframes flux{to{stroke-dashoffset:-24}}
 
-/* ---------- Folio Campus ---------- */
+/* ---------- Mirandola Campus ---------- */
 .campus{position:relative;max-width:calc(var(--large) + 120px);margin:clamp(96px,13vw,170px) auto 0;padding:clamp(64px,9vw,120px) 0 clamp(56px,8vw,100px);
   border-radius:clamp(26px,4vw,48px);background:var(--nuit);color:var(--creme);overflow:hidden;isolation:isolate}
 .campus::before{content:'';position:absolute;inset:-26% -12% auto auto;width:70%;aspect-ratio:1;z-index:-1;border-radius:50%;
@@ -528,7 +528,7 @@ button{font:inherit;color:inherit}
 .campus .petit{color:#A29CAF}
 .campus-tete{display:flex;flex-direction:column;align-items:center;text-align:center}
 .campus-tete .texte{margin-inline:auto;text-wrap:balance}
-/* la marque de l'offre : le logo de Folio sur son carré de papier (sur le
+/* la marque de l'offre : le logo de Mirandola sur son carré de papier (sur le
    fond sombre, le livre noir de la pile disparaissait), la toque des
    établissements en écusson, « Campus » dans la lumière de la marque */
 .campus-marque{display:inline-flex;align-items:center;gap:16px;margin:0 0 30px;padding-bottom:8px;font:700 clamp(30px,3.4vw,40px)/1 var(--serif);letter-spacing:-.025em;color:var(--creme)}
@@ -711,10 +711,46 @@ button{font:inherit;color:inherit}
 .comparatif .oui{color:var(--ok);stroke-width:2.6}
 .comparatif .non{color:#C8C3B9;stroke-width:2.4}
 .comparatif tbody th{position:sticky;left:0;background:#FFF;z-index:1}
-/* un intertitre de groupe : « Tes statistiques », pour lire d'un coup d'œil tout ce que le journal de Folio gratuit n'a pas */
+/* un intertitre de groupe : « Tes statistiques », pour lire d'un coup d'œil tout ce que le journal de Mirandola gratuit n'a pas */
 .comparatif .groupe th{padding-top:26px;padding-bottom:10px;font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--az5)}
 .js .comparatif tbody tr{opacity:0;transform:translateY(10px)}
 .comparatif.vu tbody tr{opacity:1;transform:none;transition:opacity .6s var(--e),transform .6s var(--e);transition-delay:calc(var(--i,0) * 45ms + .15s)}
+
+/* combien pour mon établissement : la grille dégressive (src/tarifs.js) */
+.calcul{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px 40px;align-items:center;margin-top:clamp(40px,6vw,64px);
+  padding:clamp(24px,3.4vw,40px);border-radius:30px;background:var(--carte);box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
+.calcul-tete h3{font:700 clamp(24px,2.6vw,30px)/1.15 var(--serif);letter-spacing:-.02em}
+.calcul-tete p{margin-top:10px;color:var(--encre2);font-size:16px;line-height:1.5}
+.calcul-corps{display:flex;flex-direction:column;gap:14px;grid-row:span 2}
+.calcul-champ{display:flex;align-items:center;justify-content:space-between;gap:14px;font-weight:650;color:var(--encre2)}
+.calcul-champ input{width:110px;height:48px;padding:0 14px;border:0;border-radius:14px;background:var(--papier);box-shadow:inset 0 0 0 1px var(--filet2);
+  font:700 20px var(--sans);text-align:right;color:var(--encre);font-variant-numeric:tabular-nums}
+.calcul-champ input:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--az4)}
+#calcul-curseur{width:100%;accent-color:var(--az5)}
+.calcul-total{color:var(--doux);font-weight:650;line-height:1.4}
+.calcul-total b{display:block;font:700 clamp(36px,4vw,48px)/1.05 var(--serif);letter-spacing:-.03em;color:var(--encre);font-variant-numeric:tabular-nums}
+.tranches{width:100%;border-collapse:collapse;font-size:15px}
+.tranches th{padding:0 0 8px;text-align:left;font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--doux)}
+.tranches th:last-child,.tranches td:last-child{text-align:right}
+.tranches td{padding:10px 0;border-top:1px solid var(--filet);font-weight:650;color:var(--encre2);font-variant-numeric:tabular-nums;transition:color .3s}
+.tranches tr.ici td{color:var(--az5)}
+.tranches tr.ici td:first-child{box-shadow:inset 3px 0 0 var(--az4);padding-left:10px;transition:padding .3s var(--e)}
+.calcul-pied{grid-column:1 / -1;margin:0}
+
+/* les professeurs particuliers */
+.particulier{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px 32px;align-items:center;margin-top:18px;
+  padding:clamp(22px,3vw,34px);border-radius:30px;background:var(--papier2);box-shadow:inset 0 0 0 1px var(--filet)}
+.particulier h3{grid-column:1 / -1;font:700 clamp(22px,2.4vw,27px)/1.2 var(--serif);letter-spacing:-.02em}
+.particulier ul{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.particulier li{display:flex;gap:10px;align-items:flex-start;color:var(--encre2);line-height:1.45}
+.particulier li .ic{flex:none;width:20px;height:20px;margin-top:1px;color:var(--ok);stroke-width:2.6}
+.particulier li b{color:var(--encre)}
+@media (max-width:860px){
+  .calcul{grid-template-columns:minmax(0,1fr)}
+  .calcul-corps{grid-row:auto}
+  .particulier{grid-template-columns:minmax(0,1fr)}
+  .particulier .bt{justify-self:start}
+}
 
 /* ---------- les questions ---------- */
 .faq{padding-top:clamp(96px,13vw,170px)}
@@ -886,7 +922,15 @@ button{font:inherit;color:inherit}
 @media (forced-colors:active){
   .titre em,.titre-heros .mot:nth-child(4),.pastille-ia span,.plus,.campus-marque em,.moteur-plus h3{background:none;color:CanvasText}
 }
-/* un tout petit téléphone : le logo seul, le bouton d'inscription garde sa place */
-@media (max-width:360px){
+/* Mirandola est un nom long (2026-10-28) : au téléphone, la marque se
+   serre un peu ; sur un petit téléphone, le logo seul — le bouton
+   d'inscription garde sa place. */
+@media (max-width:440px){
+  .tete .marque{gap:7px;font-size:21px}
+  .tete .marque-livres{width:28px;height:30px}
+  .tete-actions{gap:7px}
+  .tete-actions .bt{padding:0 13px}
+}
+@media (max-width:379px){
   .tete .marque span{display:none}
 }

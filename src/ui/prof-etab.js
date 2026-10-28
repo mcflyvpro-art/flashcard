@@ -54,7 +54,7 @@ export function inviterCode(c) {
         <div class="pf-lien"><input readonly value="${esc(lienCode())}" aria-label="Lien">${btn('code-lien', I.copy, '', 'ic sm', 'aria-label="Copier le lien"')}</div>
       </div></div>
     <ol class="pf-etapes">
-      <li><b>1</b><span>Folio → Réglages → J’ai un code</span></li>
+      <li><b>1</b><span>Mirandola → Réglages → J’ai un code</span></li>
       <li><b>2</b><span>Choisir « ${esc(c.name)} »</span></li>
     </ol>
     ${c.gere ? `<button class="pf-lnk seul" data-pf="f-mode" data-v="liste">${svg(I.card)}Des élèves sans adresse e-mail ?</button>` : ''}`;
@@ -65,8 +65,8 @@ export function tableauCode(w) {
   const c = classeOuverte(), r = c ? (prof.roster || []) : [];
   if (prof.code === null) codePull();
   feuille(w, 'pf-tableau', '', '', `<div class="pf-tb">
-      <div class="pf-tb-g">${c ? pastilleClasse(c, true) : ''}<h1>${esc(c ? c.name : 'Rejoindre Folio')}</h1>
-        <ol><li>Ouvrez <b>Folio</b> → Réglages → <b>J’ai un code</b></li><li>Visez le QR code, ou tapez le code</li>
+      <div class="pf-tb-g">${c ? pastilleClasse(c, true) : ''}<h1>${esc(c ? c.name : 'Rejoindre Mirandola')}</h1>
+        <ol><li>Ouvrez <b>Mirandola</b> → Réglages → <b>J’ai un code</b></li><li>Visez le QR code, ou tapez le code</li>
           ${c ? `<li>Choisissez <b>${esc(c.name)}</b></li>` : ''}</ol>
         <b class="pf-tb-code">${prof.code ? esc(formatCode(prof.code)) : '— — —'}</b>
         <p>${esc(SITE.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</p></div>

@@ -1,4 +1,4 @@
-# Folio sous Capacitor — ce qui est prêt, ce qui reste à faire
+# Mirandola sous Capacitor — ce qui est prêt, ce qui reste à faire
 
 Capacitor n'est **pas installé** : ce fichier dit comment l'ajouter sans rien
 casser, et ce que le code a déjà préparé. À relire avec `CLAUDE.md`
@@ -17,7 +17,7 @@ connectée.
 ## Ce qui est déjà prêt dans le code
 
 - **Une seule adresse pour les liens qui sortent** : `SITE`
-  (`src/adresse.js`, `https://www.folioflashcard.online/`). Sous Capacitor,
+  (`src/adresse.js`, `https://mirandola.fr/`). Sous Capacitor,
   `location` vaut `capacitor://localhost` (iOS) ou `https://localhost`
   (Android) : aucun lien partagé n'est fabriqué à partir de `location`.
 - **Une seule porte pour les liens qui entrent** :
@@ -46,7 +46,7 @@ connectée.
 ```sh
 npm i @capacitor/core @capacitor/app
 npm i -D @capacitor/cli
-npx cap init Folio online.folioflashcard.app --web-dir dist
+npx cap init Mirandola fr.mirandola.app --web-dir dist
 npm i @capacitor/ios @capacitor/android
 npx cap add ios && npx cap add android
 npm run build && npx cap sync
@@ -56,15 +56,15 @@ npm run build && npx cap sync
 
 ```json
 {
-  "appId": "online.folioflashcard.app",
-  "appName": "Folio",
+  "appId": "fr.mirandola.app",
+  "appName": "Mirandola",
   "webDir": "dist",
   "server": { "androidScheme": "https" }
 }
 ```
 
 L'`appId` est un choix définitif (il identifie l'app dans les magasins) :
-`online.folioflashcard.app` suit le domaine à l'envers.
+`fr.mirandola.app` suit le domaine à l'envers.
 
 Ces paquets sont des **dépendances à l'exécution** : la règle « pas de
 bibliothèque externe sans accord explicite » s'applique — l'accord est à
@@ -87,7 +87,7 @@ Au lancement à froid par un lien, Capacitor fournit aussi l'URL par
 
 ## Payer, dans l'app des magasins
 
-**Folio+ s'y achète par l'achat intégré d'Apple ou de Google**, au travers
+**Mirandola+ s'y achète par l'achat intégré d'Apple ou de Google**, au travers
 de RevenueCat. Ce sont leurs règles : jamais Stripe dans l'app (le détail et
 la mise en place sont dans docs/VENTE.md, § 2).
 
@@ -95,18 +95,18 @@ Le code est prêt :
 
 - `plateforme()` (`src/plateformes.js`) lit `window.Capacitor.getPlatform()`,
   et `vente()` répond alors « magasin ».
-- L'écran Folio+ propose « Passer à Folio+ » et « Restaurer mes achats ». Il
+- L'écran Mirandola+ propose « Passer à Mirandola+ » et « Restaurer mes achats ». Il
   ne mentionne ni Stripe ni le site. Un abonnement se gère là où il a été pris
   (`gestion()`, `src/abonnement.js`) :
   - Apple : les réglages de l'iPhone ;
   - Google : Google Play ;
-  - Stripe : « se gère sur folioflashcard.online, depuis un ordinateur », sans
+  - Stripe : « se gère sur mirandola.fr, depuis un ordinateur », sans
     lien.
 - `versMagasin()` et `restaurerAchats()` (`src/core/abonnement.js`)
   appellent le greffon `@revenuecat/purchases-capacitor` sous
   `Capacitor.Plugins.Purchases` : il n'y a rien à importer dans l'app web.
   - `configure` se fait avec la clé publique de `REVENUECAT`
-    (`src/abonnement.js`), et `logIn` avec l'identifiant Folio du compte.
+    (`src/abonnement.js`), et `logIn` avec l'identifiant Mirandola du compte.
   - Ensuite viennent `getOfferings` (`current.annual`, `current.monthly`),
     puis `purchasePackage`.
   - Enfin, la fonction `magasins` relit l'abonné et écrit l'abonnement.
@@ -118,14 +118,14 @@ Le code est prêt :
 
 Une fois l'app publiée, son lien va dans `MAGASINS` (`src/plateformes.js`).
 La porte d'installation (`ui/pwa.js`, 2026-10-28), qui montre aujourd'hui à
-un téléphone comment poser Folio sur son écran d'accueil, mène alors à la
+un téléphone comment poser Mirandola sur son écran d'accueil, mène alors à la
 fiche du magasin. Depuis le 2026-10-28, Capacitor est en réserve : le
 téléphone passe par l'app web installée (CLAUDE.md, « La porte
 d'installation »).
 
 ## Liens universels (iOS) et App Links (Android)
 
-Deux fichiers à servir depuis `https://www.folioflashcard.online/.well-known/`.
+Deux fichiers à servir depuis `https://mirandola.fr/.well-known/`.
 **Ne pas les publier avant d'avoir les vrais identifiants** : un fichier faux
 fait échouer la vérification d'Apple ou de Google, qui la met en cache.
 
@@ -135,7 +135,7 @@ fait échouer la vérification d'Apple ou de Google, qui la met en cache.
 {
   "applinks": {
     "details": [
-      { "appIDs": ["<TEAM_ID>.online.folioflashcard.app"], "components": [ { "/": "/*" } ] }
+      { "appIDs": ["<TEAM_ID>.fr.mirandola.app"], "components": [ { "/": "/*" } ] }
     ]
   }
 }
@@ -143,7 +143,7 @@ fait échouer la vérification d'Apple ou de Google, qui la met en cache.
 
 `<TEAM_ID>` : l'identifiant d'équipe du compte Apple Developer. Dans Xcode,
 ajouter la capacité *Associated Domains* avec
-`applinks:www.folioflashcard.online`.
+`applinks:mirandola.fr`.
 
 `public/.well-known/assetlinks.json` :
 
@@ -152,7 +152,7 @@ ajouter la capacité *Associated Domains* avec
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "online.folioflashcard.app",
+    "package_name": "fr.mirandola.app",
     "sha256_cert_fingerprints": ["<EMPREINTE SHA-256 DE LA CLÉ DE SIGNATURE>"]
   }
 }]
@@ -161,7 +161,7 @@ ajouter la capacité *Associated Domains* avec
 L'empreinte : `keytool -list -v -keystore <clé>.jks` (ou, si Google signe
 l'app, la console Play → Intégrité de l'app). Dans
 `android/app/src/main/AndroidManifest.xml`, un `intent-filter` avec
-`android:autoVerify="true"`, `https`, `www.folioflashcard.online`.
+`android:autoVerify="true"`, `https`, `mirandola.fr`.
 
 Apple exige `Content-Type: application/json` pour un fichier sans extension :
 ajouter dans `vercel.json`, au même moment que le fichier,
@@ -184,7 +184,7 @@ ajouter dans `vercel.json`, au même moment que le fichier,
 
 - Le lien « Mot de passe oublié » renvoie vers la *Site URL* du projet
   (Supabase → Authentication → URL Configuration) : elle doit valoir
-  `https://www.folioflashcard.online/`, et ce domaine figurer dans les
+  `https://mirandola.fr/`, et ce domaine figurer dans les
   *Redirect URLs*. Ouvert sur le téléphone, ce lien ouvrira l'app grâce aux
   liens universels.
 - Aucune URL `capacitor://` n'est à déclarer : l'app n'emploie pas de

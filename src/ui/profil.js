@@ -29,7 +29,7 @@ function tete(id, p) {
       ${avatar(id, ident(p.pseudo, p.nom), 'xl')}
       <h1>${esc(p.nom)}</h1>
       <div class="lp-sous">${p.pseudo ? `<span>@${esc(p.pseudo)}</span>` : ''}
-        ${p.depuis ? `<span title="Lit sur Folio depuis">${svg(I.cal)}${depuis(p.depuis)}</span>` : ''}
+        ${p.depuis ? `<span title="Lit sur Mirandola depuis">${svg(I.cal)}${depuis(p.depuis)}</span>` : ''}
         ${ami && !p.moi ? `<span class="lp-ami">${svg(I.check)}Ami</span>` : ''}</div>
       ${(p.clubs || []).length ? `<div class="lp-clubs">${p.clubs.map(g =>
         `<span class="lp-club">${blasonClub(g, 'xs')}${esc(g.nom)}</span>`).join('')}</div>` : ''}

@@ -101,7 +101,7 @@ export const svg = p => `<svg viewBox="0 0 24 24">${p}</svg>`;
 
 export const SWIPE = `<svg viewBox="0 0 72 24">${I.swipe}</svg>`;
 
-/* Le logo de Folio, le même dessin que la page d'accueil du site
+/* Le logo de Mirandola, le même dessin que la page d'accueil du site
    (public/site/logo.svg, tracé par tools/logo.py) : un fichier vectoriel
    que le service worker garde aussi hors ligne. Au téléphone, les onglets
    gardent leur titre en haut, sans le logo (demandé le 2026-10-27). */

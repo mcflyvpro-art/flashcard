@@ -70,7 +70,7 @@ function tuilesCodes(c) {
 
 function tuileLicence(c) {
   const l = licence(c);
-  const alerte = { echue: 'La licence a pris fin : les codes ne font plus entrer personne. Écris à Folio pour la renouveler.',
+  const alerte = { echue: 'La licence a pris fin : les codes ne font plus entrer personne. Écris à Mirandola pour la renouveler.',
     pleine: 'Toutes les places sont prises : personne ne peut plus entrer. Demande des places dans l’onglet Licence.',
     bientot: `La licence finit dans ${l.jours} jour${l.jours > 1 ? 's' : ''}.` }[l.k];
   return `<div class="rf-tuile rf-licence">
@@ -304,7 +304,7 @@ function cartes() {
   return `<div class="rf-cartes">
       <button class="rf-b sm" data-rf="onglet" data-id="accueil">${svg(I.back)}Retour</button>
       <h2>Des élèves sans adresse e-mail</h2>
-      <p>Pour les élèves qui n’ont pas d’adresse e-mail (souvent de jeunes collégiens), Folio crée un compte par élève
+      <p>Pour les élèves qui n’ont pas d’adresse e-mail (souvent de jeunes collégiens), Mirandola crée un compte par élève
         avec un identifiant et un code secret, imprimés sur une carte avec un QR. Ils n’ont alors pas besoin du code élèves :
         ils scannent leur carte. Les autres entrent normalement, avec le code élèves.</p>
       <form id="rfcartes" autocomplete="off">
@@ -349,7 +349,7 @@ function projection() {
       <span class="rf-projo-t">${ref.projo === 'eleve' ? 'Élèves' : 'Professeurs'} · ${esc((ref.board || {}).org || '')}</span>
       <b class="rf-projo-c">${formatCode(code || '')}</b>
       <i class="rf-qr grand" data-lien="${esc(lienRejoindre(SITE, code || ''))}"></i>
-      <span class="rf-projo-a">Folio → Réglages → J’ai un code</span>
+      <span class="rf-projo-a">Mirandola → Réglages → J’ai un code</span>
     </div>`;
 }
 
@@ -574,7 +574,7 @@ document.addEventListener('change', e => {
 
 let attente = 0;
 document.addEventListener('input', e => {
-  // le message à Folio survit à un repeint (le tableau se relit après chaque geste)
+  // le message à Mirandola survit à un repeint (le tableau se relit après chaque geste)
   if (e.target.id === 'rfemsg') { ref.brouillon = e.target.value; return; }
   if (e.target.id !== 'rfq' || view.name !== 'ref') return;
   ref.q = e.target.value;

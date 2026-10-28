@@ -1,4 +1,4 @@
-"""La voix off de la Folio Academy (2026-10-27).
+"""La voix off de la Mirandola Academy (2026-10-27).
 
 Chaque réplique est synthétisée une fois et gardée en cache, par moteur et
 par voix. Trois moteurs, du meilleur au repli :
@@ -33,7 +33,7 @@ ECHANTILLONS = {'gemini': ['Sulafat', 'Achernar', 'Aoede', 'Kore', 'Leda', 'Char
 STYLE = os.environ.get('FOLIO_VOIX_STYLE',
                        'Lis ce texte en français, comme une formatrice bienveillante qui guide pas à pas : '
                        'voix chaleureuse et souriante, débit posé et naturel, articulation nette')
-PHRASE_TEST = ('Bienvenue dans la Folio Academy. En trois minutes, tu vas apprendre l’essentiel : '
+PHRASE_TEST = ('Bienvenue dans la Mirandola Academy. En trois minutes, tu vas apprendre l’essentiel : '
                'entrer dans ta classe, faire tes devoirs, et réviser un peu chaque jour.')
 
 SIGLES = {'QCM', 'QR', 'PDF', 'RGPD', 'ENT', 'UAI', 'SIRET', 'CGV', 'TVA', 'HT', 'TTC', 'PP', 'IA', 'URL'}
@@ -46,7 +46,7 @@ KOKORO = [   # ce qu'espeak, derrière Kokoro, lit à l'anglaise ou épelle mal
     (r'\bSpé maths\b', 'spé mathématiques'), (r'\bmaths\b', 'mathématiques'),
     (r'\be-mails?\b', 'mèl'), (r'\badresse mail\b', 'adresse mèl'), (r'\bmail\b', 'mèl'),
     (r'\bQCM\b', 'Q.C.M.'), (r'\bQR code\b', 'Q.R. code'), (r'\bQR\b', 'Q.R.'), (r'\bPDF\b', 'P.D.F.'),
-    (r'\bFolio Academy\b', 'Académie Folio'),
+    (r'\bFolio Academy\b', 'Académie Mirandola'),
 ]
 
 

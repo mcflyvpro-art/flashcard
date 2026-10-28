@@ -5,7 +5,7 @@
 
    La courbe d'oubli est celle de FSRS (R = (1 + 19/81 · t/S)^-0,5, qui vaut
    0,9 quand t = S). Sans révision, chaque fiche glisse sur sa courbe. Avec
-   Folio, elle revient quand son rappel tombe à 90 %, comme le règle le
+   Mirandola, elle revient quand son rappel tombe à 90 %, comme le règle le
    moteur de l'app, et chaque révision réussie allonge sa stabilité : les
    révisions s'espacent. Le temps est porté en racine carrée, sinon la
    première semaine, où tout se joue, tiendrait dans un trait. */

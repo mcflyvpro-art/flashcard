@@ -15,9 +15,9 @@ import { armerSur, desarmer } from './routeur.js';
 import { lancerTuto } from './tuto-porte.js';
 import './demo.css';
 
-/* ══════════ « Essayer Folio », sans compte (2026-10-26) ══════════
+/* ══════════ « Essayer Mirandola », sans compte (2026-10-26) ══════════
    Chargé à la demande par sa porte, ui/demo-porte.js. Le visiteur choisit un
-   rôle dans le « Lycée Démo Folio » et l'app s'ouvre pour de vrai : ses
+   rôle dans le « Lycée Démo Mirandola » et l'app s'ouvre pour de vrai : ses
    écrans, sa synchro, ses gestes — seul le réseau est remplacé. Chaque
    requête est servie dans l'onglet par la base locale (src/base-locale/,
    le même Supabase en mémoire que les parcours e2e), semée du monde de
@@ -37,7 +37,7 @@ import './demo.css';
 /* n : le numéro de la personne dans monde.js (son visage, sa couleur) ;
    t : le rôle sur la porte, c : dans le bandeau, q : ce qu'on y verra ;
    suite : le geste d'après, dans le bandeau. Un élève crée son compte (il
-   est gratuit) ; un professeur ou un référent ouvre Folio dans son
+   est gratuit) ; un professeur ou un référent ouvre Mirandola dans son
    établissement (la démo de 30 jours, /demande-demo). Le libellé court
    sert au téléphone, où le bandeau n'a pas la place. */
 const POUR_SOI = { href: '/inscription', icone: 'user', long: 'Créer mon compte gratuit', court: 'Créer mon compte' };
@@ -59,7 +59,7 @@ export function decouvrirEcran() {
   $.innerHTML = `<div class="pub pub-essai">${pubTete()}
     <div class="dm">
       <span class="dm-etab">${svg(I.school)}${esc(ETAB.nom)}</span>
-      <h1 class="dm-t">Essaie <em>Folio.</em></h1>
+      <h1 class="dm-t">Essaie <em>Mirandola.</em></h1>
       <p class="dm-s">Choisis qui tu es. Rien ne s’enregistre.</p>
       <div class="dm-roles">${ROLES.map(r => `<button class="dm-role" data-dm="lancer" data-v="${r.k}">
         <i class="dm-av" style="--c:${COULEURS[teinteDemo(r.n)]}">${avatarSvg(lireAvatar(ecrireAvatar(visageDemo(r.n))))}</i>
@@ -116,7 +116,7 @@ function nettoyer() {
 }
 
 function bandeau(role) {
-  // un élève essaie Folio gratuit : ce qui est dans Folio+ se grise (demo.css, `plusSeul`)
+  // un élève essaie Mirandola gratuit : ce qui est dans Mirandola+ se grise (demo.css, `plusSeul`)
   document.documentElement.classList.toggle('en-demo-libre', role === 'eleve');
   let b = document.getElementById('dmbandeau');
   if (!b) { b = document.createElement('div'); b.id = 'dmbandeau'; b.className = 'dm-bandeau'; document.body.appendChild(b); }
@@ -136,25 +136,25 @@ function bandeau(role) {
    envie. Une fenêtre, une fois par geste, qu'on ferme d'un appui : rien
    ne revient tout seul. Les offres sont celles de la page d'accueil (le
    prix ne se coupe jamais : espaces insécables). */
-const PRIX = 'dès 2,50\u00a0€\u00a0par\u00a0mois';
+const PRIX = 'dès 4,17\u00a0€\u00a0par\u00a0mois';
 const ENVIES = {
   ia: { t: 'L’IA écrit le livre pour toi',
-    s: `Colle ton cours\u202f: elle en tire les questions et les réponses, une par page. Avec Folio+, 50\u00a0cours par mois, ${PRIX}.` },
+    s: `Colle ton cours\u202f: elle en tire les questions et les réponses, une par page. Avec Mirandola+, 30\u00a0cours par mois, ${PRIX}.` },
   photo: { t: 'Ton cahier en photo, et c’est un livre',
-    s: `Prends ton cours en photo\u202f: l’IA le lit et en fait des flashcards. Avec Folio+, ${PRIX}.` },
+    s: `Prends ton cours en photo\u202f: l’IA le lit et en fait des flashcards. Avec Mirandola+, ${PRIX}.` },
   fichier: { t: 'Ton PDF devient un livre',
-    s: `Dépose le PDF d’un cours\u202f: l’IA en tire les flashcards. Avec Folio+, ${PRIX}.` },
+    s: `Dépose le PDF d’un cours\u202f: l’IA en tire les flashcards. Avec Mirandola+, ${PRIX}.` },
   exercices: { t: 'QCM et associations',
-    s: `Quatre réponses au choix, ou des paires à relier, tirées de tes pages\u202f: de quoi t’entraîner avant le contrôle. Avec Folio+, ${PRIX}.` },
+    s: `Quatre réponses au choix, ou des paires à relier, tirées de tes pages\u202f: de quoi t’entraîner avant le contrôle. Avec Mirandola+, ${PRIX}.` },
   livres: { t: 'Ta bibliothèque est pleine',
-    s: `Folio gratuit garde 5\u00a0livres. Avec Folio+, des livres sans limite, ${PRIX}.` },
+    s: `Mirandola gratuit garde 5\u00a0livres. Avec Mirandola+, des livres sans limite, ${PRIX}.` },
   media: { t: 'Des images et des sons sur tes pages',
-    s: `Un schéma, une carte, la prononciation d’un mot\u202f: ils se glissent sur tes pages. Avec Folio+, ${PRIX}.` },
+    s: `Un schéma, une carte, la prononciation d’un mot\u202f: ils se glissent sur tes pages. Avec Mirandola+, ${PRIX}.` },
   journal: { t: 'Ton journal complet',
-    s: `Ta mémoire, tes heures, tes matières et les pages qui résistent. Avec Folio+, ${PRIX}.` }
+    s: `Ta mémoire, tes heures, tes matières et les pages qui résistent. Avec Mirandola+, ${PRIX}.` }
 };
 
-/* Ce que Folio gratuit n'a pas, dans la démo d'un élève (qui essaie Folio
+/* Ce que Mirandola gratuit n'a pas, dans la démo d'un élève (qui essaie Mirandola
    gratuit, html.en-demo-libre) : ui/bridage.js le grise et, au geste,
    appelle envie() — la même règle que pour un vrai compte gratuit. */
 export function envie(cle) {
@@ -169,7 +169,7 @@ export function envie(cle) {
   d.innerHTML = `<i class="dm-envie-ic">${svg(I.spark)}</i>
     <h2 id="dmenviet">${e.t}</h2><p>${e.s}</p>
     <a class="cta" href="/inscription" data-dm="partir">${svg(I.user)}Créer mon compte</a>
-    <a class="lnk" href="/#tarifs" data-dm="partir">Voir Folio+</a>
+    <a class="lnk" href="/#tarifs" data-dm="partir">Voir Mirandola+</a>
     <button class="lnk" data-dm="rester">Continuer la démo</button>`;
   if (!d.open) d.showModal();
 }
@@ -217,7 +217,7 @@ export async function lancer(role, adresse) {
   if (!monde) { nettoyer(); monde = chargerMonde(); }
   setDemoEtab(servir);
   resetSession();                      // ce qui appartenait au rôle d'avant (un tuto en cours aussi)
-  setAuth({ uid, email: `${r.k}@demo.folio.invalid`, token: `tok-${uid}-demo`, refresh: '', exp: Date.now() + 365 * 864e5 });
+  setAuth({ uid, email: `${r.k}@demo.mirandola.invalid`, token: `tok-${uid}-demo`, refresh: '', exp: Date.now() + 365 * 864e5 });
   bandeau(r.k);
   setDb({ subjects: [], decks: [], hist: {} });
   go('home');

@@ -16,7 +16,7 @@ const LEGALV = '12 septembre 2026';
 
 export const LEGAL = {
   cgu: ['Conditions d’utilisation', `
-**Ce que Folio est.** Une application de révision : tu écris des fiches,
+**Ce que Mirandola est.** Une application de révision : tu écris des fiches,
 l’app décide quand te les représenter, et tu peux en prêter à des lecteurs
 que tu as toi-même ajoutés. Le service est fourni tel quel, sans garantie
 de résultat scolaire.
@@ -45,7 +45,7 @@ revente de données, aucun profilage publicitaire. Ce n’est pas une
 promesse commerciale : c’est la description du code.
 
 **Interruptions.** Le service peut s’arrêter pour maintenance, ou changer.
-Tes données restent exportables. Si Folio devait fermer, tu serais prévenu
+Tes données restent exportables. Si Mirandola devait fermer, tu serais prévenu
 avec un délai raisonnable pour les récupérer.
 
 **Droit applicable.** Droit français. En cas de différend, on cherche
@@ -54,8 +54,8 @@ d’abord une solution à l’amiable en écrivant à ${CONTACT}.
 *Version du ${LEGALV}.*`],
 
   vie: ['Confidentialité', `
-**Qui traite tes données.** ${EDITEUR}, éditeur de Folio, joignable à
-${CONTACT}. Lorsque Folio est déployé par un établissement scolaire, c’est
+**Qui traite tes données.** ${EDITEUR}, éditeur de Mirandola, joignable à
+${CONTACT}. Lorsque Mirandola est déployé par un établissement scolaire, c’est
 l’établissement qui décide du traitement et nous n’agissons que sur ses
 instructions.
 
@@ -150,7 +150,7 @@ Services, région eu-west-1 (Irlande, Union européenne).
 **Génération de fiches par IA.** Anthropic PBC (États-Unis), appelée
 uniquement lorsque tu le demandes.
 
-**Propriété.** Le nom Folio, son identité visuelle et le code de
+**Propriété.** Le nom Mirandola, son identité visuelle et le code de
 l’application appartiennent à l’éditeur. Les fiches écrites par les
 utilisateurs restent la propriété de leurs auteurs.
 
@@ -163,7 +163,7 @@ utilisateurs restent la propriété de leurs auteurs.
    publication) : signalés dès qu'ils sont ouverts. Ceux d'EDITEUR et de
    CONTACT le sont dès le démarrage, dans ui/connexion.js. */
 if (/⟦/.test(Object.values(LEGAL).map(v => v[1]).join(''))) {
-  console.error('Folio : mentions légales incomplètes — des ⟦placeholders⟧ sont encore servis '
+  console.error('Mirandola : mentions légales incomplètes — des ⟦placeholders⟧ sont encore servis '
     + 'aux utilisateurs. Voir LEGAL dans src/ui/legal-textes.js.');
 }
 

@@ -102,3 +102,30 @@ test('modifié hors ligne, app fermée, l’autre appareil passe, réouverture :
   await expect(B2.getByText('Modifié sur un autre appareil')).toHaveCount(0);
   await ctxA.close(); await ctxB.close();
 });
+
+/* 2026-10-28 : la bibliothèque suit l'autre appareil sans recharger.
+   Avant, B ne voyait le livre créé sur A qu'après un rechargement — et
+   restait sur l'ancienne version d'un livre que A venait de corriger. Le
+   retour sur l'app (focus) suffit désormais (ui/synchro-ecran.js). */
+test('un livre créé et une page corrigée sur A apparaissent sur B au retour, sans recharger', async ({ browser }) => {
+  test.setTimeout(120000);
+  const store = nouveauStore();
+  const { ctxA, ctxB, A, B } = await deuxAppareils(browser, store);
+  const revenir = p => p.evaluate(() => dispatchEvent(new Event('focus')));
+
+  await modifier(A, 'Recto', 0, 'Pays 1 — corrigé sur A');
+  await expect.poll(() => carte(store, 1).front, { timeout: 15000 }).toBe('Pays 1 — corrigé sur A');
+  await revenir(B);
+  await expect(B.getByRole('textbox', { name: 'Recto' }).nth(0)).toHaveValue('Pays 1 — corrigé sur A', { timeout: 10000 });
+
+  await A.getByRole('button', { name: 'Retour' }).first().click();
+  await creerLivre(A, 'Fleuves', 2);
+  await expect.poll(() => (store.tables.decks || []).filter(d => d.name === 'Fleuves').length).toBe(1);
+  await B.getByRole('button', { name: 'Retour' }).first().click();
+  await expect(B.getByRole('button', { name: /Capitales/ })).toBeVisible();
+  await B.waitForTimeout(5200);                      // deux retours à moins de 5 s n'en font qu'un
+  await revenir(B);
+  await expect(B.getByRole('button', { name: /Fleuves/ })).toBeVisible({ timeout: 10000 });
+  await expect(B.getByText('Modifié sur un autre appareil')).toHaveCount(0);
+  await ctxA.close(); await ctxB.close();
+});

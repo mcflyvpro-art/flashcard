@@ -4,7 +4,7 @@
 // son bouton, le code d'un lien qui attend. Rien ne la contourne, sauf la
 // démo et les textes du cadre. Installée, l'app accueille : « C'est
 // installé », puis la connexion, et reprend le code que lui a confié son
-// navigateur (Android). Sur ordinateur, rien ne change, et l'écran Folio+
+// navigateur (Android). Sur ordinateur, rien ne change, et l'écran Mirandola+
 // montre l'installation et le QR du téléphone, plus aucun magasin.
 import { test, expect } from '@playwright/test';
 import { appInstallee, brancher, nouveauStore } from './faux-supabase.js';
@@ -17,7 +17,7 @@ const UA = {
   android: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36',
   windows: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0'
 };
-const porte = page => page.getByRole('heading', { name: 'Installe Folio' });
+const porte = page => page.getByRole('heading', { name: 'Installe Mirandola' });
 const etapes = page => page.locator('.pw-etapes li > span');          // le texte, sans ce qu'on touche dessiné à côté
 
 test.describe('un iPhone, dans Safari', () => {
@@ -97,10 +97,10 @@ test.describe('dans Instagram', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await brancher(page, nouveauStore(), { navigateur: true });
     await page.goto('./inscription');
-    await expect(page.getByRole('heading', { name: 'Ouvre Folio dans Safari' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Continue dans Safari' })).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.pw-fleche.haut-droite')).toBeVisible();
     await page.locator('.pw-carte').getByRole('button', { name: 'Copier le lien' }).click();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('https://www.folioflashcard.online/inscription');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('https://mirandola.fr/inscription');
   });
 });
 
@@ -120,14 +120,14 @@ test.describe('un téléphone Android, dans Chrome', () => {
     });
     await brancher(page, nouveauStore(), { navigateur: true });
     await page.goto('./app');
-    const bouton = page.locator('.pw-carte').getByRole('button', { name: 'Installer Folio' });
+    const bouton = page.locator('.pw-carte').getByRole('button', { name: 'Installer Mirandola' });
     await expect(bouton).toBeEnabled({ timeout: 10000 });
     await expect(etapes(page)).toHaveCount(3);
     await expect(page.locator('.pw-fleche')).toHaveCount(0);           // le bouton est dans la page
     await bouton.click();
     await expect(page.getByRole('heading', { name: 'C’est installé' })).toBeVisible({ timeout: 10000 });
     expect(await page.evaluate(() => window.__invite)).toBe(1);
-    await expect(page.locator('.pw-carte')).toContainText('Ouvre Folio depuis ton écran d’accueil');
+    await expect(page.locator('.pw-carte')).toContainText('Ouvre Mirandola depuis ton écran d’accueil');
   });
 
   test('sans invite : le menu ⋮ en haut à droite, dans les mots de Chrome', async ({ page }) => {
@@ -189,18 +189,18 @@ test.describe('l’app installée', () => {
 test.describe('sur ordinateur', () => {
   test.use({ userAgent: UA.windows, viewport: { width: 1360, height: 900 }, isMobile: false, hasTouch: false });
 
-  test('pas de porte ; l’écran Folio+ installe ici et montre le QR du téléphone, plus aucun magasin', async ({ page }) => {
+  test('pas de porte ; l’écran Mirandola+ installe ici et montre le QR du téléphone, plus aucun magasin', async ({ page }) => {
     await brancher(page, { ...nouveauStore(), parDefaut: 'gratuit' }, { navigateur: true });
     await inscrire(page);
-    await page.goto('./eleve/folio-plus');
+    await page.goto('./eleve/mirandola-plus');
     await expect(page.locator('#app[data-view="plus"]')).toBeVisible({ timeout: 10000 });
     const ecrans = page.locator('.fp-partout');
-    await expect(ecrans.getByRole('heading', { name: 'Sur tous tes écrans' })).toBeVisible();
+    await expect(ecrans.getByRole('heading', { name: 'Sur cet ordinateur' })).toBeVisible();
     await expect(ecrans.locator('.fp-qr svg.qr')).toBeVisible();
-    await expect(ecrans).toContainText('Sur ton téléphone : scanne, puis pose Folio sur ton écran d’accueil');
+    await expect(ecrans).toContainText('Sur ton téléphone : scanne, puis pose Mirandola sur ton écran d’accueil');
     await expect(ecrans).not.toContainText(/Bientôt|App Store|Google Play/);
-    await ecrans.getByRole('button', { name: 'Installer sur cet ordinateur' }).click();
-    await expect(page.locator('.menu .mhd')).toContainText('Installer Folio');
+    await ecrans.getByRole('button', { name: 'Installer Mirandola' }).click();
+    await expect(page.locator('.menu .mhd')).toContainText('Installer Mirandola');
     await expect(page.locator('.menu')).toContainText('barre d’adresse');
   });
 });

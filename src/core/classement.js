@@ -19,6 +19,7 @@ import { cibleEnAttente } from '../ui/routeur.js';
 import { friendsPull, mailPull } from './reglages-corbeille.js';
 import { sallesPull } from './cercle.js';
 import { offrePull } from './abonnement.js';
+import { prechauffer } from '../ui/synchro-ecran.js';
 
 /* ---------- classement ----------
    Les révisions de chacun restent privées : la fonction côté serveur ne
@@ -124,7 +125,13 @@ export async function schoolPull() {
    classe veut ses devoirs. On ne le sait qu'après le rôle, donc on attend :
    rediriger après coup ferait clignoter un écran qu'on n'a pas demandé. */
 export async function accueil() {
-  // l'offre avec le rôle : l'onglet Folio+ et ce que Folio gratuit grise se savent dès l'arrivée
+  const r = await arrivee();
+  prechauffer();                                 // les onglets voisins prêts avant qu'on les touche (ui/synchro-ecran.js)
+  return r;
+}
+
+async function arrivee() {
+  // l'offre avec le rôle : l'onglet Mirandola+ et ce que Mirandola gratuit grise se savent dès l'arrivée
   const avant = JSON.stringify(offre);
   await Promise.all([rolePull(), schoolPull(), comptePull(), offrePull()]);
   /* Un lien ou un QR « rejoindre », une partie en direct (« ?defi= »), une
@@ -140,7 +147,7 @@ export async function accueil() {
   if (myRole === 'admin') { admPull(); return go('admin'); }      // l'éditeur arrive sur sa console
   if (isProf()) return allerAccueil();
   if (isPupil()) { eleveClassesPull(); matesPull(); return go('classes'); }
-  /* on reste sur ses livres : l'offre arrivée (l'onglet Folio+, ce que Folio
+  /* on reste sur ses livres : l'offre arrivée (l'onglet Mirandola+, ce que Mirandola
      gratuit grise) se montre ; un écran vers lequel on part la montre de
      lui-même — repeindre avant d'y aller dérangeait la suite (le tuto d'un
      professeur, 2026-10-27) */

@@ -1,5 +1,5 @@
 // « Essayer sans compte » (2026-10-26) : la vraie app, sur une base locale
-// semée du Lycée Démo Folio (src/base-locale/). Tout marche — un devoir lu par
+// semée du Lycée Démo Mirandola (src/base-locale/). Tout marche — un devoir lu par
 // Léa se voit chez Marc, un mot de Marc arrive chez Léa, une classe créée
 // par Claire reste après un rafraîchissement — et rien ne part vers la base :
 // chaque visiteur a son lycée, dans son onglet. Ce qui coûte (l'IA, les
@@ -94,9 +94,9 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await aller(page, '/demo/eleve/livres/nouveau');
   const cours = page.getByRole('tab', { name: 'Cours' });
   await expect(cours).toHaveClass(/payant/, { timeout: 10000 });
-  await expect(cours).toHaveAttribute('data-astuce', 'Avec Folio+');               // toute l'IA est dans Folio+ (2026-10-27)
+  await expect(cours).toHaveAttribute('data-astuce', 'Avec Mirandola+');               // toute l'IA est dans Mirandola+ (2026-10-27)
   await expect(page.getByRole('tab', { name: 'Photo' })).toHaveClass(/payant/);
-  await expect(page.getByRole('tab', { name: 'Photo' })).toHaveAttribute('data-astuce', 'Avec Folio+');
+  await expect(page.getByRole('tab', { name: 'Photo' })).toHaveAttribute('data-astuce', 'Avec Mirandola+');
   await expect(page.getByRole('tab', { name: 'Fichier' })).toHaveClass(/payant/);
   await expect(page.getByRole('tab', { name: 'Coller' })).not.toHaveClass(/payant/);
 
@@ -111,7 +111,7 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await expect(page.getByRole('tab', { name: 'Écrire' })).toHaveAttribute('aria-selected', 'true');
   expect(parties).toEqual([]);
 
-  // un élève essaie Folio gratuit : le QCM d'un livre est dans Folio+, il ouvre la même fenêtre
+  // un élève essaie Mirandola gratuit : le QCM d'un livre est dans Mirandola+, il ouvre la même fenêtre
   await aller(page, '/demo/eleve/livres');
   await page.getByText('La cellule', { exact: true }).first().click();
   await page.locator('[data-act="mcq"]').first().click();
@@ -119,7 +119,7 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'deck');            // l'exercice ne s'est pas ouvert
   await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
 
-  // Folio gratuit garde 5 livres : Léa en a 4, elle en crée un, puis « Nouveau livre » se grise et ouvre la fenêtre
+  // Mirandola gratuit garde 5 livres : Léa en a 4, elle en crée un, puis « Nouveau livre » se grise et ouvre la fenêtre
   await aller(page, '/demo/eleve/livres');
   await expect(page.locator('html')).not.toHaveClass(/livres-plein/);
   await page.locator('[data-act="new"]:visible').first().click();
@@ -135,7 +135,7 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'home');
   await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
 
-  // le journal de Folio gratuit : la série et la régularité restent, la mémoire se floute sous « Avec Folio+ »
+  // le journal de Mirandola gratuit : la série et la régularité restent, la mémoire se floute sous « Avec Mirandola+ »
   await aller(page, '/demo/eleve/journal');
   await expect(page.locator('[data-volet="memoire"]')).toHaveClass(/plus-floute/, { timeout: 10000 });
   await expect(page.locator('.plus-floute')).toHaveCount(6);
@@ -147,7 +147,7 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await page.locator('.dm-bandeau').getByRole('link', { name: 'Créer mon compte' }).click();
   await expect(page).toHaveURL(/\/inscription$/, { timeout: 10000 });
   // au téléphone, le compte se crée dans l'app installée : la porte d'installation (2026-10-28)
-  await expect(page.getByRole('heading', { name: 'Installe Folio' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Installe Mirandola' })).toBeVisible({ timeout: 10000 });
   const restes = await page.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]
     .filter(k => /dece0000-|folio\.demo/.test(k)));
   expect(restes).toEqual([]);
@@ -170,7 +170,7 @@ test.describe('sur ordinateur', () => {
     await expect(page.locator('.rf-ligne', { hasText: '2nde C' })).toBeVisible({ timeout: 10000 });
     expect(parties).toEqual([]);
 
-    // un référent : le geste d'après, c'est Folio dans son établissement
+    // un référent : le geste d'après, c'est Mirandola dans son établissement
     await expect(page.locator('.dm-bandeau').getByRole('link', { name: 'Essayer dans mon établissement' }))
       .toHaveAttribute('href', '/demande-demo');
 

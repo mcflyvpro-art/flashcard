@@ -7,11 +7,11 @@ import { estArme, installee } from './routeur.js';
 import { render } from './bibliotheque.js';
 
 /* ══════════ la porte d'installation (2026-10-28) ══════════
-   Sur un téléphone ou une tablette, Folio ne s'ouvre que depuis son icône
+   Sur un téléphone ou une tablette, Mirandola ne s'ouvre que depuis son icône
    d'écran d'accueil (src/plateformes.js, `porte`). Dans le navigateur,
    l'app laisse place à ce seul écran : le geste qui l'installe, montré et
    animé pour CE navigateur (ui/pwa.js et sa feuille, chargés à la demande,
-   préfixe pw-). Puis on ouvre Folio par son icône et l'on s'y connecte.
+   préfixe pw-). Puis on ouvre Mirandola par son icône et l'on s'y connecte.
 
    Pourquoi fermer la porte plutôt que proposer : dans le navigateur, une
    app web n'a ni stockage durable (Safari efface ce qu'un site garde au
@@ -47,6 +47,6 @@ export function porteView() {
   charger().then(() => { if (aInstaller()) render(); }).catch(() => {
     /* hors ligne au premier passage : le geste, sans son animation */
     if (aInstaller()) $.innerHTML = `<div class="pub"><div class="pub-attente"><p style="max-width:280px;text-align:center">
-      Ajoute Folio à ton écran d’accueil depuis le menu de ton navigateur, puis ouvre-le par son icône.</p></div></div>`;
+      Ajoute Mirandola à ton écran d’accueil depuis le menu de ton navigateur, puis ouvre-le par son icône.</p></div></div>`;
   });
 }

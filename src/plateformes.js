@@ -1,10 +1,10 @@
-/* ══════════ Folio sur chaque appareil (2026-10-27, 2026-10-28) ══════════
+/* ══════════ Mirandola sur chaque appareil (2026-10-27, 2026-10-28) ══════════
    Module pur, sans dépendance, testé (test/abonnement.test.js) : lu par
-   l'écran Folio+ (vendre, gérer, l'installer ailleurs) et par la porte
+   l'écran Mirandola+ (vendre, gérer, l'installer ailleurs) et par la porte
    d'installation (ui/pwa-porte.js).
 
    Décidé le 2026-10-28 (et non plus « l'app des magasins », décidé la
-   veille) : sur un téléphone ou une tablette, Folio est l'app posée sur
+   veille) : sur un téléphone ou une tablette, Mirandola est l'app posée sur
    l'écran d'accueil depuis le navigateur — sans magasin, sans attendre une
    validation, le même code partout. Tant qu'elle n'y est pas, l'app ne
    s'ouvre pas : la porte d'installation montre le geste, et l'on se
@@ -36,7 +36,7 @@ export function plateforme({ ua = '', touches = 0, capacitor = null } = {}) {
 
 export const mobile = p => p.os === 'ios' || p.os === 'android';
 
-/* Par où passe Folio+ : dans l'app des magasins, l'achat intégré d'Apple ou
+/* Par où passe Mirandola+ : dans l'app des magasins, l'achat intégré d'Apple ou
    de Google (leurs règles : 3.1.1 de l'App Store, paiements de Google Play),
    par RevenueCat ; partout ailleurs, Stripe. Jamais de lien vers l'un dans
    l'app de l'autre. */
@@ -53,7 +53,7 @@ export const SANS_PORTE = /^\/(essayer|demande-demo)(\/|$)|^\/(demo|mentions)\//
 export const porte = (p, { installee = false, chemin = '/' } = {}) =>
   mobile(p) && !p.natif && !installee && !SANS_PORTE.test(chemin);
 
-/* Le geste pour avoir Folio sur CET appareil : la fiche du magasin si l'app
+/* Le geste pour avoir Mirandola sur CET appareil : la fiche du magasin si l'app
    y est ; un téléphone, l'écran d'accueil ; un ordinateur, l'installation
    par le navigateur. */
 export function installer(p, magasins = MAGASINS) {

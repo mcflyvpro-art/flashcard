@@ -123,7 +123,7 @@ test.describe('sur ordinateur', () => {
     // pas de facture sans l'identité du vendeur
     await page.locator('#rail [data-r="adm:entreprise"]').click();
     await expect(page).toHaveURL(/\/admin\/entreprise$/);
-    await page.locator('#ev-raison_sociale').fill('Folio');
+    await page.locator('#ev-raison_sociale').fill('Mirandola');
     await page.locator('#ev-forme').fill('EI');
     await page.locator('#ev-adresse').fill('1 rue des Livres');
     await page.locator('#ev-code_postal').fill('30000');

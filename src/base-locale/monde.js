@@ -1,4 +1,4 @@
-/* ══════════ le Lycée Démo Folio (2026-10-26) ══════════
+/* ══════════ le Lycée Démo Mirandola (2026-10-26) ══════════
    Le monde de la démo sans compte, posé dans une base locale neuve
    (serveur.js) : un établissement en démo, ses classes et un groupe, trois
    professeurs et leurs services, vingt élèves qui ont déjà travaillé — des
@@ -22,12 +22,12 @@ export const PREFIXE = 'dece0000-';
 const ID = n => `${PREFIXE}0000-4000-8000-${String(n).padStart(12, '0')}`;
 export const COMPTES = { eleve: ID(1), prof: ID(2), ref: ID(3) };
 
-export const ETAB = { nom: 'Lycée Démo Folio', ville: 'Nîmes', codeEleves: 'DEMXPK47', codeProfs: 'PRFQWT58' };
+export const ETAB = { nom: 'Lycée Démo Mirandola', ville: 'Nîmes', codeEleves: 'DEMXPK47', codeProfs: 'PRFQWT58' };
 
 /* Le visage de la personne n° n (traits de src/avatar.js, à normaliser par
    ecrireAvatar) et sa couleur de jeton : les mêmes dans la démo, sur sa
-   porte d'entrée (« Essayer Folio », ui/demo.js) et, pour Léa, Marc et
-   Claire, sur la page d'accueil du site (les trois rôles de Folio Campus).
+   porte d'entrée (« Essayer Mirandola », ui/demo.js) et, pour Léa, Marc et
+   Claire, sur la page d'accueil du site (les trois rôles de Mirandola Campus).
    Les autres se tirent de leur numéro. */
 const VEDETTES = {
   1: [{ peau: 1, coiffure: 7, cheveux: 2, yeux: 4, bouche: 0, accessoire: 0, haut: 7 }, 10],
@@ -196,13 +196,13 @@ export function semerMonde(store, graine = 2026) {
     fin: finAnnee(now), exemples: false, codes: { eleve: ETAB.codeEleves, prof: ETAB.codeProfs, ref: null, refFin: null,
       eleveAu: iso(now - 3 * JOUR), profAu: iso(now - 3 * JOUR) }, rythme: 'semaine',
     suivi: { statut: 'client', source: 'editeur', contact_nom: 'Claire ROUX', contact_fonction: 'Proviseure adjointe',
-      contact_email: '', contact_tel: '', eleves_estimes: 280, budget_euros: null, prix_euros: 900, besoins: [], message: '',
+      contact_email: '', contact_tel: '', eleves_estimes: 280, budget_euros: null, prix_euros: 1200, besoins: [], message: '',
       notes: '', relance: null }, cree: iso(now - 20 * JOUR) };
   et.orgs.push(org);
   const profils = tab(store, 'profiles'), jetons = store.jetons = store.jetons || {};
   const personne = (n, prenom, nom, role, pseudo) => {
     const id = ID(n);
-    store.users.push({ id, email: `${(pseudo || prenom).toLowerCase()}@demo.folio.invalid`, password: uuid() });
+    store.users.push({ id, email: `${(pseudo || prenom).toLowerCase()}@demo.mirandola.invalid`, password: uuid() });
     m.roles[id] = role; m.noms[id] = nomComplet(prenom, nom); et.membres[id] = org.id;
     profils.push({ id, email: '', handle: pseudo || pseudoNeuf(store, prenom, id), name: nomComplet(prenom, nom) });   // un pseudo pour tous
     jetons['p:' + id] = { cle: ecrireAvatar(visageDemo(n)), teinte: teinteDemo(n) };
@@ -322,14 +322,14 @@ function finAnnee(now) {
 
 /* Le vendeur de la démo est un exemple, et le dit : ce ne sont pas les vraies
    coordonnées de l'éditeur (qu'il remplit dans sa console). */
-const VENDEUR = { raison_sociale: 'Folio', forme: 'EI', adresse: '1 rue des Exemples', code_postal: '30000', ville: 'Nîmes',
+const VENDEUR = { raison_sociale: 'Mirandola', forme: 'EI', adresse: '1 rue des Exemples', code_postal: '30000', ville: 'Nîmes',
   siret: '98765432100015', immatriculation: 'Document de démonstration', tva_intracom: '', iban: '', bic: '',
-  email: 'contact@demo.folio.invalid', regime_tva: 'franchise', taux_tva: 20, delai_jours: 30 };
+  email: 'contact@demo.mirandola.invalid', regime_tva: 'franchise', taux_tva: 20, delai_jours: 30 };
 
 function semerLicence(store, et, org, now, trace) {
   const jour = n => iso(now - n * JOUR).slice(0, 10), an = new Date(now).getFullYear();
-  org.facturation = { nom: 'Lycée Démo Folio', adresse: '12 avenue Jean-Jaurès', code_postal: '30900', ville: 'Nîmes',
-    siret: '19301234500016', service: 'FOLIO-LYC', engagement: 'BC-' + an + '-0412', email: 'intendance@demo.folio.invalid' };
+  org.facturation = { nom: 'Lycée Démo Mirandola', adresse: '12 avenue Jean-Jaurès', code_postal: '30900', ville: 'Nîmes',
+    siret: '19301234500016', service: 'MIR-LYC', engagement: 'BC-' + an + '-0412', email: 'intendance@demo.mirandola.invalid' };
   et.vendeur = { ...VENDEUR };
   const client = { ...org.facturation, uai: org.uai };
   const piece = (n, il, objet, lignes, paye) => {
@@ -341,8 +341,8 @@ function semerLicence(store, et, org, now, trace) {
       vendeur: { ...VENDEUR }, client, engagement: org.facturation.engagement, deposee_le: jour(il - 1), payee_le: paye ? jour(paye) : null };
   };
   et.factures = [
-    piece(801, 55, 'Licence annuelle', [['Licence Folio — 250 places (élèves et professeurs)', 1, 75000]], 28),
-    piece(802, 6, 'Places supplémentaires', [['50 places supplémentaires', 50, 300]], null)
+    piece(801, 55, 'Licence annuelle', [['Licence Mirandola — 250 places (élèves et professeurs)', 1, 102500]], 28),
+    piece(802, 6, 'Places supplémentaires', [['50 places supplémentaires', 50, 350]], null)
   ];
   et.compteurs = { ['F' + an]: 2 };
   const msg = (id, il, de, sujet, message, lu) => ({ id, org_id: org.id, de, auteur: de === 'etab' ? COMPTES.ref : null, sujet, message,
@@ -350,7 +350,7 @@ function semerLicence(store, et, org, now, trace) {
   et.echanges = [
     msg(1, 8, 'etab', 'places', 'Bonjour, une classe de plus ouvre après les vacances : pouvez-vous ajouter 50 places ?', true),
     msg(2, 7, 'folio', 'places', 'C’est fait : 50 places de plus dès aujourd’hui. La facture suit, à déposer sur Chorus Pro.', true),
-    msg(3, 6, 'folio', 'facture', `Voici la facture F-${an}-0002 (150 € HT), à régler sous trente jours.`, false)
+    msg(3, 6, 'folio', 'facture', `Voici la facture F-${an}-0002 (175 € HT), à régler sous trente jours.`, false)
   ];
   trace(55, 'facture émise', { numero: `F-${an}-0001` });
   trace(6, 'facture émise', { numero: `F-${an}-0002` });

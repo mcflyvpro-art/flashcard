@@ -70,7 +70,7 @@ export function paintMenuRename(w) {
             value="${esc(conf[4])}" autocapitalize="none" autocorrect="off" spellcheck="false">`
           : `<div class="mi" style="font-size:13.5px;color:var(--soft);height:auto;padding:0 16px 12px;
                line-height:1.45">Tes livres, tes matières et ton journal seront effacés définitivement.${magasinCourt()
-                ? `<br><b>Ton abonnement Folio+ continue dans ${magasinCourt()} : résilie-le là-bas d’abord.</b>` : ''}</div>`}
+                ? `<br><b>Ton abonnement Mirandola+ continue dans ${magasinCourt()} : résilie-le là-bas d’abord.</b>` : ''}</div>`}
         <div class="mrr" id="mrr"></div>
         <button class="mi ${menu === 'delacc' ? 'warn' : ''}" data-mact="do-${menu}"
           style="justify-content:center;font-weight:700">${svg(I.check)}<span>${conf[5]}</span></button>
@@ -240,7 +240,7 @@ function clickDoDelacc(a, b) {
   deleteAccount()
     .then(() => { closeMenu(); logout(); })
     .catch(e => {
-      /* un abonnement Folio+ qui court (delete_me, 20261027190000) : la base
+      /* un abonnement Mirandola+ qui court (delete_me, 20261027190000) : la base
          dit quoi faire d'abord ; le reste reste une panne */
       const m = /Résilie d'abord[^"]*/.exec(String(e && e.message || ''));
       err.textContent = m ? m[0].replace(/''/g, '’').replace(/'/g, '’') : 'Suppression impossible';
@@ -309,7 +309,7 @@ async function clickBackupFile() {
   const blob = new Blob([JSON.stringify(await backupData())], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'folio-bibliotheque-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.download = 'mirandola-bibliotheque-' + new Date().toISOString().slice(0, 10) + '.json';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   toast(I.check, 'Bibliothèque exportée');

@@ -1,4 +1,4 @@
-"""Le sommaire de la Folio Academy : les minutages des formations tournées,
+"""Le sommaire de la Mirandola Academy : les minutages des formations tournées,
 et pour chacune une description prête à coller sous une vidéo YouTube (qui
 transforme d'elle-même les minutages en chapitres)."""
 import json, os
@@ -17,7 +17,7 @@ def mmss(s):
     return f'{s // 60}:{s % 60:02d}'
 
 
-lignes = ['# Folio Academy — sommaire', '',
+lignes = ['# Mirandola Academy — sommaire', '',
           'Chaque vidéo commence par son sommaire minuté ; les chapitres sont aussi inscrits dans le fichier '
           '(VLC, QuickTime et la plupart des lecteurs les proposent).', '']
 youtube = []
@@ -28,12 +28,12 @@ for cle, module, resume in F:
     d = json.load(open(j))
     lignes += [f'## {module}', '', f'`{d["fichier"]}` · {mmss(d["total"])}', '', resume, '',
                '| Minutage | Chapitre |', '|---|---|', *[f'| {c["t"]} | {c["titre"]} |' for c in d['chapitres']], '']
-    youtube += [f'---- {module} ----', f'Folio Academy — {module}. {resume}', '',
+    youtube += [f'---- {module} ----', f'Mirandola Academy — {module}. {resume}', '',
                 *[f'{c["t"]} {c["titre"]}' for c in d['chapitres']], '',
-                'Essayer Folio sans compte : https://www.folioflashcard.online/essayer', '']
+                'Essayer Mirandola sans compte : https://mirandola.fr/essayer', '']
 
 lignes += ['## Descriptions prêtes pour YouTube', '', 'À coller telles quelles : YouTube en tire des chapitres cliquables.', '',
            '```', *youtube, '```', '']
 os.makedirs(os.path.join(TRAVAIL, 'sortie'), exist_ok=True)
-open(os.path.join(TRAVAIL, 'sortie', 'Folio-Academy-Sommaire.md'), 'w').write('\n'.join(lignes))
+open(os.path.join(TRAVAIL, 'sortie', 'Mirandola-Academy-Sommaire.md'), 'w').write('\n'.join(lignes))
 print('\n'.join(lignes[:40]))

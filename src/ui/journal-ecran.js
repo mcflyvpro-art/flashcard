@@ -276,13 +276,13 @@ function csv() {
 }
 
 export async function exporterJournal() {
-  const name = 'folio-journal-' + new Date().toISOString().slice(0, 10) + '.csv';
+  const name = 'mirandola-journal-' + new Date().toISOString().slice(0, 10) + '.csv';
   const texte = csv(), file = new File([texte], name, { type: 'text/csv' });
   /* Sur iPhone, une ancre à télécharger ne donne rien dans une app
      installée : la feuille de partage est le seul chemin qui aboutit. */
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: 'Journal de lecture Folio' });
+      await navigator.share({ files: [file], title: 'Journal de lecture Mirandola' });
       return;
     }
   } catch (e) { if (e && e.name === 'AbortError') return; }

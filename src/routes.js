@@ -46,7 +46,8 @@ export const ROUTES = [
   R('settings', 'reglages'),
   R('trash', 'reglages/corbeille'),
   R('mod', 'moderation'),
-  R('plus', 'folio-plus', { espaces: ['eleve', 'prof'] }),
+  R('plus', 'mirandola-plus', { espaces: ['eleve', 'prof'] }),
+  R('plus', 'folio-plus', { espaces: ['eleve', 'prof'] }),         // l'adresse d'avant le 2026-10-28 : se lit encore, ne s'écrit plus
   R('shared', 'partage', { repli: 'home' }),
   R('bienvenue', 'bienvenue', { repli: 'home' }),
   R('classes', 'classe', { espaces: ['eleve'] }),

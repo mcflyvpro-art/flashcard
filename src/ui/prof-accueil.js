@@ -159,7 +159,7 @@ function accueilVide() {
     <h2>Vos premiers élèves</h2>
     <ol class="pf-etapes">
       <li><b>1</b><span>Donnez votre code à vos élèves</span></li>
-      <li><b>2</b><span>Ils le tapent dans Folio → Réglages → J’ai un code</span></li>
+      <li><b>2</b><span>Ils le tapent dans Mirandola → Réglages → J’ai un code</span></li>
       <li><b>3</b><span>Donnez un devoir</span></li>
     </ol>
     ${btn('tableau', I.grid, 'Projeter mon code', 'pri lg')}

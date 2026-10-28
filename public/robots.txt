@@ -1,5 +1,5 @@
-# Folio : tout se lit, sauf l'app elle-même (elle porte aussi « noindex »).
+# Mirandola : tout se lit, sauf l'app elle-même (elle porte aussi « noindex »).
 User-agent: *
 Allow: /
 
-Sitemap: https://www.folioflashcard.online/sitemap.xml
+Sitemap: https://mirandola.fr/sitemap.xml

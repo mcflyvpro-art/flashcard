@@ -127,7 +127,7 @@
 @keyframes pw-deroule{0%,33%{transform:scale(.4);opacity:0}37%,100%{transform:none;opacity:1}}
 @keyframes pw-ligne{0%,48%{background:#fff}52%,100%{background:#E3EEFC}}
 
-/* scène 3 : l'écran d'accueil, où Folio arrive */
+/* scène 3 : l'écran d'accueil, où Mirandola arrive */
 .pw-s3{background:linear-gradient(160deg,#C9D3F2,#E9D3E6 60%,#F4DCD4)}
 .pw-grille{position:absolute;top:26px;left:14px;right:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 12px}
 .pw-grille > i,.pw-app img{display:block;width:100%;aspect-ratio:1;border-radius:7px;background:rgba(255,255,255,.55)}

@@ -103,7 +103,7 @@ function inviter(w) {
   } else {
     const n = lireListeEleves(prof.f.liste || '').eleves.length;
     corps = `<button class="pf-lnk" data-pf="f-mode" data-v="code">${svg(I.back)}Le code</button>
-      <p class="pf-note">Pour des élèves sans adresse e-mail : Folio crée un compte par élève, avec un identifiant et un code secret
+      <p class="pf-note">Pour des élèves sans adresse e-mail : Mirandola crée un compte par élève, avec un identifiant et un code secret
         imprimés sur une carte avec un QR. Les autres entrent avec le code.</p>
       <label class="pf-fl">Un élève par ligne — copiez la colonne depuis Pronote ou un tableur
         <textarea id="pfliste" data-pfin="f.liste" rows="9" spellcheck="false" placeholder="MARTIN Alice&#10;DUBOIS Léo&#10;N’DIAYE Awa">${esc(prof.f.liste || '')}</textarea></label>
@@ -187,7 +187,7 @@ function message(w) {
   feuille(w, '', `<b>${qui ? (n > 1 ? `Écrire à ${n} élèves` : 'Écrire à ' + esc(((prof.roster || []).find(m => m.user_id === qui[0]) || {}).who || ''))
     : 'Écrire à la classe'}</b>`, esc(c.name), `<label class="pf-fl">Message
       <textarea id="pfmsg" data-pfin="f.msg" rows="6" maxlength="1000" placeholder="On reprend la série 2 jeudi : révisez les cartes 10 à 20.">${esc(prof.f.msg || '')}</textarea></label>
-    <p class="pf-note">${svg(I.mail)}Arrive dans leur courrier Folio.</p>`,
+    <p class="pf-note">${svg(I.mail)}Arrive dans leur courrier Mirandola.</p>`,
     btn('message-go', I.mail2, `Envoyer${n > 1 ? ` à ${n} élèves` : ''}`, 'pri lg'));
   focus('pfmsg');
 }
@@ -336,7 +336,7 @@ export function imprimerCartes(l, c) {
     <div class="pf-carte-t"><b>${esc(x.nom)}</b><i>${esc(c ? c.name : '')}</i></div>
     <div class="pf-carte-q">${qrSvg(lienCarte(baseApp(), x.identifiant, x.code), 'Carte de ' + x.nom)}</div>
     <dl><dt>Identifiant</dt><dd>${esc(x.identifiant)}</dd><dt>Code</dt><dd class="code">${esc(formatCode(x.code))}</dd></dl>
-    <p>Folio → « Élève » → identifiant et code, ou visez le QR code avec l’appareil photo.</p></div>`).join('');
+    <p>Mirandola → « Élève » → identifiant et code, ou visez le QR code avec l’appareil photo.</p></div>`).join('');
   document.body.appendChild(n);
   const fin = () => { n.remove(); window.removeEventListener('afterprint', fin); };
   window.addEventListener('afterprint', fin);

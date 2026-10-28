@@ -21,10 +21,21 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
 
   const prix = page.locator('.offre-plus .prix b');
   await prix.scrollIntoViewIfNeeded();
-  await expect(prix).toHaveText(/^2,50\s€$/);
+  await expect(prix).toHaveText(/^4,17\s€$/);
   await page.getByRole('radio', { name: 'Mensuel' }).click();
-  await expect(prix).toHaveText(/^4,99\s€$/);
+  await expect(prix).toHaveText(/^6,99\s€$/);
   await expect(page.locator('.offre-plus .prix-note')).toHaveText(/Sans engagement/);
+
+  // combien pour mon établissement : la grille de src/tarifs.js, tranche par tranche
+  const places = page.locator('#calcul-places');
+  await places.scrollIntoViewIfNeeded();
+  await expect(page.locator('#calcul-prix')).toHaveText(/^1\s900\s€\sHT$/);          // 500 places
+  await places.fill('16');                                                         // un professeur particulier et ses élèves
+  await expect(page.locator('#calcul-prix')).toHaveText(/^100\s€\sHT$/);
+  await places.fill('1080');
+  await expect(page.locator('#calcul-prix')).toHaveText(/^3\s350\s€\sHT$/);
+  await expect(page.locator('#calcul-moyen')).toContainText('3,10');
+  await expect(page.locator('.tranches tr.ici')).toHaveAttribute('data-tranche', '2');
 
   // au téléphone, l'inscription reste dans l'en-tête, « Se connecter » passe dans le menu
   await page.evaluate(() => scrollTo(0, 0));
@@ -34,7 +45,7 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
   await expect(page.locator('#menu-mobile').getByRole('link', { name: 'Créer un compte' })).toBeVisible();
   await expect(page.locator('#menu-mobile').getByRole('link', { name: 'Se connecter' })).toBeVisible();
 
-  // « Passer à Folio+ » : l'écran Folio+ de l'app, la formule choisie déjà cochée (2026-10-27 : la vente est ouverte)
+  // « Passer à Mirandola+ » : l'écran Mirandola+ de l'app, la formule choisie déjà cochée (2026-10-27 : la vente est ouverte)
   await expect(page.locator('[data-vente]')).toHaveAttribute('href', /^\/app\?plus=(annuel|mensuel)$/);
   // plus de section « Sur tous tes écrans » : un téléphone a son magasin, un ordinateur son navigateur
   await expect(page.locator('#telecharger')).toHaveCount(0);
@@ -47,7 +58,7 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
 test('les boutons ouvrent l’app à l’adresse de chaque écran (src/routes.js)', async ({ page }) => {
   await page.goto('./');
   await page.locator('.heros').getByRole('link', { name: 'Commencer gratuitement' }).click();
-  await expect(page.getByRole('heading', { name: 'Installe Folio' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Installe Mirandola' })).toBeVisible({ timeout: 10000 });
   await expect(page).toHaveURL(/\/inscription$/);
 
   await page.goto('./');
@@ -67,7 +78,7 @@ test('les boutons ouvrent l’app à l’adresse de chaque écran (src/routes.js
   await page.goto('./');
   await page.locator('.pied').getByRole('link', { name: 'Carte élève' }).click();
   await expect(page).toHaveURL(/\/carte-eleve$/, { timeout: 10000 });
-  await expect(page.getByRole('heading', { name: 'Installe Folio' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Installe Mirandola' })).toBeVisible({ timeout: 10000 });
 
   await page.goto('./');
   await page.locator('.pied').getByRole('link', { name: 'Mentions légales' }).click();
@@ -131,7 +142,7 @@ test('la pile du héros se note : Facile l’envoie à droite, Encore à gauche,
   await expect(dessus()).toHaveText('to take for granted', { timeout: 5000 });
 });
 
-test('Folio Campus : chaque rôle montre son espace et mène à sa démo', async ({ page }) => {
+test('Mirandola Campus : chaque rôle montre son espace et mène à sa démo', async ({ page }) => {
   await page.goto('./');
   const roles = page.locator('.roles');
   const tel = page.locator('#tel-campus');
@@ -169,5 +180,5 @@ test('« Retour » d’un écran ouvert depuis le site ramène au site, pas à l
   await expect(page).toHaveURL(/\/essayer$/);
   await page.getByRole('button', { name: 'Retour' }).click();
   await expect(page).toHaveURL(/\/connexion$/);
-  await expect(page.getByRole('heading', { name: 'Installe Folio' })).toBeVisible();     // au téléphone, la porte
+  await expect(page.getByRole('heading', { name: 'Installe Mirandola' })).toBeVisible();     // au téléphone, la porte
 });

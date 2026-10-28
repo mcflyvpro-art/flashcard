@@ -1,4 +1,4 @@
-/* Folio — Folio+ acheté dans l'app des magasins (Apple, Google), par RevenueCat.
+/* Mirandola — Mirandola+ acheté dans l'app des magasins (Apple, Google), par RevenueCat.
    Deux appelants, une seule chose faite : relire chez RevenueCat l'abonné
    d'un compte (GET /v1/subscribers/<compte>) et écrire sa ligne « apple »
    ou « google » dans la table abonnements — dont c'est le seul écrivain.
@@ -9,7 +9,7 @@
      relit chaque compte que nomme l'évènement.
    - l'app, juste après un achat ou « Restaurer mes achats » : son jeton de
      session. On relit ce compte-là sans attendre l'évènement, pour que
-     Folio+ s'ouvre à l'instant.
+     Mirandola+ s'ouvre à l'instant.
 
    verify_jwt est COUPÉ (`supabase functions deploy magasins --no-verify-jwt`) :
    RevenueCat n'a pas de jeton Supabase. Le jeton de l'app est vérifié ici,
@@ -18,7 +18,7 @@
    Secrets (Edge Functions → Secrets ; le pas à pas : docs/VENTE.md) :
      RC_SECRET        la clé secrète de l'API RevenueCat (sk_…), obligatoire
      RC_WEBHOOK_AUTH  la valeur de l'en-tête Authorization du webhook RevenueCat
-     RC_DROIT         le droit (« entitlement ») de Folio+, défaut « plus »
+     RC_DROIT         le droit (« entitlement ») de Mirandola+, défaut « plus »
      RC_API           défaut https://api.revenuecat.com/v1/ (les essais locaux
                       pointent ailleurs : tools/paiement/essai.js)
 
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       const comptes = comptesDeLEvenementRC(corps);
       let ecrit = 0;
       for (const uid of comptes) if (await synchroniser(uid, cle)) ecrit++;
-      // RevenueCat réessaie tant qu'on ne répond pas 200 : un évènement sans compte Folio est ignoré, pas refusé
+      // RevenueCat réessaie tant qu'on ne répond pas 200 : un évènement sans compte Mirandola est ignoré, pas refusé
       return json({ ok: true, ecrit });
     }
     const uid = await compteDuJeton(entete);

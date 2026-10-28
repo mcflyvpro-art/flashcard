@@ -15,7 +15,7 @@ import { reprendrePassage } from './passage.js';
    Une seule porte pour tout lien qui ouvre l'app : « ?carte= » (le QR d'une
    carte élève), « #i= » / « #s= » (un livre partagé), « ?go= » (raccourci de
    l'icône), « ?rejoindre= » (une classe), « ?defi= » (une partie en
-   direct), « ?club= » (un club), « ?plus= » (l'écran Folio+ : un bouton du
+   direct), « ?club= » (un club), « ?plus= » (l'écran Mirandola+ : un bouton du
    site, le retour de Stripe). Chacun a son consommateur, qui lit
    l'adresse et la nettoie ; ce fichier ne fait que les appeler dans le
    bon ordre — le même au démarrage (`boot()`) qu'à l'arrivée d'un lien

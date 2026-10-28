@@ -49,7 +49,7 @@ describe('le navigateur', () => {
 describe('le guide de chaque téléphone', () => {
   it('iPhone, Safari jusqu’à 18 : Partager en bas, Sur l’écran d’accueil, Ajouter, puis l’icône et la connexion', () => {
     const r = g('iphone18');
-    expect(r).toMatchObject({ cas: 'ios', titre: 'Installe Folio', fleche: 'bas', bouton: null, secours: 'safari' });
+    expect(r).toMatchObject({ cas: 'ios', titre: 'Installe Mirandola', fleche: 'bas', bouton: null, secours: 'safari' });
     expect(r.etapes.map(e => e.ic)).toEqual(['partager', 'ajouter', 'ok', 'folio']);
     expect(r.etapes[1].texte).toContain('**Sur l’écran d’accueil**');
     expect(r.etapes.at(-1).texte).toContain('connecte-toi');
@@ -68,8 +68,8 @@ describe('le guide de chaque téléphone', () => {
     expect(g('firefoxIos')).toMatchObject({ cas: 'ios-firefox', fleche: 'bas-droite', secours: 'safari' });
   });
   it('dans une autre app : sortir d’abord, vers Safari (copier le lien) ou Chrome (un geste)', () => {
-    expect(g('instagram')).toMatchObject({ cas: 'integre', titre: 'Ouvre Folio dans Safari', bouton: 'copier', secours: null });
-    expect(g('tiktok')).toMatchObject({ cas: 'integre', titre: 'Ouvre Folio dans Chrome', bouton: 'chrome', secours: 'copier' });
+    expect(g('instagram')).toMatchObject({ cas: 'integre', titre: 'Continue dans Safari', bouton: 'copier', secours: null });
+    expect(g('tiktok')).toMatchObject({ cas: 'integre', titre: 'Continue dans Chrome', bouton: 'chrome', secours: 'copier' });
   });
   it('Android : l’invite du navigateur installe en un geste', () => {
     const r = g('chrome', { invite: true });
@@ -110,9 +110,9 @@ describe('le guide de chaque téléphone', () => {
 
 describe('les outils de la porte', () => {
   it('lienChrome : un lien intent vers Chrome, la même adresse en repli', () => {
-    const l = lienChrome('https://www.folioflashcard.online/inscription?x=1');
-    expect(l).toBe('intent://www.folioflashcard.online/inscription?x=1#Intent;scheme=https;package=com.android.chrome;'
-      + 'S.browser_fallback_url=https%3A%2F%2Fwww.folioflashcard.online%2Finscription%3Fx%3D1;end');
+    const l = lienChrome('https://mirandola.fr/inscription?x=1');
+    expect(l).toBe('intent://mirandola.fr/inscription?x=1#Intent;scheme=https;package=com.android.chrome;'
+      + 'S.browser_fallback_url=https%3A%2F%2Fmirandola.fr%2Finscription%3Fx%3D1;end');
   });
   it('enGras : les mots de l’écran en gras, le reste échappé', () => {
     const esc = t => t.replace(/</g, '&lt;');

@@ -53,14 +53,14 @@ function identiteHtml() {
     </section>`;
 }
 
-/* Toute l'IA (cours, photo, PDF) est dans Folio+ (décidé le 2026-10-27) :
-   avec Folio gratuit, et dans la démo sans compte, ces onglets sont grisés,
+/* Toute l'IA (cours, photo, PDF) est dans Mirandola+ (décidé le 2026-10-27) :
+   avec Mirandola gratuit, et dans la démo sans compte, ces onglets sont grisés,
    le disent au survol (`data-astuce`, app.css) et d'un « + » (`data-offre`) ;
-   les toucher dit ce qu'ils feraient et comment les avoir — l'écran Folio+,
+   les toucher dit ce qu'ils feraient et comment les avoir — l'écran Mirandola+,
    ou la fenêtre de la démo (`envie`, ui/bridage.js). */
 const PAYANTS = new Set(['fichier', 'photo', 'ia']);
 const payant = id => PAYANTS.has(id) && (!!demoEtab || bride(id));
-export const ASTUCE_PAYANT = 'Avec Folio+';
+export const ASTUCE_PAYANT = 'Avec Mirandola+';
 
 const ongletsHtml = mode => `<div class="cr-tabs" role="tablist" aria-label="Façon de créer les pages">
     ${MODES.map(m => `<button role="tab" class="${m.id === mode ? 'on' : ''}${payant(m.id) ? ' payant' : ''}" data-cmode="${m.id}"
@@ -145,7 +145,7 @@ export function importView() {
     </div>`;
 
   const nm = document.getElementById('nm');
-  if (nm) nm.addEventListener('input', () => comp.name = nm.value);
+  if (nm) { nm.addEventListener('input', () => comp.name = nm.value); nm.addEventListener('focus', () => { comp.champ = 'nm'; }); }
   $.querySelectorAll('[data-cmode]').forEach(b => b.onclick = () => {
     if (payant(b.dataset.cmode)) return envie(b.dataset.cmode);
     if (b.dataset.cmode === comp.mode) return;
@@ -157,16 +157,36 @@ export function importView() {
   bindOk(t);
 }
 
+/* L'écran peut se redessiner pendant qu'on tape (une relecture de fond qui
+   arrive, 2026-10-28) : le recto et le verso en cours sont gardés dans
+   `comp` et remis, et le focus revient au champ où l'on était. Le focus
+   posé à l'ouverture (60 ms plus tard, le temps que l'écran se pose) ne
+   prend jamais un champ à qui y tape déjà : il envoyait la touche Entrée
+   du verso au recto, et la page ne s'ajoutait pas. */
+const enSaisie = () => {
+  const a = document.activeElement;
+  return !!(a && a.isConnected && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.closest('#app'));
+};
+
 function bindEcrire(nm) {
   const cf = document.getElementById('cf'), cb = document.getElementById('cb');
   if (comp.edit >= 0) { cf.value = comp.cards[comp.edit].f; cb.value = comp.cards[comp.edit].b; }
-  setTimeout(() => (comp.cards.length || comp.edit >= 0 || (nm && nm.value) ? cf : (nm || cf)).focus(), 60);
+  else { cf.value = comp.f || ''; cb.value = comp.b || ''; }
+  const ou = comp.champ && document.getElementById(comp.champ);
+  setTimeout(() => {
+    if (enSaisie()) return;
+    (ou || (comp.cards.length || comp.edit >= 0 || (nm && nm.value) ? cf : (nm || cf))).focus();
+  }, 60);
+  for (const c of [cf, cb]) {
+    c.addEventListener('input', () => { comp[c.id === 'cf' ? 'f' : 'b'] = c.value; });
+    c.addEventListener('focus', () => { comp.champ = c.id; });
+  }
   const addCard = () => {
     const f = cf.value.trim(), b = cb.value.trim();
     if (!f && !b) return;
     if (comp.edit >= 0) { comp.cards[comp.edit] = { f, b }; comp.edit = -1; }
     else comp.cards.push({ f, b });
-    cf.value = ''; cb.value = ''; cf.focus();
+    cf.value = ''; cb.value = ''; comp.f = ''; comp.b = ''; cf.focus();
     document.getElementById('cadd').innerHTML = svg(I.plus) + '<span>Ajouter la page</span>';
     paintDraft();
   };

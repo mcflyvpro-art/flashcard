@@ -6,8 +6,8 @@ import { nouveauStore as storeNeuf, repondre } from '../src/base-locale/serveur.
 export { semerLivre, semerPaquetDu } from '../src/base-locale/serveur.js';
 
 /* Les comptes des parcours sont ceux d'avant le 2026-10-27, qui ont reçu
-   Folio+ offert (migration 20261027210000) : un parcours écrit avant le
-   bridage ne bute pas sur lui. Celui qui essaie Folio gratuit pose
+   Mirandola+ offert (migration 20261027210000) : un parcours écrit avant le
+   bridage ne bute pas sur lui. Celui qui essaie Mirandola gratuit pose
    `store.parDefaut = 'gratuit'` (e2e/folio-plus.e2e.js). */
 export const nouveauStore = () => ({ ...storeNeuf(), parDefaut: 'plus' });
 

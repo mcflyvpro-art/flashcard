@@ -71,7 +71,7 @@ export function readBackup(text) {
 }
 
 function headerError(data) {
-  if (!data || data.format !== FORMAT) return 'Ce fichier n’est pas une sauvegarde Folio';
+  if (!data || data.format !== FORMAT) return 'Ce fichier n’est pas une sauvegarde Mirandola';
   if (data.version !== VERSION) return 'Version de sauvegarde inconnue';
   if (!Array.isArray(data.subjects) || !Array.isArray(data.decks)) return 'Sauvegarde incomplète';
   return '';

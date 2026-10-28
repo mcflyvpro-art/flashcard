@@ -232,7 +232,7 @@ export function upErr(x) {
   const m = String((x && x.message) || '');
   if (m === 'big') return 'Fichier trop lourd';
   if (m === 'auth') return 'Reconnecte-toi pour envoyer';
-  if (m === 'demo') return 'Images et sons : avec Folio+';
+  if (m === 'demo') return 'Images et sons : avec Mirandola+';
   const code = (m.match(/^up:(\d+)$/) || [])[1];
   if (code === '415') return 'Ce format de fichier n’est pas accepté';
   if (code === '413') return 'Fichier trop lourd pour le serveur';
@@ -382,10 +382,10 @@ export function markDups(cards, target) {
    Le moteur lui-même est dans src/fsrs.js — voir son bandeau. Ici ne
    restent que les trois choses qu'il ne peut pas savoir : les réglages du
    compte, et ce que l'app en fait. */
-/* Memory Engine Lite (Folio gratuit, src/offres.js) : les paramètres par
-   défaut, sans équilibreur ni réoptimisation ; Ultra (Folio+, Campus) : les
+/* Memory Engine Lite (Mirandola gratuit, src/offres.js) : les paramètres par
+   défaut, sans équilibreur ni réoptimisation ; Ultra (Mirandola+, Campus) : les
    paramètres réglés sur l'élève, et l'équilibreur de charge d'Anki. Les
-   paramètres appris restent rangés : repasser à Folio+ les retrouve. */
+   paramètres appris restent rangés : repasser à Mirandola+ les retrouve. */
 export const fsrsW = () => (!moteurLite() && prefs.w && (prefs.w.length === 34 || prefs.w.length === 21)) ? prefs.w : W6;
 
 /* La rétention visée et l'intervalle plafond sont figés sur les réglages

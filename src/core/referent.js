@@ -132,7 +132,7 @@ export async function refCreerCartes(cid, eleves) {
 /* ══════════ la licence (20261026130000) ══════════
    Le tableau d'un coup (licence_tableau : places, prix, coordonnées de
    facturation, factures, échanges) ; une pièce entière à part (facture),
-   quand on l'ouvre. Ouvrir le tableau, c'est avoir lu les réponses de Folio. */
+   quand on l'ouvre. Ouvrir le tableau, c'est avoir lu les réponses de Mirandola. */
 export async function refLicencePull() {
   await lire('licence', 'licence_tableau', {}, false);
   repeint();
@@ -155,7 +155,7 @@ async function agirLicence(nom, args, bon) {
 }
 
 export const refFacturation = fiche => agirLicence('facturation_enregistrer', { fiche }, 'Coordonnées enregistrées');
-export const refEcrire = (sujet, message) => agirLicence('ref_ecrire', { sujet, message }, 'Envoyé à Folio');
+export const refEcrire = (sujet, message) => agirLicence('ref_ecrire', { sujet, message }, 'Envoyé à Mirandola');
 
 /* Sortir quelqu'un de l'établissement : sa place se libère (ref_retirer). */
 export const refRetirer = cible => agirLicence('ref_retirer', { cible }, 'Retiré : sa place est libre');

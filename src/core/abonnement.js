@@ -1,16 +1,16 @@
-/* ══════════ Folio+ : la base et la fonction de paiement (2026-10-27) ══════════
+/* ══════════ Mirandola+ : la base et la fonction de paiement (2026-10-27) ══════════
    Ce que ce compte ouvre se lit dans la base (mon_offre, migration
    20261027190000) ; payer et gérer passent par la fonction `paiement`
    (supabase/functions/paiement), qui rend l'adresse d'une page Stripe —
-   l'app y envoie le navigateur, la carte ne passe jamais par Folio.
+   l'app y envoie le navigateur, la carte ne passe jamais par Mirandola.
 
    Payer ne se met pas en file d'attente (règle 5) : c'est un geste qui
    n'a de sens qu'en ligne, maintenant — hors ligne, l'écran le dit. La
    réponse de mon_offre est gardée par compte (folio.offre.<uid>) pour
    s'afficher hors ligne ; jamais en démo, qui ne touche pas au stockage. */
-import { auth, demoEtab, offre, online, setOffre } from '../data/etat.js';
+import { auth, demoEtab, offre, online, plus, setOffre } from '../data/etat.js';
 import { REVENUECAT, lireOffre } from '../abonnement.js';
-import { api } from './coeur-sync.js';
+import { api, apiPage } from './coeur-sync.js';
 
 const cle = () => 'folio.offre.' + (auth && auth.uid);
 
@@ -20,7 +20,7 @@ function offreRangee() {
 }
 
 /* Ce qu'on savait, au démarrage, avant que la base réponde : l'app se
-   bride (ou se pare de Folio+) dès le premier écran, hors ligne compris. */
+   bride (ou se pare de Mirandola+) dès le premier écran, hors ligne compris. */
 export function offreLocale() {
   if (!auth || demoEtab || offre) return;
   const r = offreRangee();
@@ -46,6 +46,20 @@ export async function offrePull() {
     if (r) setOffre(lireOffre(r));
   }
   return offre;
+}
+
+/* Les cours mis en flashcards par l'IA ce mois-ci (2026-10-28), pour
+   l'écran Mirandola+ : la table ai_usage, que chacun lit pour lui seul (RLS),
+   le même compte que la fonction ai (une ligne par appel, depuis le 1er du
+   mois en UTC). Rien si la base ne répond pas : l'écran tait la ligne. */
+export async function iaMoisPull() {
+  if (!auth || demoEtab) return null;
+  const d = new Date(), debut = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
+  try {
+    const r = await apiPage(`/rest/v1/ai_usage?select=id&day=gte.${debut}`, 0, 0);
+    plus.ia = r ? r.total : null;
+  } catch (e) { plus.ia = null; }       // hors ligne : la ligne de l'IA attendra la prochaine ouverture
+  return plus.ia;
 }
 
 /* Le code d'erreur de la fonction : son corps le dit ({ error }) ; une
@@ -76,7 +90,7 @@ export async function versStripe(action, formule) {
    Le greffon @revenuecat/purchases-capacitor (docs/CAPACITOR.md) n'est pas
    une dépendance de l'app web : on le trouve sous Capacitor.Plugins une fois
    l'app native construite, et nulle part ailleurs. Le compte RevenueCat est
-   le compte Folio (logIn) : l'achat suit l'élève d'un appareil à l'autre, et
+   le compte Mirandola (logIn) : l'achat suit l'élève d'un appareil à l'autre, et
    un autre compte sur le même téléphone n'hérite de rien. Après l'achat, la
    fonction magasins relit RevenueCat et écrit l'abonnement sans attendre son
    évènement. Les codes d'erreur sont ceux de src/abonnement.js (erreurDe). */

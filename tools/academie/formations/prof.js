@@ -1,4 +1,4 @@
-// Folio Academy — Professeur : l'essentiel en quatre étapes (ordinateur, vouvoiement).
+// Mirandola Academy — Professeur : l'essentiel en quatre étapes (ordinateur, vouvoiement).
 // Ce qui bloque un professeur : avoir ses classes, y faire entrer ses
 // élèves, donner un devoir, voir qui décroche. Le reste (groupes, messages,
 // défis en direct, agenda) se découvre : la carte de fin le nomme.
@@ -6,9 +6,9 @@
 const CL = { '2nde A': 'dece0000-0000-4000-8000-000000000101', '2nde B': 'dece0000-0000-4000-8000-000000000102' };
 
 async function scenario(t) {
-  await t.carte({ sur: 'Folio Academy · Professeur', titre: 'Bien démarrer avec Folio',
+  await t.carte({ sur: 'Mirandola Academy · Professeur', titre: 'Bien démarrer avec Mirandola',
     txt: 'Vos classes, vos élèves, vos devoirs, leur suivi.' });
-  await t.dire('Folio fait réviser vos élèves au bon moment : vous donnez les devoirs, l’application s’occupe du reste, et vous suivez le travail de chacun.');
+  await t.dire('Mirandola fait réviser vos élèves au bon moment : vous donnez les devoirs, l’application s’occupe du reste, et vous suivez le travail de chacun.');
 
   /* ---------- 1 ---------- */
   await t.chapitre('Choisir vos classes', ['Votre compte', 'Vos classes'], { sous: 'Le code professeurs, puis vos classes.' });
@@ -136,17 +136,17 @@ async function scenario(t) {
 
   /* ---------- fin ---------- */
   await t.taire();
-  await t.carte({ sur: 'Folio Academy · Professeur', titre: 'Vous êtes prêt !', txt: 'À découvrir ensuite :',
+  await t.carte({ sur: 'Mirandola Academy · Professeur', titre: 'Vous êtes prêt !', txt: 'À découvrir ensuite :',
     puces: ['Créer un groupe', 'Écrire à la classe', 'Défi en direct au tableau', 'L’agenda'] });
   await t.dire('Vous avez l’essentiel. À découvrir ensuite : les groupes, les messages à la classe, les défis en direct au tableau, et l’agenda.');
-  await t.dire('Bonne rentrée avec Folio !');
+  await t.dire('Bonne rentrée avec Mirandola !');
   await t.pause(1200);
 }
 
 export default {
-  nom: 'prof', fichier: 'Folio-Academy-2-Professeur.mp4', mode: 'pc', module: 'Professeur', depart: '/connexion',
-  titre: 'Folio Academy — Professeur : bien démarrer',
-  intro: { sur: 'Folio Academy · Professeur', titre: 'Bien démarrer', txt: 'L’essentiel en quatre étapes. Chacune a son minutage.',
-    repliques: ['Bienvenue dans la Folio Academy !', 'En quatre étapes, voici l’essentiel pour bien démarrer.'] },
+  nom: 'prof', fichier: 'Mirandola-Academy-2-Professeur.mp4', mode: 'pc', module: 'Professeur', depart: '/connexion',
+  titre: 'Mirandola Academy — Professeur : bien démarrer',
+  intro: { sur: 'Mirandola Academy · Professeur', titre: 'Bien démarrer', txt: 'L’essentiel en quatre étapes. Chacune a son minutage.',
+    repliques: ['Bienvenue dans la Mirandola Academy !', 'En quatre étapes, voici l’essentiel pour bien démarrer.'] },
   scenario
 };

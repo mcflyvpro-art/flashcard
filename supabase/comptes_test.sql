@@ -6,7 +6,7 @@
 --   admin@folio.app     FolioAdmin2026   (l'éditeur : la console d'administration)
 --   prof@folio.app      FolioProf2026
 --   eleve@folio.app     FolioEleve2026
---   referent@folio.app  FolioRef2026     (référent du « Lycée d'essai Folio », plus bas)
+--   referent@folio.app  FolioRef2026     (référent du « Lycée d'essai Mirandola », plus bas)
 --
 -- ⚠ LE PIÈGE, et il coûte une heure si on ne le connaît pas.
 -- Créer un compte à la main laisse les colonnes de jetons à NULL, alors que
@@ -128,7 +128,7 @@ begin
   if not exists (select 1 from public.org_members where user_id = r) then
     perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
     perform set_config('role', 'authenticated', true);
-    o := public.admin_etab_enregistrer(null, jsonb_build_object('nom', 'Lycée d’essai Folio', 'ville', 'Nîmes', 'genre', 'lycee',
+    o := public.admin_etab_enregistrer(null, jsonb_build_object('nom', 'Lycée d’essai Mirandola', 'ville', 'Nîmes', 'genre', 'lycee',
       'statut', 'demo', 'contact_nom', 'Claire Essai', 'contact_fonction', 'Référente', 'contact_email', 'referent@folio.app',
       'eleves_estimes', '60', 'besoins', jsonb_build_array('devoirs', 'revision'),
       'notes', 'Établissement d’essai : les comptes de test (supabase/comptes_test.sql).'));

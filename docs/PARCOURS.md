@@ -1,4 +1,4 @@
-# Parcours, rôles et vente de Folio
+# Parcours, rôles et vente de Mirandola
 
 Revu le 2026-10-26 (« un seul code »). Ce document dit **qui arrive
 comment, qui gère quoi, où**. S'il diverge de l'app, c'est lui qu'on
@@ -32,8 +32,8 @@ seraient ingérables.
 | **Élève d'établissement** | le **code élève** de l'établissement + sa classe | « Ma classe » : devoirs, défis, ses professeurs ; son nom est figé |
 | **Élève d'un prof particulier** | le **code du professeur** + une de ses classes | « Ma classe » ; il reste un compte personnel |
 | **Professeur d'établissement** | le **code professeur** de l'établissement | l'espace professeur : il **choisit ses classes** dans la liste, forme des **groupes** en sélectionnant des élèves |
-| **Professeur particulier** | sur demande à Folio (rôle donné depuis la console) | son code, ses classes, ses élèves |
-| **Référent** | le **code référent** que Folio lui envoie (une seule fois, 30 jours) | la console de l'établissement |
+| **Professeur particulier** | sur demande à Mirandola (rôle donné depuis la console) | son code, ses classes, ses élèves |
+| **Référent** | le **code référent** que Mirandola lui envoie (une seule fois, 30 jours) | la console de l'établissement |
 | **Éditeur** | toi | la console d'administration |
 
 Un élève appartient à **un** établissement, et à **une** classe dedans (la
@@ -85,7 +85,7 @@ croix, « Passer » ou Échap ; il se rejoue des Réglages (« Revoir le tuto »
   de sa première matière) ; une flashcard qu'il lit, retourne et note ;
   comment créer un livre (les cinq façons) ; son journal ; sa classe et ses
   devoirs, s'il en a une ; ses amis (ses camarades) ; son courrier. La fin
-  présente **Folio+** (« Découvrir Folio+ » ouvre les tarifs).
+  présente **Mirandola+** (« Découvrir Mirandola+ » ouvre les tarifs).
 - **Le professeur**, à sa première connexion, pas à pas dans un espace qui
   est grand : son code ; sans classe, il choisit les siennes (établissement)
   ou crée la sienne (particulier) ; son tableau de bord, « À traiter », une
@@ -102,13 +102,13 @@ Au téléphone la bulle prend toute la largeur, sous ou sur ce qu'on montre ;
 sur ordinateur elle se pose à côté, et dit « Clique sur » plutôt que
 « Touche ».
 
-**Au téléphone** (2026-10-28) : Folio ne s'ouvre que depuis l'écran
+**Au téléphone** (2026-10-28) : Mirandola ne s'ouvre que depuis l'écran
 d'accueil. Dans le navigateur, la porte d'installation montre le geste
-(Partager, Sur l'écran d'accueil ; sur Android, « Installer Folio » en un
-geste), puis on ouvre Folio par son icône et l'on s'y connecte. Pas de
+(Partager, Sur l'écran d'accueil ; sur Android, « Installer Mirandola » en un
+geste), puis on ouvre Mirandola par son icône et l'on s'y connecte. Pas de
 magasin : Capacitor reste en réserve.
 
-**Payer** : Folio+ se paie par Stripe, dans le navigateur de l'ordinateur
+**Payer** : Mirandola+ se paie par Stripe, dans le navigateur de l'ordinateur
 comme dans l'app posée sur l'écran d'accueil (docs/VENTE.md). Ce que
 chaque offre ouvre est dans `src/offres.js`.
 
@@ -141,7 +141,7 @@ il trouve dans sa console le code élève et le code professeur à distribuer
 à une classe pilote. Tout est réel : rien à refaire en passant en licence.
 
 Il y a aussi une **démo sans compte** (« Essayer sans compte », sur l'écran
-de connexion et sous le formulaire de démo) : le **Lycée Démo Folio**,
+de connexion et sous le formulaire de démo) : le **Lycée Démo Mirandola**,
 établissement fictif, où l'on entre comme élève (Léa MARTIN, 2nde B et le
 groupe Spé maths, trois devoirs), professeur (Marc DURAND, ses classes, son
 groupe, le code de l'établissement) ou référent (Claire ROUX, les codes, la
@@ -153,23 +153,23 @@ rien ne part : chaque visiteur a son lycée à lui, dans son onglet
 (rafraîchir le garde, fermer l'onglet l'efface). Ce qui coûte — l'IA, les
 photos, les fichiers, les images et les sons — est grisé et le dit. Un
 bandeau change de rôle en un geste (ce que Marc donne, Léa le reçoit),
-« Quitter » ramène au site — pour montrer Folio en rendez-vous, ou se faire
+« Quitter » ramène au site — pour montrer Mirandola en rendez-vous, ou se faire
 une idée. La première fois qu'on prend un rôle, **son tuto** se joue (entrer
 en élève puis passer en professeur donne l'un puis l'autre ; revenir à
 l'élève ne le rejoue pas) ; « Tuto », dans le bandeau, le rejoue ;
-il finit sur Folio+ pour l'élève (« Créer mon compte ») et sur Folio Campus
+il finit sur Mirandola+ pour l'élève (« Créer mon compte ») et sur Mirandola Campus
 pour le professeur et le référent (« Essayer dans mon établissement »).
 
 ### 4.3 Licence
 
 **Passer en licence** : nombre de places, date de fin, prix annuel. Étape :
-**Client**. Proposition de prix : 3 € HT par place et par an, 300 € HT
+**Client**. Prix (2026-10-28) : de 5 à 2 € HT par place et par an, dégressif par tranches (`src/tarifs.js`), 100 € HT
 minimum. **Une place par élève ET par professeur** (décidé le 2026-10-26 :
 « même licence peu importe ») ; le référent n'en prend pas. Un établissement
 public paie sur bon de commande et reçoit ses factures par **Chorus Pro**
 (obligatoire pour le secteur public). Le contrat comprend des **conditions
 générales de vente** et un **contrat de sous-traitance** RGPD (art. 28) :
-l'établissement est responsable du traitement, Folio sous-traitant ; le
+l'établissement est responsable du traitement, Mirandola sous-traitant ; le
 référent les lit et les imprime dans son onglet Licence, avec la fiche à
 reporter dans le registre des traitements de son établissement.
 
@@ -224,7 +224,7 @@ dans un recoin de sa console, avec l'explication.
 | lancer une démo, passer en licence | toi | la fiche |
 | renvoyer un code référent | toi | la fiche |
 | distribuer, changer le code élève ou professeur, choisir son rythme | référent | Mon établissement → Accueil |
-| voir sa licence, ses factures, écrire à Folio, lire le contrat | référent | Mon établissement → Licence |
+| voir sa licence, ses factures, écrire à Mirandola, lire le contrat | référent | Mon établissement → Licence |
 | ajouter un professeur, retirer un compte parti | référent | Mon établissement → Professeurs / Élèves |
 | émettre une facture, un avoir, répondre à un établissement | toi | la fiche → Facturation |
 | ton identité de vendeur (SIRET, TVA, IBAN) | toi | Administration → Entreprise |
@@ -244,7 +244,7 @@ coûts. Le suivi commercial (budget, notes) n'est lisible que par toi.
 
 - **Mentions légales** : remplacer les ⟦crochets⟧ (éditeur, contact,
   hébergeur) — `src/editeur.js` et `src/ui/legal-textes.js`.
-- **Prix B2B** : 3 € HT par place et par an est une proposition.
+- **Prix B2B** : la grille dégressive de `src/tarifs.js` (2026-10-28).
 - **Ton entreprise** (Administration → Entreprise) : raison sociale et
   forme (« EI » pour un entrepreneur individuel), adresse, SIRET,
   immatriculation, IBAN. Sans elle, aucune facture ne part.

@@ -36,7 +36,7 @@
 //
 // 2026-10-26 (bis) : la démo sans compte embarque une base locale entière
 // (le Supabase en mémoire des parcours, src/base-locale/, et le monde du
-// Lycée Démo Folio) — 22 Ko de JS. Elle ne se charge que chez un visiteur
+// Lycée Démo Mirandola) — 22 Ko de JS. Elle ne se charge que chez un visiteur
 // sans compte qui clique « Essayer », jamais chez un élève, un professeur
 // ou un référent : elle a son plafond à elle (30 Ko JS, 3 Ko CSS) au lieu
 // de gonfler celui des comptes. Ses fichiers se reconnaissent à leur nom
@@ -63,16 +63,25 @@
 // connexion, et plus jamais une fois l'app installée : un plafond à elle
 // (10 Ko JS, 5 Ko CSS), comme la démo, plutôt que de prendre la marge des
 // morceaux que chargent les comptes.
+//
+// 2026-10-28 (bis) : l'écran Mirandola+ (ui/plus.js, src/licence.js et sa
+// feuille, `plus-…`) montre maintenant la licence en détail, les avantages
+// et les gestes de résiliation. On l'ouvre pour payer ou pour regarder sa
+// licence — quelques fois par an —, jamais en révisant : un plafond à lui
+// (10 Ko JS, 4 Ko CSS), comme la porte d'installation, au lieu de prendre
+// la marge des écrans qu'on ouvre tous les jours.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 // octets gzip, tous fichiers de la part cumulés
 const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 30 * 1024, cssDemo: 3 * 1024,
-  jsGestion: 30 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, site: 48 * 1024 };
+  jsGestion: 30 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
+  site: 48 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',
   jsGestion: 'JS des consoles (référent, éditeur)', cssGestion: 'CSS des consoles (référent, éditeur)',
   jsPorte: 'JS de la porte d’installation', cssPorte: 'CSS de la porte d’installation',
+  jsPlus: 'JS de l’écran Mirandola+', cssPlus: 'CSS de l’écran Mirandola+',
   site: 'Page d’accueil (HTML + CSS + JS)' };
 const dir = 'dist/assets';
 const gz = b => gzipSync(b, { level: 9 }).length;
@@ -81,7 +90,7 @@ const site = readFileSync('dist/index.html', 'utf8');
 const auDemarrage = f => app.includes('/assets/' + f);
 const duSite = f => site.includes('/assets/' + f);
 const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, jsDemo: 0, cssDemo: 0, jsGestion: 0, cssGestion: 0,
-  jsPorte: 0, cssPorte: 0, site: gz(site) };
+  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, site: gz(site) };
 for (const f of readdirSync(dir)) {
   const ext = f.split('.').pop();
   if (ext !== 'js' && ext !== 'css') continue;
@@ -89,7 +98,7 @@ for (const f of readdirSync(dir)) {
   if (duSite(f)) total.site += n;
   if (duSite(f) && !auDemarrage(f)) continue;
   const part = auDemarrage(f) ? ext : /^demo-/.test(f) ? ext + 'Demo' : /^pwa-/.test(f) ? ext + 'Porte'
-    : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion' : ext + 'Demande';
+    : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion' : ext + 'Demande';
   total[part] += n;
 }
 let ok = true;
