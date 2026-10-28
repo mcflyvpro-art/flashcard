@@ -2,7 +2,9 @@
 // /app — docs/LANDING.md) : elle s'affiche au téléphone sans erreur ni
 // débordement, ses boutons ouvrent l'app au bon endroit, et son aiguillage
 // fait passer dans l'app qui l'a déjà : une session sur l'appareil, un lien
-// de l'app arrivé à la racine (QR imprimés, codes partagés).
+// de l'app arrivé à la racine (QR imprimés, codes partagés). Ces parcours
+// sont ceux d'un téléphone dans son navigateur : l'app y laisse place à la
+// porte d'installation (2026-10-28), sauf la démo et les textes du cadre.
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore } from './faux-supabase.js';
 import { inscrire } from './aide.js';
@@ -45,7 +47,7 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
 test('les boutons ouvrent l’app à l’adresse de chaque écran (src/routes.js)', async ({ page }) => {
   await page.goto('./');
   await page.locator('.heros').getByRole('link', { name: 'Commencer gratuitement' }).click();
-  await expect(page.getByRole('button', { name: 'Créer le compte' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Installe Folio' })).toBeVisible({ timeout: 10000 });
   await expect(page).toHaveURL(/\/inscription$/);
 
   await page.goto('./');
@@ -64,7 +66,8 @@ test('les boutons ouvrent l’app à l’adresse de chaque écran (src/routes.js
 
   await page.goto('./');
   await page.locator('.pied').getByRole('link', { name: 'Carte élève' }).click();
-  await expect(page.locator('#lmode [data-lm="carte"]')).toHaveClass(/on/, { timeout: 10000 });
+  await expect(page).toHaveURL(/\/carte-eleve$/, { timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Installe Folio' })).toBeVisible({ timeout: 10000 });
 
   await page.goto('./');
   await page.locator('.pied').getByRole('link', { name: 'Mentions légales' }).click();
@@ -166,5 +169,5 @@ test('« Retour » d’un écran ouvert depuis le site ramène au site, pas à l
   await expect(page).toHaveURL(/\/essayer$/);
   await page.getByRole('button', { name: 'Retour' }).click();
   await expect(page).toHaveURL(/\/connexion$/);
-  await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Installe Folio' })).toBeVisible();     // au téléphone, la porte
 });

@@ -43,10 +43,11 @@ test('un compte gratuit : l’onglet Folio+, le paiement, le retour ; l’onglet
   const u = store.users.find(x => x.email === 'lea@exemple.fr');
   expect(store.tables.abonnements.find(a => a.user_id === u.id)).toMatchObject({ statut: 'actif', formule: 'mensuel' });
 
-  // Folio partout : un téléphone attend l'app de son magasin (jamais le web), et les autres appareils
+  // sur tous ses écrans : ce téléphone l'a installée (la porte d'installation), l'ordinateur a son adresse
   await expect(page.locator('.fp-partout')).toBeVisible();
-  await expect(page.locator('.fp-ici')).toContainText('Bientôt sur Google Play');
-  await expect(page.locator('.fp-autres li')).toHaveCount(3);
+  await expect(page.locator('.fp-ici')).toContainText('Installé sur ce téléphone');
+  await expect(page.locator('.fp-adresse')).toContainText('folioflashcard.online');
+  await expect(page.locator('.fp-partout')).not.toContainText(/Bientôt|App Store|Google Play/);
   await expect(page.locator('html')).toHaveClass(/offre-plus/);
 
   // l'onglet Folio+ s'en est allé ; mon jeton porte le liseré de la marque

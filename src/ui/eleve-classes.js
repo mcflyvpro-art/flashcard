@@ -249,7 +249,7 @@ export function classeEleveView() {
 /* « ?rejoindre=CODE » : le lien envoyé par le professeur, ou le QR projeté.
    Sans session, le code attend la connexion (sessionStorage) ; avec, on
    ouvre « Mes classes » et on montre tout de suite la classe trouvée. */
-export function consumeRejoindre() {
+export function consumeRejoindre(connecte = !!auth) {
   const p = new URLSearchParams(location.search), brut = p.get('rejoindre');
   let k = brut ? codeDepuisTexte('?rejoindre=' + brut) : '';
   if (brut) {
@@ -258,9 +258,9 @@ export function consumeRejoindre() {
   }
   try { k = k || sessionStorage.getItem('folio.rejoindre') || ''; } catch (e) { /* stockage indisponible : le code ne survivra pas à la connexion */ }
   if (!k) return false;
-  try { auth ? sessionStorage.removeItem('folio.rejoindre') : sessionStorage.setItem('folio.rejoindre', k); }
+  try { connecte ? sessionStorage.removeItem('folio.rejoindre') : sessionStorage.setItem('folio.rejoindre', k); }
   catch (e) { /* idem */ }
-  if (!auth) return false;
+  if (!connecte) return false;
   /* Code d'établissement, de professeur particulier, d'équipe ou ancien
      code de classe : la feuille « J'ai un code » reconnaît chacun. */
   ouvrirCode(k);

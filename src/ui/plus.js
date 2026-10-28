@@ -4,7 +4,7 @@ import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { offre, plus, view } from '../data/etat.js';
 import { AVANTAGES, FORMULES, RAISONS, erreurDe, euros, gestion, resume } from '../abonnement.js';
-import { NOMS, installer, mobile, partout, plateforme, vente } from '../plateformes.js';
+import { NOMS, mobile, plateforme, vente } from '../plateformes.js';
 import { qrSvg } from '../qr.js';
 import { offrePull, restaurerAchats, versMagasin, versStripe } from '../core/abonnement.js';
 import { esc } from '../core/coeur-sync.js';
@@ -18,7 +18,9 @@ import './plus.css';
    ce que le compte a (mon_offre, dit par resume() de src/abonnement.js) et
    de quoi le gérer (le portail de Stripe) ; les deux formules et le
    paiement (une page de Stripe : l'app n'y voit jamais la carte) ; et Folio
-   sur tous ses écrans — c'est là qu'on arrive après avoir payé.
+   sur tous ses écrans — c'est là qu'on arrive après avoir payé : installé
+   sur l'ordinateur en un clic, et sur le téléphone par un QR qui ouvre la
+   porte d'installation (ui/pwa-porte.js, 2026-10-28 : plus de magasins).
 
    Sur ordinateur et dans un navigateur, Folio+ se paie par Stripe ; dans
    l'app des magasins (Capacitor), par l'achat intégré d'Apple ou de Google
@@ -112,30 +114,21 @@ function offreHtml(p) {
     </section>`;
 }
 
-/* ---------- Folio partout ---------- */
-function cetAppareil(p) {
-  const i = installer(p);
-  if (i.type === 'deja' || installed()) {
-    return `<div class="fp-ici fp-ok">${svg(I.check)}<span>Installé sur cet appareil</span></div>`;
-  }
-  if (i.type === 'magasin') {
-    return `<a class="fp-ici fp-bouton" href="${esc(i.lien)}" target="_blank" rel="noopener">${svg(I.down)}<span>Télécharger sur ${esc(i.nom)}</span></a>`;
-  }
-  if (i.type === 'bientot') return `<div class="fp-ici fp-ok">${svg(I.clock)}<span>Bientôt sur ${esc(i.nom)}</span></div>`;
-  return `<button class="fp-ici fp-bouton" data-fp="installer">${svg(I.down)}<span>Installer sur cet appareil</span></button>`;
-}
-
-function partoutHtml(p) {
-  const qr = mobile(p) || p.natif ? '' : `<div class="fp-qr">${qrSvg(SITE + 'app', 'Folio sur ton téléphone')}
-      <span>${svg(IC.tel)}Sur ton téléphone : scanne avec l’appareil photo</span></div>`;
-  const autres = partout(p).filter(x => !x.ici).map(x => `<li>
-      ${svg(x.os === 'mac' || x.os === 'windows' ? IC.ordi : IC.tel)}<b>${esc(x.appareil)}</b>
-      ${x.lien ? `<a href="${esc(x.lien)}" target="_blank" rel="noopener">${esc(x.magasin)}</a>` : `<span>${esc(x.geste)}</span>`}</li>`).join('');
-  return `<section class="fp-partout">
-      <h2 class="fp-h2">Folio partout</h2>
-      ${p.natif ? '' : cetAppareil(p)}${qr}
-      <ul class="fp-autres">${autres}</ul>
-    </section>`;
+/* ---------- sur tous ses écrans ----------
+   Cet appareil : installé, ou « Installer » (un ordinateur ; un téléphone
+   n'arrive ici qu'installé, la porte d'installation l'y a mené). L'autre :
+   le QR du téléphone, qui ouvre Folio dans son navigateur et y joue le
+   geste de l'écran d'accueil ; l'adresse, depuis le téléphone. */
+function ecransHtml(p) {
+  const tel = mobile(p);
+  const ici = p.natif || installed()
+    ? `<div class="fp-ici fp-ok">${svg(I.check)}<span>Installé sur ${tel ? 'ce téléphone' : 'cet ordinateur'}</span></div>`
+    : `<button class="fp-ici fp-bouton" data-fp="installer">${svg(I.down)}<span>Installer sur cet ordinateur</span></button>`;
+  const ailleurs = tel
+    ? `<div class="fp-qr fp-adresse">${svg(IC.ordi)}<span><b>Sur ton ordinateur</b>folioflashcard.online</span></div>`
+    : `<div class="fp-qr">${qrSvg(SITE + 'app', 'Folio sur ton téléphone')}
+      <span>${svg(IC.tel)}Sur ton téléphone : scanne, puis pose Folio sur ton écran d’accueil</span></div>`;
+  return `<section class="fp-partout"><h2 class="fp-h2">Sur tous tes écrans</h2>${ici}${ailleurs}</section>`;
 }
 
 // ce que l'élève vient de toucher, s'il arrive d'un geste bridé (ui/bridage.js)
@@ -152,7 +145,7 @@ export function plusEcran() {
       ${plus.etape === 'annule' ? merci() : ''}
       <div class="fp-grille">
         <div class="fp-col">${plus.etape === 'merci' ? merci() : etat(p) + offreHtml(p)}</div>
-        <div class="fp-col">${partoutHtml(p)}</div>
+        <div class="fp-col">${ecransHtml(p)}</div>
       </div>
     </div>
     ${onglet ? tabs('plus') : ''}`;

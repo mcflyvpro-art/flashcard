@@ -1,22 +1,23 @@
-/* ══════════ Folio sur chaque appareil (2026-10-27) ══════════
+/* ══════════ Folio sur chaque appareil (2026-10-27, 2026-10-28) ══════════
    Module pur, sans dépendance, testé (test/abonnement.test.js) : lu par
-   l'écran Folio+ (vendre, gérer, « Folio partout ») et par l'écran qui
-   envoie un téléphone vers son magasin (ui/magasin.js).
+   l'écran Folio+ (vendre, gérer, l'installer ailleurs) et par la porte
+   d'installation (ui/pwa-porte.js).
 
-   Décidé le 2026-10-27 : sur un téléphone ou une tablette, Folio est l'app
-   des magasins (Capacitor, docs/CAPACITOR.md), jamais le site — ni la
-   version web, ni l'app installée depuis le navigateur. Sur un ordinateur,
-   la version web, installable en un clic (Chrome, Edge ; Safari l'ajoute
-   au Dock) ; sur un Mac à puce Apple, l'app de l'iPad aussi, par le Mac App
-   Store, avec le même abonnement. Les fiches des magasins se renseignent
-   ici, dans MAGASINS, le jour où elles existent : les boutons apparaissent
-   seuls, et un téléphone connecté dans son navigateur est alors envoyé vers
-   la sienne (docs/VENTE.md). */
+   Décidé le 2026-10-28 (et non plus « l'app des magasins », décidé la
+   veille) : sur un téléphone ou une tablette, Folio est l'app posée sur
+   l'écran d'accueil depuis le navigateur — sans magasin, sans attendre une
+   validation, le même code partout. Tant qu'elle n'y est pas, l'app ne
+   s'ouvre pas : la porte d'installation montre le geste, et l'on se
+   connecte dans l'app installée. Sur un ordinateur, la version web,
+   installable en un clic (Chrome, Edge ; Safari l'ajoute au Dock).
+
+   Les magasins restent possibles (Capacitor, docs/CAPACITOR.md) : une
+   fiche renseignée dans MAGASINS, et la porte mène à elle au lieu de
+   l'écran d'accueil. */
 
 export const MAGASINS = { ios: '', android: '', windows: '', mac: '' };
 
 export const NOMS = { ios: 'App Store', android: 'Google Play', windows: 'Microsoft Store', mac: 'Mac App Store' };
-export const APPAREILS = { ios: 'iPhone et iPad', android: 'Android', mac: 'Mac', windows: 'Windows' };
 
 /* L'appareil, d'après le navigateur. `capacitor` : la plateforme que
    rapporte Capacitor (« ios », « android ») quand l'app tourne dans son
@@ -41,38 +42,23 @@ export const mobile = p => p.os === 'ios' || p.os === 'android';
    l'app de l'autre. */
 export const vente = p => (p.natif ? 'magasin' : 'stripe');
 
-/* Un téléphone ou une tablette dans un navigateur, une fois l'app de son
-   magasin publiée : on l'y envoie (ui/magasin.js), plus de version web. */
-export const versLeMagasin = (p, magasins = MAGASINS) => mobile(p) && !p.natif && !!magasins[p.os];
+/* Ce qui reste ouvert dans un navigateur de téléphone : ce qui se lit ou
+   s'essaie sans compte (la démo, les textes du cadre, la demande de démo
+   d'un établissement). Tout le reste passe par l'app installée. */
+export const SANS_PORTE = /^\/(essayer|demande-demo)(\/|$)|^\/(demo|mentions)\//;
+
+/* La porte d'installation : un téléphone ou une tablette dans son
+   navigateur n'entre pas dans l'app. `installee` : l'app tourne depuis son
+   icône (display-mode standalone, navigator.standalone). */
+export const porte = (p, { installee = false, chemin = '/' } = {}) =>
+  mobile(p) && !p.natif && !installee && !SANS_PORTE.test(chemin);
 
 /* Le geste pour avoir Folio sur CET appareil : la fiche du magasin si l'app
-   y est ; sur un ordinateur, l'installation par le navigateur ; sur un
-   téléphone sans app publiée, rien encore. */
+   y est ; un téléphone, l'écran d'accueil ; un ordinateur, l'installation
+   par le navigateur. */
 export function installer(p, magasins = MAGASINS) {
   if (p.natif) return { type: 'deja' };
   const lien = magasins[p.os];
   if (lien) return { type: 'magasin', os: p.os, lien, nom: NOMS[p.os] };
-  return mobile(p) ? { type: 'bientot', os: p.os, nom: NOMS[p.os] } : { type: 'navigateur', os: p.os };
-}
-
-/* Comment installer depuis le navigateur, sur un ordinateur ; un téléphone
-   attend son magasin. */
-export const GESTES = {
-  ios: 'Bientôt sur l’App Store',
-  android: 'Bientôt sur Google Play',
-  mac: 'Dans Chrome ou Edge : l’icône d’installation de la barre d’adresse. Dans Safari : Fichier, puis « Ajouter au Dock »',
-  windows: 'Dans Edge ou Chrome : l’icône d’installation de la barre d’adresse',
-  chromeos: 'Dans Chrome : l’icône d’installation de la barre d’adresse',
-  linux: 'Dans Chrome ou Edge : l’icône d’installation de la barre d’adresse',
-  autre: 'Depuis le menu de ton navigateur : « Installer l’application »'
-};
-
-/* Les quatre familles d'appareils, dans l'ordre où on les montre : celui
-   qu'on tient d'abord. Chacune avec son magasin s'il existe. */
-export function partout(p, magasins = MAGASINS) {
-  const ordre = ['ios', 'android', 'mac', 'windows'];
-  const premier = ordre.includes(p.os) ? [p.os] : [];
-  return [...premier, ...ordre.filter(o => o !== p.os)].map(os => ({
-    os, appareil: APPAREILS[os], lien: magasins[os] || '', magasin: magasins[os] ? NOMS[os] : '', geste: GESTES[os], ici: os === p.os
-  }));
+  return { type: mobile(p) ? 'ecran' : 'navigateur', os: p.os };
 }

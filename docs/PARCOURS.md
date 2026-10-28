@@ -102,10 +102,15 @@ Au téléphone la bulle prend toute la largeur, sous ou sur ce qu'on montre ;
 sur ordinateur elle se pose à côté, et dit « Clique sur » plutôt que
 « Touche ».
 
-**Payer** : pas de Stripe. L'app sera publiée sur l'App Store et Google
-Play (Capacitor) ; un abonnement s'y vend par l'achat intégré d'Apple et de
-Google, qui gèrent paiement, factures et résiliation. Ce qui est gratuit et
-ce qui sera payant reste à décider avec toi au moment de Capacitor.
+**Au téléphone** (2026-10-28) : Folio ne s'ouvre que depuis l'écran
+d'accueil. Dans le navigateur, la porte d'installation montre le geste
+(Partager, Sur l'écran d'accueil ; sur Android, « Installer Folio » en un
+geste), puis on ouvre Folio par son icône et l'on s'y connecte. Pas de
+magasin : Capacitor reste en réserve.
+
+**Payer** : Folio+ se paie par Stripe, dans le navigateur de l'ordinateur
+comme dans l'app posée sur l'écran d'accueil (docs/VENTE.md). Ce que
+chaque offre ouvre est dans `src/offres.js`.
 
 ---
 

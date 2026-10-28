@@ -1,8 +1,10 @@
 // M07.T1 — le parcours témoin : l'app s'ouvre, l'écran de connexion est là,
 // rien ne plante, rien ne déborde sur un téléphone.
 import { test, expect } from '@playwright/test';
+import { appInstallee } from './faux-supabase.js';
 
 test('ouvrir l’app sans compte : écran de connexion, aucune erreur, aucun débordement', async ({ page }) => {
+  await appInstallee(page);
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));
 
@@ -22,6 +24,7 @@ test('ouvrir l’app sans compte : écran de connexion, aucune erreur, aucun dé
 // Les trois textes du cadre se chargent à la demande (ui/legal-textes.js) :
 // ils doivent s'ouvrir avant tout compte, et passer de l'un à l'autre.
 test('les conditions d’utilisation s’ouvrent depuis l’écran de connexion', async ({ page }) => {
+  await appInstallee(page);
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));
   await page.goto('./app');
@@ -36,10 +39,11 @@ test('les conditions d’utilisation s’ouvrent depuis l’écran de connexion'
 });
 
 // Sur iPhone, un QR de partie scanné ouvre Safari, pas l'app installée : le
-// code doit s'y lire en gros, prêt à copier, et attendre la connexion.
+// code doit s'y lire en gros, prêt à copier, sur la porte d'installation.
 test('un QR de partie ouvert hors de l’app : le code en gros, prêt à copier', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('./app?defi=482913');
+  await expect(page.getByRole('heading', { name: 'Installe Folio' })).toBeVisible({ timeout: 10000 });
   const carte = page.locator('#passage');
   await expect(carte).toContainText('482 913', { timeout: 10000 });
   await expect(carte).toContainText('Entrer un code');

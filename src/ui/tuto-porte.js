@@ -4,6 +4,7 @@ import { demoEtab, menu, myRole, prefs, tuto, view } from '../data/etat.js';
 import { atSchool, isPupil } from './classement.js';
 import { ouvrirBienvenue } from './bienvenue-porte.js';
 import { toast } from './import-cartes.js';
+import { aInstaller } from './pwa-porte.js';
 
 /* ══════════ la porte du tuto (2026-10-27) ══════════
    Le tuto (ui/tuto.js, sa feuille tuto.css, préfixe tu-, et ses scénarios
@@ -48,7 +49,7 @@ function premiereFois() {
    rôle et l'établissement connus, pas un délai qui parie sur le réseau. Un
    lien de partage ou un raccourci qui s'ouvre passe avant. */
 export function maybeTuto(pret) {
-  if (prefs.tuto || tuto || demoEtab || location.hash || location.search.includes('go=')) return;
+  if (prefs.tuto || tuto || demoEtab || location.hash || location.search.includes('go=') || aInstaller()) return;
   Promise.resolve(pret).catch(() => { /* accueil() a échoué : on décide quand même, sur ce qu'on sait */ })
     .then(() => setTimeout(premiereFois, 600));
 }

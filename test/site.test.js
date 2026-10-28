@@ -156,8 +156,9 @@ describe('le graphique du moteur', async () => {
 
 /* La page, l'app et Stripe disent les mêmes prix ; le bouton de Folio+ ne
    mène à l'écran Folio+ de l'app que la vente ouverte. La section « Sur
-   tous tes écrans » est partie le 2026-10-27 : un téléphone a l'app de son
-   magasin, un ordinateur son navigateur (src/plateformes.js). */
+   tous tes écrans » est partie le 2026-10-27 ; depuis le 2026-10-28, un
+   téléphone pose Folio sur son écran d'accueil depuis le navigateur (la
+   porte d'installation, src/plateformes.js), sans magasin. */
 describe('Folio+ et les appareils', async () => {
   const { FORMULES, VENTE_OUVERTE, euros } = await import('../src/abonnement.js');
   const plat = s => s.replace(/&nbsp;|&#8239;|\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ');
@@ -166,6 +167,11 @@ describe('Folio+ et les appareils', async () => {
     for (const c of [FORMULES.annuel.prix, FORMULES.annuel.mois, FORMULES.annuel.sans, FORMULES.mensuel.prix]) {
       expect(page).toContain(plat(euros(c)));
     }
+  });
+  it('la FAQ dit l’écran d’accueil, plus les magasins', () => {
+    expect(page).toContain('sans passer par un magasin');
+    expect(page).toContain('le poser sur ton écran d’accueil');
+    expect(page).not.toMatch(/App Store|Google Play/);
   });
   it('plus de section pour installer : ni ses cartes, ni son lien', () => {
     expect(html).not.toContain('id="telecharger"');

@@ -331,7 +331,7 @@ test.describe('sur ordinateur', () => {
 
 test('la démo : un tuto par rôle la première fois, et rien ne le contourne', async ({ page }) => {
   test.setTimeout(150000);
-  await brancher(page, nouveauStore());
+  await brancher(page, nouveauStore(), { navigateur: true });        // « Quitter » ramène au site
   await page.goto('./essayer');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await page.locator('.dm-role[data-v="eleve"]').click();

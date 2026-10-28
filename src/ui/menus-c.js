@@ -33,7 +33,7 @@ import {
 } from './import-cartes.js';
 import { closeMenu, mountMenu, openMenu, paintMenu, vientDOuvrir } from './menus-a.js';
 import { changePassword, deleteAccount, mateProfPull } from '../core/menus-c.js';
-import { copyLink, doPrompt, logout } from './onboarding.js';
+import { doPrompt, logout } from './onboarding.js';
 import { versRestore } from './reglages-corbeille.js';
 import {
   addMail, backupData, backupRestore, delMail, dropFriend, lireSauvegarde
@@ -166,7 +166,6 @@ function clickMateReportBlock(a) {
 }
 
 
-const clickInstcopy = () => copyLink();
 const clickInstgo = () => doPrompt();
 
 function clickCardOk() {
@@ -516,7 +515,6 @@ const CLICK_RULES = [
   [a => a === 'rblock', clickRblock],
   [a => a === 'mailreport' || a === 'mailblock', clickMailReportBlock],
   [a => a === 'matereport' || a === 'mateblock', clickMateReportBlock],
-  [a => a === 'instcopy', clickInstcopy],
   [a => a === 'instgo', clickInstgo],
   [a => a === 'instlater', clickClose],
   [a => a === 'card-ok', clickCardOk],

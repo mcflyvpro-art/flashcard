@@ -206,6 +206,9 @@ export function armerSur(e) {
    temps que le rôle soit connu. */
 export function desarmer() { arme = false; }
 
+// la porte d'installation (ui/pwa-porte.js) : tant que rien n'est armé, l'adresse dit encore où l'on va
+export const estArme = () => arme;
+
 /* ---------- vers le site ----------
    L'app vit à côté de la page d'accueil du site (index.html, à la racine).
    Quitter la démo, se déconnecter, revenir d'un écran public ouvert depuis

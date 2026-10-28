@@ -14,7 +14,23 @@ export const nouveauStore = () => ({ ...storeNeuf(), parDefaut: 'plus' });
 /* Branche le faux serveur sur une page (ou un contexte). Couper le réseau
    (`store.online = false`) fait échouer chaque requête comme une vraie
    coupure : `fetch` rejette, exactement ce que voit l'app dans un tunnel. */
-export async function brancher(cible, store) {
+/* Sur un téléphone, l'app ne s'ouvre que depuis son icône d'écran d'accueil
+   (la porte d'installation, ui/pwa-porte.js) : un parcours qui joue l'app la
+   joue installée — display-mode standalone, comme la lit l'app. Ceux qui
+   jouent le navigateur (le site, la démo, la porte elle-même) passent
+   `{ navigateur: true }`. `cible` : une page ou un contexte. */
+export async function appInstallee(cible) {
+  await cible.addInitScript(() => {
+    const avant = window.matchMedia.bind(window);
+    window.matchMedia = q => (/display-mode:\s*standalone/.test(q)
+      ? { matches: true, media: q, onchange: null, addListener() {}, removeListener() {},
+        addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false }
+      : avant(q));
+  });
+}
+
+export async function brancher(cible, store, { navigateur = false } = {}) {
+  if (!navigateur) await appInstallee(cible);
   await cible.route(/supabase\.co\//, async route => {
     const req = route.request();
     if (!store.online) return route.abort('internetdisconnected');

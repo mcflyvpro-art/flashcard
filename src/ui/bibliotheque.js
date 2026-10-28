@@ -21,7 +21,7 @@ import { admAller, adminView, atSchool, isProf, isPupil, modView } from './class
 import { refAller, refView } from './etablissement.js';
 import { bienvenueView } from './bienvenue-porte.js';
 import { ongletPlus, ouvrirPlus, plusView } from './plus-porte.js';
-import { auMagasin, magasinView } from './magasin.js';
+import { aInstaller, porteView } from './pwa-porte.js';
 import { admPull, boardPull, modPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { decouvrirView, deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
@@ -116,11 +116,14 @@ export function render() {
   /* Seul un vrai changement d'écran s'anime (mouvement.js) : redemander
      l'écran où l'on est — un onglet touché dix fois, une réponse qui
      arrive, une case cochée — ne rejoue rien. */
-  const change = view.name + ':' + (view.id || '') !== ecranAvant;
+  /* Un téléphone dans son navigateur : la porte d'installation, seule, quel
+     que soit l'écran derrière (ui/pwa-porte.js) ; il ne s'anime pas en
+     changeant dessous */
+  const portee = aInstaller();
+  const change = !portee && view.name + ':' + (view.id || '') !== ecranAvant;
   const glissiere = glissiereAvant();
-  // un téléphone connecté dans son navigateur, l'app de son magasin publiée : ce seul écran (ui/magasin.js)
-  (auMagasin() ? magasinView : v[view.name] || home)();
-  $.dataset.view = view.name;
+  (portee ? porteView : v[view.name] || home)();
+  $.dataset.view = portee ? 'porte' : view.name;
   placerDefilement();
   applyFont();
   paintRail();
@@ -135,7 +138,7 @@ export function render() {
   setAnimate(false);
   const on = $.querySelector('.pills .p.on');
   if (on && on.previousElementSibling) on.scrollIntoView({ block: 'nearest', inline: 'center' });
-  if (menu) paintMenu();
+  if (menu && !portee) paintMenu();
   liveSync();
   dropBoot();
   synchroniser();                              // l'adresse suit l'écran (ui/routeur.js)
@@ -302,7 +305,7 @@ function railClick(e) {
 }
 
 /* Pas de barre sans session, ni pendant l'accueil d'un nouveau compte : rien n'y mène encore. */
-const sansRail = () => !auth || view.name === 'login' || view.name === 'bienvenue';
+const sansRail = () => !auth || view.name === 'login' || view.name === 'bienvenue' || aInstaller();
 
 /* Un compte d'établissement (et l'éditeur) travaille, il ne révise pas : ni
    journal de lecture, ni cercle des lecteurs. Ses entrées passent en barre

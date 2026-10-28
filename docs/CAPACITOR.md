@@ -117,9 +117,11 @@ Le code est prêt :
 `npx cap sync`, et poser les deux clés publiques dans `REVENUECAT`.
 
 Une fois l'app publiée, son lien va dans `MAGASINS` (`src/plateformes.js`).
-Un téléphone connecté dans son navigateur est alors envoyé vers son magasin
-(`ui/magasin.js` : mobile jamais web), et l'écran Folio+ montre
-« Télécharger sur … ».
+La porte d'installation (`ui/pwa.js`, 2026-10-28), qui montre aujourd'hui à
+un téléphone comment poser Folio sur son écran d'accueil, mène alors à la
+fiche du magasin. Depuis le 2026-10-28, Capacitor est en réserve : le
+téléphone passe par l'app web installée (CLAUDE.md, « La porte
+d'installation »).
 
 ## Liens universels (iOS) et App Links (Android)
 

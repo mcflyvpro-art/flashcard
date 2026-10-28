@@ -89,10 +89,12 @@ l'air de marcher ».
     plein, Lite en pointillés — rappelé bien trop tard, `JUSTE_LITE`, il tourne
     autour de 65 à 70 % —, sans révision en dessous), la pile
     qu'on note dans le héros de `essai()` (`src/site/site.js`). La section
-    « Sur tous tes écrans » (`#telecharger`) est **partie le 2026-10-27** :
-    un téléphone a l'app de son magasin, jamais le web, un ordinateur son
-    navigateur (la FAQ le dit ; `test/site.test.js` vérifie qu'elle ne
-    revient pas). Le bouton « Passer à Folio+ » (`data-vente`) porte
+    « Sur tous tes écrans » (`#telecharger`) est **partie le 2026-10-27** ;
+    depuis le 2026-10-28, un téléphone pose Folio sur son écran d'accueil
+    depuis le navigateur (la porte d'installation, plus bas), sans magasin,
+    un ordinateur l'ouvre dans son navigateur (la FAQ le dit, visible et
+    JSON-LD ; `test/site.test.js` vérifie qu'elle ne parle plus de magasin
+    et que la section ne revient pas). Le bouton « Passer à Folio+ » (`data-vente`) porte
     `data-vente-an`/`data-vente-mois` (`/app?plus=…`) tant que la vente est
     ouverte (sinon il mène à l'inscription) — site.js n'importe pas
     `src/abonnement.js` (partagé avec le démarrage de l'app, il ferait
@@ -131,10 +133,12 @@ l'air de marcher ».
     **carte de passage** de l'écran de connexion : dans un navigateur — pas
     l'app installée —, si un de ces trois codes attend, le code en gros, un
     bouton « Copier » et où le coller dans l'app ; c'est ce qu'a un iPhone, où
-    une PWA n'intercepte jamais un lien, en attendant Capacitor), `ui/bridage.js`
+    une PWA n'intercepte jamais un lien et ne partage pas le stockage de
+    Safari ; sur Android, `confierPassage`/`reprendrePassage` font passer le
+    code à l'app installée par `localStorage['folio.passage']`, une heure au
+    plus), `ui/bridage.js`
     (ce que Folio gratuit n'ouvre pas, voir « Folio+ » plus bas),
-    `ui/magasin.js` (un téléphone connecté dans son navigateur envoyé vers
-    son magasin, endormi tant que `MAGASINS` est vide), et trois morceaux chargés à la demande, l'espace professeur,
+    `ui/pwa-porte.js` (**la porte d'installation**, voir plus bas), et trois morceaux chargés à la demande, l'espace professeur,
     l'écran d'une partie en direct et le journal de lecture — voir plus bas).
   - `src/core/` — réseau et mutation d'état, **jamais de DOM ni de gabarit
     HTML** (M06.T4, preuve : `grep -rc "api(" src/ui/*.js` → 0 partout, sauf
@@ -539,9 +543,11 @@ l'air de marcher ».
     `core/abonnement.js` : le greffon RevenueCat sous
     `Capacitor.Plugins.Purchases`, les clés publiques dans `REVENUECAT`,
     puis la fonction `magasins` relit l'abonné ; « Restaurer mes achats »),
-    et **Folio partout** (le magasin quand l'app y est, « Bientôt sur … »
-    au téléphone — jamais l'installation par le navigateur —, l'installation
-    sur ordinateur, un QR vers le téléphone, les autres appareils). Au
+    et **Sur tous tes écrans** (`ecransHtml`, 2026-10-28 : plus aucun
+    magasin — « Installer sur cet ordinateur » ou « Installé », et le QR du
+    téléphone, qui ouvre Folio dans son navigateur, donc la porte
+    d'installation et son animation ; au téléphone, l'adresse pour
+    l'ordinateur). Au
     retour d'un paiement (`?plus=merci`, ou la feuille du magasin refermée),
     l'écran relit la base toutes les 2 s, 30 s au plus. La vente est ouverte
     (`VENTE_OUVERTE`, `src/abonnement.js`) : la ligne « Folio+ » des Réglages
@@ -550,14 +556,52 @@ l'air de marcher ».
     résilier d'abord (`delete_me`) ; un abonnement des magasins : la feuille
     prévient qu'il continue là-bas (`magasinCourt`, `ui/menus-c.js`).
     L'éditeur offre ou reprend Folio+ depuis la fiche d'un compte
-    (`admin_offrir_plus`, `admOffrirPlus`). **Mobile jamais web** :
-    `ui/magasin.js` (`auMagasin`, branché dans `render()` et
-    `lienApresRole`) montre à un téléphone connecté dans son navigateur le
-    seul écran « Folio est une app » et le code qui attendait — endormi
-    tant que `MAGASINS` est vide. Parcours `e2e/folio-plus.e2e.js` (8 : un
+    (`admin_offrir_plus`, `admOffrirPlus`). Parcours `e2e/folio-plus.e2e.js` (8 : un
     compte gratuit qui paie et voit l'onglet partir, le bridage et ses
     raisons, un compte d'avant, Campus, l'app des magasins, hors ligne,
     webhook en retard, lien du site sans session).
+    **La porte d'installation** (2026-10-28, demandé : « bloquer la suite
+    si le mobile n'est pas en PWA » ; remplace « mobile jamais web » et
+    `ui/magasin.js`, supprimé) : sur un téléphone ou une tablette, dans le
+    navigateur (ni l'icône d'écran d'accueil, ni Capacitor), l'app ne
+    s'ouvre pas. `aInstaller()` de `ui/pwa-porte.js` (au démarrage, sur la
+    règle `porte` de `src/plateformes.js`) fait rendre à `render()` ce seul
+    écran (`porteView`, `#app[data-view="porte"]`, sans barre latérale ni
+    feuille, rien qui s'anime en changeant dessous), quel que soit l'écran
+    derrière ; seules la démo (`demoEtab`, `/essayer`, `/demo/…`), les
+    textes du cadre (`legal`, `/mentions/…`) et la demande de démo
+    (`demande`, `/demande-demo`) restent ouvertes. L'écran (`ui/pwa.js` +
+    `pwa.css`, préfixe `pw-`, chargés à la demande, plafond à part dans
+    `tools/budget.js` ; rien d'autre ne doit importer `ui/pwa.js`) montre le
+    geste de CE navigateur (`guide` de `src/installation.js` : Safari
+    jusqu'à 18 — Partager en bas —, Safari 26 — ••• puis Partager, lu dans
+    `Version/26`, la signature gardant « iPhone OS 18_6 » —, iPad, Chrome et
+    Firefox d'iOS, Chrome, Samsung Internet, Edge, Firefox d'Android, et le
+    navigateur enfermé dans une autre app — Instagram, TikTok, une vue web
+    d'ENT —, d'où l'on sort : « Copier le lien » vers Safari, « Ouvrir dans
+    Chrome » par un lien `intent:`) : un téléphone dessiné rejoue le geste
+    en trois scènes (la barre et son bouton, le menu et sa ligne, l'écran
+    d'accueil où Folio apparaît), les étapes s'allument avec lui, une
+    flèche se pose au bord de l'écran vers le vrai bouton ; sur Android,
+    l'invite du navigateur (`beforeinstallprompt`, rangée dans `bip` par
+    `ui/onboarding.js`, attendue 2 s) donne un seul bouton « Installer
+    Folio », puis « C'est installé » (`appinstalled`) ; « Folio est déjà
+    là » si `getInstalledRelatedApps` le dit (`related_applications` du
+    manifeste) ; « Tu ne trouves pas ? » propose Safari ou Chrome. Le code
+    d'un lien (`rangerLiens` de `ui/liens-entrants.js`) y est montré à
+    recopier et confié à l'app (Android) ; une session ouverte dans le
+    navigateur continue d'envoyer ses écritures (`boot()` suit son cours,
+    seul l'écran change ; ni `lienApresRole`, ni tuto, ni accueil). Puis on
+    ouvre Folio par son icône et l'on s'y connecte : à sa première
+    ouverture sans session, l'écran de connexion dit « C'est installé. Plus
+    qu'à te connecter. » (`premiereOuverture`, jusqu'à la première
+    connexion, `noterConnexion`, `folio.install.connecte`). Si un jour une
+    fiche de magasin est renseignée (`MAGASINS`), la porte mène à elle.
+    L'invite d'installation de `ui/onboarding.js` (`installSheet`) ne sert
+    plus qu'à l'ordinateur. Parcours `e2e/installation.e2e.js` ; les
+    autres parcours jouent l'app installée (`brancher` d'`e2e/faux-supabase.js`
+    émule `display-mode: standalone`, `appInstallee`), sauf ceux qui jouent
+    le navigateur (`{ navigateur: true }` : le site, la démo).
     **Les textes du cadre** (conditions, confidentialité, mentions) sont
     chargés à la demande par `legalView()` (`ui/connexion.js`, qui ne garde
     que leurs titres, `LEGAL_TITRES`) depuis `ui/legal-textes.js` ; l'éditeur
@@ -706,7 +750,8 @@ l'air de marcher ».
   - `src/facture.js` — la licence d'un établissement, ses factures et ses échanges (2026-10-26) : montants en euros (`euros`, centimes partout), saisie (`enCentimes`), les totaux d'une facture avec la même règle que la base (`totaux` : arrondi par ligne, TVA sur le total HT, franchise de l'art. 293 B sinon), prix d'une place (`prixPlace`), ligne de licence proposée (`lignesLicence`), état d'une pièce (`etatFacture` : à payer, échue, payée, annulée par avoir, avoir ; `resteDu`), ce qu'une facture imprime (`enteteVendeur` — la forme accolée au nom, « EI » obligatoire —, `enteteClient` — SIRET, UAI, code service et bon de commande pour Chorus Pro —, `mentionsLegales` — TVA, échéance, virement, escompte, intérêts moratoires d'un acheteur public, pénalités, indemnité de 40 €), `SUJETS` et `nonLus` des échanges, `siretValide` (Luhn, et la règle de La Poste) — pur et testé (`test/facture.test.js`)
   - `src/offres.js` — ce que chaque offre ouvre (2026-10-27), sans dépendance : Folio gratuit (`gratuit`), Folio+ (`plus`), un compte d'établissement (`campus`) ; le moteur (Lite ou Ultra), 5 livres en gratuit, l'IA par mois, ce qui n'est que dans Folio+, les volets du journal réservés — la seule source de la règle, pour la démo aujourd'hui et le paiement demain — pur et testé (`test/offres.test.js`)
   - `src/abonnement.js` — Folio+ dans l'app (2026-10-27), sans dépendance : `VENTE_OUVERTE` (vrai depuis le 2026-10-27), `REVENUECAT` (les clés publiques de l'achat intégré, vides tant que l'app des magasins n'existe pas), `FORMULES` (les prix, en centimes TTC : ceux de la page d'accueil, de Stripe et des magasins), `AVANTAGES`, `RAISONS` (ce que dit l'écran Folio+ ouvert par un geste bridé), `euros`, `dateLisible` (rien pour une date nulle : un Folio+ offert sans fin disait « 1 janvier 1970 »), `lireOffre` (la réponse de `mon_offre`, quelle qu'elle soit, en forme sûre), `resume` (ce que l'écran en dit : titre, ligne, alerte, payer, gérer), `gestion` (où se gère un abonnement, vu de cet appareil ; `GERER`), `erreurDe` (les erreurs de `paiement` et du magasin en clair), `lireRetour` (`?plus=`) — pur et testé (`test/abonnement.test.js`)
-  - `src/plateformes.js` — l'appareil (2026-10-27), sans dépendance : `plateforme` (iOS — l'iPad qui se dit Mac compris —, Android, Mac, Windows, ChromeOS, Linux ; natif sous Capacitor), `vente` (« stripe » dans un navigateur, « magasin » dans l'app des magasins), `versLeMagasin` (un téléphone dans son navigateur, l'app de son magasin publiée : mobile jamais web, `ui/magasin.js`), `MAGASINS` (les fiches des magasins, vides tant que l'app n'y est pas), `installer` (le magasin ; l'installation par le navigateur sur ordinateur seulement ; « bientôt » au téléphone), `GESTES`, `partout` — lu par l'écran Folio+ et `ui/magasin.js`, pur et testé (`test/abonnement.test.js`)
+  - `src/plateformes.js` — l'appareil (2026-10-27, 2026-10-28), sans dépendance : `plateforme` (iOS — l'iPad qui se dit Mac compris —, Android, Mac, Windows, ChromeOS, Linux ; natif sous Capacitor), `vente` (« stripe » dans un navigateur, « magasin » dans l'app des magasins), `porte` (un téléphone ou une tablette dans son navigateur n'entre pas dans l'app ; `SANS_PORTE` : la démo, les textes du cadre, la demande de démo), `MAGASINS` (les fiches des magasins, vides : Folio n'y est pas), `installer` (le magasin s'il y en avait un ; l'écran d'accueil au téléphone ; le navigateur sur ordinateur) — lu par la porte d'installation et l'écran Folio+, pur et testé (`test/abonnement.test.js`)
+  - `src/installation.js` — poser Folio sur l'écran d'accueil (2026-10-28), sans dépendance, chargé avec la porte seulement : `navigateur` (Safari et sa vraie version, Chrome, Firefox, Edge, Samsung Internet, le navigateur enfermé dans une autre app, la tablette), `guide` (titre, étapes dans les mots du navigateur — `ic` ce qu'on touche, `texte` avec ses mots d'écran entre `**`, `s` la scène de l'animation —, `fleche`, bouton, secours, ligne du menu), `lienChrome` (sortir d'une app vers Chrome, `intent:`), `enGras` — pur et testé (`test/installation.test.js`)
   - `src/club.js` — un club : nom (2–40), devise (≤ 90), code d'invitation lisible et lien `?club=`, classements (places partagées, barre relative, ma ligne), médailles — pur et testé (`test/club.test.js`)
   - `src/qr.js` — encodeur QR sans bibliothèque (octets, niveau M, versions 1–10, `qrSvg()`), pour projeter le code d'une classe et imprimer les cartes de connexion — pur et testé (`test/qr.test.js` ; relu 10/10 par le décodeur d'OpenCV le 2026-10-24). Le SVG porte ses couleurs : `svg.qr{stroke:none}` (sinon le trait que l'app donne à tout SVG grossit les modules)
   - `src/app.css` — ~2 400 lignes ; l'espace professeur a la sienne, `src/ui/prof-espace.css` (~620 lignes, préfixe `pf-`, chargée avec son morceau), la partie en direct aussi (`src/ui/direct.css`, préfixe `dx-`) ; le journal de lecture aussi (`src/ui/journal.css`, préfixe `jr-` : tout en azur — l'activité, la régularité, la mémoire du plus clair « à lire » au plus foncé « sue » —, chaque matière à sa reliure, le rouge pour les pages qui résistent) ; l'écran élève « Mes classes » est dans `app.css` (préfixe `el-`), le cercle aussi (`cc-`, `cl-` pour un club, `dn-` pour « Nouveau défi », `jt` pour les jetons). **Le moins de texte possible** (demandé le 2026-10-25) : des icônes et des chiffres plutôt que des phrases, aucun sous-titre explicatif sous un titre ou une carte, onglets du bas en icônes seules ; une explication vraiment nécessaire va dans une pastille « ? » (`hlp(clé)` et la table `HELP` de `ui/connexion.js`) ou un `title`, jamais en paragraphe sous l'élément. **Charte visuelle (refaite le 2026-10-24)**, sobre et la même partout : jetons dans `:root` (`--bg` #F6F5F1, `--bg2`, `--ink` #1D1C19, `--ink2`, `--soft`, `--card` blanc, `--hair`/`--line` pour les filets, `--edge` = filet intérieur de 1 px, `--ring` = halo gris du focus) ; titres de page dans la serif de la page d'accueil (`.hero`, `.bar h1`, le titre d'un livre, l'accueil du professeur : `--serif`, Charter avant Palatino — décidé le 2026-10-26, une seule voix du site à l'app), tout le reste en sans-serif, surfaces blanches cernées d'un filet, ombres à peine visibles. **Une couleur, un travail** (2026-10-27, `src/couleurs.js`) : l'azur compte, les états jugent, le nuancier relie une matière, l'encre habille — un chiffre reste à l'encre, la couleur va à la marque à côté (barre, pastille, icône). **Un livre a une reliure et une couverture** : sur l'étagère, en liste et en tête de sa page, le dos plein de sa matière (11 px, le léger dégradé d'une toile tendue), la couverture teintée (`--c`) cernée de son filet (`--b`), le nom de la matière en petites capitales quand plusieurs se côtoient (`.mixte`), le nombre à lire en chiffre blanc sur la reliure foncée (`--f`) ; chaque page de la liste garde un liseré de 4 px de sa reliure ; la fiche qu'on lit est une page de ce livre : le papier de la couverture, le nom de la matière en tête (`.sbj`, sur chaque face, marathon compris) et le grand signet de la reliure (le petit d'avant, sur une fiche blanche, ne se reconnaissait pas) — le QCM aussi. La pastille d'une matière choisie (filtre, création) prend sa couverture. **La forme dit ce que c'est** : un rond et un visage pour une personne, un carré arrondi pour une classe (ses repères dans les listes aussi : jamais un rond, réservé à la pastille d'une matière), un écusson pour un club. Les interrupteurs et les choix cochés sont à l'encre, jamais au vert. **Aucun contour noir** : `:focus` n'a pas d'outline, `:focus-visible` un trait gris clair (clavier seulement), les champs n'en ont pas du tout — c'est leur cadre qui s'éclaire (`:focus-within` + `--ring`). Sur ordinateur (≥ 900 px) : barre latérale de 236 px (entrées groupées en haut, Réglages et compte en bas), contenu centré à 1 120 px (1 240 ≥ 1 500 px) ; **gabarit unique** (2026-10-25) : toutes les pages de premier niveau (Livres, Journal, Ma classe, Cercle des lecteurs, Courrier, Réglages) ont la même largeur et leur titre au même endroit (`.top`, 52 px de haut) — plus de colonne étroite centrée, c'est le contenu qui se range en colonnes (Réglages en deux colonnes de sections `.rg`, Ma classe « à faire » | « mes classes » `.el-grille`, Courrier et Corbeille en grille, Journal en tableau de bord) ; **les feuilles ne sont plus des tiroirs de téléphone** : `placerSurPC()` (`ui/menus-a.js`) accroche une feuille légère — une bulle « ? », une liste d'actions comme le menu d'un livre — sous le bouton qui l'a ouverte (`.menu.pop`, elle défile si elle est longue, jamais sous la barre latérale), et fait d'un formulaire une boîte de dialogue (`.menu.dlg`, sans poignée ni geste de glisser) — jamais une fiche en tiroir (`.pf-tiroir`), un tableau, une grande feuille (`.large`) ni un calendrier (`.pf-cal`), qui s'accrochait en petit menu coupé sous sa ligne ; mises en page à deux colonnes (livre, création, bilan) ; **le livre sur PC tient dans l'écran** (2026-10-25) : seule la liste des pages défile (`.rows` défile seule, `minmax(0,1fr)` en dernière rangée de la grille — sans ce plancher la page entière défilait de nouveau), sa position est gardée quand le livre se repeint (`retenirListe`/`rendreListe`, `ui/connexion.js`) et « Plus… » s'y observe (`root` de l'IntersectionObserver) ; **la recherche dans un livre ne repeint que la liste** (`repeindrePages`, jamais `render()` pendant la frappe : le clavier d'iPhone sautait) et son champ est `flex:none` (dans la colonne flex de la page, `.fld` s'étirait sur tout l'écran) ; une barre qui ne porte qu'un retour à l'accueil est masquée, la barre latérale y mène déjà. Plus de mode zen (retiré le 2026-10-25). **Le mouvement (2026-10-25) : ne s'anime que ce qui ARRIVE, une seule fois** — l'app redessine en `innerHTML`, et un nœud neuf rejouait son entrée : un jour choisi dans le calendrier d'un devoir, une case cochée, dix appuis sur le même onglet relançaient la page, la feuille, la barre du bas. `src/ui/mouvement.js` (sans autre import que la racine) : `entreeEcran()`, appelée par `render()`, ne pose `.fade` qu'à un vrai changement d'écran (`view.name:id`) et l'ôte après 560 ms ; un redessin pendant l'entrée la prolonge au même point (`--retard`, délai négatif), redemander l'écran où l'on est ne rejoue rien. Un élément qui apparaît au milieu d'un écran porte une clé `data-k` (barre du bas, bouton flottant, barre de sélection `.selb`/`.pf-bulk`, onglet d'une classe `.pf-corps`, onglet de création `.cr-panel`, page ajoutée `.dc`, question d'un quiz `.qz`, bilan `.rev`, joueur d'une partie `.dx-chip`, étape d'une partie `.dx`) : un observateur lui donne `.neuf` — et donc son animation — seulement si aucun élément de même clé n'était à l'écran. **Toute nouvelle animation d'entrée s'écrit sous `.fade` ou `.neuf`, jamais nue.** La glissière des onglets glisse depuis là où on la voyait, une barre de progression (`avancer()`) depuis sa largeur d'avant (elle repartait de 0 à chaque réponse), le chrono d'un quiz ne repart plus à zéro sur un redessin, l'entrée allumée de la barre latérale change sur place. Les feuilles (`menus-a.js`, `poser`) : redessinées, elles gardent leur point d'entrée, leur défilement et le champ actif ; leur hauteur glisse, une autre étape (`data-etape`) fond le contenu ; à la fermeture (`sortirFeuilles`) elles repartent par où elles sont venues (animations web, depuis leur position du moment) en `.sort` — `inert`, `aria-hidden`, sans identifiants, sans gestes —, et une feuille qui s'ouvre retire aussitôt les sortantes ; le voile ignore un tap dans les 350 ms qui suivent l'ouverture (`vientDOuvrir`, un double appui refermait la feuille). Un toast identique déjà affiché reste en place, un autre change de texte sans rejouer son entrée. Durées : 0,2 à 0,4 s, six pixels, courbe `--e` (entrées), `--ios` (feuilles), `--out` (sorties), échelonnement plafonné à 11 éléments ; mouvement réduit : ni entrée ni boucle. Preuve : `e2e/animations.e2e.js` (aucune animation d'entrée en cours après chaque geste, défilement de la feuille gardé ; échoue sur l'ancien code)
@@ -791,7 +836,8 @@ l'air de marcher ».
   `vars.VITE_SUPABASE_ANON_KEY` (Settings → Secrets and variables → Actions →
   onglet **Variables**, pas Secrets : la clé anon est publique par nature),
   mêmes valeurs que `.env.local`.
-- **Capacitor (à venir, pas installé)** : tout ce qui est prêt et tout ce qui
+- **Capacitor (en réserve, pas installé ; depuis le 2026-10-28 le téléphone
+  passe par l'app posée sur l'écran d'accueil, la porte d'installation)** : tout ce qui est prêt et tout ce qui
   reste (`appId`, `webDir: 'dist'`, liens universels iOS et App Links
   Android, `appUrlOpen` → `traiterLienEntrant`, session, Supabase Auth) est
   dans `docs/CAPACITOR.md` — le lire avant d'y toucher. Le service worker ne
@@ -863,7 +909,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 30, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la page d'accueil du site (HTML + CSS + JS) ≤ 48 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 30, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; la page d'accueil du site (HTML + CSS + JS) ≤ 48 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans

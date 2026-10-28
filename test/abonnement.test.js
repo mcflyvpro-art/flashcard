@@ -1,10 +1,10 @@
 // Folio+ dans l'app : lire ce que dit la base, le dire en clair (src/abonnement.js),
-// et l'appareil, pour le bon téléchargement (src/plateformes.js).
+// et l'appareil : la porte d'installation, le bon geste (src/plateformes.js).
 import { describe, expect, it } from 'vitest';
 import { FORMULES, GERER, RAISONS, VENTE_OUVERTE, dateLisible, erreurDe, euros, gestion, lireOffre, lireRetour, resume }
   from '../src/abonnement.js';
 import { PLUS_SEUL } from '../src/offres.js';
-import { GESTES, MAGASINS, installer, mobile, partout, plateforme, vente, versLeMagasin } from '../src/plateformes.js';
+import { MAGASINS, installer, mobile, plateforme, porte, vente } from '../src/plateformes.js';
 
 describe('ce que dit la base', () => {
   it('une réponse absente ou d’une base sans la fonction : Folio gratuit', () => {
@@ -128,30 +128,36 @@ describe('l’appareil', () => {
     expect(plateforme({ ua: UA.windows, capacitor: 'web' }).natif).toBe(false);
     expect(mobile(p)).toBe(true);
   });
-  it('installer : le magasin quand l’app y est ; un ordinateur, son navigateur ; un téléphone, jamais le web', () => {
+  it('installer : le magasin quand l’app y est ; un téléphone, l’écran d’accueil ; un ordinateur, son navigateur', () => {
     const p = plateforme({ ua: UA.android });
-    expect(installer(p)).toEqual({ type: 'bientot', os: 'android', nom: 'Google Play' });
+    expect(installer(p)).toEqual({ type: 'ecran', os: 'android' });
+    expect(installer(plateforme({ ua: UA.iphone }))).toEqual({ type: 'ecran', os: 'ios' });
     expect(installer(plateforme({ ua: UA.windows }))).toEqual({ type: 'navigateur', os: 'windows' });
     expect(installer(p, { ...MAGASINS, android: 'https://play.google.com/store/apps/details?id=online.folioflashcard.app' }))
       .toEqual({ type: 'magasin', os: 'android', lien: 'https://play.google.com/store/apps/details?id=online.folioflashcard.app', nom: 'Google Play' });
     expect(installer({ os: 'ios', natif: true })).toEqual({ type: 'deja' });
   });
-  it('un téléphone dans un navigateur part vers son magasin, une fois l’app publiée', () => {
-    const tel = plateforme({ ua: UA.iphone });
-    expect(versLeMagasin(tel)).toBe(false);                       // pas encore publiée : la version web reste
-    expect(versLeMagasin(tel, { ...MAGASINS, ios: 'https://apps.apple.com/app/id1' })).toBe(true);
-    expect(versLeMagasin({ os: 'ios', natif: true }, { ios: 'x' })).toBe(false);
-    expect(versLeMagasin(plateforme({ ua: UA.windows }), { windows: 'x' })).toBe(false);
+  it('la porte : un téléphone ou une tablette n’entre dans l’app qu’installée (2026-10-28)', () => {
+    const tel = plateforme({ ua: UA.iphone }), ipad = plateforme({ ua: UA.ipad, touches: 5 });
+    expect(porte(tel, { chemin: '/connexion' })).toBe(true);
+    expect(porte(ipad, { chemin: '/inscription' })).toBe(true);
+    expect(porte(plateforme({ ua: UA.android }), { chemin: '/eleve/livres' })).toBe(true);
+    expect(porte(tel, { installee: true, chemin: '/connexion' })).toBe(false);            // depuis son icône
+    expect(porte({ os: 'android', natif: true }, { chemin: '/connexion' })).toBe(false);  // l'app des magasins
+    expect(porte(plateforme({ ua: UA.windows }), { chemin: '/connexion' })).toBe(false);
+    expect(porte(plateforme({ ua: UA.ipad, touches: 0 }), { chemin: '/connexion' })).toBe(false);  // un vrai Mac
+    expect(porte(plateforme({ ua: UA.chromebook }), { chemin: '/connexion' })).toBe(false);
   });
-  it('partout : l’appareil qu’on tient d’abord, chacun avec son geste', () => {
-    const l = partout(plateforme({ ua: UA.windows }));
-    expect(l.map(x => x.os)).toEqual(['windows', 'ios', 'android', 'mac']);
-    expect(l[0].ici).toBe(true);
-    expect(l.every(x => x.geste && !x.lien)).toBe(true);
-    expect(partout(plateforme({ ua: UA.linux })).map(x => x.os)).toEqual(['ios', 'android', 'mac', 'windows']);
+  it('la porte laisse lire et essayer : la démo, les textes du cadre, la demande de démo', () => {
+    const tel = plateforme({ ua: UA.iphone });
+    for (const chemin of ['/essayer', '/demo/eleve', '/demo/prof/classes/x', '/mentions/cgu', '/demande-demo']) {
+      expect(porte(tel, { chemin })).toBe(false);
+    }
+    for (const chemin of ['/', '/app', '/demonstration', '/essayer-plus', '/mentions', '/carte-eleve', '/eleve/folio-plus']) {
+      expect(porte(tel, { chemin })).toBe(true);
+    }
   });
   it('les magasins restent vides tant que l’app n’y est pas publiée', () => {
     expect(Object.values(MAGASINS).every(v => v === '')).toBe(true);
-    expect(Object.keys(GESTES)).toEqual(expect.arrayContaining(['ios', 'android', 'mac', 'windows']));
   });
 });

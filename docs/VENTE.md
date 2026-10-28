@@ -113,26 +113,34 @@ poser, pas à programmer. À relire avec `CLAUDE.md` et `docs/CAPACITOR.md`.
 
 ### Un élève sur téléphone (B2C)
 
-**Aujourd'hui**, tant que les apps ne sont pas publiées et que `MAGASINS` est
-vide, la version web reste au téléphone, comme avant. L'onglet Folio+ ferme
-la barre du bas (Livres · Classe · Cercle · Folio+). Le paiement passe par
-Stripe, et l'onglet s'en va une fois payé.
+**Depuis le 2026-10-28**, un téléphone n'utilise Folio que depuis son écran
+d'accueil : l'app web installée par le navigateur, sans magasin.
 
-**Le jour où l'app est publiée** et son lien posé dans `MAGASINS` :
+1. Sur le site, il touche « Commencer gratuitement » (ou ouvre un lien, un
+   QR de classe, de partie, de club). Dans le navigateur, l'app ne s'ouvre
+   pas : **la porte d'installation** (`ui/pwa-porte.js`, `ui/pwa.js`) montre
+   le geste de son navigateur, animé, et une flèche vers le bouton à
+   toucher. Sur Android, Chrome propose « Installer Folio » en un geste.
+   Le code qui attendait y est montré, à recopier (et passé tout seul à
+   l'app sur Android).
+2. Il ouvre Folio par son icône : « C'est installé. Plus qu'à te
+   connecter. » Il crée son compte ou se connecte, dans l'app.
+3. L'onglet Folio+ ferme la barre du bas (Livres · Classe · Cercle ·
+   Folio+). Le paiement passe par Stripe (une page qui s'ouvre par-dessus
+   l'app, puis le retour), et l'onglet s'en va une fois payé.
 
-1. Sur le site, il crée son compte ou se connecte.
-2. Une fois connecté, son téléphone ne voit plus qu'un écran
-   (`ui/magasin.js`) : « Folio est une app. Télécharger sur l'App Store »
-   (ou Google Play). Le code de classe, de partie ou de club qui attendait y
-   est montré, à recopier dans l'app.
-3. Dans l'app, il se connecte avec le même compte. L'onglet Folio+ ouvre la
-   feuille d'achat d'Apple ou de Google. Une fois payé, `magasins` relit
+**Si un jour l'app est publiée dans un magasin** (Capacitor) et son lien
+posé dans `MAGASINS`, la porte d'installation mène à la fiche du magasin
+au lieu de l'écran d'accueil, et dans l'app des magasins :
+
+1. Il se connecte avec le même compte. L'onglet Folio+ ouvre la feuille
+   d'achat d'Apple ou de Google. Une fois payé, `magasins` relit
    RevenueCat, Folio+ s'ouvre et l'onglet s'en va.
-4. Pour gérer son abonnement :
+2. Pour gérer son abonnement :
    - dans les réglages de l'iPhone, ou dans Google Play ;
    - l'écran Folio+ y mène ;
    - sur un autre appareil, l'écran dit où il se gère.
-5. « Restaurer mes achats » (demandé par Apple) sert pour un abonnement pris
+3. « Restaurer mes achats » (demandé par Apple) sert pour un abonnement pris
    sur un autre appareil, ou avant une réinstallation.
 
 Dans l'app des magasins, on ne voit jamais Stripe, ni aucun lien vers le
@@ -209,11 +217,11 @@ Folio+ offert.
 | `supabase/functions/_shared/abonnement.js` | les règles pures des trois fonctions (testées : `test/paiement.test.js`) |
 | `tools/paiement/essai.js` | les trois fonctions sous Deno, face à un faux Stripe et un faux RevenueCat : 32 vérifications |
 | `src/offres.js` | ce que chaque offre ouvre |
-| `src/abonnement.js`, `src/plateformes.js` | prix, statuts, où se gère un abonnement, appareil, magasins, « mobile jamais web » (testés : `test/abonnement.test.js`) |
+| `src/abonnement.js`, `src/plateformes.js` | prix, statuts, où se gère un abonnement, appareil, la porte d'installation (testés : `test/abonnement.test.js`) |
 | `src/core/abonnement.js` | `offrePull()`, `offreLocale()`, `versStripe()`, `versMagasin()`, `restaurerAchats()` |
 | `src/ui/bridage.js` | le bridage de Folio gratuit (vrai compte et démo), les marques `html.offre-gratuit`, `livres-plein`, `offre-plus` |
 | `src/ui/plus-porte.js`, `src/ui/plus.js`, `src/ui/plus.css` | l'écran Folio+ (`…/folio-plus`, `?plus=…`) et l'onglet (`ongletPlus`) |
-| `src/ui/magasin.js` | le téléphone connecté dans son navigateur, envoyé vers son magasin |
+| `src/ui/pwa-porte.js`, `src/ui/pwa.js`, `src/installation.js` | la porte d'installation : un téléphone dans son navigateur pose Folio sur son écran d'accueil (testé : `test/installation.test.js`, `e2e/installation.e2e.js`) |
 | `e2e/folio-plus.e2e.js` | l'onglet, le paiement, le retour, ce qui est grisé, l'ancien compte, Campus, l'app des magasins, hors ligne |
 
 ## 1. Stripe, pas à pas (en mode test d'abord)
@@ -403,20 +411,23 @@ En local, sans aucun service :
 
 ## 6. Folio sur chaque appareil
 
-| Appareil | Aujourd'hui | Une fois l'app publiée | Coût |
+Décidé le 2026-10-28 : **pas de magasin pour l'instant**. Un téléphone pose
+Folio sur son écran d'accueil depuis le navigateur (la porte
+d'installation) ; Capacitor et les magasins restent en réserve.
+
+| Appareil | Aujourd'hui | Si l'app est un jour publiée | Coût |
 |---|---|---|---|
-| iPhone, iPad | la version web (comme avant) | **l'App Store seulement** : un téléphone connecté dans Safari est envoyé vers l'app | 99 $ par an |
-| Android | la version web (comme avant) | **Google Play seulement**, de même | 25 $, une fois |
+| iPhone, iPad | **l'app de l'écran d'accueil seulement** : dans Safari, la porte d'installation (Partager, Sur l'écran d'accueil) | l'App Store ; la porte mène à sa fiche | 99 $ par an |
+| Android | **l'app de l'écran d'accueil seulement** : « Installer Folio » en un geste (Chrome, Edge, Samsung Internet), ou le menu | Google Play, de même | 25 $, une fois |
 | Mac | la version web ; Chrome ou Edge l'installent, Safari l'ajoute au Dock | en plus, l'app de l'iPad sur les Mac à puce Apple (Mac App Store), avec le même abonnement | compris dans les 99 $ |
 | Windows, Chromebook, Linux | la version web, installable en un clic (Edge, Chrome) | de même ; le Microsoft Store plus tard, si l'on veut (PWABuilder) | compte Microsoft |
 
 - **Le jour où une app est publiée**, renseigner son lien dans `MAGASINS`
   (`src/plateformes.js`), par exemple
   `android: 'https://play.google.com/store/apps/details?id=online.folioflashcard.app'`.
-  Deux choses en découlent :
-  - un téléphone Android connecté dans son navigateur est envoyé vers
-    Google Play (`versLeMagasin`, `ui/magasin.js`) ;
-  - l'écran Folio+ propose « Télécharger sur Google Play ».
+  La porte d'installation mène alors un téléphone Android à Google Play
+  (`installer` de `src/plateformes.js` : `magasin`) au lieu de l'écran
+  d'accueil.
 - **Le Mac** : l'app de l'iPad s'y installe depuis le Mac App Store. Il
   suffit de cocher « Mac (Apple Silicon) » dans App Store Connect : rien à
   construire de plus, et c'est le même abonnement Apple. Pour un Mac Intel,

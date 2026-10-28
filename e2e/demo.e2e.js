@@ -10,8 +10,9 @@ import { noter, passerTuto } from './aide.js';
 
 const BASE = /supabase\.co\//;
 
+// la démo se joue dans le navigateur du visiteur : la porte d'installation ne la ferme pas
 async function ouvrirDemo(page, role) {
-  await brancher(page, nouveauStore());
+  await brancher(page, nouveauStore(), { navigateur: true });
   const parties = [];
   page.on('request', r => { if (BASE.test(r.url())) parties.push(r.method() + ' ' + new URL(r.url()).pathname); });
   await aller(page, '/essayer');
@@ -145,7 +146,8 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   // le bandeau propose le geste d'après : pour un élève, son compte ; la démo ne laisse rien
   await page.locator('.dm-bandeau').getByRole('link', { name: 'Créer mon compte' }).click();
   await expect(page).toHaveURL(/\/inscription$/, { timeout: 10000 });
-  await expect(page.getByRole('button', { name: 'Créer le compte' })).toBeVisible({ timeout: 10000 });
+  // au téléphone, le compte se crée dans l'app installée : la porte d'installation (2026-10-28)
+  await expect(page.getByRole('heading', { name: 'Installe Folio' })).toBeVisible({ timeout: 10000 });
   const restes = await page.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)]
     .filter(k => /dece0000-|folio\.demo/.test(k)));
   expect(restes).toEqual([]);

@@ -1,6 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
-import { SITE } from '../adresse.js';
 import { DAY } from '../fsrs.js';
 import {
   DECKPAGE, DEFPREFS, auth, bip, cercleNeuf, defiNeuf, demoEtab, directNeuf,
@@ -125,46 +124,22 @@ export function logout() {
   Promise.race([envoi, new Promise(r => setTimeout(r, 2500))]).then(partir, partir);
 }
 
-/* ══════════ l'écran d'accueil ══════════
-   Une app web n'est vraiment installée que le jour où elle a son icône.
-   Avant ça elle n'a ni rappels, ni stockage durable, ni place dans les
-   habitudes — et sur iPhone, le geste qui l'installe n'est proposé par
-   personne. Ce module s'occupe de ce seul moment, et il compte plus que
-   n'importe quelle fonctionnalité de révision : une app pas installée
-   n'est pas rouverte.
-
-   Le vrai piège n'est pas iOS. C'est le navigateur intégré d'Instagram,
-   de Snapchat, d'un client mail ou d'une appli d'ENT : « Sur l'écran
-   d'accueil » n'y figure pas du tout. L'élève cherche, ne trouve pas, et
-   abandonne sans savoir pourquoi. C'est le seul cas où l'on parle avant
-   d'attendre qu'on nous le demande. */
+/* ══════════ installer Folio sur l'ordinateur ══════════
+   Une app web n'est vraiment installée que le jour où elle a son icône :
+   avant, ni stockage durable, ni rappels, ni place dans les habitudes.
+   Sur un téléphone, c'est la porte d'installation qui s'en charge — l'app
+   ne s'y ouvre pas autrement (ui/pwa-porte.js, 2026-10-28). Ce module ne
+   s'occupe plus que de l'ordinateur : l'invite du navigateur (Chrome,
+   Edge), ou le chemin de son menu. */
 const INSTKEY = 'folio.install';
 
-const instLoad = () => { try { return JSON.parse(localStorage.getItem(INSTKEY)) || {}; } catch (e) { return {}; } };
+export const instLoad = () => { try { return JSON.parse(localStorage.getItem(INSTKEY)) || {}; } catch (e) { return {}; } };
 
 const instSave = o => { try { localStorage.setItem(INSTKEY, JSON.stringify(o)); } catch (e) { /* stockage indisponible : la prochaine relance proposera l'install à nouveau, sans gravité */ } };
 
-const UA = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
-
-/* déjà posée sur l'écran d'accueil : plus jamais un mot à ce sujet */
+/* déjà posée sur l'écran d'accueil ou dans le Dock : plus jamais un mot à ce sujet */
 export const installed = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches)
   || navigator.standalone === true;
-
-/* iPad récent se présente comme un Mac : le test tactile le rattrape */
-const isIOS = () => /iPad|iPhone|iPod/.test(UA)
-  || (/Macintosh/.test(UA) && typeof document !== 'undefined' && 'ontouchend' in document);
-
-const isAndroid = () => /Android/.test(UA);
-
-/* Navigateur enfermé dans une autre application. La liste est faite de
-   ce qu'on croise réellement dans une classe, pas de l'exhaustivité. */
-const inApp = () => /FBAN|FBAV|Instagram|Snapchat|TikTok|Line\/|LinkedInApp|Twitter|Pinterest|GSA\//.test(UA)
-  || (isAndroid() && /\bwv\b/.test(UA))
-  || (isIOS() && !/Safari/.test(UA) && !/CriOS|FxiOS|EdgiOS/.test(UA));
-
-/* Sur iOS, seul Safari sait ajouter à l'écran d'accueil. Chrome et
-   Firefox y sont le même moteur mais sans ce menu. */
-const iosOther = () => isIOS() && /CriOS|FxiOS|EdgiOS|OPiOS/.test(UA);
 
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); setBip(e); });
 
@@ -172,18 +147,8 @@ window.addEventListener('appinstalled', () => {
   setBip(null);
   instSave({ ...instLoad(), done: 1 });
   closeMenu();
-  toast(I.check, 'Folio est sur ton écran d’accueil');
+  toast(I.check, 'Folio est installé');
 });
-
-function instCtx() {
-  if (installed()) return 'done';
-  if (inApp()) return 'webview';
-  if (iosOther()) return 'iosother';
-  if (bip) return 'prompt';
-  if (isIOS()) return 'ios';
-  if (isAndroid()) return 'android';
-  return 'desktop';
-}
 
 /* Quand se permettre de demander. Trois règles, et aucune n'est
    négociable : jamais par-dessus autre chose, jamais plus de trois fois,
@@ -210,19 +175,9 @@ export function maybeAskInstall() {
   setTimeout(() => { if (!menu && !study && !quiz) openMenu('install'); }, 900);
 }
 
-/* Ouverture explicite, depuis les Réglages : ni compteur, ni délai —
-   c'est demandé, donc c'est montré. */
+/* Ouverture explicite, depuis les Réglages ou l'écran Folio+ : ni
+   compteur, ni délai — c'est demandé, donc c'est montré. */
 export function openInstall() { openMenu('install'); }
-
-export async function copyLink() {
-  const url = SITE;
-  try {
-    await navigator.clipboard.writeText(url);
-    toast(I.check, 'Lien copié');
-  } catch (e) {
-    toast(I.link, url);
-  }
-}
 
 export async function doPrompt() {
   if (!bip) return;
@@ -235,76 +190,33 @@ export async function doPrompt() {
   } catch (x) { /* invite refusée ou déjà consommée par le navigateur : rien à faire de plus */ }
 }
 
+/* L'app installée, ouverte sans session pour la première fois : l'écran de
+   connexion le dit (ui/connexion.js), jusqu'à la première connexion. */
+export const premiereOuverture = () => !auth && installee() && !instLoad().connecte;
+export const noterConnexion = () => { if (installee() && !instLoad().connecte) instSave({ ...instLoad(), connecte: 1 }); };
+
 const instep = (n, txt) => `<div class="instep"><i>${n}</i><span>${txt}</span></div>`;
 
 /* Pourquoi on le demande, dit une seule fois et honnêtement : les
    rappels et le hors-ligne complet n'existent qu'une fois installée.
    Une raison vraie convainc mieux qu'une insistance. */
-const INSTWHY = 'Une fois posée sur l’écran d’accueil, Folio s’ouvre en un tap, '
-  + 'fonctionne entièrement hors ligne et peut te rappeler tes révisions.';
+const INSTWHY = 'Installée, Folio s’ouvre en un clic, dans sa fenêtre, '
+  + 'et fonctionne entièrement hors ligne.';
 
-/* Le vrai glyphe de partage d'iOS, dessiné plutôt que décrit : « touche
-   le carré avec la flèche » se cherche, l'icône se reconnaît. */
-const SVGSHARE = `<svg viewBox="0 0 24 24" class="shg">${I.share}</svg>`;
+/* Safari sur Mac n'a pas d'invite : « Ajouter au Dock », dans le menu Fichier. */
+const SAFARI_MAC = /Macintosh/.test(navigator.userAgent || '') && !/Chrome|Edg\//.test(navigator.userAgent || '');
 
 export function installSheet(w) {
-  const ctx = instCtx();
   const head = (icon, t, s) => `<div class="mhd">${svg(icon)}<span class="mhx">
     <b>${t}</b><span class="msub">${s}</span></span></div>`;
-  let inner;
-
-  if (ctx === 'webview') {
-    /* Le cas le plus fréquent et le seul vraiment bloquant : on ne
-       demande pas d'installer, on explique comment sortir d'ici. */
-    inner = head(I.warn, 'Ouvre Folio dans ton navigateur',
-        'Tu es dans le navigateur d’une autre application. L’ajout à l’écran d’accueil n’y existe pas.')
-      + `<div class="insteps">
-          ${instep(1, `Touche le menu ${isIOS() ? '<b>•••</b> en haut à droite' : '<b>⋮</b> en haut à droite'}`)}
-          ${instep(2, `Choisis <b>${isIOS() ? 'Ouvrir dans Safari' : 'Ouvrir dans Chrome'}</b>`)}
-          ${instep(3, 'Reviens ici : Folio te montrera la suite')}
-        </div>
-        <button class="mi" data-mact="instcopy" style="justify-content:center;font-weight:700">
-          ${svg(I.copy)}Copier le lien</button>`;
-  } else if (ctx === 'iosother') {
-    inner = head(I.warn, 'Ouvre cette page dans Safari',
-        'Sur iPhone et iPad, seul Safari sait ajouter une app à l’écran d’accueil.')
-      + `<div class="insteps">
-          ${instep(1, 'Copie le lien ci-dessous')}
-          ${instep(2, 'Ouvre <b>Safari</b> et colle-le')}
-          ${instep(3, 'Folio te montrera la suite')}
-        </div>
-        <button class="mi" data-mact="instcopy" style="justify-content:center;font-weight:700">
-          ${svg(I.copy)}Copier le lien</button>`;
-  } else if (ctx === 'prompt') {
-    inner = head(I.plus, 'Installer Folio', INSTWHY)
+  const inner = installed() ? head(I.check, 'Folio est installé', 'Ouvre-le depuis ton Dock, ta barre des tâches ou tes applications.')
+    : bip ? head(I.plus, 'Installer Folio', INSTWHY)
       + `<button class="cta" data-mact="instgo" style="margin:6px 7px 8px;width:calc(100% - 14px)">
-          ${svg(I.down)}Installer</button>`;
-  } else if (ctx === 'ios') {
-    /* Le bouton Partager n'est pas au même endroit selon l'appareil :
-       le dire évite la minute passée à chercher en haut sur un iPhone. */
-    const where = /iPad/.test(UA) ? 'en haut de l’écran' : 'en bas de l’écran';
-    inner = head(I.plus, 'Ajoute Folio à ton écran d’accueil', INSTWHY)
-      + `<div class="insteps">
-          ${instep(1, `Touche <b class="inshare">${SVGSHARE}</b> Partager, ${where}`)}
-          ${instep(2, 'Fais défiler et choisis <b>Sur l’écran d’accueil</b>')}
-          ${instep(3, 'Touche <b>Ajouter</b>, puis ouvre Folio par son icône')}
-        </div>
-        <div class="note">Ferme ensuite cet onglet : c’est par l’icône que Folio gardera tes rappels.</div>`;
-  } else if (ctx === 'android') {
-    inner = head(I.plus, 'Ajoute Folio à ton écran d’accueil', INSTWHY)
-      + `<div class="insteps">
-          ${instep(1, 'Touche le menu <b>⋮</b> en haut à droite')}
-          ${instep(2, 'Choisis <b>Ajouter à l’écran d’accueil</b>')}
-          ${instep(3, 'Confirme, puis ouvre Folio par son icône')}
-        </div>`;
-  } else {
-    inner = head(I.plus, 'Installer Folio', INSTWHY)
-      + `<div class="insteps">
-          ${instep(1, 'Cherche l’icône d’installation dans la barre d’adresse')}
-          ${instep(2, 'Ou, dans le menu du navigateur, <b>Installer Folio</b>')}
-        </div>`;
-  }
-
+          ${svg(I.down)}Installer</button>`
+      : head(I.plus, 'Installer Folio', INSTWHY) + `<div class="insteps">${SAFARI_MAC
+        ? instep(1, 'Dans le menu <b>Fichier</b>, choisis <b>Ajouter au Dock</b>')
+        : instep(1, 'Clique sur l’icône d’installation, à droite de la barre d’adresse')
+          + instep(2, 'Ou, dans le menu du navigateur, <b>Installer Folio</b>')}</div>`;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">${inner}
       <div class="msep"></div>
@@ -323,6 +235,7 @@ export async function boot() {
   effacerDemo();
   if (!(await lienAvantSession())) { setView({ name: 'login' }); render(); return armerSansSession(cibleDepart()); }
   desarmer();
+  noterConnexion();
   setDb(load());
   offreLocale();                         // Folio gratuit ou Folio+ dès le premier écran, hors ligne aussi
   fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état

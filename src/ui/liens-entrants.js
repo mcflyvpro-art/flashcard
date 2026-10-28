@@ -8,7 +8,8 @@ import { consumeDefi } from './direct-porte.js';
 import { consumeClub } from './cercle-feuilles.js';
 import { consumeGoto } from './raccourcis.js';
 import { consumePlus } from './plus-porte.js';
-import { auMagasin } from './magasin.js';
+import { aInstaller } from './pwa-porte.js';
+import { reprendrePassage } from './passage.js';
 
 /* ══════════ les liens qui entrent dans l'app ══════════
    Une seule porte pour tout lien qui ouvre l'app : « ?carte= » (le QR d'une
@@ -32,19 +33,26 @@ import { auMagasin } from './magasin.js';
    repris par `lienApresRole()` depuis `accueil()`. Rend vrai s'il y a une
    session. */
 export async function lienAvantSession() {
+  reprendrePassage();                  // l'app installée reprend le code laissé par son navigateur (ui/passage.js)
   await consumeCarte();
   if (auth) return true;
-  consumeRejoindre();
+  await rangerLiens();
+  return false;
+}
+
+/* Les codes de l'adresse, rangés pour plus tard : sans session, ou devant
+   la porte d'installation (ui/pwa.js), qui les confie à l'app installée. */
+export async function rangerLiens() {
+  consumeRejoindre(false);
   await consumeDefi(false);
   consumeClub(false);
   consumePlus(false);
-  return false;
 }
 
 /* Une fois le rôle connu (un code de classe ne veut pas dire la même chose
    pour un professeur et pour un élève) : la classe, la partie, le club. */
 export async function lienApresRole() {
-  if (auMagasin()) return false;       // un téléphone envoyé vers son magasin : le code attend, montré à recopier dans l'app
+  if (aInstaller()) return false;      // devant la porte d'installation : le code attend l'app installée (ui/pwa.js)
   if (consumeRejoindre()) return true;
   if (await consumeDefi(true)) return true;
   if (consumeClub(true)) return true;

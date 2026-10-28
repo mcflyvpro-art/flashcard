@@ -19,18 +19,17 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-28 · Folio+ en base : les migrations 20261027190000 et
-          20261027210000 appliquées (11 comptes en Folio+ offert, aucun
-          référent ni éditeur), les tests SQL verts (abonnements 17/17 —
-          un cas corrigé : la lecture des évènements Stripe est refusée,
-          pas vide —, folio_plus_pour_tous 15/15), les advisors relus, les
-          fonctions ai, paiement, stripe-webhook et magasins déployées.
-          M12.T2 cochée. Manquent les secrets STRIPE_SECRET_KEY et RC_SECRET
-          (et ceux qu'ils ouvrent) : docs/VENTE.md § 3.
-Avant :   2026-10-27 · Folio+ pour de vrai : les comptes d'avant gardent
-          tout ; un compte neuf est en Folio gratuit, bridé (ui/bridage.js) ;
-          achat dans l'app des magasins par RevenueCat. Avant encore : le
-          moteur compte les jours comme Anki.
+DERNIER   2026-10-28 · la porte d'installation : sur un téléphone, Folio
+          ne s'ouvre plus que depuis l'écran d'accueil (ui/pwa-porte.js,
+          ui/pwa.js, src/installation.js) — le geste de chaque navigateur,
+          animé, une flèche vers son bouton, « Installer Folio » en un
+          geste sur Android, puis « C'est installé, plus qu'à te
+          connecter » dans l'app. Plus de magasins à l'écran Folio+ (le QR
+          du téléphone, l'installation sur l'ordinateur). Aucune tâche
+          cochée (M08.T5/T6 restent à prouver sur un vrai iPhone).
+Avant :   2026-10-28 · Folio+ en base : migrations appliquées, tests SQL
+          verts, fonctions déployées ; manquent STRIPE_SECRET_KEY et
+          RC_SECRET (docs/VENTE.md § 3).
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

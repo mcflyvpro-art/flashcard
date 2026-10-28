@@ -20,7 +20,7 @@ import {
 } from '../core/coeur-sync.js';
 import { dueCount, simpleMode, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
-import { consumeHash, logout } from './onboarding.js';
+import { consumeHash, logout, noterConnexion, premiereOuverture } from './onboarding.js';
 import { maybeTuto } from './tuto-porte.js';
 import { norm } from './quiz.js';
 import { cartePassage, lierPassage } from './passage.js';
@@ -408,6 +408,7 @@ function loginErrorMessage(x, up) {
 /* Ce qui suit toute connexion réussie, quelle qu'en soit la porte. */
 async function apresConnexion() {
   desarmer();                              // l'adresse attend le rôle : un professeur n'a pas d'espace « élève »
+  noterConnexion();                        // l'app installée n'accueille plus par « C'est installé »
   setDb(load());
   await pull();
   /* Un lien de partage ouvert alors qu'on n'était pas connecté attend
@@ -525,13 +526,23 @@ const vitrine = () => `<div class="pub-vitrine" aria-hidden="true">
       .map(([m, t, txt]) => `<span style="${sty(PALETTE[t])}"><small>${m}</small>${txt}</span>`).join('')}</div>
   </div>`;
 
+/* Le titre, et sous lui : à la première ouverture de l'app installée (la
+   porte d'installation y a mené, ui/pwa.js), la bienvenue et ce qui reste
+   à faire. */
+function enTete() {
+  const neuf = premiereOuverture();
+  const titre = { up: 'Bienvenue.', carte: 'Ta carte élève.' }[loginMode] || (neuf ? 'Bienvenue.' : 'Bon retour.');
+  return `<h1 class="lt">${titre}</h1>${neuf
+    ? `<p class="lsub linstalle">${svg(I.check)}C’est installé. Plus qu’à ${{ up: 'créer ton compte', carte: 'entrer ta carte' }[loginMode]
+      || 'te connecter'}.</p>` : '<p class="lsub">Tes cours, reliés en livres.</p>'}`;
+}
+
 export function loginView() {
   const up = loginMode === 'up', carte = loginMode === 'carte';
   $.innerHTML = `<div class="pub pub-connexion">
     ${pubTete(false)}
     <div class="pub-duo">${vitrine()}<div class="login">
-    <h1 class="lt">${up ? 'Bienvenue.' : carte ? 'Ta carte élève.' : 'Bon retour.'}</h1>
-    <p class="lsub">Tes cours, reliés en livres.</p>
+    ${enTete()}
     ${cartePassage()}
     <div class="seg lseg" id="lmode">
       <button data-lm="in" class="${up || carte ? '' : 'on'}">Connexion</button>

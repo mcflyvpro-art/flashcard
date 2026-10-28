@@ -113,7 +113,7 @@ test.describe('sur ordinateur', () => {
 });
 
 test('la démo a ses adresses, et rafraîchir ne la quitte plus', async ({ page }) => {
-  await brancher(page, nouveauStore());
+  await brancher(page, nouveauStore(), { navigateur: true });        // le visiteur d'un téléphone : la porte, puis la démo
   await page.goto('./app');
   await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
   await page.getByRole('button', { name: 'Essayer sans compte' }).click();
