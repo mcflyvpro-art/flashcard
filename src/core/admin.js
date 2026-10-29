@@ -30,7 +30,54 @@ export async function admComptesPull() {
 }
 
 export async function admCharger() {
-  await Promise.allSettled([admOrgsPull(), admEtatPull(), admComptesPull(), admAttentePull(), admVendeurPull()]);
+  await Promise.allSettled([admOrgsPull(), admEtatPull(), admComptesPull(), admAttentePull(), admVendeurPull(),
+    admProfsPull(), admCoutPull(), admOrgsIaPull()]);
+}
+
+/* ══════════ les comptes que l'éditeur ouvre (20261029090000) ══════════
+   Un professeur particulier (sa licence : des places d'élèves et l'IA du
+   mois), un autre éditeur, un élève : une adresse, un nom, un mot de passe
+   provisoire, choisi ici et montré une fois — le compte le remplace à sa
+   première connexion. */
+export async function admProfsPull() {
+  try { adm.profs = Object.fromEntries((await rpc('admin_profs') || []).map(p => [p.id, p])); }
+  catch (e) { adm.profs = adm.profs || {}; }
+  repeint();
+}
+
+export async function admCoutPull() {
+  try { adm.cout = await rpc('admin_cout_ia') || {}; } catch (e) { adm.cout = adm.cout || {}; }
+  repeint();
+}
+
+export async function admOrgsIaPull() {
+  try { adm.ia = Object.fromEntries((await rpc('admin_orgs_ia') || []).map(o => [o.org_id, o])); }
+  catch (e) { adm.ia = adm.ia || {}; }
+  repeint();
+}
+
+/* Le compte d'abord, sa licence ensuite : un professeur sans licence n'a
+   pas encore de places, il en recevra dans sa fiche. */
+export async function admCreerCompte({ adresse, nom, qrole, pw, licence }) {
+  const id = await admAgir('admin_creer_compte', { adresse, nom, qrole, pw });
+  if (!id) return null;
+  if (qrole === 'prof' && licence) await admAgir('admin_prof_licence', { prof: id, ...licence });
+  await Promise.allSettled([admComptesPull(), admProfsPull()]);
+  return id;
+}
+
+export async function admLicenceProf(prof, licence) {
+  const r = await admAgir('admin_prof_licence', { prof, ...licence }, 'Licence enregistrée');
+  if (r) await admProfsPull();
+  return r;
+}
+
+export const admMdp = (cible, pw) => admAgir('admin_mdp', { cible, pw }, null);
+
+export async function admIa(org, iaProf, iaEleve) {
+  const r = await admAgir('admin_ia', { org, ia_prof: iaProf, ia_eleve: iaEleve }, 'IA enregistrée');
+  if (r) await admOrgsIaPull();
+  return r;
 }
 
 /* Une écriture : le message de la base est montré tel quel (« Un nom de 2 à

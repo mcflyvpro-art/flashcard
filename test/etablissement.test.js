@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  aRelancer, BESOINS, bienvenue, bilanSuivi, changeLe, compterEtapes, courrielReferent, cycleDe, ETAPES, etatLicence, filtrerSuivi,
+  aRelancer, BESOINS, bienvenue, bilanSuivi, changeLe, compterEtapes, courrielCompte, courrielReferent, cycleDe, ETAPES, etatLicence, filtrerSuivi,
   lienCourriel, messageDemande, messageEtab, motDePasseProvisoire, NIVEAUX, nouvelleDemande, ORDRE_ETAPES, prochainPas, renouvellement, ROLES_CODE, RYTHMES, trierSuivi, uaiValide
 } from '../src/etablissement.js';
 
@@ -176,5 +176,21 @@ describe('messageDemande — le formulaire public', () => {
     expect(messageDemande('deja').ton).toBe('ok');
     for (const s of ['email', 'champs', 'trop']) expect(messageDemande(s).ton).toBe('ko');
     expect(messageDemande('???').titre).toBe('Envoi impossible');
+  });
+});
+
+describe('le message d’un compte ouvert par l’éditeur', () => {
+  it('l’adresse, le mot de passe provisoire et les premiers pas d’un professeur particulier', () => {
+    const c = courrielCompte({ nom: 'Lucie Mira', email: 'lucie@exemple.fr', pw: 'abcd-efgh-jkmn', role: 'prof', site: 'https://mirandola.fr/' });
+    expect(c.sujet).toBe('Mirandola · votre compte professeur');
+    expect(c.corps).toMatch(/^Bonjour Lucie,/);
+    expect(c.corps).toContain('Adresse : lucie@exemple.fr');
+    expect(c.corps).toContain('Mot de passe provisoire : abcd-efgh-jkmn');
+    expect(c.corps).toContain('https://mirandola.fr/');
+    expect(c.corps).toContain('salle d’attente');
+    expect(c.corps).not.toMatch(/Folio|—/);
+  });
+  it('sans nom, un bonjour tout court', () => {
+    expect(courrielCompte({ nom: '', email: 'a@b.fr', pw: 'x', role: 'admin', site: 's' }).corps).toMatch(/^Bonjour,/);
   });
 });

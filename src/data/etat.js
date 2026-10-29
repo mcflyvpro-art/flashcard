@@ -266,7 +266,10 @@ export let accounts = null;
 export const admNeuf = () => ({ charge: false, orgs: null, etat: null, err: 0, tab: 'suivi',
             etape: 'tous', q: '', open: null, copen: null, cq: '', crole: '',
             // la facturation (20261026130000) : l'identité du vendeur, la licence ouverte, la pièce ouverte
-            vendeur: null, licence: null, facture: null, fid: null, attente: {} });
+            vendeur: null, licence: null, facture: null, fid: null, attente: {},
+            // les professeurs particuliers et leur licence, le coût de l'IA, l'IA des établissements,
+            // le compte qu'on ouvre (20261029090000)
+            profs: null, cout: null, ia: null, neuf: null });
 export let adm = admNeuf();
 
 /* ══════════ rôles, classes, devoirs ══════════

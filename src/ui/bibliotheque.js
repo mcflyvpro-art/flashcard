@@ -22,6 +22,7 @@ import { refAller, refView } from './etablissement.js';
 import { bienvenueView } from './bienvenue-porte.js';
 import { entreePlus, ongletPlus, ouvrirPlus, plusView } from './plus-porte.js';
 import { aInstaller, porteView } from './pwa-porte.js';
+import { mdpAChoisir, mdpView } from './mdp-porte.js';
 import { admPull, boardPull, modPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { decouvrirView, deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
@@ -104,6 +105,11 @@ function placerDefilement() {
   document.body.scrollTop = RETROUVE.test(view.name) ? positions.get(k) || 0 : 0;
 }
 
+/* Un écran seul à la place de tout le reste : la porte d'installation (un
+   téléphone dans son navigateur, ui/pwa-porte.js), puis le mot de passe
+   provisoire à remplacer (ui/mdp-porte.js). */
+const ecranSeul = () => (aInstaller() ? ['porte', porteView] : mdpAChoisir() ? ['mdp', mdpView] : null);
+
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, lettre: lettreView, stats: statsView, find: findView,
@@ -119,11 +125,11 @@ export function render() {
   /* Un téléphone dans son navigateur : la porte d'installation, seule, quel
      que soit l'écran derrière (ui/pwa-porte.js) ; il ne s'anime pas en
      changeant dessous */
-  const portee = aInstaller();
-  const change = !portee && view.name + ':' + (view.id || '') !== ecranAvant;
+  const seul = ecranSeul();
+  const change = !seul && view.name + ':' + (view.id || '') !== ecranAvant;
   const glissiere = glissiereAvant();
-  (portee ? porteView : v[view.name] || home)();
-  $.dataset.view = portee ? 'porte' : view.name;
+  (seul ? seul[1] : v[view.name] || home)();
+  $.dataset.view = seul ? seul[0] : view.name;
   placerDefilement();
   applyFont();
   paintRail();
@@ -138,7 +144,7 @@ export function render() {
   setAnimate(false);
   const on = $.querySelector('.pills .p.on');
   if (on && on.previousElementSibling) on.scrollIntoView({ block: 'nearest', inline: 'center' });
-  if (menu && !portee) paintMenu();
+  if (menu && !seul) paintMenu();
   liveSync();
   dropBoot();
   synchroniser();                              // l'adresse suit l'écran (ui/routeur.js)
@@ -306,7 +312,7 @@ function railClick(e) {
 }
 
 /* Pas de barre sans session, ni pendant l'accueil d'un nouveau compte : rien n'y mène encore. */
-const sansRail = () => !auth || view.name === 'login' || view.name === 'bienvenue' || aInstaller();
+const sansRail = () => !auth || view.name === 'login' || view.name === 'bienvenue' || aInstaller() || mdpAChoisir();
 
 /* Un compte d'établissement (et l'éditeur) travaille, il ne révise pas : ni
    journal de lecture, ni cercle des lecteurs. Ses entrées passent en barre

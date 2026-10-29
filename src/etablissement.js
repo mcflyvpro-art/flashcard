@@ -228,6 +228,33 @@ Bonne découverte,
   };
 }
 
+/* Le message qui accompagne un compte ouvert par l'éditeur (2026-10-29) :
+   l'adresse, le mot de passe provisoire — montré une seule fois, il n'est
+   gardé nulle part —, et les premiers pas. Un professeur particulier crée
+   sa classe et donne son code ; ses élèves créent leur propre compte. */
+export function courrielCompte({ nom, email, pw, role, site }) {
+  const prenom = String(nom || '').trim().split(/\s+/)[0];
+  const suite = role === 'prof'
+    ? `3. Créez votre classe, puis donnez votre code à vos élèves : ils créent leur compte Mirandola, entrent ce code, et vous les acceptez dans votre salle d’attente.`
+    : role === 'admin' ? '3. La console de l’éditeur s’ouvre d’elle-même.' : '3. Vos livres vous attendent.';
+  return {
+    sujet: role === 'prof' ? 'Mirandola · votre compte professeur' : 'Mirandola · votre compte',
+    corps: `${prenom ? `Bonjour ${prenom},` : 'Bonjour,'}
+
+Voici votre compte Mirandola.
+
+Adresse : ${email}
+Mot de passe provisoire : ${pw}
+
+1. Ouvrez ${site} et connectez-vous (sur un téléphone, Mirandola vous montre d’abord comment l’installer).
+2. Choisissez votre propre mot de passe : il remplace celui-ci.
+${suite}
+
+À bientôt,
+`
+  };
+}
+
 export const lienCourriel = (email, c) =>
   `mailto:${encodeURIComponent(email || '')}?subject=${encodeURIComponent(c.sujet)}&body=${encodeURIComponent(c.corps)}`;
 

@@ -5,6 +5,7 @@ import { atSchool, isPupil } from './classement.js';
 import { ouvrirBienvenue } from './bienvenue-porte.js';
 import { toast } from './import-cartes.js';
 import { aInstaller } from './pwa-porte.js';
+import { mdpAChoisir } from './mdp-porte.js';
 
 /* ══════════ la porte du tuto (2026-10-27) ══════════
    Le tuto (ui/tuto.js, sa feuille tuto.css, préfixe tu-, et ses scénarios
@@ -35,7 +36,8 @@ const ARRIVEES = ['home', 'classes', 'prof', 'ref'];
    qui enchaîne sur le tuto ; un professeur et un référent n'ont que le tuto ;
    l'éditeur rien, un rôle inconnu non plus. */
 function premiereFois() {
-  if (prefs.tuto || tuto || demoEtab || menu) return;
+  // un mot de passe provisoire d'abord : ui/mdp-porte.js relance le tuto une fois choisi
+  if (prefs.tuto || tuto || demoEtab || menu || mdpAChoisir()) return;
   const eleve = myRole === 'eleve';
   if (!eleve && myRole !== 'prof' && !(myRole === 'ref' && atSchool())) return;
   if (eleve && !prefs.bienvenue) {

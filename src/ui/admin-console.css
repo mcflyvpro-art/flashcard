@@ -163,3 +163,18 @@ button.ed-ligne:hover{background:var(--surf)}
 .ed-entreprise{max-width:760px}
 .ed-b[data-arme="1"]{background:color-mix(in srgb,var(--ko) 13%,var(--card))}
 .ed-seg button svg{width:15px;height:15px;vertical-align:-3px;margin-right:6px}
+
+/* ---------- les comptes que l'éditeur ouvre (2026-10-29, ui/admin-comptes.js) ---------- */
+.ed-kc b small{font-size:.65em;font-weight:700;color:var(--soft)}
+.ed-licence{grid-column:1 / -1;margin:4px 0 0;padding:12px 14px 6px;border:0;border-radius:14px;background:var(--bg);box-shadow:var(--edge)}
+.ed-licence legend{padding:0;font-size:13px;font-weight:700}
+.ed-licence[hidden]{display:none}
+.ed-cout{display:flex;align-items:flex-start;gap:8px;margin:10px 2px 0;font-size:13.5px;color:var(--ink2)}
+.ed-cout:empty{display:none}
+.ed-cout svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--az5)}
+.ed-cout b{color:var(--ink)}
+.ed-cout i{display:block;font-style:normal;font-size:12px;color:var(--soft)}
+.ed-mdp-l{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.ed-mdp-l span{font-size:13px;font-weight:600;color:var(--ink2)}
+.ed-mdp-l .ed-code{margin:0;font-size:24px;letter-spacing:1px;user-select:all}
+.ed-mdp .ed-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}

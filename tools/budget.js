@@ -70,11 +70,17 @@
 // licence — quelques fois par an —, jamais en révisant : un plafond à lui
 // (10 Ko JS, 4 Ko CSS), comme la porte d'installation, au lieu de prendre
 // la marge des écrans qu'on ouvre tous les jours.
+//
+// 2026-10-29 : la base locale de la démo rejoue aussi la licence d'un
+// professeur particulier, sa salle d'attente et les comptes que l'éditeur
+// ouvre (src/base-locale/licences.js) — sans elle, la démo et les parcours
+// verraient ces écrans vides. Le plafond de la démo passe de 30 à 32 Ko :
+// il ne se charge toujours que chez un visiteur sans compte.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 30 * 1024, cssDemo: 3 * 1024,
+const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
   jsGestion: 30 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
   site: 48 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
