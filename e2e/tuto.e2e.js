@@ -62,7 +62,6 @@ async function toucherLaCible(page, lue) {
 /* Les gestes qui ne sont pas un simple appui au centre de la cible. */
 const GESTES = {
   'Dis si tu savais': page => page.locator('.grades button').nth(2).click({ timeout: 3000 }),
-  'Écris ta première page': page => bulle(page).getByRole('button', { name: 'Remplir pour moi' }).click({ timeout: 3000 }),
   'Le livre': page => page.locator('#pflivres [data-pf="livre"]').first().click({ timeout: 3000 })
 };
 
@@ -86,6 +85,7 @@ async function jusqua(page, but) {
     if (!s || s.fini === false) { await page.waitForTimeout(100); continue; }
     if (s.titre === but) return vus;
     if (vus.at(-1) !== s.titre) vus.push(s.titre);
+    if (s.mode === 'auto') { await page.waitForTimeout(300); continue; }      // le tuto écrit : on regarde
     try {
       if (s.mode === 'geste') await (GESTES[s.titre] || toucherLaCible)(page, s.titre);
       else await page.locator('#tu .tu-bulle.vue [data-tu="suivant"]').click({ timeout: 3000 });
@@ -112,8 +112,9 @@ test('un particulier : son premier livre, une page lue et notée, son journal, s
   await page.getByRole('button', { name: 'Continuer' }).click();
   await page.getByRole('button', { name: 'Continuer' }).click();
   await page.getByRole('button', { name: 'Lycée' }).click();
-  await page.getByRole('button', { name: 'Anglais' }).click();
+  await page.getByRole('button', { name: 'Terminale' }).click();
   await page.getByRole('button', { name: 'Continuer' }).click();
+  await page.getByRole('button', { name: 'Continuer' }).click();              // les matières de Terminale, cochées d'office
   await page.getByRole('button', { name: 'C’est parti' }).click();
 
   // la carte du début, puis les gestes
@@ -122,29 +123,38 @@ test('un particulier : son premier livre, une page lue et notée, son journal, s
   await page.locator('#tu .tu-go').click();
 
   await etape(page, 'Ton premier livre');
-  // un appui à côté ne fait rien : la bulle le rappelle, l'écran ne bouge pas
+  // un appui à côté ne fait rien : l'anneau s'éclaire, la bulle ne bouge pas, l'écran non plus
+  await page.waitForTimeout(450);                                             // la bulle a fini d'arriver
+  const ici = await bulle(page).boundingBox();
   await page.mouse.click(30, 300);
   await expect(page.locator('#tu')).toHaveClass(/rappel/);
+  expect(await bulle(page).boundingBox()).toEqual(ici);
+  expect(await page.evaluate(() => document.getAnimations().filter(a => a.animationName === 'tu-rappel').length)).toBe(0);
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'home');
   await toucherLaCible(page);
 
-  await etape(page, 'Écris ta première page');
+  // sa première page, le tuto l'écrit sous ses yeux : rien à taper, aucun clavier ne s'ouvre
+  await etape(page, 'Ta première page');
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'import');
-  // une autre façon de créer (l'onglet « Coller ») attendra : on écrit sa première page
-  await page.locator('[data-cmode="coller"]').click();
+  await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'auto');
+  const coller = await page.locator('[data-cmode="coller"]').boundingBox();   // une autre façon de créer attendra : le tuto la retient
+  await page.mouse.click(coller.x + coller.width / 2, coller.y + coller.height / 2);
   await expect(page.locator('#cf')).toBeVisible();
-  await bulle(page).getByRole('button', { name: 'Remplir pour moi' }).click();
-  await expect(page.locator('#cn')).toHaveText('3');
-  await expect(page.locator('#nm')).toHaveValue('Verbes irréguliers');   // la matière choisie à l'accueil
-  // l'étape a porté : le tuto laisse voir les pages (320 ms), puis passe à « Crée-le »
-  await expect(page.locator('#tu .tu-bulle.vue .tu-t')).not.toHaveText('Écris ta première page', { timeout: 5000 });
+  await expect(page.locator('#nm')).toHaveValue('Dates d’histoire', { timeout: 10000 });   // l'histoire d'abord
+  await expect(page.locator('#cf')).toHaveValue('1789', { timeout: 10000 });
+  await expect(page.locator('#cb')).toHaveValue('Prise de la Bastille', { timeout: 10000 });
+  await expect(page.locator('#cn')).toHaveText('3', { timeout: 10000 });
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.tagName)).not.toBe('INPUT');
+  await etape(page, 'Crée-le');
 
   expect(await jusqua(page, 'Mirandola s’en souvient')).toEqual(['Crée-le', 'Lis-le', 'Retourne la page', 'Dis si tu savais']);
+  await expect(page.locator('.sbj').first()).toContainText(/histoire/i);      // le livre est rangé dans sa matière
   await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'centre');
   await suivant(page);
 
   expect(await jusqua(page, '')).toEqual(['Ton journal', 'Tes progrès', 'Le cercle', 'Tes amis', 'Ton courrier', 'Ta boîte']);
-  await expect(page.locator('#app')).toHaveAttribute('data-view', 'mail');
+  // la fin se lit sur « Mes livres », pas sur le courrier où l'on était
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'home', { timeout: 10000 });
 
   // la fin : Mirandola+, l'écran Mirandola+ de l'app (la vente est ouverte depuis le 2026-10-27)
   const fin = page.locator('#tu .tu-fin.plus');
@@ -155,7 +165,7 @@ test('un particulier : son premier livre, une page lue et notée, son journal, s
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'plus', { timeout: 10000 });
 
   // tout est vrai : le livre, ses trois pages, la page lue au journal
-  const livre = (store.tables.decks || []).find(d => d.user_id === lea && d.name === 'Verbes irréguliers');
+  const livre = (store.tables.decks || []).find(d => d.user_id === lea && d.name === 'Dates d’histoire');
   expect(livre).toBeTruthy();
   await expect.poll(() => (store.tables.reviews || []).filter(r => r.user_id === lea).length).toBeGreaterThan(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
@@ -242,7 +252,7 @@ test('un professeur particulier : sa classe créée pour de vrai, puis le tour d
   await expect(page.locator('#tu .tu-fin.pret h2')).toHaveText('Tout est prêt', { timeout: 10000 });
   await page.locator('#tu .tu-fin').getByRole('button', { name: 'Commencer' }).click();
   await expect(page.locator('#tu')).toHaveCount(0);
-  await expect(page.locator('#app')).toHaveAttribute('data-view', 'mail');
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'prof');      // son tableau de bord, pas le courrier
   expect(modele(store).classes.some(c => c.name === '2nde 4')).toBe(true);
   expect(prefsDe(store, marc).tuto).toBe(1);
 });

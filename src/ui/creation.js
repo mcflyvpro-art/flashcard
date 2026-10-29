@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { parseText } from '../parseur.js';
-import { aiBusy, comp, db, demoEtab, setAiBusy, setComp, view } from '../data/etat.js';
+import { aiBusy, comp, db, demoEtab, setAiBusy, setComp, tuto, view } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { donnerLivre } from './prof-porte.js';
 import { MAXB, MAXF, markDups, markOver } from './carte-media.js';
@@ -174,7 +174,8 @@ function bindEcrire(nm) {
   else { cf.value = comp.f || ''; cb.value = comp.b || ''; }
   const ou = comp.champ && document.getElementById(comp.champ);
   setTimeout(() => {
-    if (enSaisie()) return;
+    // pendant le tuto, pas de clavier qui s'ouvre de lui-même : il cachait ce que le tuto montre
+    if (enSaisie() || tuto) return;
     (ou || (comp.cards.length || comp.edit >= 0 || (nm && nm.value) ? cf : (nm || cf))).focus();
   }, 60);
   for (const c of [cf, cb]) {
@@ -366,6 +367,24 @@ function bindOk(t) {
     }
     toast(I.check, plur(cards.length, 'page'));
   };
+}
+
+/* Pour le tuto, qui écrit la première page sous les yeux (ui/tuto.js) :
+   la matière choisie et une page ajoutée se posent sur place, sans
+   redessiner l'écran — un rendu redonne le focus au recto, et le clavier
+   du téléphone s'ouvrirait sur ce qu'il faut voir. */
+export function poserMatiere(id) {
+  comp.subject = id || '';
+  $.querySelectorAll('[data-nsubj]').forEach(x => x.classList.toggle('on', x.dataset.nsubj === comp.subject));
+  const c = document.getElementById('comp');
+  if (c) c.setAttribute('style', sty(subj(comp.subject)));
+}
+
+export function poserPage(f, b) {
+  comp.cards.push({ f, b });
+  comp.f = ''; comp.b = '';
+  for (const id of ['cf', 'cb']) { const n = document.getElementById(id); if (n) n.value = ''; }
+  paintDraft();
 }
 
 function paintDraft() {

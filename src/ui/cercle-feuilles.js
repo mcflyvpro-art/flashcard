@@ -9,10 +9,10 @@ import {
 } from '../core/cercle.js';
 import { codeClubDepuisTexte, codeClubLisible, deviseValide, lienClub, nomClubValide } from '../club.js';
 import { COULEURS, couleurDe, embleme, rangCouleur, teinte } from '../jeton.js';
-import { avatarDe, avatarDeCle, ecrireAvatar } from '../avatar.js';
+import { auHasard, avatarDe, avatarDeCle, ecrireAvatar } from '../avatar.js';
 import { choisirMonJeton } from '../core/visuels.js';
 import { messageSalle, pinComplet, pinDepuisTexte, pinLisible } from '../defi.js';
-import { avatar, blasonClub, grilleCouleurs, grilleEmblemes, grilleTrait, iconeEmbleme } from './jeton.js';
+import { avatar, blasonClub, grilleCouleurs, grilleEmblemes, grilleTrait, iconeEmbleme, ongletsAvatar } from './jeton.js';
 import { isPupil } from './classement.js';
 import { clubOuvert, clubPull } from './club.js';
 import { ouvrirProfil } from './cercle.js';
@@ -164,8 +164,6 @@ const monChoix = () => visuels['p:' + auth.uid] || {};
 const maTeinte = () => { const v = monChoix(); return v.teinte != null ? v.teinte : rangCouleur(auth.uid); };
 // l'avatar qu'on modifie : le sien, ou, la première fois, celui que tire son identifiant
 const monAvatar = () => avatarDeCle(monChoix().cle) || avatarDe(auth.uid);
-const ONGLETS_AV = { coiffure: 'Coiffure', cheveux: 'Cheveux', peau: 'Peau', yeux: 'Yeux', bouche: 'Bouche',
-  accessoire: 'Accessoire', haut: 'Haut', fond: 'Fond' };
 
 function feuilleMoi() {
   const v = monChoix(), eleve = isPupil(), trait = cercle.trait || 'coiffure';
@@ -176,8 +174,7 @@ function feuilleMoi() {
       <button class="av-b" data-cc="av-hasard">${svg(I.shuffle)}Au hasard</button>
       <button class="av-b${v.cle ? '' : ' on'}" data-cc="av-init" aria-pressed="${!v.cle}"><b>Aa</b>Initiales</button>
     </div>
-    <div class="av-traits" role="tablist">${Object.entries(ONGLETS_AV).map(([k, n]) =>
-      `<button role="tab" class="${trait === k ? 'on' : ''}" aria-selected="${trait === k}" data-cc="av-trait" data-id="${k}">${n}</button>`).join('')}</div>
+    ${ongletsAvatar(monAvatar(), trait, 'data-cc="av-trait" data-id')}
     <div class="cf-pick">${trait === 'fond'
       ? grilleCouleurs(maTeinte(), 'data-cc="couleur" data-id')
       : grilleTrait(monAvatar(), trait, couleurDe(auth.uid, maTeinte()), 'data-cc="av" data-id', !!v.cle)}</div>`);
@@ -299,7 +296,7 @@ const ACTIONS = {
     a[trait] = +k;
     choisirMonJeton(ecrireAvatar(a), maTeinte()); peindre();
   },
-  'av-hasard': () => { choisirMonJeton(ecrireAvatar(avatarDe(Math.random())), maTeinte()); peindre(); },
+  'av-hasard': () => { choisirMonJeton(ecrireAvatar(auHasard()), maTeinte()); peindre(); },
   'av-init': () => { choisirMonJeton(null, maTeinte()); peindre(); },
   couleur: i => { choisirMonJeton(monChoix().cle || null, +i); peindre(); },
   'form-ok': () => validerForm()

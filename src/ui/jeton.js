@@ -4,7 +4,7 @@ import { auth, visuels } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
 import { voir } from '../core/visuels.js';
 import { COULEURS, EMBLEMES, embleme, jetonGroupe, jetonPersonne } from '../jeton.js';
-import { TRAITS, avatarSvg } from '../avatar.js';
+import { DE_PRES, ONGLETS, TEINTES_TRAIT, TRAITS, avatarSvg, choixDe, nomOnglet } from '../avatar.js';
 import { medaille } from '../club.js';
 import { aFolioPlus } from './bridage.js';
 
@@ -76,14 +76,25 @@ export const medailleHtml = p => (medaille(p)
 
 /* ---------- l'avatar : un aperçu par choix ----------
    Chaque trait se choisit en voyant le visage qu'il donnerait : la grille
-   d'un trait dessine l'avatar en cours avec chacune des valeurs. */
+   d'un trait dessine l'avatar en cours avec chacune des valeurs (agrandi sur
+   le visage quand le choix ne se voit que de près : les yeux, la bouche, la
+   barbe…) ; une couleur (la peau, les cheveux, le haut, les yeux) se choisit
+   sur sa pastille. Les mêmes grilles dans l'accueil (ui/bienvenue.js) et
+   dans « Mon jeton » (ui/cercle-feuilles.js). */
 export function grilleTrait(a, trait, teinteK, attr, choisi = true) {
-  return `<div class="jt-grille av-grille">${TRAITS[trait].map((nom, k) => {
-    const on = choisi && a[trait] === k;
-    return `<button class="jt-choix av-choix${on ? ' on' : ''}" ${attr}="${trait}:${k}" aria-label="${esc(nom)}" aria-pressed="${on}">
-      <i class="jt vis" style="--k:${teinteK}">${avatarSvg({ ...a, [trait]: k })}</i></button>`;
+  const teintes = TEINTES_TRAIT[trait], pres = DE_PRES.has(trait) ? 'visage' : '';
+  return `<div class="jt-grille av-grille${teintes ? ' av-teintes' : ''}">${choixDe(trait).map(k => {
+    const on = choisi && a[trait] === k, nom = esc(TRAITS[trait][k]);
+    const dedans = teintes ? `<i class="av-pastille" style="--p:${teintes[k]}"></i>`
+      : `<i class="jt vis" style="--k:${teinteK}">${avatarSvg({ ...a, [trait]: k }, '', pres)}</i>`;
+    return `<button class="jt-choix av-choix${on ? ' on' : ''}" ${attr}="${trait}:${k}" aria-label="${nom}" aria-pressed="${on}" title="${nom}">${dedans}</button>`;
   }).join('')}</div>`;
 }
+
+/* Les onglets d'un éditeur d'avatar, et le fond (la couleur du jeton) à la fin. */
+export const ongletsAvatar = (a, courant, attr) => `<div class="av-traits" role="tablist">${[...ONGLETS.map(([k]) => k), 'fond'].map(k =>
+  `<button role="tab" class="${courant === k ? 'on' : ''}" aria-selected="${courant === k}" ${attr}="${k}">${
+    k === 'fond' ? 'Fond' : esc(nomOnglet(k, a))}</button>`).join('')}</div>`;
 
 /* ---------- les grilles de choix (emblème d'une classe ou d'un club, couleurs) ---------- */
 

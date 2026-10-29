@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  CONNU, SCENARIOS, aideSelon, debutDe, ecransDe, etapes, exemple, finDe, quelRole, textes, tient
+  CONNU, SCENARIOS, aideSelon, debutDe, ecransDe, etapes, exemple, finDe, pageAuto, quelRole, textes, tient
 } from '../src/tuto.js';
 
 const ids = (role, d) => etapes(role, d).map(e => e.id);
@@ -40,6 +40,11 @@ describe('un élève : ses livres, une page lue, créer, son journal, sa classe,
   it('un compte neuf crée d’abord son premier livre, puis le lit', () => {
     const l = ids('perso', { livres: false });
     expect(l.slice(0, 4)).toEqual(['debut', 'nouveau', 'page', 'creer']);
+    // sa première page, le tuto l'écrit : rien à taper, le clavier du téléphone ne cache rien
+    const page = SCENARIOS.perso.find(e => e.id === 'page');
+    expect(page).toMatchObject({ ecrit: 1, attend: { ecrite: 1 } });
+    expect(page.geste).toBeFalsy();
+    expect(page.permis).toBeUndefined();
     expect(l.indexOf('lire')).toBeGreaterThan(l.indexOf('creer'));
     expect(l).not.toContain('ouvrir');
     expect(l).not.toContain('creer-livre');            // il vient d'en créer un
@@ -110,7 +115,6 @@ describe('chaque étape tient debout', () => {
       const k = `${role}/${e.id}`;
       for (const a of Object.keys(e.attend || {})) expect(CONNU.attend, k).toContain(a);
       if (e.tant) expect(CONNU.tant, k).toContain(e.tant.replace(/^!/, ''));
-      if (e.bouton) expect(CONNU.bouton, k).toContain(e.bouton);
       for (const pc of [true, false]) for (const s of ecransDe(e, pc) || []) expect(CONNU.ecran, k).toContain(s);
     }
   });
@@ -169,6 +173,14 @@ describe('les cartes du début et de la fin', () => {
     expect(debutDe('ref', {}).passe).toMatch(/Réglages/);
     expect(debutDe('classe', { demo: true }).passe).toMatch(/bandeau/);
   });
+  it('ni phrase sous le titre au début, ni sous-titre ni note à la fin (demandé le 2026-10-29)', () => {
+    for (const r of ['perso', 'classe', 'prof', 'ref']) for (const demo of [false, true]) {
+      expect(debutDe(r, { demo }).texte, `${r}/${demo}`).toBeUndefined();
+      const f = finDe(r, { demo });
+      expect(f.sous, `${r}/${demo}`).toBeUndefined();
+      expect(f.note, `${r}/${demo}`).toBeUndefined();
+    }
+  });
   it('un élève finit sur Mirandola+, un prof de la démo sur Mirandola Campus, un établissement client sur « tout est prêt »', () => {
     expect(finDe('perso').cle).toBe('plus');
     expect(finDe('classe', { demo: true }).cle).toBe('plus');
@@ -216,15 +228,24 @@ describe('aideSelon — au doigt ou à la souris, au téléphone ou sur ordinate
 describe('exemple — trois pages tirées de la matière', () => {
   it('reconnue à son nom, sans casse ni accent', () => {
     expect(exemple('Anglais').titre).toBe('Verbes irréguliers');
-    expect(exemple('Histoire-géo').titre).toBe('Capitales d’Europe');
-    expect(exemple('Histoire').titre).toBe('Dates d’histoire');
+    expect(exemple('Histoire-géo').titre).toBe('Dates d’histoire');      // l'histoire avant la géographie
+    expect(exemple('Histoire').pages[0]).toEqual({ f: '1789', b: 'Prise de la Bastille' });
+    expect(exemple('Géographie').titre).toBe('Capitales d’Europe');
     expect(exemple('Mathématiques').pages[0]).toEqual({ f: 'Aire d’un disque', b: 'π × r²' });
     expect(exemple('PHILOSOPHIE').titre).toBe('Philosophes');
   });
-  it('des capitales sinon', () => {
-    expect(exemple('').titre).toBe('Capitales d’Europe');
+  it('des dates d’histoire sinon', () => {
+    expect(exemple('').titre).toBe('Dates d’histoire');
     expect(exemple('Astrophysique quantique').titre).toBe('Physique-chimie');
-    expect(exemple('Cuisine').titre).toBe('Capitales d’Europe');
+    expect(exemple('Cuisine').titre).toBe('Dates d’histoire');
+  });
+  it('le premier livre du tuto : l’histoire d’abord, sinon une matière qui a ses exemples, sinon sans matière', () => {
+    const m = (id, name) => ({ id, name });
+    expect(pageAuto([m('fr', 'Français'), m('hg', 'Histoire-géo')])).toMatchObject({ matiere: 'hg', titre: 'Dates d’histoire' });
+    expect(pageAuto([m('mu', 'Musique'), m('en', 'Anglais')])).toMatchObject({ matiere: 'en', titre: 'Verbes irréguliers' });
+    expect(pageAuto([m('mu', 'Musique')])).toMatchObject({ matiere: '', titre: 'Dates d’histoire' });
+    expect(pageAuto([]).pages[0]).toEqual({ f: '1789', b: 'Prise de la Bastille' });
+    expect(pageAuto(undefined).pages).toHaveLength(3);
   });
   it('toujours trois pages, recto et verso remplis', () => {
     for (const m of ['Anglais', 'Droit', 'SVT', 'NSI', 'Code de la route', 'Économie', 'Médecine', 'Lettres', 'x']) {

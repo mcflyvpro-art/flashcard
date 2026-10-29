@@ -19,25 +19,18 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-29 · Le professeur particulier en licence, de bout en
-          bout : l'éditeur ouvre son compte (mot de passe provisoire,
-          message tout écrit) et lui accorde places et IA (coût estimé en
-          direct) ; mot de passe choisi à la première connexion ; l'élève
-          crée son compte, entre le code à son accueil, passe en salle
-          d'attente (une place réservée, Campus aussitôt) ; accepté, ou
-          refusé (place rendue, un mot, retour en gratuit) ; places et
-          commande chez le professeur. La carte élève est partie ; le
-          référent ouvre les comptes de ses élèves d'un coup et prend une
-          place ; Google/Apple prêts (docs/CONNEXION.md), le lien « mot de
-          passe oublié » enfin ouvert. Migrations 20261029090000→094000
-          appliquées, prof_particulier.sql 48/48 ; la fonction `ai`
-          redéployée (le quota IA de la licence, ia_quota). Deux défauts
-          trouvés par les parcours : le curseur d'ouverture de « J'ai un
-          code » envoyait le nom dans le prénom (« léamartin »), et la
-          connexion demandait la liste des fournisseurs avant que /essayer
-          n'ouvre la démo ; /mentions/confidentialite (pied de la page
-          d'accueil, consentement Google) ouvrait « undefined ». Aucune
-          tâche cochée.
+DERNIER   2026-10-29 · Premiers pas refaits au téléphone : le tuto
+          n'a plus de saccades (voile en SVG posé image par image, trou
+          qui épouse sa cible, se ferme d'un écran à l'autre au lieu de
+          laisser un rectangle clair), plus de secousse à chaque appui,
+          écrit lui-même la première page (« 1789 », « Prise de la
+          Bastille ») sans ouvrir le clavier, finit sur Mes livres.
+          L'accueil : visage composé trait par trait (14 traits, hijab,
+          turban, locks, barbe, lunettes, appareil auditif… sans
+          migration, les visages d'avant intacts), niveau puis année,
+          matières de l'année cochées d'office et les siennes à la main ;
+          plus aucun sous-titre, ni à la connexion. Budget de démarrage
+          126 Ko (les visages). Aucune tâche cochée.
 Avant :   2026-10-28 · Folio devient Mirandola (mirandola.fr) : le nom
           partout où il se lit, les clés internes gardées (CLAUDE.md, « Le
           nom ») ; référencement de la page d'accueil. Les prix : Mirandola+

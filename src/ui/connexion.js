@@ -465,15 +465,14 @@ const vitrine = () => `<div class="pub-vitrine" aria-hidden="true">
       .map(([m, t, txt]) => `<span style="${sty(PALETTE[t])}"><small>${m}</small>${txt}</span>`).join('')}</div>
   </div>`;
 
-/* Le titre, et sous lui : à la première ouverture de l'app installée (la
-   porte d'installation y a mené, ui/pwa.js), la bienvenue et ce qui reste
-   à faire. */
+/* Le titre seul, sans phrase dessous (demandé le 2026-10-29 : « Tes
+   cours, reliés en livres » et « C'est installé. Plus qu'à te connecter »
+   ne disaient rien de plus que l'écran). À la première ouverture de l'app
+   installée (la porte d'installation y a mené, ui/pwa.js), on n'est pas
+   « de retour » : « Bienvenue. » */
 function enTete() {
-  const neuf = premiereOuverture();
-  const up = loginMode === 'up', titre = up || neuf ? 'Bienvenue.' : 'Bon retour.';
-  return `<h1 class="lt">${titre}</h1>${neuf
-    ? `<p class="lsub linstalle">${svg(I.check)}C’est installé. Plus qu’à ${up ? 'créer ton compte' : 'te connecter'}.</p>`
-    : '<p class="lsub">Tes cours, reliés en livres.</p>'}`;
+  const titre = loginMode === 'up' || premiereOuverture() ? 'Bienvenue.' : 'Bon retour.';
+  return `<h1 class="lt">${titre}</h1>`;
 }
 
 export function loginView() {

@@ -49,7 +49,9 @@
      passable 1 : « Plus tard » (sur un vrai compte : donner un vrai devoir à
               une vraie classe, créer une vraie classe, ne s'impose pas) ;
      ferme    1 : « Suivant » referme la feuille ouverte ;
-     bouton   un bouton de plus dans la bulle (« exemple ») ;
+     ecrit    1 : le tuto écrit lui-même, sous les yeux, ce qu'il y a à
+              écrire (la première page d'un livre : `pageAuto`) — au
+              téléphone, le clavier qui s'ouvrait cachait tout ;
      carte    une carte au centre : « debut », ou la fin (`finDe`). */
 
 /* ---------- ce qu'on vise ---------- */
@@ -60,7 +62,6 @@ const LIVRE = ['.grid .tile:has(.due)', '.rows.lst .brow:has(.ldue) .lmain', '.g
 const JOURNAL = ['#rail nav [data-r="stats"]', '.top .goal'];
 const COURRIER = ['#rail nav [data-r="mail"]', '.top .icmail'];
 const FEUILLE = ['.menu:not(.sort)'];
-const SAISIE = ['#nm', '[data-nsubj]', '#cf', '#cb', '#cadd'];
 /* au téléphone, les onglets du bas ne sont que sur ces trois écrans */
 const ONGLETS_TEL = ['home', 'classes', 'commu'];
 /* sur un téléphone, les onglets n'ont que leur icône */
@@ -69,12 +70,13 @@ const ICONEZ = 'Touchez l’icône qui s’allume';
 
 /* ---------- l'élève : un livre, une page lue, créer, son journal, sa classe, ses amis, son courrier ---------- */
 const creation = [
-  /* sans livre, le premier se crée pour de bon : il faut bien quelque chose à lire */
+  /* sans livre, le premier se crée pour de bon : il faut bien quelque chose à lire ; ses pages,
+     le tuto les écrit sous les yeux (le clavier du téléphone cachait tout, demandé le 2026-10-29) */
   { id: 'nouveau', si: ['!livres'], ecran: 'home', cible: NOUVEAU, geste: 1, attend: { vue: 'import' },
     titre: 'Ton premier livre', texte: 'Un livre, ce sont des pages : la question, puis la réponse.', aide: 'Touche « Nouveau livre »' },
-  { id: 'page', si: ['!livres'], ecran: 'import', reprise: 'nouveau', cible: ['#comp'], trou: ['.cr-main'], permis: SAISIE,
-    geste: 1, saisie: 1, attend: { pages: 1 }, bouton: 'exemple',
-    titre: 'Écris ta première page', texte: 'Un titre, la question au recto, la réponse au verso.', aide: 'Puis « Ajouter la page »' },
+  { id: 'page', si: ['!livres'], ecran: 'import', reprise: 'nouveau', cible: ['#comp'], trou: ['.cr-main', '#dlist'],
+    ecrit: 1, attend: { ecrite: 1 },
+    titre: 'Ta première page', texte: 'La question au recto, la réponse au verso.' },
   { id: 'creer', si: ['!livres'], ecran: 'import', reprise: 'nouveau', cible: ['#ok'], geste: 1, attend: { vue: 'deck' },
     titre: 'Crée-le', texte: 'Tu ajouteras des pages quand tu voudras.', aide: 'Touche « Créer le livre »' }
 ];
@@ -256,10 +258,9 @@ export const SCENARIOS = {
 /* Ce que le moteur sait lire : un scénario qui écrirait autre chose aurait
    une étape qui ne finit jamais (test/tuto.test.js y veille). */
 export const CONNU = {
-  attend: ['vue', 'pages', 'feuille', 'sansFeuille', 'onglet', 'ref', 'retournee', 'notee', 'classes', 'details', 'donne'],
+  attend: ['vue', 'ecrite', 'feuille', 'sansFeuille', 'onglet', 'ref', 'retournee', 'notee', 'classes', 'details', 'donne'],
   tant: ['aLire', 'creable', 'feuille', 'classes', 'eleves'],
-  ecran: ['home', 'import', 'deck', 'study', 'stats', 'classes', 'commu', 'mail', 'prof', 'profclasse', 'ref:accueil'],
-  bouton: ['exemple']
+  ecran: ['home', 'import', 'deck', 'study', 'stats', 'classes', 'commu', 'mail', 'prof', 'profclasse', 'ref:accueil']
 };
 
 /* Le scénario de qui : `null` pour qui n'en a pas (l'éditeur). */
@@ -306,22 +307,23 @@ export function aideSelon(aide, souris, pc) {
 const prenom = p => String(p || '').trim().split(/\s+/)[0];
 
 /* Ce que dit la carte du début : à qui l'on parle (dans la démo, le rôle
-   qu'on vient de prendre), et le temps que ça prend. */
+   qu'on vient de prendre), et rien de plus — « Deux minutes pour faire le
+   tour » est parti le 2026-10-29 : un titre, un visage, un bouton. */
 const DEBUTS = {
-  perso: [p => (p ? `Bienvenue, ${p}` : 'Bienvenue sur Mirandola'), 'Deux minutes pour faire le tour de Mirandola.'],
-  classe: [p => (p ? `Bienvenue, ${p}` : 'Bienvenue'), 'Deux minutes pour faire le tour de Mirandola.'],
-  prof: [p => (p ? `Bonjour, ${p}` : 'Bonjour'), 'Deux minutes pour faire le tour de votre espace.'],
-  ref: [p => (p ? `Bonjour, ${p}` : 'Bonjour'), 'Une minute pour faire le tour de votre console.']
+  perso: p => (p ? `Bienvenue, ${p}` : 'Bienvenue sur Mirandola'),
+  classe: p => (p ? `Bienvenue, ${p}` : 'Bienvenue'),
+  prof: p => (p ? `Bonjour, ${p}` : 'Bonjour'),
+  ref: p => (p ? `Bonjour, ${p}` : 'Bonjour')
 };
 const DEBUTS_DEMO = {
-  classe: [(p, c) => `Tu es ${p || 'Léa'}${c ? `, en ${c}` : ''}`, 'Deux minutes pour voir Mirandola côté élève.'],
-  prof: [p => `Vous êtes ${p || 'Marc'}, professeur`, 'Deux minutes pour voir Mirandola côté professeur.'],
-  ref: [p => `Vous êtes ${p || 'Claire'}, référente`, 'Une minute pour voir Mirandola côté établissement.']
+  classe: (p, c) => `Tu es ${p || 'Léa'}${c ? `, en ${c}` : ''}`,
+  prof: p => `Vous êtes ${p || 'Marc'}, professeur`,
+  ref: p => `Vous êtes ${p || 'Claire'}, référente`
 };
 
 function quiEst(role, p, demo, classe) {
-  const [titre, texte] = (demo && DEBUTS_DEMO[role]) || DEBUTS[role] || DEBUTS.perso;
-  return { titre: titre(p, classe), texte };
+  const titre = (demo && DEBUTS_DEMO[role]) || DEBUTS[role] || DEBUTS.perso;
+  return { titre: titre(p, classe) };
 }
 
 /** @param {string} role @param {{ demo?: boolean, prenom?: string, classe?: string }} [ctx] */
@@ -349,40 +351,37 @@ const PLUS = [['spark', 'Ton cours, une photo ou un PDF : l’IA en fait des pag
 export function finDe(role, { demo, aPlus } = {}) {
   const eleve = role === 'perso' || role === 'classe';
   if (eleve && aPlus && !demo) {
-    return { cle: 'pret', titre: 'Tout est prêt', sous: 'Tes livres t’attendent',
+    return { cle: 'pret', titre: 'Tout est prêt',
       points: [['layers', 'Tes livres, partout'], ['chart', 'Ton journal, chaque jour'], ['users', 'Tes amis et tes défis']],
-      actions: [{ t: 'Commencer', fin: 1, pri: 1 }], note: 'Revois ce tuto dans les Réglages.' };
+      actions: [{ t: 'Commencer', fin: 1, pri: 1 }] };
   }
   if (eleve && demo) {
-    return { cle: 'plus', titre: 'Mirandola+', sous: 'Pour aller plus loin', points: PLUS,
+    return { cle: 'plus', titre: 'Mirandola+', points: PLUS,
       actions: [{ t: 'Créer mon compte', href: '/inscription', partir: 1, pri: 1 },
-        { t: 'Voir Mirandola+', href: '/#tarifs', partir: 1 }, { t: 'Continuer la démo', fin: 1 }],
-      note: 'Revois ce tuto depuis le bandeau, en bas.' };
+        { t: 'Voir Mirandola+', href: '/#tarifs', partir: 1 }, { t: 'Continuer la démo', fin: 1 }] };
   }
   if (eleve) {
-    return { cle: 'plus', titre: 'Mirandola+', sous: 'Pour aller plus loin', points: PLUS,
-      actions: [{ t: 'Découvrir Mirandola+', href: 'tarifs', pri: 1 }, { t: 'Terminer', fin: 1 }],
-      note: 'Revois ce tuto dans les Réglages.' };
+    return { cle: 'plus', titre: 'Mirandola+', points: PLUS,
+      actions: [{ t: 'Découvrir Mirandola+', href: 'tarifs', pri: 1 }, { t: 'Terminer', fin: 1 }] };
   }
   if (demo) {
-    return { cle: 'campus', titre: 'Mirandola Campus', sous: 'Pour tout votre établissement',
+    return { cle: 'campus', titre: 'Mirandola Campus',
       points: [['users', 'Espace professeur et devoirs suivis'], ['build', 'Console du référent'],
         ['spark', 'Mise en place accompagnée'], ['cal', 'Démo gratuite de 30 jours']],
       actions: [{ t: 'Essayer dans mon établissement', href: '/demande-demo', partir: 1, pri: 1 },
-        { t: 'Continuer la démo', fin: 1 }],
-      note: 'Revoyez ce tuto depuis le bandeau, en bas.' };
+        { t: 'Continuer la démo', fin: 1 }] };
   }
-  return { cle: 'pret', titre: 'Tout est prêt', sous: role === 'ref' ? 'Votre établissement est en place' : 'Vos classes vous attendent',
+  return { cle: 'pret', titre: 'Tout est prêt',
     points: role === 'ref'
       ? [['key', 'Deux codes qui changent seuls'], ['school', 'Les classes et les comptes'], ['money', 'La licence et les factures']]
       : [['key', 'Votre code, projeté en classe'], ['card', 'Des devoirs suivis page par page'], ['bolt', 'Des défis en direct']],
-    actions: [{ t: 'Commencer', fin: 1, pri: 1 }],
-    note: 'Revoyez ce tuto dans les Réglages.' };
+    actions: [{ t: 'Commencer', fin: 1, pri: 1 }] };
 }
 
-/* ---------- une page d'exemple, pour « Remplir pour moi » ----------
-   Trois pages tirées de la première matière choisie à l'accueil, sinon
-   des capitales : de quoi lire tout de suite, et un livre qu'on garde ou
+/* ---------- les pages que le tuto écrit lui-même ----------
+   Trois pages tirées d'une matière choisie à l'accueil (l'histoire d'abord :
+   « 1789, Prise de la Bastille » se comprend de tous), sinon des dates
+   d'histoire : de quoi lire tout de suite, et un livre qu'on garde ou
    qu'on supprime. La matière se reconnaît à son nom, sans casse ni accent. */
 /** @type {Array<[RegExp, string, string[][]]>} */
 const EXEMPLES = [
@@ -390,9 +389,10 @@ const EXEMPLES = [
   [/espagnol/, 'Vocabulaire espagnol', [['la casa', 'la maison'], ['el perro', 'le chien'], ['la playa', 'la plage']]],
   [/allemand/, 'Vocabulaire allemand', [['das Haus', 'la maison'], ['der Hund', 'le chien'], ['die Schule', 'l’école']]],
   [/italien/, 'Vocabulaire italien', [['la casa', 'la maison'], ['il cane', 'le chien'], ['la scuola', 'l’école']]],
-  [/geo/, 'Capitales d’Europe', [['Portugal', 'Lisbonne'], ['Hongrie', 'Budapest'], ['Norvège', 'Oslo']]],
+  /* « Histoire-géo » : l'histoire passe avant la géographie */
   [/histoire|hggsp/, 'Dates d’histoire', [['1789', 'Prise de la Bastille'], ['1848', 'Abolition de l’esclavage en France'],
     ['1944', 'Débarquement en Normandie']]],
+  [/geo/, 'Capitales d’Europe', [['Portugal', 'Lisbonne'], ['Hongrie', 'Budapest'], ['Norvège', 'Oslo']]],
   [/math/, 'Formules de maths', [['Aire d’un disque', 'π × r²'], ['Dérivée de x²', '2x'], ['(a + b)²', 'a² + 2ab + b²']]],
   [/physique|chimie/, 'Physique-chimie', [['Formule de l’eau', 'H₂O'], ['Unité de la force', 'le newton (N)'],
     ['Vitesse de la lumière', '300 000 km/s']]],
@@ -412,16 +412,28 @@ const EXEMPLES = [
   [/code de la route|route/, 'Code de la route', [['Panneau triangulaire', 'Danger'], ['Feu orange fixe', 'S’arrêter, sauf danger'],
     ['Distance de sécurité', 'Deux secondes au moins']]]
 ];
+const HISTOIRE = EXEMPLES.find(([re]) => re.test('histoire'));
 /** @type {[string, string[][]]} */
-const DEFAUT = ['Capitales d’Europe', [['Portugal', 'Lisbonne'], ['Hongrie', 'Budapest'], ['Norvège', 'Oslo']]];
+const DEFAUT = [HISTOIRE[1], HISTOIRE[2]];
 
 const cleMatiere = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const exempleDe = m => { const k = cleMatiere(m); return k ? EXEMPLES.find(([re]) => re.test(k)) : null; };
 
 export function exemple(matiere) {
-  const k = cleMatiere(matiere);
-  const trouve = k ? EXEMPLES.find(([re]) => re.test(k)) : null;
+  const trouve = exempleDe(matiere);
   const [titre, pages] = trouve ? [trouve[1], trouve[2]] : DEFAUT;
   return { titre, pages: pages.map(([f, b]) => ({ f, b })) };
+}
+
+/* Le premier livre que le tuto écrit : parmi les matières du compte,
+   l'histoire d'abord, sinon la première qui a ses exemples ; aucune, et le
+   livre est sans matière (des dates d'histoire rangées en « Musique » ne
+   voudraient rien dire). */
+/** @param {Array<{ id: string, name: string }>} [matieres] */
+export function pageAuto(matieres = []) {
+  const l = (matieres || []).filter(m => m && m.name);
+  const m = l.find(x => /histoire|hggsp/.test(cleMatiere(x.name))) || l.find(x => exempleDe(x.name));
+  return { matiere: m ? m.id : '', ...exemple(m ? m.name : '') };
 }
 
 /* Les textes qu'on montre, pour qu'un test veille à ce qu'ils restent courts. */

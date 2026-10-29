@@ -440,12 +440,16 @@ l'air de marcher ».
     émoji change d'un téléphone à l'autre et ne se personnalise pas ; les
     icônes viennent de `src/icones.js` (dont les 20 emblèmes, tracés de
     Lucide, licence ISC), les visages de `src/avatar.js`. L'éditeur
-    (« Mon jeton », `cercle-feuilles.js`) : au hasard, initiales, puis un
-    onglet par trait et le fond (la couleur du jeton).
+    (« Mon jeton », `cercle-feuilles.js`) : au hasard (`auHasard`, parmi tous
+    les choix), initiales, puis un onglet par trait et le fond (la couleur du
+    jeton) — les onglets et les grilles sont ceux de l'accueil
+    (`ongletsAvatar`, `grilleTrait` de `ui/jeton.js` : chaque choix dessiné sur
+    le visage en cours, agrandi sur le visage pour ce qui ne se voit que de
+    près, `DE_PRES` ; une couleur sur sa pastille, `TEINTES_TRAIT`).
 
     Aucun fichier, `core/` ou `ui/`, ne dépasse 800 lignes (les plus gros :
     `core/coeur-sync.js` 784, `bibliotheque.js` 744, `revision.js` 723).
-    **L'accueil d'un nouveau compte** (2026-10-26, refait le 2026-10-27) : vue
+    **L'accueil d'un nouveau compte** (2026-10-26, refait le 2026-10-27 et le 2026-10-29) : vue
     `bienvenue` (sans barre latérale), chargée à la demande par
     `ui/bienvenue-porte.js` (`bienvenueView`, `ouvrirBienvenue(mode, apres)`)
     — `ui/bienvenue.js` + `bienvenue.css`, préfixe `bv-` ; rien d'autre ne
@@ -453,9 +457,20 @@ l'air de marcher ».
     (enveloppe `.pub` : la lumière de la marque, le logo, titres en serif,
     cartes de verre ; un fil d'avancement qui glisse, `avancer`). Un
     particulier : « Je révise pour moi » / « J'ai un code », prénom et
-    pseudo, visage parmi six (`propositions`), niveau et matières
-    (`matieresApres` : les cochées remplacent les matières d'exemple, jamais
-    une qu'un livre emploie), objectif de pages par jour ; un élève de classe
+    pseudo, **son visage composé trait par trait** (rien au hasard : le sien
+    s'il en a un, sinon `NEUTRE` ; les quatorze onglets de `ONGLETS` et le
+    fond, un choix ne repeint que le visage et la grille), **son niveau puis
+    son année** (`ANNEES` : 6e à 3e, Seconde à Terminale, ou la filière du
+    supérieur — `anneeRequise`), **ses matières, celles de son année cochées
+    d'office** (`proposees(niveau, annee)` : `cochees` et `autres` ; la
+    philosophie n'est qu'en Terminale) et les siennes écrites à la main
+    (`ajouterMatiere`, `nomMatiere` : une proposée se coche, une nouvelle
+    s'ajoute ; une puce se coche sur place, sans redessiner l'écran),
+    `matieresApres` (les cochées remplacent les matières d'exemple, jamais
+    une qu'un livre emploie ; `prefs.niveau`, `prefs.annee`), objectif de
+    pages par jour. **Un titre par écran, rien dessous** (2026-10-29 : « Mes
+    livres, mon rythme », « Mon établissement, mon prof », « Tu révises pour
+    toi… », « Tu le changes quand tu veux… » sont partis) ; un élève de classe
     (`isPupil`) : son lycée et sa classe en tête (`.bv-ecole`, `school.org`,
     `school.classe`), son pseudo (son nom de classe affiché à côté, fixe) puis
     son visage. « J'ai un code » ouvre la feuille du code **par-dessus
@@ -482,9 +497,29 @@ l'air de marcher ».
     `ui/tuto-porte.js` (`lancerTuto`, `arreterTuto`, `maybeTuto`,
     `apresEntree`) — rien d'autre ne doit importer `ui/tuto.js` ; l'état en
     cours dans `tuto` (`src/data/etat.js`). Un voile, un trou sur ce qui
-    reste éclairé (`trou` : toute une feuille, un formulaire), un anneau qui
-    pulse sur la cible, une bulle d'une phrase : au téléphone toute la
-    largeur, sous ou sur le trou ; sur ordinateur à côté ; « Touche » au
+    reste éclairé (`trou` : toute une feuille, un formulaire ; plusieurs
+    sélecteurs s'unissent), un anneau qui pulse sur la cible, une bulle
+    d'une phrase. **Le voile est un SVG plein écran percé du trou** (refait
+    le 2026-10-29 : c'était l'ombre de 200vmax d'un élément tirée par des
+    transitions — des saccades au téléphone, un rectangle clair qui restait
+    sur l'écran d'après, un retard de 0,45 s au défilement), redessiné par
+    une seule boucle `requestAnimationFrame` (`image`) : le trou suit sa
+    cible sans retard, épouse ses coins (lus une fois, `coinsDe`), sans
+    marge ni liseré blanc ; d'une étape à l'autre sur le même écran il
+    glisse (`viser`, 340 ms), vers un autre écran il se ferme aussitôt
+    (`fermer`, `cleEcran`) et s'ouvre depuis son centre sur la nouvelle cible
+    (`resserre`). La géométrie, pure, dans `src/tuto-trou.js` (`forme`,
+    `chemin`, `mix`, `placeTel`, `placePc` ; `test/tuto-trou.test.js`). La
+    bulle se pose cachée à sa place puis paraît (elle ne traverse plus
+    l'écran), mesurée une fois par étape ; au téléphone toute la largeur,
+    sous ou sur le trou, et elle garde son côté tant qu'elle ne couvre pas
+    plus de 32 px de l'anneau ; sur ordinateur à côté. **Un appui à côté
+    n'anime plus la bulle** (elle tremblait à chaque appui) : l'anneau
+    s'éclaire une fois, pendant un geste seulement, au plus toutes les
+    1,5 s (`rappel`). Un champ qui prend le focus sans être à remplir le
+    rend aussitôt, même pendant qu'une étape se prépare (`gardeFocus`), et
+    l'écran de création ne donne plus le focus à son titre pendant le tuto :
+    plus de clavier qui s'ouvre et se referme ; « Touche » au
     doigt, « Clique sur » à la souris, l'icône qui s'allume au téléphone
     (`aideSelon(aide, souris, pc)`, `aide: { pc, tel }`). **Rien ne le
     contourne, sauf la croix, « Passer » et Échap** : une garde posée sur la
@@ -496,7 +531,7 @@ l'air de marcher ».
     glisse à cette étape (`glisse` : la page d'une lecture) ; le clavier ne
     garde que les raccourcis d'une lecture (`clavier`), jamais « annuler ».
     « Créer un nouveau livre » pendant qu'on choisit le livre d'un devoir, la
-    croix d'une feuille, un appui à côté : retenus, la bulle le rappelle. Le
+    croix d'une feuille, un appui à côté : retenus, l'anneau le rappelle. Le
     retour du navigateur ne fait sauter aucune étape : le tuto ramène à
     l'écran de l'étape (`ALLER`), ou revient à l'étape d'où l'on y entre
     (`reprise` : une lecture ne se rouvre pas d'une adresse, on revient à
@@ -507,8 +542,16 @@ l'air de marcher ».
     (300 ms). Sur un vrai compte, « Plus tard » (`passable`) dispense de
     créer une vraie classe ou de donner un vrai devoir ; pas dans la démo.
     Scénarios : **l'élève** (particulier et de classe) — ses livres (un
-    livre qui a des pages à lire, ou le premier qu'il crée : « Remplir pour
-    moi », trois pages de sa première matière), une flashcard lue, retournée,
+    livre qui a des pages à lire, ou le premier qu'il crée : **ses pages, le
+    tuto les écrit sous ses yeux**, étape `ecrit` — au téléphone le clavier
+    cachait tout, demandé le 2026-10-29 —, lettre à lettre et sans jamais
+    donner le focus à un champ, l'anneau sur le champ qu'il écrit : la
+    matière, le titre, « 1789 » au recto, « Prise de la Bastille » au verso,
+    « Ajouter la page », puis deux pages de plus (`ecrireSeul` de
+    `ui/tuto.js`, `pageAuto` de `src/tuto.js` : l'histoire d'abord parmi ses
+    matières, sinon une qui a ses exemples, sinon sans matière ;
+    `poserMatiere`/`poserPage` de `ui/creation.js` les posent sans redessiner
+    l'écran) ; puis « Crée-le »), une flashcard lue, retournée,
     notée (voile léger : la réponse se lit), « Mirandola s'en souvient » (un mot
     au centre), comment créer (« Nouveau livre », les cinq façons — dans la
     démo d'un élève, bibliothèque pleine : un mot seulement), son journal,
@@ -527,7 +570,13 @@ l'air de marcher ».
     prêt » ; **l'éditeur** — rien. La fin de la démo d'un professeur ou d'un
     référent : **Mirandola Campus**, la marque du site (le logo sur son carré de
     papier, l'école en écusson dégradé, « Campus » en italique dégradée, la
-    carte sombre au liseré qui tourne, comme Mirandola+). Il part une fois : à
+    carte sombre au liseré qui tourne, comme Mirandola+). Les cartes n'ont
+    plus de phrase sous leur titre (« Deux minutes pour faire le tour… »,
+    « Pour aller plus loin », « Revois ce tuto… » : partis le 2026-10-29). **La
+    fin se lit sur l'écran d'arrivée** (`versArrivee`) : un élève sur « Mes
+    livres », un professeur sur son tableau de bord, un référent sur
+    l'accueil de sa console — elle finissait dans le Courrier. Il s'en va en
+    fondu. Il part une fois : à
     la fin de l'accueil d'un élève, à la première connexion d'un professeur
     ou d'un référent (`maybeTuto(pret)` après `accueil()`, seulement sur
     l'écran d'arrivée et sans feuille ouverte), après une entrée par code
@@ -678,9 +727,11 @@ l'air de marcher ».
     navigateur continue d'envoyer ses écritures (`boot()` suit son cours,
     seul l'écran change ; ni `lienApresRole`, ni tuto, ni accueil). Puis on
     ouvre Mirandola par son icône et l'on s'y connecte : à sa première
-    ouverture sans session, l'écran de connexion dit « C'est installé. Plus
-    qu'à te connecter. » (`premiereOuverture`, jusqu'à la première
-    connexion, `noterConnexion`, `folio.install.connecte`). Si un jour une
+    ouverture sans session, l'écran de connexion dit « Bienvenue. » et non
+    « Bon retour. » (`premiereOuverture`, jusqu'à la première connexion,
+    `noterConnexion`, `folio.install.connecte`) — et rien dessous : « C'est
+    installé. Plus qu'à te connecter » et « Tes cours, reliés en livres »
+    sont partis le 2026-10-29 (`enTete` de `ui/connexion.js`). Si un jour une
     fiche de magasin est renseignée (`MAGASINS`), la porte mène à elle.
     L'invite d'installation de `ui/onboarding.js` (`installSheet`) ne sert
     plus qu'à l'ordinateur. Parcours `e2e/installation.e2e.js` ; les
@@ -868,7 +919,7 @@ l'air de marcher ».
   - `src/couleurs.js` — **les couleurs de l'app** (2026-10-27), sans dépendance : une couleur fait UN travail. L'**encre** habille ; l'**azur** (`AZUR`, six pas du plus clair au plus foncé, l'azur de la page d'accueil, jetons `--az1` à `--az6`) dit tout ce qui se compte — pages lues, régularité, rythme, mémoire (`MEMOIRE` : à lire sans couleur, puis `--az3`, `--az4`, `--az6`), objectif du jour, bilan d'une séance, classement, avancement d'un devoir, réussite d'une classe ; les **états** (`ETATS`, `--ok` `--ko` `--am`, assez sombres pour un petit texte sur leur propre teinte à 13 %) disent juste ou faux, à jour, en retard, attention, toujours avec une icône ou un mot ; le **nuancier** (`NUANCIER`, 14 teintes de reliure : Rouge, Orange, Moutarde, Olive, Vert, Canard, Ciel, Bleu, Marine, Violet, Prune, Rose, Cuir, Ardoise — `NOMS`) relie une matière, chaque teinte en cinq tons : `d` la reliure (dos, pastille, trait d'un graphique), `c` la couverture (fond d'un livre, papier d'une fiche), `b` son filet, `ci` l'encre sur la couverture (≥ 7:1), `f` la reliure foncée sous un chiffre blanc (≥ 4,5:1) — `sty()` de `core/coeur-sync.js` les pose en `--d --c --b --ci --f`. Les seize clés de la base (`subjects.color`) restent valables : `coral` et `amber`, qui doublaient une voisine, la rejoignent (`ALIAS`, `cleTeinte`) et ne se proposent plus ; `PALETTE` (de coeur-sync) répond à toutes ; `COLORS` donne les quatorze dans l'ordre où une matière nouvelle les reçoit (`SUCCESSION` : bleu, rouge, moutarde, vert, rose, ciel… ; `couleurLibre` de `src/matieres.js` prend la moins employée — dans l'ordre du nuancier, cinq matières créées de suite prenaient cinq voisines), le nuancier s'affiche dans l'ordre des teintes (`TEINTES`, `ui/menus-a.js`). Avant : ambre et jaune, indigo et violet, canard et cyan se confondaient (écart OKLab 2,8 à 4,5) et le vert voulait dire à la fois « juste », « relue », « jours lus », SVT et une classe. Pur et testé (`test/couleurs.test.js` : deux teintes à 10 au moins d'écart OKLab × 100, 5,5 pour un œil daltonien — Machado 2009 —, aucune reliure à moins de 8,5 de l'azur, contrastes, rampe d'azur à pas visibles, et les jetons de `app.css` identiques au module)
   - `src/jeton.js` — les jetons d'identité (2026-10-25) : 12 couleurs (chacune ≥ 4,5:1 avec du blanc, vérifié), 20 emblèmes (classes, clubs), le hachage stable qui tire un jeton par défaut de l'identifiant, les initiales (première lettre du premier et du dernier mot, jamais un chiffre en tête) — pur et testé (`test/jeton.test.js`). Rien n'est inventé à partir du nom : « CPGE ECP1 » donnait « CE1 » avec l'ancien sigle. Les 38 figures en émojis sont parties le 2026-10-25 : une personne a un avatar (`jetonPersonne` rend `avatar`, via `avatarDeCle`)
   - `src/pseudo.js` — les pseudos (2026-10-27) : la règle (`motif` : 3 à 20 caractères, minuscules, chiffres, point, tiret bas, une lettre en tête, une lettre ou un chiffre à la fin, jamais deux signes à la suite ; ni mot réservé — `RESERVES`, `PREFIXES` : « admin », « prof », « folio »… — ni grossier — `MOTS` comptés seuls, `RACINES` partout, chiffres lus comme des lettres), `saisie` (ce que le champ garde : sans accent, l'espace devient un point), `cle` (l'unicité au point et au tiret bas près), `proposer` (le prénom, sinon « lecteur »), `MESSAGES`. **Les listes sont mot pour mot celles de `pseudo_motif` en base** : `test/pseudo.test.js` les compare à la migration — en changer une, c'est changer les deux. Chargé seulement à la demande (la feuille du pseudo, l'accueil, la base locale). Pur et testé
-  - `src/avatar.js` — les avatars (2026-10-25) : un visage en SVG composé de sept traits (peau 6, coiffure 10, cheveux 8, yeux 5, bouche 5, accessoire 6, haut 8) sur la couleur du jeton. **Aucune migration** : il s'écrit dans `profiles.figure` déjà là, « av » + une lettre par trait (`ecrireAvatar`/`lireAvatar`, `^av[a-z]{7}$`, que `mon_jeton` et `visuels` acceptent tels quels) ; une ancienne figure (« renard ») donne l'avatar tiré de son nom, le même partout. Listes fermées, ni photo ni texte libre (des mineurs). Pur et testé (`test/avatar.test.js`)
+  - `src/avatar.js` — les avatars (2026-10-25, élargis le 2026-10-29 : « que tout le monde se sente concerné ») : un visage en SVG composé de **quatorze traits** sur la couleur du jeton — peau 14, coiffure 22 (dont sans cheveux, locks, nattes collées, macarons, crépue courte, hijab, turban), cheveux 18 (sous un hijab ou un turban, c'est la couleur du tissu, `couvert`, `nomOnglet`), yeux 10, bouche 10, chapeau 12 (`accessoire`), couleur du haut 16, puis sourcils 6, barbe 7, détails 7 (taches de rousseur, grain de beauté, vitiligo, fossettes), tenue 9, couleur des yeux 6, lunettes 7, bijoux 7 (dont l'appareil auditif) ; rien n'est réservé à un genre. **Aucune migration** : il s'écrit dans `profiles.figure` déjà là, « av » + une lettre par trait (`ecrireAvatar`/`lireAvatar`, `^av[a-z]{7,14}$` — la contrainte `^[a-z]{2,16}$` de la base, que `mon_jeton` et `visuels` acceptent tels quels, n'en laisse pas un de plus) ; les lettres de fin par défaut ne s'écrivent pas, et un choix nouveau s'ajoute toujours en FIN de sa liste (`AFFICHE` dit l'ordre où on les présente) : **un avatar d'avant garde sa clé et son dessin au pixel près** (vérifié sur 3 032 visages le 2026-10-29). Les lunettes (accessoire 1, 2) et les boucles (5) d'avant passent à leur trait (`normaliser`, même dessin) : on porte un bonnet ET des lunettes. Une ancienne figure (« renard ») donne l'avatar tiré de son nom, le même partout (`avatarDe` ne tire que parmi les choix d'avant). Listes fermées, ni photo ni texte libre (des mineurs). Pur et testé (`test/avatar.test.js`)
   - `src/defi.js` — les règles d'un défi en direct : jeux (QCM, vrai ou faux, réponse écrite), durées, nombre de questions, fabrication des questions depuis un livre, code à 6 chiffres et lien `?defi=`, statuts de la base, phase et chrono (décalage d'horloge compensé), places et podium — pur et testé (`test/defi.test.js`)
   - `src/journal.js` — le journal de lecture (2026-10-25), deux questions jamais mélangées : **ce que tu as fait** se lit dans le journal des révisions, où chaque ligne garde son contexte du moment (matière, livre, écart) — supprimer, fusionner, scinder, renommer un livre ou changer sa matière ne réécrit jamais le passé ; **ce que tu sais** se lit sur les cartes d'aujourd'hui (`savoir` : âges, maîtrise, rappel estimé FSRS, échéances). Une matière se reconnaît à son NOM (`cleNom`, sans casse ni accents) : un identifiant disparu garde le nom qu'il avait, deux matières du même nom n'en font qu'une. `PALIERS` (écarts 1/3/14/90 j) est passé à la base, qui ne fait que compter ; `rassembler` réunit la réponse de `journal()` et les révisions locales sans double compte (`connus`) ; jours en chaînes « AAAA-MM-JJ » dans le fuseau de l'appareil. `etatCarte` (l'âge d'une carte) y vit ; `cstate` de `ui/carte-media.js` en est l'équivalent historique. Pur et testé (`test/journal.test.js`, dont le scénario « 3 h de droit → changement de matière → fusion → suppression → recréation depuis un partage en anglais »)
   - `src/matieres.js` — une matière qui arrive d'un autre compte (devoir, lien, envoi à un ami) : retrouvée par son nom, créée sinon (identifiant libre, couleur la moins employée) ; sans nom, un identifiant n'est gardé que s'il existe ici (lien de sauvegarde du même compte). Pur et testé (`test/matieres.test.js`)
@@ -1040,7 +1091,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 120 Ko, CSS ≤ 25 Ko ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 48 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 126 Ko (les visages, 2026-10-29), CSS ≤ 25 Ko ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 48 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
