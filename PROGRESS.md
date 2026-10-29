@@ -19,7 +19,14 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-29 (soir, ter) · Tout est mirandola.fr : l'ancien
+DERNIER   2026-10-29 (soir, quater) · « IA indisponible » pour tous :
+          la fonction ai n'autorisait pas l'en-tête apikey que l'app
+          envoie — le navigateur n'envoyait jamais la demande (OPTIONS 200,
+          aucun POST). Corrigé et déployé (v12), avec des secours (Sonnet
+          5.5 puis Haiku 5.5 quand Sonnet 5 est surchargé) et un message
+          clair par panne (crédit épuisé, surcharge, réseau). Aucune tâche
+          cochée.
+Avant :   2026-10-29 (soir, ter) · Tout est mirandola.fr : l'ancien
           domaine (folioflashcard.online) et l'alias vercel.app de
           production renvoient tout vers mirandola.fr ; l'app installée
           là-bas reçoit un dernier service worker qui vide ses caches, se

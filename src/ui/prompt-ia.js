@@ -67,6 +67,7 @@ async function envoyer(n, ctx, message) {
   const p = P(), msg = String(message || '').trim();
   if (!msg || p.envoi || aiBusy) return;
   const hist = p.fil.filter(x => x.qui === 'moi').map(x => x.t.slice(0, 600)).slice(-HIST);
+  p.fil = p.fil.filter(x => x.qui !== 'err');          // une erreur d'avant ne vaut plus : on réessaie
   p.fil.push({ qui: 'moi', t: msg }); p.envoi = true; p.texte = ''; setAiBusy(true);
   dessiner(n);
   try {

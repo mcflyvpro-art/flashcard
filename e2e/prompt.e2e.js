@@ -145,3 +145,37 @@ test('un élève Campus sans IA : les trois onglets grisés, et pourquoi', async
   await expect(page.getByRole('tab', { name: 'Écrire' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#pimsg')).toHaveCount(0);
 });
+
+test('une professeure, et l’IA en panne : le message dit pourquoi, rien n’est compté, le message attend ; revenue, ça marche', async ({ page }) => {
+  const store = nouveauStore();
+  semerCompte(store, 'lucie@exemple.fr');
+  faireProfesseur(store, 'lucie@exemple.fr', 'Lucie MIRA');
+  sansTuto(store, 'lucie@exemple.fr');
+  await brancher(page, store);
+  await page.goto('./app');
+  await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
+  await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill('lucie@exemple.fr');
+  await page.getByRole('textbox', { name: 'Mot de passe' }).fill(MDP);
+  await page.getByRole('button', { name: 'Se connecter' }).click();
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'prof', { timeout: 10000 });
+  await page.goto('./prof/livres/nouveau');
+  await page.getByRole('tab', { name: 'Prompt' }).click({ timeout: 10000 });
+  await expect(reste(page, 'Prompt')).toHaveText('400', { timeout: 10000 });       // un professeur : 400 par mois
+
+  store.iaPanne = 'surcharge';
+  await page.locator('#pimsg').fill('to go = aller');
+  await page.getByRole('button', { name: 'Envoyer' }).click();
+  await expect(page.locator('.pi-b.err')).toContainText('L’IA est très demandée', { timeout: 10000 });
+  await expect(page.locator('#pimsg')).toHaveValue('to go = aller');
+  await expect(reste(page, 'Prompt')).toHaveText('400');
+
+  store.iaPanne = 'credit';
+  await page.getByRole('button', { name: 'Envoyer' }).click();
+  await expect(page.locator('.pi-b.err')).toContainText('L’IA fait une courte pause', { timeout: 10000 });
+
+  store.iaPanne = null;
+  await page.getByRole('button', { name: 'Envoyer' }).click();
+  await expect(page.locator('.pi-p')).toHaveCount(1, { timeout: 10000 });
+  await expect(page.locator('.pi-b.err')).toHaveCount(0);
+  await expect(reste(page, 'Prompt')).toHaveText('399');
+});

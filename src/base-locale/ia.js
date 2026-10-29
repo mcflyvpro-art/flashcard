@@ -8,6 +8,7 @@
    - « inverse… » échange recto et verso de toutes les pages ;
    - « enlève X » retire les pages qui parlent de X ;
    - sinon les pages du message s'ajoutent à celles qui sont là.
+   `store.iaPanne` joue une panne de la vraie (« credit », « surcharge »).
    La démo sans compte ne l'appelle jamais (l'IA y est fermée). */
 import { modele } from './classes.js';
 import { etab, orgDe } from './etablissement.js';
@@ -65,6 +66,8 @@ export function aiFaux(store, b, user) {
   if (ia.offre === 'gratuit') return [402, { error: 'plus' }];
   const mois = { fait: ia.fait, quota: ia.quota };
   if (ia.fait >= ia.quota) return [429, { error: 'mquota', quota: ia.quota, mois }];
+  // une panne jouée par un parcours (store.iaPanne : « credit », « surcharge »…) : rien n'est compté, comme en vrai
+  if (store.iaPanne) return [503, { error: store.iaPanne, mois }];
   const op = String(b.op || '');
   let r;
   if (op === 'prompt') r = retoucher((b.cards || []).map(c => ({ f: String(c.f || ''), b: String(c.b || '') })), String(b.message || ''));

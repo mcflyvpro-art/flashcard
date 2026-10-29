@@ -34,6 +34,11 @@
    comptée comme les autres. Toute réponse rend aussi le compte du mois
    (`mois` : fait, quota), que l'écran pose sur ses onglets.
 
+   Toujours disponible, autant que possible (2026-10-29) : si le modèle
+   principal est surchargé, la fonction réessaie sur deux autres (MODELES) ;
+   un crédit Anthropic épuisé répond « credit », une surcharge partout
+   « surcharge » — l'app les dit en clair, et rien n'est compté.
+
    verify_jwt est actif : seul un compte connecté peut appeler la fonction. */
 
 /* Appel HTTP direct plutôt que le SDK npm : dans le runtime Edge de Deno,
@@ -42,10 +47,20 @@
    jamais. curl/HTTP brut n'a pas ce problème. */
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const MODEL = "claude-sonnet-5";
-/* tarif Sonnet 5, en cents par token */
-const CENTS_IN = 200 / 1e6;
-const CENTS_OUT = 1000 / 1e6;
+/* Les modèles, dans l'ordre (2026-10-29 : « l'IA doit être dispo partout ») :
+   le principal, puis deux secours quand il est surchargé, limité, en panne
+   ou introuvable — 429, 529, 5xx, 404, une coupure réseau. Une erreur qui
+   ne tient pas au modèle (crédit épuisé, clé refusée, requête refusée)
+   s'arrête au premier : un autre modèle du même compte n'y changerait rien.
+   Tarifs en cents par token, pour ai_usage et le budget du mois. */
+const MODELES = [
+  { id: "claude-sonnet-5", entree: 200 / 1e6, sortie: 1000 / 1e6 },
+  { id: "claude-sonnet-5-5", entree: 200 / 1e6, sortie: 1000 / 1e6 },
+  { id: "claude-haiku-5-5", entree: 10 / 1e6, sortie: 50 / 1e6 },
+];
+const REESSAYER = new Set([404, 408, 409, 429, 500, 502, 503, 504, 529]);
+/* Une fonction vit 150 s : passé ce temps, on ne lance plus de secours. */
+const BUDGET_MS = 75_000;
 
 const BUDGET_CENTS = Math.round(Number(Deno.env.get("AI_BUDGET_USD") ?? 20) * 100);
 const DAILY_CALLS = Number(Deno.env.get("AI_DAILY_CALLS") ?? 30);
@@ -69,7 +84,11 @@ const IMG_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, content-type",
+  // l'app envoie aussi « apikey » (comme paiement et magasins) : sans lui ici,
+  // le navigateur refusait d'envoyer la requête après le contrôle préalable
+  // (OPTIONS 200, aucun POST) — « IA indisponible » pour tout le monde
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Max-Age": "86400",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const json = (body: unknown, status = 200) =>
@@ -83,6 +102,47 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   { auth: { persistSession: false } },
 );
+
+type Essai =
+  | { ok: true; data: { usage?: { input_tokens?: number; output_tokens?: number }; content?: unknown; parsed_output?: unknown }; modele: (typeof MODELES)[number] }
+  | { ok: false; erreur: string; statut: number };
+
+/* Un appel à l'API Messages, modèle par modèle (MODELES). Ce qui revient
+   d'Anthropic en erreur part au journal de la fonction (le type et le
+   message de l'API, jamais la demande de l'élève). */
+async function demander(corps: Record<string, unknown>, key: string): Promise<Essai> {
+  const debut = Date.now();
+  let dernier: Essai = { ok: false, erreur: "upstream", statut: 502 };
+  for (const [i, modele] of MODELES.entries()) {
+    if (i && Date.now() - debut > BUDGET_MS) break;
+    if (i) await new Promise((r) => setTimeout(r, 400 * i));
+    let res: Response;
+    try {
+      res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({ ...corps, model: modele.id }),
+      });
+    } catch (e) {
+      console.error("anthropic réseau", modele.id, e instanceof Error ? e.message : e);
+      dernier = { ok: false, erreur: "upstream", statut: 502 };
+      continue;
+    }
+    if (res.ok) return { ok: true, data: await res.json(), modele };
+    const texte = await res.text().catch(() => "");
+    let type = "";
+    try { type = JSON.parse(texte)?.error?.type ?? ""; } catch { /* corps illisible : le statut suffit */ }
+    console.error("anthropic", modele.id, res.status, type, texte.slice(0, 300));
+    // le crédit du compte Anthropic : 402 billing_error (ou un 400 qui le dit, sur une API plus ancienne)
+    if (res.status === 402 || type === "billing_error" || /credit balance/i.test(texte)) {
+      return { ok: false, erreur: "credit", statut: 503 };
+    }
+    if (res.status === 401 || res.status === 403) return { ok: false, erreur: "nokey", statut: 503 };
+    if (!REESSAYER.has(res.status)) return { ok: false, erreur: "upstream", statut: 502 };
+    dernier = { ok: false, erreur: res.status === 429 || res.status === 529 ? "surcharge" : "upstream", statut: 503 };
+  }
+  return dernier;
+}
 
 /* le gateway a déjà validé le JWT ; on ne lit que le sujet */
 function uidOf(req: Request): string | null {
@@ -315,41 +375,26 @@ Deno.serve(async (req) => {
     ? [{ type: "text", text: messagePrompt(message, actuelles, hist, hint) }]
     : [{ type: "text", text: (hint ? `Consigne : ${hint}\n\n` : "") + "Texte :\n\n" + text }];
 
-  let res: Response;
-  try {
-    res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 16000,
-        system: op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM,
-        thinking: { type: "adaptive" },
-        output_config: {
-          // lire une page, ou suivre une consigne sur tout un paquet, demande plus d'attention
-          effort: isFile || op === "prompt" ? "medium" : "low",
-          format: { type: "json_schema", schema: op === "prompt" ? SCHEMA_PROMPT : SCHEMA },
-        },
-        messages: [{ role: "user", content }],
-      }),
-    });
-  } catch (e) {
-    console.error("fetch anthropic", e instanceof Error ? e.message : e);
-    return json({ error: "upstream" }, 502);
+  const essai = await demander({
+    max_tokens: 16000,
+    system: op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM,
+    thinking: { type: "adaptive" },
+    output_config: {
+      // lire une page, ou suivre une consigne sur tout un paquet, demande plus d'attention
+      effort: isFile || op === "prompt" ? "medium" : "low",
+      format: { type: "json_schema", schema: op === "prompt" ? SCHEMA_PROMPT : SCHEMA },
+    },
+    messages: [{ role: "user", content }],
+  }, key);
+  // rien n'est compté : le mois reste tel quel
+  if (!essai.ok) {
+    return json({ error: essai.erreur, mois: { fait: myMonth ?? 0, quota: sansOffre ? null : mensuel } }, essai.statut);
   }
-  if (!res.ok) {
-    console.error("anthropic status", res.status, await res.text().catch(() => ""));
-    return json({ error: "upstream" }, 502);
-  }
-  const data = await res.json();
+  const data = essai.data;
 
   const inTok = data.usage?.input_tokens ?? 0;
   const outTok = data.usage?.output_tokens ?? 0;
-  const cents = inTok * CENTS_IN + outTok * CENTS_OUT;
+  const cents = inTok * essai.modele.entree + outTok * essai.modele.sortie;
   admin.from("ai_usage").insert({
     user_id: uid, day: today, op,
     in_tok: inTok, out_tok: outTok, cents: cents.toFixed(4),

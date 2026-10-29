@@ -3,7 +3,7 @@ import { I, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import { aLire } from '../file.js';
 import {
-  actx, auth, booted, db, demoEtab, dirty, fnr, gone, ia, prefs, prefsTimer, setActx, setBooted, setIa,
+  actx, auth, booted, db, demoEtab, dirty, fnr, gone, ia, myRole, prefs, prefsTimer, setActx, setBooted, setIa,
   setPrefsTimer, setTt, tt
 } from '../data/etat.js';
 import { compter } from '../ia-mois.js';
@@ -26,25 +26,35 @@ export const AIERR = {
   big: 'Fichier trop lourd', mime: 'Format non reconnu',
   nokey: 'IA non configurée', empty: 'Rien à extraire',
   plus: 'L’IA est dans Mirandola+', mquota: 'Ton IA du mois est épuisée : la suite le 1er',
-  demo: 'Avec un compte Mirandola'
+  demo: 'Avec un compte Mirandola',
+  // ce que la fonction ai rend quand rien n'a marché (2026-10-29) : rien n'est compté
+  surcharge: 'L’IA est très demandée : réessaie dans une minute',
+  credit: 'L’IA fait une courte pause : réessaie un peu plus tard',
+  'credit-admin': 'Crédit Anthropic épuisé : recharge-le (console Anthropic, Billing)',
+  upstream: 'IA indisponible : réessaie dans un instant',
+  net: 'Connexion à l’IA impossible : vérifie ta connexion'
 };
+
+/* Le crédit Anthropic épuisé : l'éditeur, lui, apprend quoi faire. */
+const codeErreur = e => (e === 'credit' && myRole === 'admin' ? 'credit-admin' : e || 'upstream');
 
 /* `tout` : la note du Prompt avec les pages ({ cards, note }). Chaque réponse
    rend le compte du mois (`mois`), posé sur les onglets de la création. */
 export async function aiCall(payload, tout) {
   if (demoEtab) throw new Error('demo');     // l'IA est réservée aux comptes : la démo ne l'appelle jamais
   if (auth && auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
+  // une requête qui ne part pas (réseau coupé, refusée par le navigateur) se dit comme telle
   const call = () => fetch(SB.url + '/functions/v1/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: SB.key,
                Authorization: 'Bearer ' + (auth && auth.token) },
     body: JSON.stringify(payload)
-  });
+  }).catch(() => { throw new Error('net'); });
   let r = await call();
   if (r.status === 401 && auth && auth.refresh && await refreshToken()) r = await call();
   const j = await r.json().catch(() => ({}));
   if (j.mois) setIa(compter(ia, j.mois));
-  if (!r.ok) throw new Error(j.error || 'net');
+  if (!r.ok) throw new Error(codeErreur(j.error));
   const cards = (j.cards || []).map(c => ({
     f: String(c.f || '').replace(/[\t\r\n]+/g, ' ').trim(),
     b: String(c.b || '').replace(/[\t\r\n]+/g, ' ').trim()
