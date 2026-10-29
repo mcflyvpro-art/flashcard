@@ -22,6 +22,7 @@ import { toast } from './import-cartes.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { askFriend } from '../core/reglages-corbeille.js';
 import { ouvrirPseudo } from './pseudo-porte.js';
+import { garder, lire, oublier } from '../lien-garde.js';
 
 /* ══════════ les feuilles du cercle, et ses gestes ══════════
    Une seule entrée `cc` dans la table des menus (menus-a.js) ; laquelle
@@ -354,10 +355,9 @@ export function consumeClub(connecte) {
     p.delete('club');
     history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
   }
-  try { k = k || sessionStorage.getItem('folio.club') || ''; } catch (e) { /* stockage indisponible : le code ne survivra pas à la connexion */ }
+  k = k || lire('folio.club');
   if (!k) return false;
-  try { connecte ? sessionStorage.removeItem('folio.club') : sessionStorage.setItem('folio.club', k); }
-  catch (e) { /* idem */ }
+  connecte ? oublier('folio.club') : garder('folio.club', k);             // src/lien-garde.js
   if (!connecte) return false;
   if (cercle.clubs === null) clubsPull();
   cercle.code = codeClubLisible(k);

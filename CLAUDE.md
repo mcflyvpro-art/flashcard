@@ -148,9 +148,15 @@ l'air de marcher ».
     `ui/cercle-feuilles.js`, `ui/defi-nouveau.js`, `ui/direct-porte.js`,
     `ui/jeton.js`, `ui/balayage.js`, `ui/mouvement.js`, `ui/reordonner.js` (le glisser-déposer des pages d'un livre, sorti de `connexion.js` qui touchait les 800 lignes), `ui/liens-entrants.js` (**la porte de
     tout lien entrant** : `lienAvantSession()` au démarrage — sans
-    session, les codes `?rejoindre=`/`?defi=`/`?club=` rangés en
-    `sessionStorage` (`folio.rejoindre`, `folio.defi`, `folio.club`) —,
-    `lienApresRole()` depuis `accueil()` — et `?plus=` (l'écran Mirandola+ : un
+    session, les codes `?rejoindre=`/`?defi=`/`?club=` gardés une heure
+    pour l'origine (`src/lien-garde.js`, `localStorage` `folio.rejoindre`,
+    `folio.defi`, `folio.club` — depuis le 2026-10-29 : l'e-mail de
+    confirmation d'une inscription s'ouvre souvent dans un autre onglet) —,
+    `lienApresRole()` depuis `accueil()` — sauf pour un élève qui commence
+    (accueil pas fait, ou tuto en cours : `commence()`) : le code d'une
+    classe, l'accueil le prend lui-même et s'ouvre sur le nom et la classe ;
+    une partie ou un club passent quand le tuto s'en va pour de bon
+    (`premiers-pas-finis`, `arreter(true)` de `ui/tuto.js`) — et `?plus=` (l'écran Mirandola+ : un
     bouton du site, le retour de Stripe, `consumePlus`, rangé en
     `folio.plus` sans session) —, et `traiterLienEntrant(url)` pour un
     lien reçu app ouverte : c'est là que se branche `appUrlOpen` de Capacitor ;
@@ -161,7 +167,8 @@ l'air de marcher ».
     une PWA n'intercepte jamais un lien et ne partage pas le stockage de
     Safari ; sur Android, `confierPassage`/`reprendrePassage` font passer le
     code à l'app installée par `localStorage['folio.passage']`, une heure au
-    plus), `ui/bridage.js`
+    plus ; sur ordinateur, rien à recopier : le code et « Après la
+    connexion », sur une ligne, `.passage.pc`), `ui/bridage.js`
     (ce que Mirandola gratuit n'ouvre pas, voir « Mirandola+ » plus bas),
     `ui/pwa-porte.js` (**la porte d'installation**, voir plus bas), et trois morceaux chargés à la demande, l'espace professeur,
     l'écran d'une partie en direct et le journal de lecture — voir plus bas).
@@ -383,7 +390,12 @@ l'air de marcher ».
     libres), qui ouvre « Mes places » (feuille `places` : l'IA du mois, la
     fin, la demande en cours, « Commander des places », `prof_commander`) ;
     ses élèves passent par la **salle d'attente** (onglet Demandes d'une
-    classe : « Accepter », « Refuser » — la place revient —, « Bloquer »). Plus de code
+    classe : « Accepter », « Refuser » — la place revient —, « Bloquer »),
+    qu'il **voit se remplir sans recharger** (2026-10-29 : `attentePull` de
+    `core/espace-prof.js`, toutes les 6 s sur son espace — sa licence dit
+    combien attendent, rien ne se repeint si rien n'a bougé —, et « Un élève
+    attend votre validation ») ; côté élève, « Mes classes » relit une
+    demande en attente toutes les 6 s (validée ou refusée, il le voit). Plus de code
     par classe à l'écran, ni d'interrupteurs d'inscription (seules restent
     les places d'une classe de professeur particulier). Ces feuilles se
     lisent dans `FEUILLES_ETAB`, consulté **dans** `paintMenuProf`, jamais
@@ -501,8 +513,18 @@ l'air de marcher ».
     (`isPupil`) : son lycée et sa classe en tête (`.bv-ecole`, `school.org`,
     `school.classe`), son pseudo (son nom de classe affiché à côté, fixe) puis
     son visage. « J'ai un code » ouvre la feuille du code **par-dessus
-    l'accueil** (refermée, on y est encore) ; entré, `apresEntree()` le
-    reprend en élève de sa classe. À la fin — « Passer » compris —, **le tuto
+    l'accueil** (refermée, on y est encore) ; entré, **l'accueil continue
+    sur place** (`ouvrirCode(code, { entre })` : la feuille rend la main à
+    `entreParCode`, après avoir relu l'offre, l'établissement et ses
+    classes) en élève de sa classe — il ne repart plus au choix « Je révise
+    pour moi / J'ai un code » (2026-10-29). Chez un professeur particulier,
+    l'élève **attend sur son accueil** (étape `attente` : « En attente de
+    Lucie MIRA », une horloge, « Annuler ma demande » ; ses classes relues
+    toutes les 4 s) : validé, l'accueil continue (pseudo, visage) puis le
+    tuto de la classe ; refusé, il revient au choix. Le prénom donné avec le
+    code devient `prefs.name` (le tuto le salue). Un code de classe tapé
+    sur le site avant d'avoir un compte (`src/lien-garde.js`) ouvre la
+    feuille dès l'arrivée, sur le nom et la classe (`reprendreCode`). À la fin — « Passer » compris —, **le tuto
     prend le relais** (`apres`, pour l'un comme pour l'autre). Le pseudo suit
     la règle de `src/pseudo.js` pendant la frappe, la base dit s'il est libre
     (`pseudo_libre`), « Continuer » le vérifie avant d'avancer, et il part à
@@ -607,7 +629,11 @@ l'air de marcher ».
     la fin de l'accueil d'un élève, à la première connexion d'un professeur
     ou d'un référent (`maybeTuto(pret)` après `accueil()`, seulement sur
     l'écran d'arrivée et sans feuille ouverte), après une entrée par code
-    (`apresEntree`) ; vu dès qu'il commence (`prefs.tuto`), « Passer » dit où
+    (`apresEntree`) ; un élève de classe au sens des premiers pas
+    (`eleveDeClasse()` de `ui/classement.js` : un élève d'établissement, ou
+    l'élève inscrit d'un professeur particulier sous licence — Campus) a
+    l'accueil et le scénario de la classe (`#tu[data-role="classe"]`), qui
+    finit sur « Tout est prêt » et sa classe, jamais sur Mirandola+ ; vu dès qu'il commence (`prefs.tuto`), « Passer » dit où
     le retrouver ; **« Revoir le tuto »** dans les Réglages (`data-act="tuto"`,
     ceux du référent compris, pas l'éditeur). Parcours `e2e/tuto.e2e.js`
     (dont la démo : « Créer un nouveau livre », la croix, le retour du
@@ -932,6 +958,7 @@ l'air de marcher ».
     qui le faisaient) : ce qui est là s'affiche, la relecture arrive
     par-dessus. `resetSession()` remet la synchro à zéro (`oublierSynchro`).
   - `src/ia-mois.js` — l'IA du mois sur les onglets de la création (2026-10-29), sans dépendance : `etatIA(ia, offre)` (`plus` pour Mirandola gratuit, `inconnu` tant que la base n'a rien dit — rien de posé ni de fermé : la fonction `ai` tranchera —, `ferme` pour un quota de 0 avec `messageFerme`, `ouvert` ou `epuise` avec le reste, sa part et la phrase du survol), `compter` (le `mois` d'une réponse de `ai`) — pur et testé (`test/ia-mois.test.js`)
+  - `src/lien-garde.js` — les codes qui attendent la connexion (2026-10-29), sans dépendance : `garder`, `lire`, `oublier`, `prendre` ; `localStorage` (l'origine, pas l'onglet : l'e-mail de confirmation s'ouvre souvent ailleurs), une heure au plus, repris une fois ; un code rangé par une version d'avant (`sessionStorage`, le texte seul) se lit encore
   - `src/cout-ia.js` — ce que coûte l'IA d'une licence (2026-10-29), sans dépendance : `coutIA({ profs, eleves, iaProf, iaEleve, moyenne })` (toutes les générations accordées pour un mois, fois le coût moyen d'une génération — `admin_cout_ia`, sinon `PAR_GENERATION_DEFAUT` —, au mois et à l'an : un plafond), `eurosDe` — pur et testé (`test/cout-ia.test.js`), lu par la console de l'éditeur pendant la saisie d'un quota
   - `src/tarifs.js` — le prix d'une licence d'établissement (2026-10-28),
     sans dépendance : `TRANCHES`, `MINIMUM`, `detailCampus`, `prixCampus`,
@@ -1121,7 +1148,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 126 Ko (les visages, 2026-10-29), CSS ≤ 25 Ko ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 48 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 127 Ko (les visages, puis les codes qui attendent la connexion, 2026-10-29), CSS ≤ 25 Ko ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 48 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans

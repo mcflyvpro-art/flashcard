@@ -163,6 +163,21 @@ export function licencePull() {
   return licenceEnCours;
 }
 
+/* La salle d'attente d'un professeur particulier, relue seule (2026-10-29) :
+   un élève qui tape son code apparaît sans qu'il recharge. Sa licence dit
+   combien attendent ; rien n'a bougé, rien ne se repeint. Rend le nombre
+   d'arrivées depuis la dernière lecture. */
+export async function attentePull() {
+  if (atSchool() || !prof.licence) return 0;
+  try {
+    const l = await rpc('prof_licence') || false, avant = prof.licence || {};
+    if (l && l.attente === avant.attente && l.inscrits === avant.inscrits && l.prises === avant.prises) return 0;
+    prof.licence = l;
+    await profPull();                            // les compteurs de chaque classe (en attente), et l'écran
+    return Math.max(0, ((l && l.attente) || 0) - (avant.attente || 0));
+  } catch (e) { return 0; }                      // panne passagère : le prochain tour réessaie
+}
+
 /* Les classes de l'établissement, pour choisir les siennes. */
 export async function classesEtabPull() {
   try { prof.etabClasses = await rpc('prof_classes_etab') || []; } catch (e) { prof.etabClasses = prof.etabClasses || []; }

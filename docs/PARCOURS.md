@@ -262,12 +262,19 @@ reporter dans le registre des traitements de son établissement.
    l'installation d'abord), **créent leur propre compte**, et, à leur
    accueil, « J'ai un code » : le code, leur prénom et leur nom, sa classe.
    Ils sont en **salle d'attente** : une place est réservée, Mirandola Campus
-   est déjà ouvert.
+   est déjà ouvert ; l'élève attend sur son accueil (« En attente de … »,
+   « Annuler ma demande »). Un code tapé sur le site avant d'avoir un compte
+   l'attend une heure : connecté, l'accueil s'ouvre sur le prénom, le nom et
+   la classe.
 5. **Il accepte** dans la classe → onglet **Demandes** (« Accepter », « Tout
-   accepter ») : l'élève est dans la classe, la place reste prise. Un nom
-   faux ou inconnu : **Refuser** — la place revient, l'élève retombe en
-   Mirandola gratuit et reçoit un mot (« vérifie ton prénom et ton nom, puis
-   entre de nouveau son code »). Bloquer l'empêche de redemander.
+   accepter ») — il voit l'élève arriver sans recharger (« Un élève attend
+   votre validation ») : l'élève est dans la classe, la place reste prise,
+   et son accueil continue de lui-même (pseudo, visage), puis le tuto de la
+   classe, sans Mirandola+ à la fin. Un nom faux ou inconnu : **Refuser** —
+   la place revient, l'élève revient au choix « Je révise pour moi / J'ai un
+   code », retombe en Mirandola gratuit et reçoit un mot (« vérifie ton
+   prénom et ton nom, puis entre de nouveau son code »). Bloquer l'empêche
+   de redemander.
 6. **Plus de place** : le code dit « Ton professeur n'a plus de place ». Il
    touche ses places → « Commander des places » (combien, un mot) : tu vois
    « places demandées » en haut de ta console et dans sa fiche, où la

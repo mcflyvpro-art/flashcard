@@ -1,5 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
-import { auth, setView, view } from '../data/etat.js';
+import { auth, demoEtab, myRole, prefs, setView, tuto, view } from '../data/etat.js';
 import { render } from './bibliotheque.js';
 import { boot, consumeHash } from './onboarding.js';
 import { consumeRejoindre } from './eleve-classes.js';
@@ -66,15 +66,30 @@ export async function rangerLiens() {
   consumePlus(false);
 }
 
+/* Un élève qui commence (2026-10-29) : son accueil n'est pas fait, ou son
+   tuto tourne. Ses codes attendent : celui d'une classe ouvre son accueil
+   sur le nom et la classe (ui/bienvenue.js le reprend lui-même) ; une
+   partie ou un club passent après le tuto (`premiers-pas-finis`). */
+// comme ui/tuto-porte.js (premiereFois) : l'accueil ne s'ouvre qu'à qui n'a vu ni lui ni le tuto
+const commence = () => !demoEtab && myRole === 'eleve' && ((!prefs.bienvenue && !prefs.tuto) || !!tuto);
+
 /* Une fois le rôle connu (un code de classe ne veut pas dire la même chose
    pour un professeur et pour un élève) : la classe, la partie, le club. */
 export async function lienApresRole() {
   if (aInstaller()) return false;      // devant la porte d'installation : le code attend l'app installée (ui/pwa.js)
+  if (commence()) { await rangerLiens(); return false; }     // ceux de l'adresse aussi : gardés pour plus tard
   if (consumeRejoindre()) return true;
   if (await consumeDefi(true)) return true;
   if (consumeClub(true)) return true;
   return consumePlus(true);
 }
+
+/* Les premiers pas finis (le tuto s'en va pour de bon, ui/tuto.js) : ce
+   qui attendait passe. Un peu plus tard : un tuto qui se relance aussitôt
+   (le bandeau, les Réglages) n'est pas une fin. */
+document.addEventListener('premiers-pas-finis', () => setTimeout(() => {
+  if (auth && view.name !== 'login' && !commence()) lienApresRole();
+}, 400));
 
 /* Un lien reçu alors que l'app est déjà ouverte (Capacitor, ou tout appel
    qui fournit une URL). Son `search` et son `hash` remplacent ceux de

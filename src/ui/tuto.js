@@ -13,7 +13,7 @@ import { rangerClasses } from '../classe.js';
 import { aideSelon, debutDe, ecransDe, etapes, finDe, pageAuto, quelRole } from '../tuto.js';
 import { chemin, doux, forme, mix, placePc, placeTel, resserre } from '../tuto-trou.js';
 import { allerClasses, aUneClasse, go, monIdent } from './bibliotheque.js';
-import { atSchool, isPupil } from './classement.js';
+import { atSchool, eleveDeClasse } from './classement.js';
 import { commuPull } from './cercle.js';
 import { refAller } from './etablissement.js';
 import { avatar } from './jeton.js';
@@ -156,8 +156,8 @@ const prenomDe = () => (compte && compte.nom) || prefs.name || (me && me.name) |
 const classeDe = () => ((eleve.classes || []).find(c => c.statut === 'inscrit') || {}).nom || '';
 
 export async function lancer(o = {}) {
-  arreter();
-  const role = quelRole({ role: myRole, eleveDeClasse: isPupil(), prof: myRole === 'prof', referent: myRole === 'ref' && atSchool() });
+  arreter(false);
+  const role = quelRole({ role: myRole, eleveDeClasse: eleveDeClasse(), prof: myRole === 'prof', referent: myRole === 'ref' && atSchool() });
   if (!role) return;
   setTuto({ role, attente: true });     // en route : la porte ne relance rien entre-temps
   closeMenu();
@@ -176,7 +176,11 @@ export async function lancer(o = {}) {
 
 /* Le tuto s'en va en fondu (le voile ne disparaît pas d'un coup) ; ses
    gardes, elles, partent tout de suite : l'app répond dès cet instant. */
-export function arreter() {
+/* `fini` : le tuto s'en va pour de bon (pas relancé) — les codes qui
+   attendaient la fin des premiers pas (une partie, un club tapés sur le
+   site avant d'avoir un compte) peuvent passer (ui/liens-entrants.js). */
+export function arreter(fini = true) {
+  const etait = !!(t || tuto);
   clearInterval(minuteur); minuteur = 0;
   cancelAnimationFrame(boucle); boucle = 0;
   if (racine) {
@@ -189,6 +193,7 @@ export function arreter() {
   document.documentElement.classList.remove('tu-actif');
   for (const [type, f] of GARDES) window.removeEventListener(type, f, true);
   t = null; setTuto(null);
+  if (fini && etait) document.dispatchEvent(new Event('premiers-pas-finis'));
 }
 
 function passer() {
@@ -215,6 +220,7 @@ const SVG = 'http://www.w3.org/2000/svg';
 function monter() {
   racine = document.createElement('div');
   racine.id = 'tu'; racine.className = 'tu';
+  if (t) racine.dataset.role = t.role;          // le scénario : perso, classe, prof, ref
   racine.innerHTML = `<svg class="tu-ombre" aria-hidden="true" xmlns="${SVG}"><path fill-rule="evenodd"/></svg>`
     + '<i class="tu-flou"></i><i class="tu-anneau"></i>'
     + ['h', 'b', 'g', 'd', 'trou'].map(k => `<i class="tu-blk" data-c="${k}"></i>`).join('')

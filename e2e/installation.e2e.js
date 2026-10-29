@@ -170,17 +170,18 @@ test.describe('l’app installée', () => {
     await page.evaluate(() => localStorage.setItem('folio.passage', JSON.stringify({ 'folio.defi': '482913', at: Date.now() })));
     await page.reload();
     await expect(titre).toHaveText('Bienvenue.', { timeout: 10000 });
-    const repris = await page.evaluate(() => [sessionStorage.getItem('folio.defi'), localStorage.getItem('folio.passage')]);
+    // gardé une heure pour l'origine, comme tout code qui attend la connexion (src/lien-garde.js)
+    const repris = await page.evaluate(() => [JSON.parse(localStorage.getItem('folio.defi') || '{}').v, localStorage.getItem('folio.passage')]);
     expect(repris).toEqual(['482913', null]);
 
     // une heure plus tard, un code oublié ne ressurgit pas
     await page.evaluate(() => {
-      sessionStorage.removeItem('folio.defi');
+      localStorage.removeItem('folio.defi');
       localStorage.setItem('folio.passage', JSON.stringify({ 'folio.defi': '111111', at: Date.now() - 2 * 3600e3 }));
     });
     await page.reload();
     await expect(titre).toHaveText('Bienvenue.', { timeout: 10000 });
-    expect(await page.evaluate(() => sessionStorage.getItem('folio.defi'))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem('folio.defi'))).toBeNull();
 
     // après la première connexion, l'écran de connexion n'en parle plus
     await inscrire(page);

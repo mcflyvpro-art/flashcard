@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I } from '../icones.js';
 import { demoEtab, menu, myRole, prefs, tuto, view } from '../data/etat.js';
-import { atSchool, isPupil } from './classement.js';
+import { atSchool, eleveDeClasse } from './classement.js';
 import { ouvrirBienvenue } from './bienvenue-porte.js';
 import { toast } from './import-cartes.js';
 import { aInstaller } from './pwa-porte.js';
@@ -42,7 +42,7 @@ function premiereFois() {
   if (!eleve && myRole !== 'prof' && !(myRole === 'ref' && atSchool())) return;
   if (eleve && !prefs.bienvenue) {
     if (!['home', 'classes'].includes(view.name)) return;
-    return ouvrirBienvenue(isPupil() ? 'classe' : 'perso', () => lancerTuto());
+    return ouvrirBienvenue(eleveDeClasse() ? 'classe' : 'perso', () => lancerTuto());
   }
   if (ARRIVEES.includes(view.name)) lancerTuto();
 }

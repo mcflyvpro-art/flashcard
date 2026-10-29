@@ -127,3 +127,16 @@
   .bv-bas{position:static;margin-top:8px}
 }
 @media (prefers-reduced-motion:reduce){.bv-corps.neuf,.bv-annees.neuf{animation:none}}
+
+/* ---------- la salle d'attente d'un professeur particulier (2026-10-29) ----------
+   Une horloge dont l'aiguille tourne doucement, qui doit valider, et
+   « Annuler ma demande ». Mouvement réduit : l'aiguille reste. */
+.bv[data-etape="attente"] .bv-corps{align-items:center;justify-content:center;text-align:center;padding-bottom:12vh}
+.bv-attente{display:grid;place-items:center;width:88px;height:88px;border-radius:50%;color:#3E58A8;
+  background:rgba(255,255,255,.78);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 24px 50px -28px rgba(52,40,110,.45)}
+.bv-attente svg{width:42px;height:42px}
+.bv-attente svg path{transform-origin:12px 12px;animation:bv-aiguille 2.6s linear infinite}
+@keyframes bv-aiguille{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.bv-attente svg path{animation:none}}
+.bv-annuler{margin-top:6px;padding:10px 14px;border-radius:12px;font-size:14px;font-weight:650;color:var(--soft)}
+.bv-annuler:hover{background:rgba(255,255,255,.6);color:var(--ink)}

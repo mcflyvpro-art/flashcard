@@ -351,8 +351,11 @@ const PLUS = [['spark', 'Ton cours, une photo ou un PDF : l’IA en fait des pag
 export function finDe(role, { demo, aPlus } = {}) {
   const eleve = role === 'perso' || role === 'classe';
   if (eleve && aPlus && !demo) {
+    // un élève de classe (Campus, 2026-10-29) : sa classe d'abord, et rien à lui vendre
     return { cle: 'pret', titre: 'Tout est prêt',
-      points: [['layers', 'Tes livres, partout'], ['chart', 'Ton journal, chaque jour'], ['users', 'Tes amis et tes défis']],
+      points: role === 'classe'
+        ? [['school', 'Ta classe et tes devoirs'], ['layers', 'Tes livres, partout'], ['chart', 'Ton journal, chaque jour']]
+        : [['layers', 'Tes livres, partout'], ['chart', 'Ton journal, chaque jour'], ['users', 'Tes amis et tes défis']],
       actions: [{ t: 'Commencer', fin: 1, pri: 1 }] };
   }
   if (eleve && demo) {

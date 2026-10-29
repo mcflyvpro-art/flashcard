@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import {
-  adm, blocks, mods, myRole, reportOn, reportWhy, school, setAnimate, setMenu, setReportOn, setReportWhy, view
+  adm, blocks, eleve, mods, myRole, offre, reportOn, reportWhy, school, setAnimate, setMenu, setReportOn, setReportWhy, view
 } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
 import { admPull } from '../core/classement.js';
@@ -154,6 +154,13 @@ export const atSchool = () => !!(school && school.org_id);
 /* Un élève « de classe » : celui d'un établissement. Son nom est celui de
    la classe (le référent seul le corrige), et son accueil est « Mes classes ». */
 export const isPupil = () => atSchool() && myRole === 'eleve';
+
+/* Un élève de classe, au sens de ses premiers pas (2026-10-29) : celui
+   d'un établissement, ou l'élève inscrit d'un professeur particulier sous
+   licence (Campus) — son accueil (pseudo, visage) et le tuto de la classe,
+   sans Mirandola+ à la fin. */
+export const eleveDeClasse = () => isPupil() || (myRole === 'eleve' && !!offre && offre.offre === 'campus'
+  && (eleve.classes || []).some(c => c.statut === 'inscrit'));
 
 export const isProf = () => myRole === 'prof' || myRole === 'admin';
 

@@ -32,8 +32,13 @@ import { apresEntree } from './tuto-porte.js';
 
 const E = () => eleve.entree;
 
-export function ouvrirCode(code) {
-  Object.assign(E(), { code: formatCode(code || ''), fiche: null, reponse: null, envoi: false, classe: '', type: '' });
+/* `o.entre(r)` (2026-10-29) : qui a ouvert la feuille reprend la main une
+   fois l'élève entré ou en salle d'attente — l'accueil d'un nouveau compte
+   (ui/bienvenue.js) continue alors sur place, sans repasser par « Ma
+   classe ». Rend vrai s'il s'en charge. */
+export function ouvrirCode(code, o = {}) {
+  Object.assign(E(), { code: formatCode(code || ''), fiche: null, reponse: null, envoi: false, classe: '', type: '',
+    entre: o.entre || null });
   openMenu('code');
   if (codeComplet(normCode(code || ''))) lire();
 }
@@ -96,6 +101,14 @@ export function paintMenuCode(w) {
 }
 
 /* ---------- les gestes ---------- */
+/* Déjà dans cette classe, ou déjà dans sa salle d'attente : rien à entrer,
+   on y va (l'accueil, s'il a ouvert la feuille, reprend là). */
+async function dejaLa(r) {
+  closeMenu(); toast(I.check, messageEtab(r.statut, r.type).titre);
+  if (await reprise({ ...r, statut: r.statut === 'deja' ? 'ok' : 'attente' })) return;
+  go('classes');
+}
+
 async function lire() {
   const e = E(), k = normCode(e.code);
   if (!codeComplet(k) || e.envoi) return;
@@ -111,9 +124,8 @@ async function lire() {
     }
     e.type = r.type || '';
     if (r.statut === 'ok') { e.fiche = r; e.classe = ''; }
-    else if (r.statut === 'deja' || r.statut === 'attente') {
-      closeMenu(); toast(I.check, messageEtab(r.statut, r.type).titre); return go('classes');
-    } else e.reponse = r.statut;
+    else if (r.statut === 'deja' || r.statut === 'attente') return dejaLa(r);
+    else e.reponse = r.statut;
   } catch (x) { e.envoi = false; e.reponse = 'erreur'; toast(I.x, messageErreur(x).slice(0, 120) || 'Impossible pour l’instant'); }
   peindre();
 }
@@ -127,6 +139,7 @@ async function arriver(r) {
   toast(I.check, bienvenue(r));
   Object.assign(E(), { code: '', fiche: null, reponse: null, classe: '', type: '' });
   closeMenu();
+  if (await reprise(r)) return;
   await offrePull();
   await cerclePull();
   eleveClassesPull();
@@ -134,6 +147,18 @@ async function arriver(r) {
   else if (r.quel === 'prof') allerAccueil();
   else go('classes');
   apresEntree();
+}
+
+/* Un élève (pas un professeur ni un référent, qui ont leur espace) entré
+   depuis l'accueil : l'accueil reprend, ce qu'il faut relu d'abord — l'offre
+   (Campus dès la salle d'attente), l'établissement, le nom de classe, ses
+   classes. */
+async function reprise(r) {
+  const f = E().entre;
+  E().entre = null;
+  if (!f || r.quel === 'prof' || r.quel === 'ref') return false;
+  await Promise.all([offrePull(), cerclePull(), eleveClassesPull()]);
+  return !!(await f(r));
 }
 
 async function entrer() {

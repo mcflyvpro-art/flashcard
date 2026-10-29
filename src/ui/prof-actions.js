@@ -12,7 +12,7 @@ import {
 import { deck, plur } from '../core/coeur-sync.js';
 import { DUELQ } from '../core/defis.js';
 import {
-  agendaPull, cartesBloquePull, cartesDuDevoir, classePull, codeCollegue, codePull, defiClasse, demandesPull, ecrire,
+  agendaPull, attentePull, cartesBloquePull, cartesDuDevoir, classePull, codeCollegue, codePull, defiClasse, demandesPull, ecrire,
   exclusPull, fichePull, profPull, relire, repeindre, semainePull
 } from '../core/espace-prof.js';
 import { messageErreur } from '../core/eleve-classes.js';
@@ -489,5 +489,17 @@ setInterval(async () => {
   if (projete() && prof.open) return releveTableau();
   if (prof.open && view.name === 'profclasse' && prof.tab === 'demandes') {
     if (await demandesPull(prof.open)) repeindre();
-  } else if (view.name === 'prof' && tours % 10 === 0 && !menu) profPull();
+    return;
+  }
+  if (!(await arrivees()) && view.name === 'prof' && tours % 10 === 0 && !menu) profPull();
 }, 6000);
+
+/* Un professeur particulier : ses élèves arrivent dans la salle d'attente, il
+   les voit arriver (2026-10-29). */
+async function arrivees() {
+  const n = await attentePull();
+  if (!n) return false;
+  toast(I.user, n > 1 ? `${n} élèves attendent votre validation` : 'Un élève attend votre validation');
+  if (prof.open) classePull(prof.open);          // l'onglet Demandes de la classe ouverte, prêt
+  return true;
+}

@@ -19,7 +19,17 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-29 (nuit) · Le Prompt : l'onglet « Cours » de la
+DERNIER   2026-10-29 (nuit, bis) · Un code dès l'accueil : l'accueil
+          continue sur place (il repartait au choix « pour moi / j'ai un
+          code »). Chez un professeur particulier, l'élève attend sur son
+          accueil, la professeure le voit arriver sans recharger ; validé,
+          pseudo, visage, puis le tuto de la classe (Campus, sans
+          Mirandola+) ; refusé, retour au choix. Un code tapé sur le site
+          attend la connexion (une heure, d'un onglet à l'autre) : une
+          classe ouvre l'accueil sur le nom et la classe, un club ou une
+          partie après le tuto. Parcours e2e/premiers-pas-code.e2e.js.
+          Aucune tâche cochée.
+Avant :   2026-10-29 (nuit) · Le Prompt : l'onglet « Cours » de la
           création devient une conversation avec l'IA (un cours collé et
           une consigne, puis « ajoute… », « inverse… », « enlève… » ;
           chaque message est une génération) ; une pastille dit le reste

@@ -90,11 +90,17 @@
 // plafond à eux (22 Ko JS, 6 Ko CSS) : ils ne servent qu'une fois par compte,
 // comme la porte d'installation, et grandissent avec la page que le tuto
 // écrit lui-même et l'éditeur de visage.
+//
+// 2026-10-29 (bis) : un code tapé sur le site avant d'avoir un compte attend
+// la connexion d'un onglet à l'autre (src/lien-garde.js), l'accueil continue
+// après un code, l'élève et le professeur voient la salle d'attente bouger
+// sans recharger. Tout cela doit être là dès le premier écran (le lien
+// arrive avant tout) : 0,6 Ko de plus, et le démarrage passe de 126 à 127 Ko.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 126 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
+const BUDGET = { js: 127 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
   jsGestion: 30 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
   jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, site: 48 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',

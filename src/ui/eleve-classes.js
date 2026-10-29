@@ -17,6 +17,8 @@ import {
 import { importPayload, toast } from './import-cartes.js';
 import { closeMenu } from './menus-a.js';
 import { ouvrirCode } from './code-entree.js';
+import { garder, lire as lireGarde, oublier } from '../lien-garde.js';
+import { offrePull } from '../core/abonnement.js';
 
 /* ══════════ « Mes classes », côté élève (téléphone d'abord) ══════════
    Dans l'ordre de ce qui presse : les devoirs à faire, puis rejoindre une
@@ -256,13 +258,28 @@ export function consumeRejoindre(connecte = !!auth) {
     p.delete('rejoindre');
     history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
   }
-  try { k = k || sessionStorage.getItem('folio.rejoindre') || ''; } catch (e) { /* stockage indisponible : le code ne survivra pas à la connexion */ }
+  k = k || lireGarde('folio.rejoindre');
   if (!k) return false;
-  try { connecte ? sessionStorage.removeItem('folio.rejoindre') : sessionStorage.setItem('folio.rejoindre', k); }
-  catch (e) { /* idem */ }
+  connecte ? oublier('folio.rejoindre') : garder('folio.rejoindre', k);   // src/lien-garde.js
   if (!connecte) return false;
   /* Code d'établissement, de professeur particulier, d'équipe ou ancien
      code de classe : la feuille « J'ai un code » reconnaît chacun. */
   ouvrirCode(k);
   return true;
 }
+
+/* Une demande en salle d'attente (2026-10-29) : relue toutes les 6 s tant que
+   « Mes classes » est à l'écran. Validée, la classe paraît sans recharger
+   (et Campus reste) ; refusée, elle s'en va, et Mirandola gratuit revient. */
+setInterval(async () => {
+  if (document.hidden || !auth || !online || view.name !== 'classes') return;
+  const avant = (eleve.classes || []).filter(c => c.statut === 'attente');
+  if (!avant.length) return;
+  await eleveClassesPull();
+  for (const a of avant) {
+    const c = (eleve.classes || []).find(x => x.class_id === a.class_id);
+    if (c && c.statut === 'attente') continue;
+    toast(c ? I.check : I.x, c ? `C’est validé : bienvenue dans ${c.nom}` : 'Ta demande n’a pas été validée');
+    offrePull();
+  }
+}, 6000);

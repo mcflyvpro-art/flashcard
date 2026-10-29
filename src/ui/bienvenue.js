@@ -4,6 +4,11 @@ import { I, svg } from '../icones.js';
 import { auth, compte, db, eleve, me, online, prefs, school, view, visuels } from '../data/etat.js';
 import { COLORS, delSubject, esc, pushSubject, save } from '../core/coeur-sync.js';
 import { changerPseudo, envoyerPrefs, mePull, pseudoLibre } from '../core/reglages-corbeille.js';
+import { annulerDemande, eleveClassesPull, messageErreur } from '../core/eleve-classes.js';
+import { offrePull } from '../core/abonnement.js';
+import { cerclePull } from '../core/classement.js';
+import { prendre } from '../lien-garde.js';
+import { nomPropre, nomValide } from '../classe.js';
 import { choisirMonJeton } from '../core/visuels.js';
 import { NEUTRE, avatarDeCle, avatarSvg, ecrireAvatar, nomOnglet, normaliser } from '../avatar.js';
 import { COULEURS, rangCouleur } from '../jeton.js';
@@ -30,6 +35,12 @@ import './bienvenue.css';
    tuto aussi. « J'ai un code » ouvre la porte d'entrée par-dessus l'accueil :
    entré, l'élève reprend ici, en élève de sa classe. Le pseudo suit la
    règle de src/pseudo.js pendant la frappe, et la base dit s'il est libre.
+   Le code d'un professeur particulier (2026-10-29) : l'élève attend ici
+   qu'il valide (`attente`, relu toutes les 4 s) ; validé, l'accueil
+   continue en élève de sa classe (pseudo, visage) puis le tuto de la
+   classe ; refusé, il revient au choix. Un code tapé sur le site avant
+   d'avoir un compte (src/lien-garde.js) ouvre la feuille du code dès
+   l'arrivée : l'accueil commence par le nom et la classe.
    Habillé comme les écrans publics (la lumière de la marque, le logo, des
    titres en serif) : on arrive du site, on y est encore un peu. Un titre
    par écran et rien dessous (« Mes livres, mon rythme », « Tu révises pour
@@ -39,10 +50,10 @@ import './bienvenue.css';
 
 const e = { mode: 'perso', etape: 0, apres: null, prenom: '', pseudo: '', pseudoTouche: false, libre: '', suggestion: '',
   jeton: 0, av: NEUTRE, teinte: 0, trait: 'peau', niveau: '', annee: '', base: '', matieres: new Set(), ajoutees: [],
-  objectif: 20, envoi: false };
+  objectif: 20, envoi: false, cid: null, prof: '' };
 
 const ETAPES_PERSO = ['choix', 'nom', 'visage', 'niveau', 'matieres', 'objectif'];
-const etapes = () => (e.mode === 'classe' ? ['pseudo', 'visage'] : ETAPES_PERSO);
+const etapes = () => (e.mode === 'classe' ? ['pseudo', 'visage'] : e.mode === 'attente' ? ['attente'] : ETAPES_PERSO);
 const actuel = () => (me && me.handle) || '';
 
 /* Le visage de départ : le sien s'il en a déjà un, sinon le même pour tous
@@ -55,9 +66,10 @@ function visageDepart() {
 export function commencer(mode, apres) {
   Object.assign(e, { mode, etape: 0, apres, prenom: String(prefs.name || '').trim(), pseudo: '', pseudoTouche: false,
     libre: '', suggestion: '', ...visageDepart(), trait: 'peau', niveau: '', annee: '', base: '', matieres: new Set(), ajoutees: [],
-    objectif: prefs.goal || 20, envoi: false });
+    objectif: prefs.goal || 20, envoi: false, cid: null, prof: '' });
   e.pseudo = mode === 'perso' && e.prenom ? proposer(e.prenom) : actuel();
   go('bienvenue');
+  if (mode === 'perso') reprendreCode();
   // le pseudo donné d'office par la base, s'il n'est pas encore là
   if (!me) mePull().then(() => {
     if (e.pseudoTouche || (mode === 'perso' && e.prenom) || !actuel()) return;
@@ -66,6 +78,74 @@ export function commencer(mode, apres) {
 }
 
 const repeint = () => { if (view.name === 'bienvenue') bienvenueEcran(); };
+
+/* ---------- un code : l'accueil continue sur place ---------- */
+const entre = { entre: r => entreParCode(r) };
+
+/* Ce qui attendait l'arrivée : une demande déjà en salle d'attente (l'app
+   rouverte pendant l'attente), ou un code tapé sur le site. */
+async function reprendreCode() {
+  if (!eleve.classes) await eleveClassesPull();
+  if (view.name !== 'bienvenue' || e.mode !== 'perso' || e.etape) return;
+  const c = (eleve.classes || []).find(x => x.statut === 'attente');
+  if (c) return attendre(c.class_id, c.prof);
+  const k = prendre('folio.rejoindre');
+  if (k) ouvrirCode(k, entre);
+}
+
+function entreParCode(r) {
+  // le prénom donné avec le code : celui dont le tuto le salue (« Bienvenue, Léa »)
+  const f = eleve.entree || {};
+  if (!prefs.name && nomValide(f.prenom) && nomValide(f.nom)) prefs.name = nomPropre(f.prenom, f.nom).split(' ')[0];
+  if (r.statut !== 'attente') { enClasse(); return true; }
+  const c = (eleve.classes || []).find(x => x.statut === 'attente');
+  attendre(c ? c.class_id : null, r.nom || (c && c.prof) || '');
+  return true;
+}
+
+/* Entré (ou validé) : son pseudo — celui que la base lui a donné —, puis son visage. */
+function enClasse() {
+  Object.assign(e, { mode: 'classe', etape: 0, cid: null, pseudo: actuel() || e.pseudo, pseudoTouche: false, libre: '', suggestion: '' });
+  if (view.name !== 'bienvenue') go('bienvenue'); else repeint();
+}
+
+let minuteur = 0;
+function attendre(cid, prof) {
+  Object.assign(e, { mode: 'attente', etape: 0, cid, prof: prof || '' });
+  repeint();
+  clearInterval(minuteur);
+  minuteur = setInterval(regarder, 4000);
+}
+
+const arreterAttente = () => { clearInterval(minuteur); minuteur = 0; };
+
+/* La salle d'attente, relue : toujours là, validé, ou refusé (la demande
+   n'existe plus — le professeur lui a écrit pourquoi). */
+async function regarder() {
+  if (view.name !== 'bienvenue' || e.mode !== 'attente') return arreterAttente();
+  if (document.hidden || !online) return;
+  await eleveClassesPull();
+  if (e.mode !== 'attente') return;
+  const l = eleve.classes || [], de = x => !e.cid || x.class_id === e.cid;
+  if (l.some(x => de(x) && x.statut === 'attente')) return;
+  arreterAttente();
+  const c = l.find(x => de(x) && x.statut === 'inscrit');
+  await Promise.all([offrePull(), cerclePull()]);
+  if (c) { toast(I.check, `C’est validé : bienvenue dans ${c.nom}`); return enClasse(); }
+  toast(I.x, 'Ta demande n’a pas été validée');
+  Object.assign(e, { mode: 'perso', etape: 0, cid: null });
+  repeint();
+}
+
+async function annuler() {
+  arreterAttente();
+  try { if (e.cid) await annulerDemande(e.cid); }
+  catch (x) { toast(I.x, messageErreur(x).slice(0, 120) || 'Impossible pour l’instant'); minuteur = setInterval(regarder, 4000); return; }
+  await Promise.all([offrePull(), eleveClassesPull()]);
+  Object.assign(e, { mode: 'perso', etape: 0, cid: null });
+  repeint();
+}
+
 const gros = (act, ic, titre) => `<button class="bv-gros" data-bv="${act}">
   <i class="bv-gros-ic">${svg(ic)}</i><span class="bv-gros-t"><b>${titre}</b></span>${svg(I.arrow)}</button>`;
 
@@ -100,6 +180,13 @@ function ouEntre() {
   const lieu = ec.org || cl.etab || cl.prof || '', classe = ec.classe || cl.nom || '';
   if (!lieu && !classe) return '';
   return `<p class="bv-ecole">${svg(I.school)}<span>${[lieu && esc(lieu), classe && `<b>${esc(classe)}</b>`].filter(Boolean).join(' · ')}</span></p>`;
+}
+
+/* En salle d'attente : qui doit valider, et rien d'autre à faire qu'attendre. */
+function attente() {
+  return `<div class="bv-attente" aria-hidden="true">${svg(I.clock)}</div>
+    <h1 class="bv-t">En attente de <em>${esc(e.prof || 'ton professeur')}</em></h1>
+    <button class="bv-annuler" data-bv="annuler">Annuler ma demande</button>`;
 }
 
 /* L'élève de classe : son nom de classe, fixe, et le pseudo qu'il veut. */
@@ -223,13 +310,13 @@ function objectif() {
       data-v="${o.n}"><b>${o.n}</b><span>${o.t}</span></button>`).join('')}</div>`;
 }
 
-const ECRANS = { choix, nom, pseudo, visage, niveau, matieres, objectif };
+const ECRANS = { choix, nom, pseudo, visage, niveau, matieres, objectif, attente };
 
 /* Le bouton du bas : « Continuer », ou « C'est parti » à la dernière étape.
    La première étape d'un particulier se choisit par ses deux gros boutons. */
 function suite() {
   const k = etapes()[e.etape], dernier = e.etape === etapes().length - 1;
-  if (k === 'choix') return '';
+  if (k === 'choix' || k === 'attente') return '';
   const pret = pretEtape(k);
   return `<button class="cta bv-go" id="bvgo" data-bv="suivant" ${pret && !e.envoi ? '' : 'disabled'}>${
     dernier ? 'C’est parti' : 'Continuer'}${svg(I.arrow)}</button>`;
@@ -245,7 +332,7 @@ export function bienvenueEcran() {
           : '<span class="bv-logo"><img src="/site/logo.svg" alt="" width="26" height="28"><span>Mirandola</span></span>'}
         <span class="bv-fil" role="progressbar" aria-label="Avancement" aria-valuemin="1" aria-valuemax="${l.length}"
           aria-valuenow="${e.etape + 1}"><i id="bvfil"></i></span>
-        <button class="bv-passer" data-bv="passer">Passer</button>
+        ${k === 'attente' ? '<span></span>' : '<button class="bv-passer" data-bv="passer">Passer</button>'}
       </header>
       <div class="bv-corps" data-k="bv:${k}">${ECRANS[k]()}</div>
       <div class="bv-bas">${suite()}</div>
@@ -290,7 +377,8 @@ async function terminer(complet) {
 const ACTIONS = {
   'pour-moi': () => { e.etape = 1; repeint(); },
   // par-dessus l'accueil : refermée, on y est encore ; entré, l'élève reprend ici (ui/tuto-porte.js, apresEntree)
-  code: () => ouvrirCode(),
+  code: () => ouvrirCode('', entre),
+  annuler,
   passer: () => terminer(false),
   retour: () => { e.etape = Math.max(0, e.etape - 1); repeint(); },
   suivant: async () => {

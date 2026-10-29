@@ -6,6 +6,7 @@ import { go, render } from './bibliotheque.js';
 import { rejoindreSalle } from '../core/cercle.js';
 import { messageSalle, pinComplet, pinDepuisTexte } from '../defi.js';
 import { toast } from './import-cartes.js';
+import { garder, lire, oublier } from '../lien-garde.js';
 
 /* ══════════ la porte d'une partie en direct ══════════
    L'écran d'une partie (hôte et joueur, sa feuille de style, sa boucle
@@ -49,10 +50,9 @@ export async function consumeDefi(connecte) {
     p.delete('defi');
     history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
   }
-  try { k = k || sessionStorage.getItem('folio.defi') || ''; } catch (e) { /* stockage indisponible : le code ne survivra pas à la connexion */ }
+  k = k || lire('folio.defi');
   if (!pinComplet(k)) return false;
-  try { connecte ? sessionStorage.removeItem('folio.defi') : sessionStorage.setItem('folio.defi', k); }
-  catch (e) { /* idem */ }
+  connecte ? oublier('folio.defi') : garder('folio.defi', k);             // src/lien-garde.js
   if (!connecte) return false;
   const r = await rejoindreSalle(k);
   if (r.statut === 'ok' || r.statut === 'hote') { ouvrirDirect(r.salle); return true; }
