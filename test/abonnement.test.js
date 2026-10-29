@@ -9,7 +9,7 @@ import { MAGASINS, installer, mobile, plateforme, porte, vente } from '../src/pl
 
 describe('ce que dit la base', () => {
   it('une réponse absente ou d’une base sans la fonction : Mirandola gratuit', () => {
-    for (const r of [null, undefined, [], 'x', {}]) expect(lireOffre(r)).toEqual({ offre: 'gratuit', etablissement: '', licenceFin: null, abonnement: null });
+    for (const r of [null, undefined, [], 'x', {}]) expect(lireOffre(r)).toEqual({ offre: 'gratuit', etablissement: '', professeur: '', licenceFin: null, abonnement: null });
   });
   it('un abonnement', () => {
     const o = lireOffre({ offre: 'plus', abonnement: { statut: 'actif', formule: 'annuel', source: 'stripe',
@@ -21,6 +21,10 @@ describe('ce que dit la base', () => {
     expect(lireOffre({ offre: 'plus', abonnement: { statut: 'actif', montant: -4 } }).abonnement.montant).toBeNull();
   });
   it('une offre inconnue ne donne rien', () => expect(lireOffre({ offre: 'illimite' }).offre).toBe('gratuit'));
+  it('Campus chez un professeur particulier : son nom', () => {
+    expect(lireOffre({ offre: 'campus', professeur: 'Lucie MIRA' }).professeur).toBe('Lucie MIRA');
+    expect(lireOffre({ offre: 'campus', professeur: 4 }).professeur).toBe('');
+  });
 });
 
 describe('ce que l’écran en dit', () => {

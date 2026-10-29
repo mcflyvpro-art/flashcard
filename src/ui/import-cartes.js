@@ -3,9 +3,10 @@ import { I, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import { aLire } from '../file.js';
 import {
-  actx, auth, booted, db, demoEtab, dirty, fnr, gone, prefs, prefsTimer, setActx, setBooted,
+  actx, auth, booted, db, demoEtab, dirty, fnr, gone, ia, prefs, prefsTimer, setActx, setBooted, setIa,
   setPrefsTimer, setTt, tt
 } from '../data/etat.js';
+import { compter } from '../ia-mois.js';
 import {
   SB, api, doUndo, esc, flush, pushUndo, refreshToken, save, saveDeck, setOnline, uid
 } from '../core/coeur-sync.js';
@@ -28,7 +29,9 @@ export const AIERR = {
   demo: 'Avec un compte Mirandola'
 };
 
-async function aiCall(payload) {
+/* `tout` : la note du Prompt avec les pages ({ cards, note }). Chaque réponse
+   rend le compte du mois (`mois`), posé sur les onglets de la création. */
+export async function aiCall(payload, tout) {
   if (demoEtab) throw new Error('demo');     // l'IA est réservée aux comptes : la démo ne l'appelle jamais
   if (auth && auth.exp && Date.now() > auth.exp - 60000) await refreshToken();
   const call = () => fetch(SB.url + '/functions/v1/ai', {
@@ -40,14 +43,15 @@ async function aiCall(payload) {
   let r = await call();
   if (r.status === 401 && auth && auth.refresh && await refreshToken()) r = await call();
   const j = await r.json().catch(() => ({}));
+  if (j.mois) setIa(compter(ia, j.mois));
   if (!r.ok) throw new Error(j.error || 'net');
-  return (j.cards || []).map(c => ({
+  const cards = (j.cards || []).map(c => ({
     f: String(c.f || '').replace(/[\t\r\n]+/g, ' ').trim(),
     b: String(c.b || '').replace(/[\t\r\n]+/g, ' ').trim()
   })).filter(c => c.f && c.b);
+  return tout ? { cards, note: String(j.note || '') } : cards;
 }
 
-export const aiCards = (text, hint) => aiCall({ op: 'cards', text, hint: hint || '' });
 
 /* ---------- photo d'une page, PDF ----------
    La photo est réduite avant d'être envoyée : au-delà de 1568 pixels de

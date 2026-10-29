@@ -377,11 +377,47 @@ export function consoleRef() {
     refCharger();
     if (c) poserAdresse(c.sous, c.id);
   }
-  const b = ref.board;
+  const b = ref.board, garde = saisies();
   $.innerHTML = `<div class="page rf" id="page">${tete(b, ref.codes)}
       ${PC() ? `<section class="rf-corps">${(CORPS[ref.tab] || accueil)()}</section>` : telephone()}
     </div>${ref.projo ? projection() : ''}`;
+  rendre(garde);
   dessinerQR();
+}
+
+/* Ce qu'on tape survit à un repeint. La console se redessine à chaque
+   réponse de la base (l'ouverture en lit trois, chaque geste relit le
+   tableau) : un nom de classe tapé pendant que les codes arrivaient
+   repartait à vide, et « Créer » ne créait rien. On garde la valeur d'un
+   champ qui diffère de celle que l'écran y avait posée, et on la rend au
+   même champ s'il revient avec la même valeur de départ (sinon c'est la
+   base qui a changé, elle passe devant) ; le curseur aussi. Un formulaire
+   réussi se vide (`reset`, plus bas). */
+const depart = el => (el.tagName === 'SELECT'
+  ? ([...el.options].find(o => o.defaultSelected) || el.options[0] || {}).value
+  : el.defaultValue);
+
+function saisies() {
+  const a = document.activeElement, champs = [];
+  $.querySelectorAll('.rf input[id], .rf textarea[id], .rf select[id]').forEach(el => {
+    if (el.type === 'checkbox' || el.type === 'radio') return;
+    if (el.value !== depart(el)) champs.push({ id: el.id, v: el.value, d: depart(el) });
+  });
+  const ici = a && a.id && $.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) ? a : null;
+  let sel = null;
+  try { sel = ici && ici.selectionStart != null ? [ici.selectionStart, ici.selectionEnd] : null; } catch (e) { /* un select ou un champ sans curseur */ }
+  return { champs, actif: ici && ici.id, sel };
+}
+
+function rendre({ champs, actif, sel }) {
+  for (const c of champs) {
+    const el = document.getElementById(c.id);
+    if (el && depart(el) === c.d) el.value = c.v;
+  }
+  const el = actif && document.getElementById(actif);
+  if (!el || document.activeElement === el) return;
+  el.focus({ preventScroll: true });
+  try { if (sel) el.setSelectionRange(sel[0], sel[1]); } catch (e) { /* un select ou un champ sans curseur */ }
 }
 
 /* Les QR (la projection d’un code) : l’encodeur se charge à la demande. */
@@ -518,7 +554,7 @@ const FORMULAIRES = {
   rfnouvelle: async () => {
     const nom = val('rfcnom').trim(), niveau = val('rfcniv');
     if (!nom) return;
-    await refAgir('ref_save_class', { cid: null, nom, niveau, cycle: cycleDe(niveau), filiere: '', prevu: null }, 'Classe créée');
+    return refAgir('ref_save_class', { cid: null, nom, niveau, cycle: cycleDe(niveau), filiere: '', prevu: null }, 'Classe créée');
   },
   rfrenom: async () => {
     const c = (ref.classes || []).find(x => x.id === ref.open), nom = val('rfrnom').trim();
@@ -529,12 +565,12 @@ const FORMULAIRES = {
   rfservice: async () => {
     const mat = val('rfsmat').trim();
     if (!mat) return toast(I.x, 'Indique la matière');
-    await refAgir('ref_set_teaching', { cid: ref.open, prof: val('rfsprof'), matiere: mat, pp: false }, 'Ajouté à l’équipe');
+    return refAgir('ref_set_teaching', { cid: ref.open, prof: val('rfsprof'), matiere: mat, pp: false }, 'Ajouté à l’équipe');
   },
   rfservprof: async () => {
     const mat = val('rfspmat').trim();
     if (!mat) return toast(I.x, 'Indique la matière');
-    await refAgir('ref_set_teaching', { cid: val('rfspcls'), prof: ref.who.id, matiere: mat, pp: false }, 'Classe ajoutée');
+    return refAgir('ref_set_teaching', { cid: val('rfspcls'), prof: ref.who.id, matiere: mat, pp: false }, 'Classe ajoutée');
   },
   rfnom: async () => {
     const nom = val('rfnnom').trim().replace(/\s+/g, ' ');
@@ -569,7 +605,9 @@ document.addEventListener('submit', e => {
   const f = FORMULAIRES[e.target.id];
   if (!f || view.name !== 'ref') return;
   e.preventDefault();
-  f();
+  const id = e.target.id;
+  // réussi, il repart à vide (ce qu'on y avait tapé n'est plus gardé)
+  Promise.resolve(f()).then(ok => { const n = ok && document.getElementById(id); if (n && n.reset) n.reset(); });
 });
 
 document.addEventListener('change', e => {

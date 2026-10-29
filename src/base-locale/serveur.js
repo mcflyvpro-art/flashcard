@@ -34,6 +34,7 @@ import { REFUS, ecritPseudo, pseudoNeuf, rpcPseudos } from './pseudos.js';
 import { contexteRevision, journalFaux } from './journal.js';
 import { magasinsFaux, paiementFaux, rpcAbonnements } from './abonnements.js';
 import { mdpChoisi } from './licences.js';
+import { aiFaux, rpcIa } from './ia.js';
 
 const CARD_COLS = { f: 'front', b: 'back', st: 'state', sp: 'step', S: 'stability', D: 'difficulty',
   F: 'trace2', d: 'due', lr: 'last_review', i: 'interval_days', n: 'reviews_count', l: 'lapses' };
@@ -246,7 +247,8 @@ function rest(store, req, url, path, body) {
   const prefer = req.headers.prefer || '';
   if (name === 'rpc/sync_deck_cards') return syncDeckCards(store, body, user);
   if (name === 'rpc/journal') return journalFaux(store, body || {}, user);
-  if (name.startsWith('rpc/')) return rpcAbonnements(store, name.slice(4), user, body) || rpcPseudos(store, name.slice(4), body, user)
+  if (name.startsWith('rpc/')) return rpcAbonnements(store, name.slice(4), user, body) || rpcIa(store, name.slice(4), user)
+    || rpcPseudos(store, name.slice(4), body, user)
     || rpcClasses(store, name.slice(4), body, user)
     || rpcCercle(store, name.slice(4), body, user) || [200, []];
   const m = req.method;
@@ -259,10 +261,11 @@ function rest(store, req, url, path, body) {
 }
 
 /* Les Edge Functions : `paiement` et `magasins` sont jouées ici
-   (abonnements.js) ; `ai` répond 404, comme une fonction absente. */
+   (abonnements.js), `ai` aussi (ia.js : prévisible, sans modèle). */
 function fonction(store, req, path, body) {
   const user = userOf(store, req);
   if (!user) return [401, { message: 'JWT expired' }];
+  if (path === '/functions/v1/ai') return aiFaux(store, body || {}, user);
   if (path === '/functions/v1/paiement') return paiementFaux(store, body, user);
   return path === '/functions/v1/magasins' ? magasinsFaux(store, body, user) : [404, null];
 }

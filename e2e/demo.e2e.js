@@ -92,7 +92,7 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   const parties = await ouvrirDemo(page, 'eleve');
   await expect(page).toHaveURL(/\/demo\/eleve\/classe$/, { timeout: 10000 });
   await aller(page, '/demo/eleve/livres/nouveau');
-  const cours = page.getByRole('tab', { name: 'Cours' });
+  const cours = page.getByRole('tab', { name: 'Prompt' });
   await expect(cours).toHaveClass(/payant/, { timeout: 10000 });
   await expect(cours).toHaveAttribute('data-astuce', 'Avec Mirandola+');               // toute l'IA est dans Mirandola+ (2026-10-27)
   await expect(page.getByRole('tab', { name: 'Photo' })).toHaveClass(/payant/);

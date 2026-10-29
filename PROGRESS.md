@@ -19,7 +19,16 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-29 (soir) · L'inscription par e-mail « ne faisait rien » :
+DERNIER   2026-10-29 (nuit) · Le Prompt : l'onglet « Cours » de la
+          création devient une conversation avec l'IA (un cours collé et
+          une consigne, puis « ajoute… », « inverse… », « enlève… » ;
+          chaque message est une génération) ; une pastille dit le reste
+          du mois sur Fichier, Photo et Prompt (mon_ia) ; un élève Campus
+          sans IA voit ces onglets grisés, et pourquoi. Fonction ai
+          déployée (v11). La console du référent ne vide plus un champ
+          en se redessinant. Parcours e2e/prompt.e2e.js, SQL 53/53.
+          Aucune tâche cochée.
+Avant :   2026-10-29 (soir) · L'inscription par e-mail « ne faisait rien » :
           le SMTP intégré de Supabase (2 e-mails/h, l'équipe seulement)
           refusait en 429 ou laissait les comptes sans confirmation, et
           l'app effaçait elle-même « Compte créé… » en redessinant l'écran.

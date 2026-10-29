@@ -77,6 +77,8 @@ export function lireOffre(r) {
   return {
     offre: o.offre === 'plus' || o.offre === 'campus' ? o.offre : 'gratuit',
     etablissement: typeof o.etablissement === 'string' ? o.etablissement : '',
+    // Campus chez un professeur particulier : son nom (20261029090000), qui dit à l'élève qui lui ouvre l'IA
+    professeur: typeof o.professeur === 'string' ? o.professeur : '',
     licenceFin: o.licence_fin || null,
     abonnement: lireAbonnement(o.abonnement)
   };

@@ -310,6 +310,9 @@ export let compte = null;                  // { gere, nom, identifiant } | null
 export let offre = null;
 export const plusNeuf = () => ({ etape: null, formule: 'annuel', envoi: null, err: '', attente: 0, raison: null, ia: null });
 export let plus = plusNeuf();
+/* L'IA du mois (mon_ia, src/ia-mois.js) : { fait, quota }, null tant que la
+   base n'a rien dit ; chaque appel à la fonction ai la remet à jour. */
+export let ia = null;
 
 /* ══════════ « Mes classes », côté élève ══════════
    Ce qu'il y a à faire d'abord — un devoir se rend, il ne se cherche pas —,
@@ -511,6 +514,7 @@ export const setMyRole = v => myRole = v;
 export const setSchool = v => school = v;
 export const setCompte = v => compte = v;
 export const setOffre = v => offre = v;
+export const setIa = v => ia = v;
 export const setPlus = v => plus = v;
 export const setEleve = v => eleve = v;
 export const setMates2 = v => mates2 = v;

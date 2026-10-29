@@ -564,6 +564,21 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .cr-tabs button svg{width:20px;height:20px;stroke-width:1.9;flex:none}
 .cr-tabs button.on{background:var(--card);color:var(--ink);box-shadow:var(--s1),var(--edge)}
 .cr-tabs button span{max-width:100%}
+/* l'IA du mois (src/ia-mois.js) : ce qui reste, en chiffre, et sa part en anneau d'azur — rouge une fois tout pris */
+.cr-tabs button{position:relative}
+.cr-reste{position:absolute;top:3px;right:3px;display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 5px 0 3px;
+  border-radius:99px;background:var(--card);box-shadow:var(--edge);color:var(--ink2);font-size:10.5px;font-weight:750;line-height:1;
+  font-style:normal;font-variant-numeric:tabular-nums;letter-spacing:0;pointer-events:none}
+.cr-reste::before{content:'';width:10px;height:10px;border-radius:50%;flex:none;
+  background:radial-gradient(closest-side,var(--card) 52%,transparent 56%),conic-gradient(var(--az5) calc(var(--p,0)*1%),var(--az2) 0)}
+.cr-reste.vide{color:var(--ko)}
+.cr-reste.vide::before{background:radial-gradient(closest-side,var(--card) 52%,transparent 56%),var(--ko)}
+/* fermée par la licence : grisé sans « + », la raison au survol (au toucher, un message) */
+.cr-tabs .ferme[data-astuce]:hover::after,.cr-tabs .ferme[data-astuce]:focus-visible::after{white-space:normal;width:max-content;
+  max-width:210px;text-align:center;line-height:1.35}
+.cr-tabs .ferme:last-child::after{left:auto;right:0;transform:none}
+.cr-tabs .ferme:first-child::after{left:0;transform:none}
+@media (hover:none){.cr-tabs .ferme::after{display:none}}
 
 .cr-panel{display:flex;flex-direction:column;gap:12px}
 /* l'onglet qu'on vient de choisir (data-k), pas chaque page ajoutée */
@@ -1068,6 +1083,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   .cr-mat{padding:2px 20px;flex-wrap:wrap;overflow:visible}
   .cr-tabs button{flex-direction:row;gap:8px;min-height:42px;font-size:13.5px}
   .cr-tabs button svg{width:17px;height:17px}
+  .cr-reste{position:static;margin-left:-2px}
   .cr-drop{padding:44px 24px}
   .cr-pages{display:flex;flex-direction:column;min-width:0;position:sticky;top:24px;max-height:calc(100vh - 48px);background:var(--card);
     box-shadow:var(--edge);border-radius:16px;padding:6px 8px 8px}

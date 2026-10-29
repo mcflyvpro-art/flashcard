@@ -25,6 +25,15 @@
    ou chez un professeur particulier) ; les secrets ci-dessus ne valent plus
    que pour Mirandola+. Un quota de 0 dit « mquota » avec `quota: 0`.
 
+   Le Prompt (2026-10-29, op « prompt ») : l'atelier de l'écran de création.
+   L'élève (ou son professeur) écrit un message — un cours collé, une
+   consigne, ou les deux —, la fonction reçoit aussi les pages en cours et
+   les messages d'avant, et rend la liste COMPLÈTE des pages après ce message,
+   avec une phrase qui dit ce qu'elle a fait. « Ajoute… », « inverse le recto
+   et le verso », « enlève les dates » : chaque message est une génération,
+   comptée comme les autres. Toute réponse rend aussi le compte du mois
+   (`mois` : fait, quota), que l'écran pose sur ses onglets.
+
    verify_jwt est actif : seul un compte connecté peut appeler la fonction. */
 
 /* Appel HTTP direct plutôt que le SDK npm : dans le runtime Edge de Deno,
@@ -137,6 +146,58 @@ const SCHEMA = {
   additionalProperties: false,
 };
 
+/* L'atelier du Prompt : une conversation sur un paquet de pages. */
+const SYSTEM_PROMPT = `Tu es l'atelier de flashcards de Mirandola, une app de révision. Avec un élève (ou son professeur), tu fabriques puis retouches un paquet de pages { f, b }, message après message.
+  f = le recto, ce qu'on voit et doit retrouver
+  b = le verso, la réponse attendue
+
+À chaque message, tu reçois le contexte (le titre du livre, sa matière, la classe de l'élève, quand on les connaît), les pages actuelles (parfois aucune), les messages précédents, et le nouveau message : un cours collé, une consigne, ou les deux. Le contexte t'aide à viser le bon niveau ; c'est le message qui décide.
+
+Tu rends TOUJOURS la liste complète des pages telle qu'elle doit être après ce message, et une note.
+
+Fabriquer :
+- Un cours, des notes, une liste collés : des pages fidèles à ce texte (définitions, dates, formules, vocabulaire, causes, conséquences). N'invente rien qui n'y est pas ; reprends ses mots.
+- Une demande sur un sujet sans texte (« 10 cartes sur les capitales d'Europe ») : des pages justes, classiques, du niveau scolaire demandé, sur ce qui est établi avec certitude. Dans le doute sur un fait, ne l'écris pas.
+- Une consigne de forme s'applique à toutes les pages qu'elle vise : « la définition au recto, le mot au verso », « une question au recto », « l'anglais au recto », « plus courtes », « avec un exemple au verso »…
+- Une seule information par page ; recto et verso courts, sans phrase d'introduction, sans numérotation, sans puces.
+- Respecte la langue, l'orthographe et les accents du texte.
+
+Retoucher :
+- Une retouche (ajoute, enlève, inverse, corrige, reformule, fusionne, sépare, traduis) ne change que ce qu'elle vise. Toutes les autres pages restent identiques, mot pour mot, dans le même ordre.
+- « Inverse », « change le sens », « échange recto et verso » : le recto devient le verso et le verso le recto.
+- « Ajoute… » : les pages nouvelles viennent à la fin, sans doublon de celles qui existent.
+- « Enlève… », « supprime… » : retire seulement les pages visées.
+- Si la demande ne peut pas s'appliquer, rends les pages inchangées et dis pourquoi dans la note.
+
+Au plus ${MAX_CARDS} pages.
+
+La note : une seule phrase, en français, qui tutoie, dit ce que tu as fait et combien de pages il y a (« 12 pages sur la photosynthèse, la définition au recto. »). Ni flatterie, ni question.`;
+
+const SCHEMA_PROMPT = {
+  type: "object",
+  properties: {
+    note: { type: "string" },
+    cards: SCHEMA.properties.cards,
+  },
+  required: ["note", "cards"],
+  additionalProperties: false,
+};
+
+const MAX_HIST = 12;      // les messages d'avant qu'on rappelle au modèle
+const MAX_PAGE = 600;     // un recto ou un verso, en caractères
+
+/* Le message du Prompt tel que le modèle le lit : les pages actuelles,
+   numérotées, les messages d'avant, puis le nouveau. */
+function messagePrompt(message: string, cards: { f: string; b: string }[], hist: string[], hint: string): string {
+  const pages = cards.length
+    ? cards.map((c, i) => `${i + 1}. ${c.f} ⟶ ${c.b}`).join("\n")
+    : "(aucune)";
+  return (hint ? `Contexte : ${hint}\n\n` : "")
+    + `Pages actuelles (${cards.length}) :\n${pages}\n\n`
+    + (hist.length ? `Messages précédents :\n${hist.map((h) => "- " + h).join("\n")}\n\n` : "")
+    + `Nouveau message :\n${message}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "method" }, 405);
@@ -147,15 +208,34 @@ Deno.serve(async (req) => {
   const uid = uidOf(req);
   if (!uid) return json({ error: "auth" }, 401);
 
-  let body: { op?: string; text?: string; hint?: string; data?: string; mime?: string; pages?: string };
+  let body: { op?: string; text?: string; hint?: string; data?: string; mime?: string; pages?: string;
+    message?: string; cards?: unknown; historique?: unknown };
   try {
     body = await req.json();
   } catch {
     return json({ error: "body" }, 400);
   }
   const op = String(body.op ?? "");
-  if (op !== "cards" && op !== "ocr" && op !== "pdf") return json({ error: "op" }, 400);
-  const isFile = op !== "cards";
+  if (op !== "cards" && op !== "ocr" && op !== "pdf" && op !== "prompt") return json({ error: "op" }, 400);
+  const isFile = op === "ocr" || op === "pdf";
+
+  /* Le Prompt : un message (de quoi faire au moins une consigne), les pages
+     en cours (bornées comme celles qu'il rendra) et les messages d'avant. */
+  let message = "", actuelles: { f: string; b: string }[] = [], hist: string[] = [];
+  if (op === "prompt") {
+    message = String(body.message ?? "").trim();
+    if (message.length < 2) return json({ error: "short" }, 400);
+    if (message.length > MAX_CHARS) return json({ error: "long", max: MAX_CHARS }, 413);
+    const brutes = Array.isArray(body.cards) ? body.cards : [];
+    if (brutes.length > MAX_CARDS) return json({ error: "long", max: MAX_CARDS }, 413);
+    actuelles = brutes.map((c) => {
+      const x = (c ?? {}) as { f?: unknown; b?: unknown };
+      return { f: String(x.f ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_PAGE),
+               b: String(x.b ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_PAGE) };
+    }).filter((c) => c.f || c.b);
+    hist = (Array.isArray(body.historique) ? body.historique : [])
+      .map((h) => String(h ?? "").replace(/\s+/g, " ").trim().slice(0, 600)).filter(Boolean).slice(-MAX_HIST);
+  }
 
   let text = "";
   let b64 = "", mime = "";
@@ -172,7 +252,7 @@ Deno.serve(async (req) => {
       if (mime !== "application/pdf") return json({ error: "mime" }, 415);
       if (bytes > MAX_PDF) return json({ error: "big", max: MAX_PDF }, 413);
     }
-  } else {
+  } else if (op === "cards") {
     text = String(body.text ?? "").trim();
     if (text.length < 40) return json({ error: "short" }, 400);
     if (text.length > MAX_CHARS) return json({ error: "long", max: MAX_CHARS }, 413);
@@ -204,7 +284,9 @@ Deno.serve(async (req) => {
   if (!sansOffre && offre === "gratuit") return json({ error: "plus" }, 402);
   // le quota de la licence Campus d'abord ; nul (Mirandola+, ou une base sans la fonction) : celui des secrets
   const mensuel = typeof quota === "number" ? quota : prof ? MONTHLY_PROF : MONTHLY_PLUS;
-  if (!sansOffre && (myMonth ?? 0) >= mensuel) return json({ error: "mquota", quota: mensuel }, 429);
+  if (!sansOffre && (myMonth ?? 0) >= mensuel) {
+    return json({ error: "mquota", quota: mensuel, mois: { fait: myMonth ?? 0, quota: mensuel } }, 429);
+  }
   const spent = (month ?? []).reduce((a, r) => a + Number(r.cents), 0);
   if (spent >= BUDGET_CENTS) return json({ error: "budget" }, 402);
   if ((mine ?? 0) >= (prof ? DAILY_PROF : DAILY_CALLS)) return json({ error: "quota" }, 429);
@@ -229,6 +311,8 @@ Deno.serve(async (req) => {
           + "Fabrique les cartes à partir de ce document.",
       },
     ]
+    : op === "prompt"
+    ? [{ type: "text", text: messagePrompt(message, actuelles, hist, hint) }]
     : [{ type: "text", text: (hint ? `Consigne : ${hint}\n\n` : "") + "Texte :\n\n" + text }];
 
   let res: Response;
@@ -243,11 +327,12 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 16000,
-        system: isFile ? SYSTEM_FILE : SYSTEM,
+        system: op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM,
         thinking: { type: "adaptive" },
         output_config: {
-          effort: isFile ? "medium" : "low",   // lire une page demande plus d'attention
-          format: { type: "json_schema", schema: SCHEMA },
+          // lire une page, ou suivre une consigne sur tout un paquet, demande plus d'attention
+          effort: isFile || op === "prompt" ? "medium" : "low",
+          format: { type: "json_schema", schema: op === "prompt" ? SCHEMA_PROMPT : SCHEMA },
         },
         messages: [{ role: "user", content }],
       }),
@@ -271,7 +356,7 @@ Deno.serve(async (req) => {
   }).then(() => {}, () => {});
 
   let cards: { f: string; b: string }[] = [];
-  const parsed = (data as { parsed_output?: { cards?: unknown } }).parsed_output;
+  const parsed = (data as { parsed_output?: { cards?: unknown; note?: unknown } }).parsed_output;
   const raw = parsed ?? (() => {
     const content = (data.content ?? []) as { type: string; text?: string }[];
     const t = content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
@@ -283,10 +368,17 @@ Deno.serve(async (req) => {
       .filter((c) => c.f && c.b)
       .slice(0, MAX_CARDS);
   }
-  if (!cards.length) return json({ error: "empty" }, 422);
+  // le compte du mois, cet appel compris : l'écran le pose sur ses onglets
+  const mois = { fait: (myMonth ?? 0) + 1, quota: sansOffre ? null : mensuel };
+  const note = op === "prompt" ? String((raw as { note?: unknown } | null)?.note ?? "").trim().slice(0, 300) : "";
+  /* Un Prompt peut légitimement tout retirer (« enlève tout ce qui parle
+     de… ») : une liste vide n'est une erreur que pour une génération. */
+  if (!cards.length && op !== "prompt") return json({ error: "empty", mois }, 422);
 
   return json({
     cards,
+    note,
+    mois,
     usage: { in: inTok, out: outTok, cents: +cents.toFixed(4) },
     left: Math.max(0, DAILY_CALLS - (mine ?? 0) - 1),
     filesLeft: isFile ? Math.max(0, DAILY_FILES - (myFiles ?? 0) - 1) : undefined,

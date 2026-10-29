@@ -9,7 +9,7 @@ import {
   setDeckShow, setDirty, setDuelRun, setDuels, setEleve, setFilter, setFindQ, setFriends,
   setGone, setIAmMod, setLeaving, setLoginMode,
   setMailOpen, setMailbox, setMateOpen, setMateProf, setMates, setMates2, setMe,
-  setMenu, setMods, setMyRole, setOffre, setPeek, setPlus, setPrefs, setPreviewOf, setProf,
+  setMenu, setMods, setMyRole, setIa, setOffre, setPeek, setPlus, setPrefs, setPreviewOf, setProf,
   setQuiz, setRef, setReorder, setReportOn, setReportWhy, setSchool,
   setSel, setSendMsg, setSendTo, setShared, setStats, setStudy, setSubjEdit,
   setTrash, setUndos, setVers, setView,
@@ -86,7 +86,7 @@ export function resetSession() {
   /* le rôle et ce qu'il ouvre */
   setMyRole('eleve'); setIAmMod(false);
   setSchool(null); setCompte(null); setMates2(null);
-  setOffre(null); setPlus(plusNeuf());
+  setOffre(null); setPlus(plusNeuf()); setIa(null);
   setProf(profNeuf()); setEleve(eleveNeuf());
   setAdm(admNeuf());
   setRef(refNeuf());

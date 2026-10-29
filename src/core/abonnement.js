@@ -8,7 +8,7 @@
    n'a de sens qu'en ligne, maintenant — hors ligne, l'écran le dit. La
    réponse de mon_offre est gardée par compte (folio.offre.<uid>) pour
    s'afficher hors ligne ; jamais en démo, qui ne touche pas au stockage. */
-import { auth, demoEtab, offre, online, plus, setOffre } from '../data/etat.js';
+import { auth, demoEtab, ia, offre, online, plus, setIa, setOffre } from '../data/etat.js';
 import { REVENUECAT, lireOffre } from '../abonnement.js';
 import { api, apiPage } from './coeur-sync.js';
 
@@ -60,6 +60,18 @@ export async function iaMoisPull() {
     plus.ia = r ? r.total : null;
   } catch (e) { plus.ia = null; }       // hors ligne : la ligne de l'IA attendra la prochaine ouverture
   return plus.ia;
+}
+
+/* L'IA du mois (mon_ia, 2026-10-29) : ce qui reste, posé sur les onglets de
+   la création qui passent par l'IA (src/ia-mois.js). Hors ligne, rien : les
+   onglets restent sans pastille, et la fonction ai tranchera. */
+export async function iaPull() {
+  if (!auth || demoEtab) return ia;
+  try {
+    const r = await api('/rest/v1/rpc/mon_ia', 'POST', {});
+    if (r && typeof r === 'object' && !Array.isArray(r)) setIa(r);
+  } catch (e) { /* hors ligne, ou base sans la fonction : pas de pastille, rien de fermé */ }
+  return ia;
 }
 
 /* Le code d'erreur de la fonction : son corps le dit ({ error }) ; une

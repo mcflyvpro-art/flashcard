@@ -1,4 +1,4 @@
--- Tests de 20261029090000 (et de son correctif 20261029091000) : le parcours
+-- Tests de 20261029090000 (et de ses correctifs 20261029091000, 20261029120000, 20261029130000) : le parcours
 -- d'un professeur particulier, de son compte ouvert par l'éditeur à ses
 -- élèves acceptés ou refusés. Même mode que abonnements.sql : transaction
 -- ANNULÉE, comptes jetables, vrai rôle `authenticated`.
@@ -152,6 +152,22 @@ begin
   j := public.mon_offre();
   select count(*) into n from public.eleve_classes() e where e.statut = 'inscrit';
   insert into public.zz_res (nom, ok, vu) values ('Tom dans la classe, en Campus', j->>'offre' = 'campus' and n = 1, j::text);
+  -- l'IA du mois (20261029130000) : celle de la licence, et ce qui en est pris
+  j := public.mon_ia();
+  insert into public.zz_res (nom, ok, vu) values ('l''IA du mois de Tom : 15 par sa licence, rien de pris',
+    (j->>'quota')::int = 15 and (j->>'fait')::int = 0 and (j->>'licence')::boolean, j::text);
+  perform public.zz_root();
+  insert into public.ai_usage (user_id, op, in_tok, out_tok, cents) values (tom, 'prompt', 10, 10, 0.01);
+  perform public.zz_comme(tom);
+  j := public.mon_ia();
+  insert into public.zz_res (nom, ok, vu) values ('un prompt envoyé : 1 de pris', (j->>'fait')::int = 1, j::text);
+  perform public.zz_comme(mira);
+  j := public.mon_ia();
+  insert into public.zz_res (nom, ok, vu) values ('la professeure : 120 par sa licence', (j->>'quota')::int = 120, j::text);
+  perform public.zz_comme(lea);
+  j := public.mon_ia();
+  insert into public.zz_res (nom, ok, vu) values ('refusée, Mirandola gratuit : rien', (j->>'quota')::int = 0
+    and not (j->>'licence')::boolean, j::text);
   -- un défi en direct de sa classe : son nom de classe, pas son pseudo (20261029120000)
   perform public.zz_comme(mira);
   select o.pin into t from public.salle_ouvrir('Révisions', 'vf', 20,
@@ -236,7 +252,9 @@ begin
     and not has_function_privilege('anon', 'public.admin_creer_compte(text, text, text, text)', 'execute')
     and not has_function_privilege('anon', 'public.prof_licence()', 'execute')
     and not has_function_privilege('anon', 'public.prof_commander(integer, text)', 'execute')
-    and not has_function_privilege('anon', 'public.admin_prof_licence(uuid, integer, integer, integer, date)', 'execute'), 'droits');
+    and not has_function_privilege('anon', 'public.admin_prof_licence(uuid, integer, integer, integer, date)', 'execute')
+    and has_function_privilege('authenticated', 'public.mon_ia()', 'execute')
+    and not has_function_privilege('anon', 'public.mon_ia()', 'execute'), 'droits');
   insert into public.zz_res (nom, ok, vu) values ('internes : compte_ouvrir, mdp_provisoire, ia_quota, campus_prof, licence_prof',
     not has_function_privilege('authenticated', 'public.compte_ouvrir(text, text, text)', 'execute')
     and not has_function_privilege('authenticated', 'public.mdp_provisoire(uuid)', 'execute')
