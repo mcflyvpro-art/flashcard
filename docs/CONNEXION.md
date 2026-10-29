@@ -84,6 +84,11 @@ le SMTP marche.** Les comptes déjà créés sans confirmation restent à confir
 (Claude peut les confirmer en base, à la demande : `email_confirmed_at` de
 `auth.users`).
 
+**État au 2026-10-29 (décidé)** : « Confirm email » est **coupé** dans le
+projet — tout le monde ouvre un compte dès l'inscription, adresse réelle ou
+non ; le SMTP Brevo viendra plus tard. Les 3 comptes créés avant, restés sans
+confirmation, **ne sont pas confirmés** : on n'y touche pas.
+
 Les comptes ouverts par l'éditeur ou un référent (mot de passe provisoire)
 sont confirmés d'office : ils n'attendent aucun e-mail.
 

@@ -10,7 +10,7 @@ et personne ne peut vérifier qu'ils sont bien posés.
 |---|---|---|
 | Longueur minimale du mot de passe | **10** | L'app refuse déjà en dessous (`PWMIN` dans `app.js`), mais ce contrôle-là ne protège que la personne qui se sert du formulaire. Celui qui appelle l'API directement passe outre tant que la base accepte six caractères. |
 | Protection contre les mots de passe compromis | **activée** | Compare le mot de passe choisi à la base HaveIBeenPwned. Signalé par l'audit de sécurité Supabase tant qu'elle est éteinte. |
-| Confirmation de l'adresse e-mail | **exigée** | Sans elle, n'importe qui ouvre un compte avec l'adresse d'un autre. |
+| Confirmation de l'adresse e-mail | **coupée depuis le 2026-10-29** (décision, en attendant le SMTP Brevo) ; **exigée** une fois le SMTP posé | Sans elle, n'importe qui ouvre un compte avec l'adresse d'un autre — accepté pour l'instant, pour que l'inscription marche. |
 
 ## Authentication → URL Configuration (mirandola.fr, depuis le 2026-10-28)
 
