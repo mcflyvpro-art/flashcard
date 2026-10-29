@@ -440,10 +440,10 @@ async function doLogin(up, em, pw, err, btn) {
    marques comprises) n'arrivent qu'alors, chargés à part (ui/fournisseurs.js). */
 let allumes = null;                       // la promesse de la liste, demandée une fois
 
-/* Au démarrage, la connexion se peint avant que l'adresse n'ouvre son écran
-   (/essayer, /demo/…, un texte du cadre) : la démo ne parle jamais à la base.
-   On attend donc la fin du rendu, où l'adresse dit l'écran. */
-const ailleurs = () => /^\/(essayer|demo\/|demande-demo|mentions\/)/.test(location.pathname);
+/* Au démarrage, la connexion se peint avant que l'adresse n'ouvre son écran :
+   sous /essayer ou /demo/…, la démo ne parle jamais à la base. On attend donc
+   la fin du rendu, où l'adresse dit l'écran. */
+const ailleurs = () => /^\/(essayer|demo\/)/.test(location.pathname);
 
 async function peindreFournisseurs() {
   await new Promise(r => setTimeout(r));

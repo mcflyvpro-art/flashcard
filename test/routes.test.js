@@ -9,7 +9,9 @@ describe('chemin — un écran, son adresse', () => {
     expect(chemin({ name: 'login', id: 'carte' })).toBe('/connexion');
     expect(chemin({ name: 'decouvrir' })).toBe('/essayer');
     expect(chemin({ name: 'demande' })).toBe('/demande-demo');
-    expect(chemin({ name: 'legal', id: 'confidentialite' })).toBe('/mentions/confidentialite');
+    expect(chemin({ name: 'legal', id: 'vie' })).toBe('/mentions/confidentialite');   // la clé de l'app, l'adresse publique
+    expect(chemin({ name: 'legal', id: 'mentions' })).toBe('/mentions/mentions');
+    expect(chemin({ name: 'legal', id: 'nimporte' })).toBe('/mentions/cgu');
     expect(chemin({ name: 'home' })).toBeNull();                 // sans session, pas d'espace
   });
   it('chaque rôle a son espace', () => {
@@ -64,6 +66,10 @@ describe('lireChemin — une adresse, son écran', () => {
   });
   it('la racine, un espace nu, l’inconnu', () => {
     expect(lireChemin('/')).toEqual({ racine: true });
+    // le pied de la page d'accueil et l'écran de consentement de Google mènent à /mentions/confidentialite
+    expect(lireChemin('/mentions/confidentialite')).toEqual({ name: 'legal', id: 'vie' });
+    expect(lireChemin('/mentions/cgu')).toEqual({ name: 'legal', id: 'cgu' });
+    expect(lireChemin('/mentions/rien')).toEqual({ name: 'legal', id: 'cgu' });
     expect(lireChemin('/prof')).toMatchObject({ role: 'prof', name: 'prof' });
     expect(lireChemin('/referent')).toMatchObject({ role: 'ref', name: 'ref', sous: 'accueil' });
     expect(lireChemin('/referent/licence/factures/f1')).toMatchObject({ role: 'ref', name: 'ref', sous: 'licence', id: 'f1' });

@@ -22,7 +22,12 @@ const ROLE_DE = { eleve: 'eleve', prof: 'prof', referent: 'ref', admin: 'admin' 
 /* Avant la connexion. `login` porte le mode du formulaire dans son id. */
 const MODES = { in: 'connexion', up: 'inscription' };
 const PUBLICS = { demande: 'demande-demo', decouvrir: 'essayer' };
-export const TEXTES = ['cgu', 'confidentialite', 'mentions'];
+/* Les textes du cadre : la clé de l'app (LEGAL_TITRES, ui/legal-textes.js)
+   et son adresse publique — celle du pied de la page d'accueil et de l'écran
+   de consentement de Google. « vie » se lit /mentions/confidentialite : sans
+   cette table, l'adresse ouvrait un texte qui n'existe pas. */
+export const TEXTES = { cgu: 'cgu', vie: 'confidentialite', mentions: 'mentions' };
+const TEXTE_DE = Object.fromEntries(Object.entries(TEXTES).map(([k, v]) => [v, k]));
 
 /* Dans un espace : l'écran, son motif (`:id` = un identifiant), puis, au
    besoin, le sous-écran qu'il désigne (un onglet), l'écran à rouvrir à sa
@@ -104,7 +109,7 @@ export function chemin(e, role, demo = false) {
   if (!role) {
     if (e.name === 'login') return '/' + (MODES[e.id] || MODES.in);
     if (PUBLICS[e.name]) return '/' + PUBLICS[e.name];
-    if (e.name === 'legal') return '/mentions/' + (TEXTES.includes(e.id) ? e.id : TEXTES[0]);
+    if (e.name === 'legal') return '/mentions/' + (TEXTES[e.id] || TEXTES.cgu);
     return null;
   }
   const espace = ESPACES[role];
@@ -137,7 +142,7 @@ function lirePublic(parts) {
   if (mode && parts.length === 1) return { name: 'login', id: mode };
   const pub = Object.keys(PUBLICS).find(k => PUBLICS[k] === p0);
   if (pub && parts.length === 1) return { name: pub };
-  if (p0 === 'mentions' && parts.length <= 2) return { name: 'legal', id: TEXTES.includes(parts[1]) ? parts[1] : TEXTES[0] };
+  if (p0 === 'mentions' && parts.length <= 2) return { name: 'legal', id: TEXTE_DE[parts[1]] || 'cgu' };
   return null;
 }
 

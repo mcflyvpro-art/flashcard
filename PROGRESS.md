@@ -35,7 +35,9 @@ DERNIER   2026-10-29 · Le professeur particulier en licence, de bout en
           trouvés par les parcours : le curseur d'ouverture de « J'ai un
           code » envoyait le nom dans le prénom (« léamartin »), et la
           connexion demandait la liste des fournisseurs avant que /essayer
-          n'ouvre la démo. Aucune tâche cochée.
+          n'ouvre la démo ; /mentions/confidentialite (pied de la page
+          d'accueil, consentement Google) ouvrait « undefined ». Aucune
+          tâche cochée.
 Avant :   2026-10-28 · Folio devient Mirandola (mirandola.fr) : le nom
           partout où il se lit, les clés internes gardées (CLAUDE.md, « Le
           nom ») ; référencement de la page d'accueil. Les prix : Mirandola+

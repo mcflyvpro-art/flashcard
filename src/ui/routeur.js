@@ -50,6 +50,9 @@ const pile = [];
    après « Créer », le retour mène à la bibliothèque, pas au formulaire. */
 const PASSAGE = /^(import|study|run|bienvenue|duel|direct|defi|shared)$/;
 const dePassage = p => { const e = lireChemin(p || ''); return !!(e && PASSAGE.test(e.name)); };
+/* Passer d'un texte du cadre à un autre (ses onglets) n'est pas un nouvel
+   écran : « Retour » ramène là d'où l'on venait, pas au texte d'avant. */
+const unTexte = p => { const e = lireChemin(p || ''); return !!(e && e.name === 'legal'); };
 
 function lireCibleRangee() {
   try { return JSON.parse(sessionStorage.getItem(CIBLE) || 'null'); }
@@ -89,7 +92,7 @@ export function synchroniser() {
   if (!arme || enRetour) return;
   const p = cheminActuel();
   if (!p || p === location.pathname) { remplacer = false; return; }
-  if (remplacer || dePassage(location.pathname)) {
+  if (remplacer || dePassage(location.pathname) || (unTexte(location.pathname) && unTexte(p))) {
     history.replaceState({ folio: rang }, '', p + (remplacer ? location.search + location.hash : ''));
     pile[rang] = p;
   } else if (rang > 0 && pile[rang - 1] === p) {
