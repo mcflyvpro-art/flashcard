@@ -19,18 +19,26 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-28 · Folio devient Mirandola (mirandola.fr) : le nom
+DERNIER   2026-10-29 · Le professeur particulier en licence, de bout en
+          bout : l'éditeur ouvre son compte (mot de passe provisoire,
+          message tout écrit) et lui accorde places et IA (coût estimé en
+          direct) ; mot de passe choisi à la première connexion ; l'élève
+          crée son compte, entre le code à son accueil, passe en salle
+          d'attente (une place réservée, Campus aussitôt) ; accepté, ou
+          refusé (place rendue, un mot, retour en gratuit) ; places et
+          commande chez le professeur. La carte élève est partie ; le
+          référent ouvre les comptes de ses élèves d'un coup et prend une
+          place ; Google/Apple prêts (docs/CONNEXION.md), le lien « mot de
+          passe oublié » enfin ouvert. Migrations 20261029090000→094000
+          appliquées, prof_particulier.sql 48/48. Aucune tâche cochée.
+Avant :   2026-10-28 · Folio devient Mirandola (mirandola.fr) : le nom
           partout où il se lit, les clés internes gardées (CLAUDE.md, « Le
           nom ») ; référencement de la page d'accueil. Les prix : Mirandola+
           6,99 €/mois ou 49,99 €/an, l'IA 30 cours/mois (400 pour un prof),
           Campus dégressif (src/tarifs.js, calculateur). L'écran Mirandola+ :
           sa licence en détail, « Résilier », l'entrée de la barre latérale
           qui reste. La synchro entre appareils sans recharger, des onglets
-          préchargés. Migration 20261028090000 à appliquer, puis redéployer
-          ai, paiement, stripe-webhook, magasins. Aucune tâche cochée.
-Avant :   2026-10-28 · la porte d'installation : sur un téléphone, l'app ne
-          s'ouvre plus que depuis l'écran d'accueil (M08.T5/T6 restent à
-          prouver sur un vrai iPhone).
+          préchargés.
 ```
 
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` fait et prouvé.

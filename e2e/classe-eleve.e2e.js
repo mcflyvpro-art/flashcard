@@ -3,6 +3,7 @@
 // de cette classe — au lieu d'une petite fiche ; un camarade y ouvre son
 // profil. Qui voit quoi se prouve en base (supabase/tests/classe_eleve.sql).
 import { test, expect } from '@playwright/test';
+import { semerLicenceProf } from '../src/base-locale/licences.js';
 import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerAmis, semerCompte, semerPseudo } from './faux-cercle.js';
 import { faireEleve, faireProfesseur, rpcClasses } from './faux-classes.js';
@@ -99,11 +100,12 @@ test('un particulier : pas de « Classe » ; le code de son lycée, son nom, sa 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test('un professeur particulier : son code, et son élève arrive dans « Mes élèves »', async ({ page }) => {
+test('un professeur particulier : son code, sa salle d’attente, puis son élève dans « Mes élèves »', async ({ page }) => {
   const store = nouveauStore();
   const lea = particulier(store);
   const prof = semerCompte(store, 'prof@exemple.fr');
   faireProfesseur(store, 'prof@exemple.fr', 'M. Durand');
+  semerLicenceProf(store, 'prof@exemple.fr', { places: 10 });
   const [, code] = rpcClasses(store, 'prof_mon_code', {}, { id: prof });
 
   await brancher(page, store);
@@ -114,7 +116,15 @@ test('un professeur particulier : son code, et son élève arrive dans « Mes é
   await page.getByLabel('Prénom').fill('Léa');
   await page.getByLabel('Nom', { exact: true }).fill('Martin');
   await page.locator('#cego').click();
+  // la salle d'attente (20261029090000) : sa place est réservée, il attend d'être accepté
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'classes');
-  await expect(page.locator('[data-el="classe"]', { hasText: 'Mes élèves' })).toBeVisible();
+  await expect(page.locator('.el-cl.attente', { hasText: 'Mes élèves' })).toContainText('En attente de M. Durand');
+  expect(store.cl.demandes.map(x => [x.uid, x.who])).toEqual([[lea, 'Léa MARTIN']]);
+  expect(store.cl.membres.some(x => x.uid === lea)).toBe(false);
+
+  // accepté par son professeur : sa classe apparaît
+  rpcClasses(store, 'prof_admettre', { cid: store.cl.demandes[0].cid, qui: [lea] }, { id: prof });
+  await page.reload();
+  await expect(page.locator('[data-el="classe"]', { hasText: 'Mes élèves' })).toBeVisible({ timeout: 10000 });
   expect(store.cl.membres.some(x => x.uid === lea)).toBe(true);
 });

@@ -2,15 +2,16 @@
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { prof, setMenu } from '../data/etat.js';
-import { formatCode, lienRejoindre } from '../classe.js';
+import { formatCode, jourLong, lienRejoindre } from '../classe.js';
 import { qrSvg } from '../qr.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
-  classePull, classesEtabPull, codePull, ecrire, elevesEtabPull, mesElevesPull, profPull, relire
+  classePull, classesEtabPull, codePull, ecrire, elevesEtabPull, licencePull, mesElevesPull, profPull, relire
 } from '../core/espace-prof.js';
 import { atSchool } from './classement.js';
 import { toast } from './import-cartes.js';
 import { closeMenu, paintMenu } from './menus-a.js';
+import { timeAgo } from './reglages-corbeille.js';
 import { btn, chargement, classeOuverte, pastilleClasse } from './prof-accueil.js';
 import { champ, feuille, focus } from './prof-feuilles.js';
 
@@ -22,7 +23,11 @@ import { champ, feuille, focus } from './prof-feuilles.js';
      de l'établissement (prof_code_etab).
    - Professeur particulier : un seul code, le sien (prof_mon_code) ; ses
      élèves choisissent leur cours, et il range un élève dans une autre de
-     ses classes (prof_ajouter_eleve). */
+     ses classes (prof_ajouter_eleve). Depuis le 2026-10-29, il a une
+     licence (prof_licence : des places d'élèves, l'IA du mois) : un élève
+     qui entre son code passe par sa salle d'attente et y tient une place ;
+     il l'accepte, ou le refuse et la place revient. Il voit ses places en
+     tête de son accueil et en commande d'autres (prof_commander). */
 
 export const etab = () => atSchool();
 
@@ -32,7 +37,7 @@ const lienCode = () => lienRejoindre(SITE, prof.code || '');
 export function codeBande() {
   const titre = etab() ? 'Code élèves de l’établissement' : 'Mon code';
   const aide = etab() ? 'Vos élèves le tapent dans Réglages → J’ai un code, puis choisissent leur classe.'
-    : 'Vos élèves le tapent dans Réglages → J’ai un code, puis choisissent leur cours.';
+    : 'Vos élèves créent leur compte Mirandola, tapent ce code et choisissent leur cours : vous les acceptez ensuite.';
   if (prof.code === null) codePull();
   return `<section class="pf-codeband" title="${aide}">
       <span class="pf-cb-l">${svg(I.key)}${titre}</span>
@@ -40,7 +45,24 @@ export function codeBande() {
         <span class="pf-cb-a">${btn('code-copier', I.copy, 'Copier', 'sm')}${btn('tableau', I.grid, 'Projeter', 'sm')}${
           etab() ? '' : btn('code-changer', I.refresh, 'Changer', 'sm')}</span>`
       : prof.code === null ? chargement() : `<span class="pf-note">${esc(prof.codeErr || 'Pas encore de code')}</span>`}
+      ${licenceBande()}
     </section>`;
+}
+
+/* Les places d'un professeur particulier, d'un coup d'œil ; le toucher
+   ouvre « Mes places » (et la commande). */
+const aujourdhui = () => new Date().toISOString().slice(0, 10);
+const libresDe = l => Math.max(0, l.places - l.prises);
+
+function licenceBande() {
+  if (etab()) return '';
+  const l = prof.licence;
+  if (l === null) { licencePull(); return ''; }
+  if (!l) return `<button class="pf-cb-lic ko" data-pf="places">${svg(I.lock)}Pas encore de licence Campus</button>`;
+  if (!l.active) return `<button class="pf-cb-lic ko" data-pf="places">${svg(I.lock)}Licence finie le ${esc(jourLong(l.fin))}</button>`;
+  return `<button class="pf-cb-lic${libresDe(l) ? '' : ' ko'}" data-pf="places">${svg(I.users)}
+      <span><b>${l.inscrits}</b>/${l.places} élèves</span>${l.attente ? `<span class="am"><b>${l.attente}</b> en attente</span>` : ''}
+      <span>${libresDe(l)} libre${libresDe(l) > 1 ? 's' : ''}</span></button>`;
 }
 
 /* La feuille « Ajouter des élèves » : le code et son QR, ce que l'élève fait,
@@ -53,10 +75,35 @@ export function inviterCode(c) {
       <div class="pf-inv-t"><span>${etab() ? 'Code élèves' : 'Mon code'}</span><b class="pf-gros">${esc(formatCode(prof.code))}</b>
         <div class="pf-lien"><input readonly value="${esc(lienCode())}" aria-label="Lien">${btn('code-lien', I.copy, '', 'ic sm', 'aria-label="Copier le lien"')}</div>
       </div></div>
-    <ol class="pf-etapes">
+    <ol class="pf-etapes">${etab() ? `
       <li><b>1</b><span>Mirandola → Réglages → J’ai un code</span></li>
+      <li><b>2</b><span>Choisir « ${esc(c.name)} »</span></li>` : `
+      <li><b>1</b><span>Créer son compte Mirandola, puis « J’ai un code »</span></li>
       <li><b>2</b><span>Choisir « ${esc(c.name)} »</span></li>
+      <li><b>3</b><span>Vous l’acceptez dans l’onglet Demandes</span></li>`}
     </ol>`;
+}
+
+/* ---------- « Mes places » (professeur particulier) ---------- */
+function places(w) {
+  const l = prof.licence;
+  if (l === null) licencePull();
+  const corps = !l ? `<p class="pf-note">${l === null ? 'Chargement…'
+      : 'Pas encore de licence Campus : demandez des places, Mirandola vous répond vite.'}</p>`
+    : `<div class="pf-mini">
+        <span><b>${l.inscrits}<small>/${l.places}</small></b><i>élèves</i></span>
+        <span class="${l.attente ? 'am' : ''}"><b>${l.attente}</b><i>en attente</i></span>
+        <span class="${libresDe(l) ? '' : 'ko'}"><b>${libresDe(l)}</b><i>libres</i></span>
+        <span><b>${l.ia_mois}<small>/${l.ia_prof}</small></b><i>IA ce mois</i></span></div>
+      <p class="pf-note">${l.fin ? (l.fin < aujourdhui() ? 'Licence finie le ' : 'Licence jusqu’au ') + esc(jourLong(l.fin)) : 'Licence sans date de fin'}
+        · ${plur(l.ia_eleve, 'génération')} IA par élève et par mois</p>`;
+  const d = l && l.demande;
+  feuille(w, '', '<b>Mes places</b>', 'Mirandola Campus', `${corps}
+      ${d ? `<p class="pf-alerte">${svg(I.clock)}Demande envoyée : ${plur(d.places, 'place')} de plus · ${timeAgo(d.le)}</p>` : ''}
+      <h3 class="pf-h3">Commander des places</h3>
+      ${champ('Combien de places de plus ?', 'nb', 'id="pfnb" inputmode="numeric" maxlength="4"', prof.f.nb ?? '10')}
+      ${champ('Un mot pour Mirandola (facultatif)', 'mot', 'maxlength="300"')}`,
+    btn('places-go', I.check, 'Commander', 'pri lg'));
 }
 
 /* Le mode tableau : le code en très grand, le QR, et qui vient d'arriver. */
@@ -157,7 +204,7 @@ function ajouter(w) {
         ${btn('ajouter-go', I.plus, 'Ajouter', 'sm', `data-id="${esc(e.id)}"`)}</div>`).join('')}</div>`, '');
 }
 
-export const FEUILLES_ETAB = { choisir, groupe, ajouter };
+export const FEUILLES_ETAB = { choisir, groupe, ajouter, places };
 
 /* ---------- les gestes ---------- */
 async function copier(t, quoi) {
@@ -213,6 +260,14 @@ export function actionsEtab({ ouvrir, ouvrirClasse, arme, allerAccueil }) {
       }
     },
     ajouter: () => { prof.mesEleves = null; mesElevesPull(prof.open); ouvrir('ajouter'); },
+    places: () => { licencePull(); ouvrir('places', { nb: '10', mot: '' }); },
+    'places-go': async () => {
+      const n = Math.floor(+String(prof.f.nb || '').replace(/\s/g, ''));
+      if (!(n >= 1 && n <= 1000)) { toast(I.x, 'Entre 1 et 1000 places'); return document.getElementById('pfnb')?.focus(); }
+      if (await ecrire('prof_commander', { places: n, mot: String(prof.f.mot || '').trim() }, 'Demande envoyée : Mirandola vous répond vite')) {
+        closeMenu(); prof.licence = null; licencePull();
+      }
+    },
     'ajouter-go': async id => {
       if (await ecrire('prof_ajouter_eleve', { cid: prof.open, qui: id }, 'Élève ajouté')) { await classePull(prof.open); paintMenu(); relire(); }
     }

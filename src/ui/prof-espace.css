@@ -637,3 +637,12 @@ button.pf-kpi:active{transform:scale(.98)}
 .pf-btn.on{background:var(--ink);color:#fff;box-shadow:none}
 .pf-lnks{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 10px;margin-top:4px}
 .pf-lnks .pf-lnk{margin:0;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:9px}
+/* les places d'un professeur particulier, au bout du bandeau du code (2026-10-29) */
+.pf-cb-lic{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px 10px;padding:6px 11px;border-radius:11px;
+  background:var(--bg);font-size:13px;font-weight:600;color:var(--ink2)}
+.pf-cb-lic:hover{background:var(--surf)}
+.pf-cb-lic svg{width:15px;height:15px;color:var(--az5)}
+.pf-cb-lic b{color:var(--ink);font-variant-numeric:var(--tab)}
+.pf-cb-lic .am,.pf-cb-lic .am b{color:var(--am)}
+.pf-cb-lic.ko,.pf-cb-lic.ko svg{color:var(--ko)}
+.pf-mini small{font-size:.65em;color:var(--soft)}

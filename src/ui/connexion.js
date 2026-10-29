@@ -23,6 +23,7 @@ import { consumeHash, noterConnexion, premiereOuverture } from './onboarding.js'
 import { maybeTuto } from './tuto-porte.js';
 import { norm } from './quiz.js';
 import { cartePassage, lierPassage } from './passage.js';
+import { fournisseurs } from '../core/connexion-externe.js';
 import { bindReorder } from './reordonner.js';
 import { CONTACT, EDITEUR } from '../editeur.js';
 import { armer, desarmer, installee, synchroniser } from './routeur.js';
@@ -433,6 +434,21 @@ async function doLogin(up, em, pw, err, btn) {
   }
 }
 
+/* ---------- Google, Apple (2026-10-29, core/connexion-externe.js) ----------
+   Seulement ceux qu'on a allumés dans le projet Supabase (docs/CONNEXION.md) :
+   la liste se demande une fois par ouverture de l'app, et les boutons (leurs
+   marques comprises) n'arrivent qu'alors, chargés à part (ui/fournisseurs.js). */
+let allumes = null;                       // la promesse de la liste, demandée une fois
+
+async function peindreFournisseurs() {
+  if (!allumes) allumes = fournisseurs();
+  const a = await allumes;
+  if (!Object.values(a).some(Boolean)) return;
+  const m = await import('./fournisseurs.js').catch(() => null);   // hors ligne : la connexion par e-mail suffit
+  const n = document.getElementById('lext');
+  if (m && n) m.peindre(n, a);
+}
+
 /* À côté du formulaire, sur un écran large : ce que dit la page d'accueil,
    et ses pages dessinées comme dans l'app (les teintes de la page d'accueil). */
 const vitrine = () => `<div class="pub-vitrine" aria-hidden="true">
@@ -478,6 +494,7 @@ export function loginView() {
       <button class="cta" id="go" type="submit">${up ? 'Créer le compte' : 'Se connecter'}${svg(I.arrow)}</button>
       ${up ? '' : `<button class="lnk" id="forgot" type="button">Mot de passe oublié</button>`}
     </form>
+    <div class="lext" id="lext" hidden></div>
     <div class="ldemos"><button class="lnk ldemo" data-act="decouvrir" type="button">${svg(I.play)}Essayer sans compte</button>
       <button class="lnk ldemo" data-act="demande" type="button">${svg(I.school)}Un établissement ? Demander une démo</button></div>
     </div></div>
@@ -489,6 +506,7 @@ export function loginView() {
     setLoginMode(b.dataset.lm); loginView(); synchroniser();
   };
   lierPassage();
+  peindreFournisseurs();
   const em = document.getElementById('em'), pw = document.getElementById('pw'),
         err = document.getElementById('le'), btn = document.getElementById('go');
   document.getElementById('pk').onclick = () => {

@@ -160,11 +160,11 @@ function demandesOnglet(c) {
       ${btn('tableau', I.grid, 'Projeter le code', 'pri')}</div>`;
   }
   return `<div class="pf-dem-h"><b>${plur(l.length, 'élève')} en attente</b>
-      <span>Un nom inconnu ? Refusez-le, et bloquez-le.</span>
-      ${btn('admettre-tout', I.check, 'Tout admettre', 'pri')}</div>
+      <span>Vérifiez le prénom et le nom. Refusé, l’élève recommence et sa place vous revient.</span>
+      ${btn('admettre-tout', I.check, 'Tout accepter', 'pri')}</div>
     <div class="pf-list">${l.map(d => `<div class="pf-li pf-dem">
       ${avatar(d.user_id, d.who)}<span class="pf-lit"><b>${esc(d.who)}</b><i>${d.handle ? '@' + esc(d.handle) + ' · ' : ''}${timeAgo(d.depuis)}</i></span>
-      ${btn('admettre', I.check, 'Admettre', 'sm pri', `data-id="${esc(d.user_id)}"`)}
+      ${btn('admettre', I.check, 'Accepter', 'sm pri', `data-id="${esc(d.user_id)}"`)}
       ${btn('refuser', I.x, 'Refuser', 'sm', `data-id="${esc(d.user_id)}"`)}
       ${btn('bloquer', I.lock, '', 'sm ic warn', `data-id="${esc(d.user_id)}" aria-label="Refuser et bloquer" title="Refuser et bloquer"`)}
     </div>`).join('')}</div>`;

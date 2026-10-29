@@ -106,13 +106,14 @@ async function admettre(ids) {
   const n = await ecrire('prof_admettre', { cid: cid(), qui: ids });
   if (n !== null) {
     const reste = ids.length - (+n || 0);
-    toast(I.check, `${plur(+n || 0, 'élève')} admis${reste > 0 ? ` · ${reste} en attente (classe complète)` : ''}`);
+    toast(I.check, `${plur(+n || 0, 'élève')} accepté${(+n || 0) > 1 ? 's' : ''}${reste > 0 ? ` · ${reste} en attente (plus de place)` : ''}`);
   }
   relire();
 }
 
 async function refuser(ids, bloquer) {
-  if (await ecrire('prof_refuser', { cid: cid(), qui: ids, exclure: !!bloquer }, bloquer ? 'Refusé et bloqué' : 'Demande refusée')) relire();
+  if (await ecrire('prof_refuser', { cid: cid(), qui: ids, exclure: !!bloquer },
+    bloquer ? 'Refusé et bloqué : la place vous revient' : 'Refusé : la place vous revient')) relire();
 }
 
 async function retirerGo() {

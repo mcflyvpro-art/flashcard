@@ -300,7 +300,7 @@ export async function apiAll(path) {
   return first.rows.concat(...(await Promise.all(suite)).map(p => p.rows));
 }
 
-function keepSession(j) {
+export function keepSession(j) {
   /* Le seul endroit par lequel passe TOUT changement de compte : connexion,
      inscription, renouvellement de jeton. Si l'identifiant change, c'est
      quelqu'un d'autre — on efface donc ce que l'écran gardait du précédent.

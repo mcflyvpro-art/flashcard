@@ -54,7 +54,7 @@ function tuilePlaces(l) {
       <div class="rf-barre ${e.k}"><i style="width:${e.pc}%"></i></div>
       <div class="rf-chiffres">${kc(l.places ?? '∞', 'places')}${kc(l.eleves, 'élèves')}${kc(l.profs, 'professeurs')}
         ${kc(e.libre ?? '—', 'libres', e.libre === 0 ? 'ko' : '')}</div>
-      ${l.prix ? `<div class="rf-prix" title="Hors taxes, par année scolaire ; une place par élève ou professeur">
+      ${l.prix ? `<div class="rf-prix" title="Hors taxes, par année scolaire ; une place par compte : élève, professeur ou référent">
         <span>${svg(I.money)}<b>${euros(l.prix * 100)}</b> HT / an</span>${pp ? `<span>${euros(pp)} la place</span>` : ''}
         ${du ? `<span class="rf-du">${euros(du)} à régler</span>` : ''}</div>` : ''}
       <div class="rf-b-l">

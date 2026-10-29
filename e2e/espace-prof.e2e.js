@@ -1,10 +1,9 @@
 // L'espace professeur et « Mes classes », de bout en bout (2026-10-24, au
-// modèle « un seul code » le 2026-10-26) : un professeur crée sa classe, la
-// feuille lui montre SON code ; il crée les comptes à carte de deux élèves
-// sans adresse e-mail (le lien discret) ; un élève à compte personnel tape
-// le code, donne son vrai nom, choisit la classe et entre aussitôt — le
-// professeur le voit arriver sur le code projeté — ; un devoir ; l'élève à
-// carte se connecte avec son identifiant et son code et trouve le devoir.
+// modèle « un seul code » le 2026-10-26, la salle d'attente du professeur
+// particulier le 2026-10-29) : un professeur crée sa classe, la feuille lui
+// montre SON code ; un élève à compte personnel tape le code, donne son
+// vrai nom, choisit la classe et passe en salle d'attente ; le professeur
+// l'accepte dans l'onglet Demandes ; un devoir, que l'élève trouve.
 //
 // Sur téléphone (390 px, le projet Playwright) et sur ordinateur (1440 px) :
 // aucun écran ne déborde. Les captures (SHOTS=dossier) servent à relire les
@@ -13,7 +12,8 @@ import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
 import { faireProfesseur } from './faux-classes.js';
 import { etab } from './faux-etablissement.js';
-import { inscrire, passerTuto, sansTuto } from './aide.js';
+import { inscrire, sansTuto } from './aide.js';
+import { semerLicenceProf } from '../src/base-locale/licences.js';
 
 const SHOTS = process.env.SHOTS;
 
@@ -26,7 +26,7 @@ async function voir(page, nom, largeur, serie = largeur) {
 }
 
 for (const largeur of [390, 1440]) {
-  test(`professeur à ${largeur} px : créer une classe, son code, des comptes à carte, un élève qui entre, un devoir`, async ({ page, browser }, info) => {
+  test(`professeur à ${largeur} px : créer une classe, son code, un élève en salle d’attente puis accepté, un devoir`, async ({ page, browser }, info) => {
     test.setTimeout(120000);
     await page.setViewportSize({ width: largeur, height: largeur > 900 ? 900 : 844 });
     const store = nouveauStore();
@@ -37,6 +37,7 @@ for (const largeur of [390, 1440]) {
     await inscrire(page, 'durand@exemple.fr');
     faireProfesseur(store, 'durand@exemple.fr', 'Claire DURAND');
     sansTuto(store, 'durand@exemple.fr');
+    semerLicenceProf(store, 'durand@exemple.fr', { places: 30 });
     semerLivre(store, 'durand@exemple.fr', 'Verbes irréguliers', [['be', 'été'], ['go', 'aller'], ['see', 'voir'], ['take', 'prendre']]);
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Vos premiers élèves' })).toBeVisible({ timeout: 10000 });
@@ -66,20 +67,9 @@ for (const largeur of [390, 1440]) {
     await expect(page.locator('.pf-inv .pf-gros')).toHaveText(enClair);
     await expect(page.locator('.pf-etapes')).toContainText('Choisir « 2nde 4 »');
 
-    // des élèves sans adresse e-mail : le cas à part, derrière un lien
-    await page.getByRole('button', { name: 'Des élèves sans adresse e-mail ?' }).click();
-    await expect(page.getByRole('button', { name: 'Créer les comptes' })).toBeVisible();
-
-    // deux élèves collés depuis une liste : deux comptes à carte
-    await page.locator('#pfliste').fill('MARTIN Alice\nN’DIAYE Awa\n');
-    await expect(page.getByRole('button', { name: 'Créer 2 comptes' })).toBeEnabled();
-    await voir(page, '03-liste', largeur);
-    await page.getByRole('button', { name: 'Créer 2 comptes' }).click();
-    await expect(page.getByText('alice.martin')).toBeVisible();
-    await voir(page, '04-cartes-creees', largeur);
-    await page.getByRole('button', { name: 'Terminé' }).click();
-    await expect(page.locator('.pf-t-eleves')).toContainText('Alice MARTIN');
-    await voir(page, '05-classe-eleves', largeur);
+    await page.getByRole('button', { name: 'Projeter au tableau' }).click();
+    await expect(page.locator('.pf-tb-code')).toHaveText(enClair);
+    await page.locator('.menu .mx').click();
 
     // un élève à compte personnel tape le code du professeur
     // un autre téléphone : un autre contexte, sans la session du professeur
@@ -87,11 +77,12 @@ for (const largeur of [390, 1440]) {
     const eleve = await autre.newPage();
     await brancher(eleve, store);
     await inscrire(eleve, 'leo@exemple.fr');
-    // projeter le code au tableau, et voir l'élève arriver
+    // projeter le code au tableau
     await page.getByRole('button', { name: 'Plus d’actions' }).click();
     await page.getByRole('button', { name: 'Projeter le code au tableau' }).click();
     await expect(page.locator('.pf-tb-code')).toHaveText(enClair);
     await voir(page, '09-tableau', largeur);
+    await page.locator('.menu .mx').click();
 
     await eleve.goto('./app?rejoindre=' + code);
     await expect(eleve.locator('.ce-f .mhx b')).toHaveText('Claire DURAND', { timeout: 10000 });
@@ -104,9 +95,15 @@ for (const largeur of [390, 1440]) {
     await expect(eleve.locator('#app')).toHaveAttribute('data-view', 'classes');
     await voir(eleve, '07-eleve-entre', 390, largeur);
 
-    // sans salle d'attente : il apparaît sur le code projeté, puis dans la classe
-    await expect(page.locator('.pf-tb-att')).toContainText('Léo DUBOIS', { timeout: 15000 });
-    await page.locator('.menu .mx').click();
+    // la salle d'attente (20261029090000) : le professeur vérifie son nom et l'accepte
+    await expect(eleve.locator('.el-cl.attente', { hasText: '2nde 4' })).toBeVisible();
+    await expect.poll(() => store.cl.demandes.length).toBe(1);
+    await page.reload();
+    await page.locator('[data-pf="onglet"][data-v="demandes"]').click({ timeout: 10000 });
+    await expect(page.locator('.pf-dem')).toContainText('Léo DUBOIS');
+    await page.locator('.pf-dem [data-pf="admettre"]').click();
+    await expect.poll(() => store.cl.membres.length).toBe(1);
+    await page.locator('[data-pf="onglet"][data-v="eleves"]').click();
     await expect(page.locator('.pf-t-eleves')).toContainText('Léo DUBOIS');
 
     // donner un devoir depuis un livre de la bibliothèque
@@ -133,52 +130,5 @@ for (const largeur of [390, 1440]) {
     await voir(eleve, '15-eleve-devoir', 390, largeur);
     expect(erreurs, 'erreurs JavaScript côté professeur').toEqual([]);
     await autre.close();
-    if (largeur !== 390) return;
-
-    // les élèves à carte : identifiant + code tapés, puis le QR de la carte
-    const telephone = async () => {
-      const ctx = await browser.newContext({ ...info.project.use, viewport: { width: 390, height: 844 } });
-      const p = await ctx.newPage();
-      await brancher(p, store);
-      return [ctx, p];
-    };
-    const carte = id => store.users.find(u => u.email === id + '@eleves.folio.invalid');
-    const [c1, alice] = await telephone();
-    await alice.goto('./app');
-    await expect(alice.locator('#boot')).toHaveCount(0, { timeout: 10000 });
-    await alice.getByRole('button', { name: 'Carte élève' }).click();
-    await alice.getByLabel('Identifiant').fill('alice.martin');
-    await alice.getByLabel('Code').fill('ABCD-EFGH');
-    await alice.getByRole('button', { name: 'Se connecter' }).click();
-    await expect(alice.getByText('Identifiant ou code incorrect')).toBeVisible();
-    await alice.getByLabel('Code').fill(carte('alice.martin').password.toLowerCase());
-    await expect(alice.getByLabel('Code')).toHaveValue(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/);
-    await voir(alice, '16-connexion-carte', 390);
-    await alice.getByRole('button', { name: 'Se connecter' }).click();
-    // à sa première ouverture, il choisit son pseudo puis son visage (ui/bienvenue.js), puis arrive sur ses devoirs
-    // avec son tuto (ui/tuto.js), qu'il passe ici
-    await expect(alice.locator('#app')).toHaveAttribute('data-view', 'bienvenue', { timeout: 10000 });
-    await alice.getByRole('button', { name: 'Continuer' }).click();          // le pseudo donné d'office lui va
-    await alice.getByRole('button', { name: 'C’est parti' }).click();
-    await passerTuto(alice);
-    // un élève à carte arrive sur ses devoirs, sous le nom de la liste de classe
-    await expect(alice.getByText('Verbes irréguliers')).toBeVisible({ timeout: 10000 });
-    await expect(alice.locator('.el-qui')).toContainText('Alice MARTIN');
-    await voir(alice, '17-carte-mes-classes', 390);
-    // M17.T1 : deux gestes pour commencer — le devoir, puis « Lire »
-    await alice.getByRole('button', { name: /Verbes irréguliers/ }).click();
-    await alice.getByRole('button', { name: /^Lire/ }).click();
-    await expect(alice.locator('.face').first()).toBeVisible();
-    await c1.close();
-
-    const [c2, awa] = await telephone();
-    await awa.goto('./app?carte=awa.ndiaye-' + carte('awa.ndiaye').password);
-    await expect(awa.locator('#app')).toHaveAttribute('data-view', 'bienvenue', { timeout: 10000 });
-    await awa.getByRole('button', { name: 'Passer' }).click();
-    await passerTuto(awa);                                                    // l'accueil passé, le tuto vient quand même
-    await expect(awa.getByText('Verbes irréguliers')).toBeVisible({ timeout: 10000 });
-    await expect(awa.locator('.el-qui')).toContainText('Awa N’DIAYE');
-    expect(new URL(awa.url()).search, 'le code ne reste pas dans l’adresse').toBe('');
-    await c2.close();
   });
 }

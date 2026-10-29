@@ -25,6 +25,13 @@ d'accueil (`index.html`) passe à l'app tout retour d'e-mail
 | Site URL | `https://mirandola.fr` |
 | Redirect URLs | `https://mirandola.fr/**`, et l'ancien domaine tant qu'il sert : `https://www.folioflashcard.online/**` |
 
+Depuis le 2026-10-29, l'app **ouvre** la session que portent ces retours
+(`#access_token=…`, `ui/liens-entrants.js`) — un lien « mot de passe
+oublié » mène à « Choisis un nouveau mot de passe » — et les mêmes
+réglages servent à **Google et Apple** (Sign In / Providers) : la marche à
+suivre est dans `docs/CONNEXION.md`. Un fournisseur allumé fait paraître son
+bouton sur l'écran de connexion, sans nouvelle version de l'app.
+
 ## Authentication → Emails
 
 Les modèles (confirmation, mot de passe oublié, changement d'adresse) et,

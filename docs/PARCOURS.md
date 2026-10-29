@@ -1,7 +1,9 @@
 # Parcours, rôles et vente de Mirandola
 
-Revu le 2026-10-26 (« un seul code »). Ce document dit **qui arrive
-comment, qui gère quoi, où**. S'il diverge de l'app, c'est lui qu'on
+Revu le 2026-10-26 (« un seul code »), puis le 2026-10-29 (le professeur
+particulier en licence, sa salle d'attente, les comptes ouverts par
+l'éditeur et le référent ; la carte élève n'existe plus). Ce document dit
+**qui arrive comment, qui gère quoi, où**. S'il diverge de l'app, c'est lui qu'on
 corrige dans le même commit (CLAUDE.md, règle 0).
 
 ---
@@ -16,8 +18,11 @@ corrige dans le même commit (CLAUDE.md, règle 0).
   10 essais faux par heure, **renouvelé seul chaque semaine** — ou chaque
   mois, chaque trimestre, au choix du référent —, changeable à tout moment ;
   ceux qui sont entrés restent).
-- **Un professeur particulier** a lui aussi **un code** : ses élèves le
-  tapent, choisissent une de ses classes, c'est fait.
+- **Un professeur particulier** a un compte que Mirandola lui ouvre, avec
+  une **licence** (X places d'élèves, l'IA du mois) et **un code** : ses
+  élèves créent leur propre compte, tapent le code et passent dans sa
+  **salle d'attente** ; il vérifie le prénom et le nom, et les accepte (ou
+  les refuse : la place revient).
 
 Plus jamais de code par classe : une classe a dix matières, dix codes
 seraient ingérables.
@@ -30,17 +35,25 @@ seraient ingérables.
 |---|---|---|
 | **Particulier** | s'inscrire | ses livres, le cercle, le journal |
 | **Élève d'établissement** | le **code élève** de l'établissement + sa classe | « Ma classe » : devoirs, défis, ses professeurs ; son nom est figé |
-| **Élève d'un prof particulier** | le **code du professeur** + une de ses classes | « Ma classe » ; il reste un compte personnel |
+| **Élève d'un prof particulier** | son propre compte, puis le **code du professeur** + une de ses classes : **salle d'attente**, puis accepté | « Ma classe », Mirandola Campus dès la salle d'attente ; il reste un compte personnel |
 | **Professeur d'établissement** | le **code professeur** de l'établissement | l'espace professeur : il **choisit ses classes** dans la liste, forme des **groupes** en sélectionnant des élèves |
-| **Professeur particulier** | sur demande à Mirandola (rôle donné depuis la console) | son code, ses classes, ses élèves |
-| **Référent** | le **code référent** que Mirandola lui envoie (une seule fois, 30 jours) | la console de l'établissement |
+| **Professeur particulier** | Mirandola ouvre son compte (Administration → Comptes → « Compte ») avec sa licence ; mot de passe provisoire à changer à la première connexion | son code, ses classes, sa salle d'attente, ses places (et en commander) |
+| **Référent** | le **code référent** que Mirandola lui envoie (une seule fois, 30 jours) | la console de l'établissement ; il ouvre aussi les comptes de ses professeurs et de ses élèves (adresse + mot de passe provisoire) |
 | **Éditeur** | toi | la console d'administration |
 
 Un élève appartient à **un** établissement, et à **une** classe dedans (la
 même pour tous ses camarades) ; il peut en plus être dans des **groupes**
 (spécialités, options) et chez des **professeurs particuliers**.
 
-**Le nom « Prénom NOM » est figé à l'entrée** : seul le référent le corrige.
+**Le nom « Prénom NOM » est figé à l'entrée** : seul le référent le corrige
+(chez un professeur particulier, lui).
+
+**Un compte ouvert par quelqu'un d'autre** (l'éditeur, le référent) a un
+**mot de passe provisoire**, montré une seule fois à qui l'a ouvert, avec
+le message tout écrit à envoyer : à la première connexion, l'app ne montre
+que « Choisis ton mot de passe » ; ensuite seulement son espace et son tuto.
+**Plus de carte élève** (2026-10-28) : chaque élève a une adresse e-mail —
+personnelle, de l'établissement, peu importe.
 
 ---
 
@@ -54,7 +67,11 @@ même pour tous ses camarades) ; il peut en plus être dans des **groupes**
    niveau et ses matières (elles remplacent les matières d'exemple) ; un
    objectif de pages par jour. Puis **le tuto** (§ 3 bis).
    « J'ai un code » s'ouvre par-dessus l'accueil : entré, il reprend en élève
-   de sa classe. Un élève entré par son établissement ou avec une carte : son
+   de sa classe. Chez un professeur particulier, il passe d'abord en salle
+   d'attente (« Demande envoyée ») : Mirandola Campus s'ouvre tout de suite,
+   son tuto finit sur « Tout est prêt », pas sur Mirandola+. Refusé, il
+   retombe en Mirandola gratuit et un mot de son professeur lui dit de
+   vérifier son prénom et son nom, puis de recommencer. Un élève entré par son établissement : son
    lycée et sa classe pour l'accueillir, son pseudo (son nom de classe,
    « Prénom NOM », s'affiche à côté, fixe), son visage, puis son tuto.
    **Les pseudos** (2026-10-27) : tout compte en a un, donné d'office par la
@@ -164,8 +181,12 @@ pour le professeur et le référent (« Essayer dans mon établissement »).
 
 **Passer en licence** : nombre de places, date de fin, prix annuel. Étape :
 **Client**. Prix (2026-10-28) : de 5 à 2 € HT par place et par an, dégressif par tranches (`src/tarifs.js`), 100 € HT
-minimum. **Une place par élève ET par professeur** (décidé le 2026-10-26 :
-« même licence peu importe ») ; le référent n'en prend pas. Un établissement
+minimum. **Une place par compte : élève, professeur ET référent** (décidé le
+2026-10-26 pour les deux premiers, le 2026-10-28 pour le référent).
+**L'IA** : un nombre de générations par mois et par professeur, et par
+élève (400 et 30 d'office), réglé dans la fiche (tuile « IA par mois ») ; la
+console dit aussitôt ce que cela peut coûter au plus (le coût moyen d'une
+génération, mesuré sur 90 jours, fois tout ce qui est accordé). Un établissement
 public paie sur bon de commande et reçoit ses factures par **Chorus Pro**
 (obligatoire pour le secteur public). Le contrat comprend des **conditions
 générales de vente** et un **contrat de sous-traitance** RGPD (art. 28) :
@@ -173,9 +194,9 @@ l'établissement est responsable du traitement, Mirandola sous-traitant ; le
 référent les lit et les imprime dans son onglet Licence, avec la fiche à
 reporter dans le registre des traitements de son établissement.
 
-- **Places** : un élève ou un professeur entré prend une place — par le
-  code, par un compte que le référent ouvre lui-même (« Ajouter un
-  professeur »), par une carte élève ; licence pleine → le code dit
+- **Places** : un élève, un professeur ou un référent entré prend une
+  place — par le code, ou par un compte que le référent ouvre lui-même
+  (« Ajouter un professeur », « Ajouter des élèves ») ; licence pleine → le code dit
   « l'établissement n'a plus de place » ; le référent le voit et sait quoi
   faire : demander des places (onglet Licence → « Des places ») ou retirer
   les comptes partis.
@@ -202,16 +223,47 @@ reporter dans le registre des traitements de son établissement.
 ### 4.4 Déploiement
 
 1. Le référent crée ses classes (ou garde les classes d'exemple renommées).
-2. Il donne le **code professeur** en salle des profs : chaque professeur
-   entre, puis choisit ses classes.
-3. Il donne le **code élève** (affiche avec QR, ENT, en classe) : chaque
-   élève entre et choisit sa classe.
+2. Les professeurs : le **code professeur** en salle des profs (chacun entre,
+   puis choisit ses classes), ou leur compte ouvert par le référent
+   (« Ajouter un professeur » : adresse et mot de passe provisoire).
+3. Les élèves : le **code élève** (affiche avec QR, ENT, en classe : chacun
+   entre et choisit sa classe), ou leurs comptes ouverts d'un coup par le
+   référent — Élèves → « Ajouter des élèves » : une classe, puis une ligne
+   par élève (« MARTIN Alice ; alice.martin@lycee.fr », copiée d'un tableur
+   ou de Pronote). Chacun reçoit un mot de passe provisoire (la liste se
+   copie pour un tableur ou s'imprime, une seule fois) et arrive directement
+   dans sa classe ; il change son mot de passe à sa première connexion.
 4. Il corrige ce qui doit l'être : un nom, un élève dans la mauvaise classe.
 
-**Les cartes élève** (comptes créés depuis une liste, sans e-mail, QR
-imprimé) restent possibles mais **cachées** : c'est le cas très particulier
-d'élèves qui n'ont pas d'e-mail (jeunes collégiens). Le référent les trouve
-dans un recoin de sa console, avec l'explication.
+### 4.5 Le professeur particulier (2026-10-29)
+
+1. **Tu ouvres son compte** : Administration → Comptes → « Compte » →
+   Professeur particulier, son prénom, son nom, son adresse ; un mot de
+   passe provisoire est proposé. Sa **licence** dans le même formulaire :
+   places d'élèves (30 d'office), IA du professeur et par élève par mois,
+   fin (vide : sans fin) ; le coût de l'IA au plus et le prix de la grille
+   se calculent pendant la saisie. « Ouvrir le compte » : l'adresse et le
+   mot de passe s'affichent une fois, avec « Écrire à … » (le message tout
+   écrit dans ta messagerie) ou « Copier le message ».
+2. **Il se connecte** sur mirandola.fr (au téléphone, Mirandola lui montre
+   d'abord comment l'installer), choisit son mot de passe, puis son tuto.
+3. **Il crée sa classe** et donne son **code** (en tête de son accueil,
+   avec ses places : « 3/30 élèves · 1 en attente · 26 libres » ; « Ajouter
+   des élèves » montre le QR).
+4. **Ses élèves** ouvrent mirandola.fr (le QR y mène ; au téléphone,
+   l'installation d'abord), **créent leur propre compte**, et, à leur
+   accueil, « J'ai un code » : le code, leur prénom et leur nom, sa classe.
+   Ils sont en **salle d'attente** : une place est réservée, Mirandola Campus
+   est déjà ouvert.
+5. **Il accepte** dans la classe → onglet **Demandes** (« Accepter », « Tout
+   accepter ») : l'élève est dans la classe, la place reste prise. Un nom
+   faux ou inconnu : **Refuser** — la place revient, l'élève retombe en
+   Mirandola gratuit et reçoit un mot (« vérifie ton prénom et ton nom, puis
+   entre de nouveau son code »). Bloquer l'empêche de redemander.
+6. **Plus de place** : le code dit « Ton professeur n'a plus de place ». Il
+   touche ses places → « Commander des places » (combien, un mot) : tu vois
+   « places demandées » en haut de ta console et dans sa fiche, où la
+   licence se change en un geste (la demande est alors traitée).
 
 ---
 
@@ -223,9 +275,12 @@ dans un recoin de sa console, avec l'explication.
 | créer une fiche, noter un besoin, une relance | toi | idem → Nouvel établissement / la fiche |
 | lancer une démo, passer en licence | toi | la fiche |
 | renvoyer un code référent | toi | la fiche |
+| ouvrir le compte d'un professeur particulier, sa licence, un mot de passe oublié | toi | Administration → Comptes → « Compte » / sa fiche |
+| régler l'IA d'un établissement (par professeur, par élève) | toi | la fiche → IA par mois |
+| voir ses places, en commander, accepter ou refuser un élève | professeur particulier | son espace (bandeau du code, onglet Demandes d'une classe) |
 | distribuer, changer le code élève ou professeur, choisir son rythme | référent | Mon établissement → Accueil |
 | voir sa licence, ses factures, écrire à Mirandola, lire le contrat | référent | Mon établissement → Licence |
-| ajouter un professeur, retirer un compte parti | référent | Mon établissement → Professeurs / Élèves |
+| ajouter un professeur, ouvrir les comptes des élèves, retirer un compte parti | référent | Mon établissement → Professeurs / Élèves |
 | émettre une facture, un avoir, répondre à un établissement | toi | la fiche → Facturation |
 | ton identité de vendeur (SIRET, TVA, IBAN) | toi | Administration → Entreprise |
 | créer, renommer une classe | référent | Mon établissement → Classes |

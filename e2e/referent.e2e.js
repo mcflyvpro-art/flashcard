@@ -3,6 +3,7 @@
 // élèves, les professeurs, le journal ; et, cachées derrière un lien
 // discret, les cartes élève. Au téléphone, l'essentiel seulement.
 import { test, expect } from '@playwright/test';
+import { licences } from '../src/base-locale/licences.js';
 import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerCompte } from './faux-cercle.js';
 import { modele } from './faux-classes.js';
@@ -129,37 +130,55 @@ test.describe('sur ordinateur', () => {
     await expect(page.locator('[data-rf="supprimer-classe"]')).toHaveCount(0);
   });
 
-  test('les cartes élève : cachées, expliquées, imprimables', async ({ page }) => {
+  test('ajouter des élèves : une ligne par élève, un mot de passe provisoire chacun, montré une fois', async ({ page, browser }) => {
     const store = nouveauStore();
     const { org, classes } = lycee(store);
     await brancher(page, store);
     await entrerReferent(page);
 
-    await page.getByRole('button', { name: 'Des élèves sans adresse e-mail ?' }).click();
-    await expect(page.locator('.rf-cartes')).toContainText('code secret');
-    await page.locator('#rfkcls').selectOption({ label: '1re B' });
-    await page.locator('#rfkliste').fill('MOREAU Inès\nPETIT Hugo');
-    await page.getByRole('button', { name: 'Créer les comptes' }).click();
-    await expect(page.locator('.rf-cartes h2')).toHaveText('2 comptes créés');
-    await expect(page.locator('.rf-carte')).toHaveCount(2);
-    await expect(page.locator('.rf-carte .rf-qr svg')).toHaveCount(2);
-    const ines = store.users.find(u => u.email.startsWith('ines.moreau@'));
+    await page.getByRole('button', { name: 'Ouvrir les comptes des élèves' }).click();
+    await expect(page).toHaveURL(/\/referent\/eleves\/comptes$/);
+    await page.locator('#rflcls').selectOption({ label: '1re B' });
+    await page.locator('#rflliste').fill('MOREAU Inès ; ines.moreau@lycee.fr\nhugo@gmail.com\tPetit\tHugo\nlea@lycee.fr ; MARTIN Léa');
+    await expect(page.locator('#rflapercu')).toContainText('3 élèves');
+    await page.getByRole('button', { name: 'Ouvrir les comptes' }).click();
+    await expect(page.locator('.rf-lot h2')).toHaveText('2 comptes ouverts · 1re B');
+    await expect(page.locator('.rf-lot-ko')).toContainText('déjà un compte');            // Léa en a un : les autres passent quand même
+    await expect(page.locator('.rf-mdps tbody tr')).toHaveCount(2);
+    const ines = store.users.find(u => u.email === 'ines.moreau@lycee.fr');
+    expect(ines.password).toMatch(/^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+    await expect(page.locator('.rf-mdps')).toContainText(ines.password);
+    expect(modele(store).noms[ines.id]).toBe('Inès MOREAU');
     expect(store.cl.membres.some(x => x.uid === ines.id && x.cid === classes[1])).toBe(true);
     expect(store.et.membres[ines.id]).toBe(org.id);
-
+    expect(licences(store).provisoires[ines.id]).toBeTruthy();
     await page.getByRole('button', { name: 'Terminé' }).click();
-    await expect(page.locator('.rf-code')).toHaveCount(2);
+    await expect(page).toHaveURL(/\/referent\/eleves$/);
+
+    // Inès se connecte : son mot de passe d'abord
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const p2 = await ctx.newPage();
+    await brancher(p2, store);
+    await p2.goto('./app');
+    await expect(p2.locator('#boot')).toHaveCount(0, { timeout: 10000 });
+    await p2.getByRole('textbox', { name: 'Adresse e-mail' }).fill('ines.moreau@lycee.fr');
+    await p2.getByRole('textbox', { name: 'Mot de passe' }).fill(ines.password);
+    await p2.getByRole('button', { name: 'Se connecter' }).click();
+    await expect(p2.locator('#app')).toHaveAttribute('data-view', 'mdp', { timeout: 10000 });
+    await ctx.close();
   });
+
 });
 
 test.describe('la licence, sur ordinateur', () => {
   test.use({ viewport: { width: 1360, height: 900 } });
 
-  /* Quatre places : Léa, Tom et Marc en prennent trois (le référent, aucune).
-     Une facture déjà émise par l'éditeur, par la base locale elle-même. */
+  /* Cinq places : Claire (la référente), Léa, Tom et Marc en prennent quatre
+     — une par compte, référent compris (20261029090000). Une facture déjà
+     émise par l'éditeur, par la base locale elle-même. */
   function licence(store) {
     const l = lycee(store), m = modele(store), et = etab(store);
-    Object.assign(l.org, { offre: 'etablissement', places: 4 });
+    Object.assign(l.org, { offre: 'etablissement', places: 5 });
     l.org.suivi.prix_euros = 300;
     l.org.facturation = { nom: 'Lycée Camus', adresse: '51 avenue Kennedy', code_postal: '30000', ville: 'Nîmes', siret: '',
       service: '', engagement: 'BC-118', email: '' };
@@ -179,7 +198,7 @@ test.describe('la licence, sur ordinateur', () => {
     await page.locator('#rail [data-r="ref:licence"]').click();
     await expect(page).toHaveURL(/\/referent\/licence$/);
     const places = page.locator('.rf-places');
-    await expect(places.locator('.rf-kc', { hasText: 'places' })).toContainText('4');
+    await expect(places.locator('.rf-kc', { hasText: 'places' })).toContainText('5');
     await expect(places.locator('.rf-kc', { hasText: 'professeurs' })).toContainText('1');   // un professeur prend une place
     await expect(places.locator('.rf-kc', { hasText: 'libres' })).toContainText('1');
     await expect(places).toContainText('300,00');

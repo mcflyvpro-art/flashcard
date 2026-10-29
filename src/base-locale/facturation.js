@@ -99,7 +99,7 @@ function avoir(et, m, uid, b) {
   return { id: a.id, numero: a.numero };
 }
 
-/* Le référent ouvre le compte d'un professeur : il prend une place, et son mot de passe est provisoire. */
+/* Le référent ouvre le compte d'un professeur ou d'un élève : il prend une place, et son mot de passe est provisoire. */
 function nouveauCompte(store, et, m, uid, b) {
   const o = referent(et, m, uid);
   if (!['eleve', 'prof'].includes(b.qrole)) erreur('Un référent ouvre des comptes d’élève et de professeur.');
@@ -112,6 +112,10 @@ function nouveauCompte(store, et, m, uid, b) {
   store.users.push({ id, email: ad, password: b.pw });
   marquerProvisoire(store, id);                       // le compte choisira son mot de passe à sa première connexion
   m.noms[id] = String(b.nom || '').trim(); m.roles[id] = b.qrole; et.membres[id] = o.id;
+  // un élève entre aussitôt dans sa classe, comme en base
+  if (b.cid && b.qrole === 'eleve' && m.classes.some(c => c.id === b.cid && c.org === o.id)) {
+    m.membres.push({ cid: b.cid, uid: id, depuis: new Date().toISOString(), who: m.noms[id] });
+  }
   tracer(store, id, 'compte ouvert', { nom: m.noms[id], role: b.qrole });
   return id;
 }

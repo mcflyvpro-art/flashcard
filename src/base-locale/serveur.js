@@ -69,6 +69,25 @@ function auth(store, path, url, body, req) {
     return user ? [200, jeton(user)] : [400, { error_description: 'Invalid login credentials' }];
   }
   if (path.endsWith('/recover')) return [200, {}];
+  /* Google, Apple (2026-10-29) : les fournisseurs allumés (`store.fournisseurs`,
+     aucun d'office), et la page du fournisseur jouée d'un coup — elle renvoie
+     à l'app avec la session dans l'adresse, comme Supabase en flux implicite.
+     `store.oauth[fournisseur]` : l'adresse du compte qui « choisit » ce compte
+     chez le fournisseur ; il est créé s'il n'existe pas. */
+  if (path.endsWith('/settings')) return [200, { external: store.fournisseurs || {} }];
+  if (path.endsWith('/authorize')) {
+    const p = url.searchParams.get('provider'), email = (store.oauth || {})[p];
+    if (!(store.fournisseurs || {})[p] || !email) return [400, { msg: 'Unsupported provider: provider is not enabled' }];
+    let user = store.users.find(u => u.email === email);
+    if (!user) { user = { id: randomUUID(), email, password: null }; store.users.push(user); }
+    const j = jeton(user);
+    return [302, null, { location: `${url.searchParams.get('redirect_to')}#access_token=${j.access_token}`
+      + `&refresh_token=${j.refresh_token}&expires_in=3600&token_type=bearer` }];
+  }
+  if (path.endsWith('/user') && req && req.method === 'GET') {
+    const user = userOf(store, req);
+    return user ? [200, { id: user.id, email: user.email }] : [401, { msg: 'Invalid token' }];
+  }
   /* PUT /user : un mot de passe changé n'est plus provisoire (le
      déclencheur mdp_choisi de la vraie base, 20261029090000). */
   if (path.endsWith('/user') && req && req.method === 'PUT') {

@@ -2436,3 +2436,11 @@ button.el-dv:active,button.el-cl:active{transform:scale(.98)}
 .sr.fixe:active{transform:none}
 #app[data-view="settings"] .note svg{width:14px;height:14px;vertical-align:-2px;margin-right:6px}
 
+/* Google, Apple (2026-10-29) : sous le formulaire de connexion, seulement s'ils sont allumés */
+.lext{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.lext[hidden]{display:none}
+.lext-b{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:46px;border-radius:12px;
+  background:var(--card);box-shadow:var(--edge);font-size:15px;font-weight:650;color:var(--ink)}
+.lext-b svg{width:18px;height:18px;stroke:none}
+.lext-b.apple{background:#000;color:#fff;box-shadow:none}
+.lext-n{margin:2px 4px 0;font-size:12px;line-height:1.4;color:var(--soft);text-align:center}

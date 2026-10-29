@@ -85,7 +85,7 @@ export function anneeChoix() {
 
 /* ---------- le tableau de bord ---------- */
 const TODO = {
-  attente: [I.users, 'am', n => plur(n, 'demande') + ' d’inscription', 'Admettre', 'demandes'],
+  attente: [I.users, 'am', n => plur(n, 'demande') + ' d’inscription', 'Voir', 'demandes'],
   retard: [I.warn, 'ko', n => plur(n, 'élève') + ' en retard', 'Voir', 'retard'],
   jamais: [I.lock, 'gris', n => (n > 1 ? `${n} élèves jamais connectés` : '1 élève jamais connecté'), 'Voir', 'jamais'],
   vide: [I.user, 'neutre', () => 'Aucun élève', 'Ajouter', 'inviter'],

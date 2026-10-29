@@ -147,6 +147,22 @@ export function codePull(nouveau) {
   return codeEnCours;
 }
 
+/* La licence d'un professeur particulier (20261029090000) : ses places
+   d'élèves — une demande en attente en tient une —, l'IA du mois, la
+   demande de places en cours. Nulle s'il n'en a pas encore. */
+let licenceEnCours = null;
+export function licencePull() {
+  if (atSchool()) return null;
+  if (licenceEnCours) return licenceEnCours;
+  licenceEnCours = (async () => {
+    try { prof.licence = await rpc('prof_licence') || false; }
+    catch (e) { prof.licence = prof.licence || false; }
+    licenceEnCours = null;
+    repeindre(true);
+  })();
+  return licenceEnCours;
+}
+
 /* Les classes de l'établissement, pour choisir les siennes. */
 export async function classesEtabPull() {
   try { prof.etabClasses = await rpc('prof_classes_etab') || []; } catch (e) { prof.etabClasses = prof.etabClasses || []; }
@@ -197,4 +213,5 @@ export async function ecrire(nom, args, bon) {
 export function relire() {
   profPull();
   if (prof.open) classePull(prof.open);
+  if (prof.licence !== null) licencePull();
 }

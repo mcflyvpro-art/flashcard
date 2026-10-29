@@ -9,6 +9,10 @@ import { consumeGoto } from './raccourcis.js';
 import { consumePlus } from './plus-porte.js';
 import { aInstaller } from './pwa-porte.js';
 import { reprendrePassage } from './passage.js';
+import { lireRetour, sessionDepuisRetour } from '../core/connexion-externe.js';
+import { demanderNouveauMdp } from './mdp-porte.js';
+import { toast } from './import-cartes.js';
+import { I } from '../icones.js';
 
 /* ══════════ les liens qui entrent dans l'app ══════════
    Une seule porte pour tout lien qui ouvre l'app : « #i= » / « #s= » (un
@@ -32,9 +36,25 @@ import { reprendrePassage } from './passage.js';
    session. */
 export async function lienAvantSession() {
   reprendrePassage();                  // l'app installée reprend le code laissé par son navigateur (ui/passage.js)
+  await consumeRetour();
   if (auth) return true;
   await rangerLiens();
   return false;
+}
+
+/* Le retour de Google, d'Apple ou d'un lien reçu par e-mail
+   (core/connexion-externe.js) : la session est dans l'adresse ; on l'ouvre,
+   et on retire aussitôt les jetons de l'adresse (l'historique, une capture
+   d'écran, un lien copié ne doivent jamais les garder). Un lien « mot de
+   passe oublié » mène tout droit au choix d'un nouveau mot de passe. */
+async function consumeRetour() {
+  const r = lireRetour(location.hash);
+  if (!r) return;
+  history.replaceState(history.state, '', location.pathname + location.search);
+  if (r.erreur) { toast(I.x, /expired|invalid/i.test(r.erreur) ? 'Ce lien a expiré : redemande-le' : 'Connexion refusée'); return; }
+  try {
+    if (await sessionDepuisRetour(r) === 'recovery') demanderNouveauMdp();
+  } catch (e) { toast(I.x, 'Ce lien a expiré : redemande-le'); }
 }
 
 /* Les codes de l'adresse, rangés pour plus tard : sans session, ou devant
