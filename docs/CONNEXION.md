@@ -81,7 +81,8 @@ Providers → **Email → décocher « Confirm email »**. Un compte s'ouvre alo
 l'inscription, sans e-mail. Mais n'importe qui peut s'inscrire avec l'adresse
 d'un autre, et le « mot de passe oublié » reste bloqué : **à réactiver dès que
 le SMTP marche.** Les comptes déjà créés sans confirmation restent à confirmer
-(Authentication → Users → le compte → « Confirm email », ou demander à Claude).
+(Claude peut les confirmer en base, à la demande : `email_confirmed_at` de
+`auth.users`).
 
 Les comptes ouverts par l'éditeur ou un référent (mot de passe provisoire)
 sont confirmés d'office : ils n'attendent aucun e-mail.

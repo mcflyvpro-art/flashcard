@@ -173,9 +173,19 @@ async function nouveauMdp() {
   }
 }
 
+/* Le premier champ d'un formulaire qui s'ouvre, un instant après : jamais
+   sous les doigts — un champ déjà actif le garde (sinon la suite de la
+   saisie partait dans le premier : « Lycée NeufArles »). */
+export function premierChamp(id) {
+  setTimeout(() => {
+    const a = document.activeElement;
+    if (!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) document.getElementById(id)?.focus();
+  }, 60);
+}
+
 export const ACTIONS_COMPTES = {
   'nouveau-compte': () => { Object.assign(adm, { tab: 'comptes', copen: 'nouveau', neuf: { role: 'prof' } }); repeint();
-    setTimeout(() => document.getElementById('nc-prenom')?.focus(), 60); },
+    premierChamp('nc-prenom'); },
   'copier-acces': copierAcces,
   'nouveau-mdp': nouveauMdp
 };

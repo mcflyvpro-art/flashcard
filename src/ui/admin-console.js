@@ -20,7 +20,7 @@ import {
 } from './admin-facturation.js';
 import { admFacturePull } from '../core/admin.js';
 import {
-  ACTIONS_COMPTES, blocMdp, blocProf, FORMULAIRES_COMPTES, nouveauCompte, suivreCout, suivreRole, tuileIa
+  ACTIONS_COMPTES, blocMdp, blocProf, FORMULAIRES_COMPTES, nouveauCompte, premierChamp, suivreCout, suivreRole, tuileIa
 } from './admin-comptes.js';
 import './admin-console.css';
 
@@ -351,7 +351,7 @@ const ACTIONS = {
   'voir-demandes': () => { Object.assign(adm, { tab: 'suivi', etape: 'prospect', q: '' }); repeint(); },
   'voir-relances': () => { Object.assign(adm, { tab: 'suivi', etape: 'tous', q: '' }); repeint(); },
   org: id => { adm.open = id; admLicencePull(id); repeint(); },
-  nouveau: () => { adm.open = 'nouveau'; adm.tab = 'suivi'; repeint(); setTimeout(() => document.getElementById('ef-nom')?.focus(), 60); },
+  nouveau: () => { adm.open = 'nouveau'; adm.tab = 'suivi'; repeint(); premierChamp('ef-nom'); },
   fermer: () => { adm.open = null; adm.copen = null; repeint(); },
   crole: k => { adm.crole = k; repeint(); },
   compte: id => { adm.copen = id; if (adm.neuf && adm.neuf.mdpDe !== id) adm.neuf = null; adm.tab = 'comptes'; repeint(); },
