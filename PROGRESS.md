@@ -19,7 +19,14 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-29 · Le professeur particulier en licence, de bout en
+DERNIER   2026-10-29 (soir) · L'inscription par e-mail « ne faisait rien » :
+          le SMTP intégré de Supabase (2 e-mails/h, l'équipe seulement)
+          refusait en 429 ou laissait les comptes sans confirmation, et
+          l'app effaçait elle-même « Compte créé… » en redessinant l'écran.
+          Le message reste, chaque refus dit son motif, « Renvoyer
+          l'e-mail » ; SMTP à poser (docs/CONNEXION.md § 1). Apple écarté,
+          Google en place.
+Avant :   2026-10-29 · Le professeur particulier en licence, de bout en
           bout : l'éditeur ouvre son compte (mot de passe provisoire,
           message tout écrit) et lui accorde places et IA (coût estimé en
           direct) ; mot de passe choisi à la première connexion ; l'élève

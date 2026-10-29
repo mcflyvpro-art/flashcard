@@ -54,22 +54,44 @@ const userOf = (store, req) => {
   return m && store.users.find(u => u.id === m[1]);
 };
 
+// un e-mail d'authentification qui part, s'il reste de la place sous le plafond
+function courriel(store, type, email) {
+  store.courriels = store.courriels || [];
+  if (store.limiteCourriels != null && store.courriels.length >= store.limiteCourriels) return false;
+  store.courriels.push({ type, email });
+  return true;
+}
+const limite = () => [429, { code: 429, error_code: 'over_email_send_rate_limit', msg: 'email rate limit exceeded' }];
+
 function auth(store, path, url, body, req) {
+  /* La confirmation d'adresse (2026-10-29) : `store.confirmation` la demande,
+     comme le projet en vrai ; `store.courriels` compte les e-mails partis et
+     `store.limiteCourriels` en fixe le plafond (le SMTP intégré de Supabase :
+     2 par heure) — au-delà, 429 et aucun compte, comme Supabase. Le lien de
+     l'e-mail se joue en posant `confirme: true` sur le compte. */
   if (path.endsWith('/signup')) {
-    if (store.users.some(u => u.email === body.email)) return [422, { msg: 'User already registered' }];
+    if (store.users.some(u => u.email === body.email)) return [422, { error_code: 'user_already_exists', msg: 'User already registered' }];
+    if (store.confirmation && !courriel(store, 'signup', body.email)) return limite();
     const user = { id: randomUUID(), email: body.email, password: body.password };
     store.users.push(user);
+    if (store.confirmation) { user.confirme = false; return [200, { id: user.id, email: user.email }]; }
     return [200, jeton(user)];
+  }
+  if (path.endsWith('/resend')) {
+    const user = store.users.find(u => u.email === body.email && u.confirme === false);
+    if (user && !courriel(store, body.type, body.email)) return limite();
+    return [200, {}];
   }
   if (path.endsWith('/token')) {
     const grant = url.searchParams.get('grant_type');
     const user = grant === 'refresh_token'
       ? store.users.find(u => 'ref-' + u.id === body.refresh_token)
       : store.users.find(u => u.email === body.email && u.password === body.password);
-    return user ? [200, jeton(user)] : [400, { error_description: 'Invalid login credentials' }];
+    if (user && user.confirme === false) return [400, { error_code: 'email_not_confirmed', msg: 'Email not confirmed' }];
+    return user ? [200, jeton(user)] : [400, { error_code: 'invalid_credentials', msg: 'Invalid login credentials' }];
   }
   if (path.endsWith('/recover')) return [200, {}];
-  /* Google, Apple (2026-10-29) : les fournisseurs allumés (`store.fournisseurs`,
+  /* Google (2026-10-29) : les fournisseurs allumés (`store.fournisseurs`,
      aucun d'office), et la page du fournisseur jouée d'un coup — elle renvoie
      à l'app avec la session dans l'adresse, comme Supabase en flux implicite.
      `store.oauth[fournisseur]` : l'adresse du compte qui « choisit » ce compte

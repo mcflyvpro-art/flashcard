@@ -1,18 +1,18 @@
 import { SB, keepSession } from './coeur-sync.js';
 
-/* ══════════ se connecter par Google, Apple, ou un lien reçu par e-mail (2026-10-29) ══════════
-   Supabase Auth en « flux implicite » : la page d'un fournisseur (Google,
-   Apple) ou le lien d'un e-mail (« mot de passe oublié ») renvoie à l'app
+/* ══════════ se connecter par Google, ou un lien reçu par e-mail (2026-10-29) ══════════
+   Supabase Auth en « flux implicite » : la page de Google ou le lien d'un
+   e-mail (« mot de passe oublié », confirmation d'adresse) renvoie à l'app
    avec la session dans l'adresse — `#access_token=…&refresh_token=…&type=…`.
    On la reprend au tout début du démarrage (ui/liens-entrants.js), on lit le
    compte qu'elle ouvre (`GET /auth/v1/user`), puis elle passe par
    keepSession comme une connexion ordinaire ; l'adresse est nettoyée aussitôt.
 
-   Les boutons ne se montrent que pour un fournisseur ALLUMÉ dans le projet
+   Le bouton ne se montre que pour un fournisseur ALLUMÉ dans le projet
    (`GET /auth/v1/settings`, `external`) : tant qu'il ne l'est pas, rien ne
-   change à l'écran (docs/CONNEXION.md dit comment les allumer). */
+   change à l'écran (docs/CONNEXION.md dit comment allumer Google). */
 
-/* Les fournisseurs allumés ({ google: true, apple: false… }), ou {} si on ne
+/* Les fournisseurs allumés ({ google: true… }), ou {} si on ne
    sait pas (hors ligne, projet injoignable) : alors on n'en montre aucun. */
 export async function fournisseurs() {
   try {

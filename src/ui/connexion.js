@@ -390,20 +390,19 @@ function validateLoginForm(up, em, pw, err) {
 /* Rend true quand l'inscription vient de s'arrêter net (compte créé mais
    e-mail à confirmer) : la vue a déjà été repeinte, l'appelant n'a plus
    rien à faire. */
-async function submitSignUp(em, pw, err) {
+async function submitSignUp(em, pw) {
   const done = await signUp(em.value, pw.value);
   if (done) return false;
-  err.textContent = 'Compte créé. Confirme l’e-mail reçu, puis connecte-toi.';
-  setLoginMode('in'); setLoginBusy(false); loginView();
+  /* L'écran se refait en mode connexion : le message va dans le NOUVEAU champ
+     (écrit avant, il partait avec l'ancien, et l'inscription semblait n'avoir
+     rien fait), et l'adresse reste remplie. */
+  const email = em.value;
+  setLoginMode('in'); setLoginBusy(false); loginView(); synchroniser();
+  document.getElementById('em').value = email;
+  import('./connexion-refus.js').then(m => m.direCree(document.getElementById('le')));
   return true;
 }
 
-function loginErrorMessage(x, up) {
-  const m = String(x.message || '');
-  if (/already|exist|registered/i.test(m)) return 'Cette adresse a déjà un compte';
-  if (/Invalid|credentials|refus/i.test(m)) return 'E-mail ou mot de passe incorrect';
-  return up ? 'Inscription impossible' : 'Connexion impossible';
-}
 
 /* Ce qui suit toute connexion réussie, quelle qu'en soit la porte. */
 async function apresConnexion() {
@@ -424,18 +423,20 @@ async function apresConnexion() {
 async function doLogin(up, em, pw, err, btn) {
   try {
     if (up) {
-      if (await submitSignUp(em, pw, err)) return;
+      if (await submitSignUp(em, pw)) return;
     } else await signIn(em.value, pw.value);
     await apresConnexion();
   } catch (x) {
-    err.textContent = loginErrorMessage(x, up);
     btn.disabled = false;
     btn.firstChild.textContent = up ? 'Créer le compte' : 'Se connecter';
+    // le vrai motif, et « Renvoyer l'e-mail » au besoin : chargés au premier refus
+    import('./connexion-refus.js').then(m => m.direRefus(x, up, err, em.value),
+      () => { err.textContent = up ? 'Inscription impossible' : 'Connexion impossible'; });
   }
 }
 
-/* ---------- Google, Apple (2026-10-29, core/connexion-externe.js) ----------
-   Seulement ceux qu'on a allumés dans le projet Supabase (docs/CONNEXION.md) :
+/* ---------- Google (2026-10-29, core/connexion-externe.js ; Apple écarté) ----------
+   Seulement s'il est allumé dans le projet Supabase (docs/CONNEXION.md) :
    la liste se demande une fois par ouverture de l'app, et les boutons (leurs
    marques comprises) n'arrivent qu'alors, chargés à part (ui/fournisseurs.js). */
 let allumes = null;                       // la promesse de la liste, demandée une fois

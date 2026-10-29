@@ -28,21 +28,37 @@ d'accueil (`index.html`) passe à l'app tout retour d'e-mail
 Depuis le 2026-10-29, l'app **ouvre** la session que portent ces retours
 (`#access_token=…`, `ui/liens-entrants.js`) — un lien « mot de passe
 oublié » mène à « Choisis un nouveau mot de passe » — et les mêmes
-réglages servent à **Google et Apple** (Sign In / Providers) : la marche à
-suivre est dans `docs/CONNEXION.md`. Un fournisseur allumé fait paraître son
-bouton sur l'écran de connexion, sans nouvelle version de l'app.
+réglages servent à **Google** (Sign In / Providers, allumé le 2026-10-29 ;
+Apple écarté le même jour) : la marche à suivre est dans `docs/CONNEXION.md`.
+Google allumé fait paraître son bouton sur l'écran de connexion, sans
+nouvelle version de l'app.
 
 ## Authentication → Emails
 
-Les modèles (confirmation, mot de passe oublié, changement d'adresse) et,
-s'il y en a un, le nom d'expéditeur du SMTP disent **Mirandola**, jamais
-« Folio » (2026-10-28).
+**Un SMTP à soi est obligatoire** (constaté le 2026-10-29, marche à suivre
+dans `docs/CONNEXION.md` § 1) : le service intégré de Supabase n'envoie que
+2 e-mails par heure, et seulement aux membres de l'équipe du projet. Sans
+SMTP, une inscription par e-mail échoue (`429 email rate limit exceeded`) ou
+attend un lien de confirmation qui n'arrive jamais (`Email not confirmed`),
+et « mot de passe oublié » n'arrive à personne.
+
+| Réglage | Valeur attendue |
+|---|---|
+| SMTP Settings | **Custom SMTP** (Brevo : `smtp-relay.brevo.com`, port 587), expéditeur `noreply@mirandola.fr`, nom `Mirandola` ; identifiant et clé dans le tableau de bord seulement |
+| Domaine d'envoi | `mirandola.fr` authentifié chez l'expéditeur (DKIM, DMARC) |
+
+Les modèles (confirmation, mot de passe oublié, changement d'adresse) et le
+nom d'expéditeur du SMTP disent **Mirandola**, jamais « Folio » (2026-10-28).
 
 ## Authentication → Rate limits
 
 Laisser les limites par défaut au minimum, et les resserrer avant un
 déploiement en établissement : l'inscription et la connexion sont les deux
-portes qu'on essaie en premier.
+portes qu'on essaie en premier. Une exception : les **e-mails envoyés**, que
+Supabase fixe à 30 par heure avec un SMTP neuf — **100 par heure** au moins,
+sans quoi une classe qui s'inscrit le même matin bute sur la limite (l'app
+le dit en clair : « L'e-mail de confirmation ne peut pas partir pour
+l'instant »).
 
 ## Storage
 

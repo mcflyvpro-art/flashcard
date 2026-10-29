@@ -320,7 +320,8 @@ export async function signUp(email, password) {
     body: JSON.stringify({ email: email.trim().toLowerCase(), password })
   });
   const j = await r.json();
-  if (!r.ok) throw new Error(j.msg || j.error_description || j.message || 'Inscription refusée');
+  // le code de Supabase Auth suit l'erreur : l'écran en tire le vrai motif (src/connexion-erreurs.js)
+  if (!r.ok) throw Object.assign(new Error(j.msg || j.error_description || j.message || 'Inscription refusée'), { code: j.error_code });
   if (j.access_token) { keepSession(j); return true; }
   return false;                       // confirmation par e-mail exigée par le projet
 }
@@ -339,7 +340,7 @@ export async function signIn(email, password) {
     body: JSON.stringify({ email: email.trim().toLowerCase(), password })
   });
   const j = await r.json();
-  if (!r.ok || !j.access_token) throw new Error(j.error_description || j.msg || j.error || 'Connexion refusée');
+  if (!r.ok || !j.access_token) throw Object.assign(new Error(j.error_description || j.msg || j.error || 'Connexion refusée'), { code: j.error_code });
   keepSession(j);
   return j;
 }
