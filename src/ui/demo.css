@@ -1,11 +1,7 @@
 /* ══════════ « Essayer Mirandola » (préfixe dm-, chargé avec ui/demo.js) ══════════ */
 .dm{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:1040px;
   margin:0 auto;padding:6px 0 24px;text-align:center}
-.dm-etab{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;background:rgba(255,255,255,.78);
-  box-shadow:var(--edge);font-size:13.5px;font-weight:700;color:var(--ink2)}
-.dm-etab svg{width:16px;height:16px}
-.dm-t{margin:16px 0 0;font:700 clamp(42px,7.4vw,76px)/1 var(--serif);letter-spacing:-.045em}
-.dm-s{margin:10px 0 26px;font:italic 400 17px/1.35 var(--serif);color:var(--soft)}
+.dm-t{margin:0 0 30px;font:700 clamp(42px,7.4vw,76px)/1 var(--serif);letter-spacing:-.045em}
 .dm-roles{display:grid;gap:12px;width:100%;max-width:440px}
 .dm-role{display:flex;align-items:center;gap:14px;width:100%;padding:14px 14px 14px 14px;border-radius:24px;text-align:left;
   background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
@@ -18,7 +14,6 @@
 .dm-qui{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .dm-qui b{font-size:17px;font-weight:750;letter-spacing:-.2px}
 .dm-qui span{font-size:13.5px;font-weight:650;color:var(--ink2)}
-.dm-qui small{font-size:12.5px;color:var(--soft)}
 .dm-go{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;
   transition:transform .35s var(--e)}
 .dm-go svg{width:18px;height:18px;stroke-width:2.2}

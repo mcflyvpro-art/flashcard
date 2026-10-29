@@ -118,7 +118,10 @@ function rejoindre(store, m, b, uid) {
   if (s.group_id && !membre(store, s.group_id, uid)) return [{ statut: 'club', salle: null, titre: null }];
   const j = m.joueurs.find(x => x.salle_id === s.id && x.user_id === uid);
   if (j && j.exclu) return [{ statut: 'exclu', salle: null, titre: null }];
-  if (!j) m.joueurs.push({ salle_id: s.id, user_id: uid, nom: nomDe(store, uid), score: 0, serie: 0, justes: 0, exclu: false,
+  // dans une salle de classe, le nom de classe de l'élève (« Prénom NOM »), comme salle_rejoindre (20261029120000)
+  const deClasse = s.class_id && store.cl && store.cl.membres.find(x => x.cid === s.class_id && x.uid === uid);
+  const nom = (deClasse && (deClasse.who || profil(store, uid).name)) || nomDe(store, uid);
+  if (!j) m.joueurs.push({ salle_id: s.id, user_id: uid, nom, score: 0, serie: 0, justes: 0, exclu: false,
     vu_rang: null, vu_at: null, joined_at: Date.now() });
   return [{ statut: 'ok', salle: s.id, titre: s.titre }];
 }

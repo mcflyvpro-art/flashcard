@@ -2,10 +2,10 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { demoEtab, setAuth, setDb, setDemoEtab } from '../data/etat.js';
-import { esc, flush, pull, setOnline } from '../core/coeur-sync.js';
+import { flush, pull, setOnline } from '../core/coeur-sync.js';
 import { accueil } from '../core/classement.js';
 import { nouveauStore, repondre } from '../base-locale/serveur.js';
-import { COMPTES, ETAB, PREFIXE, semerMonde, teinteDemo, visageDemo } from '../base-locale/monde.js';
+import { COMPTES, PREFIXE, semerMonde, teinteDemo, visageDemo } from '../base-locale/monde.js';
 import { avatarSvg, ecrireAvatar, lireAvatar } from '../avatar.js';
 import { COULEURS } from '../jeton.js';
 import { go } from './bibliotheque.js';
@@ -43,9 +43,9 @@ import './demo.css';
 const POUR_SOI = { href: '/inscription', icone: 'user', long: 'Créer mon compte gratuit', court: 'Créer mon compte' };
 const POUR_L_ETAB = { href: '/demande-demo', icone: 'school', long: 'Essayer dans mon établissement', court: 'Mon établissement' };
 const ROLES = [
-  { k: 'eleve', n: 1, t: 'Élève', c: 'Élève', s: 'Léa · 2nde B', q: 'Ses devoirs, ses livres, sa série', suite: POUR_SOI },
-  { k: 'prof', n: 2, t: 'Professeur', c: 'Prof', s: 'Marc · mathématiques', q: 'Ses classes, un devoir à donner', suite: POUR_L_ETAB },
-  { k: 'ref', n: 3, t: 'Référent de l’établissement', c: 'Référent', s: 'Claire · le lycée', q: 'Les codes, les classes, les comptes', suite: POUR_L_ETAB }
+  { k: 'eleve', n: 1, t: 'Élève', c: 'Élève', s: 'Léa · 2nde B', suite: POUR_SOI },
+  { k: 'prof', n: 2, t: 'Professeur', c: 'Prof', s: 'Marc · mathématiques', suite: POUR_L_ETAB },
+  { k: 'ref', n: 3, t: 'Référent de l’établissement', c: 'Référent', s: 'Claire · le lycée', suite: POUR_L_ETAB }
 ];
 const CLE = 'folio.demo';
 /* Le tuto de chaque rôle se joue la première fois qu'on le prend : entrer en
@@ -58,12 +58,10 @@ const CLE_TUTO = 'folio.demo.tuto';
 export function decouvrirEcran() {
   $.innerHTML = `<div class="pub pub-essai">${pubTete()}
     <div class="dm">
-      <span class="dm-etab">${svg(I.school)}${esc(ETAB.nom)}</span>
       <h1 class="dm-t">Essaie <em>Mirandola.</em></h1>
-      <p class="dm-s">Choisis qui tu es. Rien ne s’enregistre.</p>
       <div class="dm-roles">${ROLES.map(r => `<button class="dm-role" data-dm="lancer" data-v="${r.k}">
         <i class="dm-av" style="--c:${COULEURS[teinteDemo(r.n)]}">${avatarSvg(lireAvatar(ecrireAvatar(visageDemo(r.n))))}</i>
-        <span class="dm-qui"><b>${r.t}</b><span>${r.s}</span><small>${r.q}</small></span>
+        <span class="dm-qui"><b>${r.t}</b><span>${r.s}</span></span>
         <i class="dm-go">${svg(I.arrow)}</i></button>`).join('')}</div>
       <button class="lnk dm-lien" data-act="demande" type="button">${svg(I.mail)}Une démo pour mon établissement</button>
     </div>

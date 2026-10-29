@@ -33,9 +33,10 @@ test('Google allumé : « Continuer avec Google » ouvre la session, et l’adre
   await expect(page.getByRole('button', { name: 'Continuer avec Google' })).toBeVisible({ timeout: 10000 });
   await expect(page.getByRole('button', { name: 'Continuer avec Apple' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Continuer avec Google' }).click();
-  await expect(page.locator('#app')).not.toHaveAttribute('data-view', 'login', { timeout: 10000 });
+  // un vrai écran (avant le démarrage, #app n'a pas encore de data-view : « pas login » serait déjà vrai)
+  await expect(page.locator('#app')).toHaveAttribute('data-view', /^(?!login$)\w+/, { timeout: 10000 });
   expect(store.users.some(u => u.email === 'nina@gmail.com')).toBe(true);
-  expect(page.url()).not.toContain('access_token');
+  await expect(page).not.toHaveURL(/access_token/);
 });
 
 test('le lien « mot de passe oublié » : un nouveau mot de passe d’abord', async ({ page }) => {

@@ -145,7 +145,7 @@ test('mon jeton : un avatar et une couleur, le même visage chez un ami', async 
   await page.keyboard.press('Escape');
   await expect.poll(() => ((store.jetons || {})['p:' + store.users[0].id] || {}).teinte).toBe(3);
   const cle = store.jetons['p:' + store.users[0].id].cle;
-  expect(cle).toMatch(/^av[a-z]{7}$/);
+  expect(cle).toMatch(/^av[a-z]{7,14}$/);                                // quatorze traits depuis le 2026-10-29 (src/avatar.js)
   expect(cle[3]).toBe('d');                                          // la coiffure n° 3 : bouclée
 
   // chez Tom : la même figure, la même couleur, dans le classement et les amis

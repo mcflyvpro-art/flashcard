@@ -152,6 +152,17 @@ begin
   j := public.mon_offre();
   select count(*) into n from public.eleve_classes() e where e.statut = 'inscrit';
   insert into public.zz_res (nom, ok, vu) values ('Tom dans la classe, en Campus', j->>'offre' = 'campus' and n = 1, j::text);
+  -- un défi en direct de sa classe : son nom de classe, pas son pseudo (20261029120000)
+  perform public.zz_comme(mira);
+  select o.pin into t from public.salle_ouvrir('Révisions', 'vf', 20,
+    '[{"e":"Paris est en France","c":["Paris est en France"],"b":"1","r":"Vrai"}]'::jsonb, cid) o;
+  perform public.zz_comme(tom);
+  perform public.salle_rejoindre(t);
+  perform public.zz_root();
+  select x.nom into t from public.salle_joueurs x join public.salles s on s.id = x.salle_id
+  where s.hote = mira and x.user_id = tom;
+  insert into public.zz_res (nom, ok, vu) values ('un défi de sa classe : « Tom DURAND », pas son pseudo', t = 'Tom DURAND', t);
+  update public.salles set etat = 'fini' where hote = mira;
   perform public.zz_comme(lea);
   j := public.rejoindre(code, 'Léa', 'Martin', null);
   insert into public.zz_res (nom, ok, vu) values ('Léa recommence : la place rendue l''attend', j->>'statut' = 'attente', j::text);
