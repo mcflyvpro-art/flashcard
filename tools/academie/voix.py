@@ -39,7 +39,6 @@ PHRASE_TEST = ('Bienvenue dans la Mirandola Academy. En trois minutes, tu vas ap
 SIGLES = {'QCM', 'QR', 'PDF', 'RGPD', 'ENT', 'UAI', 'SIRET', 'CGV', 'TVA', 'HT', 'TTC', 'PP', 'IA', 'URL'}
 COMMUN = [
     (r'\b2nde\b', 'seconde'), (r'\b1re\b', 'première'), (r'\bTle\b', 'terminale'),
-    (r'www\.folioflashcard\.online', 'folioflashcard point online'),
     (r'→', ','), (r'«\s*|\s*»', ''), (r'\s—\s', ', '), (r'…', '.'),
 ]
 KOKORO = [   # ce qu'espeak, derrière Kokoro, lit à l'anglaise ou épelle mal

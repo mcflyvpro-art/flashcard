@@ -1038,11 +1038,17 @@ l'air de marcher ».
   `https://mirandola.fr/`** (depuis le 2026-10-28 ; projet Vercel
   `flashcard`, équipe `massam-17-s-projects` ; `www.mirandola.fr` redirige
   vers l'apex). **L'ancien domaine `www.folioflashcard.online` (et son
-  apex) reste servi, sans redirection**, comme l'alias
-  `flashcard-roan-chi.vercel.app` : qui y a installé l'app perdrait ses
-  écritures pas encore envoyées, le stockage local étant propre à chaque
-  origine ; la page d'accueil y porte la balise canonique de mirandola.fr,
-  pour les moteurs de recherche. Vercel déploie
+  apex), comme l'alias de production `flashcard-roan-chi.vercel.app`,
+  renvoient tout vers mirandola.fr** (décidé le 2026-10-29 : « je veux plus
+  jamais voir cette adresse » — on accepte que qui y avait installé l'app
+  se reconnecte et la réinstalle) : redirections 308 par hôte dans
+  `vercel.json`, le chemin et la requête gardés, **sauf `/sw.js`**, que
+  l'app installée là-bas redemande encore — et qui, sur ces hôtes, ne garde
+  rien : il vide les caches, se désinscrit et mène chaque fenêtre ouverte à
+  la même adresse sur mirandola.fr (`ANCIEN` de `src/sw.js` ; les deux
+  listes d'hôtes gardées d'accord par `test/ancien-domaine.test.js`). Les
+  préversions Vercel (`*-git-*.vercel.app`) ne sont pas touchées. Plus
+  aucun lien de l'app ni du site ne nomme l'ancien domaine. Vercel déploie
   `main`. **Tout lien qui sort de l'app** (partage, QR, invitation, carte de
   connexion) se fabrique sur `SITE` (`src/adresse.js`, sans dépendance),
   jamais sur `location.origin` : une préversion ou Capacitor

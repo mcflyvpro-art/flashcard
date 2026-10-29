@@ -19,7 +19,13 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-29 (nuit, bis) · Un code dès l'accueil : l'accueil
+DERNIER   2026-10-29 (soir, ter) · Tout est mirandola.fr : l'ancien
+          domaine (folioflashcard.online) et l'alias vercel.app de
+          production renvoient tout vers mirandola.fr ; l'app installée
+          là-bas reçoit un dernier service worker qui vide ses caches, se
+          désinscrit et l'y mène. La confirmation par e-mail est coupée
+          (décidé), Brevo plus tard. Aucune tâche cochée.
+Avant :   2026-10-29 (nuit, bis) · Un code dès l'accueil : l'accueil
           continue sur place (il repartait au choix « pour moi / j'ai un
           code »). Chez un professeur particulier, l'élève attend sur son
           accueil, la professeure le voit arriver sans recharger ; validé,

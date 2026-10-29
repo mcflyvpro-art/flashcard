@@ -23,7 +23,7 @@ d'accueil (`index.html`) passe à l'app tout retour d'e-mail
 | Réglage | Valeur attendue |
 |---|---|
 | Site URL | `https://mirandola.fr` |
-| Redirect URLs | `https://mirandola.fr/**`, et l'ancien domaine tant qu'il sert : `https://www.folioflashcard.online/**` |
+| Redirect URLs | `https://mirandola.fr/**` seulement — l'ancien domaine renvoie tout vers mirandola.fr depuis le 2026-10-29 |
 
 Depuis le 2026-10-29, l'app **ouvre** la session que portent ces retours
 (`#access_token=…`, `ui/liens-entrants.js`) — un lien « mot de passe

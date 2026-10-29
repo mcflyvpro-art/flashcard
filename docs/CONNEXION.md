@@ -26,7 +26,7 @@ Authentication → **URL Configuration** (voir `supabase/REGLAGES.md`) :
 | Réglage | Valeur |
 |---|---|
 | Site URL | `https://mirandola.fr` |
-| Redirect URLs | `https://mirandola.fr/**`, `https://www.folioflashcard.online/**` (l'ancien domaine, tant qu'il sert) |
+| Redirect URLs | `https://mirandola.fr/**` seulement (l'ancien domaine renvoie tout vers mirandola.fr depuis le 2026-10-29 : à retirer de la liste) |
 
 ---
 

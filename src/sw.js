@@ -9,10 +9,33 @@
 const C = 'folio-__BUILD__';
 const BASE = '__BASE__';
 const SHELL = __SHELL__;
+
+/* L'ancien domaine (2026-10-29 : « tout est mirandola.fr ») : Vercel y
+   renvoie toute adresse vers mirandola.fr, sauf ce fichier — l'app installée
+   là-bas tournait sur sa copie en cache, sans jamais redemander le réseau.
+   Ce service worker-ci, le seul qu'elle reçoit encore, ne garde rien : il
+   vide les caches, se désinscrit et mène chaque fenêtre ouverte à la même
+   adresse sur mirandola.fr. On s'y reconnecte (le stockage local est propre
+   à chaque domaine) — accepté. */
+const ANCIEN = ['www.folioflashcard.online', 'folioflashcard.online', 'flashcard-roan-chi.vercel.app']
+  .includes(self.location.hostname);
+
 self.addEventListener('install', e => {
+  if (ANCIEN) { self.skipWaiting(); return; }
   e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
+  if (ANCIEN) {
+    e.waitUntil((async () => {
+      for (const k of await caches.keys()) await caches.delete(k);
+      await self.registration.unregister();
+      for (const c of await self.clients.matchAll({ type: 'window' })) {
+        const u = new URL(c.url);
+        c.navigate('https://mirandola.fr' + u.pathname + u.search + u.hash).catch(() => { /* fenêtre déjà fermée */ });
+      }
+    })());
+    return;
+  }
   e.waitUntil(caches.keys()
     .then(k => Promise.all(k.filter(x => x !== C).map(x => caches.delete(x))))
     .then(() => self.clients.claim()));
@@ -34,7 +57,7 @@ self.addEventListener('activate', e => {
    place d'un script. */
 self.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  if (ANCIEN || req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   const page = req.mode === 'navigate';
   const cle = !page ? req : new URL(req.url).pathname === BASE ? BASE : BASE + 'app';
   e.respondWith(

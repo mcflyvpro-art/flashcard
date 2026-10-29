@@ -9,7 +9,6 @@
    vaudra `capacitor://localhost` : un lien partagé ne mènerait nulle part.
    Un seul domaine, donc, celui où l'app est installée et où les liens
    universels (iOS) et App Links (Android) seront déclarés : mirandola.fr
-   depuis le 2026-10-28 (l'ancien, folioflashcard.online, sert toujours
-   l'app à qui l'y a installée, sans redirection — son stockage local, et
-   les écritures pas encore envoyées, sont propres à son origine). */
+   depuis le 2026-10-28 ; l'ancien domaine renvoie tout vers lui depuis le
+   2026-10-29 (vercel.json, src/sw.js). */
 export const SITE = 'https://mirandola.fr/';

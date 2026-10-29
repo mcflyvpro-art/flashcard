@@ -6,6 +6,9 @@
   "installCommand": "npm ci",
   "cleanUrls": true,
   "redirects": [
+    { "source": "/:chemin((?!sw\\.js$).*)", "has": [{ "type": "host", "value": "www.folioflashcard.online" }], "destination": "https://mirandola.fr/:chemin*", "permanent": true },
+    { "source": "/:chemin((?!sw\\.js$).*)", "has": [{ "type": "host", "value": "folioflashcard.online" }], "destination": "https://mirandola.fr/:chemin*", "permanent": true },
+    { "source": "/:chemin((?!sw\\.js$).*)", "has": [{ "type": "host", "value": "flashcard-roan-chi.vercel.app" }], "destination": "https://mirandola.fr/:chemin*", "permanent": true },
     { "source": "/app/", "destination": "/app", "permanent": true }
   ],
   "rewrites": [
