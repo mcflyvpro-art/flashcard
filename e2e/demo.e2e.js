@@ -71,7 +71,7 @@ test('Léa lit son devoir, Marc le voit ; Marc écrit à la classe, Léa le reç
   await page.locator('[data-pf="message"]').first().click();
   await page.locator('#pfmsg').fill('Contrôle vendredi : révisez les fonctions');
   await page.locator('[data-pf="message-go"]').click();
-  await expect(page.locator('.toast')).toContainText('Message envoyé à 11 élèves');
+  await expect(page.locator('.toast:not(.sort)')).toContainText('Message envoyé à 11 élèves');
 
   // Léa le trouve dans son courrier, comme un mot et non comme un livre
   await changer(page, 'eleve');

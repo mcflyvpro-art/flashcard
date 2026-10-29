@@ -123,7 +123,7 @@ test('un élève entre le code dès son accueil : salle d’attente, Campus, pui
   await expect(page.locator('html')).toHaveClass(/offre-gratuit/);            // un compte neuf : Mirandola gratuit
   await page.getByRole('button', { name: 'J’ai un code' }).click();
   await entrerLeCode(page, 'léa', 'martin');
-  await expect(page.locator('.toast')).toContainText('Demande envoyée', { timeout: 10000 });
+  await expect(page.locator('.toast:not(.sort)')).toContainText('Demande envoyée', { timeout: 10000 });
   expect(m.demandes.map(x => [x.cid, x.uid, x.who])).toEqual([[cid, eleves.lea, 'Léa MARTIN']]);
   expect(offreDe(store, eleves.lea)).toBe('campus');
   // Campus dès la salle d'attente : plus rien de bridé (et son tuto ne lui proposera pas Mirandola+)
@@ -178,7 +178,7 @@ test('refusé, l’élève retombe en gratuit et reçoit un mot ; la licence ple
   await zoe.getByRole('button', { name: 'Réglages' }).first().click();
   await zoe.locator('[data-ce="ouvrir"]').first().click();
   await entrerLeCode(zoe, 'Zoé', 'Petit');
-  await expect(zoe.locator('.toast')).toContainText('Demande envoyée', { timeout: 10000 });
+  await expect(zoe.locator('.toast:not(.sort)')).toContainText('Demande envoyée', { timeout: 10000 });
   const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const tom = await ctx2.newPage();
   await brancher(tom, store);

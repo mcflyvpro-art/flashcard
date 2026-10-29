@@ -30,7 +30,12 @@ DERNIER   2026-10-29 · Le professeur particulier en licence, de bout en
           référent ouvre les comptes de ses élèves d'un coup et prend une
           place ; Google/Apple prêts (docs/CONNEXION.md), le lien « mot de
           passe oublié » enfin ouvert. Migrations 20261029090000→094000
-          appliquées, prof_particulier.sql 48/48. Aucune tâche cochée.
+          appliquées, prof_particulier.sql 48/48 ; la fonction `ai`
+          redéployée (le quota IA de la licence, ia_quota). Deux défauts
+          trouvés par les parcours : le curseur d'ouverture de « J'ai un
+          code » envoyait le nom dans le prénom (« léamartin »), et la
+          connexion demandait la liste des fournisseurs avant que /essayer
+          n'ouvre la démo. Aucune tâche cochée.
 Avant :   2026-10-28 · Folio devient Mirandola (mirandola.fr) : le nom
           partout où il se lit, les clés internes gardées (CLAUDE.md, « Le
           nom ») ; référencement de la page d'accueil. Les prix : Mirandola+

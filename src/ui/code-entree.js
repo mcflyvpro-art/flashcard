@@ -88,8 +88,11 @@ export function paintMenuCode(w) {
   const e = E();
   w.innerHTML = e.fiche ? feuilleNom(e, e.fiche) : feuilleCode(e);
   mountMenu(w);
-  const champ = document.getElementById(e.fiche ? 'cepre' : 'cecode'), a = document.activeElement;
-  if (champ && !champ.value && !(a && a.tagName === 'INPUT')) setTimeout(() => champ.focus(), 80);
+  // le curseur d'ouverture se pose plus tard : on regarde alors si l'on tape déjà
+  // ailleurs (sinon la suite du nom partait dans le prénom, « léamartin »)
+  const champ = document.getElementById(e.fiche ? 'cepre' : 'cecode');
+  const libre = () => { const a = document.activeElement; return !(a && a.tagName === 'INPUT'); };
+  if (champ && !champ.value && libre()) setTimeout(() => { if (champ.isConnected && !champ.value && libre()) champ.focus(); }, 80);
 }
 
 /* ---------- les gestes ---------- */
