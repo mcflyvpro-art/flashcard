@@ -76,18 +76,33 @@
 // ouvre (src/base-locale/licences.js) — sans elle, la démo et les parcours
 // verraient ces écrans vides. Le plafond de la démo passe de 30 à 32 Ko :
 // il ne se charge toujours que chez un visiteur sans compte.
+//
+// 2026-10-29 : l'avatar passe de sept traits à quatorze (quatorze peaux,
+// vingt-deux coiffures dont le hijab, le turban, les locks et les nattes
+// collées, la barbe, les lunettes, les bijoux, la tenue… — demandé pour que
+// chacun s'y retrouve). Ses dessins ne peuvent pas attendre : le visage de
+// chacun est sur les tout premiers écrans (le cercle, la classe, le
+// classement), et un visage dessiné en deux temps clignoterait. Le
+// démarrage, qui n'avait plus un octet de marge (120,0 Ko), passe à 126 Ko :
+// 4,6 Ko de dessins, et un peu de marge. Dans le même temps, l'accueil d'un
+// nouveau compte et le tuto (ui/bienvenue.js, ui/tuto.js et leurs règles,
+// `bienvenue-…`, `tuto-…`) quittent le plafond « à la demande » pour un
+// plafond à eux (22 Ko JS, 6 Ko CSS) : ils ne servent qu'une fois par compte,
+// comme la porte d'installation, et grandissent avec la page que le tuto
+// écrit lui-même et l'éditeur de visage.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 120 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
+const BUDGET = { js: 126 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
   jsGestion: 30 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
-  site: 48 * 1024 };
+  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, site: 48 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',
   jsGestion: 'JS des consoles (référent, éditeur)', cssGestion: 'CSS des consoles (référent, éditeur)',
   jsPorte: 'JS de la porte d’installation', cssPorte: 'CSS de la porte d’installation',
   jsPlus: 'JS de l’écran Mirandola+', cssPlus: 'CSS de l’écran Mirandola+',
+  jsPremiers: 'JS des premiers pas (accueil, tuto)', cssPremiers: 'CSS des premiers pas (accueil, tuto)',
   site: 'Page d’accueil (HTML + CSS + JS)' };
 const dir = 'dist/assets';
 const gz = b => gzipSync(b, { level: 9 }).length;
@@ -96,7 +111,7 @@ const site = readFileSync('dist/index.html', 'utf8');
 const auDemarrage = f => app.includes('/assets/' + f);
 const duSite = f => site.includes('/assets/' + f);
 const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, jsDemo: 0, cssDemo: 0, jsGestion: 0, cssGestion: 0,
-  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, site: gz(site) };
+  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, site: gz(site) };
 for (const f of readdirSync(dir)) {
   const ext = f.split('.').pop();
   if (ext !== 'js' && ext !== 'css') continue;
@@ -104,7 +119,8 @@ for (const f of readdirSync(dir)) {
   if (duSite(f)) total.site += n;
   if (duSite(f) && !auDemarrage(f)) continue;
   const part = auDemarrage(f) ? ext : /^demo-/.test(f) ? ext + 'Demo' : /^pwa-/.test(f) ? ext + 'Porte'
-    : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion' : ext + 'Demande';
+    : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion'
+      : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : ext + 'Demande';
   total[part] += n;
 }
 let ok = true;

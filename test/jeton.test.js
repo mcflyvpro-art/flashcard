@@ -86,7 +86,7 @@ describe('jetons : ce qu’on dessine', () => {
     expect(jetonPersonne('u1', 'Léa Martin')).toEqual({ couleur: couleurDe('u1'), avatar: null, texte: 'LM' });
     const j = jetonPersonne('u1', 'Léa Martin', { figure: 'avbcaedab', teinte: 2 });
     expect(j.couleur).toBe(COULEURS[2]);
-    expect(j.avatar).toEqual({ peau: 1, coiffure: 2, cheveux: 0, yeux: 4, bouche: 3, accessoire: 0, haut: 1 });
+    expect(j.avatar).toMatchObject({ peau: 1, coiffure: 2, cheveux: 0, yeux: 4, bouche: 3, accessoire: 0, haut: 1, lunettes: 0 });
     // une figure d'avant les avatars (un émoji) devient un avatar tiré de son nom, le même partout
     expect(jetonPersonne('u1', 'Léa', { figure: 'renard' }).avatar).toEqual(jetonPersonne('u9', 'Zoé', { figure: 'renard' }).avatar);
     expect(jetonPersonne('u1', 'Léa', { figure: 'piège', teinte: 99 }).avatar).toBeNull();

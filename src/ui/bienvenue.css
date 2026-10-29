@@ -19,7 +19,6 @@
 .bv-t{margin:4px 0 0;font:700 clamp(30px,8.4vw,40px)/1.06 var(--serif);letter-spacing:-.03em;text-wrap:balance}
 .bv-t em{font-style:italic;padding-right:.08em;color:transparent;
   background:linear-gradient(100deg,#3E4FA0 8%,#80439C 55%,#B33F6C 94%);-webkit-background-clip:text;background-clip:text}
-.bv-s{margin:-6px 0 4px;font:italic 400 17px/1.35 var(--serif);color:var(--soft)}
 .bv-bas{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom))}
 .bv-go{width:100%;border-radius:99px;box-shadow:0 12px 24px -12px rgba(29,28,25,.6)}
 /* une carte de verre posée sur la lumière */
@@ -40,7 +39,6 @@
 .bv-gros-ic svg{width:24px;height:24px}
 .bv-gros-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .bv-gros-t b{font-size:17.5px;font-weight:750;letter-spacing:-.2px}
-.bv-gros-t small{font-size:13.5px;font-weight:550;color:var(--soft)}
 .bv-gros > svg{width:20px;height:20px;flex:none;color:var(--soft);transition:transform .3s var(--e)}
 @media (hover:hover){
   .bv-gros:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 2px 4px rgba(29,28,25,.06),0 30px 60px -28px rgba(52,40,110,.55)}
@@ -72,19 +70,20 @@
 .bv-classe{display:flex;align-items:center;gap:8px;margin:-4px 0 0;font-size:15px;color:var(--ink2)}
 .bv-classe svg{width:16px;height:16px;color:var(--soft);flex:none}
 
-/* ---------- le visage ---------- */
-.bv-moi{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 0}
-.bv-moi .jt.xl{--s:112px;box-shadow:0 0 0 5px rgba(255,255,255,.9),0 22px 40px -18px rgba(52,40,110,.6)}
-.bv-moi span{font-size:15px;font-weight:700;color:var(--ink2)}
-.bv-visages{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;justify-items:center}
-.bv-vis{padding:5px;border-radius:50%;box-shadow:inset 0 0 0 2px transparent;transition:transform .25s var(--e)}
-.bv-vis:active{transform:scale(.94)}
-.bv-vis.on{box-shadow:inset 0 0 0 3px var(--ink)}
-.bv-vis .jt.lg{--s:72px}
-.bv-lnk{display:inline-flex;align-items:center;gap:7px;align-self:center;padding:8px 14px;border-radius:99px;font-weight:650;font-size:14px;
-  color:var(--ink2);background:rgba(255,255,255,.7);box-shadow:var(--edge)}
-.bv-lnk svg{width:16px;height:16px}
-.bv-lnk:hover{background:#fff}
+/* ---------- le visage : composé trait par trait ---------- */
+.bv-moi{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0}
+.bv-moi .jt.xl{--s:104px;box-shadow:0 0 0 5px rgba(255,255,255,.9),0 22px 40px -18px rgba(52,40,110,.6)}
+.bv-moi > span:last-child:not(#bvmoi){font-size:15px;font-weight:700;color:var(--ink2)}
+/* les onglets défilent d'un bord à l'autre de l'écran */
+.bv-traits{margin:0 calc(-1 * var(--pad))}
+.bv-traits .av-traits{padding:2px var(--pad) 4px}
+.bv-traits .av-traits button{background:rgba(255,255,255,.78);box-shadow:var(--edge)}
+.bv-traits .av-traits button.on{background:var(--ink);box-shadow:none}
+.bv-pick{padding:14px;border-radius:22px;background:rgba(255,255,255,.74);
+  -webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);box-shadow:inset 0 0 0 1px rgba(255,255,255,.75)}
+.bv-pick .av-grille:not(.av-teintes){grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
+.bv-pick .av-choix.on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink)}
+.bv-pick .jt-couleurs{grid-template-columns:repeat(6,minmax(0,1fr))}
 
 /* ---------- le niveau et les matières ---------- */
 .bv-niveaux{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
@@ -95,6 +94,17 @@
   box-shadow:var(--edge);font-weight:650;font-size:14.5px;color:var(--ink2)}
 .bv-mat svg{width:15px;height:15px}
 .bv-mat.on{background:var(--ink);color:#fff;box-shadow:none}
+/* l'année, ou la filière : sous le niveau, dès qu'il est choisi */
+.bv-annees{display:flex;flex-wrap:wrap;gap:8px}
+.bv-annees.neuf{animation:bv-entre .32s var(--e) both}
+/* une matière écrite à la main */
+.bv-ajout{display:flex;gap:8px}
+.bv-ajout input{flex:1;min-width:0;height:48px;padding:0 14px;border:0;border-radius:14px;background:var(--card);box-shadow:var(--edge);
+  font:inherit;font-size:16px;color:var(--ink);outline:0}
+.bv-ajout input:focus{box-shadow:inset 0 0 0 1px rgba(29,28,25,.3),var(--ring)}
+.bv-plus{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:14px;background:var(--ink);color:#fff}
+.bv-plus svg{width:20px;height:20px}
+.bv-plus:disabled{background:rgba(29,28,25,.12);color:var(--soft)}
 
 /* ---------- l'objectif ---------- */
 .bv-objectifs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -104,8 +114,6 @@
 .bv-obj span{font-size:13.5px;font-weight:650;color:var(--soft)}
 .bv-obj.on{background:var(--ink);color:#fff;box-shadow:0 14px 28px -16px rgba(29,28,25,.7)}
 .bv-obj.on span{color:rgba(255,255,255,.75)}
-.bv-pied{display:flex;align-items:center;gap:7px;margin:2px 0 0;font-family:inherit;font-style:normal;font-weight:500;font-size:13.5px;line-height:1.3;color:var(--soft)}
-.bv-pied svg{width:15px;height:15px;flex:none}
 
 @media (min-width:900px){
   .bv{max-width:600px}
@@ -118,4 +126,4 @@
   .bv-niveaux,.bv-objectifs{grid-template-columns:repeat(4,1fr)}
   .bv-bas{position:static;margin-top:8px}
 }
-@media (prefers-reduced-motion:reduce){.bv-corps.neuf{animation:none}}
+@media (prefers-reduced-motion:reduce){.bv-corps.neuf,.bv-annees.neuf{animation:none}}

@@ -156,18 +156,20 @@ test.describe('un téléphone Android, dans Chrome', () => {
 });
 
 test.describe('l’app installée', () => {
-  test('première ouverture : « C’est installé », le code confié par le navigateur repris', async ({ page }) => {
+  test('première ouverture : « Bienvenue. », le code confié par le navigateur repris', async ({ page }) => {
     await brancher(page, nouveauStore());
     await page.goto('./app');
-    await expect(page.locator('.linstalle')).toHaveText('C’est installé. Plus qu’à te connecter.', { timeout: 10000 });
+    const titre = page.locator('.login .lt');
+    await expect(titre).toHaveText('Bienvenue.', { timeout: 10000 });        // pas « Bon retour. » : on n'est jamais venu
+    await expect(page.locator('.login .lsub')).toHaveCount(0);              // et pas de phrase dessous
     await expect(porte(page)).toHaveCount(0);
     await page.getByRole('button', { name: 'Créer un compte' }).click();
-    await expect(page.locator('.linstalle')).toHaveText('C’est installé. Plus qu’à créer ton compte.');
+    await expect(titre).toHaveText('Bienvenue.');
 
     // le navigateur avait confié un code de partie (Android) : l'app le reprend, une seule fois
     await page.evaluate(() => localStorage.setItem('folio.passage', JSON.stringify({ 'folio.defi': '482913', at: Date.now() })));
     await page.reload();
-    await expect(page.locator('.linstalle')).toBeVisible({ timeout: 10000 });
+    await expect(titre).toHaveText('Bienvenue.', { timeout: 10000 });
     const repris = await page.evaluate(() => [sessionStorage.getItem('folio.defi'), localStorage.getItem('folio.passage')]);
     expect(repris).toEqual(['482913', null]);
 
@@ -177,7 +179,7 @@ test.describe('l’app installée', () => {
       localStorage.setItem('folio.passage', JSON.stringify({ 'folio.defi': '111111', at: Date.now() - 2 * 3600e3 }));
     });
     await page.reload();
-    await expect(page.locator('.linstalle')).toBeVisible({ timeout: 10000 });
+    await expect(titre).toHaveText('Bienvenue.', { timeout: 10000 });
     expect(await page.evaluate(() => sessionStorage.getItem('folio.defi'))).toBeNull();
 
     // après la première connexion, l'écran de connexion n'en parle plus

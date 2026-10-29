@@ -19,7 +19,7 @@ import {
   admPull, blocksPull, boardPull, matesPull, modAct,
   modPull, refPull
 } from '../core/classement.js';
-import { deck, doUndo, flush, pending, plur, pushUndo, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
+import { deck, doUndo, flush, pending, plur, pushUndo, saveDeck, uid } from '../core/coeur-sync.js';
 import { selBar } from './connexion.js';
 import { duelPick } from './defis.js';
 import { exportStats, lostOnLeave } from './ecran-groupe.js';
@@ -35,7 +35,7 @@ import { ouvrirPlus } from './plus-porte.js';
 import {
   dictate, fail, nextQ, norm, pickQuiz, startQuiz, submit
 } from './quiz.js';
-import { resetComp } from './creation.js';
+import { poserMatiere, resetComp } from './creation.js';
 import { cb, cf, openSubject } from './reglages-corbeille.js';
 import {
   answerFriend, askFriend, friendsPull, mailPull, openMail,
@@ -109,12 +109,7 @@ function tapDl(a, ds) {
 function tapEd(a, ds) { comp.edit = +ds.ed; return render(); }
 function tapFilt(a, ds) { setFilter(ds.filt); render(); }
 
-function tapNsubj(a, ds) {
-  comp.subject = ds.nsubj;
-  $.querySelectorAll('[data-nsubj]').forEach(x => x.classList.toggle('on', x.dataset.nsubj === comp.subject));
-  const c = document.getElementById('comp');
-  if (c) c.setAttribute('style', sty(subj(comp.subject)));
-}
+const tapNsubj = (a, ds) => poserMatiere(ds.nsubj);
 
 const tapSub = (a, ds) => openSubject(ds.sub || null);
 

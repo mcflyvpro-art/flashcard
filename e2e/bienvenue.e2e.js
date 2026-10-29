@@ -1,6 +1,8 @@
-// L'accueil d'un nouveau compte (2026-10-26, refait le 2026-10-27) : un
-// particulier donne son prénom, son pseudo, choisit son visage, son niveau,
-// ses matières et un objectif, puis le tuto prend le relais (ui/tuto.js,
+// L'accueil d'un nouveau compte (2026-10-26, refait le 2026-10-27, puis le
+// 2026-10-29) : un particulier donne son prénom, son pseudo, compose son
+// visage trait par trait, dit son niveau et son année, retrouve les
+// matières de son année déjà cochées (et en écrit une à la main), choisit
+// un objectif, puis le tuto prend le relais (ui/tuto.js,
 // e2e/tuto.e2e.js le joue) ; un élève entré par son établissement voit son
 // lycée et sa classe, choisit son pseudo et son visage (son nom de classe ne
 // bouge pas, e2e/pseudo.e2e.js), puis son tuto ; « J'ai un code » ouvre la
@@ -10,6 +12,7 @@ import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerCompte } from './faux-cercle.js';
 import { faireEleve, modele } from './faux-classes.js';
 import { etab, semerEtablissement } from './faux-etablissement.js';
+import { TRAITS, lireAvatar } from '../src/avatar.js';
 
 async function entrer(page, email) {
   await page.goto('./app');
@@ -41,18 +44,39 @@ test('un particulier : prénom, pseudo, visage, matières, objectif, puis le tut
   await expect(page.locator('#bvpv')).toContainText('Libre');
   await page.getByRole('button', { name: 'Continuer' }).click();
 
-  await expect(page.locator('.bv-vis')).toHaveCount(6);
-  const premier = await page.locator('.bv-vis').first().innerHTML();
-  await page.getByRole('button', { name: 'D’autres' }).click();
-  expect(await page.locator('.bv-vis').first().innerHTML()).not.toBe(premier);
-  await page.locator('.bv-vis').nth(2).click();
-  await expect(page.locator('.bv-vis').nth(2)).toHaveClass(/on/);
+  // le visage : rien au hasard, chaque trait se choisit (la peau, la coiffure, sa couleur, les lunettes…)
+  await expect(page.getByRole('heading', { name: 'Ton visage' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'D’autres' })).toHaveCount(0);
+  const visage = () => page.locator('#bvmoi').innerHTML();
+  const avant = await visage();
+  await page.getByRole('button', { name: 'ébène' }).click();
+  expect(await visage()).not.toBe(avant);
+  await page.getByRole('tab', { name: 'Coiffure' }).click();
+  await page.getByRole('button', { name: 'hijab' }).click();
+  await expect(page.getByRole('tab', { name: 'Hijab' })).toBeVisible();      // ses cheveux couverts : la couleur est celle du tissu
+  await page.getByRole('tab', { name: 'Hijab' }).click();
+  await page.getByRole('button', { name: 'violets' }).click();
+  await page.getByRole('tab', { name: 'Lunettes' }).click();
+  await page.getByRole('button', { name: 'rondes' }).click();
+  await page.getByRole('tab', { name: 'Bijoux' }).click();
+  await page.getByRole('button', { name: 'créoles' }).click();
+  await expect(page.getByRole('button', { name: 'créoles' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Continuer' }).click();
 
-  await expect(page.getByRole('button', { name: 'Continuer' })).toBeDisabled();   // le niveau d'abord
+  // le niveau et l'année, puis les matières de cette année déjà cochées
+  await expect(page.getByRole('button', { name: 'Continuer' })).toBeDisabled();
   await page.getByRole('button', { name: 'Lycée' }).click();
+  await expect(page.getByRole('button', { name: 'Continuer' })).toBeDisabled();   // l'année aussi
+  await page.getByRole('button', { name: 'Terminale' }).click();
+  await page.getByRole('button', { name: 'Continuer' }).click();
+  await expect(page.getByRole('heading', { name: 'Tes matières' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Philosophie' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'SVT' })).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('button', { name: 'SVT' }).click();
-  await page.getByRole('button', { name: 'Philosophie' }).click();
+  await page.getByRole('button', { name: 'Anglais', exact: true }).click();              // décochée
+  await page.getByLabel('Une autre matière').fill('droit du travail');
+  await page.getByLabel('Une autre matière').press('Enter');
+  await expect(page.getByRole('button', { name: 'Droit du travail' })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Continuer' }).click();
 
   await page.locator('.bv-obj', { hasText: '30' }).click();
@@ -61,11 +85,15 @@ test('un particulier : prénom, pseudo, visage, matières, objectif, puis le tut
   await expect(page.locator('#tu .tu-debut')).toContainText('Bienvenue, Léa', { timeout: 10000 });   // le tuto prend le relais
   const p = (store.tables.prefs || []).find(r => r.user_id === lea);
   await expect.poll(() => (store.tables.prefs || []).find(r => r.user_id === lea)?.data?.bienvenue).toBe(1);
-  expect(p.data).toMatchObject({ name: 'Léa', goal: 30, niveau: 'lycee' });
+  expect(p.data).toMatchObject({ name: 'Léa', goal: 30, niveau: 'lycee', annee: 'terminale' });
   expect((store.tables.profiles || []).find(r => r.id === lea).handle).toBe('lea_75');
-  expect(store.jetons['p:' + lea].cle).toMatch(/^av[a-z]{7}$/);
+  const a = lireAvatar(store.jetons['p:' + lea].cle);
+  expect(a).toMatchObject({ peau: TRAITS.peau.indexOf('ébène'), coiffure: TRAITS.coiffure.indexOf('hijab'),
+    cheveux: TRAITS.cheveux.indexOf('violets'), lunettes: TRAITS.lunettes.indexOf('rondes'), bijoux: TRAITS.bijoux.indexOf('créoles') });
+  expect(store.jetons['p:' + lea].cle).toMatch(/^[a-z]{2,16}$/);             // la contrainte de la base
   const mats = (store.tables.subjects || []).filter(s => s.user_id === lea).map(s => s.name);
-  expect(mats).toEqual(expect.arrayContaining(['SVT', 'Philosophie']));
+  expect(mats).toEqual(expect.arrayContaining(['Philosophie', 'Histoire-géo', 'SVT', 'Droit du travail']));
+  expect(mats).not.toContain('Anglais');                                     // décochée
   expect(mats).not.toContain('Italien');                                     // les exemples non choisis partent
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
@@ -85,11 +113,12 @@ test('un élève de son lycée : son lycée et sa classe, son pseudo, son visage
   await expect(page.locator('.bv-ecole')).toHaveText('Lycée Camus · 2nde A');
   await expect(page.locator('.bv-classe')).toContainText('Tom PETIT');
   await page.getByRole('button', { name: 'Continuer' }).click();            // le pseudo donné d'office lui va
-  await expect(page.getByRole('heading', { name: 'Choisis ton visage' })).toBeVisible();
-  await page.locator('.bv-vis').nth(4).click();
+  await expect(page.getByRole('heading', { name: 'Ton visage' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Barbe' }).click();
+  await page.getByRole('button', { name: 'courte', exact: true }).click();
   await page.getByRole('button', { name: 'C’est parti' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'classes');
-  await expect.poll(() => (store.jetons || {})['p:' + tom]?.cle).toMatch(/^av[a-z]{7}$/);
+  await expect.poll(() => lireAvatar((store.jetons || {})['p:' + tom]?.cle)?.barbe).toBe(TRAITS.barbe.indexOf('courte'));
   await expect(page.locator('#tu .tu-debut')).toContainText('Bienvenue, Tom', { timeout: 10000 });   // son tuto, côté classe
 });
 

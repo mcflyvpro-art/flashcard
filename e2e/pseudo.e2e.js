@@ -98,7 +98,7 @@ test('un élève de lycée : son pseudo à l’accueil, puis dans le cercle ; so
   await champ.fill('tom.petit');
   await expect(page.locator('#bvpv')).toContainText('Libre');
   await page.getByRole('button', { name: 'Continuer' }).click();
-  await expect(page.getByRole('heading', { name: 'Choisis ton visage' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ton visage' })).toBeVisible();
   await page.getByRole('button', { name: 'C’est parti' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'classes');
   await expect.poll(() => pseudoDe(store, 'tom@lycee.fr')).toBe('tom.petit');

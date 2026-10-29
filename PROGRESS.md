@@ -26,6 +26,18 @@ DERNIER   2026-10-29 (soir) · L'inscription par e-mail « ne faisait rien » :
           Le message reste, chaque refus dit son motif, « Renvoyer
           l'e-mail » ; SMTP à poser (docs/CONNEXION.md § 1). Apple écarté,
           Google en place.
+Avant :   2026-10-29 · Premiers pas refaits au téléphone : le tuto
+          n'a plus de saccades (voile en SVG posé image par image, trou
+          qui épouse sa cible, se ferme d'un écran à l'autre au lieu de
+          laisser un rectangle clair), plus de secousse à chaque appui,
+          écrit lui-même la première page (« 1789 », « Prise de la
+          Bastille ») sans ouvrir le clavier, finit sur Mes livres.
+          L'accueil : visage composé trait par trait (14 traits, hijab,
+          turban, locks, barbe, lunettes, appareil auditif… sans
+          migration, les visages d'avant intacts), niveau puis année,
+          matières de l'année cochées d'office et les siennes à la main ;
+          plus aucun sous-titre, ni à la connexion. Budget de démarrage
+          126 Ko (les visages). Aucune tâche cochée.
 Avant :   2026-10-29 · Le professeur particulier en licence, de bout en
           bout : l'éditeur ouvre son compte (mot de passe provisoire,
           message tout écrit) et lui accorde places et IA (coût estimé en

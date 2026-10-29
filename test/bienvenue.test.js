@@ -1,20 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  MATIERES, matieresApres, NIVEAUX_PERSO, OBJECTIFS, prenomValide, propositions
+  ANNEES, ajouterMatiere, anneeRequise, matieresApres, NIVEAUX_PERSO, nomMatiere, OBJECTIFS, prenomValide, proposees
 } from '../src/bienvenue.js';
-import { estAvatar } from '../src/avatar.js';
-
-describe('propositions — six visages', () => {
-  it('six avatars valides, chacun sur une couleur', () => {
-    const l = propositions('compte-1');
-    expect(l).toHaveLength(6);
-    for (const p of l) { expect(estAvatar(p.cle)).toBe(true); expect(p.teinte).toBeGreaterThanOrEqual(0); expect(p.teinte).toBeLessThan(12); }
-  });
-  it('les mêmes pour le même compte et le même tour, d’autres au tour suivant', () => {
-    expect(propositions('compte-1', 0)).toEqual(propositions('compte-1', 0));
-    expect(propositions('compte-1', 1).map(p => p.cle)).not.toEqual(propositions('compte-1', 0).map(p => p.cle));
-  });
-});
 
 // le pseudo a sa règle à lui, src/pseudo.js (test/pseudo.test.js)
 describe('prénom', () => {
@@ -48,9 +35,46 @@ describe('matieresApres — les matières cochées remplacent les exemples', () 
   });
 });
 
-describe('les listes proposées', () => {
-  it('un jeu de matières par niveau, quatre objectifs croissants', () => {
-    for (const k of Object.keys(NIVEAUX_PERSO)) expect(MATIERES[k].length).toBeGreaterThan(4);
+describe('les matières du niveau, cochées d’office', () => {
+  it('le niveau dit, on propose ses matières déjà cochées, et d’autres à côté', () => {
+    const t = proposees('lycee', 'terminale');
+    expect(t.cochees).toContain('Philosophie');
+    expect(proposees('lycee', 'seconde').cochees).not.toContain('Philosophie');   // la philosophie n'est qu'en Terminale
+    expect(t.autres).toEqual(expect.arrayContaining(['Mathématiques', 'SES']));
+    expect(t.autres.some(m => t.cochees.includes(m))).toBe(false);
+  });
+  it('chaque année, chaque filière a ses matières ; « Autre » n’en coche aucune', () => {
+    for (const [n, annees] of Object.entries(ANNEES)) {
+      expect(anneeRequise(n)).toBe(true);
+      for (const a of Object.keys(annees)) expect(proposees(n, a).cochees.length, `${n}/${a}`).toBeGreaterThan(2);
+    }
+    expect(anneeRequise('autre')).toBe(false);
+    expect(proposees('autre').cochees).toEqual([]);
+    expect(proposees('autre').autres.length).toBeGreaterThan(4);
+  });
+  it('sans année connue, rien d’office', () => {
+    expect(proposees('lycee', '')).toEqual({ cochees: [], autres: [] });
+    expect(proposees('college', 'terminale')).toEqual({ cochees: [], autres: [] });
+    expect(Object.keys(NIVEAUX_PERSO)).toEqual(['college', 'lycee', 'sup', 'autre']);
+  });
+  it('quatre objectifs croissants', () => {
     expect(OBJECTIFS.map(o => o.n)).toEqual([10, 20, 30, 50]);
+  });
+});
+
+describe('une matière écrite à la main', () => {
+  it('nettoyée : espaces, majuscule', () => {
+    expect(nomMatiere('  droit   du travail ')).toBe('Droit du travail');
+    expect(nomMatiere('c++')).toBe('C++');
+    expect(nomMatiere('Histoire (L1)')).toBe('Histoire (L1)');
+  });
+  it('refusée si elle ne ressemble pas à une matière', () => {
+    for (const v of ['', 'a', '42', '<script>', 'x'.repeat(41), '😀😀']) expect(nomMatiere(v), v).toBeNull();
+  });
+  it('une proposée se coche, une nouvelle s’ajoute', () => {
+    expect(ajouterMatiere('philosophie', ['Philosophie', 'SES'])).toEqual({ nom: 'Philosophie', nouvelle: false });
+    expect(ajouterMatiere('ses', ['Philosophie', 'SES'])).toEqual({ nom: 'SES', nouvelle: false });
+    expect(ajouterMatiere('Latin', ['SES'])).toEqual({ nom: 'Latin', nouvelle: true });
+    expect(ajouterMatiere('!', ['SES'])).toBeNull();
   });
 });

@@ -63,9 +63,14 @@ personnelle, de l'établissement, peu importe.
 2. L'accueil en quelques écrans, chacun passable (« Passer » en haut) :
    « Je révise pour moi » ou « **J'ai un code** » ; son prénom et un pseudo
    (proposé depuis le prénom, vérifié pendant la frappe : la règle, puis la
-   base dit s'il est libre) ; son visage parmi six (« D'autres ») ; son
-   niveau et ses matières (elles remplacent les matières d'exemple) ; un
-   objectif de pages par jour. Puis **le tuto** (§ 3 bis).
+   base dit s'il est libre) ; **son visage, composé trait par trait** (rien
+   au hasard : peau, coiffure — hijab et turban compris —, cheveux,
+   sourcils, yeux, barbe, lunettes, bijoux, chapeau, tenue, fond…) ; **son
+   niveau puis son année** (ou sa filière) ; **ses matières : celles de son
+   année déjà cochées**, d'autres à côté, et les siennes qu'il écrit à la
+   main (elles remplacent les matières d'exemple) ; un objectif de pages par
+   jour. Un titre par écran, sans phrase dessous (2026-10-29). Puis **le
+   tuto** (§ 3 bis).
    « J'ai un code » s'ouvre par-dessus l'accueil : entré, il reprend en élève
    de sa classe. Chez un professeur particulier, il passe d'abord en salle
    d'attente (« Demande envoyée ») : Mirandola Campus s'ouvre tout de suite,
@@ -98,11 +103,14 @@ rien), et le retour du navigateur ramène à l'étape. On le quitte par la
 croix, « Passer » ou Échap ; il se rejoue des Réglages (« Revoir le tuto »).
 
 - **L'élève** (particulier, ou d'une classe), à la fin de son accueil : ses
-  livres (ou le premier qu'il crée : « Remplir pour moi » y met trois pages
-  de sa première matière) ; une flashcard qu'il lit, retourne et note ;
+  livres (ou le premier qu'il crée : le tuto l'écrit sous ses yeux, sans
+  ouvrir le clavier — le titre, « 1789 » au recto, « Prise de la Bastille »
+  au verso, puis deux pages de plus, tirées de l'histoire s'il l'a choisie
+  ou d'une autre de ses matières) ; une flashcard qu'il lit, retourne et note ;
   comment créer un livre (les cinq façons) ; son journal ; sa classe et ses
   devoirs, s'il en a une ; ses amis (ses camarades) ; son courrier. La fin
-  présente **Mirandola+** (« Découvrir Mirandola+ » ouvre les tarifs).
+  présente **Mirandola+** (« Découvrir Mirandola+ » ouvre les tarifs), sur
+  ses Livres : « Terminer » l'y laisse.
 - **Le professeur**, à sa première connexion, pas à pas dans un espace qui
   est grand : son code ; sans classe, il choisit les siennes (établissement)
   ou crée la sienne (particulier) ; son tableau de bord, « À traiter », une

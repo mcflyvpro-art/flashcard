@@ -10,14 +10,16 @@ import { eleveClassesPull } from '../core/eleve-classes.js';
 import { statsPull } from '../core/ecran-groupe.js';
 import { mailPull } from '../core/reglages-corbeille.js';
 import { rangerClasses } from '../classe.js';
-import { aideSelon, debutDe, ecransDe, etapes, exemple, finDe, quelRole } from '../tuto.js';
-import { allerClasses, aUneClasse, go, monIdent, render } from './bibliotheque.js';
+import { aideSelon, debutDe, ecransDe, etapes, finDe, pageAuto, quelRole } from '../tuto.js';
+import { chemin, doux, forme, mix, placePc, placeTel, resserre } from '../tuto-trou.js';
+import { allerClasses, aUneClasse, go, monIdent } from './bibliotheque.js';
 import { atSchool, isPupil } from './classement.js';
 import { commuPull } from './cercle.js';
 import { refAller } from './etablissement.js';
 import { avatar } from './jeton.js';
 import { beep, savePrefs, toast } from './import-cartes.js';
 import { closeMenu } from './menus-a.js';
+import { poserMatiere, poserPage } from './creation.js';
 import { allerAccueil, allerClasse } from './prof-porte.js';
 import { ouvrirPlus, sansFolioPlus } from './plus-porte.js';
 import { VENTE_OUVERTE } from '../abonnement.js';
@@ -89,8 +91,9 @@ const note = () => {
 const aDesClasses = () => !!prof.classes && rangerClasses(prof.classes).actives.length > 0;
 const ATTEND = {
   vue: v => view.name === v,
-  pages: n => comp.cards.length >= n,
   feuille: k => menu === k,
+  /* la première page, écrite par le tuto (ecrireSeul) */
+  ecrite: () => !!t.ecrite,
   sansFeuille: () => !menu,
   onglet: k => view.name === 'profclasse' && prof.tab === k,
   ref: k => view.name === 'ref' && ref.tab === k,
@@ -171,14 +174,20 @@ export async function lancer(o = {}) {
   entrer(0);
 }
 
+/* Le tuto s'en va en fondu (le voile ne disparaît pas d'un coup) ; ses
+   gardes, elles, partent tout de suite : l'app répond dès cet instant. */
 export function arreter() {
   clearInterval(minuteur); minuteur = 0;
-  if (racine) { racine.remove(); racine = null; }
+  cancelAnimationFrame(boucle); boucle = 0;
+  if (racine) {
+    const r = racine;
+    r.id = '';                                // un tuto relancé aussitôt a le sien ; celui-ci ne prend plus rien
+    r.classList.add('part');
+    setTimeout(() => r.remove(), reduit() ? 0 : 240);
+    racine = null;
+  }
   document.documentElement.classList.remove('tu-actif');
   for (const [type, f] of GARDES) window.removeEventListener(type, f, true);
-  document.body.removeEventListener('scroll', placer);
-  removeEventListener('resize', placer);
-  if (window.visualViewport) visualViewport.removeEventListener('resize', placer);
   t = null; setTuto(null);
 }
 
@@ -188,25 +197,43 @@ function passer() {
   if (m) toast(I.bulb, m);
 }
 
-/* ---------- l'habillage ---------- */
+/* ---------- l'habillage ----------
+   Le voile est un SVG de la taille de l'écran : un rectangle plein percé
+   d'un rectangle arrondi (evenodd), redessiné par une seule boucle
+   (requestAnimationFrame). Jusqu'au 2026-10-29, c'était l'ombre démesurée
+   d'un élément (200vmax) poussée par des transitions CSS : au téléphone une
+   couche immense repeinte à chaque image (des saccades), un trou qui
+   restait un instant sur l'écran d'après (un rectangle clair là où était le
+   bouton) puis le traversait, et qui suivait le défilement avec 0,45 s de
+   retard. Maintenant le trou suit ce qu'il montre sans retard ; d'une
+   étape à l'autre sur le même écran, il glisse ; vers un autre écran, il
+   se ferme aussitôt et s'ouvre sur la nouvelle cible. Il épouse la forme
+   de ce qu'il montre (ses coins), sans marge : plus de liseré clair du
+   fond de page autour, plus de liseré blanc à l'anneau. */
+const SVG = 'http://www.w3.org/2000/svg';
+
 function monter() {
   racine = document.createElement('div');
   racine.id = 'tu'; racine.className = 'tu';
-  racine.innerHTML = '<i class="tu-voile"></i><i class="tu-spot"></i><i class="tu-anneau"></i>'
+  racine.innerHTML = `<svg class="tu-ombre" aria-hidden="true" xmlns="${SVG}"><path fill-rule="evenodd"/></svg>`
+    + '<i class="tu-flou"></i><i class="tu-anneau"></i>'
     + ['h', 'b', 'g', 'd', 'trou'].map(k => `<i class="tu-blk" data-c="${k}"></i>`).join('')
     + '<div class="tu-bulle" role="dialog" aria-live="polite" aria-labelledby="tut"></div><div class="tu-carte"></div>';
   document.body.appendChild(racine);
   document.documentElement.classList.add('tu-actif');
   racine.addEventListener('click', surClic);
   for (const [type, f] of GARDES) window.addEventListener(type, f, true);
-  document.body.addEventListener('scroll', placer, { passive: true });
-  addEventListener('resize', placer);
-  if (window.visualViewport) visualViewport.addEventListener('resize', placer);
+  geo.trou = geo.anim = null; geo.d = geo.an = '';
   minuteur = setInterval(tic, 120);
+  boucle = requestAnimationFrame(image);
 }
 
 const bulle = () => racine && racine.querySelector('.tu-bulle');
 const etape = () => t && t.liste[t.i];
+
+/* L'écran qu'on voit : quand il change sous le trou, le trou se ferme (il
+   montrerait un bout de l'écran d'après, qui n'a rien à voir). */
+const cleEcran = () => `${view.name}:${view.id || ''}:${menu || ''}`;
 
 /* ---------- d'une étape à l'autre ---------- */
 function entrer(i) {
@@ -214,7 +241,8 @@ function entrer(i) {
   t.i = i;
   const e = t.liste[i];
   if (!e) return arreter();
-  Object.assign(t, { depuis: Date.now(), navigue: 0, pause: 0, pret: 0, defile: 0, feuille: '', els: null, perdu: 0, retours: 0 });
+  Object.assign(t, { depuis: Date.now(), navigue: 0, pause: 0, pret: 0, feuille: '', els: null, perdu: 0, retours: 0,
+    ecrite: 0, vise: '', glisser: 0, cote: '' });
   if (e.carte) return carte(e.carte);
   if (e.attend && atteint(e.attend)) return entrer(i + 1);     // déjà fait : on n'y revient pas
   const ec = ecransDe(e, t.pc);
@@ -230,6 +258,8 @@ function reussi() {
   t.pause = 1;
   beep(true);
   racine.dataset.mode = 'pause';
+  bulle().classList.remove('vue');
+  if (cleEcran() !== t.ecran) fermer();
   setTimeout(() => { if (t) { t.pause = 0; entrer(t.i + 1); } }, 320);
 }
 
@@ -240,8 +270,7 @@ function tic() {
   observer();
   if (e.attend && atteint(e.attend)) return t.pret ? reussi() : entrer(t.i + 1);
   if (!t.pret) return preparer(e);
-  if (perdue(e)) return;
-  placer();
+  perdue(e);
 }
 
 /* Ce que le tuto retient en chemin : la lecture commencée (pour savoir
@@ -265,7 +294,9 @@ function preparer(e) {
   const ok = tantOk(e.tant);
   if (ok === false && (e.tant !== 'feuille' || age > GRACE_TANT)) return entrer(t.i + 1);
   if (ok !== true) { if (age > GRACE_INCONNU) entrer(t.i + 1); return; }
-  if (!e.centre && !trouver(e)) { if (age > (e.geste ? GRACE_CIBLE : GRACE_MOT)) entrer(t.i + 1); return; }
+  const els = e.centre ? null : trouver(e);
+  if (!e.centre && !els) { if (age > (e.geste ? GRACE_CIBLE : GRACE_MOT)) entrer(t.i + 1); return; }
+  if (els) amener(els);
   t.pret = 1;
   if (e.tant === 'feuille') t.feuille = cleFeuille();
   peindre(e);
@@ -295,8 +326,7 @@ function points() {
 function boutonsHtml(e) {
   const l = [];
   if (e.passable && !t.demo) l.push(`<button class="tu-btn" data-tu="plustard">Plus tard</button>`);
-  if (e.bouton === 'exemple') l.push(`<button class="tu-btn" data-tu="exemple">${svg(I.spark)}Remplir pour moi</button>`);
-  if (!e.geste) l.push(`<button class="tu-btn pri" data-tu="suivant">Suivant${svg(I.arrow)}</button>`);
+  if (!e.geste && !e.ecrit) l.push(`<button class="tu-btn pri" data-tu="suivant">Suivant${svg(I.arrow)}</button>`);
   return l.length ? `<div class="tu-b">${l.join('')}</div>` : '';
 }
 
@@ -311,24 +341,31 @@ function bulleHtml(e) {
 }
 
 /* Les modes : un geste (le trou ouvert, l'anneau qui pulse), un mot à lire
-   (« info » : le trou fermé), un mot au centre ; « attente » quand l'étape
-   se prépare ou se cherche : rien ne se touche. */
+   (« info » : le trou fermé aux appuis), ce que le tuto écrit lui-même
+   (« auto » : on regarde), un mot au centre ; « attente » quand l'étape se
+   prépare ou se cherche : rien ne se touche. La bulle se pose d'un coup à
+   sa place, cachée, puis paraît : elle ne traverse plus l'écran. */
 function peindre(e) {
   t.peint = Date.now();
-  racine.dataset.mode = e.centre ? 'centre' : e.geste ? 'geste' : 'info';
+  racine.dataset.mode = e.centre ? 'centre' : e.geste ? 'geste' : e.ecrit ? 'auto' : 'info';
   racine.dataset.voile = e.voile || '';
   racine.querySelector('.tu-carte').innerHTML = '';
+  if (e.centre || cleEcran() !== t.ecran) fermer();
+  t.ecran = cleEcran();
+  t.glisser = 1;                        // la première image de l'étape : le trou s'ouvre, ou glisse depuis l'étape d'avant
   const b = bulle();
-  b.innerHTML = bulleHtml(e);
   b.classList.remove('vue');
+  b.innerHTML = bulleHtml(e);
+  t.bulle = 1;                          // à mesurer, puis à montrer
   calmerClavier();
-  placer();
+  if (e.ecrit) ecrireSeul(e);
 }
 
 function attente() {
   racine.dataset.mode = 'attente';
   const b = bulle();
   if (b) b.classList.remove('vue');
+  if (t && cleEcran() !== t.ecran) fermer();
 }
 
 /* Un champ qui n'est pas à remplir ne garde pas le focus : le clavier du
@@ -343,8 +380,10 @@ function calmerClavier() {
 const visible = n => { const r = n.getBoundingClientRect(); return r.width > 2 && r.height > 2 && !n.closest('#tu'); };
 
 /* La cible : le premier sélecteur qui a quelque chose de visible ; avec
-   `union`, tout ce qu'il désigne (les deux codes d'un référent, au téléphone). */
+   `union`, tout ce qu'il désigne (les deux codes d'un référent, au
+   téléphone) ; pendant que le tuto écrit, le champ où il écrit. */
 function trouver(e) {
+  if (t.vise) { const n = [...document.querySelectorAll(t.vise)].find(visible); if (n) return [n]; }
   for (const s of e.cible || []) {
     const l = [...document.querySelectorAll(s)].filter(visible);
     if (l.length) return e.union ? l : [l[0]];
@@ -352,9 +391,11 @@ function trouver(e) {
   return null;
 }
 
+/* Ce qui reste éclairé, s'il est plus large que la cible : tout ce que
+   désignent ses sélecteurs (la page qu'on écrit et la liste des pages). */
 function trouDe(e) {
-  for (const s of e.trou || []) { const n = [...document.querySelectorAll(s)].find(visible); if (n) return [n]; }
-  return null;
+  const l = (e.trou || []).map(s => [...document.querySelectorAll(s)].find(visible)).filter(Boolean);
+  return l.length ? l : null;
 }
 
 function boite(els) {
@@ -368,19 +409,54 @@ function boite(els) {
 
 const hauteur = () => (window.visualViewport ? Math.min(innerHeight, visualViewport.height) : innerHeight);
 
-/* Le cadre de ce qu'on montre, amené à l'écran une fois s'il n'y est pas
-   (c'est <body> qui défile) : sur la page, loin du bas où se posent les
-   onglets et le bandeau de la démo ; dans une feuille, seulement s'il en
-   sort (son pied, collé en bas, y est toujours). Une feuille, au ras de ses bords. */
-function cadre(els, m, defiler) {
-  const W = innerWidth, H = hauteur();
-  let r = boite(els);
+/* Ce qu'on montre est amené à l'écran, une fois, avant que le trou ne s'y
+   pose (c'est <body> qui défile) : loin du bas où se posent les onglets et
+   le bandeau de la démo ; dans une feuille, seulement s'il en sort. Ce qui
+   est fixé à l'écran (les onglets, le bouton rond) n'a pas à y venir. */
+const fixe = n => { for (; n && n !== document.body; n = n.parentElement) if (getComputedStyle(n).position === 'fixed') return true; return false; };
+function amener(els) {
+  const H = hauteur(), r = boite(els);
   const [haut, bas] = els[0].closest('.menu, #rail') ? [8, 8] : [64, 150];
-  if (defiler && !t.defile && (r.top < haut || r.bottom > H - bas) && r.height < H * .7) {
-    t.defile = 1; els[0].scrollIntoView({ block: 'center' }); r = boite(els);
+  if ((r.top < haut || r.bottom > H - bas) && r.height < H * .7 && !fixe(els[0])) {
+    els[0].scrollIntoView({ block: 'center', behavior: geo.trou && !reduit() ? 'smooth' : 'auto' });
   }
-  const x = Math.max(4, r.left - m), y = Math.max(4, r.top - m);
-  return { x, y, w: Math.min(W - 4, r.right + m) - x, h: Math.min(H - 4, r.bottom + m) - y };
+}
+
+/* Les coins de ce qu'on montre, pour que le trou en ait la forme (lus une
+   fois par élément : un pourcentage s'écrit négatif, src/tuto-trou.js). */
+const COINS = ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRightRadius', 'borderBottomLeftRadius'];
+const coins = new WeakMap();
+function coinsDe(n) {
+  if (!coins.has(n)) {
+    const cs = getComputedStyle(n);
+    coins.set(n, COINS.map(k => { const v = cs[k] || '0', x = parseFloat(v) || 0; return v.includes('%') ? -x : x; }));
+  }
+  return coins.get(n);
+}
+const formeDe = (els, W, H) => forme(boite(els), W, H, coinsDe(els[0]));
+
+/* ---------- la géométrie, image par image ----------
+   `geo.trou` : la forme du trou à l'écran (`null` : fermé, tout est
+   voilé) ; `geo.anim` : un glissement en cours, de `de` vers `vers`, que
+   la cible qui bouge (un défilement, l'entrée de l'écran) fait suivre. */
+const geo = { trou: null, anneau: null, anim: null, d: '', an: '' };
+let boucle = 0;
+const reduit = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function fermer() { geo.trou = geo.anneau = geo.anim = null; }
+
+/* Où va le trou : il s'ouvre (fermé), glisse (une autre étape sur le même
+   écran), ou suit sa cible (la même étape). */
+function viser(trou, anneau, glisser) {
+  const now = performance.now();
+  if (reduit()) { geo.anim = null; geo.trou = trou; geo.anneau = anneau; return; }
+  if (!geo.trou) geo.anim = { de: { trou: resserre(trou), anneau: resserre(anneau) }, t0: now, duree: 300 };
+  else if (glisser) geo.anim = { de: { trou: geo.trou, anneau: geo.anneau || anneau }, t0: now, duree: 340 };
+  if (geo.anim) {
+    const p = doux(Math.min(1, (now - geo.anim.t0) / geo.anim.duree));
+    geo.trou = mix(geo.anim.de.trou, trou, p); geo.anneau = mix(geo.anim.de.anneau, anneau, p);
+    if (p >= 1) geo.anim = null;
+  } else { geo.trou = trou; geo.anneau = anneau; }
 }
 
 const posEl = (n, x, y, w, h) => {
@@ -388,58 +464,65 @@ const posEl = (n, x, y, w, h) => {
   n.style.width = Math.max(0, Math.round(w)) + 'px'; n.style.height = Math.max(0, Math.round(h)) + 'px';
 };
 
-/* La place de chacun : le trou sur ce qui reste éclairé, l'anneau sur la
-   cible, les volets autour du trou (ils prennent les appuis), la bulle à côté. */
-function placer() {
-  if (!t || !racine || t.pause || !t.pret || t.perdu) return;
-  const e = etape();
-  if (!e || e.carte) return;
-  const b = bulle();
-  if (e.centre) return montrer(b, null, null, e);
-  const els = trouver(e);
-  if (!els) { t.els = null; b.classList.remove('vue'); return; }   // un instant ailleurs (un redessin) : on la retrouvera
-  t.els = els;
-  const anneau = cadre(els, 6, true), trou = trouDe(e);
-  const box = trou ? cadre(trou, 0, false) : anneau;
-  poser(box, anneau);
-  montrer(b, box, anneau, e);
+/* Chaque image : ce que l'étape montre, puis le trou, l'anneau, les volets
+   (ils prennent les appuis hors du trou) et la bulle. Rien ne s'écrit si
+   rien n'a bougé. */
+function image() {
+  boucle = requestAnimationFrame(image);
+  if (!t || !racine) return;
+  const W = racine.clientWidth, H = racine.clientHeight, e = etape();
+  const montre = e && !e.carte && t.pret && !t.pause && !t.perdu;
+  if (montre && !e.centre) {
+    const els = trouver(e);
+    if (els) {
+      const anneau = formeDe(els, W, H), tr = trouDe(e);
+      t.els = els; t.vers = { trou: tr ? formeDe(tr, W, H) : anneau, anneau };
+      viser(t.vers.trou, anneau, t.glisser);
+      t.glisser = 0;
+    } else { t.els = null; bulle().classList.remove('vue'); }   // un instant ailleurs (un redessin) : on la retrouvera
+  } else geo.anim = null;
+  dessiner(W, H);
+  if (montre && (e.centre || t.els)) placerBulle(e);
 }
 
-const montrer = (b, box, anneau, e) => { placerBulle(b, box, anneau, e); b.classList.add('vue'); };
-
-function poser(box, anneau) {
-  const W = innerWidth, H = innerHeight;
-  posEl(racine.querySelector('.tu-spot'), box.x, box.y, box.w, box.h);
-  posEl(racine.querySelector('.tu-anneau'), anneau.x, anneau.y, anneau.w, anneau.h);
-  const v = (k, X, Y, w, h) => posEl(racine.querySelector(`[data-c="${k}"]`), X, Y, w, h);
-  v('h', 0, 0, W, box.y); v('b', 0, box.y + box.h, W, H - box.y - box.h);
-  v('g', 0, box.y, box.x, box.h); v('d', box.x + box.w, box.y, W - box.x - box.w, box.h);
-  v('trou', box.x, box.y, box.w, box.h);
-}
-
-/* Au téléphone : toute la largeur, juste sous le trou ou juste dessus ;
-   s'il prend tout l'écran (une feuille), en haut ou en bas, loin de
-   l'anneau. Sur ordinateur : 340 px, à côté. Un mot au centre : au centre. */
-function placerBulle(b, box, anneau, e) {
-  const W = innerWidth, H = hauteur(), tel = W < 900, g = 12;
-  const bw = Math.min(W - 24, tel ? W : 340);
-  b.style.width = bw + 'px';
-  const bh = b.offsetHeight || 150;
-  let x, y;
-  if (!box) { x = (W - bw) / 2; y = Math.max(g, (H - bh) / 2); }
-  else if (tel) {
-    x = g;
-    const bas = box.y + box.h + g, haut = box.y - bh - g;
-    y = bas + bh <= H - g ? bas : haut >= g ? haut : (anneau.y + anneau.h / 2 > H / 2 ? g + 6 : H - bh - g - 8);
-  } else {
-    const centre = Math.min(Math.max(g, box.x + box.w / 2 - bw / 2), W - bw - g);
-    const essais = [
-      [centre, box.y + box.h + 14], [centre, box.y - bh - 14],
-      [box.x + box.w + 16, Math.min(Math.max(g, box.y), H - bh - g)], [box.x - bw - 16, Math.min(Math.max(g, box.y), H - bh - g)]
-    ];
-    [x, y] = essais.find(([X, Y]) => X >= g && Y >= g && X + bw <= W - g && Y + bh <= H - g) || [W - bw - 24, H - bh - 24];
+function dessiner(W, H) {
+  const d = chemin(W, H, geo.trou);
+  if (d !== geo.d) {
+    geo.d = d;
+    const svgEl = racine.querySelector('.tu-ombre');
+    svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svgEl.firstChild.setAttribute('d', d);
   }
-  b.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
+  const f = geo.trou || { x: 0, y: 0, w: 0, h: 0 }, a = geo.anneau;
+  const an = a ? `${Math.round(a.x)},${Math.round(a.y)},${Math.round(a.w)},${Math.round(a.h)},${a.r.map(Math.round)}` : '';
+  if (an !== geo.an) {
+    geo.an = an;
+    const n = racine.querySelector('.tu-anneau');
+    n.classList.toggle('sans', !a);
+    if (a) { posEl(n, a.x, a.y, a.w, a.h); n.style.borderRadius = a.r.map(v => Math.round(v) + 'px').join(' '); }
+  }
+  const v = (k, X, Y, w, h) => posEl(racine.querySelector(`[data-c="${k}"]`), X, Y, w, h);
+  v('h', 0, 0, W, f.y); v('b', 0, f.y + f.h, W, H - f.y - f.h);
+  v('g', 0, f.y, f.x, f.h); v('d', f.x + f.w, f.y, W - f.x - f.w, f.h);
+  v('trou', f.x, f.y, f.w, f.h);
+}
+
+/* La bulle : au téléphone toute la largeur, sous le trou ou dessus ; sur
+   ordinateur 340 px, à côté ; un mot au centre, au centre (src/tuto-trou.js).
+   Elle se place sur la forme d'arrivée du trou, pas sur celle qui glisse :
+   elle ne le suit pas en chemin. Mesurée une fois par étape. */
+function placerBulle(e) {
+  const b = bulle(), W = innerWidth, H = hauteur(), tel = W < 900;
+  const bw = Math.min(W - 24, tel ? W : 340);
+  if (t.bulle || t.bw !== bw) { b.style.width = bw + 'px'; t.bw = bw; t.bh = b.offsetHeight || 150; }
+  let x = 12, y;
+  if (e.centre) { x = (W - bw) / 2; y = Math.max(12, (H - t.bh) / 2); }
+  else if (tel) ({ y, cote: t.cote } = placeTel(t.vers.trou, t.vers.anneau, t.bh, H, t.cote));
+  else [x, y] = placePc(t.vers.trou, bw, t.bh, W, H);
+  const tr = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
+  if (b.style.transform !== tr) b.style.transform = tr;
+  if (t.bulle) { t.bulle = 0; void b.offsetWidth; }       // posée cachée, puis elle paraît sur place
+  if (!b.classList.contains('vue')) b.classList.add('vue');
 }
 
 /* ---------- la garde ----------
@@ -516,9 +599,13 @@ function gardeSaisie(ev) {
   if (t && !duTuto(ev.target) && !permis(ev.target)) retenir(ev);
 }
 
+/* Un champ qui prend le focus sans être à remplir le rend aussitôt, même
+   pendant qu'une étape se prépare : l'écran de création donne le focus à
+   son titre en s'ouvrant, et le clavier du téléphone s'ouvrait puis se
+   refermait (l'écran sautait deux fois). */
 function gardeFocus(ev) {
   const n = ev.target;
-  if (!t || duTuto(n) || !n.matches || !n.matches(CHAMP) || !t.pret || t.pause || permis(n)) return;
+  if (!t || duTuto(n) || !n.matches || !n.matches(CHAMP) || permis(n)) return;
   setTimeout(() => { if (t && document.activeElement === n) n.blur(); }, 0);
 }
 
@@ -526,12 +613,14 @@ const GARDES = [['click', gardeClic], ['dblclick', gardeClic], ['auxclick', gard
   ['submit', gardeClic], ['pointerdown', gardeAppui], ['mousedown', gardeAppui], ['keydown', gardeTouche],
   ['beforeinput', gardeSaisie], ['focusin', gardeFocus]];
 
-/* ---------- les cartes du début et de la fin ---------- */
+/* ---------- les cartes du début et de la fin ----------
+   Un titre, un visage, deux boutons : pas de phrase dessous (« Deux minutes
+   pour faire le tour… », partie le 2026-10-29). */
 function carteDebut() {
   const d = t.debut;
   return `<div class="tu-c tu-debut" role="dialog" aria-modal="true" aria-labelledby="tuct">
       <span class="tu-moi">${avatar(auth.uid, monIdent(), 'xl')}</span>
-      <h2 id="tuct">${esc(d.titre)}</h2><p>${esc(d.texte)}</p>
+      <h2 id="tuct">${esc(d.titre)}</h2>
       <button class="tu-go" data-tu="oui">${esc(d.oui)}${svg(I.arrow)}</button>
       <button class="tu-lien" data-tu="non">${esc(d.non)}</button>
     </div>`;
@@ -565,34 +654,74 @@ function carteFin() {
   const f = finDe(t.role, { demo: t.demo, aPlus: !!offre && offre.offre !== 'gratuit' });
   return `<div class="tu-c tu-fin ${f.cle}" role="dialog" aria-modal="true" aria-labelledby="tuct">
       ${titreFin(f)}
-      <p class="tu-sous">${esc(f.sous)}</p>
       <ul class="tu-points">${f.points.map(([ic, x]) => `<li>${svg(I[ic] || I.check)}<span>${esc(x)}</span></li>`).join('')}</ul>
       <div class="tu-actions">${f.actions.map(actionHtml).join('')}</div>
-      ${f.note ? `<p class="tu-note">${esc(f.note)}</p>` : ''}
     </div>`;
 }
 
+/* La fin se lit sur l'écran où l'on arrive d'habitude, pas sur le dernier
+   visité : un élève sur ses livres (« Mes livres »), un professeur sur son
+   tableau de bord, un référent sur l'accueil de sa console — « OK » finissait
+   dans le Courrier (corrigé le 2026-10-29). */
+function versArrivee() {
+  if (t.role === 'prof') { if (view.name !== 'prof') allerAccueil(); }
+  else if (t.role === 'ref') { if (!surEcran('ref:accueil')) refAller('accueil'); }
+  else if (view.name !== 'home') go('home');
+}
+
 function carte(k) {
-  if (k === 'fin' && menu) closeMenu();
+  if (k === 'fin') { if (menu) closeMenu(); versArrivee(); }
   racine.dataset.mode = 'carte';
+  fermer();
   bulle().classList.remove('vue');
   const c = racine.querySelector('.tu-carte');
   c.innerHTML = k === 'debut' ? carteDebut() : carteFin();
   setTimeout(() => { const p = c.querySelector('.tu-go, .tu-a.pri'); if (p) p.focus({ preventScroll: true }); }, 60);
 }
 
-/* ---------- « Remplir pour moi » ----------
-   Trois pages tirées de la matière choisie (ou de la première matière du
-   compte, celle de l'accueil), et le titre qui va avec s'il n'y en a pas. */
-function remplir() {
-  const choisie = db.subjects.find(s => s.id === comp.subject) || db.subjects[0];
-  if (!comp.subject && choisie) comp.subject = choisie.id;
-  const ex = exemple(choisie ? choisie.name : '');
-  if (!String(comp.name || '').trim()) comp.name = ex.titre;
-  comp.cards.push(...ex.pages);
-  render();
-  // les pages sont là : pas de clavier qui surgit sur le champ du recto
-  setTimeout(() => { const a = document.activeElement; if (a && a.tagName === 'INPUT') a.blur(); }, 90);
+/* ---------- la première page, écrite par le tuto ----------
+   Au téléphone, écrire soi-même sa première page ouvrait le clavier, qui
+   cachait la page, la bulle et le bouton : on ne voyait plus rien
+   (2026-10-29). Le tuto l'écrit donc sous les yeux, lettre à lettre, sans
+   jamais donner le focus à un champ : la matière, le titre, le recto
+   (« 1789 »), le verso (« Prise de la Bastille »), « Ajouter la page » ;
+   puis deux autres pages arrivent dans la liste. L'anneau suit le champ où
+   il écrit. Quitter le tuto en route arrête l'écriture. */
+async function ecrireSeul(e) {
+  const moi = t, encore = () => t === moi && etape() === e && t.pret && !t.perdu && view.name === 'import';
+  if (comp.cards.length) { t.ecrite = 1; return; }          // déjà écrites (on revient à l'étape)
+  const { matiere, titre, pages: [p, ...reste] } = pageAuto(db.subjects);
+  const pointer = async (s, ms) => { t.vise = s; await attendre(reduit() ? 60 : ms); return encore(); };
+  const taper = async (id, texte, garder) => {
+    if (!(await pointer('#' + id, 420))) return false;
+    for (let i = 1; i <= texte.length; i++) {
+      const n = document.getElementById(id), v = texte.slice(0, i);
+      if (n) n.value = v;
+      garder(v);
+      await attendre(reduit() ? 0 : 48);
+      if (!encore()) return false;
+    }
+    return true;
+  };
+  const ajouter = () => {
+    const add = document.getElementById('cadd');
+    if (add) { add.classList.add('tu-appui'); setTimeout(() => add.classList.remove('tu-appui'), 180); }
+    poserPage(p.f, p.b);
+    t.vise = '#dlist';
+    return true;
+  };
+  const pas = [
+    () => attendre(650).then(encore),
+    () => !matiere || comp.subject === matiere || pointer(`[data-nsubj="${matiere}"]`, 420).then(ok => ok && (poserMatiere(matiere), true)),
+    () => !!String(comp.name || '').trim() || taper('nm', titre, v => { comp.name = v; }),
+    () => taper('cf', p.f, v => { comp.f = v; }),
+    () => taper('cb', p.b, v => { comp.b = v; }),
+    () => pointer('#cadd', 420).then(ok => ok && ajouter()),
+    ...reste.map(q => () => attendre(380).then(() => encore() && (poserPage(q.f, q.b), true))),
+    () => attendre(700).then(encore)
+  ];
+  for (const f of pas) if (!(await f())) return;            // quitté, ou l'étape s'est perdue : on n'écrit plus
+  t.ecrite = 1;                                             // l'anneau reste sur les pages : l'étape suivante l'en fera glisser
 }
 
 /* ---------- les boutons du tuto ----------
@@ -608,21 +737,29 @@ const GESTES = {
   non: passer,
   passer,
   fin: arreter,
-  plus: () => { arreter(); ouvrirPlus(); },
-  exemple: () => { if (posee() && !comp.cards.length) remplir(); }
+  plus: () => { arreter(); ouvrirPlus(); }
 };
 
 function surClic(ev) {
   const b = ev.target.closest('[data-tu]');
-  if (!b) return rappel();
+  if (!b) { if (ev.target.classList.contains('tu-blk')) rappel(); return; }
   if (b.dataset.tu === 'fin' && b.tagName === 'A') return arreter();     // le lien part de lui-même
   ev.preventDefault();
   const f = GESTES[b.dataset.tu];
   if (f && t) f(etape());
 }
 
-/* un appui à côté : l'anneau et la bulle le rappellent */
+/* Un appui à côté de ce qu'il faut toucher : l'anneau s'éclaire une fois,
+   rien ne bouge. La bulle qui tremblait à chaque appui (on le prenait pour
+   une vibration) est partie le 2026-10-29 ; et seulement pendant un geste,
+   au plus une fois par seconde et demie — jamais pendant qu'une étape
+   s'en va ou arrive, jamais sur la bulle elle-même. */
 function rappel() {
-  if (!racine) return;
-  racine.classList.remove('rappel'); void racine.offsetWidth; racine.classList.add('rappel');
+  if (!t || !racine || racine.dataset.mode !== 'geste' || !pret()) return;
+  const now = Date.now();
+  if (now - (t.rappel || 0) < 1500) return;
+  t.rappel = now;
+  const r = racine;
+  r.classList.remove('rappel'); void r.offsetWidth; r.classList.add('rappel');
+  setTimeout(() => r.classList.remove('rappel'), 900);
 }
