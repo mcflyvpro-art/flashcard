@@ -108,35 +108,36 @@ export function lireListeEleves(texte, max = 60) {
   return { eleves: eleves.slice(0, max), ignorees, trop: Math.max(0, eleves.length - max) };
 }
 
-/* ---------- la carte de connexion ----------
-   L'identifiant « prenom.nom » est l'adresse « prenom.nom@eleves.folio.invalid »
-   du compte : `.invalid` est réservé, aucun courriel ne peut y partir. Le
-   QR de la carte ouvre l'app avec « ?carte=identifiant-CODE ». */
-export const DOMAINE_CARTE = 'eleves.folio.invalid';
+/* ---------- des comptes ouverts d'un coup (2026-10-29) ----------
+   Le référent ouvre les comptes de ses élèves : une ligne par élève, telle
+   qu'elle sort d'un tableur ou de Pronote — son nom et son adresse e-mail,
+   dans n'importe quel ordre, séparés par une tabulation, un point-virgule
+   ou une virgule (« MARTIN Alice ; alice.martin@lycee.fr »). Le nom se lit
+   comme dans une liste d'appel (lireLigne) ; une ligne sans adresse, ou au
+   nom illisible, est rendue telle quelle pour qu'on la corrige. Une adresse
+   déjà vue plus haut n'ouvre pas un second compte. */
+const ADRESSE = /[^\s@;,<>"']+@[^\s@;,<>"']+\.[^\s@;,<>"']+/;
 
-export const normIdentifiant = s => String(s || '').trim().toLowerCase().replace(/@.*$/, '').replace(/[^a-z0-9.]/g, '');
-
-export const emailCarte = identifiant => `${normIdentifiant(identifiant)}@${DOMAINE_CARTE}`;
-
-export const lienCarte = (base, identifiant, code) =>
-  `${String(base).replace(/[?#].*$/, '')}?carte=${normIdentifiant(identifiant)}-${normCode(code)}`;
-
-export function lireCarte(search) {
-  const v = new URLSearchParams(String(search || '')).get('carte') || '';
-  const i = v.lastIndexOf('-');
-  if (i < 1) return null;
-  const identifiant = normIdentifiant(v.slice(0, i)), code = normCode(v.slice(i + 1));
-  return identifiant && codeComplet(code) ? { identifiant, code } : null;
+export function lireComptes(texte, max = 200) {
+  const comptes = [], ignorees = [], vues = new Set();
+  for (const brute of String(texte || '').split(/\r?\n/)) {
+    const l = brute.trim();
+    if (!l || (ENTETE.test(l) && /nom/i.test(l))) continue;
+    const m = l.match(ADRESSE), email = m ? m[0].toLowerCase() : '';
+    const reste = m ? l.slice(0, m.index) + ';' + l.slice(m.index + m[0].length) : '';
+    const e = email ? lireLigne(reste.split(/\t|;|,/).map(espaces).filter(Boolean).join(';')) : null;
+    if (!e) { ignorees.push(l); continue; }
+    if (vues.has(email)) continue;
+    vues.add(email);
+    comptes.push({ prenom: espaces(e.prenom), nom: espaces(e.nom), complet: nomPropre(e.prenom, e.nom), email });
+  }
+  return { comptes: comptes.slice(0, max), ignorees, trop: Math.max(0, comptes.length - max) };
 }
 
-/* Ce que la base répond, ligne par ligne, quand le professeur crée les comptes. */
-export const CREATION = {
-  cree: ['ok', 'Créé'],
-  deja: ['neutre', 'Déjà dans la classe'],
-  homonyme: ['am', 'Existe déjà dans l’établissement'],
-  complet: ['ko', 'Classe complète'],
-  invalide: ['ko', 'Nom illisible']
-};
+/* Ce qu'on donne à chacun : une ligne de tableur (nom, adresse, mot de
+   passe provisoire), pour un publipostage ou une impression. */
+export const tableurComptes = l => ['Nom\tAdresse e-mail\tMot de passe provisoire',
+  ...l.map(x => [x.complet, x.email, x.pw].join('\t'))].join('\n');
 
 /* ---------- ce que répond la base quand on tape un code ----------
    `ton` : ok (c'est fait), attente (rien à faire qu'attendre), ko (il faut

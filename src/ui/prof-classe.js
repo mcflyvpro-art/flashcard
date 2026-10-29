@@ -89,11 +89,11 @@ function ligneEleve(m) {
   const e = etatEleve(m), sel = prof.sel.has(m.user_id);
   const taux = pc(m.rendus, m.donnes);
   return `<div class="pf-tr${sel ? ' sel' : ''}" role="button" tabindex="0" data-pf="eleve" data-id="${esc(m.user_id)}"
-      data-nom="${esc((m.who + ' ' + (m.handle || '') + ' ' + (m.identifiant || '')).toLowerCase())}">
+      data-nom="${esc((m.who + ' ' + (m.handle || '')).toLowerCase())}">
     <span class="pf-cb" role="checkbox" aria-checked="${sel}" aria-label="Sélectionner ${esc(m.who)}" data-pf="coche"
       data-id="${esc(m.user_id)}"><i>${svg(I.check)}</i></span>
     <span class="pf-who">${avatar(m.user_id, m.who)}<span><b>${esc(m.who)}</b>${
-      m.carte ? `<i>${svg(I.key)}${esc(m.identifiant)}</i>` : m.handle ? `<i>@${esc(m.handle)}</i>` : ''}</span></span>
+      m.handle ? `<i>@${esc(m.handle)}</i>` : ''}</span></span>
     <span class="pf-c-etat">${pill(ETATS[e.k], e.t)}</span>
     <span class="pf-num pf-c-rendu"><b>${m.rendus}</b><i>/${m.donnes}</i>
       <span class="pf-mb"><i style="width:${m.rendus ? Math.max(4, taux) : 0}%"></i></span></span>
@@ -106,11 +106,9 @@ function ligneEleve(m) {
 function barreSelection() {
   const n = prof.sel.size;
   if (!n) return '';
-  const cartes = (prof.roster || []).filter(m => prof.sel.has(m.user_id) && m.carte).length;
   return `<div class="pf-bulk" data-k="pf-bulk" role="toolbar" aria-label="Élèves sélectionnés">
     <b>${plur(n, 'élève')}</b>
     ${btn('sel-message', I.mail2, 'Écrire')}
-    ${cartes ? btn('sel-cartes', I.key, `Nouvelles cartes (${cartes})`) : ''}
     ${btn('sel-retirer', I.x, 'Retirer', 'warn')}
     ${btn('sel-vider', I.x, '', 'ic', 'aria-label="Tout désélectionner"')}
   </div>`;
@@ -124,7 +122,7 @@ function elevesVide(c) {
       ${c.gere ? btn('groupe-modifier', I.users, 'Choisir les élèves', 'pri') : ''}</div>`;
   }
   return `<div class="pf-vide petit"><i class="pf-vide-ic">${svg(I.users)}</i><h2>Aucun élève</h2>
-    ${btn('inviter', I.key, 'Donner le code', 'pri', 'data-v="code"')}</div>`;
+    ${btn('inviter', I.key, 'Donner le code', 'pri')}</div>`;
 }
 
 function elevesOnglet(c) {
@@ -141,7 +139,6 @@ function elevesOnglet(c) {
         `<button class="${prof.filtre === k ? 'on' : ''}" data-pf="filtre" data-v="${k}">${t}<em>${n(k)}</em></button>`).join('')}</div>
       <select class="pf-sel" data-pfch="tri" aria-label="Trier">${Object.entries(TRIS).map(([k, t]) =>
         `<option value="${k}"${prof.tri === k ? ' selected' : ''}>${t}</option>`).join('')}</select>
-      ${c.gere && r.some(m => m.carte) ? btn('cartes', I.key, 'Cartes de connexion', 'sm') : ''}
     </div>
     <div class="pf-table pf-t-eleves" role="table" aria-label="Élèves">
       <div class="pf-tr pf-th" role="row">

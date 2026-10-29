@@ -6,7 +6,7 @@ import { auth, me, menu, online, prefs, prof, setAnimate, view, visuels } from '
 import { go, render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
 import {
-  codeComplet, codeDepuisTexte, dansJours, etatInscriptions, formatCode, iso, lienRejoindre, lireListeEleves, messageStatut,
+  codeComplet, codeDepuisTexte, dansJours, etatInscriptions, formatCode, iso, lienRejoindre, messageStatut,
   nomPropre, normCode
 } from '../classe.js';
 import { deck, plur } from '../core/coeur-sync.js';
@@ -20,7 +20,7 @@ import { sendMotProf } from '../core/menus-c.js';
 import { toast } from './import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { classeOuverte } from './prof-accueil.js';
-import { apercuListe, baseApp, devoirOuvert, imprimerCartes, listeLivres } from './prof-feuilles.js';
+import { baseApp, devoirOuvert, listeLivres } from './prof-feuilles.js';
 import { resetComp } from './creation.js';
 import { actionsEtab, chercherEleves, majBoutonGroupe } from './prof-etab.js';
 import { ouvrirDefi } from './defi-nouveau.js';
@@ -115,37 +115,13 @@ async function refuser(ids, bloquer) {
   if (await ecrire('prof_refuser', { cid: cid(), qui: ids, exclure: !!bloquer }, bloquer ? 'Refusé et bloqué' : 'Demande refusée')) relire();
 }
 
-async function nouvellesCartes(ids) {
-  const l = await ecrire('prof_nouvelles_cartes', { cid: cid(), qui: ids });
-  if (!l) return;
-  prof.faites = (Array.isArray(l) ? l : []).map(x => ({ ...x, statut: 'cree' }));
-  prof.sel = new Set();
-  ouvrir('cartes');
-}
-
-async function creerEleves(forcer) {
-  const c = classeOuverte(); if (!c) return;
-  const eleves = forcer ? (prof.faites || []).filter(x => x.statut === 'homonyme').map(x => x.source)
-                        : lireListeEleves(prof.f.liste || '').eleves.map(e => ({ prenom: e.prenom, nom: e.nom }));
-  if (!eleves.length) return;
-  const l = await ecrire('prof_creer_eleves', { cid: c.id, eleves, forcer: !!forcer });
-  if (!Array.isArray(l)) return;
-  const res = l.map(x => ({ ...x, source: eleves[x.rang - 1] }));
-  prof.faites = forcer ? [...prof.faites.filter(x => x.statut !== 'homonyme'), ...res] : res;
-  const n = res.filter(x => x.statut === 'cree').length;
-  toast(I.check, plur(n, 'compte') + ' créé' + (n > 1 ? 's' : ''));
-  relire(); paintMenu();
-}
-
 async function retirerGo() {
   const ids = prof.f.qui || [], choix = prof.f.choix || 'retirer';
   let ok = 0;
   for (const qui of ids) {
-    const r = choix === 'supprimer' ? await ecrire('prof_supprimer_eleve', { cid: cid(), qui })
-      : await ecrire('prof_retirer', { cid: cid(), qui, exclure: choix === 'exclure' });
-    if (r) ok++;
+    if (await ecrire('prof_retirer', { cid: cid(), qui, exclure: choix === 'exclure' })) ok++;
   }
-  if (ok) toast(I.check, `${plur(ok, 'élève')} ${choix === 'supprimer' ? 'supprimé' : 'retiré'}${ok > 1 ? 's' : ''}`);
+  if (ok) toast(I.check, `${plur(ok, 'élève')} retiré${ok > 1 ? 's' : ''}`);
   prof.sel = new Set(); closeMenu(); relire();
 }
 
@@ -273,7 +249,7 @@ function actions() {
     archives: () => { prof.archives = !prof.archives; repeindre(); },
     classe: id => ouvrirClasse(id),
     aller: (id, v) => {
-      if (v === 'inviter') { prof.faites = null; ouvrirClasse(id); return ouvrir('inviter', { mode: 'code' }); }
+      if (v === 'inviter') { ouvrirClasse(id); return ouvrir('inviter'); }
       if (v === 'donner') { ouvrirClasse(id); prof.comp = null; return ouvrir('donner'); }
       ouvrirClasse(id, v === 'demandes' ? 'demandes' : 'eleves');
       prof.filtre = v === 'retard' ? 'ko' : v === 'jamais' ? 'jamais' : 'tous';
@@ -302,7 +278,6 @@ function actions() {
     'sel-vider': () => { prof.sel = new Set(); repeindre(); },
     'sel-message': () => ouvrir('message', { qui: [...prof.sel] }),
     'sel-retirer': () => ouvrir('retirer', { qui: [...prof.sel] }),
-    'sel-cartes': () => nouvellesCartes((prof.roster || []).filter(m => prof.sel.has(m.user_id) && m.carte).map(m => m.user_id)),
     eleve: id => { prof.eleve = id; prof.fiche = null; fichePull(cid(), id); ouvrir('eleve'); },
     mot: () => ouvrir('message', { qui: [prof.eleve] }),
     nommer: () => {
@@ -314,19 +289,11 @@ function actions() {
       if (await ecrire('prof_nommer_eleve', { cid: cid(), qui: prof.eleve, prenom: prof.f.prenom || '', nom: prof.f.nomfam || '' },
         r => 'Nom enregistré · ' + r)) { closeMenu(); relire(); }
     },
-    'carte-une': () => nouvellesCartes([prof.eleve]),
     retirer: () => ouvrir('retirer', { qui: [prof.eleve] }),
     'f-choix': (id, v) => { prof.f.choix = v; paintMenu(); },
     'retirer-go': retirerGo,
-    inviter: (id, v) => { if (v) prof.faites = null; ouvrir('inviter', { mode: v || 'code' }); },
-    'f-mode': (id, v) => { prof.f.mode = v; paintMenu(); },
-    'creer-eleves': () => creerEleves(false),
-    homonymes: () => creerEleves(true),
-    imprimer: () => imprimerCartes(prof.faites || [], classeOuverte()),
-    fermer: () => { prof.faites = null; closeMenu(); repeindre(); },
-    cartes: () => { prof.faites = null; ouvrir('cartes'); },
-    'carte-coche': id => { const s = prof.f.cartes; s.has(id) ? s.delete(id) : s.add(id); paintMenu(); },
-    'cartes-go': () => nouvellesCartes([...(prof.f.cartes || [])]),
+    inviter: () => ouvrir('inviter'),
+    fermer: () => { closeMenu(); repeindre(); },
     tableau: () => { if (prof.code === null) codePull(); ouvrir('tableau'); },
     admettre: id => admettre([id]),
     'admettre-tout': () => admettre((prof.demandes || []).map(d => d.user_id)),
@@ -374,7 +341,7 @@ function actions() {
       const id = await ecrire('prof_creer_classe', { nom: prof.f.nom || '', niveau: prof.f.niveau || '', matiere: prof.f.matiere || '' }, 'Classe créée');
       if (!id || id === true) return;
       closeMenu(); prof.annees = null; await profPull();
-      prof.faites = null; ouvrirClasse(id); ouvrir('inviter', { mode: 'code' });
+      ouvrirClasse(id); ouvrir('inviter');
     },
     devoir: id => { prof.work = id; prof.cartes = null; prof.f = {}; cartesBloquePull(id); ouvrir('devoir'); },
     echeance: async (id, v) => {
@@ -428,11 +395,6 @@ function apercuGroupe(cle) {
 
 function apercus(cle) {
   apercuGroupe(cle);
-  if (cle === 'f.liste') {
-    const a = document.getElementById('pfapercu'); if (a) a.innerHTML = apercuListe();
-    const n = lireListeEleves(prof.f.liste || '').eleves.length, b = document.getElementById('pfcreer');
-    if (b) { b.disabled = !n; b.querySelector('span').textContent = n ? `Créer ${plur(n, 'compte')}` : 'Créer les comptes'; }
-  }
   if (cle === 'f.conf') {
     const c = classeOuverte(), b = document.getElementById('pfsupp');
     if (b && c) b.disabled = (prof.f.conf || '').trim().toLowerCase() !== c.name.trim().toLowerCase();

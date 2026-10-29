@@ -96,11 +96,6 @@ function settingsMatieresHtml() {
       </div>`;
 }
 
-/* Un compte à carte : son nom vient de la liste de la classe (la base le
-   verrouille) et son code, de son professeur — ni l'un ni l'autre ne se
-   change d'ici, on les montre seulement. */
-const carteEleve = () => !!(compte && compte.gere);
-
 /* La ligne « Mirandola+ » : à qui l'a déjà (abonnement, établissement, Mirandola+
    offert aux comptes d'avant le 2026-10-27), et à tous une fois la vente
    ouverte (VENTE_OUVERTE, src/abonnement.js). Jamais au référent, à
@@ -119,18 +114,16 @@ function settingsCompteHtml() {
       <div class="lbl"><span>Mon compte</span></div>
       <div class="slist">
         ${lignePlus()}
-        ${carteEleve() ? `<div class="sr flat fixe">${svg(I.user)}<span class="n">${esc(compte.nom || '')}</span>
-          <span class="c">${esc(compte.identifiant || '')}</span></div>`
-        : `<button class="sr flat" data-act="rename">${svg(I.user)}
-          <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>`}
+        <button class="sr flat" data-act="rename">${svg(I.user)}
+          <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="handle">${svg(I.hash)}<span class="n">Pseudo</span>
           <span class="c">${me && me.handle ? '@' + esc(me.handle) : ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="commu">${svg(I.users)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
-        ${(myRole === 'eleve' || myRole === 'prof') && !carteEleve() && !atSchool() ? `<button class="sr flat" data-ce="ouvrir">${svg(I.key)}
+        ${(myRole === 'eleve' || myRole === 'prof') && !atSchool() ? `<button class="sr flat" data-ce="ouvrir">${svg(I.key)}
           <span class="n">J’ai un code</span><span class="c">établissement, professeur</span>${svg(I.arrow)}</button>` : ''}
-        ${carteEleve() ? '' : `<button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>`}
-      </div>${carteEleve() ? `<p class="note">${svg(I.key)}Carte élève : un nouveau code se demande à ton professeur.</p>` : ''}`;
+        <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
+      </div>`;
 }
 
 /* Les lignes de rôle (référent, admin, modération) : chacune ne s'affiche
@@ -172,7 +165,7 @@ function settingsQuitterHtml() {
       <div class="lbl"><span>Quitter</span></div>
       <div class="slist">
         <button class="sr flat warn" data-act="logout">${svg(I.exit)}<span class="n">Se déconnecter</span></button>
-        ${carteEleve() ? '' : `<button class="sr flat warn" data-act="delacc">${svg(I.trash)}<span class="n">Supprimer le compte</span></button>`}
+        <button class="sr flat warn" data-act="delacc">${svg(I.trash)}<span class="n">Supprimer le compte</span></button>
       </div>
       <div class="foot">${pending()
         ? plur(pending(), 'modification') + ' en attente' + (online ? ' d’envoi' : ' — reprise dès le retour du réseau')

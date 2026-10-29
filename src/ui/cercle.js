@@ -64,7 +64,7 @@ function moiInfos() {
 
 function moiEleve() {
   const nom = (compte && compte.nom) || (me && me.name) || 'Élève';
-  const ou = school && school.classe ? `${school.classe}${school.org ? ' · ' + school.org : ''}` : 'Carte élève';
+  const ou = school && school.classe ? `${school.classe}${school.org ? ' · ' + school.org : ''}` : 'Ma classe';
   return `<button class="cc-moi" data-cc="moi">${avatar(auth.uid, monIdent(), 'lg')}
     <span class="cc-moi-t"><b>${esc(nom)}</b>${infos([['school', ou], me && me.handle ? ['hash', '@' + me.handle, 'Ton pseudo'] : null])}${
       moiInfos()}</span>${svg(I.pen)}</button>`;

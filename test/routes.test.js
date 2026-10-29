@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { ROUTES, aRouvrir, chemin, lireChemin } from '../src/routes.js';
 
 describe('chemin — un écran, son adresse', () => {
-  it('avant la connexion : connexion, inscription, carte, démo, mentions', () => {
+  it('avant la connexion : connexion, inscription, démo, mentions', () => {
     expect(chemin({ name: 'login', id: 'in' })).toBe('/connexion');
     expect(chemin({ name: 'login', id: 'up' })).toBe('/inscription');
-    expect(chemin({ name: 'login', id: 'carte' })).toBe('/carte-eleve');
+    // la carte élève est partie le 2026-10-28 : une vieille adresse retombe sur la connexion
+    expect(chemin({ name: 'login', id: 'carte' })).toBe('/connexion');
     expect(chemin({ name: 'decouvrir' })).toBe('/essayer');
     expect(chemin({ name: 'demande' })).toBe('/demande-demo');
     expect(chemin({ name: 'legal', id: 'confidentialite' })).toBe('/mentions/confidentialite');

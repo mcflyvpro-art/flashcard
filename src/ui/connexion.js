@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { estNeuve, isLeech } from '../file.js';
 import {
-  auth, db, deckOpen, DECKPAGE, deckQ, deckShow, dirty, legalBack, legalTab, loginBusy, loginMode,
+  db, deckOpen, DECKPAGE, deckQ, deckShow, dirty, legalBack, legalTab, loginBusy, loginMode,
   prof, sel, setAnimate, setDb, setDeckQ, setDeckShow, setLoginBusy, setLoginMode, setSel,
   setTyping, typing, view
 } from '../data/etat.js';
@@ -13,14 +13,13 @@ import {
 import {
   MAXB, MAXF, STATE, cstate, nextIn, plain
 } from './carte-media.js';
-import { codeComplet, emailCarte, formatCode, lireCarte, normCode, normIdentifiant } from '../classe.js';
 import { accueil } from '../core/classement.js';
 import {
-  PALETTE, deck, esc, load, pending, plur, pull, resetPassword, saveDeck, signIn, signUp, sty, subj
+  PALETTE, deck, esc, load, plur, pull, resetPassword, saveDeck, signIn, signUp, sty, subj
 } from '../core/coeur-sync.js';
 import { dueCount, simpleMode, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
-import { consumeHash, logout, noterConnexion, premiereOuverture } from './onboarding.js';
+import { consumeHash, noterConnexion, premiereOuverture } from './onboarding.js';
 import { maybeTuto } from './tuto-porte.js';
 import { norm } from './quiz.js';
 import { cartePassage, lierPassage } from './passage.js';
@@ -434,89 +433,6 @@ async function doLogin(up, em, pw, err, btn) {
   }
 }
 
-/* ---------- la carte élève ----------
-   Un élève dont le professeur a créé le compte n'a ni e-mail ni mot de
-   passe choisi : il a une carte, avec un identifiant (« prenom.nom ») et
-   un code de huit caractères — ou le QR code de la même carte, qui
-   connecte d'un geste. Son nom, « Prénom NOM », vient de la liste de la
-   classe et ne se change pas de son côté (la base le verrouille). */
-let carteInit = { identifiant: '', err: '' };
-
-const carteMessage = x => (/Invalid|credentials|refus/i.test(String(x && x.message))
-  ? 'Identifiant ou code incorrect' : 'Connexion impossible : vérifie le réseau');
-
-async function connecterCarte(identifiant, code) {
-  await signIn(emailCarte(identifiant), normCode(code));
-  carteInit = { identifiant: '', err: '' };
-  await apresConnexion();
-}
-
-function carteHtml() {
-  return `<form class="lf" id="lf" autocomplete="on">
-      <div class="lrow">${svg(I.user)}
-        <input id="cid" placeholder="Identifiant" aria-label="Identifiant" value="${esc(carteInit.identifiant)}"
-          autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next"></div>
-      <div class="lrow">${svg(I.key)}
-        <input id="ccode" class="lcode" placeholder="Code" aria-label="Code" maxlength="9"
-          autocomplete="current-password" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go"></div>
-      <div class="lerr" id="le">${esc(carteInit.err)}</div>
-      <button class="cta" id="go" type="submit">Se connecter${svg(I.arrow)}</button>
-      <p class="lnote">${svg(I.key)}<span>L’identifiant et le code sont sur la carte remise par ton professeur.
-        Avec l’appareil photo, vise le QR code de la carte : tu entres directement.</span></p>
-    </form>`;
-}
-
-function bindCarte() {
-  const id = document.getElementById('cid'), code = document.getElementById('ccode'),
-        err = document.getElementById('le'), btn = document.getElementById('go');
-  code.oninput = () => {
-    const v = formatCode(code.value);
-    if (v !== code.value) code.value = v;
-  };
-  document.getElementById('lf').onsubmit = async e => {
-    e.preventDefault();
-    if (loginBusy) return;
-    if (!normIdentifiant(id.value)) { err.textContent = 'Écris ton identifiant'; id.focus(); return; }
-    if (!codeComplet(code.value)) { err.textContent = 'Le code a huit caractères, sans 0, O, 1, I ni L'; code.focus(); return; }
-    setLoginBusy(true); btn.disabled = true; err.textContent = '';
-    btn.firstChild.textContent = 'Connexion…';
-    try { await connecterCarte(id.value, code.value); }
-    catch (x) {
-      err.textContent = carteMessage(x);
-      btn.disabled = false; btn.firstChild.textContent = 'Se connecter';
-    }
-    setLoginBusy(false);
-  };
-  setTimeout(() => (id.value ? code : id).focus(), 80);
-}
-
-/* « ?carte=identifiant-CODE » : le QR code imprimé sur la carte. Rend
-   `true` si une session vient de s'ouvrir (le démarrage continue alors
-   normalement). Un autre compte déjà ouvert sur l'appareil n'est fermé que
-   s'il n'a plus rien à envoyer : sinon ses changements seraient perdus. */
-export async function consumeCarte() {
-  const p = new URLSearchParams(location.search);
-  if (!p.has('carte')) return false;
-  const c = lireCarte(location.search);
-  p.delete('carte');
-  history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
-  if (!c) return false;
-  if (auth && auth.email === emailCarte(c.identifiant)) return false;     // déjà ce compte
-  if (auth && pending()) {
-    toast(I.x, 'Un autre compte est ouvert ici et n’a pas fini d’envoyer ses changements');
-    return false;
-  }
-  if (auth) logout();
-  try {
-    await signIn(emailCarte(c.identifiant), c.code);
-    return true;
-  } catch (x) {
-    carteInit = { identifiant: c.identifiant, err: carteMessage(x) };
-    setLoginMode('carte');
-    return false;
-  }
-}
-
 /* À côté du formulaire, sur un écran large : ce que dit la page d'accueil,
    et ses pages dessinées comme dans l'app (les teintes de la page d'accueil). */
 const vitrine = () => `<div class="pub-vitrine" aria-hidden="true">
@@ -531,25 +447,24 @@ const vitrine = () => `<div class="pub-vitrine" aria-hidden="true">
    à faire. */
 function enTete() {
   const neuf = premiereOuverture();
-  const titre = { up: 'Bienvenue.', carte: 'Ta carte élève.' }[loginMode] || (neuf ? 'Bienvenue.' : 'Bon retour.');
+  const up = loginMode === 'up', titre = up || neuf ? 'Bienvenue.' : 'Bon retour.';
   return `<h1 class="lt">${titre}</h1>${neuf
-    ? `<p class="lsub linstalle">${svg(I.check)}C’est installé. Plus qu’à ${{ up: 'créer ton compte', carte: 'entrer ta carte' }[loginMode]
-      || 'te connecter'}.</p>` : '<p class="lsub">Tes cours, reliés en livres.</p>'}`;
+    ? `<p class="lsub linstalle">${svg(I.check)}C’est installé. Plus qu’à ${up ? 'créer ton compte' : 'te connecter'}.</p>`
+    : '<p class="lsub">Tes cours, reliés en livres.</p>'}`;
 }
 
 export function loginView() {
-  const up = loginMode === 'up', carte = loginMode === 'carte';
+  const up = loginMode === 'up';
   $.innerHTML = `<div class="pub pub-connexion">
     ${pubTete(false)}
     <div class="pub-duo">${vitrine()}<div class="login">
     ${enTete()}
     ${cartePassage()}
     <div class="seg lseg" id="lmode">
-      <button data-lm="in" class="${up || carte ? '' : 'on'}">Connexion</button>
+      <button data-lm="in" class="${up ? '' : 'on'}">Connexion</button>
       <button data-lm="up" class="${up ? 'on' : ''}">Créer un compte</button>
-      <button data-lm="carte" class="${carte ? 'on' : ''}">Carte élève</button>
     </div>
-    ${carte ? carteHtml() : `<form class="lf" id="lf" autocomplete="on">
+    <form class="lf" id="lf" autocomplete="on">
       <div class="lrow">${svg(I.mail)}
         <input id="em" type="email" placeholder="Adresse e-mail" autocomplete="username"
           autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next"></div>
@@ -562,7 +477,7 @@ export function loginView() {
         <span>J’ai 15 ans ou plus, et j’accepte les conditions d’utilisation.</span></label>` : ''}
       <button class="cta" id="go" type="submit">${up ? 'Créer le compte' : 'Se connecter'}${svg(I.arrow)}</button>
       ${up ? '' : `<button class="lnk" id="forgot" type="button">Mot de passe oublié</button>`}
-    </form>`}
+    </form>
     <div class="ldemos"><button class="lnk ldemo" data-act="decouvrir" type="button">${svg(I.play)}Essayer sans compte</button>
       <button class="lnk ldemo" data-act="demande" type="button">${svg(I.school)}Un établissement ? Demander une démo</button></div>
     </div></div>
@@ -574,7 +489,6 @@ export function loginView() {
     setLoginMode(b.dataset.lm); loginView(); synchroniser();
   };
   lierPassage();
-  if (carte) return bindCarte();
   const em = document.getElementById('em'), pw = document.getElementById('pw'),
         err = document.getElementById('le'), btn = document.getElementById('go');
   document.getElementById('pk').onclick = () => {

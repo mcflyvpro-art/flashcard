@@ -17,19 +17,19 @@ function client(store, uid) {
 const monde = () => semerMonde(nouveauStore());
 
 describe('le Lycée Démo Mirandola', () => {
-  it('Claire : sa licence (une place par élève et par professeur), deux factures, un échange, un professeur ajouté puis retiré', () => {
+  it('Claire : sa licence (une place par élève, par professeur et par référent), deux factures, un échange, un professeur ajouté puis retiré', () => {
     const store = monde(), claire = client(store, COMPTES.ref);
     const l = claire.rpc('licence_tableau');
-    expect(l).toMatchObject({ offre: 'etablissement', places: 300, prises: 23, eleves: 20, profs: 3, prix: 1200 });
+    expect(l).toMatchObject({ offre: 'etablissement', places: 300, prises: 24, eleves: 20, profs: 3, prix: 1200 });
     expect(l.factures.map(f => f.numero.slice(-4))).toEqual(['0002', '0001']);
     expect(l.factures[0]).not.toHaveProperty('lignes');
     expect(claire.rpc('facture', { fid: l.factures[1].id }).lignes[0].total_ht).toBe(102500);
     expect(l.echanges.filter(e => e.de === 'folio' && !e.lu)).toHaveLength(1);
     const anne = claire.rpc('ref_new_account', { adresse: 'anne.leroy@demo.folio.invalid', nom: 'Anne LEROY', pseudo: '', qrole: 'prof',
       cid: null, pw: 'abcd-efgh-jkmn' });
-    expect(claire.rpc('licence_tableau').prises).toBe(24);
+    expect(claire.rpc('licence_tableau').prises).toBe(25);
     claire.rpc('ref_retirer', { cible: anne });
-    expect(claire.rpc('licence_tableau').prises).toBe(23);
+    expect(claire.rpc('licence_tableau').prises).toBe(24);
     claire.rpc('ref_ecrire', { sujet: 'renouvellement', message: 'Nous renouvelons pour l’an prochain.' });
     expect(claire.rpc('licence_tableau').echanges).toHaveLength(4);
   });

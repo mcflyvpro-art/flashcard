@@ -7,6 +7,7 @@
 // ce que l'app appelle et lit, pas la sécurité — elle se prouve en base
 // (supabase/tests/licence.sql).
 import { uuid as randomUUID } from './uuid.js';
+import { marquerProvisoire } from './licences.js';
 import { erreur, membresOrg, placesLibres, placesPrises, referent, tracer } from './etablissement.js';
 
 const auj = () => new Date().toISOString().slice(0, 10);
@@ -98,7 +99,7 @@ function avoir(et, m, uid, b) {
   return { id: a.id, numero: a.numero };
 }
 
-/* Le référent ouvre le compte d'un professeur : il prend une place. */
+/* Le référent ouvre le compte d'un professeur : il prend une place, et son mot de passe est provisoire. */
 function nouveauCompte(store, et, m, uid, b) {
   const o = referent(et, m, uid);
   if (!['eleve', 'prof'].includes(b.qrole)) erreur('Un référent ouvre des comptes d’élève et de professeur.');
@@ -109,6 +110,7 @@ function nouveauCompte(store, et, m, uid, b) {
   if (store.users.some(u => u.email === ad)) erreur('Cette adresse a déjà un compte');
   const id = randomUUID();
   store.users.push({ id, email: ad, password: b.pw });
+  marquerProvisoire(store, id);                       // le compte choisira son mot de passe à sa première connexion
   m.noms[id] = String(b.nom || '').trim(); m.roles[id] = b.qrole; et.membres[id] = o.id;
   tracer(store, id, 'compte ouvert', { nom: m.noms[id], role: b.qrole });
   return id;

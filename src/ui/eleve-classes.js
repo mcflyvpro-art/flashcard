@@ -22,7 +22,7 @@ import { ouvrirCode } from './code-entree.js';
    Dans l'ordre de ce qui presse : les devoirs à faire, puis rejoindre une
    classe (le code se tape, se colle en lien, ou arrive par le QR projeté),
    puis ses classes et ses demandes en attente. Le nom sous lequel on entre
-   n'est pas un pseudo : c'est celui du compte à carte ou de l'établissement,
+   n'est pas un pseudo : c'est celui que connaît l'établissement,
    ou, pour un compte personnel, son vrai prénom et son vrai nom. */
 
 /* Le blason d'une classe (ui/jeton.js) : avant d'y être entré, on ne le
@@ -31,8 +31,8 @@ import { ouvrirCode } from './code-entree.js';
 const pastille = id => blason(id);
 const neutre = () => `<i class="jt groupe vide">${svg(I.school)}</i>`;
 
-/* Un compte à carte ou d'établissement a déjà son nom : on ne le redemande pas. */
-const nomConnu = () => !!(compte && compte.gere) || atSchool();
+/* Un compte d'établissement a déjà son nom : on ne le redemande pas. */
+const nomConnu = () => atSchool();
 
 /* ---------- rejoindre ---------- */
 function rejoindreHtml() {
@@ -120,7 +120,7 @@ export function mesClassesView() {
   $.innerHTML = `
     <div class="page el-page" id="page">
       <div class="top"><div class="hero">${n === 1 ? 'Ma classe' : 'Mes classes'}</div></div>
-      ${qui && nomConnu() ? `<p class="el-qui">${svg(I.user)}<b>${esc(qui)}</b>${compte && compte.gere ? '<i>carte élève</i>' : ''}</p>` : ''}
+      ${qui && nomConnu() ? `<p class="el-qui">${svg(I.user)}<b>${esc(qui)}</b></p>` : ''}
       <div class="el-grille">
         <div>${enDirectHtml((cercle.salles || []).filter(s => s.class_id))}
           <h2 class="el-h2">À faire</h2>${devoirsHtml()}

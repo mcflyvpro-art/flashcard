@@ -5,10 +5,10 @@ import { SITE } from '../adresse.js';
 import { ref, setAnimate, view } from '../data/etat.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
-  PAGE, refAgir, refAjouterProf, refCharger, refCreerCartes, refEquipePull, refJournalPull, refNouveauCode, refPersonnesPull,
+  PAGE, refAgir, refAjouterProf, refCharger, refOuvrirComptes, refEquipePull, refJournalPull, refNouveauCode, refPersonnesPull,
   refProfsPull, refRetirer, refRythme, refServicePull
 } from '../core/referent.js';
-import { formatCode, lienCarte, lienRejoindre, lireListeEleves, nomPropre, nomValide } from '../classe.js';
+import { formatCode, lienRejoindre, lireComptes, nomPropre, nomValide, tableurComptes } from '../classe.js';
 import { changeLe, cycleDe, etatLicence, motDePasseProvisoire, NIVEAUX, RYTHMES } from '../etablissement.js';
 import { render } from './bibliotheque.js';
 import { avatar } from './jeton.js';
@@ -28,8 +28,8 @@ const PC = () => matchMedia('(min-width: 900px)').matches;
 const repeint = () => { if (view.name === 'ref') { setAnimate(false); render(); } };
 const kc = (n, lab, cls) => `<div class="rf-kc ${cls || ''}"><b>${n ?? '—'}</b><span>${lab}</span></div>`;
 const vide = (ic, t) => `<div class="rf-vide">${svg(ic)}<p>${t}</p></div>`;
-// une place par élève et par professeur (20261026130000) ; le référent n'en prend pas
-const licence = c => etatLicence({ offre: c.offre, places: c.places, eleves: (+c.eleves || 0) + (+c.profs || 0),
+// une place par élève, par professeur et par référent (20261029090000)
+const licence = c => etatLicence({ offre: c.offre, places: c.places, eleves: (+c.eleves || 0) + (+c.profs || 0) + (+c.refs || 0),
   licence_fin: c.licence_fin });
 const jusque = l => (l.k === 'echue' ? 'finie le ' + l.fin : l.fin === 'sans fin' ? 'sans fin' : 'jusqu’au ' + l.fin);
 
@@ -76,7 +76,7 @@ function tuileLicence(c) {
   return `<div class="rf-tuile rf-licence">
       <div class="rf-tl">${l.offre}<span>${jusque(l)}</span></div>
       <div class="rf-barre"><i style="width:${l.pc}%"></i></div>
-      <div class="rf-tl-p" title="Une place par élève et par professeur"><b>${l.places}</b> places${l.libre != null ? ` · ${l.libre} libre${l.libre > 1 ? 's' : ''}` : ''}</div>
+      <div class="rf-tl-p" title="Une place par élève, par professeur et par référent"><b>${l.places}</b> places${l.libre != null ? ` · ${l.libre} libre${l.libre > 1 ? 's' : ''}` : ''}</div>
       ${alerte ? `<p class="rf-alerte ${l.k}">${svg(I.warn)}${alerte}</p>` : ''}
     </div>`;
 }
@@ -106,7 +106,7 @@ function accueil() {
         ${aRegler(b)}
       </div>
     </div>
-    <button class="rf-discret" data-rf="onglet" data-id="cartes">${svg(I.card)}Des élèves sans adresse e-mail ?</button>`;
+    <button class="rf-discret" data-rf="onglet" data-id="lot">${svg(I.users)}Ouvrir les comptes des élèves</button>`;
 }
 
 /* ---------- les classes ---------- */
@@ -192,7 +192,7 @@ function liste() {
     ${l.map(g => `<button class="rf-ligne${ref.who && ref.who.id === g.id ? ' on' : ''}" data-rf="personne" data-id="${esc(g.id)}">
       ${avatar(g.id, g.name, 'sm')}
       <span class="rf-l1"><b>${esc(g.name)}</b><i>${esc(g.role === 'prof' ? g.matiere || '' : g.classe || '')}${
-        g.role === 'eleve' && !g.classe ? '<em class="rf-chip">sans classe</em>' : ''}${g.carte ? '<em class="rf-chip">carte</em>' : ''}</i></span>
+        g.role === 'eleve' && !g.classe ? '<em class="rf-chip">sans classe</em>' : ''}</i></span>
       <span class="rf-l2">${g.jamais ? 'aucune connexion' : timeAgo(g.derniere)}</span></button>`).join('')}
     ${pages > 1 ? `<div class="rf-pages"><button class="rf-b sm" ${ref.page ? '' : 'disabled'} data-rf="page" data-id="${ref.page - 1}">Précédent</button>
       <span>${ref.page + 1} / ${pages}</span>
@@ -204,7 +204,8 @@ function personnes() {
   const detail = ref.who ? detailPersonne(ref.who) : prof && ref.nouveauProf ? nouveauProf()
     : vide(I.user, prof ? 'Choisis un professeur' : 'Choisis un élève');
   return `<div class="rf-maitre"><div class="rf-liste">
-      ${prof ? `<button class="rf-b pri rf-ajouter" data-rf="nouveau-prof">${svg(I.plus)}Ajouter un professeur</button>` : ''}
+      ${prof ? `<button class="rf-b pri rf-ajouter" data-rf="nouveau-prof">${svg(I.plus)}Ajouter un professeur</button>`
+        : `<button class="rf-b pri rf-ajouter" data-rf="onglet" data-id="lot">${svg(I.plus)}Ajouter des élèves</button>`}
       ${filtres()}${liste()}</div>
     <div class="rf-detail">${detail}</div></div>`;
 }
@@ -217,7 +218,7 @@ function nouveauProf() {
     return `<div class="rf-fiche"><h2 class="rf-h2">Compte ouvert</h2>
         <div class="rf-mdp"><span>${esc(n.adresse)}</span><b>${esc(n.pw)}</b>
           <button class="rf-b sm" data-rf="copier-mdp">${svg(I.copy)}Copier</button></div>
-        <p class="rf-rien" title="Le mot de passe n’est gardé nulle part">À donner à ${esc(n.nom)} : il le change dans ses réglages.</p>
+        <p class="rf-rien" title="Le mot de passe n’est gardé nulle part">À donner à ${esc(n.nom)} : il le remplace à sa première connexion.</p>
         <button class="rf-b" data-rf="nouveau-prof">${svg(I.plus)}Un autre</button></div>`;
   }
   return `<div class="rf-fiche"><h2 class="rf-h2">Ajouter un professeur</h2>
@@ -236,7 +237,7 @@ function detailPersonne(g) {
   const cl = (ref.classes || []).filter(c => c.genre === 'classe');
   return `<div class="rf-fiche">
       <div class="rf-qui">${avatar(g.id, g.name, 'lg')}<div><b>${esc(g.name)}</b>
-        <i>${esc(g.carte ? 'carte élève' : g.email || '')}${g.jamais ? ' · aucune connexion' : ' · vu ' + timeAgo(g.derniere)}</i></div></div>
+        <i>${esc(g.email || '')}${g.jamais ? ' · aucune connexion' : ' · vu ' + timeAgo(g.derniere)}</i></div></div>
       <h2 class="rf-h2">Nom</h2>
       <form class="rf-renom" id="rfnom" autocomplete="off">
         <input id="rfnnom" value="${esc(g.name)}" maxlength="80" aria-label="Prénom NOM" spellcheck="false">
@@ -250,12 +251,12 @@ function detailPersonne(g) {
       <h2 class="rf-h2">Rôle</h2>
       <div class="rf-seg" role="radiogroup">${[['eleve', 'Élève'], ['prof', 'Professeur']].map(([k, t]) => `<button role="radio"
         aria-checked="${g.role === k}" class="${g.role === k ? 'on' : ''}" data-rf="role" data-id="${k}">${t}</button>`).join('')}</div>
-      ${g.carte ? '' : `<h2 class="rf-h2">Mot de passe oublié</h2>
+      <h2 class="rf-h2">Mot de passe oublié</h2>
         <form class="rf-renom" id="rfmdp" autocomplete="off">
           <input id="rfmpw" placeholder="Dix caractères au moins" minlength="10" maxlength="72" spellcheck="false"
             autocapitalize="none" aria-label="Nouveau mot de passe">
           <button class="rf-b" type="submit">${svg(I.key)}Remplacer</button>
-        </form>`}
+        </form>
       <button class="rf-b ko large rf-retirer" data-rf="retirer" title="Il quitte ses classes ; son compte et ses livres restent">
         ${svg(I.exit)}<span>Retirer de l’établissement</span></button>
     </div>`;
@@ -297,38 +298,49 @@ function journal() {
     <span>${timeAgo(r.created_at)}</span></div>`).join('')}</div>`;
 }
 
-/* ---------- les cartes élève : le cas particulier, caché ---------- */
-function cartes() {
-  const k = ref.cartes || {}, cl = (ref.classes || []).filter(c => c.genre === 'classe');
-  if (k.res) return resultatsCartes(k);
-  return `<div class="rf-cartes">
-      <button class="rf-b sm" data-rf="onglet" data-id="accueil">${svg(I.back)}Retour</button>
-      <h2>Des élèves sans adresse e-mail</h2>
-      <p>Pour les élèves qui n’ont pas d’adresse e-mail (souvent de jeunes collégiens), Mirandola crée un compte par élève
-        avec un identifiant et un code secret, imprimés sur une carte avec un QR. Ils n’ont alors pas besoin du code élèves :
-        ils scannent leur carte. Les autres entrent normalement, avec le code élèves.</p>
-      <form id="rfcartes" autocomplete="off">
-        <select id="rfkcls" aria-label="Classe">${cl.map(c => `<option value="${esc(c.id)}"${k.cid === c.id ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
-        <textarea id="rfkliste" rows="8" placeholder="Une ligne par élève : NOM Prénom" aria-label="Liste des élèves">${esc(k.texte || '')}</textarea>
-        <button class="rf-b pri" type="submit" ${cl.length ? '' : 'disabled'}>${svg(I.card)}Créer les comptes</button>
+/* ---------- les comptes des élèves, ouverts d'un coup (2026-10-29) ----------
+   Une ligne par élève — son nom et son adresse —, une classe pour tous ;
+   chacun a un mot de passe provisoire, qu'il remplace à sa première
+   connexion, et arrive directement dans sa classe. Les mots de passe ne
+   sont montrés qu'ici, une fois : à copier ou imprimer. */
+function apercuLot(texte) {
+  const r = lireComptes(texte);
+  if (!r.comptes.length && !r.ignorees.length) return '';
+  return `${r.comptes.length ? `<b>${plur(r.comptes.length, 'élève')}</b>` : ''}${r.trop ? ` · ${r.trop} au-delà de 200` : ''}${
+    r.ignorees.length ? ` <span class="ko">· sans adresse ou illisible : ${esc(r.ignorees.slice(0, 3).join(' · ').slice(0, 120))}</span>` : ''}`;
+}
+
+function lot() {
+  const k = ref.lot || {}, cl = (ref.classes || []).filter(c => c.genre === 'classe');
+  if (k.res) return resultatsLot(k);
+  return `<div class="rf-lot">
+      <button class="rf-b sm" data-rf="onglet" data-id="eleves">${svg(I.back)}Élèves</button>
+      <h2>Ouvrir les comptes des élèves</h2>
+      <form id="rflot" autocomplete="off">
+        <select id="rflcls" aria-label="Classe">${cl.map(c => `<option value="${esc(c.id)}"${k.cid === c.id ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
+        <textarea id="rflliste" rows="10" spellcheck="false" aria-label="Une ligne par élève : nom et adresse e-mail"
+          placeholder="MARTIN Alice ; alice.martin@lycee.fr&#10;DUBOIS Léo ; leo.dubois@gmail.com">${esc(k.texte || '')}</textarea>
+        <p class="rf-rien" id="rflapercu">${apercuLot(k.texte || '')}</p>
+        <button class="rf-b pri" type="submit" ${cl.length && !k.envoi ? '' : 'disabled'}>${svg(I.users)}${k.envoi ? 'Ouverture…' : 'Ouvrir les comptes'}</button>
       </form>
+      ${cl.length ? '' : '<p class="rf-alerte">Crée d’abord une classe.</p>'}
     </div>`;
 }
 
-const POURQUOI = { invalide: 'nom illisible', deja: 'déjà dans la classe', homonyme: 'un élève porte déjà ce nom',
-  complet: 'classe complète' };
-
-function resultatsCartes(k) {
-  const faits = k.res.filter(r => r.statut === 'cree'), autres = k.res.filter(r => r.statut !== 'cree');
-  return `<div class="rf-cartes">
-      <h2>${plur(faits.length, 'compte')} créé${faits.length > 1 ? 's' : ''}</h2>
-      <p>Les codes ne seront plus jamais montrés : imprime les cartes maintenant.</p>
-      <div class="rf-b-l"><button class="rf-b pri" data-rf="imprimer">${svg(I.file)}Imprimer les cartes</button>
-        <button class="rf-b" data-rf="cartes-fin">Terminé</button></div>
-      ${autres.length ? `<p class="rf-alerte">${svg(I.warn)}${autres.map(r => `${esc(r.nom)} : ${POURQUOI[r.statut] || esc(r.statut)}`).join(' · ')}</p>` : ''}
-      <div class="rf-impression" id="rfimpr">${faits.map(r => `<div class="rf-carte"><b>${esc(r.nom)}</b>
-        <span>Identifiant <code>${esc(r.identifiant)}</code></span><span>Code <code>${esc(r.code)}</code></span>
-        <i class="rf-qr" data-lien="${esc(lienCarte(SITE, r.identifiant, r.code))}"></i></div>`).join('')}</div>
+function resultatsLot(k) {
+  const faits = k.res.filter(r => r.ok), autres = k.res.filter(r => !r.ok);
+  const classe = ((ref.classes || []).find(c => c.id === k.cid) || {}).name || '';
+  return `<div class="rf-lot">
+      <h2>${plur(faits.length, 'compte')} ouvert${faits.length > 1 ? 's' : ''}${classe ? ' · ' + esc(classe) : ''}</h2>
+      ${faits.length ? `<p class="rf-alerte">${svg(I.warn)}Les mots de passe ne seront plus montrés : copie-les ou imprime la liste maintenant.</p>
+      <div class="rf-b-l"><button class="rf-b pri" data-rf="lot-copier">${svg(I.copy)}Copier pour un tableur</button>
+        <button class="rf-b" data-rf="imprimer">${svg(I.file)}Imprimer</button>
+        <button class="rf-b" data-rf="lot-fin">Terminé</button></div>` : '<div class="rf-b-l"><button class="rf-b" data-rf="lot-fin">Retour</button></div>'}
+      ${autres.length ? `<div class="rf-lot-ko">${autres.map(r => `<p>${svg(I.x)}<b>${esc(r.complet)}</b> <i>${esc(r.email)}</i> : ${esc(r.erreur)}</p>`).join('')}</div>` : ''}
+      ${faits.length ? `<div class="rf-impression" id="rfimpr"><table class="rf-mdps">
+        <thead><tr><th>Nom</th><th>Adresse e-mail</th><th>Mot de passe provisoire</th></tr></thead>
+        <tbody>${faits.map(r => `<tr><td>${esc(r.complet)}</td><td>${esc(r.email)}</td><td><code>${esc(r.pw)}</code></td></tr>`).join('')}</tbody>
+      </table><p class="rf-rien">Mirandola · ${esc(SITE.replace(/^https?:\/\//, '').replace(/\/$/, ''))} · le mot de passe se change à la première connexion.</p></div>` : ''}
     </div>`;
 }
 
@@ -353,7 +365,7 @@ function projection() {
     </div>`;
 }
 
-const CORPS = { accueil, classes, eleves: personnes, profs: personnes, licence: ongletLicence, journal, cartes };
+const CORPS = { accueil, classes, eleves: personnes, profs: personnes, licence: ongletLicence, journal, lot };
 
 /* Chaque ouverture repart de l'accueil et relit tout (refPull, au retour
    d'ailleurs, remet `charge` à faux) : on n'y retrouve jamais une liste
@@ -372,7 +384,7 @@ export function consoleRef() {
   dessinerQR();
 }
 
-/* Les QR (projection, cartes) : l'encodeur se charge à la demande. */
+/* Les QR (la projection d’un code) : l’encodeur se charge à la demande. */
 function dessinerQR() {
   const l = document.querySelectorAll('.rf-qr[data-lien]');
   if (!l.length) return;
@@ -470,7 +482,11 @@ const ACTIONS = {
     ref.profsListe = null; refProfsPull();
   },
   imprimer: () => window.print(),
-  'cartes-fin': () => { ref.cartes = null; ouvrirOnglet('accueil'); }
+  'lot-copier': async () => {
+    try { await navigator.clipboard.writeText(tableurComptes((ref.lot.res || []).filter(r => r.ok))); toast(I.check, 'Copié : colle-le dans un tableur'); }
+    catch (e) { toast(I.x, 'Copie impossible : imprime la liste'); }
+  },
+  'lot-fin': () => { ref.lot = null; ouvrirOnglet('eleves'); }
 };
 
 document.addEventListener('click', e => {
@@ -536,14 +552,16 @@ const FORMULAIRES = {
       const i = document.getElementById('rfmpw'); if (i) i.value = '';
     }
   },
-  rfcartes: async () => {
-    const cid = val('rfkcls'), texte = val('rfkliste');
-    const { eleves, ignorees, trop } = lireListeEleves(texte);
-    ref.cartes = { cid, texte };
-    if (!eleves.length) return toast(I.x, 'Une ligne par élève : NOM Prénom');
-    if (ignorees.length || trop) return toast(I.warn, ignorees.length ? `Ligne illisible : ${ignorees[0].slice(0, 40)}` : 'Soixante élèves à la fois');
-    const res = await refCreerCartes(cid, eleves.map(x => ({ prenom: x.prenom, nom: x.nom })));
-    if (res) { ref.cartes = { cid, texte: '', res }; repeint(); }
+  rflot: async () => {
+    const cid = val('rflcls'), texte = val('rflliste');
+    const { comptes, ignorees, trop } = lireComptes(texte);
+    ref.lot = { cid, texte };
+    if (!comptes.length) return toast(I.x, 'Une ligne par élève : son nom et son adresse e-mail');
+    if (ignorees.length || trop) return toast(I.warn, ignorees.length ? `À corriger : ${ignorees[0].slice(0, 40)}` : 'Deux cents élèves à la fois');
+    ref.lot.envoi = true; repeint();
+    const res = await refOuvrirComptes(cid, comptes.map(x => ({ ...x, pw: motDePasseProvisoire(alea) })));
+    ref.lot = res ? { cid, texte: '', res } : { cid, texte };
+    repeint();
   }
 };
 
@@ -576,6 +594,12 @@ let attente = 0;
 document.addEventListener('input', e => {
   // le message à Mirandola survit à un repeint (le tableau se relit après chaque geste)
   if (e.target.id === 'rfemsg') { ref.brouillon = e.target.value; return; }
+  // la liste d'élèves collée : l'aperçu suit, sans repeindre le champ où l'on tape
+  if (e.target.id === 'rflliste') {
+    ref.lot = { ...(ref.lot || {}), texte: e.target.value };
+    const a = document.getElementById('rflapercu'); if (a) a.innerHTML = apercuLot(e.target.value);
+    return;
+  }
   if (e.target.id !== 'rfq' || view.name !== 'ref') return;
   ref.q = e.target.value;
   clearTimeout(attente);

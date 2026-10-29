@@ -56,8 +56,7 @@ export function inviterCode(c) {
     <ol class="pf-etapes">
       <li><b>1</b><span>Mirandola → Réglages → J’ai un code</span></li>
       <li><b>2</b><span>Choisir « ${esc(c.name)} »</span></li>
-    </ol>
-    ${c.gere ? `<button class="pf-lnk seul" data-pf="f-mode" data-v="liste">${svg(I.card)}Des élèves sans adresse e-mail ?</button>` : ''}`;
+    </ol>`;
 }
 
 /* Le mode tableau : le code en très grand, le QR, et qui vient d'arriver. */

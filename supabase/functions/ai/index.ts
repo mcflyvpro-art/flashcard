@@ -20,6 +20,11 @@
    la base (offre_de, rôle service) ; une base qui n'a pas encore la
    fonction laisse passer, aux seuls quotas du jour.
 
+   Un compte Campus a le quota mensuel que l'éditeur a fixé pour sa licence
+   (2026-10-29, ia_quota : par professeur et par élève, dans un établissement
+   ou chez un professeur particulier) ; les secrets ci-dessus ne valent plus
+   que pour Mirandola+. Un quota de 0 dit « mquota » avec `quota: 0`.
+
    verify_jwt est actif : seul un compte connecté peut appeler la fonction. */
 
 /* Appel HTTP direct plutôt que le SDK npm : dans le runtime Edge de Deno,
@@ -180,7 +185,7 @@ Deno.serve(async (req) => {
   const today = now.toISOString().slice(0, 10);
 
   const [{ data: month }, { count: mine }, { count: myFiles }, { count: myMonth }, { data: offre, error: sansOffre },
-    { data: roles }] =
+    { data: roles }, { data: quota }] =
     await Promise.all([
       admin.from("ai_usage").select("cents").gte("day", firstOfMonth),
       admin.from("ai_usage").select("id", { count: "exact", head: true })
@@ -193,10 +198,13 @@ Deno.serve(async (req) => {
         .eq("user_id", uid).gte("day", firstOfMonth),
       admin.rpc("offre_de", { u: uid }),
       admin.from("user_roles").select("role").eq("user_id", uid),
+      admin.rpc("ia_quota", { u: uid }),
     ]);
   const prof = (roles ?? []).some((r: { role: string }) => ["prof", "ref", "admin"].includes(r.role));
   if (!sansOffre && offre === "gratuit") return json({ error: "plus" }, 402);
-  if (!sansOffre && (myMonth ?? 0) >= (prof ? MONTHLY_PROF : MONTHLY_PLUS)) return json({ error: "mquota" }, 429);
+  // le quota de la licence Campus d'abord ; nul (Mirandola+, ou une base sans la fonction) : celui des secrets
+  const mensuel = typeof quota === "number" ? quota : prof ? MONTHLY_PROF : MONTHLY_PLUS;
+  if (!sansOffre && (myMonth ?? 0) >= mensuel) return json({ error: "mquota", quota: mensuel }, 429);
   const spent = (month ?? []).reduce((a, r) => a + Number(r.cents), 0);
   if (spent >= BUDGET_CENTS) return json({ error: "budget" }, 402);
   if ((mine ?? 0) >= (prof ? DAILY_PROF : DAILY_CALLS)) return json({ error: "quota" }, 429);

@@ -23,7 +23,6 @@ const STATUTS = {
   choisir: ['ko', 'Choisis ta classe', ''],
   classe: ['ko', 'Cette classe n’est plus proposée', 'Choisis-en une autre dans la liste.'],
   autre: ['ko', 'Ton compte appartient à un autre établissement', 'Un compte ne fait partie que d’un seul établissement.'],
-  gere: ['ko', 'Ton compte vient déjà de ton établissement', 'Une carte élève n’a pas besoin de code.'],
   role: ['ko', 'Ce code n’est pas pour ce compte', 'Les élèves et les professeurs n’ont pas le même code.'],
   soi: ['ko', 'C’est ton propre code', 'Donne-le à tes élèves.'],
   plein: ['ko', 'L’établissement n’a plus de place', 'Préviens-le : il doit ajouter des places à sa licence.'],
@@ -35,14 +34,26 @@ const STATUTS = {
   connexion: ['ko', 'Connecte-toi d’abord', '']
 };
 
-export function messageEtab(statut) {
-  const [ton, titre, texte] = STATUTS[statut] || ['ko', 'Impossible pour l’instant', 'Réessaie dans un moment.'];
+/* Chez un professeur particulier (2026-10-29) : on entre dans sa salle
+   d'attente, et c'est sa licence qui a des places — pas un établissement. */
+const STATUTS_PROF = {
+  attente: ['ok', 'Demande envoyée', 'Ton professeur vérifie ton prénom et ton nom, puis t’accepte dans sa classe.'],
+  plein: ['ko', 'Ton professeur n’a plus de place', 'Préviens-le : il peut en commander d’autres.'],
+  licence: ['ko', 'La licence de ton professeur a pris fin', 'Préviens-le : il doit la renouveler.'],
+  demandes: ['ko', 'Trop de demandes en attente', 'Attends qu’un professeur réponde à tes demandes en cours.'],
+  refuse: ['ko', 'Ton professeur n’a pas accepté ta demande', 'Parle-lui en directement.']
+};
+
+export function messageEtab(statut, type) {
+  const [ton, titre, texte] = (type === 'prof' && STATUTS_PROF[statut]) || STATUTS[statut] || STATUTS_PROF[statut]
+    || ['ko', 'Impossible pour l’instant', 'Réessaie dans un moment.'];
   return { ton, titre, texte };
 }
 
 /* Ce qu'on dit en entrant, selon qui l'on devient. */
 export function bienvenue(r) {
   const ou = [r.nom, r.classe].filter(Boolean).join(' · ');
+  if (r.type === 'prof' && r.statut === 'attente') return `Demande envoyée · ${ou}`;
   if (r.type === 'prof') return `Tu suis ${ou}`;
   if (r.quel === 'ref') return `Tu es référent · ${r.nom}`;
   return `Bienvenue · ${ou}`;
@@ -151,9 +162,9 @@ export const aRelancer = (o, auj = iso(new Date())) => !!o.relance && o.relance 
 export const nouvelleDemande = o => o.source === 'demande' && (o.statut || 'prospect') === 'prospect' && !o.notes;
 
 /* Une licence qui demande une décision : finie, pleine ou bientôt finie. */
-// une place par élève et par professeur (20261026130000) : une licence pleine l'est aussi de professeurs
+// une place par élève, par professeur et par référent (20261029090000) : une licence pleine l'est de tous
 const licenceAlerte = (o, auj) => !!o.licence_fin && o.statut !== 'perdu'
-  && etatLicence({ ...o, eleves: (+o.eleves || 0) + (+o.profs || 0) }, auj).k !== 'ok';
+  && etatLicence({ ...o, eleves: (+o.eleves || 0) + (+o.profs || 0) + (+o.refs || 0) }, auj).k !== 'ok';
 
 export function compterEtapes(orgs) {
   const n = { tous: orgs.length };

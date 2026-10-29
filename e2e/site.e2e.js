@@ -76,8 +76,8 @@ test('les boutons ouvrent l’app à l’adresse de chaque écran (src/routes.js
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'demande', { timeout: 10000 });
 
   await page.goto('./');
-  await page.locator('.pied').getByRole('link', { name: 'Carte élève' }).click();
-  await expect(page).toHaveURL(/\/carte-eleve$/, { timeout: 10000 });
+  await page.locator('.pied').getByRole('link', { name: 'Se connecter' }).click();
+  await expect(page).toHaveURL(/\/connexion$/, { timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Installe Mirandola' })).toBeVisible({ timeout: 10000 });
 
   await page.goto('./');

@@ -130,18 +130,23 @@ button.rf-ligne:hover{background:var(--surf)}
 .rf-jl i{font-style:normal;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rf-jl span{font-size:12.5px;font-weight:600;color:var(--soft)}
 
-/* ---------- les cartes élève ---------- */
-.rf-cartes{max-width:640px}
-.rf-cartes h2{margin:18px 0 8px;font-size:20px;font-weight:750;letter-spacing:-.3px}
-.rf-cartes p{margin:0 0 14px;font-size:14px;line-height:1.55;color:var(--ink2)}
-.rf-cartes form{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
-.rf-impression{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:14px}
-.rf-carte{display:grid;grid-template-columns:minmax(0,1fr) 92px;grid-template-rows:auto auto 1fr;gap:4px 12px;
-  padding:14px 16px;border-radius:14px;background:var(--card);box-shadow:var(--edge);break-inside:avoid}
-.rf-carte b{grid-column:1;font-size:15px;font-weight:750}
-.rf-carte span{grid-column:1;font-size:12.5px;color:var(--ink2)}
-.rf-carte code{font:700 13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink)}
-.rf-carte .rf-qr{grid-column:2;grid-row:1 / 4;width:92px;height:92px}
+/* ---------- les comptes des élèves, ouverts d'un coup ---------- */
+.rf-lot{max-width:760px}
+.rf-lot h2{margin:18px 0 12px;font-size:20px;font-weight:750;letter-spacing:-.3px}
+.rf-lot form{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+.rf-lot form select,.rf-lot form .rf-b{align-self:flex-start}
+.rf-lot textarea{min-height:200px;padding:12px 14px;border-radius:12px;background:var(--card);box-shadow:var(--edge);
+  font:500 14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical}
+.rf-lot .ko{color:var(--ko)}
+.rf-lot-ko{margin:12px 0;display:flex;flex-direction:column;gap:6px}
+.rf-lot-ko p{display:flex;align-items:center;gap:7px;margin:0;font-size:13.5px;color:var(--ink2)}
+.rf-lot-ko svg{width:15px;height:15px;color:var(--ko);flex:none}
+.rf-lot-ko i{font-style:normal;color:var(--soft)}
+.rf-impression{margin-top:14px}
+.rf-mdps{width:100%;border-collapse:collapse;font-size:13.5px}
+.rf-mdps th{text-align:left;font-size:12px;font-weight:650;color:var(--soft);padding:8px 10px;border-bottom:1px solid var(--line)}
+.rf-mdps td{padding:9px 10px;border-bottom:1px solid var(--hair)}
+.rf-mdps code{font:700 13.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);letter-spacing:.3px}
 
 /* ---------- la projection d'un code ---------- */
 .rf-projo{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -209,11 +214,11 @@ button.rf-ligne:hover{background:var(--surf)}
   .rf-chiffres{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
-/* l'impression des cartes : rien d'autre que les cartes */
+/* l'impression de la liste des comptes : rien d'autre qu'elle */
 @media print{
   html,body{overflow:visible !important;height:auto !important}
   body *{visibility:hidden}
   .rf-impression,.rf-impression *{visibility:visible}
-  .rf-impression{position:absolute;left:0;top:0;width:100%;grid-template-columns:repeat(2,1fr);margin:0}
-  .rf-carte{box-shadow:inset 0 0 0 1px #999}
+  .rf-impression{position:absolute;left:0;top:0;width:100%;margin:0}
+  .rf-mdps td,.rf-mdps th{border-color:#999}
 }

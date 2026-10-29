@@ -33,6 +33,7 @@ import { rpcCercle } from './cercle.js';
 import { REFUS, ecritPseudo, pseudoNeuf, rpcPseudos } from './pseudos.js';
 import { contexteRevision, journalFaux } from './journal.js';
 import { magasinsFaux, paiementFaux, rpcAbonnements } from './abonnements.js';
+import { mdpChoisi } from './licences.js';
 
 const CARD_COLS = { f: 'front', b: 'back', st: 'state', sp: 'step', S: 'stability', D: 'difficulty',
   F: 'trace2', d: 'due', lr: 'last_review', i: 'interval_days', n: 'reviews_count', l: 'lapses' };
@@ -53,7 +54,7 @@ const userOf = (store, req) => {
   return m && store.users.find(u => u.id === m[1]);
 };
 
-function auth(store, path, url, body) {
+function auth(store, path, url, body, req) {
   if (path.endsWith('/signup')) {
     if (store.users.some(u => u.email === body.email)) return [422, { msg: 'User already registered' }];
     const user = { id: randomUUID(), email: body.email, password: body.password };
@@ -68,6 +69,18 @@ function auth(store, path, url, body) {
     return user ? [200, jeton(user)] : [400, { error_description: 'Invalid login credentials' }];
   }
   if (path.endsWith('/recover')) return [200, {}];
+  /* PUT /user : un mot de passe changé n'est plus provisoire (le
+     déclencheur mdp_choisi de la vraie base, 20261029090000). */
+  if (path.endsWith('/user') && req && req.method === 'PUT') {
+    const user = userOf(store, req);
+    if (!user) return [401, { msg: 'JWT expired' }];
+    if (body.password) {
+      if (String(body.password).length < 6) return [422, { msg: 'Password should be at least 6 characters.' }];
+      user.password = body.password;
+      mdpChoisi(store, user.id);
+    }
+    return [200, { id: user.id, email: user.email }];
+  }
   return [404, {}];
 }
 
@@ -217,7 +230,7 @@ function fonction(store, req, path, body) {
    headers (noms en minuscules), body (déjà lu en JSON, ou null) }. */
 export function repondre(store, req) {
   const path = req.url.pathname;
-  const [status, json, headers] = path.startsWith('/auth/v1/') ? auth(store, path, req.url, req.body || {})
+  const [status, json, headers] = path.startsWith('/auth/v1/') ? auth(store, path, req.url, req.body || {}, req)
     : path.startsWith('/rest/v1/') ? rest(store, req, req.url, path, req.body)
     : path.startsWith('/functions/v1/') ? fonction(store, req, path, req.body)
     : [404, {}];

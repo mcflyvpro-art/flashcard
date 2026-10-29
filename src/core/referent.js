@@ -120,13 +120,23 @@ export async function refRythme(p) {
   return r;
 }
 
-/* Les cartes élève (cas particulier : des élèves sans adresse e-mail) : la
-   fonction des professeurs, que le référent a le droit d'appeler sur une
-   classe de son établissement (class_manager). */
-export async function refCreerCartes(cid, eleves) {
+/* Les comptes des élèves, ouverts d'un coup (2026-10-29) : un appel à
+   ref_new_account par élève — chacun prend une place, reçoit un mot de
+   passe provisoire (choisi ici, jamais gardé) et entre dans sa classe. Une
+   ligne refusée (adresse déjà prise, plus de place) n'arrête pas les
+   suivantes : la base dit pourquoi, la console le montre ligne à ligne. */
+export async function refOuvrirComptes(cid, lignes) {
   if (!online) { toast(I.cloud, 'Hors ligne : la console demande le réseau'); return null; }
-  try { return await rpc('prof_creer_eleves', { cid, eleves, forcer: false }) || []; }
-  catch (e) { toast(I.x, messageErreur(e).slice(0, 120) || 'Impossible pour l’instant'); return null; }
+  const res = [];
+  for (const l of lignes) {
+    try {
+      await rpc('ref_new_account', { adresse: l.email, nom: l.complet, pseudo: '', qrole: 'eleve', cid: cid || null, pw: l.pw });
+      res.push({ ...l, ok: true });
+    } catch (e) { res.push({ ...l, ok: false, erreur: messageErreur(e).slice(0, 120) || 'Refusé' }); }
+  }
+  await Promise.allSettled([refTableauPull(), refClassesPull(), refPersonnesPull(false), refCodesPull()]);
+  repeint();
+  return res;
 }
 
 /* ══════════ la licence (20261026130000) ══════════

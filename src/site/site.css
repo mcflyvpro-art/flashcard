@@ -812,7 +812,6 @@ button{font:inherit;color:inherit}
 .code-champ:focus{box-shadow:inset 0 0 0 1.5px var(--filet2),0 0 0 4px rgba(29,28,25,.09)}
 .code-champ::placeholder{color:#857F75}
 .code-erreur{min-height:20px;color:var(--ko);font-weight:650;font-size:14px}
-.code-carte{justify-content:center;margin-top:4px;color:var(--encre2);font-weight:650}
 .secoue{animation:secoue .4s var(--e)}
 @keyframes secoue{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
 

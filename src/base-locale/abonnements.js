@@ -17,6 +17,7 @@
    s'écrit qu'à la troisième lecture de mon_offre (un webhook en retard). */
 import { etab, orgDe } from './etablissement.js';
 import { modele } from './classes.js';
+import { campusProf, licences } from './licences.js';
 
 const table = store => (store.tables.abonnements = store.tables.abonnements || []);
 const ouvre = a => ['actif', 'essai', 'impaye'].includes(a.statut) && (!a.fin_periode || Date.parse(a.fin_periode) > Date.now());
@@ -34,7 +35,7 @@ function campusDe(store, uid) {
 
 // offre_de(), interne en base : ici aussi pour visuels()
 export function offreDe(store, uid) {
-  if (campusDe(store, uid)) return 'campus';
+  if (campusDe(store, uid) || campusProf(store, uid)) return 'campus';
   const l = lignesDe(store, uid);
   if (!l.length) return store.parDefaut === 'plus' ? 'plus' : 'gratuit';
   return ouvre(l[0]) ? 'plus' : 'gratuit';
@@ -45,14 +46,16 @@ export function monOffre(store, uid) {
     table(store).push(store.enRetard.ligne);
     store.enRetard = null;
   }
-  const o = campusDe(store, uid), campus = !!o;
+  const o = campusDe(store, uid), campus = !!o, p = campus ? null : campusProf(store, uid);
   // un compte d'avant le 2026-10-27 : la ligne « offert » que la migration lui a donnée
   const a = lignesDe(store, uid)[0] || (store.parDefaut === 'plus'
     ? { statut: 'actif', formule: null, source: 'offert', fin_periode: null, fin_prevue: false } : null);
   return {
     offre: offreDe(store, uid),
     etablissement: campus ? o.nom : null,
-    licence_fin: campus ? o.fin || null : null,
+    // le professeur particulier dont la licence ouvre Campus (20261029090000) ; pas pour lui-même
+    professeur: p && p !== uid ? modele(store).noms[p] || 'Ton professeur' : null,
+    licence_fin: campus ? o.fin || null : p ? licences(store).profs[p].fin || null : null,
     abonnement: a ? { statut: a.statut, formule: a.formule, source: a.source, fin_periode: a.fin_periode, fin_prevue: a.fin_prevue,
       montant: a.montant ?? null } : null
   };

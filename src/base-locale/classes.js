@@ -9,12 +9,12 @@
 // `avancement_devoir`, dans les révisions envoyées par l'app (cartes
 // « a:<devoir>:<rang> »).
 import { uuid as randomUUID } from './uuid.js';
-import { etab, fonctionsEtab, placesLibres } from './etablissement.js';
+import { erreur, fonctionsEtab } from './etablissement.js';
+import { estProvisoire, inscritsProf, licenceProf } from './licences.js';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const ANNEE = '2026-2027';
 const tire = () => Array.from({ length: 8 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
-const sansAccent = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
 const nomValide = t => /^[\p{L}][\p{L} '’.-]{0,39}$/u.test(String(t || '').trim());
 const nomPropre = (p, n) => {
   const cap = s => s.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
@@ -22,7 +22,7 @@ const nomPropre = (p, n) => {
 };
 
 export function modele(store) {
-  store.cl = store.cl || { classes: [], membres: [], demandes: [], exclus: [], devoirs: [], roles: {}, comptes: {}, noms: {} };
+  store.cl = store.cl || { classes: [], membres: [], demandes: [], exclus: [], devoirs: [], roles: {}, noms: {} };
   return store.cl;
 }
 
@@ -98,10 +98,9 @@ function roster(store, m, cid) {
   return membresDe(m, cid).map(x => {
     const av = devs.map(d => avancement(store, d, x.uid)), p7 = pagesDe(store, x.uid, 7);
     const rendus = av.filter(a => a.etat === 'rendu').length;
-    return { user_id: x.uid, who: nomDe(m, x.uid, store), handle: '', rendus, donnes: devs.length,
+    return { user_id: x.uid, who: x.who || nomDe(m, x.uid, store), handle: '', rendus, donnes: devs.length,
       pct: moyenne(av.filter(a => a.vus).map(a => a.pct)), vu: x.vu || null, jamais: !x.vu, pages7: p7.length,
-      jours7: new Set(p7.map(r => String(r.created_at).slice(0, 10))).size, retard: av.filter(a => a.retard).length, inscrit: x.depuis,
-      carte: !!m.comptes[x.uid], identifiant: (m.comptes[x.uid] || {}).identifiant || null };
+      jours7: new Set(p7.map(r => String(r.created_at).slice(0, 10))).size, retard: av.filter(a => a.retard).length, inscrit: x.depuis };
   });
 }
 
@@ -191,44 +190,12 @@ const fiche = (store, m, statut, c) => [{ statut, class_id: c ? c.id : null, nom
 function rejoindre(store, m, b, uid) {
   const [s, c] = verdict(store, m, b.join_code, uid);
   if (s !== 'apercu') return fiche(store, m, s, c);
-  if (!m.comptes[uid]) {
-    if (!nomValide(b.son_prenom) || !nomValide(b.son_nom)) return fiche(store, m, 'nom', c);
-    m.noms[uid] = nomPropre(b.son_prenom, b.son_nom);
-  }
+  if (!nomValide(b.son_prenom) || !nomValide(b.son_nom)) return fiche(store, m, 'nom', c);
+  m.noms[uid] = nomPropre(b.son_prenom, b.son_nom);
   const ligne = { cid: c.id, uid, depuis: new Date().toISOString() };
   if (c.validation) { m.demandes.push(ligne); return fiche(store, m, 'attente', c); }
   m.membres.push(ligne);
   return fiche(store, m, 'inscrit', c);
-}
-
-/* Un compte à carte : identifiant « prenom.nom », mot de passe = code. */
-function creerEleves(store, m, b) {
-  const c = classeDe(m, b.cid), o = c.org && etab(store).orgs.find(x => x.id === c.org);
-  // les cartes s'arrêtent au plafond de la licence (20261026130000)
-  let libres = o ? placesLibres(etab(store), m, o) ?? Infinity : Infinity;
-  return (b.eleves || []).map((e, i) => {
-    if (!nomValide(e.prenom) || !nomValide(e.nom)) return { rang: i + 1, statut: 'invalide', user_id: null, nom: '', identifiant: null, code: null };
-    if (libres <= 0) return { rang: i + 1, statut: 'complet', user_id: null, nom: nomPropre(e.prenom, e.nom), identifiant: null, code: null };
-    libres--;
-    const nom = nomPropre(e.prenom, e.nom);
-    const base = sansAccent(`${e.prenom}.${e.nom}`).toLowerCase().replace(/[^a-z.]/g, '');
-    let identifiant = base, k = 2;
-    while (Object.values(m.comptes).some(x => x.identifiant === identifiant)) identifiant = base + k++;
-    const code = tire(), id = randomUUID();
-    store.users.push({ id, email: `${identifiant}@eleves.folio.invalid`, password: code });
-    m.comptes[id] = { identifiant, nom }; m.noms[id] = nom; m.roles[id] = 'eleve';
-    m.membres.push({ cid: c.id, uid: id, depuis: new Date().toISOString() });
-    if (c.org) etab(store).membres[id] = c.org;          // un compte à carte d'un établissement en est membre
-    return { rang: i + 1, statut: 'cree', user_id: id, nom, identifiant, code };
-  });
-}
-
-function nouvellesCartes(store, m, b) {
-  return (b.qui || []).filter(id => m.comptes[id]).map(id => {
-    const code = tire(), u = store.users.find(x => x.id === id);
-    u.password = code;
-    return { user_id: id, nom: m.comptes[id].nom, identifiant: m.comptes[id].identifiant, code };
-  });
 }
 
 function donner(m, b, uid) {
@@ -284,19 +251,38 @@ function eleveDevoirs(store, m, uid) {
   });
 }
 
-function admettre(m, b) {
-  const qui = new Set(b.qui || []);
-  const l = m.demandes.filter(x => x.cid === b.cid && qui.has(x.uid));
+/* Accepter (20261029090000) : chez un professeur particulier, la licence
+   doit courir et ses inscrits ne pas la dépasser — la demande tenait déjà
+   sa place. */
+function admettre(store, m, b) {
+  const c = classeDe(m, b.cid), qui = new Set(b.qui || []);
+  let libres = Infinity;
+  if (!c.org) {
+    const l = licenceProf(store, c.owner);
+    if (!l) erreur('Ta licence Mirandola Campus est finie : renouvelle-la pour accepter des élèves');
+    libres = l.places - inscritsProf(m, c.owner);
+    if (libres <= 0) erreur('Toutes tes places sont prises : commande des places en plus');
+  }
+  const l = m.demandes.filter(x => x.cid === b.cid && qui.has(x.uid)).slice(0, libres);
   m.demandes = m.demandes.filter(x => !l.includes(x));
-  m.membres.push(...l);
+  m.membres.push(...l.map(x => ({ ...x, depuis: new Date().toISOString() })));
   return l.length;
 }
 
-function refuser(m, b) {
-  const qui = new Set(b.qui || []);
+/* Refuser : la place revient à la licence, et un mot part dans le courrier
+   de l'élève pour lui dire quoi faire. */
+function refuser(store, m, b, uid) {
+  const qui = new Set(b.qui || []), c = classeDe(m, b.cid);
   const l = m.demandes.filter(x => x.cid === b.cid && qui.has(x.uid));
   m.demandes = m.demandes.filter(x => !l.includes(x));
   if (b.exclure) m.exclus.push(...l);
+  const t = store.tables.mail = store.tables.mail || [];
+  for (const x of l) {
+    t.push({ id: randomUUID(), from_user: uid, to_user: x.uid, from_name: nomDe(m, uid, store), deck_name: c ? c.name : '',
+      subject_name: null, cards: [], created_at: new Date().toISOString(), read_at: null, added_at: null,
+      message: b.exclure ? 'Ton professeur n’a pas accepté ta demande pour cette classe.'
+        : 'Ton professeur n’a pas validé ton inscription. Vérifie ton prénom et ton nom, puis entre de nouveau son code (Réglages → J’ai un code).' });
+  }
   return l.length;
 }
 
@@ -332,15 +318,14 @@ function fonctions(store, m, uid) {
        la visite guidée, réservée aux élèves, ne s'invite pas au milieu des
        parcours qui ne parlent pas de classes. */
     my_role: () => m.roles[uid] || [],
-    mon_compte: () => [m.comptes[uid] ? { gere: true, nom: m.comptes[uid].nom, identifiant: m.comptes[uid].identifiant }
-      : { gere: false, nom: m.noms[uid] || null, identifiant: null }],
+    mon_compte: () => [{ gere: false, nom: m.noms[uid] || null, identifiant: null, provisoire: estProvisoire(store, uid) }],
     prof_annees: () => [{ annee: ANNEE, classes: m.classes.filter(c => c.owner === uid).length, courante: true }],
     prof_classes: () => mesClasses(store, m, uid).map(c => ligneClasse(store, m, c, uid)),
     prof_creer_classe: b => creerClasse(store, m, b, uid),
     prof_roster: b => roster(store, m, b.cid),
     prof_devoirs: b => devoirsClasse(store, m, b.cid, uid),
     prof_demandes: b => m.demandes.filter(x => x.cid === b.cid)
-      .map(x => ({ user_id: x.uid, who: nomDe(m, x.uid, store), handle: '', depuis: x.depuis })),
+      .map(x => ({ user_id: x.uid, who: x.who || nomDe(m, x.uid, store), handle: '', depuis: x.depuis })),
     prof_equipe: b => equipe(store, m, b.cid, uid),
     prof_exclus: b => m.exclus.filter(x => x.cid === b.cid).map(x => ({ user_id: x.uid, who: nomDe(m, x.uid, store), depuis: x.depuis })),
     prof_agenda: b => mesClasses(store, m, uid).flatMap(c => devoirsClasse(store, m, c.id, uid))
@@ -348,14 +333,12 @@ function fonctions(store, m, uid) {
     prof_eleve: b => ficheEleve(store, m, b, uid),
     prof_cartes: b => cartesDures(store, m, b.aid),
     prof_assignment_cards: b => (m.devoirs.find(d => d.id === b.aid) || {}).cartes || [],
-    prof_admettre: b => admettre(m, b),
-    prof_refuser: b => refuser(m, b),
+    prof_admettre: b => admettre(store, m, b),
+    prof_refuser: b => refuser(store, m, b, uid),
     prof_retirer: b => retirer(m, b),
     prof_reglages: b => reglages(m, b),
     prof_nouveau_code: b => (classeDe(m, b.cid).code = tire()),
     prof_give: b => donner(m, b, uid),
-    prof_creer_eleves: b => creerEleves(store, m, b),
-    prof_nouvelles_cartes: b => nouvellesCartes(store, m, b),
     prof_message_classe: b => messageClasse(store, m, b, uid),
     class_preview: b => { const [s, c] = verdict(store, m, b.join_code, uid); return fiche(store, m, s, c); },
     /* Un code d'établissement ou de professeur (faux-etablissement.js), sinon

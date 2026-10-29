@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import {
-  adm, blocks, compte, mods, myRole, reportOn, reportWhy, school, setAnimate, setMenu, setReportOn, setReportWhy, view
+  adm, blocks, mods, myRole, reportOn, reportWhy, school, setAnimate, setMenu, setReportOn, setReportWhy, view
 } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
 import { admPull } from '../core/classement.js';
@@ -151,10 +151,9 @@ export function adminView() {
 
 export const atSchool = () => !!(school && school.org_id);
 
-/* Un élève « de classe » : inscrit par son établissement, ou ouvert par un
-   professeur avec une carte. Ni l'un ni l'autre n'a de pseudo à choisir ni
-   de nom à changer, et son accueil est « Mes classes ». */
-export const isPupil = () => (atSchool() || !!(compte && compte.gere)) && myRole === 'eleve';
+/* Un élève « de classe » : celui d'un établissement. Son nom est celui de
+   la classe (le référent seul le corrige), et son accueil est « Mes classes ». */
+export const isPupil = () => atSchool() && myRole === 'eleve';
 
 export const isProf = () => myRole === 'prof' || myRole === 'admin';
 

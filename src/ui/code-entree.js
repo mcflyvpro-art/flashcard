@@ -4,6 +4,7 @@ import { eleve, menu, online } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
 import { codeApercu, eleveClassesPull, messageErreur, rejoindreAvecCode } from '../core/eleve-classes.js';
 import { cerclePull, refPull } from '../core/classement.js';
+import { offrePull } from '../core/abonnement.js';
 import { codeComplet, codeDepuisTexte, formatCode, nomPropre, nomValide, normCode } from '../classe.js';
 import { bienvenue, messageEtab, ROLES_CODE } from '../etablissement.js';
 import { go } from './bibliotheque.js';
@@ -21,19 +22,25 @@ import { apresEntree } from './tuto-porte.js';
    prénom, le nom et la classe à choisir — et on est dedans. Ouverte depuis
    les Réglages, l'accueil d'un nouveau compte, « Ma classe » et les liens
    « ?rejoindre= ». Un ancien code de classe continue dans « Ma classe »,
-   où vit déjà son parcours. */
+   où vit déjà son parcours.
+
+   Chez un professeur particulier (2026-10-29), on n'entre pas tout de
+   suite : on passe dans sa salle d'attente (statut « attente »), ce qui
+   réserve une place de sa licence et ouvre déjà Mirandola Campus. Il
+   vérifie le prénom et le nom, puis accepte — ou refuse, et la place lui
+   revient. */
 
 const E = () => eleve.entree;
 
 export function ouvrirCode(code) {
-  Object.assign(E(), { code: formatCode(code || ''), fiche: null, reponse: null, envoi: false, classe: '' });
+  Object.assign(E(), { code: formatCode(code || ''), fiche: null, reponse: null, envoi: false, classe: '', type: '' });
   openMenu('code');
   if (codeComplet(normCode(code || ''))) lire();
 }
 
 const peindre = () => { if (menu === 'code') openMenu('code'); };
 const coque = corps => `<div class="scrim" data-mact="close"></div><div class="menu ce-f">${corps}</div>`;
-const message = r => (r ? messageEtab(r) : null);
+const message = r => (r ? messageEtab(r, E().type) : null);
 
 function feuilleCode(e) {
   const m = message(e.reponse);
@@ -99,20 +106,25 @@ async function lire() {
       closeMenu();
       return isProf() ? rejoindreCollegue(k) : versClasse(k, r.fiche);
     }
+    e.type = r.type || '';
     if (r.statut === 'ok') { e.fiche = r; e.classe = ''; }
-    else if (r.statut === 'deja') { closeMenu(); toast(I.check, messageEtab('deja').titre); return go('classes'); }
-    else e.reponse = r.statut;
+    else if (r.statut === 'deja' || r.statut === 'attente') {
+      closeMenu(); toast(I.check, messageEtab(r.statut, r.type).titre); return go('classes');
+    } else e.reponse = r.statut;
   } catch (x) { e.envoi = false; e.reponse = 'erreur'; toast(I.x, messageErreur(x).slice(0, 120) || 'Impossible pour l’instant'); }
   peindre();
 }
 
-/* Entré : on relit le rôle et l'établissement, puis on va là où l'on est
-   attendu — sa classe, son espace professeur, sa console de référent. Un
-   compte neuf y trouve ensuite son accueil et son tuto (ui/tuto-porte.js). */
+/* Entré (ou en salle d'attente) : on relit le rôle, l'établissement et
+   l'offre — Campus s'ouvre dès maintenant, le tuto ne proposera donc pas
+   Mirandola+ —, puis on va là où l'on est attendu : sa classe, son espace
+   professeur, sa console de référent. Un compte neuf y trouve ensuite son
+   accueil et son tuto (ui/tuto-porte.js). */
 async function arriver(r) {
   toast(I.check, bienvenue(r));
-  Object.assign(E(), { code: '', fiche: null, reponse: null, classe: '' });
+  Object.assign(E(), { code: '', fiche: null, reponse: null, classe: '', type: '' });
   closeMenu();
+  await offrePull();
   await cerclePull();
   eleveClassesPull();
   if (r.quel === 'ref') { refPull(); go('ref'); }
@@ -128,7 +140,7 @@ async function entrer() {
   try {
     const r = await rejoindreAvecCode(normCode(e.code), e.prenom, e.nom, e.classe) || {};
     e.envoi = false;
-    if (r.statut === 'ok') return arriver(r);
+    if (r.statut === 'ok' || r.statut === 'attente') return arriver(r);
     if (!['nom', 'choisir', 'classe'].includes(r.statut)) e.fiche = null;   // le code ne vaut plus : on revient au code
     e.reponse = r.statut;
   } catch (x) { e.envoi = false; toast(I.x, messageErreur(x).slice(0, 120) || 'Impossible pour l’instant'); }

@@ -4,10 +4,10 @@
 import process from 'node:process';
 import { afterEach, describe, it, expect } from 'vitest';
 import {
-  ALPHABET, CREATION, DUREES, aTraiter, codeComplet, codeDepuisTexte, dansJours, echeance, emailCarte,
+  ALPHABET, DUREES, aTraiter, codeComplet, codeDepuisTexte, dansJours, echeance,
   correspond, erreurPlaces, etatDevoir, etatDevoirEleve, etatEleve, etatInscriptions, filtrerEleves, finTexte,
-  formatCode, grilleMois, iso, jourCourt, jourLong, joursEntre, lienCarte, lienRejoindre,
-  lireCarte, lireListeEleves, messageStatut, nomPropre, nomValide, normCode, normIdentifiant, parJour,
+  formatCode, grilleMois, iso, jourCourt, jourLong, joursEntre, lienRejoindre,
+  lireComptes, lireListeEleves, messageStatut, nomPropre, nomValide, normCode, parJour, tableurComptes,
   rangerClasses, syntheseAccueil, syntheseClasse, trierEleves
 } from '../src/classe.js';
 
@@ -281,24 +281,29 @@ describe('lire une liste de classe collée', () => {
   });
 });
 
-describe('la carte de connexion', () => {
-  it('l’identifiant devient une adresse qui ne peut recevoir aucun courriel', () => {
-    expect(emailCarte(' Alice.Martin ')).toBe('alice.martin@eleves.folio.invalid');
-    expect(emailCarte('alice.martin@eleves.folio.invalid')).toBe('alice.martin@eleves.folio.invalid');
-    expect(normIdentifiant('jean pierre.dupont2')).toBe('jeanpierre.dupont2');
+describe('des comptes ouverts d’un coup (le référent)', () => {
+  const l = t => lireComptes(t).comptes.map(c => `${c.complet} <${c.email}>`);
+  it('le nom et l’adresse, dans n’importe quel ordre et quel que soit le séparateur', () => {
+    expect(l('Nom;Adresse\nMARTIN Alice ; alice.martin@lycee.fr\nleo.dubois@x.fr\tDubois\tLéo\nAwa N’DIAYE awa@x.fr'))
+      .toEqual(['Alice MARTIN <alice.martin@lycee.fr>', 'Léo DUBOIS <leo.dubois@x.fr>', 'Awa N’DIAYE <awa@x.fr>']);
   });
-  it('le QR porte l’identifiant et le code, et se relit', () => {
-    const l = lienCarte('https://x.github.io/flashcard/?go=stats', 'alice.martin2', 'k7qm-2xrp');
-    expect(l).toBe('https://x.github.io/flashcard/?carte=alice.martin2-K7QM2XRP');
-    expect(lireCarte(l.slice(l.indexOf('?')))).toEqual({ identifiant: 'alice.martin2', code: 'K7QM2XRP' });
+  it('« Nom ; Prénom » d’un tableur, la classe en plus ignorée', () => {
+    expect(l('De La Fontaine;Jean;jean@l.fr;2nde A')).toEqual(['Jean DE LA FONTAINE <jean@l.fr>']);
   });
-  it('une carte abîmée ne tente rien', () => {
-    expect(lireCarte('?carte=alice.martin-K7QM')).toBeNull();
-    expect(lireCarte('?carte=-K7QM2XRP')).toBeNull();
-    expect(lireCarte('?go=stats')).toBeNull();
+  it('sans adresse ou sans nom lisible : la ligne revient, telle quelle', () => {
+    const r = lireComptes('Zorro z@z.fr\nAlice Martin\n\nxX_dark_Xx 93 x@y.fr');
+    expect(r.comptes).toEqual([]);
+    expect(r.ignorees).toEqual(['Zorro z@z.fr', 'Alice Martin', 'xX_dark_Xx 93 x@y.fr']);
   });
-  it('chaque statut de création a son libellé', () => {
-    for (const s of ['cree', 'deja', 'homonyme', 'complet', 'invalide']) expect(CREATION[s][1].length).toBeGreaterThan(3);
+  it('une adresse ne compte qu’une fois, sans casse ; 200 au plus', () => {
+    expect(l('Alice Martin alice@x.fr\nAutre Nom ALICE@X.FR')).toEqual(['Alice MARTIN <alice@x.fr>']);
+    const r = lireComptes(Array.from({ length: 205 }, (_, i) => `Élève Numéro e${i}@x.fr`).join('\n'));
+    expect(r.comptes).toHaveLength(200);
+    expect(r.trop).toBe(5);
+  });
+  it('la feuille à donner : une ligne de tableur par compte', () => {
+    expect(tableurComptes([{ complet: 'Alice MARTIN', email: 'a@x.fr', pw: 'k7qm2xrpab' }]))
+      .toBe('Nom\tAdresse e-mail\tMot de passe provisoire\nAlice MARTIN\ta@x.fr\tk7qm2xrpab');
   });
 });
 

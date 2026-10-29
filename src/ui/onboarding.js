@@ -229,8 +229,7 @@ export function installSheet(w) {
 
 /* ---------- démarrage ---------- */
 export async function boot() {
-  /* Le QR d'une carte élève ouvre la session avant tout le reste ; un code
-     de classe, de partie ou de club arrivé sans session attend la
+  /* Un code de classe, de partie ou de club arrivé sans session attend la
      connexion (liens-entrants.js, la porte de tout lien entrant). */
   const adresse = cibleDepart();          // l'écran que demande l'adresse (ui/routeur.js)
   if (adresse && adresse.demo) return ouvrirDemo(adresse);

@@ -5,7 +5,7 @@
    ne pouvait pas se donner. Chaque écran a maintenant son adresse, rangée
    dans l'espace de son métier, comme le font Pronote ou Quizlet :
 
-     /connexion, /inscription, /carte-eleve, /essayer, /demande-demo,
+     /connexion, /inscription, /essayer, /demande-demo,
      /mentions/<texte>                              avant la connexion
      /eleve/…  /prof/…  /referent/…  /admin/…       un espace par rôle
      /demo/<rôle>/…                                 la démo sans compte
@@ -20,7 +20,7 @@ export const ESPACES = { eleve: 'eleve', prof: 'prof', ref: 'referent', admin: '
 const ROLE_DE = { eleve: 'eleve', prof: 'prof', referent: 'ref', admin: 'admin' };
 
 /* Avant la connexion. `login` porte le mode du formulaire dans son id. */
-const MODES = { in: 'connexion', up: 'inscription', carte: 'carte-eleve' };
+const MODES = { in: 'connexion', up: 'inscription' };
 const PUBLICS = { demande: 'demande-demo', decouvrir: 'essayer' };
 export const TEXTES = ['cgu', 'confidentialite', 'mentions'];
 
@@ -74,7 +74,7 @@ export const ROUTES = [
   R('ref', 'licence', { sous: 'licence', espaces: REF }),
   R('ref', 'licence/factures/:id', { sous: 'licence', espaces: REF }),
   R('ref', 'historique', { sous: 'journal', espaces: REF }),
-  R('ref', 'cartes', { sous: 'cartes', espaces: REF }),
+  R('ref', 'eleves/comptes', { sous: 'lot', espaces: REF }),
   R('admin', '', { sous: 'suivi', espaces: ADMIN }),
   R('admin', 'etablissements/:id', { sous: 'suivi', espaces: ADMIN }),
   R('admin', 'comptes', { sous: 'comptes', espaces: ADMIN }),

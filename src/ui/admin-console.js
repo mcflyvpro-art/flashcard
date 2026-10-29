@@ -37,8 +37,8 @@ const euros = n => `${Math.round(+n || 0).toLocaleString('fr-FR')} €`;
 const centimes = c => `${(Math.round(+c || 0) / 100).toFixed(2).replace('.', ',')} €`;
 const ROLES = { eleve: 'Élève', prof: 'Professeur', ref: 'Référent', admin: 'Éditeur' };
 const orgOuverte = () => (adm.orgs || []).find(o => o.id === adm.open);
-// une place par élève et par professeur (20261026130000)
-const licenceDe = (o, auj) => etatLicence({ ...o, eleves: (+o.eleves || 0) + (+o.profs || 0) }, auj);
+// une place par élève, par professeur et par référent (20261029090000)
+const licenceDe = (o, auj) => etatLicence({ ...o, eleves: (+o.eleves || 0) + (+o.profs || 0) + (+o.refs || 0) }, auj);
 const kc = (n, lab, cls, attr) => `<${attr ? 'button' : 'div'} class="ed-kc ${cls || ''}" ${attr || ''}><b>${n}</b>
   <span>${lab}</span></${attr ? 'button' : 'div'}>`;
 
@@ -175,7 +175,7 @@ function tuileLicence(o) {
   return `<div class="ed-tuile">
       <div class="ed-tl">${l.offre}<span>${l.k === 'echue' ? 'finie le ' : 'jusqu’au '}${l.fin}</span></div>
       <div class="ed-barre"><i style="width:${l.pc}%"></i></div>
-      <div class="ed-tl-p" title="Une place par élève et par professeur"><b>${l.places}</b> places</div>
+      <div class="ed-tl-p" title="Une place par élève, par professeur et par référent"><b>${l.places}</b> places</div>
       <details class="ed-modif"><summary>Modifier la licence</summary>
         <form id="edlicence2" autocomplete="off">${champsLicence(o, false, 'lm')}</form></details>
     </div>`;

@@ -1,4 +1,4 @@
-import { eleve, prefs, setAnimate, setCompte, view } from '../data/etat.js';
+import { eleve, setAnimate, setCompte, view } from '../data/etat.js';
 import { render } from '../ui/bibliotheque.js';
 import { api } from './coeur-sync.js';
 
@@ -72,9 +72,6 @@ export async function comptePull() {
   try {
     const [r] = await rpc('mon_compte') || [];
     setCompte(r || null);
-    /* Un compte à carte n'a pas d'e-mail lisible (identifiant@eleves.folio.invalid) :
-       partout où l'app affiche « son nom », c'est celui de la classe. */
-    if (r && r.gere && r.nom) prefs.name = r.nom;
   }
   catch (e) { /* hors ligne : on garde ce qu'on savait, la base verrouille de toute façon le nom */ }
 }

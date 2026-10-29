@@ -3,10 +3,9 @@ import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { prof, setMenu, visuels } from '../data/etat.js';
 import {
-  CREATION, codeComplet, dansJours, echeance, etatDevoir, etatEleve, formatCode, grilleMois, iso,
-  auJour, jourCourt, jourLong, lienCarte, lireListeEleves, messageStatut, MOIS, pc
+  codeComplet, dansJours, echeance, etatDevoir, etatEleve, grilleMois, iso,
+  auJour, jourCourt, jourLong, messageStatut, MOIS, pc
 } from '../classe.js';
-import { qrSvg } from '../qr.js';
 import { esc, live, plur } from '../core/coeur-sync.js';
 import { avatar, btn, chargement, classeOuverte, couleur, pastilleClasse, pill } from './prof-accueil.js';
 import { grilleCouleurs, grilleEmblemes } from './jeton.js';
@@ -59,59 +58,13 @@ function creer(w) {
   focus('pfnom');
 }
 
-/* ---------- ajouter des élèves ---------- */
-export function apercuListe() {
-  const r = lireListeEleves(prof.f.liste || '');
-  return `<div class="pf-apercu">
-    ${r.eleves.length ? `<p><b>${plur(r.eleves.length, 'élève')}</b> reconnu${r.eleves.length > 1 ? 's' : ''}${
-      r.trop ? ` · ${r.trop} au-delà de 60, à ajouter ensuite` : ''}</p>
-      <div class="pf-noms">${r.eleves.map(e => `<span>${esc(e.complet)}</span>`).join('')}</div>` : ''}
-    ${r.ignorees.length ? `<p class="ko">${plur(r.ignorees.length, 'ligne')} illisible${r.ignorees.length > 1 ? 's' : ''} :</p>
-      <div class="pf-noms ko">${r.ignorees.slice(0, 12).map(l => `<span>${esc(l)}</span>`).join('')}</div>` : ''}
-  </div>`;
-}
-
-function resultats() {
-  const l = prof.faites || [];
-  const n = s => l.filter(x => x.statut === s).length;
-  return `<div class="pf-res-h">
-      <span class="ok"><b>${n('cree')}</b>créés</span>${n('deja') ? `<span><b>${n('deja')}</b>déjà là</span>` : ''}
-      ${n('homonyme') ? `<span class="am"><b>${n('homonyme')}</b>homonymes</span>` : ''}
-      ${n('complet') + n('invalide') ? `<span class="ko"><b>${n('complet') + n('invalide')}</b>non créés</span>` : ''}</div>
-    ${n('cree') ? `<p class="pf-alerte">${svg(I.warn)}Les codes ne seront plus affichés : imprimez les cartes maintenant.</p>` : ''}
-    <div class="pf-table pf-t-cartes">${l.map(x => `<div class="pf-tr">
-      <span class="pf-who"><b>${esc(x.nom)}</b></span>
-      <span class="pf-mono">${esc(x.identifiant || '')}</span><span class="pf-mono fort">${x.code ? esc(formatCode(x.code)) : ''}</span>
-      <span>${pill((CREATION[x.statut] || ['ko'])[0], (CREATION[x.statut] || ['', x.statut])[1])}</span></div>`).join('')}</div>
-    ${n('homonyme') ? `<p class="pf-note">Un homonyme a sans doute déjà sa carte : il rejoint avec le code de la classe.
-      ${btn('homonymes', I.plus, `Créer quand même (${n('homonyme')})`, 'sm')}</p>` : ''}`;
-}
-
-/* « Ajouter des élèves » (2026-10-26) : d'abord le code à donner — celui de
-   l'établissement ou le sien, ui/prof-etab.js — ; les cartes de connexion,
-   pour des élèves sans adresse e-mail, sont un cas à part, derrière un lien. */
+/* ---------- ajouter des élèves ----------
+   Le code à donner — celui de l'établissement ou le sien, ui/prof-etab.js —
+   et rien d'autre : un élève entre avec son propre compte (2026-10-28, la
+   carte élève est partie). */
 function inviter(w) {
   const c = classeOuverte(); if (!c) return setMenu(null);
-  const cartes = prof.f.mode === 'liste' || prof.faites;
-  let corps, pied;
-  if (!cartes) {
-    corps = inviterUnCode(c);
-    pied = btn('tableau', I.grid, 'Projeter au tableau', 'pri lg');
-  } else if (prof.faites) {
-    corps = resultats();
-    pied = (prof.faites.some(x => x.code) ? btn('imprimer', I.file, 'Imprimer les cartes', 'pri lg') : '') + btn('fermer', '', 'Terminé', 'lg');
-  } else {
-    const n = lireListeEleves(prof.f.liste || '').eleves.length;
-    corps = `<button class="pf-lnk" data-pf="f-mode" data-v="code">${svg(I.back)}Le code</button>
-      <p class="pf-note">Pour des élèves sans adresse e-mail : Mirandola crée un compte par élève, avec un identifiant et un code secret
-        imprimés sur une carte avec un QR. Les autres entrent avec le code.</p>
-      <label class="pf-fl">Un élève par ligne — copiez la colonne depuis Pronote ou un tableur
-        <textarea id="pfliste" data-pfin="f.liste" rows="9" spellcheck="false" placeholder="MARTIN Alice&#10;DUBOIS Léo&#10;N’DIAYE Awa">${esc(prof.f.liste || '')}</textarea></label>
-      <div id="pfapercu">${apercuListe()}</div>`;
-    pied = btn('creer-eleves', I.check, n ? `Créer ${plur(n, 'compte')}` : 'Créer les comptes', 'pri lg', `id="pfcreer" ${n ? '' : 'disabled'}`);
-  }
-  feuille(w, cartes ? 'large' : '', `<b>Ajouter des élèves</b>`, esc(c.name), corps, pied);
-  if (cartes && !prof.faites) focus('pfliste');
+  feuille(w, '', `<b>Ajouter des élèves</b>`, esc(c.name), inviterUnCode(c), btn('tableau', I.grid, 'Projeter au tableau', 'pri lg'));
 }
 
 /* ---------- le mode tableau : projeté devant la classe ---------- */
@@ -131,8 +84,7 @@ function devoirsEleve() {
 
 function actionsEleve(c, m) {
   return `${btn('mot', I.mail2, 'Écrire')}
-    ${c.gere && (m.carte || !c.etab) ? btn('nommer', I.type, 'Corriger le nom') : ''}
-    ${c.gere && m.carte ? btn('carte-une', I.key, 'Nouvelle carte') : ''}
+    ${c.gere && !c.etab ? btn('nommer', I.type, 'Corriger le nom') : ''}
     ${c.gere ? btn('retirer', I.x, 'Retirer…', 'warn') : ''}`;
 }
 
@@ -142,8 +94,7 @@ function chiffresEleve(m) {
       <span><b>${m.pct || '—'}${m.pct ? '<small>%</small>' : ''}</b><i>réussite</i></span>
       <span class="${m.retard ? 'ko' : ''}"><b>${m.retard}</b><i>en retard</i></span>
       <span><b>${m.pages7}</b><i>pages · 7 j</i></span></div>
-    ${m.jamais ? `<p class="pf-alerte">${svg(I.lock)}${m.carte ? 'Jamais connecté : sa carte lui est-elle parvenue ?'
-      : 'Ce compte ne s’est jamais connecté.'}</p>` : ''}`;
+    ${m.jamais ? `<p class="pf-alerte">${svg(I.lock)}Ce compte ne s’est jamais connecté.</p>` : ''}`;
 }
 
 function eleveFiche(w) {
@@ -151,7 +102,7 @@ function eleveFiche(w) {
   if (!c || !m) return setMenu(null);
   const e = etatEleve(m);
   feuille(w, 'pf-tiroir', `<span class="pf-sh-av">${avatar(m.user_id, m.who)}<span><b>${esc(m.who)}</b>${pill(ETATS[e.k], e.t)}</span></span>`,
-    `${m.carte ? `Carte · ${esc(m.identifiant)} · ` : m.handle ? '@' + esc(m.handle) + ' · ' : ''}inscrit ${timeAgo(m.inscrit)}`,
+    `${m.handle ? '@' + esc(m.handle) + ' · ' : ''}inscrit ${timeAgo(m.inscrit)}`,
     `${chiffresEleve(m)}<h3 class="pf-h3">Devoirs</h3>${devoirsEleve()}`,
     `<div class="pf-acts">${actionsEleve(c, m)}</div>`);
 }
@@ -160,14 +111,13 @@ function retirer(w) {
   const c = classeOuverte(), qui = prof.f.qui || [];
   const l = (prof.roster || []).filter(m => qui.includes(m.user_id));
   if (!c || !l.length) return setMenu(null);
-  const toutesCartes = l.every(m => m.carte), choix = prof.f.choix || 'retirer';
+  const choix = prof.f.choix || 'retirer';
   const opt = (k, t, s) => `<button class="pf-opt${choix === k ? ' on' : ''}" data-pf="f-choix" data-v="${k}">
     <i>${svg(choix === k ? I.check : I.arrow)}</i><span><b>${t}</b><em>${s}</em></span></button>`;
   feuille(w, '', `<b>Retirer ${l.length > 1 ? plur(l.length, 'élève') : esc(l[0].who)}</b>`, esc(c.name), `
     ${opt('retirer', 'Retirer de la classe', 'Son avancement dans cette classe est effacé. Il pourra redemander à entrer.')}
-    ${opt('exclure', 'Retirer et exclure', 'Il ne pourra plus demander à entrer, même avec le code.')}
-    ${toutesCartes ? opt('supprimer', 'Supprimer son compte', 'Pour un compte à carte qui n’est dans aucune autre classe : tout est effacé.') : ''}`,
-    btn('retirer-go', I.x, choix === 'supprimer' ? 'Supprimer définitivement' : 'Retirer', 'warn lg'));
+    ${opt('exclure', 'Retirer et exclure', 'Il ne pourra plus demander à entrer, même avec le code.')}`,
+    btn('retirer-go', I.x, 'Retirer', 'warn lg'));
 }
 
 function nommer(w) {
@@ -277,7 +227,6 @@ function actions(w) {
   const li = (act, ic, t, cls) => `<button class="mi ${cls || ''}" data-pf="${act}">${svg(ic)}<span>${t}</span></button>`;
   feuille(w, '', `<span class="pf-sh-av">${pastilleClasse(c)}<b>${esc(c.name)}</b></span>`, '', `
     ${li('tableau', I.grid, 'Projeter le code au tableau')}
-    ${c.gere && (prof.roster || []).some(m => m.carte) ? li('cartes', I.key, 'Cartes de connexion') : ''}
     ${li('message', I.mail2, 'Écrire à la classe')}
     ${li('reglages', I.gear, 'Réglages de la classe')}
     ${c.createur ? li(c.archivee ? 'desarchiver' : 'archiver', c.archivee ? I.redo : I.clock, c.archivee ? 'Désarchiver' : 'Archiver') : ''}
@@ -287,7 +236,7 @@ function actions(w) {
 function supprimer(w) {
   const c = classeOuverte(); if (!c) return setMenu(null);
   feuille(w, '', '<b>Supprimer la classe</b>', esc(c.name), `
-    <p class="pf-alerte">${svg(I.warn)}${plur(c.effectif, 'élève')}, ${plur(c.devoirs, 'devoir')} et tout l’avancement seront effacés. Les comptes à carte restent, sans classe.</p>
+    <p class="pf-alerte">${svg(I.warn)}${plur(c.effectif, 'élève')}, ${plur(c.devoirs, 'devoir')} et tout l’avancement seront effacés.</p>
     <label class="pf-fl">Pour confirmer, tapez « ${esc(c.name)} »<input id="pfconf" data-pfin="f.conf" autocomplete="off" spellcheck="false"></label>`,
     btn('supprimer-go', I.trash, 'Supprimer définitivement', 'warn lg', `id="pfsupp" ${
       (prof.f.conf || '').trim().toLowerCase() === c.name.trim().toLowerCase() ? '' : 'disabled'}`));
@@ -308,41 +257,6 @@ function rejoindre(w) {
   if (!a) focus('pfcode');
 }
 
-/* ---------- les cartes de connexion ---------- */
-function cartes(w) {
-  const c = classeOuverte(); if (!c) return setMenu(null);
-  if (prof.faites) {
-    feuille(w, 'large', '<b>Cartes de connexion</b>', esc(c.name), resultats(),
-      btn('imprimer', I.file, 'Imprimer les cartes', 'pri lg') + btn('fermer', '', 'Terminé', 'lg'));
-    return;
-  }
-  const l = (prof.roster || []).filter(m => m.carte), sel = prof.f.cartes || new Set(l.map(m => m.user_id));
-  prof.f.cartes = sel;
-  feuille(w, 'large', '<b>Cartes de connexion</b>', esc(c.name), `
-    <p class="pf-note">${svg(I.lock)}Les codes ne sont jamais conservés en clair : imprimer, c’est donner un nouveau code. L’ancienne carte cesse de marcher, et l’élève est déconnecté de ses appareils.</p>
-    <div class="pf-list">${l.map(m => `<button class="pf-li" data-pf="carte-coche" data-id="${esc(m.user_id)}">
-      <span class="pf-cb" role="checkbox" aria-checked="${sel.has(m.user_id)}"><i>${svg(I.check)}</i></span>
-      ${avatar(m.user_id, m.who)}<span class="pf-lit"><b>${esc(m.who)}</b><i>${esc(m.identifiant)}${m.jamais ? ' · jamais connecté' : ''}</i></span></button>`).join('')}</div>`,
-    btn('cartes-go', I.key, `Nouvelles cartes (${sel.size})`, 'pri lg', sel.size ? '' : 'disabled'));
-}
-
-/* L'impression : huit cartes par page A4, découpables. */
-export function imprimerCartes(l, c) {
-  const vieux = document.getElementById('impression');
-  if (vieux) vieux.remove();
-  const n = document.createElement('div');
-  n.id = 'impression';
-  n.innerHTML = l.filter(x => x.code).map(x => `<div class="pf-carte">
-    <div class="pf-carte-t"><b>${esc(x.nom)}</b><i>${esc(c ? c.name : '')}</i></div>
-    <div class="pf-carte-q">${qrSvg(lienCarte(baseApp(), x.identifiant, x.code), 'Carte de ' + x.nom)}</div>
-    <dl><dt>Identifiant</dt><dd>${esc(x.identifiant)}</dd><dt>Code</dt><dd class="code">${esc(formatCode(x.code))}</dd></dl>
-    <p>Mirandola → « Élève » → identifiant et code, ou visez le QR code avec l’appareil photo.</p></div>`).join('');
-  document.body.appendChild(n);
-  const fin = () => { n.remove(); window.removeEventListener('afterprint', fin); };
-  window.addEventListener('afterprint', fin);
-  window.print();
-}
-
 /* ---------- l'emblème d'une classe ----------
    Choisi par qui la gère, vu par ses élèves (« Mes classes ») : une icône
    et une couleur, jamais un sigle tiré du nom (« CPGE ECP1 » donnait « CE1 »). */
@@ -358,7 +272,7 @@ const FEUILLES = {
   blason: blasonFeuille,
   creer, inviter, tableau, eleve: eleveFiche, retirer, nommer, message, devoir: devoirFeuille,
   donner: w => (prof.comp && prof.comp.cartes ? donnerDetails(w) : choixLivre(w)),
-  actions, supprimer, cartes, rejoindre
+  actions, supprimer, rejoindre
 };
 
 export function paintMenuProf(w) {

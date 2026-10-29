@@ -1,7 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { auth, setView, view } from '../data/etat.js';
 import { render } from './bibliotheque.js';
-import { consumeCarte } from './connexion.js';
 import { boot, consumeHash } from './onboarding.js';
 import { consumeRejoindre } from './eleve-classes.js';
 import { consumeDefi } from './direct-porte.js';
@@ -12,8 +11,8 @@ import { aInstaller } from './pwa-porte.js';
 import { reprendrePassage } from './passage.js';
 
 /* ══════════ les liens qui entrent dans l'app ══════════
-   Une seule porte pour tout lien qui ouvre l'app : « ?carte= » (le QR d'une
-   carte élève), « #i= » / « #s= » (un livre partagé), « ?go= » (raccourci de
+   Une seule porte pour tout lien qui ouvre l'app : « #i= » / « #s= » (un
+   livre partagé), « ?go= » (raccourci de
    l'icône), « ?rejoindre= » (une classe), « ?defi= » (une partie en
    direct), « ?club= » (un club), « ?plus= » (l'écran Mirandola+ : un bouton du
    site, le retour de Stripe). Chacun a son consommateur, qui lit
@@ -27,14 +26,12 @@ import { reprendrePassage } from './passage.js';
      App.addListener('appUrlOpen', e => traiterLienEntrant(e.url));
    (voir docs/CAPACITOR.md). */
 
-/* Avant tout le reste : la carte élève peut ouvrir une session. Sans
-   session, les codes de classe, de partie et de club sont rangés en
+/* Avant tout le reste. Sans session, les codes de classe, de partie et de club sont rangés en
    sessionStorage (et retirés de l'adresse) : ils attendent la connexion,
    repris par `lienApresRole()` depuis `accueil()`. Rend vrai s'il y a une
    session. */
 export async function lienAvantSession() {
   reprendrePassage();                  // l'app installée reprend le code laissé par son navigateur (ui/passage.js)
-  await consumeCarte();
   if (auth) return true;
   await rangerLiens();
   return false;

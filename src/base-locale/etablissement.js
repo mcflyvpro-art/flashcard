@@ -12,6 +12,7 @@
 import { uuid as randomUUID } from './uuid.js';
 import { modele } from './classes.js';
 import { fonctionsFacturation } from './facturation.js';
+import { fonctionsLicences, licenceProf, marquerProvisoire, prisesProf } from './licences.js';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const tire = () => Array.from({ length: 8 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
@@ -68,9 +69,9 @@ function duCode(et, k) {
 }
 const profDuCode = (et, k) => Object.keys(et.codesProfs).find(uid => et.codesProfs[uid] === k) || null;
 
-/* Une place par élève et par professeur (20261026130000) ; le référent n'en prend pas. */
+/* Une place par élève, par professeur et par référent (20261029090000). */
 export const placesPrises = (et, m, o) =>
-  Object.keys(et.membres).filter(u => et.membres[u] === o.id && ['eleve', 'prof'].includes(m.roles[u] || 'eleve')).length;
+  Object.keys(et.membres).filter(u => et.membres[u] === o.id && ['eleve', 'prof', 'ref'].includes(m.roles[u] || 'eleve')).length;
 export const placesLibres = (et, m, o) => (o.places == null ? null : Math.max(0, o.places - placesPrises(et, m, o)));
 
 function verdictEtab(store, et, m, o, quel, uid) {
@@ -78,18 +79,24 @@ function verdictEtab(store, et, m, o, quel, uid) {
   if (o.fin && o.fin < auj()) return 'licence';
   if (et.membres[uid] === o.id) return 'deja';
   if (et.membres[uid]) return 'autre';
-  if (m.comptes[uid]) return 'gere';
   if (quel === 'eleve' && role !== 'eleve') return 'role';
   if (quel !== 'eleve' && !['eleve', 'prof'].includes(role)) return 'role';
-  if (quel !== 'ref' && placesLibres(et, m, o) === 0) return 'plein';
+  if (placesLibres(et, m, o) === 0) return 'plein';
   return 'ok';
 }
 
-function verdictProf(m, p, uid) {
+/* Chez un professeur particulier (20261029090000) : la licence, puis la
+   salle d'attente — une demande tient sa place jusqu'à la réponse. */
+function verdictProf(store, m, p, uid) {
   if (p === uid) return 'soi';
-  if (m.comptes[uid]) return 'gere';
   if ((m.roles[uid] || 'eleve') !== 'eleve') return 'role';
-  if (m.membres.some(x => x.uid === uid && m.classes.some(c => c.id === x.cid && c.owner === p && !c.org))) return 'deja';
+  const chez = l => l.some(x => x.uid === uid && m.classes.some(c => c.id === x.cid && c.owner === p && !c.org && !c.archivee));
+  if (chez(m.membres)) return 'deja';
+  if (chez(m.demandes)) return 'attente';
+  const l = licenceProf(store, p);
+  if (!l) return 'licence';
+  if (m.demandes.filter(x => x.uid === uid).length >= 3) return 'demandes';
+  if (prisesProf(m, p) >= l.places) return 'plein';
   return 'ok';
 }
 
@@ -106,7 +113,7 @@ function apercu(store, et, m, b, uid) {
   }
   const p = profDuCode(et, k);
   if (p) {
-    const s = verdictProf(m, p, uid);
+    const s = verdictProf(store, m, p, uid);
     return { type: 'prof', statut: s, nom: m.noms[p] || 'Professeur', classes: s === 'ok' ? liste(classesProf(m, p)) : [] };
   }
   return null;
@@ -115,7 +122,7 @@ function apercu(store, et, m, b, uid) {
 function entrer(store, et, m, b, uid) {
   const k = norm(b.code), e = duCode(et, k), p = e ? null : profDuCode(et, k);
   if (!e && !p) return { statut: 'inconnu' };
-  const s = e ? verdictEtab(store, et, m, e.org, e.quel, uid) : verdictProf(m, p, uid);
+  const s = e ? verdictEtab(store, et, m, e.org, e.quel, uid) : verdictProf(store, m, p, uid);
   if (s !== 'ok') return { statut: s };
   if (!nomValide(b.son_prenom) || !nomValide(b.son_nom)) return { statut: 'nom' };
   const nom = nomPropre(b.son_prenom, b.son_nom);
@@ -149,9 +156,9 @@ function entrer(store, et, m, b, uid) {
       validation: false, places: 40, fin: null, archivee: false, org: null, genre: 'classe' };
     m.classes.push(c);
   }
-  m.membres.push({ cid: c.id, uid, depuis: new Date().toISOString(), who: nom });
-  if (!m.noms[uid]) m.noms[uid] = nom;
-  return { statut: 'ok', type: 'prof', nom: m.noms[p] || 'Professeur', classe: c.name };
+  if (m.exclus.some(x => x.cid === c.id && x.uid === uid)) return { statut: 'refuse' };
+  if (!m.demandes.some(x => x.cid === c.id && x.uid === uid)) m.demandes.push({ cid: c.id, uid, depuis: new Date().toISOString(), who: nom });
+  return { statut: 'attente', type: 'prof', nom: m.noms[p] || 'Professeur', classe: c.name };
 }
 
 function monEcole(et, m, uid) {
@@ -187,8 +194,7 @@ function personne(store, et, m, o, u) {
   const sv = (et.services || []).find(x => x.prof === u);
   return { id: u, email: user.email, handle: null, name: m.noms[u] || user.email, role: m.roles[u] || 'eleve',
     classe: h ? h.name : null, class_id: h ? h.id : null, matiere: sv ? sv.matiere : null,
-    derniere: m.membres.find(x => x.uid === u && x.vu)?.vu || null, jamais: !m.membres.some(x => x.uid === u && x.vu),
-    carte: !!m.comptes[u] };
+    derniere: m.membres.find(x => x.uid === u && x.vu)?.vu || null, jamais: !m.membres.some(x => x.uid === u && x.vu) };
 }
 
 function personnes(store, et, m, uid, b) {
@@ -233,7 +239,7 @@ function fonctionsRef(store, et, m, uid) {
     ref_codes: () => { const o = referent(et, m, uid), gens = membresOrg(et, o);
       return { eleve: o.codes.eleve, prof: o.codes.prof, offre: o.offre, places: o.places, licence_fin: o.fin,
         eleves: gens.filter(u => estEleve(m, u)).length, profs: gens.filter(u => m.roles[u] === 'prof').length,
-        rythme: o.rythme || 'semaine', eleve_jusqua: jusqua(o, 'eleve'), prof_jusqua: jusqua(o, 'prof') }; },
+        refs: gens.filter(u => m.roles[u] === 'ref').length, rythme: o.rythme || 'semaine', eleve_jusqua: jusqua(o, 'eleve'), prof_jusqua: jusqua(o, 'prof') }; },
     ref_nouveau_code: b => { const o = referent(et, m, uid); o.codes[b.quel] = tire(); o.codes[b.quel + 'Au'] = new Date().toISOString();
       tracer(store, null, 'code changé', { role: b.quel });
       return o.codes[b.quel]; },
@@ -280,7 +286,8 @@ function fonctionsRef(store, et, m, uid) {
       tracer(store, b.cible, 'identité corrigée', { avant: { nom: avant }, apres: { nom: b.nom } }); return null; },
     ref_set_role: b => { referent(et, m, uid); const avant = m.roles[b.cible] || 'eleve'; m.roles[b.cible] = b.nouveau;
       tracer(store, b.cible, 'rôle changé', { avant, apres: b.nouveau }); return null; },
-    ref_set_password: b => { referent(et, m, uid); store.users.find(x => x.id === b.cible).password = b.pw; return null; }
+    ref_set_password: b => { referent(et, m, uid); store.users.find(x => x.id === b.cible).password = b.pw;
+      marquerProvisoire(store, b.cible); return null; }
   };
 }
 
@@ -420,6 +427,7 @@ export function fonctionsEtab(store, m, uid) {
     ...fonctionsRef(store, et, m, uid),
     ...fonctionsProf(store, et, m, uid),
     ...fonctionsAdmin(store, et, m, uid),
-    ...fonctionsFacturation(store, et, m, uid)
+    ...fonctionsFacturation(store, et, m, uid),
+    ...fonctionsLicences(store, m, uid)
   };
 }

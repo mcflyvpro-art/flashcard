@@ -338,14 +338,14 @@ export let mates2 = null;                  // ses camarades de classe
 
    Refaite le 2026-10-26 (ui/ref-console.js, chargée à la demande) : cinq
    onglets — l'accueil (les deux codes à donner, la licence, ce qui demande
-   une décision), les classes, les élèves, les professeurs, le journal — et,
-   caché derrière un lien discret, les cartes élève. */
+   une décision), les classes, les élèves, les professeurs, le journal — et
+   les comptes des élèves ouverts d'un coup (`lot`, 2026-10-29). */
 export const refNeuf = () => ({ tab: 'accueil', board: null, err: 0, charge: false,
             gens: null, total: 0, page: 0, q: '', role: '', cls: null, sans: false, cherche: 0,
             classes: null, open: null, team: null, profsListe: null,
             who: null, service: null, trace: null,
-            // licence et codes (migration 20261026001000), projection, cartes élève
-            codes: null, projo: '', cartes: null,
+            // licence et codes (migration 20261026001000), projection, comptes ouverts d'un coup
+            codes: null, projo: '', lot: null,
             // le tableau de la licence, la pièce ouverte, le professeur qu'on vient d'ouvrir (20261026130000)
             licence: null, facture: null, nouveauProf: null, doc: '', sujet: 'question', brouillon: '',
             // l'onglet que demande une adresse, posé à la première ouverture (ui/routeur.js)
