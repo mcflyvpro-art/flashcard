@@ -1,13 +1,38 @@
-<!-- Objet : Ton lien de connexion à Mirandola -->
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<title>Te connecter</title></head>
-<body style="margin:0;padding:0;background:#F6F5F1;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1D1C19">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F6F5F1;padding:32px 12px"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border:1px solid #E4E0D7;border-radius:18px">
-<tr><td style="padding:28px 30px 8px"><img src="https://mirandola.fr/icons/icon-192.png" width="44" height="44" alt="Mirandola" style="border-radius:11px;display:block"></td></tr>
-<tr><td style="padding:8px 30px 30px;font-size:15px;line-height:1.55">
-<h1 style="margin:0 0 14px;font-family:Charter,'Bitstream Charter','Sitka Text',Cambria,Georgia,serif;font-size:24px;line-height:1.2;color:#1D1C19">Te connecter</h1>
-<p style="margin:0">Touche le bouton pour ouvrir Mirandola, sans mot de passe. Le lien ne sert qu’une fois.</p><p style="margin:22px 0 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:13px 22px;border-radius:99px;background:#1D1C19;color:#FFFFFF;text-decoration:none;font-weight:700">Ouvrir Mirandola</a></p><p style="margin:18px 0 0;font-size:12.5px;color:#6B675F">Le bouton ne marche pas&#8239;? Copie ce lien dans ton navigateur&#8239;:<br><a href="{{ .ConfirmationURL }}" style="color:#3E4FA0;word-break:break-all">{{ .ConfirmationURL }}</a></p><p style="margin:18px 0 0;font-size:13px;color:#6B675F">Tu n’as rien demandé&#8239;? Ignore cet e-mail, rien ne changera.</p>
+<!-- Supabase : Magic link · Objet : Ton lien de connexion à Mirandola -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Te connecter en un clic</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F6F5F1;-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">Ton lien pour ouvrir Mirandola, sans mot de passe.&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F6F5F1">
+<tr><td align="center" style="padding:36px 14px 30px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">
+<tr><td style="padding:0 4px 18px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="vertical-align:middle"><img src="https://mirandola.fr/icons/icon-192.png" width="36" height="36" alt="" style="display:block;border:0;border-radius:9px"></td>
+<td style="vertical-align:middle;padding-left:10px;font-family:Charter,'Bitstream Charter','Sitka Text',Cambria,Georgia,serif;font-size:21px;font-weight:700;letter-spacing:-0.3px;color:#1D1C19">Mirandola</td>
+</tr></table>
+</td></tr>
+<tr><td style="background-color:#FFFFFF;border:1px solid #E9E5DC;border-radius:20px">
+<div style="height:4px;line-height:4px;font-size:0;border-radius:20px 20px 0 0;background-color:#80439C;background-image:linear-gradient(90deg,#3E4FA0,#80439C,#B33F6C)">&nbsp;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:30px 26px 32px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15.5px;line-height:1.6;color:#3B3A36;">
+<h1 style="margin:0 0 14px;font-family:Charter,'Bitstream Charter','Sitka Text',Cambria,Georgia,serif;font-size:26px;line-height:1.2;font-weight:700;letter-spacing:-0.4px;color:#1D1C19">Te connecter en un clic</h1>
+<p style="margin:0px 0 0">Bonjour,</p><p style="margin:12px 0 0">Touche le bouton pour ouvrir Mirandola, sans mot de passe. Pour ta sécurité, le lien ne sert qu’une fois et expire bientôt.</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 4px"><tr>
+<td align="center" bgcolor="#1D1C19" style="border-radius:999px"><a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1;color:#FFFFFF;text-decoration:none;border-radius:999px">Ouvrir Mirandola&nbsp;&rarr;</a></td>
+</tr></table><p style="margin:18px 0 0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12.5px;line-height:1.6;color:#8D887E;">Le bouton ne s’ouvre pas&#8239;? Copie ce lien dans ton navigateur&#8239;:<br><a href="{{ .ConfirmationURL }}" style="color:#3E4FA0;word-break:break-all">{{ .ConfirmationURL }}</a></p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px"><tr>
+<td style="padding:14px 16px;background-color:#F6F5F1;border-radius:14px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13.5px;line-height:1.6;color:#5B574F;line-height:1.55;">Tu n’es pas à l’origine de cette demande&#8239;? Ignore simplement cet e-mail&#8239;: rien ne change sur ton compte.</td>
+</tr></table>
 </td></tr></table>
-<p style="margin:18px 0 0;font-size:12px;color:#8D887E">Mirandola · mirandola.fr · Cet e-mail est envoyé une fois, à ta demande.</p>
-</td></tr></table></body></html>
+</td></tr>
+<tr><td align="center" style="padding:22px 18px 0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12.5px;line-height:1.6;color:#8D887E;">E-mail automatique, envoyé une seule fois à la suite d’une demande faite sur Mirandola.<br>
+<a href="https://mirandola.fr" style="color:#8D887E;text-decoration:underline">mirandola.fr</a> &middot; <a href="https://mirandola.fr/mentions/confidentialite" style="color:#8D887E;text-decoration:underline">Confidentialité</a> &middot; <a href="mailto:contact@mirandola.fr" style="color:#8D887E;text-decoration:underline">contact@mirandola.fr</a></td></tr>
+</table>
+</td></tr></table>
+</body>
+</html>

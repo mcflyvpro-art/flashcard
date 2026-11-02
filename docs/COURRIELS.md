@@ -122,21 +122,36 @@ Projet `qqbzefpdeinlynjtarqr` → **Authentication** → **Emails** → onglet
 **Save**. Puis **Authentication → Rate Limits → Rate limit for sending
 emails** : `100` par heure (un SMTP neuf démarre à 30).
 
-Les modèles, **Authentication → Emails → Templates**, pour chacun : l'objet
-(écrit en tête du fichier, en commentaire), puis tout le fichier dans
-« Message body » (sur GitHub, « Copy raw file ») :
+Les modèles (2026-11-02 : les treize que propose Supabase, en français, à la
+mise en page de Mirandola). **Authentication → Emails**, onglet
+**Templates** pour les six premiers, onglet **Security notifications** pour
+les sept alertes (chacune s'allume d'abord, interrupteur en tête de la
+page) : pour chacun, l'objet, puis tout le fichier dans « Message body »
+(sur GitHub, « Copy raw file » ; la première ligne, en commentaire, rappelle
+le modèle et l'objet) :
 
-| Modèle Supabase | Objet | Fichier |
+| Modèle Supabase | Objet | Fichier (`supabase/courriels/`) |
 |---|---|---|
-| Confirm sign up | Confirme ton adresse pour Mirandola | `supabase/courriels/confirmation.html` |
-| Reset password | Ton nouveau mot de passe Mirandola | `supabase/courriels/mot-de-passe.html` |
-| Change email address | Confirme ta nouvelle adresse Mirandola | `supabase/courriels/changement-adresse.html` |
-| Magic link | Ton lien de connexion à Mirandola | `supabase/courriels/lien-magique.html` |
-| Invite user | Ton compte Mirandola t’attend | `supabase/courriels/invitation.html` |
-| Reauthentication | Ton code Mirandola | `supabase/courriels/code-verification.html` |
+| Confirm sign up | Confirme ton adresse e-mail pour Mirandola | `confirmation.html` |
+| Invite user | Ton compte Mirandola t’attend | `invitation.html` |
+| Magic link | Ton lien de connexion à Mirandola | `lien-magique.html` |
+| Change email address | Confirme ta nouvelle adresse e-mail | `changement-adresse.html` |
+| Reset password | Réinitialise ton mot de passe Mirandola | `mot-de-passe.html` |
+| Reauthentication | Ton code de vérification Mirandola | `code-verification.html` |
+| Password changed | Ton mot de passe Mirandola a été modifié | `alerte-mot-de-passe.html` |
+| Email address changed | L’adresse e-mail de ton compte Mirandola a changé | `alerte-adresse.html` |
+| Phone number changed | Le numéro de ton compte Mirandola a changé | `alerte-telephone.html` |
+| Sign-in method linked | Nouvelle méthode de connexion sur ton compte Mirandola | `alerte-connexion-ajoutee.html` |
+| Sign-in method removed | Une méthode de connexion a été retirée de ton compte Mirandola | `alerte-connexion-retiree.html` |
+| Verification method added | Vérification en deux étapes ajoutée à ton compte Mirandola | `alerte-verification-ajoutee.html` |
+| Verification method removed | Vérification en deux étapes retirée de ton compte Mirandola | `alerte-verification-retiree.html` |
 
-Les deux premiers comptent ; les autres servent rarement. Ils se refont par
-`node tools/courriels-auth.js`.
+Les deux qui comptent tout de suite : « Confirm sign up » et « Reset
+password ». Parmi les alertes, allumer au moins « Password changed »,
+« Email address changed » et « Sign-in method linked » (un compte Google
+relié). Les modèles se refont par `node tools/courriels-auth.js` (la mise
+en page est celle de `supabase/functions/_shared/courriels.js`, la même que
+les e-mails de `prevenir`).
 
 ## 6. Essayer, PUIS rallumer la confirmation (10 minutes)
 
