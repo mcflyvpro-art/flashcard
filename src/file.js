@@ -152,3 +152,16 @@ export function entrelacer(a, b) {
   for (let p = 0; p < total; p++) if (out[p] === undefined) out[p] = a[i++];
   return out;
 }
+
+/* La reprise d'une lecture interrompue (`cartes.resume.<uid>`) photographie
+   la file : des identifiants de pages. Entre-temps, le livre a pu partir à la
+   corbeille ou perdre des pages, ailleurs ou ici : on ne garde que les pages
+   qui existent encore, et sans page à lire il n'y a rien à reprendre — un
+   livre supprimé s'affichait encore dans « Reprendre ». `existe(id)` dit si
+   la page est toujours dans un livre vivant. */
+export function reprise(r, existe) {
+  if (!r || !Array.isArray(r.queue) || !(r.i >= 0)) return null;
+  const reste = r.queue.slice(r.i).filter(existe);
+  if (!reste.length) return null;
+  return { ...r, queue: [...r.queue.slice(0, r.i), ...reste] };
+}

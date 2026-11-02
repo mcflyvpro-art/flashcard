@@ -1387,6 +1387,7 @@ html.offre-plus #rail nav button.on svg{color:#8A6BCB}
 .ai[disabled]{opacity:.3;box-shadow:none}
 .ai.busy svg{animation:spin 1.1s linear infinite;color:var(--soft)}
 @keyframes spin{to{transform:rotate(360deg)}}
+.mi .spin{display:block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite}
 
 /* ══════════ contenu enrichi ══════════ */
 .face{align-content:center;gap:14px}

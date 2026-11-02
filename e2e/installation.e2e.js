@@ -13,6 +13,8 @@ import { inscrire } from './aide.js';
 const UA = {
   iphone18: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
   iphone26: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1',
+  // Chrome d'un iPhone sous iOS 26 : sa signature dit 18_6, son moteur dit 26 (ici, Chromium sait l'ancre)
+  chromeIos: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/142.0.7444.77 Mobile/15E148 Safari/604.1',
   instagram: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 385.0.0.47.74 (iPhone15,2; iOS 18_5; fr_FR)',
   android: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36',
   windows: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0'
@@ -86,8 +88,41 @@ test.describe('un iPhone, dans Safari 26', () => {
     await page.goto('./connexion');
     await expect(porte(page)).toBeVisible({ timeout: 10000 });
     await expect(etapes(page).first()).toHaveText('Touche ••• en bas à droite, puis Partager');
+    await expect(etapes(page)).toHaveCount(5);
+    await expect(etapes(page).nth(1)).toHaveText('Touche En voir plus, au bout de la rangée');
     await expect(page.locator('.pw-fleche.bas-droite')).toBeVisible();
     await expect(page.locator('.pw-scene[data-fleche="bas-droite"]')).toHaveCount(1);
+  });
+});
+
+/* L'iPhone de l'utilisateur, le 2026-11-02 : Chrome, iOS 26, réglé en
+   anglais. Partager en haut à droite, « View More », « Add to Home Screen »,
+   « Add ». Une scène par étape, l'étape touchée montre la sienne, et aucun
+   mot ne déborde du téléphone dessiné ni de sa carte. */
+test.describe('un iPhone en anglais, dans Chrome', () => {
+  test.use({ userAgent: UA.chromeIos, locale: 'en-US' });
+  test('les mots de son écran, une scène par étape', async ({ page }) => {
+    await brancher(page, nouveauStore(), { navigateur: true });
+    await page.goto('./app');
+    await expect(porte(page)).toBeVisible({ timeout: 10000 });
+    await expect(etapes(page)).toHaveText(['Touche Share, en haut à droite', 'Touche View More, au bout de la rangée',
+      'Touche Add to Home Screen', 'Touche Add, en haut à droite', 'Ouvre Mirandola par son icône et connecte-toi']);
+    await expect(page.locator('.pw-fleche.haut-droite')).toBeVisible();
+    await expect(page.locator('.pw-s')).toHaveCount(5);
+    await expect(page.locator('.pw-s.on')).toHaveClass(/pw-sc-barre/);
+    // l'horloge passe d'elle-même à la feuille de partage, où « View More » attend le doigt
+    await expect(page.locator('.pw-s.on')).toHaveClass(/pw-sc-feuille/, { timeout: 6000 });
+    await expect(page.locator('.pw-sc-feuille .cible')).toContainText('View More');
+    await expect(page.locator('.pw-etapes li.on > span')).toHaveText('Touche View More, au bout de la rangée');
+    // toucher une étape montre sa scène
+    await page.locator('.pw-etapes li').nth(3).click();
+    await expect(page.locator('.pw-s.on')).toHaveClass(/pw-sc-ajout/);
+    await expect(page.locator('.pw-sc-ajout .cible')).toHaveText('Add');
+    const deborde = await page.evaluate(() => [...document.querySelectorAll('.pw-carte *')]
+      .filter(e => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow === 'visible'
+        && [...e.childNodes].some(x => x.nodeType === 3 && x.textContent.trim())).map(e => e.textContent.trim()));
+    expect(deborde).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
 });
 

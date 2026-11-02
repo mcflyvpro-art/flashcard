@@ -150,9 +150,10 @@ export function demandePaiement({ formule, prix, userId, email, client, site, ta
    `resilier` (l'abonnement Stripe) : le portail s'ouvre droit sur sa
    résiliation — « Résilier l'abonnement » de l'écran Mirandola+ —, puis
    ramène dans l'app (2026-10-28). */
-export function demandePortail({ client, site, resilier }) {
+export function demandePortail({ client, site, resilier, configuration }) {
   const retour = `${site}/app?plus=retour`;
   const d = { customer: client, return_url: retour };
+  if (configuration) d.configuration = configuration;
   if (!resilier) return d;
   return {
     ...d,
@@ -162,6 +163,68 @@ export function demandePortail({ client, site, resilier }) {
     'flow_data[after_completion][redirect][return_url]': retour
   };
 }
+
+/* ---------- « Brancher Stripe » (2026-11-02) ----------
+   Une seule clé à poser (STRIPE_SECRET_KEY), puis un bouton dans la console
+   de l'éditeur (Entreprise) : la fonction `paiement` pose chez Stripe tout
+   ce que la marche à suivre faisait faire à la main — le produit, ses deux
+   prix, le point d'arrivée des évènements (son secret rangé en base,
+   `stripe_reglages`), le portail client. Recommencer ne crée rien deux
+   fois ; passer en vrai, c'est changer de clé et rappuyer (chaque mode a
+   ses objets : `test:…`, `live:…`). Les prix sont ceux de FORMULES de
+   src/abonnement.js et de la page d'accueil (test/paiement.test.js). */
+export const PRODUIT = 'mirandola_plus';
+export const PRIX = {
+  annuel: { centimes: 4999, intervalle: 'year', cle: 'mirandola_plus_annuel', nom: 'Mirandola+ à l’année' },
+  mensuel: { centimes: 699, intervalle: 'month', cle: 'mirandola_plus_mensuel', nom: 'Mirandola+ au mois' }
+};
+export const modeDeLaCle = cle => (/^[sr]k_live_/.test(String(cle)) ? 'live' : 'test');
+
+// un prix Stripe déjà là fait-il l'affaire ? (même montant, même rythme, en euros TTC, actif)
+export const prixConforme = (p, f) => !!p && p.active !== false && p.currency === 'eur' && p.unit_amount === PRIX[f].centimes
+  && !!p.recurring && p.recurring.interval === PRIX[f].intervalle && p.tax_behavior === 'inclusive';
+
+export const demandeProduit = () => ({ id: PRODUIT, name: 'Mirandola+', 'metadata[app]': 'mirandola' });
+export const demandePrix = f => ({
+  product: PRODUIT, currency: 'eur', unit_amount: String(PRIX[f].centimes), 'recurring[interval]': PRIX[f].intervalle,
+  tax_behavior: 'inclusive', lookup_key: PRIX[f].cle, transfer_lookup_key: 'true', nickname: PRIX[f].nom
+});
+export const demandeWebhook = url => {
+  const d = { url, description: 'Mirandola : abonnements', 'metadata[app]': 'mirandola' };
+  EVENEMENTS.forEach((e, i) => { d[`enabled_events[${i}]`] = e; });
+  return d;
+};
+// le point d'arrivée qu'on a posé suit-il encore tous les évènements ?
+export const webhookConforme = (w, url) => !!w && w.url === url && w.status === 'enabled'
+  && EVENEMENTS.every(e => (w.enabled_events || []).includes(e) || (w.enabled_events || []).includes('*'));
+
+/* Le portail client : moyen de paiement, factures, adresse, passer d'une
+   formule à l'autre, résilier à la fin de la période. */
+export function demandePortailConfig({ site, annuel, mensuel }) {
+  return {
+    'business_profile[headline]': 'Mirandola+',
+    default_return_url: `${site}/app?plus=retour`,
+    'features[customer_update][enabled]': 'true',
+    'features[customer_update][allowed_updates][0]': 'email',
+    'features[customer_update][allowed_updates][1]': 'address',
+    'features[customer_update][allowed_updates][2]': 'name',
+    'features[invoice_history][enabled]': 'true',
+    'features[payment_method_update][enabled]': 'true',
+    'features[subscription_cancel][enabled]': 'true',
+    'features[subscription_cancel][mode]': 'at_period_end',
+    'features[subscription_update][enabled]': 'true',
+    'features[subscription_update][default_allowed_updates][0]': 'price',
+    'features[subscription_update][proration_behavior]': 'create_prorations',
+    'features[subscription_update][products][0][product]': PRODUIT,
+    'features[subscription_update][products][0][prices][0]': annuel,
+    'features[subscription_update][products][0][prices][1]': mensuel,
+    'metadata[app]': 'mirandola'
+  };
+}
+
+/* Les réglages rangés en base, lus pour le mode de la clé : `test:prix_annuel`… */
+export const reglagesDuMode = (lignes, mode) => Object.fromEntries((lignes || [])
+  .filter(l => String(l.cle).startsWith(mode + ':')).map(l => [l.cle.slice(mode.length + 1), l.valeur]));
 
 /* Stripe parle en formulaire, pas en JSON. */
 export const formulaire = d => new URLSearchParams(Object.entries(d).filter(([, v]) => v != null && v !== '')).toString();

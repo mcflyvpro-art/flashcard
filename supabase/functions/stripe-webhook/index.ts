@@ -13,9 +13,11 @@
 
    Secrets (Edge Functions → Secrets) :
      STRIPE_SECRET_KEY       pour relire l'abonnement
-     STRIPE_WEBHOOK_SECRET   whsec_… : le secret du point d'arrivée, dans
-                             Stripe → Développeurs → Webhooks
-     STRIPE_PRIX_ANNUEL, STRIPE_PRIX_MENSUEL   pour nommer la formule
+     STRIPE_WEBHOOK_SECRET   facultatif : whsec_…, le secret d'un point d'arrivée
+                             posé à la main ; « Brancher Stripe » (fonction
+                             paiement) range le sien dans stripe_reglages
+     STRIPE_PRIX_ANNUEL, STRIPE_PRIX_MENSUEL   facultatifs : pour nommer la
+                             formule (sinon les prix rangés, sinon la récurrence)
      STRIPE_API              défaut https://api.stripe.com/v1/ (essais locaux)
 
    verify_jwt DOIT être coupé pour cette fonction (Stripe n'a pas de compte
@@ -25,8 +27,10 @@
    Rien de personnel dans les journaux : identifiants techniques seulement
    (évènement, abonnement), jamais une adresse ni un nom. */
 
-import { EVENEMENTS, aEcrire, abonnementDe, compteDe, compteDeLEvenement, ligneAbonnement, signatureValide }
-  from "../_shared/abonnement.js";
+import {
+  EVENEMENTS, aEcrire, abonnementDe, compteDe, compteDeLEvenement, ligneAbonnement, modeDeLaCle, reglagesDuMode,
+  signatureValide,
+} from "../_shared/abonnement.js";
 
 const URL_SB = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -62,11 +66,20 @@ async function compte(sub: any, ev: any): Promise<string | null> {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return rep(405, { error: "method" });
-  const cle = Deno.env.get("STRIPE_SECRET_KEY"), secret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-  if (!cle || !secret) return rep(503, { error: "nokey" });
+  const cle = Deno.env.get("STRIPE_SECRET_KEY");
+  if (!cle) return rep(503, { error: "nokey" });
+  /* les secrets possibles : celui posé à la main, ceux rangés par « Brancher
+     Stripe » (un par mode) ; la signature dit lequel a signé */
+  const lignes = (await base("stripe_reglages?select=cle,valeur").catch(() => [])) ?? [];
+  const secrets = [Deno.env.get("STRIPE_WEBHOOK_SECRET"), reglagesDuMode(lignes, "test").webhook_secret,
+    reglagesDuMode(lignes, "live").webhook_secret].filter(Boolean) as string[];
+  if (!secrets.length) return rep(503, { error: "nokey" });
 
   const corps = await req.text();
-  if (!(await signatureValide(corps, req.headers.get("stripe-signature"), secret))) return rep(400, { error: "signature" });
+  const entete = req.headers.get("stripe-signature");
+  let signe = false;
+  for (const secret of secrets) if (!signe) signe = await signatureValide(corps, entete, secret);
+  if (!signe) return rep(400, { error: "signature" });
 
   let ev: any;
   try {
@@ -87,7 +100,9 @@ Deno.serve(async (req) => {
       if (!uid) {
         console.error("webhook sans compte", ev.id, sub.id);
       } else {
-        const prix = { annuel: Deno.env.get("STRIPE_PRIX_ANNUEL"), mensuel: Deno.env.get("STRIPE_PRIX_MENSUEL") };
+        const r = reglagesDuMode(lignes, modeDeLaCle(cle));
+        const prix = { annuel: Deno.env.get("STRIPE_PRIX_ANNUEL") || r.prix_annuel,
+          mensuel: Deno.env.get("STRIPE_PRIX_MENSUEL") || r.prix_mensuel };
         const nouvelle = ligneAbonnement(sub, uid, prix);
         const [actuelle] = (await base(`abonnements?select=*&user_id=eq.${uid}&source=eq.stripe`)) ?? [];
         if (aEcrire(actuelle, nouvelle)) {

@@ -319,6 +319,15 @@ enlève "Il apprend ta mémoire…", pas de sous-titre, recadre, et c'est tout �
 - [x] T5.2 Le moteur sans sous-titre : la phrase de T4.3 retirée ; le surtitre se coupe en deux lignes égales au téléphone (« Memory Engine Ultra · » / « le moteur de Mirandola+ »), le titre mène droit au graphique.
 - [x] T5.3 Vérifs (check, e2e, captures 390 et 1440 px), docs, push branche + `main`. **Fait** : `npm run check` vert (page 46,1/48 Ko) ; `e2e/site.e2e.js` 9/9 ; suite complète 81 verts et 3 repassés au second essai (deux parcours du tuto et un de la démo, sans rapport avec la page : verts seuls, 6/6 en quatre fils parallèles pour le particulier ; ce conteneur mettait 6,8 min au lieu de 2 à 3) ; captures à 390 et 1440 px relues pour les trois rôles et le moteur ; l'entrée de la Mirandola Academy dans la démo vérifiée (élève puis professeur, aucun tuto ne s'ouvre).
 
+## Tour 6 : le téléphone, revu sur un vrai iPhone (2026-11-02)
+
+La demande, captures de son iPhone à l'appui : « le texte dans la landing
+sur mobile doit être revu, et le logo Mirandola Campus mieux cadré ».
+
+- [x] T6.1 Le tableau comparatif au téléphone : les trois noms d'offres se chevauchaient (« MirandoMirandoLaCampus » : sur iPhone, la serif est plus large que sous Linux). **Fait** : chaque nom en deux morceaux (`.o-m` « Mirandola », `.o-n` « gratuit », « + », « Campus ») : sur une ligne à l'ordinateur (« Mirandola gratuit », « Mirandola+ », « Mirandola Campus »), sur deux au téléphone, le premier en petit ; la colonne des fonctions à 36 % ; plus petit encore sous 380 px.
+- [x] T6.2 La marque Campus : sur iPhone, « Mirandola *Campus* » passait sur deux lignes et le carré du logo restait seul en haut à gauche. **Fait** : au téléphone, la marque se met en colonne — le logo centré au-dessus, le nom sur une ligne dessous, à la taille de l'écran (`min(36px, 8.6vw)`).
+- [x] T6.3 Les textes au téléphone : le surtitre du moteur se coupe entre ses deux morceaux et jamais ailleurs (`.surtitre .bloc` : il finissait « … · LE » en bout de ligne) ; l'axe du graphique perd « 1 sem. », collé à « 1 mois » ; à 320 px, « Ouvrir mon espace professeur » dépassait l'écran de 10 px (la page défilait de côté) : il prend la largeur. Vérifié à 320, 360, 375 et 390 px : aucune page plus large que l'écran, aucun texte qui déborde de sa boîte.
+
 ## Ce qui reste à décider (l'utilisateur)
 
 - **Les prix** (2026-10-28) : Mirandola+ 6,99 €/mois ou

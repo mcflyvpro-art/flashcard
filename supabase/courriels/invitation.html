@@ -1,0 +1,13 @@
+<!-- Objet : Ton compte Mirandola t’attend -->
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>On t’a ouvert un compte</title></head>
+<body style="margin:0;padding:0;background:#F6F5F1;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1D1C19">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F6F5F1;padding:32px 12px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border:1px solid #E4E0D7;border-radius:18px">
+<tr><td style="padding:28px 30px 8px"><img src="https://mirandola.fr/icons/icon-192.png" width="44" height="44" alt="Mirandola" style="border-radius:11px;display:block"></td></tr>
+<tr><td style="padding:8px 30px 30px;font-size:15px;line-height:1.55">
+<h1 style="margin:0 0 14px;font-family:Charter,'Bitstream Charter','Sitka Text',Cambria,Georgia,serif;font-size:24px;line-height:1.2;color:#1D1C19">On t’a ouvert un compte</h1>
+<p style="margin:0">Un compte Mirandola a été ouvert pour {{ .Email }}. Touche le bouton pour choisir ton mot de passe.</p><p style="margin:22px 0 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:13px 22px;border-radius:99px;background:#1D1C19;color:#FFFFFF;text-decoration:none;font-weight:700">Ouvrir mon compte</a></p><p style="margin:18px 0 0;font-size:12.5px;color:#6B675F">Le bouton ne marche pas&#8239;? Copie ce lien dans ton navigateur&#8239;:<br><a href="{{ .ConfirmationURL }}" style="color:#3E4FA0;word-break:break-all">{{ .ConfirmationURL }}</a></p>
+</td></tr></table>
+<p style="margin:18px 0 0;font-size:12px;color:#8D887E">Mirandola · mirandola.fr · Cet e-mail est envoyé une fois, à ta demande.</p>
+</td></tr></table></body></html>

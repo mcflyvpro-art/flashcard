@@ -1,7 +1,7 @@
 // La porte d'installation (src/installation.js) : le bon geste pour chaque
 // navigateur de téléphone, dans ses mots, et l'endroit où se trouve son bouton.
 import { describe, expect, it } from 'vitest';
-import { enGras, guide, lienChrome, navigateur } from '../src/installation.js';
+import { MOTS, enGras, guide, langueEcran, lienChrome, navigateur } from '../src/installation.js';
 
 const UA = {
   iphone18: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
@@ -52,13 +52,42 @@ describe('le guide de chaque téléphone', () => {
     expect(r).toMatchObject({ cas: 'ios', titre: 'Installe Mirandola', fleche: 'bas', bouton: null, secours: 'safari' });
     expect(r.etapes.map(e => e.ic)).toEqual(['partager', 'ajouter', 'ok', 'folio']);
     expect(r.etapes[1].texte).toContain('**Sur l’écran d’accueil**');
+    expect(r.etapes.map(e => e.s)).toEqual(['barre', 'liste', 'ajout', 'accueil']);
     expect(r.etapes.at(-1).texte).toContain('connecte-toi');
     expect(r.ligne).toBe('Sur l’écran d’accueil');
   });
   it('iPhone, Safari 26 : Partager est dans le menu ••• en bas à droite', () => {
     const r = g('iphone26');
-    expect(r).toMatchObject({ cas: 'ios26', fleche: 'bas-droite' });
+    expect(r).toMatchObject({ cas: 'ios26', fleche: 'bas-droite', ios26: true });
     expect(r.etapes[0].texte).toBe('Touche **•••** en bas à droite, puis **Partager**');
+  });
+  it('iOS 26 : la feuille de partage cache ses actions derrière « En voir plus »', () => {
+    const r = g('iphone26');
+    expect(r.etapes.map(e => e.s)).toEqual(['barre', 'feuille', 'liste', 'ajout', 'accueil']);
+    expect(r.etapes[1].texte).toBe('Touche **En voir plus**, au bout de la rangée');
+    expect(r.etapes[2].texte).toBe('Touche **Sur l’écran d’accueil**');
+  });
+  it('Chrome d’un iPhone sous iOS 26 (sa signature dit 18_6) : l’écran le devine, le guide suit', () => {
+    const avant = g('chromeIos');
+    expect(avant.etapes.map(e => e.s)).toEqual(['barre', 'liste', 'ajout', 'accueil']);
+    const r = g('chromeIos', { ios26: true });
+    expect(r).toMatchObject({ cas: 'ios-chrome', fleche: 'haut-droite', ios26: true });
+    expect(r.etapes[0].texte).toBe('Touche **Partager**, en haut à droite');
+    expect(r.etapes.map(e => e.ic)).toEqual(['partager', 'plus', 'ajouter', 'ok', 'folio']);
+  });
+  it('un iPhone réglé en anglais : les mots de SON écran, la phrase en français', () => {
+    expect(langueEcran(['en-US', 'fr-FR'])).toBe('en');
+    expect(langueEcran(['fr-CA'])).toBe('fr');
+    expect(langueEcran([])).toBe('fr');
+    expect(langueEcran(['es-ES'])).toBe('en');
+    const r = g('chromeIos', { ios26: true, langue: 'en' });
+    expect(r.etapes.map(e => e.texte)).toEqual(['Touche **Share**, en haut à droite', 'Touche **View More**, au bout de la rangée',
+      'Touche **Add to Home Screen**', 'Touche **Add**, en haut à droite', 'Ouvre **Mirandola** par son icône et connecte-toi']);
+    expect(r.mots).toBe(MOTS.en);
+    expect(g('chrome', { langue: 'en' }).etapes[1].texte).toBe('Choisis **Install app**');
+  });
+  it('les deux langues ont les mêmes libellés', () => {
+    expect(Object.keys(MOTS.en).sort()).toEqual(Object.keys(MOTS.fr).sort());
   });
   it('iPad : Partager en haut à droite', () => {
     expect(g('ipad')).toMatchObject({ cas: 'ipad', fleche: 'haut-droite' });
@@ -90,19 +119,22 @@ describe('le guide de chaque téléphone', () => {
   it('chaque guide : des étapes courtes, dans l’ordre de l’animation, qui finissent sur l’icône', () => {
     for (const k of Object.keys(UA)) {
       for (const invite of [false, true]) {
-        const r = g(k, { invite });
+        for (const ios26 of [false, true]) for (const langue of ['fr', 'en']) {
+        const r = g(k, { invite, ios26, langue });
         expect(r.etapes.length, k).toBeGreaterThanOrEqual(3);
-        expect(r.etapes.length, k).toBeLessThanOrEqual(4);
+        expect(r.etapes.length, k).toBeLessThanOrEqual(5);
         const scenes = r.etapes.map(e => e.s);
-        expect(scenes, k).toEqual([...scenes].sort());
-        expect(scenes[0], k).toBe(1);
-        expect(r.etapes.at(-1), k).toMatchObject({ ic: 'folio', s: 3 });
+        expect(new Set(scenes).size, k).toBe(scenes.length);          // une scène par étape
+        expect(['barre', 'page'], k).toContain(scenes[0]);
+        expect(['accueil', 'nav'], k).toContain(scenes.at(-1));
+        expect(r.etapes.at(-1).ic, k).toBe('folio');
         for (const e of r.etapes) {
           expect(e.texte.length, e.texte).toBeLessThanOrEqual(70);
           expect(e.texte.split('**').length % 2, e.texte).toBe(1);   // chaque gras se ferme
           expect(e.texte).not.toMatch(/[—–]/);
         }
         expect(r.titre.length).toBeLessThanOrEqual(26);
+        }
       }
     }
   });

@@ -3,7 +3,7 @@
    limite finale. `now` et `rand` sont toujours fournis explicitement, ce
    qui rend le mélange et les échéances vérifiables sans horloge réelle. */
 import { describe, it, expect } from 'vitest';
-import { isDue, isLeech, shuffle, buildQueue } from '../src/file.js';
+import { isDue, isLeech, shuffle, buildQueue, reprise } from '../src/file.js';
 
 /* même graine → même suite, comme test/concurrence.test.js */
 function mulberry32(graine) {
@@ -249,5 +249,23 @@ describe('l’ordre d’Anki', () => {
       ...Array.from({ length: 6 }, (_, i) => carte('r' + i, { st: 2, n: 1, lr: 1, S: 2, d: NOW - i * DAY }))];
     const q = buildQueue(cards, { order: 'anki', only: 'due' }, NOW, mulberry32(3));
     expect(new Set(q.map(c => c.id)).size).toBe(10);
+  });
+});
+
+describe('reprise — un livre parti ne se reprend pas', () => {
+  const r = { id: 'd1', i: 1, queue: ['a', 'b', 'c'], name: 'Paquet' };
+  it('rien à reprendre quand aucune page restante n’existe (livre supprimé)', () => {
+    expect(reprise(r, () => false)).toBe(null);
+  });
+  it('ne garde que les pages encore là, sans toucher à celles déjà lues', () => {
+    expect(reprise(r, id => id !== 'b').queue).toEqual(['a', 'c']);
+    expect(reprise(r, id => id !== 'b').i).toBe(1);
+  });
+  it('tout est là : la file ne change pas', () => {
+    expect(reprise(r, () => true).queue).toEqual(['a', 'b', 'c']);
+  });
+  it('une reprise abîmée ne passe pas', () => {
+    expect(reprise(null, () => true)).toBe(null);
+    expect(reprise({ i: 0 }, () => true)).toBe(null);
   });
 });

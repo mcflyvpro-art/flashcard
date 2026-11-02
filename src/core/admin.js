@@ -164,3 +164,21 @@ export const admRepondre = (org, message, sujet) => agirFacture('admin_repondre'
 export const admFacturationClient = (org, fiche) =>
   agirFacture('facturation_enregistrer', { fiche, org }, 'Coordonnées enregistrées', org);
 
+
+/* ══════════ « Brancher Stripe » (2026-11-02) ══════════
+   La fonction paiement dit ce qui est branché (action etat : la clé, son
+   mode, les prix, le point d'arrivée, le portail — jamais un secret) et le
+   pose chez Stripe (action preparer), pour l'éditeur seul. */
+export async function admStripe(action = 'etat') {
+  if (action === 'preparer' && !online) { toast(I.cloud, 'Hors ligne : Stripe attendra'); return; }
+  if (action === 'preparer') { adm.stripe = { ...(adm.stripe || {}), enCours: true }; repeint(); }
+  try {
+    adm.stripe = await api('/functions/v1/paiement', 'POST', { action }) || {};
+    if (action === 'preparer') toast(I.check, 'Stripe est branché');
+  } catch (e) {
+    const code = String(e && e.message || '');
+    adm.stripe = { ...(adm.stripe || {}), enCours: false,
+      erreur: /nokey/.test(code) ? 'nokey' : /editeur/.test(code) ? 'editeur' : /404|not found/i.test(code) ? 'absente' : 'stripe' };
+  }
+  repeint();
+}

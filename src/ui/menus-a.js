@@ -24,6 +24,7 @@ import {
 import { paintMenuRename } from './menus-c.js';
 import { paintMenuPseudo } from './pseudo-porte.js';
 import { installSheet } from './onboarding.js';
+import { paintMenuPdf } from './pdf-porte.js';
 
 /* ---------- menu contextuel ----------
    Sur ordinateur, une feuille n'est pas un tiroir de téléphone posé au
@@ -323,7 +324,8 @@ function menuPainter(m) {
     mateprof: paintMenuMateprof,
     move: paintMenuMove,
     split: paintMenuSplit,
-    rename: paintMenuRename, pwd: paintMenuRename, delacc: paintMenuRename
+    rename: paintMenuRename, pwd: paintMenuRename, delacc: paintMenuRename,
+    pdf: paintMenuPdf
   }[m];
 }
 
@@ -351,6 +353,7 @@ function paintMenuDeck(w) {
       ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
       ${d.cards.length > 3 ? `<button class="mi" data-mact="splitopen">${svg(I.split)}Scinder<span class="tail">${d.cards.length}</span></button>` : ''}
       <button class="mi" data-mact="sharepick">${svg(I.share)}Partager</button>
+      ${d.cards.length ? `<button class="mi" data-mact="pdfopen">${svg(I.file)}PDF du livre<span class="tail">${d.cards.length}</span></button>` : ''}
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
   mountMenu(w);

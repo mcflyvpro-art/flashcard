@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { ACTIONS_STRIPE } from './admin-stripe.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
@@ -343,6 +344,7 @@ async function copierCourriel() {
 
 const ACTIONS = {
   ...ACTIONS_FACTURATION,
+  ...ACTIONS_STRIPE,
   ...ACTIONS_COMPTES,
   'voir-places': () => { const p = Object.values(adm.profs || {}).find(x => x.demande_places);
     Object.assign(adm, { tab: 'comptes', crole: 'prof', copen: p ? p.id : null }); repeint(); },

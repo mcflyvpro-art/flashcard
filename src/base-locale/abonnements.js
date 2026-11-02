@@ -102,6 +102,14 @@ export function paiementFaux(store, body, user) {
   if (store.paiement === 'absent') return [404, null];
   if (store.paiement && store.paiement !== 'lent') return [503, { error: store.paiement }];
   const b = body || {};
+  /* « Brancher Stripe » (console de l'éditeur, 2026-11-02) : `store.stripe`
+     dit ce qui est branché ; sans lui, la clé manque, comme une base neuve */
+  if (b.action === 'etat' || b.action === 'preparer') {
+    if (modele(store).roles[user.id] !== 'admin') return [403, { error: 'editeur' }];
+    if (!store.stripe) return b.action === 'etat' ? [200, { cle: false }] : [503, { error: 'nokey' }];
+    if (b.action === 'preparer') Object.assign(store.stripe, { prix: true, webhook: true, portail: true, branche_le: new Date().toISOString() });
+    return [200, { cle: true, mode: 'test', ...store.stripe }];
+  }
   if (b.action === 'gerer' || b.action === 'resilier') {
     const a = table(store).find(x => x.user_id === user.id && x.source === 'stripe');
     if (!a || !a.client_stripe) return [404, { error: 'aucun' }];

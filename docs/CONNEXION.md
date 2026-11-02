@@ -53,14 +53,17 @@ e-mail » ne disparaît plus (il partait avec l'écran redessiné).
 
 **Le remède, dans Supabase : un SMTP à soi.** Brevo (français, serveurs en
 Europe, 300 e-mails par jour gratuits) ; Resend ou Postmark conviennent aussi.
+**La marche à suivre complète, à jour, est dans `docs/COURRIELS.md`**
+(2026-11-02 : le DNS de `mirandola.fr` est chez OVH, les modèles d'e-mail en
+français sont dans `supabase/courriels/`, et la fonction `prevenir` alerte
+l'éditeur d'une demande de démo). Le résumé ci-dessous en reste l'esquisse.
 
 1. **brevo.com** → crée un compte gratuit.
 2. **Expéditeurs, domaines et IP dédiées → Domaines → Ajouter un domaine** :
    `mirandola.fr`. Brevo donne des enregistrements DNS (code Brevo, DKIM,
-   DMARC) : ajoute-les là où se gère le DNS de `mirandola.fr` (Vercel →
-   Domains, si ses serveurs de noms sont ceux de Vercel ; sinon chez le
-   registraire), puis « Authentifier ». Sans eux, les e-mails finissent dans
-   les indésirables.
+   DMARC) : ajoute-les chez OVH, où se gère le DNS de `mirandola.fr`
+   (serveurs de noms `dns103.ovh.net`, `ns103.ovh.net`), puis
+   « Authentifier ». Sans eux, les e-mails finissent dans les indésirables.
 3. **Expéditeurs → Ajouter** : `noreply@mirandola.fr`, nom « Mirandola ».
 4. **SMTP et API → SMTP → Générer une nouvelle clé SMTP**. Note le serveur
    (`smtp-relay.brevo.com`, port `587`), l'identifiant de connexion et la clé
@@ -73,8 +76,8 @@ Europe, 300 e-mails par jour gratuits) ; Resend ou Postmark conviennent aussi.
    e-mails par heure ; monte « emails sent » à **100 par heure** au moins
    (une classe entière qui s'inscrit le même matin).
 7. Supabase → **Authentication → Emails → Templates** : objet et texte en
-   français, qui disent « Mirandola » (« Confirme ton adresse », « Choisis un
-   nouveau mot de passe »), sans publicité ni image (les filtres anti-spam).
+   français, ceux de `supabase/courriels/` (« Confirme ton adresse pour
+   Mirandola », « Ton nouveau mot de passe Mirandola »…).
 
 **Pour débloquer tout de suite, en attendant** : Authentication → Sign In /
 Providers → **Email → décocher « Confirm email »**. Un compte s'ouvre alors dès

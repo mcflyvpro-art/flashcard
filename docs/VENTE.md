@@ -227,46 +227,55 @@ Mirandola+ offert.
 
 ## 1. Stripe, pas à pas (en mode test d'abord)
 
-1. **Créer le compte** sur stripe.com, au nom de l'entreprise. Ce doit être
-   le même nom que dans la console de l'éditeur, onglet Entreprise (raison
-   sociale, SIRET, IBAN). Rester en **mode test** jusqu'à l'étape 3 de
-   « Essayer ».
-2. **Le produit** : Catalogue de produits → « Mirandola+ », avec deux prix
-   **récurrents, en EUR, TVA incluse** (« Inclusive ») :
-   - 49,99 € par an ;
-   - 6,99 € par mois.
+**Depuis le 2026-11-02, une seule clé et un bouton.** Le produit, ses deux
+prix, le point d'arrivée des évènements et le portail client se posaient à
+la main (l'ancienne marche à suivre, plus bas, reste valable) ; « Brancher
+Stripe », dans la console de l'éditeur, les crée lui-même (fonction
+`paiement`, action `preparer`), et range leurs identifiants et le secret du
+point d'arrivée dans `stripe_reglages` (rôle service seul).
 
-   Un prix déjà créé à 29,99 € ou 4,99 € (avant le 2026-10-28) : en créer
-   deux nouveaux, puis remplacer `STRIPE_PRIX_ANNUEL` et `STRIPE_PRIX_MENSUEL`.
-   Qui s'est abonné à l'ancien prix le garde, et l'écran Mirandola+ lui
-   montre le sien (`montant`, migration `20261028090000`).
+1. **Créer le compte** sur stripe.com, au nom de l'entreprise (la SASU une
+   fois déclarée ; ce doit être le même nom que dans la console de
+   l'éditeur, onglet Entreprise : raison sociale, SIRET, IBAN). Rester en
+   **mode test** jusqu'au premier vrai paiement : rien n'est prélevé, et
+   l'activation du compte (les papiers de l'entreprise) n'est pas demandée.
+2. **Développeurs → Clés API** : copier la **clé secrète** de test,
+   `sk_test_…`.
+3. **Supabase → Edge Functions → Secrets** : `STRIPE_SECRET_KEY` = cette clé.
+   Elle ne va ni dans le dépôt, ni dans une conversation.
+4. **Mirandola → console de l'éditeur → Entreprise → Paiement en ligne →
+   Brancher Stripe.** Quatre puces passent au vert : clé de test, prix,
+   évènements, portail client. Rebrancher ne crée rien deux fois ; un prix
+   qui ne serait plus le bon (un autre montant) est refait, et les abonnés
+   gardent le leur.
+5. Essayer (§ 4 ci-dessous) : carte `4242 4242 4242 4242`, n'importe quelle
+   date future, n'importe quel code.
 
-   Noter leurs identifiants `price_…`. Ces montants doivent être identiques
-   à ceux de `FORMULES` (`src/abonnement.js`), de la page d'accueil et des
-   magasins. `test/site.test.js` garde la page et l'app d'accord. Stripe et
-   les magasins se vérifient à l'œil.
-3. **Le portail client** : Paramètres → Facturation → Portail client.
-   - Autoriser : changer de moyen de paiement, voir ses factures, **annuler
-     (à la fin de la période)**, passer d'un prix à l'autre. L'annulation
-     doit être permise : « Résilier l'abonnement » de l'app ouvre le portail
-     droit sur elle (`flow_data`, action `resilier` de la fonction `paiement`).
-   - Lien de retour : `https://mirandola.fr/app?plus=retour`.
-4. **Le point d'arrivée des évènements** : Développeurs → Webhooks →
-   Ajouter un point de terminaison.
-   - URL : `https://qqbzefpdeinlynjtarqr.supabase.co/functions/v1/stripe-webhook`
-   - Évènements, exactement ceux de `EVENEMENTS` (`_shared/abonnement.js`) :
-     - `checkout.session.completed` ;
-     - `customer.subscription.created`, `customer.subscription.updated`,
-       `customer.subscription.deleted`, `customer.subscription.paused`,
-       `customer.subscription.resumed` ;
-     - `invoice.paid`, `invoice.payment_failed`.
-   - Noter le **secret de signature** `whsec_…`.
-5. **Facultatif, mais recommandé** :
-   - Paramètres → Détails publics : les conditions de vente, puis
-     `STRIPE_CGV=1` ;
-   - Stripe Tax (la TVA européenne, guichet OSS), puis `STRIPE_TAXE=1` ;
-   - les reçus par e-mail ;
-   - le libellé sur le relevé bancaire : `MIRANDOLA`.
+**Passer en vrai** : activer le compte Stripe (Stripe demande les papiers de
+la SASU et l'IBAN), remplacer `STRIPE_SECRET_KEY` par `sk_live_…`, puis
+**Brancher Stripe** à nouveau : les objets du mode réel sont créés à leur
+tour (chaque mode a les siens). Puis le § 5 ci-dessous.
+
+**Facultatif, mais recommandé**, dans Stripe :
+- Paramètres → Détails publics : les conditions de vente, puis le secret
+  `STRIPE_CGV=1` ;
+- Stripe Tax (la TVA européenne, guichet OSS), puis `STRIPE_TAXE=1` ;
+- les reçus par e-mail ;
+- le libellé sur le relevé bancaire : `MIRANDOLA`.
+
+### L'ancienne marche à suivre, à la main (toujours valable)
+
+Un prix ou un secret posé à la main passe avant ceux de « Brancher Stripe » :
+`STRIPE_PRIX_ANNUEL`, `STRIPE_PRIX_MENSUEL` (deux prix **récurrents, en EUR,
+TVA incluse** : 49,99 € par an, 6,99 € par mois — ceux de `FORMULES`,
+`src/abonnement.js`, et de la page d'accueil ; `test/paiement.test.js` garde
+« Brancher Stripe » d'accord avec eux), `STRIPE_WEBHOOK_SECRET` (le `whsec_…`
+d'un point d'arrivée vers
+`https://qqbzefpdeinlynjtarqr.supabase.co/functions/v1/stripe-webhook`, avec
+exactement les évènements de `EVENEMENTS`, `_shared/abonnement.js`). Le
+portail client se règle alors dans Paramètres → Facturation → Portail client
+(annuler à la fin de la période, changer de prix, lien de retour
+`https://mirandola.fr/app?plus=retour`).
 
 ## 2. Apple, Google et RevenueCat (l'app des magasins)
 
@@ -370,10 +379,10 @@ Mirandola+ offert.
 
    | Secret | Valeur |
    |---|---|
-   | `STRIPE_SECRET_KEY` | `sk_test_…`, puis `sk_live_…` |
-   | `STRIPE_WEBHOOK_SECRET` | `whsec_…` du point d'arrivée |
-   | `STRIPE_PRIX_ANNUEL` | `price_…` à 49,99 € |
-   | `STRIPE_PRIX_MENSUEL` | `price_…` à 6,99 € |
+   | `STRIPE_SECRET_KEY` | `sk_test_…`, puis `sk_live_…` (puis « Brancher Stripe ») |
+   | `STRIPE_WEBHOOK_SECRET` | facultatif depuis « Brancher Stripe » : `whsec_…` d'un point d'arrivée posé à la main |
+   | `STRIPE_PRIX_ANNUEL` | facultatif : `price_…` à 49,99 € posé à la main |
+   | `STRIPE_PRIX_MENSUEL` | facultatif : `price_…` à 6,99 € posé à la main |
    | `STRIPE_TAXE`, `STRIPE_CGV` | `1` une fois activés dans Stripe |
    | `RC_SECRET` | `sk_…`, la clé secrète de RevenueCat |
    | `RC_WEBHOOK_AUTH` | la valeur de l'en-tête d'autorisation du webhook RevenueCat |

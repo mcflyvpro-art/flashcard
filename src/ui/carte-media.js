@@ -197,6 +197,10 @@ async function mediaUrl(path) {
   return url;
 }
 
+/* L'adresse locale d'un média de carte, quelle que soit sa forme (le PDF
+   d'un livre en dessine les images, ui/livre-pdf.js). */
+export const mediaSrc = r => { const p = mediaPath(r); return p ? mediaUrl(p) : Promise.resolve(r); };
+
 /* L'écran se peint d'un coup, la récupération prend un aller-retour :
    l'image part donc sans adresse et la reçoit dès qu'elle arrive. */
 export const mimg = (cls, r) => {

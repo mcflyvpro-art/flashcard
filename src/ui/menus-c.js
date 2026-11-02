@@ -20,6 +20,7 @@ import {
   blockUser, sendReport, unblockUser
 } from '../core/classement.js';
 import { trouverParNom } from '../matieres.js';
+import { clickPdf } from './pdf-porte.js';
 import {
   deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
   setMeta, slugify, solveConflict, subj
@@ -549,6 +550,7 @@ const CLICK_RULES = [
   [a => a === 'openpeek', clickOpenpeek],
   [a => a && a.startsWith('pk'), clickPkPrefix],
   [a => a === 'sharepick', clickPkShare],
+  [a => a === 'pdfopen' || (!!a && a.startsWith('pdf-')), clickPdf],
   [a => a === 'rolink', clickRolink],
   [a => a === 'roff', clickRoff],
   [a => a === 'duelnew2', clickDuelnew2],

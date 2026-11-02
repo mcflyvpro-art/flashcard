@@ -2,12 +2,12 @@
    Habillée comme les écrans publics (.pub, carte de verre .login, titre en
    serif), et tenue dans un seul écran de téléphone, barres de Safari
    comprises (~660 px de haut) : le téléphone dessiné à gauche, les étapes
-   à droite. Il rejoue le geste en trois scènes sur la même horloge (--t)
-   que les étapes, qui s'allument chacune avec la sienne : 1 la barre du
-   navigateur, 2 son menu, 3 l'écran d'accueil. Un anneau marque ce qu'on
-   touche, au moment où on le touche. Mouvement réduit : la première scène,
-   immobile, et toutes les étapes allumées. */
-.pw{--t:7.5s}
+   à droite. Une scène par étape (ui/pwa.js et son horloge pose `.on` sur
+   la scène et l'étape du moment) ; dans la scène allumée, un anneau marque
+   ce qu'on touche (`.cible`, puis `.cible2`), au moment où on le touche.
+   Les mots de l'écran dessiné (`.pw-t`) tiennent sur leur ligne, coupés
+   d'un « … » plutôt que de déborder. Mouvement réduit : rien ne défile,
+   toutes les étapes allumées, on les touche pour voir leur scène. */
 .pw > .pub-tete{display:none}
 .pw-centre{flex:1;display:flex;flex-direction:column;justify-content:center;padding:6px 0 10px}
 .login.pw-carte{max-width:460px;padding:20px 14px 14px;gap:12px}
@@ -19,21 +19,16 @@
 
 /* ---------- les étapes ---------- */
 .pw-etapes{flex:1;min-width:0;list-style:none;margin:0;padding:0;display:grid;gap:5px}
-.pw-etapes li{display:flex;align-items:center;gap:9px;padding:7px 8px 7px 7px;border-radius:13px;
-  background:rgba(255,255,255,.7);box-shadow:var(--edge);animation:var(--t) linear infinite both}
-.pw-etapes li[data-s="1"]{animation-name:pw-e1}
-.pw-etapes li[data-s="2"]{animation-name:pw-e2}
-.pw-etapes li[data-s="3"]{animation-name:pw-e3}
-.pw-etapes span{flex:1;min-width:0;font-size:13.5px;line-height:1.3;font-weight:520;color:var(--ink2);letter-spacing:-.15px}
+.pw-etapes li{display:flex;align-items:center;gap:9px;padding:7px 8px 7px 7px;border-radius:13px;cursor:pointer;
+  background:rgba(255,255,255,.55);box-shadow:var(--edge);opacity:.5;transition:opacity .3s,background .3s,box-shadow .3s}
+.pw-etapes li.on{opacity:1;background:#fff;box-shadow:0 0 0 1.5px rgba(43,123,228,.45),0 8px 18px -12px rgba(43,123,228,.6)}
+.pw-etapes span{flex:1;min-width:0;font-size:13.5px;line-height:1.3;font-weight:520;color:var(--ink2);letter-spacing:-.15px;overflow-wrap:anywhere}
 .pw-etapes b{font-weight:750;color:var(--ink)}
 .pw-g{flex:none;min-width:28px;height:28px;padding:0 4px;border-radius:9px;display:grid;place-items:center;
   background:var(--card);box-shadow:var(--edge);color:#2B7BE4;font-style:normal}
 .pw-g svg{width:16px;height:16px;stroke-width:2.1}
 .pw-g img{display:block;width:20px;height:20px;border-radius:5px}
 .pw-txt{font:800 14px/1 system-ui,-apple-system,sans-serif;letter-spacing:1px;color:var(--ink)}
-@keyframes pw-e1{0%,31%{opacity:1}35%,96%{opacity:.45}100%{opacity:1}}
-@keyframes pw-e2{0%,32%{opacity:.45}36%,64%{opacity:1}68%,100%{opacity:.45}}
-@keyframes pw-e3{0%,65%{opacity:.45}69%,95%{opacity:1}99%,100%{opacity:.45}}
 
 /* ---------- les boutons ---------- */
 .pw-cta{border-radius:99px;gap:9px;text-decoration:none;box-shadow:0 12px 24px -12px rgba(29,28,25,.6)}
@@ -56,95 +51,140 @@
 
 /* ---------- le téléphone dessiné ---------- */
 .pw-scene{flex:none}
-.pw-tel{width:112px;height:210px;padding:5px;border-radius:23px;background:#1D1C19;
+.pw-tel{width:142px;height:282px;padding:5px;border-radius:26px;background:#1D1C19;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 18px 34px -18px rgba(29,28,25,.6)}
-.pw-ecran{position:relative;width:100%;height:100%;border-radius:18px;overflow:hidden;background:#F6F5F1}
-.pw-s{position:absolute;inset:0;animation:var(--t) linear infinite both}
-.pw-s1{animation-name:pw-s1}
-.pw-s2{animation-name:pw-s2;opacity:0}
-.pw-s3{animation-name:pw-s3;opacity:0}
-@keyframes pw-s1{0%,62%{opacity:1}67%,96%{opacity:0}100%{opacity:1}}
-@keyframes pw-s2{0%,32%{opacity:0}35%,62%{opacity:1}67%,100%{opacity:0}}
-@keyframes pw-s3{0%,64%{opacity:0}68%,95%{opacity:1}99%,100%{opacity:0}}
+.pw-ecran{position:relative;width:100%;height:100%;border-radius:21px;overflow:hidden;background:#F6F5F1;
+  font:600 7px/1.2 system-ui,-apple-system,sans-serif;color:#1D1C19}
+.pw-s{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .35s,visibility 0s .35s}
+.pw-s.on{opacity:1;visibility:visible;transition:opacity .35s}
+.pw-t{display:block;min-width:0;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* scène 1 : la page dans le navigateur */
-.pw-haut{position:absolute;top:0;left:0;right:0;height:26px;display:flex;align-items:center;gap:3px;padding:8px 5px 0 8px}
-.pw-url{flex:1;min-width:0;height:13px;border-radius:7px;background:#E7E3DA;font:600 5.5px/13px system-ui,-apple-system,sans-serif;
-  color:#7A766C;text-align:center;overflow:hidden;white-space:nowrap}
-.pw-page{position:absolute;top:38px;left:10px;right:10px;display:flex;flex-direction:column;align-items:center;gap:6px}
-.pw-page img{width:24px;height:26px;margin-bottom:3px}
-.pw-page b{display:block;width:100%;height:6px;border-radius:3px;background:#E7E3DA}
+/* l'anneau du doigt, sur ce qu'on touche dans la scène allumée */
+.cible,.cible2{position:relative}
+.cible::after,.cible2::after{content:'';position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;
+  border-radius:50%;background:rgba(43,123,228,.22);box-shadow:0 0 0 2px rgba(43,123,228,.75);opacity:0;pointer-events:none}
+.pw-s.on .cible::after{animation:pw-tape 1.1s var(--e) .9s both}
+.pw-s.on .cible2::after{animation:pw-tape 1.1s var(--e) 2.3s both}
+@keyframes pw-tape{0%{opacity:0;transform:scale(1.6)}35%{opacity:1;transform:scale(1)}55%{opacity:1;transform:scale(.8)}100%{opacity:0;transform:scale(1.15)}}
+/* ce qui s'allume sous le doigt */
+.pw-s.on .pw-menu .cible,.pw-s.on .pw-groupe .cible{animation:pw-allume .3s 1.2s both}
+.pw-s.on .pw-pop .cible2{animation:pw-allume .3s 2.6s both}
+@keyframes pw-allume{to{background:#E3EEFC}}
+
+/* la page, derrière le navigateur */
+.pw-page{position:absolute;top:44px;left:12px;right:12px;display:flex;flex-direction:column;align-items:center;gap:7px}
+.pw-page img{width:28px;height:30px;margin-bottom:4px}
+.pw-page b{display:block;width:100%;height:7px;border-radius:4px;background:#E7E3DA}
 .pw-page b.court{width:62%}
-.pw-pbouton{position:relative;margin-top:18px;padding:6px 9px;border-radius:99px;background:#1D1C19;color:#fff;
-  font:700 7px/1 system-ui,-apple-system,sans-serif;white-space:nowrap}
-.pw-bas{position:absolute;left:0;right:0;bottom:0;height:30px;display:flex;align-items:center;justify-content:space-around;
-  padding:0 5px 5px;background:rgba(255,255,255,.92);box-shadow:0 -1px 0 rgba(29,28,25,.08)}
-.pw-bas > i{width:5px;height:5px;border-radius:50%;background:#CFCAC0}
-.pw-b{position:relative;display:grid;place-items:center;width:18px;height:18px;border-radius:6px;color:#2B7BE4}
-.pw-b > *{opacity:0}
-.pw-b svg{width:12px;height:12px;stroke-width:2.2}
+.pw-pbouton{margin-top:22px;padding:7px 10px;border-radius:99px;background:#1D1C19;color:#fff;font-weight:700;font-size:7.5px;white-space:nowrap}
+
+/* la barre du navigateur : en haut (l'adresse et un bouton) ou en bas (cinq boutons, ou l'adresse d'iOS 26) */
+.pw-haut{position:absolute;top:0;left:0;right:0;height:32px;display:flex;align-items:center;gap:4px;padding:10px 6px 0 8px;
+  background:rgba(255,255,255,.9);box-shadow:0 1px 0 rgba(29,28,25,.07)}
+.pw-url{flex:1;min-width:0;height:16px;display:flex;align-items:center;justify-content:center;gap:3px;border-radius:8px;background:#ECE9E2;
+  font-weight:600;font-size:6.5px;color:#5F5B52;white-space:nowrap;overflow:hidden}
+.pw-haut-t{height:24px;padding-top:9px;background:none;box-shadow:none}
+.pw-haut-t .pw-url{background:none;height:10px}
+.pw-haut-c .pw-url{justify-content:space-between;padding:0 2px 0 8px;overflow:visible}
+.pw-bas{position:absolute;left:0;right:0;bottom:0;height:34px;display:flex;align-items:center;justify-content:space-around;
+  padding:0 6px 8px;background:rgba(255,255,255,.94);box-shadow:0 -1px 0 rgba(29,28,25,.08)}
+.pw-bas26{justify-content:space-between;gap:5px;padding:0 6px 9px;background:none;box-shadow:none}
+.pw-bas26 .pw-url{height:20px;border-radius:10px;background:rgba(255,255,255,.95);box-shadow:0 2px 8px -3px rgba(29,28,25,.35)}
+.pw-p{flex:none;display:grid;place-items:center;width:14px;height:14px;font-style:normal;font-size:8px;color:#8D887E}
+.pw-bas > .pw-p:empty::before{content:'';width:5px;height:5px;border-radius:50%;background:#CFCAC0}
+.pw-b{flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:7px;background:#fff;color:#2B7BE4;
+  box-shadow:0 0 0 1px rgba(43,123,228,.3)}
+.pw-bas26 .pw-b{width:20px;height:20px;border-radius:50%}
+.pw-haut-c .pw-b{width:16px;height:16px;border-radius:5px}
+.pw-b svg{width:12px;height:12px;stroke-width:2.3}
 .pw-b .pw-txt{font-size:8px;letter-spacing:.5px;color:#2B7BE4}
-.pw-haut > .pw-b{display:none}
-/* le bouton du navigateur, là où il est sur ce téléphone */
-.pw-scene[data-fleche="haut-droite"] .pw-haut > .pw-b,
-.pw-scene[data-fleche="bas"] .pw-bc,
-.pw-scene[data-fleche="bas-droite"] .pw-bd{display:grid;width:18px;height:18px;border-radius:6px;background:#fff;
-  box-shadow:0 0 0 1px rgba(43,123,228,.28)}
-.pw-scene[data-fleche="haut-droite"] .pw-haut > .pw-b > *,
-.pw-scene[data-fleche="bas"] .pw-bc > *,
-.pw-scene[data-fleche="bas-droite"] .pw-bd > *{opacity:1}
-.pw-bas > .pw-b{width:5px;height:5px;border-radius:50%;background:#CFCAC0}
 
-/* l'anneau du doigt : sur le bouton (scène 1), la ligne du menu (2), l'icône (3) */
-.pw-scene[data-fleche="haut-droite"] .pw-haut > .pw-b::after,
-.pw-scene[data-fleche="bas"] .pw-bc::after,
-.pw-scene[data-fleche="bas-droite"] .pw-bd::after,
-.pw-scene[data-fleche="invite"] .pw-pbouton::after,
-.pw-feuille .on::after,.pw-app::after{content:'';position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;
-  border-radius:50%;background:rgba(43,123,228,.22);box-shadow:0 0 0 2px rgba(43,123,228,.7);opacity:0;
-  animation:var(--t) var(--e) infinite both}
-.pw-scene .pw-b::after,.pw-scene .pw-pbouton::after{animation-name:pw-tape1}
-.pw-feuille .on::after{animation-name:pw-tape2}
-.pw-app::after{animation-name:pw-tape3}
-@keyframes pw-tape1{0%,10%{opacity:0;transform:scale(1.5)}16%{opacity:1;transform:scale(1)}21%{opacity:1;transform:scale(.82)}30%,100%{opacity:0;transform:scale(1.2)}}
-@keyframes pw-tape2{0%,43%{opacity:0;transform:scale(1.5)}49%{opacity:1;transform:scale(1)}54%{opacity:1;transform:scale(.82)}62%,100%{opacity:0;transform:scale(1.2)}}
-@keyframes pw-tape3{0%,78%{opacity:0;transform:scale(1.5)}83%{opacity:1;transform:scale(1)}87%{opacity:1;transform:scale(.82)}94%,100%{opacity:0;transform:scale(1.2)}}
+/* le menu du bouton (••• puis Partager, ≡ puis Partager), après le premier geste */
+.pw-pop{position:absolute;right:6px;bottom:40px;width:74%;display:flex;flex-direction:column;gap:3px;padding:5px;border-radius:11px;
+  background:#fff;box-shadow:0 10px 24px -8px rgba(29,28,25,.4);opacity:0;transform:scale(.6);transform-origin:bottom right}
+.pw-pop.haut{top:34px;bottom:auto;transform-origin:top right}
+.pw-s.on .pw-pop{animation:pw-ouvre .35s var(--e) 1.6s both}
+@keyframes pw-ouvre{to{opacity:1;transform:none}}
+.pw-pop span,.pw-menu span,.pw-groupe span{min-height:17px;border-radius:5px;background:#F1EEE8}
+.pw-pop .cible2,.pw-menu .cible,.pw-groupe .cible{display:flex;align-items:center;gap:5px;padding:2px 6px;background:#fff;
+  box-shadow:0 0 0 1px rgba(43,123,228,.35);font-weight:700;font-size:6.6px}
+/* la ligne qu'on touche : sur deux lignes plutôt qu'un « … » */
+.pw-pop .cible2 .pw-t,.pw-menu .cible .pw-t,.pw-groupe .cible .pw-t{white-space:normal;line-height:1.15}
+.pw-pop svg,.pw-menu svg,.pw-groupe svg{flex:none;width:10px;height:10px;color:#2B7BE4;stroke-width:2.3}
 
-/* scène 2 : le menu du navigateur, monté du bas ou déroulé du coin */
-.pw-s2{background:rgba(29,28,25,.18)}
-.pw-feuille{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:4px;padding:13px 8px 12px;
-  border-radius:15px 15px 0 0;background:#fff;box-shadow:0 -8px 20px -10px rgba(29,28,25,.35);animation:pw-monte var(--t) var(--ios) infinite both}
-.pw-feuille::before{content:'';position:absolute;top:5px;left:50%;width:22px;height:3px;margin-left:-11px;border-radius:2px;background:#D9D5CC}
-.pw-feuille span{height:20px;border-radius:6px;background:#F1EEE8}
-.pw-feuille .on{position:relative;display:flex;align-items:center;gap:5px;padding:0 6px;background:#fff;
-  box-shadow:0 0 0 1px rgba(43,123,228,.35);font:700 7px/1 system-ui,-apple-system,sans-serif;color:var(--ink);white-space:nowrap;
-  animation:pw-ligne var(--t) linear infinite both}
-.pw-feuille .on svg{width:10px;height:10px;flex:none;color:#2B7BE4;stroke-width:2.3}
-.pw-scene[data-fleche="haut-droite"] .pw-feuille{top:24px;bottom:auto;left:auto;right:5px;width:86%;padding:6px;border-radius:10px;
-  transform-origin:top right;animation-name:pw-deroule}
-.pw-scene[data-fleche="haut-droite"] .pw-feuille::before{display:none}
-@keyframes pw-monte{0%,33%{transform:translateY(105%)}38%,100%{transform:none}}
-@keyframes pw-deroule{0%,33%{transform:scale(.4);opacity:0}37%,100%{transform:none;opacity:1}}
-@keyframes pw-ligne{0%,48%{background:#fff}52%,100%{background:#E3EEFC}}
+/* un voile sur la page sous une feuille */
+.pw-voile{position:absolute;inset:0;background:rgba(29,28,25,.22)}
 
-/* scène 3 : l'écran d'accueil, où Mirandola arrive */
-.pw-s3{background:linear-gradient(160deg,#C9D3F2,#E9D3E6 60%,#F4DCD4)}
-.pw-grille{position:absolute;top:26px;left:14px;right:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px 12px}
-.pw-grille > i,.pw-app img{display:block;width:100%;aspect-ratio:1;border-radius:7px;background:rgba(255,255,255,.55)}
+/* le menu d'un navigateur d'Android : sous le bouton, ou en feuille du bas */
+.pw-menu{position:absolute;top:30px;right:5px;left:8px;display:flex;flex-direction:column;gap:4px;padding:6px;border-radius:10px;
+  background:#fff;box-shadow:0 10px 24px -8px rgba(29,28,25,.4);transform-origin:top right}
+.pw-menu.bas{top:auto;bottom:0;left:0;right:0;width:auto;padding:14px 8px 14px;border-radius:15px 15px 0 0;transform-origin:bottom}
+.pw-s.on .pw-menu{animation:pw-deroule .4s var(--ios) both}
+@keyframes pw-deroule{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:none}}
+
+/* la feuille de partage d'iOS : son en-tête, ses rangées ; pleine pour ses actions */
+.pw-partage{position:absolute;left:4px;right:4px;bottom:4px;display:flex;flex-direction:column;gap:7px;padding:9px 7px 9px;border-radius:17px;
+  background:rgba(250,249,246,.97);box-shadow:0 -6px 20px -8px rgba(29,28,25,.35)}
+.pw-s.on .pw-partage{animation:pw-monte .45s var(--ios) both}
+@keyframes pw-monte{from{transform:translateY(105%)}to{transform:none}}
+.pw-partage.plein{top:22px;overflow:hidden}
+.pw-fe{display:flex;align-items:center;gap:6px;padding-bottom:6px;border-bottom:1px solid rgba(29,28,25,.08)}
+.pw-fe img,.pw-fiche img{flex:none;width:22px;height:22px;border-radius:6px;box-shadow:0 0 0 .5px rgba(29,28,25,.15)}
+.pw-fe span,.pw-fiche span{min-width:0;display:flex;flex-direction:column;gap:1px}
+.pw-fe b,.pw-fiche b{font-size:7.5px;font-weight:700}
+.pw-fe small,.pw-fiche small{font-size:6px;color:#8D887E}
+.pw-rang{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;justify-items:center}
+.pw-rang > i{width:22px;height:22px;border-radius:50%;background:#E3DFD7}
+.pw-rang.apps > i{border-radius:6px}
+.pw-rang.apps > i:nth-child(1){background:#5AA5F5}.pw-rang.apps > i:nth-child(2){background:#58C26A}
+.pw-rang.apps > i:nth-child(3){background:#4E8EF0}.pw-rang.apps > i:nth-child(4){background:#E28A5A}
+.pw-rang.actions span{width:100%;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:5.5px;font-weight:600;color:#5F5B52;text-align:center}
+.pw-rang.actions span > i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#E3DFD7;color:#1D1C19}
+.pw-rang.actions svg{width:11px;height:11px;stroke-width:2.2}
+.pw-rang.actions .cible > i{background:#fff;color:#2B7BE4;box-shadow:0 0 0 1px rgba(43,123,228,.45)}
+.pw-rang.actions .cible{color:#1D1C19;font-weight:700}
+.pw-rang.actions .cible::after{top:11px}
+.pw-defile{display:flex;flex-direction:column;gap:7px}
+.pw-defile.loin::before{content:'';height:110px;flex:none;border-radius:8px;background:repeating-linear-gradient(#F1EEE8 0 17px,transparent 17px 21px)}
+.pw-s.on .pw-defile.loin{animation:pw-defile 1s var(--e) .3s both}
+@keyframes pw-defile{to{transform:translateY(-117px)}}
+.pw-s.on .pw-defile.loin .cible::after{animation-delay:1.7s}
+.pw-s.on .pw-defile.loin .cible{animation-delay:2s}
+.pw-groupe{display:flex;flex-direction:column;gap:3px;padding:4px;border-radius:9px;background:#fff}
+.pw-groupe span{background:#F4F2ED}
+
+/* l'écran qui confirme : celui d'iOS, Ajouter en haut à droite ; la boîte d'Android */
+.pw-ios-ajout{position:absolute;inset:0;background:#F2F1EE;padding:14px 6px 0}
+.pw-nav-ios{display:flex;align-items:center;justify-content:space-between;gap:6px;height:20px;padding:0 4px;color:#2B7BE4;font-size:7px}
+.pw-nav-ios b{display:grid;place-items:center;height:18px;padding:0 6px;border-radius:9px;background:#2B7BE4;color:#fff;font-weight:700}
+.pw-fiche{display:flex;align-items:center;gap:7px;margin-top:9px;padding:8px;border-radius:10px;background:#fff}
+.pw-bascule{justify-content:space-between;font-size:6.5px;font-weight:600}
+.pw-bascule i{flex:none;width:22px;height:13px;border-radius:7px;background:#34C759;position:relative}
+.pw-bascule i::after{content:'';position:absolute;right:1.5px;top:1.5px;width:10px;height:10px;border-radius:50%;background:#fff}
+.pw-boite{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);padding:10px;border-radius:14px;background:#fff;
+  box-shadow:0 14px 30px -10px rgba(29,28,25,.45)}
+.pw-s.on .pw-boite{animation:pw-deroule .35s var(--e) both}
+.pw-boite .pw-fe{border:0}
+.pw-boutons{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px;font-size:7px;color:#2B7BE4}
+.pw-boutons b{display:grid;place-items:center;height:18px;padding:0 8px;border-radius:9px;background:#2B7BE4;color:#fff;font-weight:700}
+
+/* l'écran d'accueil, où Mirandola arrive */
+.pw-sc-accueil{background:linear-gradient(160deg,#C9D3F2,#E9D3E6 60%,#F4DCD4)}
+.pw-grille{position:absolute;top:30px;left:16px;right:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px 14px}
+.pw-grille > i,.pw-app img{display:block;width:100%;aspect-ratio:1;border-radius:8px;background:rgba(255,255,255,.55)}
 .pw-grille > i:nth-child(3n+1){background:rgba(255,255,255,.78)}
 .pw-grille > i:nth-child(4n+2){background:rgba(62,79,160,.22)}
-.pw-app{position:relative;animation:pw-pose var(--t) var(--e) infinite both}
 .pw-app img{background:none;box-shadow:0 4px 10px -4px rgba(29,28,25,.45)}
-.pw-app small{position:absolute;left:-8px;right:-8px;top:100%;margin-top:3px;font:700 6px/1 system-ui,-apple-system,sans-serif;
-  text-align:center;color:#1D1C19}
-@keyframes pw-pose{0%,68%{transform:scale(0);opacity:0}73%{transform:scale(1.18);opacity:1}76%,100%{transform:none;opacity:1}}
-.pw-nav{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#2B7BE4;
-  animation:pw-pose var(--t) var(--e) infinite both}
-.pw-nav svg{width:40px;height:40px;stroke-width:1.6}
-.pw-nav b{font:700 10px/1 system-ui,-apple-system,sans-serif;color:var(--ink)}
+.pw-s.on .pw-app{animation:pw-pose .5s var(--e) .2s both}
+.pw-app small{position:absolute;left:-10px;right:-10px;top:100%;margin-top:3px;font-weight:700;font-size:6.5px;text-align:center;white-space:nowrap}
+.pw-app::after{top:40%}
+@keyframes pw-pose{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:none;opacity:1}}
+.pw-nav{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#2B7BE4}
+.pw-s.on .pw-nav{animation:pw-pose .5s var(--e) .2s both}
+.pw-nav svg{width:44px;height:44px;stroke-width:1.6}
+.pw-nav b{font-size:10px;color:var(--ink)}
 
 /* installée : l'écran d'accueil seul, l'icône posée, l'anneau qui invite */
-.pw-fige .pw-s3{opacity:1;animation:none}
 .pw-fige .pw-app{animation:none}
 .pw-fige .pw-app::after{animation:pw-appel 1.6s var(--e) infinite}
 @keyframes pw-appel{0%{opacity:0;transform:scale(1.5)}40%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
@@ -171,13 +211,15 @@
   .login.pw-carte{max-width:600px;padding:30px 28px 22px;gap:16px}
   .pw-carte .lt{font-size:36px}
   .pw-duo{gap:26px}
-  .pw-tel{width:160px;height:296px}
+  .pw-tel{zoom:1.25}
   .pw-etapes span{font-size:15px}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .pw-s,.pw-etapes li,.pw-feuille,.pw-feuille .on,.pw-app,.pw-nav,.pw-fleche{animation:none}
-  .pw-s1{opacity:1}.pw-s2,.pw-s3{opacity:0}.pw-etapes li{opacity:1}
-  .pw-scene .pw-b::after,.pw-pbouton::after,.pw-feuille .on::after,.pw-app::after{animation:none;opacity:1}
-  .pw-fige .pw-s3{opacity:1}
+  .pw-s,.pw-etapes li{transition:none}
+  .pw-etapes li{opacity:1}
+  .pw-fleche,.pw-s.on .pw-partage,.pw-s.on .pw-menu,.pw-s.on .pw-boite,.pw-s.on .pw-app,.pw-s.on .pw-nav,.pw-s.on .pw-defile.loin{animation:none}
+  .pw-s.on .pw-pop{animation:none;opacity:1;transform:none}
+  .pw-s.on .pw-defile.loin{transform:translateY(-117px)}
+  .pw-s.on .cible::after,.pw-s.on .cible2::after{animation:none;opacity:1}
 }

@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
-import { buildQueue, garderNeuves, neuvesPermises, shuffle } from '../file.js';
+import { buildQueue, garderNeuves, neuvesPermises, reprise, shuffle } from '../file.js';
 import {
   auth, db, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
   study
@@ -97,7 +97,12 @@ export function loadResume() {
   try {
     const r = JSON.parse(localStorage.getItem('cartes.resume.' + auth.uid));
     if (r && Date.now() - r.t < 3 * DAY && r.i < r.queue.length
-        && !!r.simple === simpleMode()) return r;      // snapshot d'un autre mode : on l'ignore
+        && !!r.simple === simpleMode()) {             // snapshot d'un autre mode : on l'ignore
+      /* le livre (ou chaque livre d'un marathon) doit être encore là */
+      const livres = r.id === 'all' ? live() : live().filter(d => d.id === r.id);
+      const pages = new Set(livres.flatMap(d => d.cards.map(c => c.id)));
+      return reprise(r, id => pages.has(id));
+    }
   } catch (e) { /* snapshot corrompu ou absent : pas de reprise, comme un démarrage neuf */ }
   return null;
 }

@@ -19,7 +19,18 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-10-29 (soir, quater) · « IA indisponible » pour tous :
+DERNIER   2026-11-02 · Retours de l'utilisateur, ses captures à
+          l'appui : « Reprendre » ne montre plus un livre supprimé ; la
+          page d'accueil au téléphone (les trois noms d'offres du tableau
+          se chevauchaient, la marque Campus décentrée, un bouton plus
+          large qu'un écran de 320 px) ; la porte d'installation refaite
+          (une scène par étape, « En voir plus » d'iOS 26, les mots dans
+          la langue du téléphone) ; le PDF d'un livre (tableau, champs
+          modifiables, imprimable) ; « Brancher Stripe » (une clé, un
+          bouton) ; l'alerte e-mail d'une demande de démo et les e-mails
+          de Supabase Auth en français (Brevo, docs/COURRIELS.md). M12.T1
+          avance : reste la clé Stripe. Aucune tâche cochée.
+Avant :   2026-10-29 (soir, quater) · « IA indisponible » pour tous :
           la fonction ai n'autorisait pas l'en-tête apikey que l'app
           envoie — le navigateur n'envoyait jamais la demande (OPTIONS 200,
           aucun POST). Corrigé et déployé (v12), avec des secours (Sonnet
@@ -255,7 +266,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M11.T6 · bandeau cookies inutile car 0 traceur — cible: 0 cookie non essentiel — preuve: inspection
 
 ## M12 · Paiement B2C [P0] 1/5
-- [~] M12.T1 · Stripe en test: abonnement mensuel et annuel — preuve: paiement test abouti — code prêt et en ligne (migrations 20261027190000 et 20261027210000 appliquées, fonctions paiement, stripe-webhook et magasins déployées le 2026-10-28, écran et onglet Folio+), attend le compte Stripe, RevenueCat et leurs clés (STRIPE_SECRET_KEY et RC_SECRET manquent) : docs/VENTE.md § 1 à 4
+- [~] M12.T1 · Stripe en test: abonnement mensuel et annuel — preuve: paiement test abouti — code prêt et en ligne (migrations 20261027190000 et 20261027210000 appliquées, fonctions paiement, stripe-webhook et magasins déployées le 2026-10-28, écran et onglet Folio+), attend le compte Stripe, RevenueCat et leurs clés (STRIPE_SECRET_KEY et RC_SECRET manquent) : docs/VENTE.md § 1 à 4. Le 2026-11-02 : « Brancher Stripe » (console de l'éditeur → Entreprise) pose produit, prix, webhook et portail d'une seule clé — il ne manque plus que STRIPE_SECRET_KEY, puis le bouton ; tools/paiement/essai.js 45/45
 - [x] M12.T2 · limites du gratuit appliquées côté serveur — cible: contournement impossible depuis le client — preuve: test d'attaque — ce qui coûte est tenu en base (médias : politiques restrictives ; IA : offre_de dans la fonction ai, redéployée le 2026-10-28) ; livres, QCM et journal restent des règles d'écran (décidé le 2026-10-27 : refuser un livre en base bloquerait la synchro). Preuve en base, le 2026-10-28 : supabase/tests/abonnements.sql 17/17 et folio_plus_pour_tous.sql 15/15 (s'offrir ou rallonger Folio+ par l'API brute, déposer un média en gratuit, lire l'offre d'un autre, offrir Folio+ sans être l'éditeur : tous refusés en 42501)
 - [~] M12.T3 · quotas IA par compte et par mois — cible: budget global jamais dépassé — preuve: simulation 100 comptes — 30 cours par mois pour un élève en Mirandola+ ou Campus, 400 pour un professeur (rôle lu dans user_roles, 2026-10-28), 0 en gratuit (AI_MONTHLY_PLUS, AI_MONTHLY_PROF, fonction ai) ; reste la simulation et un pool par établissement
 - [x] M12.T4 · webhooks Stripe idempotents — cible: 0 double facturation sur 100 rejeux — preuve: test — node tools/paiement/essai.js 32/32 (sous Deno, face à un faux Stripe et un faux RevenueCat : 100 rejeux sans écriture de plus, un évènement neuf livré 100 fois à la fois → une seule ligne juste, 20 appuis à la fois → une seule page de paiement)

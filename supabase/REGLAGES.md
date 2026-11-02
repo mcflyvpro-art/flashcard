@@ -36,7 +36,8 @@ nouvelle version de l'app.
 ## Authentication → Emails
 
 **Un SMTP à soi est obligatoire** (constaté le 2026-10-29, marche à suivre
-dans `docs/CONNEXION.md` § 1) : le service intégré de Supabase n'envoie que
+dans **`docs/COURRIELS.md`** depuis le 2026-11-02 — Brevo, le DNS chez OVH,
+les modèles en français de `supabase/courriels/`) : le service intégré de Supabase n'envoie que
 2 e-mails par heure, et seulement aux membres de l'équipe du projet. Sans
 SMTP, une inscription par e-mail échoue (`429 email rate limit exceeded`) ou
 attend un lien de confirmation qui n'arrive jamais (`Email not confirmed`),
@@ -95,15 +96,18 @@ coûte environ 1,20 $ par jour. À remplacer par un pool de crédits par
 
 Deux fonctions de plus, `paiement` (verify_jwt actif) et `stripe-webhook`
 (**verify_jwt coupé** : `supabase functions deploy stripe-webhook --no-verify-jwt`,
-la signature de Stripe remplace le jeton). Leurs secrets, et tout le pas à
-pas (produit et prix dans Stripe, portail client, point d'arrivée des
-évènements), dans **`docs/VENTE.md`** :
+la signature de Stripe remplace le jeton). **Une seule clé à poser depuis le
+2026-11-02** : « Brancher Stripe », dans la console de l'éditeur (onglet
+Entreprise), crée chez Stripe le produit, ses deux prix, le point d'arrivée
+des évènements et le portail client, et range leurs identifiants et le
+secret du point d'arrivée dans `stripe_reglages` (rôle service seul,
+migration `20261102191503`). Le pas à pas dans **`docs/VENTE.md`** :
 
 | Secret | Rôle |
 |---|---|
-| `STRIPE_SECRET_KEY` | obligatoire, sinon `paiement` répond `nokey` (l'app dit « le paiement ouvre bientôt ») |
-| `STRIPE_WEBHOOK_SECRET` | `whsec_…`, sinon `stripe-webhook` refuse tout |
-| `STRIPE_PRIX_ANNUEL`, `STRIPE_PRIX_MENSUEL` | les `price_…` de Mirandola+ (49,99 € par an, 6,99 € par mois, depuis le 2026-10-28) |
+| `STRIPE_SECRET_KEY` | obligatoire, sinon `paiement` répond `nokey` (l'app dit « le paiement ouvre bientôt ») ; `sk_test_…` pour essayer, `sk_live_…` en vrai (chaque mode a ses réglages : rebrancher après avoir changé de clé) |
+| `STRIPE_WEBHOOK_SECRET` | facultatif : `whsec_…` d'un point d'arrivée posé à la main (« Brancher Stripe » range le sien) |
+| `STRIPE_PRIX_ANNUEL`, `STRIPE_PRIX_MENSUEL` | facultatifs : des `price_…` posés à la main, qui passent avant ceux de « Brancher Stripe » (49,99 € par an, 6,99 € par mois, depuis le 2026-10-28) |
 | `STRIPE_TAXE` | `1` si Stripe Tax est activé |
 | `STRIPE_CGV` | `1` pour faire cocher les conditions de vente (leur adresse posée dans Stripe) |
 | `SITE_URL` | défaut `https://mirandola.fr` (retours de Stripe) |
@@ -111,6 +115,20 @@ pas (produit et prix dans Stripe, portail client, point d'arrivée des
 La migration `20261027190000` pose la tâche pg_cron
 `purge-stripe-evenements` (03:41 UTC, évènements de plus de 30 jours) ;
 sans pg_cron, la lancer à la main comme les autres purges.
+
+## Les e-mails de la fonction `prevenir` (2026-11-02)
+
+La fonction `prevenir` (**verify_jwt coupé** : c'est la base qui l'appelle,
+par pg_net, déclencheur `prevenir_demande` de la migration `20261102191527`)
+envoie par Brevo l'alerte d'une demande de démo à l'éditeur et l'accusé de
+réception au demandeur. Sans ses deux secrets, elle ne fait rien. Pas à pas :
+`docs/COURRIELS.md` § 4.
+
+| Secret | Rôle |
+|---|---|
+| `BREVO_API_KEY` | la clé d'API de Brevo (`xkeysib-…`, pas la clé SMTP) |
+| `ALERTE_EMAIL` | où arrivent les demandes de démo |
+| `EXPEDITEUR` | facultatif, `noreply@mirandola.fr` par défaut (une adresse du domaine authentifié chez Brevo) |
 
 ## Mirandola+ : l'app des magasins, par RevenueCat (2026-10-27)
 

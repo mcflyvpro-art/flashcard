@@ -225,3 +225,47 @@ describe('l’app des magasins : un abonné RevenueCat devient sa ligne apple ou
     expect(autorise(null, 'x')).toBe(false);
   });
 });
+
+/* « Brancher Stripe » (2026-11-02) : ce que la fonction paiement pose chez
+   Stripe, d'une seule clé. Les prix y sont ceux de l'app et de la page. */
+describe('brancher Stripe', async () => {
+  const S = await import('../supabase/functions/_shared/abonnement.js');
+  const { FORMULES: APP } = await import('../src/abonnement.js');
+  it('les prix posés chez Stripe sont ceux de l’app (et donc de la page d’accueil)', () => {
+    expect(S.PRIX.annuel.centimes).toBe(APP.annuel.prix);
+    expect(S.PRIX.mensuel.centimes).toBe(APP.mensuel.prix);
+    expect(S.demandePrix('annuel')).toMatchObject({ product: S.PRODUIT, currency: 'eur', unit_amount: '4999',
+      'recurring[interval]': 'year', tax_behavior: 'inclusive', lookup_key: 'mirandola_plus_annuel', transfer_lookup_key: 'true' });
+  });
+  it('un prix déjà là ne se refait pas s’il est le bon ; un autre montant, si', () => {
+    const bon = { active: true, currency: 'eur', unit_amount: 699, recurring: { interval: 'month' }, tax_behavior: 'inclusive' };
+    expect(S.prixConforme(bon, 'mensuel')).toBe(true);
+    expect(S.prixConforme({ ...bon, unit_amount: 499 }, 'mensuel')).toBe(false);
+    expect(S.prixConforme({ ...bon, tax_behavior: 'exclusive' }, 'mensuel')).toBe(false);
+    expect(S.prixConforme(bon, 'annuel')).toBe(false);
+    expect(S.prixConforme(null, 'annuel')).toBe(false);
+  });
+  it('le point d’arrivée suit tous les évènements que stripe-webhook traite', () => {
+    const d = S.demandeWebhook('https://x/functions/v1/stripe-webhook');
+    expect(Object.keys(d).filter(k => k.startsWith('enabled_events')).map(k => d[k])).toEqual(S.EVENEMENTS);
+    const w = { url: 'https://x/functions/v1/stripe-webhook', status: 'enabled', enabled_events: [...S.EVENEMENTS] };
+    expect(S.webhookConforme(w, w.url)).toBe(true);
+    expect(S.webhookConforme({ ...w, enabled_events: S.EVENEMENTS.slice(1) }, w.url)).toBe(false);
+    expect(S.webhookConforme({ ...w, status: 'disabled' }, w.url)).toBe(false);
+  });
+  it('le portail : résilier à la fin de la période, passer d’une formule à l’autre, retour dans l’app', () => {
+    const d = S.demandePortailConfig({ site: 'https://mirandola.fr', annuel: 'price_a', mensuel: 'price_m' });
+    expect(d['features[subscription_cancel][mode]']).toBe('at_period_end');
+    expect(d['features[subscription_update][products][0][prices][1]']).toBe('price_m');
+    expect(d.default_return_url).toBe('https://mirandola.fr/app?plus=retour');
+    expect(S.demandePortail({ client: 'cus_1', site: 'https://m.fr', configuration: 'bpc_1' }).configuration).toBe('bpc_1');
+  });
+  it('chaque mode a ses réglages : une clé de test ne lit jamais ceux du vrai', () => {
+    expect(S.modeDeLaCle('sk_live_abc')).toBe('live');
+    expect(S.modeDeLaCle('sk_test_abc')).toBe('test');
+    expect(S.modeDeLaCle('rk_live_abc')).toBe('live');
+    const lignes = [{ cle: 'test:prix_annuel', valeur: 'price_t' }, { cle: 'live:prix_annuel', valeur: 'price_l' }];
+    expect(S.reglagesDuMode(lignes, 'test')).toEqual({ prix_annuel: 'price_t' });
+    expect(S.reglagesDuMode(lignes, 'live')).toEqual({ prix_annuel: 'price_l' });
+  });
+});

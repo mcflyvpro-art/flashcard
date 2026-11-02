@@ -11,6 +11,7 @@ import { render } from './bibliotheque.js';
 import { factureHtml } from './facture-vue.js';
 import { toast } from './import-cartes.js';
 import { timeAgo } from './reglages-corbeille.js';
+import { blocStripe } from './admin-stripe.js';
 
 /* ══════════ la facturation, côté éditeur (2026-10-26) ══════════
    Dans la fiche d'un établissement : ses pièces (émettre une facture,
@@ -136,7 +137,7 @@ export function vueEntreprise() {
         ${champ('ev-taux_tva', 'Taux de TVA (%)', v.taux_tva ?? 20, 'inputmode="decimal"')}
         ${champ('ev-delai_jours', 'Délai de paiement (jours)', v.delai_jours ?? 30, 'inputmode="numeric"')}
         <button class="ed-b pri" type="submit">${svg(I.check)}Enregistrer</button>
-      </form></div>`;
+      </form></div>${blocStripe()}`;
 }
 
 /* ---------- les gestes ---------- */

@@ -25,6 +25,8 @@ const comptes = new Set(['u1', 'u2', 'u3', 'u5', R1]);    // u4 et R4 ont suppri
 const abonnements = [{ user_id: 'u2', statut: 'actif', source: 'stripe', client_stripe: 'cus_u2', abonnement_stripe: 'sub_u2',
   fin_periode: new Date(AN * 1000).toISOString(), fin_prevue: false }];
 const evenements = [], sessions = new Map(), recu = { checkout: [], ecritures: 0 };
+// « Brancher Stripe » : ce que le faux Stripe a reçu, ce que la fausse base a rangé
+const reglages = {}, monde = { produits: {}, prix: [], points: [], portails: [] };
 const offres = { u3: 'campus', u5: 'plus' };             // u5 : Mirandola+ offert (un compte d'avant le 2026-10-27)
 const RC_AN = new Date((AN + 86400) * 1000).toISOString();
 const abonnesRC = {
@@ -70,6 +72,16 @@ function base(req, res, url, corps) {
     if (i >= 0) abonnements[i] = { ...abonnements[i], ...l }; else abonnements.push(l);
     return envoie(res, 201, null);
   }
+  if (t === 'rpc/is_admin') {
+    const sub = JSON.parse(Buffer.from((req.headers.authorization || '').split('.')[1] || 'e30', 'base64url')).sub;
+    return envoie(res, 200, sub === 'editeur');
+  }
+  if (t === 'stripe_reglages' && req.method === 'GET') return envoie(res, 200, Object.entries(reglages).map(([cle, valeur]) => ({ cle, valeur })));
+  if (t === 'stripe_reglages' && req.method === 'POST') {
+    if (q.get('on_conflict') !== 'cle') return envoie(res, 400, { message: 'on_conflict ' + q.get('on_conflict') });
+    for (const l of JSON.parse(corps)) reglages[l.cle] = l.valeur;
+    return envoie(res, 201, null);
+  }
   if (t === 'stripe_evenements' && req.method === 'GET') return envoie(res, 200, evenements.filter(e => e.id === filtre(q, 'id')));
   if (t === 'stripe_evenements' && req.method === 'POST') {
     const e = JSON.parse(corps);
@@ -91,8 +103,39 @@ function stripe(req, res, url, corps) {
   }
   if (p === 'billing_portal/sessions') {
     const f = Object.fromEntries(new URLSearchParams(corps));
+    recu.portail = f;
     return envoie(res, 200, { url: 'https://billing.stripe.com/p/session/' + f.customer, retour: f.return_url });
   }
+  const f = Object.fromEntries(new URLSearchParams(corps));
+  const liste = (k, pre) => Object.keys(f).filter(x => x.startsWith(pre)).map(x => f[x]);
+  if (p === 'products' && req.method === 'POST') {
+    if (monde.produits[f.id]) return envoie(res, 400, { error: { code: 'resource_already_exists', message: 'existe' } });
+    monde.produits[f.id] = { id: f.id, name: f.name };
+    return envoie(res, 200, monde.produits[f.id]);
+  }
+  if (p === 'prices' && req.method === 'GET') {
+    const cles = url.searchParams.getAll('lookup_keys[]');
+    return envoie(res, 200, { data: monde.prix.filter(x => x.active && cles.includes(x.lookup_key)) });
+  }
+  if (p === 'prices' && req.method === 'POST') {
+    if (f.transfer_lookup_key === 'true') monde.prix.forEach(x => { if (x.lookup_key === f.lookup_key) x.lookup_key = null; });
+    const x = { id: 'price_auto_' + monde.prix.length, active: true, product: f.product, currency: f.currency, unit_amount: Number(f.unit_amount),
+      recurring: { interval: f['recurring[interval]'] }, tax_behavior: f.tax_behavior, lookup_key: f.lookup_key };
+    monde.prix.push(x);
+    return envoie(res, 200, x);
+  }
+  if (p === 'webhook_endpoints' && req.method === 'GET') return envoie(res, 200, { data: monde.points });
+  if (p === 'webhook_endpoints' && req.method === 'POST') {
+    const w = { id: 'we_' + monde.points.length + '_' + Date.now(), url: f.url, status: 'enabled', enabled_events: liste(f, 'enabled_events['),
+      secret: 'whsec_auto_' + monde.points.length };
+    monde.points.push(w);
+    return envoie(res, 200, w);
+  }
+  const we = p.match(/^webhook_endpoints\/(.+)$/);
+  if (we && req.method === 'DELETE') { monde.points = monde.points.filter(w => w.id !== we[1]); return envoie(res, 200, { deleted: true }); }
+  if (p === 'billing_portal/configurations') { monde.portails.push({ id: 'bpc_' + monde.portails.length, f }); return envoie(res, 200, monde.portails.at(-1)); }
+  const bpc = p.match(/^billing_portal\/configurations\/(.+)$/);
+  if (bpc) { const c = monde.portails.find(x => x.id === bpc[1]); if (!c) return envoie(res, 404, { error: { message: 'portail' } }); c.f = f; return envoie(res, 200, c); }
   const m = p.match(/^subscriptions\/(.+)$/);
   if (m && subs[m[1]]) return envoie(res, 200, subs[m[1]]);
   return envoie(res, 404, { error: { message: 'inconnu ' + p } });
@@ -129,10 +172,10 @@ const ENV = {
   RC_SECRET: 'sk_rc_essai', RC_WEBHOOK_AUTH: 'Bearer rc_webhook_essai', RC_API: ICI + '/rc/v1/'
 };
 
-function lancer(nom) {
+function lancer(nom, env = ENV) {
   const [cmd, ...args] = process.env.DENO ? [process.env.DENO] : ['npx', '--yes', 'deno@2'];
   const p = spawn(cmd, [...args, 'run', '--quiet', '--no-lock', '--allow-net', '--allow-env',
-    `supabase/functions/${nom}/index.ts`], { env: { ...process.env, ...ENV }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+    `supabase/functions/${nom}/index.ts`], { env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   p.journal = '';
   p.stdout.on('data', d => (p.journal += d)); p.stderr.on('data', d => (p.journal += d));
   return p;
@@ -232,6 +275,47 @@ async function essaisWebhook() {
   verifie('un évènement qui ne nous regarde pas : ignoré', r.statut === 200 && r.j.ignore === 'charge.refunded', r);
 }
 
+/* « Brancher Stripe » (2026-11-02) : une seule clé, sans prix ni secret de
+   webhook posés à la main ; la fonction paiement pose tout chez Stripe. */
+const SANS_REGLAGES = { ...ENV, STRIPE_PRIX_ANNUEL: '', STRIPE_PRIX_MENSUEL: '', STRIPE_WEBHOOK_SECRET: '' };
+async function essaisBrancher() {
+  let r = await appel({ action: 'etat' }, 'u1');
+  verifie('brancher : réservé à l’éditeur', r.statut === 403 && r.j.error === 'editeur', r);
+  r = await appel({ action: 'payer', formule: 'annuel' }, 'u7');
+  verifie('avant de brancher, sans prix : la page de paiement ne s’ouvre pas', r.statut === 503 && r.j.error === 'noprix', r);
+  r = await appel({ action: 'etat' }, 'editeur');
+  verifie('l’état : la clé de test est là, rien d’autre', r.statut === 200 && r.j.cle && r.j.mode === 'test' && !r.j.prix && !r.j.webhook, r.j);
+  r = await appel({ action: 'preparer' }, 'editeur');
+  const [an, mois] = ['mirandola_plus_annuel', 'mirandola_plus_mensuel'].map(k => monde.prix.find(x => x.lookup_key === k) || {});
+  verifie('brancher : tout est posé', r.statut === 200 && r.j.prix && r.j.webhook && r.j.portail, r.j);
+  verifie('… le produit et ses deux prix, ceux de l’app, TVA comprise', monde.produits.mirandola_plus && an.unit_amount === 4999
+    && an.recurring.interval === 'year' && mois.unit_amount === 699 && mois.recurring.interval === 'month'
+    && an.tax_behavior === 'inclusive' && monde.prix.length === 2, monde.prix);
+  const point = monde.points[0] || {};
+  verifie('… un point d’arrivée vers stripe-webhook, tous les évènements', monde.points.length === 1
+    && point.url === ICI + '/functions/v1/stripe-webhook' && point.enabled_events.length === 8, monde.points);
+  verifie('… son secret rangé en base, pour ce mode', reglages['test:webhook_secret'] === point.secret
+    && reglages['test:prix_annuel'] === an.id && reglages['test:portail'] === 'bpc_0', reglages);
+  verifie('… le portail : résilier à la fin de la période, retour dans l’app', monde.portails.length === 1
+    && monde.portails[0].f['features[subscription_cancel][mode]'] === 'at_period_end'
+    && monde.portails[0].f.default_return_url === 'https://mirandola.fr/app?plus=retour', monde.portails);
+  r = await appel({ action: 'preparer' }, 'editeur');
+  verifie('rebrancher ne crée rien deux fois (prix, point d’arrivée, portail)', r.statut === 200 && monde.prix.length === 2
+    && monde.points.length === 1 && monde.portails.length === 1, { prix: monde.prix.length, points: monde.points.length, portails: monde.portails.length });
+  r = await appel({ action: 'payer', formule: 'mensuel' }, 'u7');
+  verifie('payer : le prix posé par « Brancher Stripe »', r.statut === 200 && recu.checkout.at(-1)['line_items[0][price]'] === mois.id, recu.checkout.at(-1));
+  r = await appel({ action: 'gerer' }, 'u2');
+  verifie('gérer : le portail configuré par « Brancher Stripe »', r.statut === 200 && recu.portail.configuration === 'bpc_0', recu.portail);
+}
+
+async function essaisWebhookBranche() {
+  const point = monde.points[0];
+  let r = await evenement({ id: 'evt_b1', type: 'invoice.paid', data: { object: { subscription: 'sub_u1' } } }, { secret: point.secret });
+  verifie('stripe-webhook : signé du secret rangé par « Brancher Stripe », accepté', r.statut === 200 && !r.j.error, r);
+  r = await evenement({ id: 'evt_b2', type: 'invoice.paid', data: { object: { subscription: 'sub_u1' } } }, { secret: 'whsec_autre' });
+  verifie('… un autre secret : refusé', r.statut === 400, r);
+}
+
 const versRC = (corps, auth) => fetch(FONCTION, { method: 'POST', body: JSON.stringify(corps),
   headers: { 'Content-Type': 'application/json', ...(auth ? { Authorization: auth } : {}) } })
   .then(async r => ({ statut: r.status, j: await r.json().catch(() => ({})) }));
@@ -264,8 +348,8 @@ async function essaisMagasins() {
   verifie('l’évènement d’essai de RevenueCat (identifiant anonyme) : ignoré', r.statut === 200 && r.j.ecrit === 0, r);
 }
 
-async function avec(nom, essais) {
-  const p = lancer(nom);
+async function avec(nom, essais, env) {
+  const p = lancer(nom, env);
   try { await attendre(); await essais(); }
   /* Tout le groupe : lancée par `npx`, la fonction est un petit-enfant
      qu'un simple kill() laissait sur le port 8000 — la fonction suivante
@@ -283,6 +367,9 @@ serveur.listen(PORT, '127.0.0.1', async () => {
     await avec('paiement', essaisPaiement);
     await avec('stripe-webhook', essaisWebhook);
     await avec('magasins', essaisMagasins);
+    comptes.add('u7');
+    await avec('paiement', essaisBrancher, SANS_REGLAGES);
+    await avec('stripe-webhook', essaisWebhookBranche, SANS_REGLAGES);
   } catch (e) {
     console.error(e);
     resultats.push({ nom: 'démarrage', ok: false });

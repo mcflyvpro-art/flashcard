@@ -16,8 +16,7 @@
 
    Une étape : `ic` (ce qu'on touche, dessiné à l'écran), `texte` (les mots
    entre ** sont ceux de l'écran du téléphone, en gras), `s` (la scène de
-   l'animation qu'elle accompagne : 1 la barre du navigateur, 2 son menu,
-   3 l'écran d'accueil). */
+   l'animation qui la rejoue, une par étape). */
 
 const APPS = /FBAN|FBAV|FB_IAB|Instagram|Snapchat|TikTok|musical_ly|Bytedance|Line\/|LinkedInApp|Twitter|Pinterest|GSA\/|Discord|MicroMessenger/;
 
@@ -52,76 +51,109 @@ export function lienChrome(url) {
     + `package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`;
 }
 
+/* Les mots de l'écran du téléphone, dans SA langue (2026-11-02) : un
+   iPhone réglé en anglais dit « Add to Home Screen », pas « Sur l'écran
+   d'accueil » — l'élève cherchait un mot qui n'était pas là. La phrase reste
+   en français, les mots en gras sont ceux qu'il voit. Une autre langue :
+   l'anglais, le plus souvent reconnu. Libellés relevés sur iOS 26 (feuille
+   de partage : « En voir plus » / « View More »), Chrome et Samsung Internet. */
+export const MOTS = {
+  fr: { partager: 'Partager', plus: 'En voir plus', accueil: 'Sur l’écran d’accueil', ajouter: 'Ajouter', annuler: 'Annuler',
+    webapp: 'Ouvrir comme app web', copier: 'Copier', installerApp: 'Installer l’application', installer: 'Installer',
+    ajouterAccueil: 'Ajouter à l’écran d’accueil', pageA: 'Ajouter la page à', ecranAccueil: 'Écran d’accueil',
+    telephone: 'Ajouter au téléphone', ouvrirDans: n => `Ouvrir dans ${n}`, navigateur: 'dans le navigateur' },
+  en: { partager: 'Share', plus: 'View More', accueil: 'Add to Home Screen', ajouter: 'Add', annuler: 'Cancel',
+    webapp: 'Open as Web App', copier: 'Copy', installerApp: 'Install app', installer: 'Install',
+    ajouterAccueil: 'Add to Home screen', pageA: 'Add page to', ecranAccueil: 'Home screen',
+    telephone: 'Add to phone', ouvrirDans: n => `Open in ${n}`, navigateur: 'in browser' }
+};
+export const langueEcran = (langues = []) => (String(langues[0] || 'fr').toLowerCase().startsWith('fr') ? 'fr' : 'en');
+
+/* Une étape : `ic` ce qu'on touche, `texte` (les mots de l'écran entre **),
+   `s` la scène qui la rejoue (ui/pwa.js) : `barre` le navigateur et son
+   bouton, `menu` son menu, `feuille` la feuille de partage d'iOS, `liste`
+   ses actions, `ajout` l'écran qui confirme, `accueil` l'écran d'accueil,
+   `page` le bouton de la page, `nav` le navigateur où l'on passe. */
 const E = (ic, texte, s) => ({ ic, texte, s });
-const AJOUTER = E('ajouter', 'Fais défiler, choisis **Sur l’écran d’accueil**', 2);
-const CONFIRMER = E('ok', 'Touche **Ajouter**', 2);
 
 /* La dernière étape : ouvrir Mirandola par son icône. Sur iPhone, l'app de
    l'écran d'accueil n'a pas le stockage de Safari : on s'y connecte. Sur
    Android elle partage celui du navigateur : une session ouverte suit. */
-const ouvrir = (ios, session) => E('folio', session && !ios ? 'Ouvre **Mirandola** sur ton écran d’accueil : ton compte t’y attend'
-  : 'Ouvre **Mirandola** sur ton écran d’accueil et connecte-toi', 3);
+const ouvrir = (ios, session) => E('folio', session && !ios ? 'Ouvre **Mirandola** par son icône : ton compte t’y attend'
+  : 'Ouvre **Mirandola** par son icône et connecte-toi', 'accueil');
 
 /* Ce que la porte montre : `cas`, `titre`, les `etapes`, la `fleche`
    (bas, bas-droite, haut-droite ou rien : là où se trouve le bouton du
    navigateur), le `bouton` principal (installer : l'invite du navigateur ;
    chrome : ouvrir dans Chrome ; copier : copier le lien), le `secours`
-   (ce qu'on propose à qui ne trouve pas) et `ligne`, le mot du menu que
-   l'animation allume. Sur iOS, le secours est toujours Safari : un lien
-   ouvert depuis Gmail ou une autre app s'affiche dans un Safari réduit,
-   sans « Sur l'écran d'accueil », et sa signature est celle de Safari.
+   (ce qu'on propose à qui ne trouve pas), `ligne` (le mot du menu que
+   l'animation allume), `mots` (les libellés de l'écran, pour l'animation)
+   et `ios26`. Sur iOS, le secours est toujours Safari : un lien ouvert
+   depuis Gmail ou une autre app s'affiche dans un Safari réduit, sans
+   « Sur l'écran d'accueil », et sa signature est celle de Safari.
    `invite` : le navigateur a proposé d'installer en un geste
-   (beforeinstallprompt : Chrome, Edge, Samsung Internet). */
-export function guide(os, n, { invite = false, session = false } = {}) {
-  if (n.nom === 'integre') return sortir(os === 'ios');
-  return os === 'ios' ? guideIos(n, session) : guideAndroid(n, invite, session);
+   (beforeinstallprompt : Chrome, Edge, Samsung Internet). `ios26` : la
+   feuille de partage d'iOS 26 range ses actions derrière « En voir plus »
+   (vu sur l'iPhone de l'utilisateur, Chrome, le 2026-11-02) ; Safari le dit
+   par `Version/26`, les autres navigateurs d'iOS non (leur signature reste
+   « iPhone OS 18_6 ») : l'écran le devine à ce que son moteur sait faire. */
+export function guide(os, n, { invite = false, session = false, langue = 'fr', ios26 = false } = {}) {
+  const m = MOTS[langue] || MOTS.fr;
+  const r = n.nom === 'integre' ? sortir(os === 'ios', m)
+    : os === 'ios' ? guideIos(n, session, m, ios26 || (n.nom === 'safari' && n.version >= 26)) : guideAndroid(n, invite, session, m);
+  return { ...r, mots: m };
 }
 
-function sortir(ios) {
+function sortir(ios, m) {
   const nav = ios ? 'Safari' : 'Chrome';
   return {
-    cas: 'integre', titre: `Continue dans ${nav}`, fleche: 'haut-droite', ligne: `Ouvrir dans ${nav}`,
+    cas: 'integre', titre: `Continue dans ${nav}`, fleche: 'haut-droite', ligne: m.ouvrirDans(nav), ios26: false,
     bouton: ios ? 'copier' : 'chrome', secours: ios ? null : 'copier',
-    etapes: [E('points', 'Touche **•••**, en haut à droite', 1),
-      E('sortir', `Choisis **Ouvrir dans ${nav}** ou **dans le navigateur**`, 2),
-      E('folio', 'Mirandola t’y montrera la suite', 3)]
+    etapes: [E('points', 'Touche **•••**, en haut à droite', 'barre'),
+      E('sortir', `Choisis **${m.ouvrirDans(nav)}** ou **${m.navigateur}**`, 'menu'),
+      E('folio', 'Mirandola t’y montrera la suite', 'nav')]
   };
 }
 
 // le bouton Partager de chaque navigateur d'iOS, et où il est ; la suite est la même partout
-function guideIos(n, session) {
+function guideIos(n, session, m, ios26) {
+  const P = `**${m.partager}**`;
   const [cas, fleche, premiere] = n.nom === 'safari'
-    ? (n.tablette ? ['ipad', 'haut-droite', E('partager', 'Touche **Partager**, en haut à droite', 1)]
-      : n.version >= 26 ? ['ios26', 'bas-droite', E('points', 'Touche **•••** en bas à droite, puis **Partager**', 1)]
-        : ['ios', 'bas', E('partager', 'Touche **Partager**, en bas de l’écran', 1)])
-    : n.nom === 'chrome' ? ['ios-chrome', 'haut-droite', E('partager', 'Touche **Partager**, dans la barre d’adresse', 1)]
-      : n.nom === 'firefox' ? ['ios-firefox', 'bas-droite', E('menu3', 'Touche **≡** en bas à droite, puis **Partager**', 1)]
-        : ['ios-autre', null, E('partager', 'Dans le menu de ton navigateur, touche **Partager**', 1)];
-  return { cas, titre: 'Installe Mirandola', fleche, ligne: 'Sur l’écran d’accueil', bouton: null, secours: 'safari',
-    etapes: [premiere, AJOUTER, CONFIRMER, ouvrir(true, session)] };
+    ? (n.tablette ? ['ipad', 'haut-droite', E('partager', `Touche ${P}, en haut à droite`, 'barre')]
+      : n.version >= 26 ? ['ios26', 'bas-droite', E('points', `Touche **•••** en bas à droite, puis ${P}`, 'barre')]
+        : ['ios', 'bas', E('partager', `Touche ${P}, en bas de l’écran`, 'barre')])
+    : n.nom === 'chrome' ? ['ios-chrome', 'haut-droite', E('partager', `Touche ${P}, en haut à droite`, 'barre')]
+      : n.nom === 'firefox' ? ['ios-firefox', 'bas-droite', E('menu3', `Touche **≡** en bas à droite, puis ${P}`, 'barre')]
+        : ['ios-autre', null, E('partager', `Dans le menu de ton navigateur, touche ${P}`, 'barre')];
+  const etapes = ios26
+    ? [premiere, E('plus', `Touche **${m.plus}**, au bout de la rangée`, 'feuille'),
+      E('ajouter', `Touche **${m.accueil}**`, 'liste')]
+    : [premiere, E('ajouter', `Fais défiler, choisis **${m.accueil}**`, 'liste')];
+  return { cas, titre: 'Installe Mirandola', fleche, ligne: m.accueil, bouton: null, secours: 'safari', ios26,
+    etapes: [...etapes, E('ok', `Touche **${m.ajouter}**, en haut à droite`, 'ajout'), ouvrir(true, session)] };
 }
 
 // Android : l'invite du navigateur installe en un geste ; sinon, son menu, dans ses mots
 const ANDROID = {
-  samsung: ['bas-droite', 'Écran d’accueil', [E('menu3', 'Touche **≡**, en bas à droite', 1),
-    E('ajouter', 'Choisis **Ajouter la page à**, puis **Écran d’accueil**', 2)]],
-  edge: ['bas', 'Ajouter au téléphone', [E('points', 'Touche **•••**, en bas de l’écran', 1),
-    E('ajouter', 'Choisis **Ajouter au téléphone**', 2)]],
-  firefox: [null, 'Ajouter à l’écran d’accueil', [E('menu', 'Touche le menu **⋮**', 1),
-    E('ajouter', 'Choisis **Ajouter à l’écran d’accueil**', 2), E('ok', 'Confirme : **Ajouter**', 2)]],
-  chrome: ['haut-droite', 'Installer l’application', [E('menu', 'Touche **⋮**, en haut à droite', 1),
-    E('ajouter', 'Choisis **Installer l’application**', 2), E('ok', 'Confirme : **Installer**', 2)]],
-  autre: [null, 'Installer l’application', [E('menu', 'Ouvre le menu de ton navigateur', 1),
-    E('ajouter', 'Choisis **Installer l’application** ou **Ajouter à l’écran d’accueil**', 2)]]
+  samsung: m => ['bas-droite', m.pageA, [E('menu3', 'Touche **≡**, en bas à droite', 'barre'),
+    E('ajouter', `Choisis **${m.pageA}**, puis **${m.ecranAccueil}**`, 'menu')]],
+  edge: m => ['bas', m.telephone, [E('points', 'Touche **•••**, en bas de l’écran', 'barre'),
+    E('ajouter', `Choisis **${m.telephone}**`, 'menu')]],
+  firefox: m => [null, m.ajouterAccueil, [E('menu', 'Touche le menu **⋮**', 'barre'),
+    E('ajouter', `Choisis **${m.ajouterAccueil}**`, 'menu'), E('ok', `Confirme : **${m.ajouter}**`, 'ajout')]],
+  chrome: m => ['haut-droite', m.installerApp, [E('menu', 'Touche **⋮**, en haut à droite', 'barre'),
+    E('ajouter', `Choisis **${m.installerApp}**`, 'menu'), E('ok', `Confirme : **${m.installer}**`, 'ajout')]],
+  autre: m => [null, m.installerApp, [E('menu', 'Ouvre le menu de ton navigateur', 'barre'),
+    E('ajouter', `Choisis **${m.installerApp}** ou **${m.ajouterAccueil}**`, 'menu')]]
 };
-function guideAndroid(n, invite, session) {
+function guideAndroid(n, invite, session, m) {
   const fin = ouvrir(false, session);
-  if (invite) return { cas: 'invite', titre: 'Installe Mirandola', fleche: null, ligne: 'Installer', bouton: 'installer', secours: null,
-    etapes: [E('installer', 'Touche **Installer Mirandola**', 1), E('ok', 'Confirme : **Installer**', 2), fin] };
+  if (invite) return { cas: 'invite', titre: 'Installe Mirandola', fleche: null, ligne: m.installer, bouton: 'installer', secours: null, ios26: false,
+    etapes: [E('installer', 'Touche **Installer Mirandola**', 'page'), E('ok', `Confirme : **${m.installer}**`, 'ajout'), fin] };
   const cle = ANDROID[n.nom] ? n.nom : 'autre';
-  const [fleche, ligne, etapes] = ANDROID[cle];
+  const [fleche, ligne, etapes] = ANDROID[cle](m);
   return { cas: { chrome: 'android', autre: 'android-autre' }[cle] || cle, titre: 'Installe Mirandola', fleche, ligne, bouton: null,
-    secours: cle === 'autre' ? 'chrome' : null, etapes: [...etapes, fin] };
+    secours: cle === 'autre' ? 'chrome' : null, ios26: false, etapes: [...etapes, fin] };
 }
 
 /* Le texte d'une étape, ses mots d'écran en gras : `esc` échappe d'abord
