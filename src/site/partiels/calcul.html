@@ -1,0 +1,25 @@
+<!-- Le prix d'une licence : la grille de src/tarifs.js (site.js en fait
+     le calcul ; test/site.test.js garde ce tableau d'accord avec elle). -->
+<div class="calcul rv" id="calcul-campus">
+  <div class="calcul-tete">
+    <h3>Combien pour mon établissement&#8239;?</h3>
+    <p>Une place par élève et par professeur. Chaque tranche a son prix&#8239;: plus vous êtes nombreux, moins la place coûte.</p>
+  </div>
+  <div class="calcul-corps">
+    <label class="calcul-champ" for="calcul-places"><span>Élèves et professeurs</span>
+      <input id="calcul-places" type="number" inputmode="numeric" min="1" max="20000" value="500"></label>
+    <input id="calcul-curseur" type="range" min="10" max="3000" step="10" value="500" aria-label="Élèves et professeurs">
+    <p class="calcul-total" aria-live="polite"><b id="calcul-prix">1&#8239;900&nbsp;€&nbsp;HT</b> par an<span id="calcul-moyen">, soit 3,80&nbsp;€&nbsp;HT la place</span></p>
+  </div>
+  <table class="tranches">
+    <caption class="cache">Le prix d’une place, tranche par tranche</caption>
+    <thead><tr><th scope="col">Places</th><th scope="col">Par place et par an</th></tr></thead>
+    <tbody>
+      <tr data-tranche="0"><td>1 à 100</td><td>5&nbsp;€&nbsp;HT</td></tr>
+      <tr data-tranche="1"><td>101 à 500</td><td>3,50&nbsp;€&nbsp;HT</td></tr>
+      <tr data-tranche="2"><td>501 à 1&#8239;500</td><td>2,50&nbsp;€&nbsp;HT</td></tr>
+      <tr data-tranche="3"><td>Au-delà</td><td>2&nbsp;€&nbsp;HT</td></tr>
+    </tbody>
+  </table>
+  <p class="petit calcul-pied">100&nbsp;€&nbsp;HT minimum par an. Démo gratuite de 30 jours pour 60 élèves, sans engagement.</p>
+</div>

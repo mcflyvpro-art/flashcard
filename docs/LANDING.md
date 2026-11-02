@@ -328,6 +328,26 @@ sur mobile doit être revu, et le logo Mirandola Campus mieux cadré ».
 - [x] T6.2 La marque Campus : sur iPhone, « Mirandola *Campus* » passait sur deux lignes et le carré du logo restait seul en haut à gauche. **Fait** : au téléphone, la marque se met en colonne — le logo centré au-dessus, le nom sur une ligne dessous, à la taille de l'écran (`min(36px, 8.6vw)`).
 - [x] T6.3 Les textes au téléphone : le surtitre du moteur se coupe entre ses deux morceaux et jamais ailleurs (`.surtitre .bloc` : il finissait « … · LE » en bout de ligne) ; l'axe du graphique perd « 1 sem. », collé à « 1 mois » ; à 320 px, « Ouvrir mon espace professeur » dépassait l'écran de 10 px (la page défilait de côté) : il prend la largeur. Vérifié à 320, 360, 375 et 390 px : aucune page plus large que l'écran, aucun texte qui déborde de sa boîte.
 
+## Tour 7 : le référencement « à fond » (2026-11-02, en cours)
+
+La demande : « gère en totalité le SEO de mirandola.fr, à fond ; dis-moi
+comment tester, visualiser, comprendre ; rends le résultat Google hyper
+beau, avec des sous-liens ». Branche `claude/mirandola-seo-optimization-gucemk`.
+Décision : l'accueil reste tel quel ; le site gagne **sept pages**, une par
+recherche (les sous-liens de Google se font à partir de pages distinctes).
+L'utilisateur a demandé une pause pour comprendre (« tu refais tout le
+site ? ») : réponse donnée, **attendre son accord** avant de pousser sur
+`main`, et lui demander si le menu de l'accueil garde le défilement vers
+ses sections (#moteur, #campus, #tarifs) ou mène aux nouvelles pages.
+
+- [x] T7.1 Le site à plusieurs pages : `src/site/pages.js` (la liste : adresse, titre, description, date), `tools/site/gabarit.js` (les marqueurs `<!-- @meta -->`, `@icones`, `@tete`, `@pied`, `@tarifs h=…`, `@calcul`, `@appel`, `@appel-campus`, `@ariane`, `@courbe`, posés depuis `src/site/partiels/` ; la FAQ en données structurées tirée du texte affiché ; le sitemap généré), `vite.config.js` (entrées, relais `/tarifs` → `tarifs.html`), `src/sw.js` (ne sert ni ne range les pages du site : rangées sous « app », elles prenaient sa place hors ligne), `src/site/commun.js` (partagé par `site.js` et `page.js`), `src/site/pages.css`. `public/sitemap.xml` retiré (il est fabriqué au build).
+- [x] T7.2 Les sept pages écrites : `flashcards-ia.html`, `repetition-espacee.html` (article, courbe de l'oubli dessinée au build), `etablissements.html`, `professeurs.html`, `tarifs.html`, `anki-quizlet.html` (comparatif daté, marques citées), `a-propos.html` (Pic de la Mirandole, la ville, données structurées qui les distinguent de l'app). Captures 390 et 1440 px relues, aucun débordement, aucune erreur de console.
+- [ ] T7.3 `vercel.json` : `/tarifs/` → `/tarifs` (et chaque page), sinon l'app répond ; vérifier sur une préversion que `/tarifs` sert bien `tarifs.html` (le système de fichiers passe avant la réécriture).
+- [ ] T7.4 Accueil : `Organization`/`WebSite` renforcés (`alternateName`, `slogan`), liens contextuels vers les pages, `favicon.ico` et `favicon-48.png` et `apple-touch-icon.png` à la racine (`tools/icones.js`), `llms.txt`, clé IndexNow + `tools/indexnow.js`, images de partage par page (`public/site/og/*.jpg`, `tools/affiches.js`).
+- [ ] T7.5 `tools/budget.js` : une part par page du site (aujourd'hui seule l'accueil est comptée, et les fichiers des autres pages tomberaient dans « à la demande »).
+- [ ] T7.6 Tests : `test/seo.test.js` (titre ≤ 60 signes, description 110 à 160, canonique, un seul h1, JSON-LD, fil d'Ariane, FAQ identique, liens internes valides, aucune adresse qui croise `src/routes.js`, sitemap = la liste, aucun tiret long ni « fiche »), `e2e/pages.e2e.js`, Lighthouse.
+- [ ] T7.7 `docs/SEO.md` : Search Console (DNS chez OVH), Bing, outils de test, sous-liens, la ville de Mirandola, actions hors site ; CLAUDE.md et PROGRESS.md ; push branche puis `main` après accord.
+
 ## Ce qui reste à décider (l'utilisateur)
 
 - **Les prix** (2026-10-28) : Mirandola+ 6,99 €/mois ou

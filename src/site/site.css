@@ -792,9 +792,9 @@ button{font:inherit;color:inherit}
 
 /* ---------- le pied de page ---------- */
 .pied{margin-top:clamp(70px,9vw,110px);padding:56px 0 28px;border-top:1px solid var(--filet)}
-.pied-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:40px}
+.pied-in{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,3fr);gap:40px}
 .pied-marque p{margin-top:12px;color:var(--doux);font-family:var(--serif);font-style:italic;font-size:17px}
-.pied-liens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.pied-liens{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
 .pied-liens h2{margin-bottom:12px;font:800 12px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--doux)}
 .pied-liens a,.pied-liens .lien{display:block;padding:6px 0;color:var(--encre2);text-decoration:none;font-size:15px;text-align:left}
 .pied-liens a:hover,.pied-liens .lien:hover{color:var(--encre)}
@@ -834,6 +834,14 @@ button{font:inherit;color:inherit}
   .t-partout{grid-column:span 3;display:flex;align-items:stretch}
   .t-partout h3{margin-top:auto;align-self:auto}
   .t-partout .tuile-dessin{height:170px}
+}
+/* cinq liens dans l'en-tête depuis qu'il mène aux pages du site
+   (2026-11-02) : sur un petit écran d'ordinateur, « Démo » et « J'ai un
+   code » laissent la place (ils restent dans le héros, l'appel final et le
+   pied de page) */
+@media (max-width:1180px){
+  .tete-demo,.tete-code{display:none}
+  .tete-liens a{padding:9px 11px}
 }
 @media (max-width:900px){
   /* au téléphone, l'inscription reste en vue ; « Se connecter » est dans le menu */

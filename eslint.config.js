@@ -34,7 +34,7 @@ export default [
   },
   {
     files: ['src/sw.js'],
-    languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker, __SHELL__: 'readonly' } }
+    languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker, __SHELL__: 'readonly', __PAGES__: 'readonly' } }
   },
   {
     files: ['*.config.js', 'tools/**/*.js'],

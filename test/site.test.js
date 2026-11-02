@@ -6,8 +6,11 @@
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { rendreFichier } from '../tools/site/gabarit.js';
 
-const html = readFileSync('index.html', 'utf8');
+/* la page telle que le build la sert : ses morceaux communs posés
+   (src/site/partiels/, tools/site/gabarit.js) */
+const html = rendreFichier('index.html');
 const vercel = JSON.parse(readFileSync('vercel.json', 'utf8'));
 const csp = vercel.headers.flatMap(h => h.headers)
   .find(h => /^Content-Security-Policy/.test(h.key)).value;
