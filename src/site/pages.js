@@ -28,14 +28,14 @@ export const PAGES = [
   {
     chemin: '/', fichier: 'index.html', nom: 'Accueil',
     titre: 'Mirandola : flashcards IA et répétition espacée pour réviser',
-    description: 'L’IA fait de ton cours des flashcards, et Mirandola te les repose juste avant l’oubli, avec l’algorithme d’Anki. Gratuit, hors ligne, pour élèves, profs et lycées.',
+    description: 'L’IA fait de ton cours des flashcards, Mirandola te les repose juste avant l’oubli, avec l’algorithme d’Anki. Gratuit, hors ligne, pour élèves, profs et lycées.',
     maj: '2026-11-02', image: '/site/og.jpg',
     imageAlt: 'Mirandola, l’app de révision : trois livres empilés, l’app sur ordinateur et téléphone, et une page de flashcard'
   },
   {
     chemin: '/flashcards-ia', fichier: 'flashcards-ia.html', nom: 'Flashcards avec l’IA',
     titre: 'Créer des flashcards avec l’IA, depuis ton cours | Mirandola',
-    description: 'Colle ton cours, prends une photo de ton cahier ou importe un PDF : l’IA de Mirandola en fait un livre de flashcards en quelques secondes. Essai gratuit.',
+    description: 'Colle ton cours, prends une photo de ton cahier ou importe un PDF : l’IA de Mirandola en fait un livre de flashcards en quelques secondes, prêt à réviser.',
     maj: '2026-11-02', image: '/site/og/flashcards-ia.jpg',
     imageAlt: 'Un cours transformé en livre de flashcards par l’IA de Mirandola'
   },

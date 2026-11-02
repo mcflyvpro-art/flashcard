@@ -19,7 +19,17 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-11-02 · Retours de l'utilisateur, ses captures à
+DERNIER   2026-11-02 (nuit) · Le référencement « à fond »
+          (docs/SEO.md) : le site passe de une à huit pages, une par
+          recherche (flashcards IA, répétition espacée, établissements,
+          professeurs, tarifs, Anki ou Quizlet, pourquoi Mirandola),
+          tirées d'une seule liste (src/site/pages.js) par un gabarit
+          (tools/site/gabarit.js : balises, fil d'Ariane, FAQ et sitemap
+          générés) ; favicon à la racine, images de partage par page,
+          llms.txt, IndexNow ; test/seo.test.js et e2e/pages.e2e.js.
+          Reste à l'utilisateur : Search Console (TXT chez OVH), Bing,
+          les profils officiels. Aucune tâche cochée.
+Avant :   2026-11-02 · Retours de l'utilisateur, ses captures à
           l'appui : « Reprendre » ne montre plus un livre supprimé ; la
           page d'accueil au téléphone (les trois noms d'offres du tableau
           se chevauchaient, la marque Campus décentrée, un bouton plus

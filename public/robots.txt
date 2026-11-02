@@ -1,4 +1,6 @@
-# Mirandola : tout se lit, sauf l'app elle-même (elle porte aussi « noindex »).
+# Mirandola : tout se lit. Les écrans de l'app (/connexion, /essayer…)
+# portent « noindex » : Google les visite sans les mettre dans ses résultats.
+# Les pages du site et le sitemap : src/site/pages.js, docs/SEO.md.
 User-agent: *
 Allow: /
 

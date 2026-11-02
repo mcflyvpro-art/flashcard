@@ -37,7 +37,8 @@ export function decoder(t) {
 export const texte = h => decoder(h.replace(/<[^>]+>/g, ' ')).replace(/[ \t\n\r]+/g, ' ')
   .replace(/ ([,.)])/g, '$1').trim();
 const attr = t => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-const json = o => JSON.stringify(o, null, 2).replace(/</g, '\\u003c');
+/* sur une ligne : des octets en moins pour la page, rien en moins pour Google */
+const json = o => JSON.stringify(o).replace(/</g, '\\u003c');
 
 /* Les questions d'une page, dans l'ordre : { question, reponse }. */
 export function questions(html) {
@@ -213,6 +214,35 @@ ${PAGES.map(url).join('\n')}
 `;
 }
 
+/** llms.txt : le site en quelques lignes, pour les assistants qui cherchent
+ *  sur le web (ChatGPT, Perplexity, Claude…) — la convention de llmstxt.org.
+ *  Tiré de la même liste que le sitemap : il ne peut pas dire autre chose. */
+export function llms() {
+  const accueil = PAGES[0];
+  return `# Mirandola
+
+> ${accueil.description}
+
+Mirandola est une application de révision en français (PWA, sur téléphone et
+ordinateur, hors ligne) : l'IA fait d'un cours, d'une photo ou d'un PDF un
+livre de flashcards, et le moteur de répétition espacée FSRS repose chaque
+page juste avant l'oubli. Trois offres : Mirandola (gratuit), Mirandola+
+(abonnement) et Mirandola Campus (licence d'établissement scolaire). Le nom
+vient de Pic de la Mirandole ; l'app n'a pas de lien avec la ville
+italienne de Mirandola.
+
+## Pages
+
+${PAGES.map(p => `- [${p.nom}](${adresse(p)}) : ${p.description}`).join('\n')}
+
+## Essayer
+
+- [Essayer sans compte](${SITE}/essayer) : la démo, dans un lycée fictif
+- [Créer un compte](${SITE}/inscription)
+- [Demander une démo pour un établissement](${SITE}/demande-demo)
+`;
+}
+
 /** Le greffon Vite : les pages comme entrées, leurs marqueurs remplacés, le sitemap écrit. */
 export function pagesDuSite() {
   return {
@@ -226,6 +256,7 @@ export function pagesDuSite() {
     },
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemap() });
+      this.emitFile({ type: 'asset', fileName: 'llms.txt', source: llms() });
     }
   };
 }

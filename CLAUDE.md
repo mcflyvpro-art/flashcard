@@ -55,7 +55,8 @@ l'air de marcher ».
 ## Architecture réelle (à ne pas supposer autrement)
 
 - **Build Vite, sans framework ni dépendance à l'exécution.**
-  - **Deux pages** (build multi-pages, `vite.config.js`), depuis le 2026-10-26 :
+  - **Le site et l'app** (build multi-pages, `vite.config.js`), depuis le 2026-10-26 ;
+    **huit pages de site** depuis le 2026-11-02 (le référencement, plus bas) :
     `index.html` — la **page d'accueil du site**, servie à `/` (B2C et B2B,
     tarifs, SEO ; tout son texte en HTML statique), `src/site/` pour son
     style et son script ; elle ne charge jamais l'app ni n'enregistre le
@@ -89,13 +90,48 @@ l'air de marcher ».
     et sur l'écran d'ouverture ; les onglets du téléphone gardent leur titre
     en haut, sans logo (demandé le 2026-10-27) ; les icônes installées (`public/icons/*.png`) se
     photographient depuis `public/site/icone.svg` (`node tools/icones.js`).
-    **Référencement** (2026-10-28, mirandola.fr) : titre et description
+    **Référencement** (2026-10-28, mirandola.fr ; « à fond » le 2026-11-02,
+    **tout est dans `docs/SEO.md`**, y compris ce que l'utilisateur fait
+    lui-même : Search Console, Bing, profils, liens) : titre et description
     sur les mots qu'on cherche (flashcards, IA, répétition espacée), balise
-    canonique et `hreflang` vers `https://mirandola.fr/`, données
-    structurées (Organization, WebSite, SoftwareApplication avec ses offres
-    — Mirandola+ au mois et à l'année, Campus par place —, ses fonctions et
-    ses captures, et la FAQ entière, mot pour mot celle de la page),
-    `public/sitemap.xml`, `public/robots.txt`.
+    canonique et `hreflang`, données structurées (Organization et WebSite
+    avec leur `alternateName` et le logo, SoftwareApplication avec ses
+    offres — Mirandola+ au mois et à l'année, Campus par place —, ses
+    fonctions et ses captures), `public/robots.txt`. **Le site a huit pages**
+    (2026-11-02 : sans plusieurs pages, ni sous-liens sous le résultat, ni
+    place sur « répétition espacée » ou « Anki ou Quizlet ») :
+    `flashcards-ia.html`, `repetition-espacee.html` (un article, la courbe de
+    l'oubli dessinée au build), `etablissements.html`, `professeurs.html`,
+    `tarifs.html`, `anki-quizlet.html` (comparatif daté, marques citées),
+    `a-propos.html` (Pic de la Mirandole ; la ville, distinguée de l'app en
+    données structurées), servies à leur adresse sans extension (Vercel
+    sert le fichier avant la réécriture vers l'app ; `/tarifs/` redirige
+    vers `/tarifs`). **`src/site/pages.js` est la seule liste** (adresse,
+    fichier, nom, titre ≤ 60 signes, description de 110 à 160, `maj`,
+    image de partage) : `tools/site/gabarit.js` en tire les entrées du build,
+    la tête de chaque page (`<!-- @meta -->` : canonique, Open Graph,
+    WebPage et fil d'Ariane), le sitemap (`dist/sitemap.xml`, plus de
+    fichier à la main) et `llms.txt` ; il pose aussi les morceaux communs de
+    `src/site/partiels/` (`@icones`, `@tete`, `@pied` avec « J'ai un code »,
+    `@tarifs h=h1|h2` — les offres, écrites une fois pour l'accueil et
+    `/tarifs` —, `@calcul`, `@appel`, `@appel-campus`, `@ariane`, `@courbe`)
+    et tire la FAQ en données structurées du texte affiché (`.questions
+    details`, sur toute page qui en a). Les autres pages chargent `site.css`
+    puis `src/site/pages.css`, et `src/site/page.js` ; l'accueil et elles
+    partagent `src/site/commun.js` (en-tête, menu, « J'ai un code », tarifs,
+    calculateur). L'en-tête mène aux pages (Flashcards IA, Le moteur,
+    Établissements, Tarifs, Démo), le pied a quatre colonnes. **Le service
+    worker ne sert ni ne range ces pages** (`PAGES` de `src/sw.js`, rempli au
+    build) : rangées sous « app », elles en prenaient la place hors ligne.
+    Le favicon est aussi à la racine (`favicon.ico`, `favicon-48.png`,
+    `apple-touch-icon.png`, écrits par `node tools/icones.js`), chaque page a
+    son image de partage (`public/site/og/`, `node tools/affiches.js
+    pages`), une clé IndexNow vit à la racine (`public/<clé>.txt`,
+    `node tools/indexnow.js`). Preuve : `test/seo.test.js` (page par page :
+    titre, description, canonique, h1 unique, données structurées, FAQ
+    identique au texte, liens, prix égaux à `FORMULES` et à la grille
+    Campus, sitemap, robots, favicon, aucune adresse qui croise
+    `src/routes.js`) et `e2e/pages.e2e.js`.
     Parcours : `e2e/site.e2e.js`. **Tout est dans `docs/LANDING.md`** (dont
     comment insérer les vidéos).
     `app.html` — l'app (`noindex`) : écran d'ouverture inline, charge
@@ -1168,13 +1204,15 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 127 Ko (les visages, puis les codes qui attendent la connexion, 2026-10-29 ; 126,9 le 2026-11-02, avec la porte du PDF : plus de place), CSS ≤ 25 Ko ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 48 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 127 Ko (les visages, puis les codes qui attendent la connexion, 2026-10-29 ; 126,9 le 2026-11-02, avec la porte du PDF : plus de place), CSS ≤ 25 Ko ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 50 (les liens vers les autres pages, 2026-11-02), la plus lourde des autres pages du site ≤ 40 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
 python3 tools/logo.py                # le logo (public/site/, public/favicon.svg, sprite de index.html)
 node tools/affiches.js               # affiches du site, image de partage, captures du manifeste, depuis la démo (vite preview --port 4190 d'abord) ; `node tools/affiches.js prof-mobile` : celles-là seules
-node tools/icones.js                 # icônes de l'app installée (public/icons/), depuis public/site/icone.svg
+node tools/icones.js                 # icônes de l'app installée (public/icons/), depuis public/site/icone.svg, et le favicon de la racine (favicon.ico, favicon-48.png, apple-touch-icon.png)
+node tools/affiches.js pages         # l'image de partage de chaque page du site (public/site/og/), sans serveur
+node tools/indexnow.js               # après une mise en ligne qui change le texte d'une page : prévient Bing (IndexNow) ; `node tools/indexnow.js /tarifs` : celle-là seule
 node tools/paiement/essai.js         # les fonctions paiement (dont « Brancher Stripe »), stripe-webhook et magasins sous Deno, face à un faux Stripe et un faux RevenueCat (DENO=chemin, sinon npx deno@2)
 node tools/courriels-auth.js         # les modèles d'e-mail de Supabase Auth, en français (supabase/courriels/, à coller dans le tableau de bord : docs/COURRIELS.md)
 bash tools/academie/installer.sh     # la Mirandola Academy, une fois : Python à part (.academie/), voix de repli Kokoro sans clé
