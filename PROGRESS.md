@@ -29,7 +29,11 @@ DERNIER   2026-11-02 · Retours de l'utilisateur, ses captures à
           modifiables, imprimable) ; « Brancher Stripe » (une clé, un
           bouton) ; l'alerte e-mail d'une demande de démo et les e-mails
           de Supabase Auth en français (Brevo, docs/COURRIELS.md). M12.T1
-          avance : reste la clé Stripe. Aucune tâche cochée.
+          avance : reste la clé Stripe. Le soir : Brevo créé, ses 4
+          enregistrements DNS posés chez OVH et publiés (vérifié) ;
+          docs/COURRIELS.md refait en liste de cases, d'après les écrans
+          (adresses par redirection OVH, MX Plan « redirect »). Aucune
+          tâche cochée.
 Avant :   2026-10-29 (soir, quater) · « IA indisponible » pour tous :
           la fonction ai n'autorisait pas l'en-tête apikey que l'app
           envoie — le navigateur n'envoyait jamais la demande (OPTIONS 200,

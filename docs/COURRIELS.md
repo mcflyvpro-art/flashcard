@@ -1,137 +1,223 @@
 # Les e-mails de Mirandola : envoyer, recevoir
 
-Écrit le 2026-11-02. Ce qu'il faut : **vérifier l'adresse** de qui crée un
-compte (aujourd'hui on peut s'inscrire avec une adresse qui n'existe pas :
+Écrit le 2026-11-02, refait le même jour d'après les captures de Brevo et
+d'OVH. Ce qu'il faut : **vérifier l'adresse** de qui crée un compte
+(aujourd'hui on peut s'inscrire avec une adresse qui n'existe pas :
 « Confirm email » est coupé dans Supabase depuis le 2026-10-29, faute de
 serveur d'envoi), le **mot de passe oublié**, et **être prévenu** quand un
-établissement demande une démo (aujourd'hui la demande n'apparaît que dans
-la console de l'éditeur).
+établissement demande une démo.
 
 ## Le choix : Brevo pour envoyer, OVH pour recevoir
 
 - **Brevo** (brevo.com) : français, serveurs en Europe (RGPD), **gratuit
-  jusqu'à 300 e-mails par jour**, sans carte bancaire. Il donne les deux
-  portes dont on a besoin : un serveur SMTP (Supabase Auth s'y branche :
-  confirmation de l'adresse, mot de passe oublié, changement d'adresse) et
-  une API (la fonction `prevenir` : l'alerte d'une demande de démo, l'accusé
-  de réception). Resend serait aussi simple, mais il est américain et
-  plafonne à 100 par jour.
-- **OVH** (où est le domaine `mirandola.fr` : ses serveurs de noms sont
-  `dns103.ovh.net` et `ns103.ovh.net`) : on y pose les enregistrements DNS de
-  Brevo, et ses **redirections e-mail gratuites** font arriver
-  `contact@mirandola.fr` dans ta boîte Gmail.
+  jusqu'à 300 e-mails par jour**, sans carte bancaire. Deux portes : un
+  serveur SMTP (Supabase Auth : confirmation de l'adresse, mot de passe
+  oublié, changement d'adresse) et une API (la fonction `prevenir` : l'alerte
+  d'une demande de démo, l'accusé de réception).
+- **OVH** (le domaine `mirandola.fr`, serveurs de noms `dns103.ovh.net` et
+  `ns103.ovh.net`) : la zone DNS, et l'offre e-mail livrée avec le domaine,
+  **MX Plan « redirect »** : aucune boîte (« Vous n'avez pas la possibilité de
+  créer de compte email », 0 / 0), mais **1 000 redirections gratuites**. Une
+  adresse `…@mirandola.fr` existe donc dès qu'on la redirige vers une vraie
+  boîte (Gmail) : pas besoin d'acheter de boîte.
 
-300 par jour suffit largement au début : un lycée de 1 000 élèves qui
-s'inscrit en une matinée, c'est le plafond de trois jours, mais les élèves
-d'un établissement entrent avec un code (aucun e-mail) ; seuls les
-particuliers et les professeurs en reçoivent un. Au-delà, l'offre
-« Starter » de Brevo (environ 9 € par mois, 5 000 e-mails).
+300 par jour suffit au début : les élèves d'un établissement entrent avec un
+code (aucun e-mail) ; seuls les particuliers et les professeurs en reçoivent
+un. Au-delà, l'offre « Starter » de Brevo (environ 9 € par mois).
+
+## Les adresses
+
+| Adresse | Ce qu'elle est | Sert à |
+|---|---|---|
+| `noreply@mirandola.fr` | expéditeur Brevo, redirigée vers Gmail | envoie tous les e-mails (Supabase Auth, `prevenir`) ; une réponse d'étourdi arrive quand même |
+| `contact@mirandola.fr` | redirigée vers Gmail | reçoit les alertes de demande de démo (`ALERTE_EMAIL`) ; c'est elle que voit un établissement quand il répond à l'accusé de réception |
 
 ---
 
-## 1. Brevo (15 minutes)
+## État au 2026-11-02 (vérifié depuis l'extérieur)
 
-1. **brevo.com → S'inscrire**, au nom de l'entreprise (la SASU une fois
-   déclarée ; ton nom en attendant, ça se change).
-2. **Paramètres → Expéditeurs, domaines et IP dédiées → Domaines → Ajouter
-   un domaine** : `mirandola.fr`, « Authentifier le domaine moi-même ».
-   Brevo affiche 4 enregistrements à poser chez OVH (étape 2) : un TXT
-   `brevo-code:…`, deux CNAME `brevo1._domainkey` et `brevo2._domainkey`
-   (DKIM), un TXT `_dmarc`. Garde la page ouverte.
-3. **Expéditeurs → Ajouter un expéditeur** : `noreply@mirandola.fr`, nom
-   « Mirandola ».
-4. **SMTP et API → onglet SMTP → Générer une nouvelle clé SMTP** : note le
-   serveur (`smtp-relay.brevo.com`, port `587`), l'**identifiant** (de la
-   forme `…@smtp-brevo.com`) et la **clé SMTP**. Pour Supabase Auth.
-5. **SMTP et API → onglet Clés API → Générer une nouvelle clé API** (nom
-   « Supabase ») : une clé `xkeysib-…`. Pour la fonction `prevenir`.
-6. **Sécurité → IP autorisées** : désactive le blocage des IP inconnues
-   (les fonctions de Supabase n'ont pas d'adresse fixe ; sinon Brevo refuse
-   leurs envois et t'écrit « adresse IP non reconnue »).
+- [x] Compte Brevo « Mirandola », propriétaire : l'éditeur.
+- [x] Domaine `mirandola.fr` ajouté dans Brevo (« Authentifier le domaine
+  moi-même »).
+- [x] Les 4 enregistrements de Brevo posés dans la zone DNS d'OVH, et
+  **publiés** (lus par DNS public le 2026-11-02) : TXT `brevo-code:4167…` à
+  la racine, CNAME `brevo1._domainkey` → `b1.mirandola-fr.dkim.brevo.com`
+  (la clé DKIM se lit au bout), CNAME `brevo2._domainkey` →
+  `b2.mirandola-fr.dkim.brevo.com`, TXT `_dmarc` →
+  `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`. Brevo les voit tous
+  les quatre (coches vertes).
+- [x] Ne rien toucher d'autre dans la zone : les deux `A` de la racine et le
+  `CNAME www` sont ceux de Vercel (le site), les trois `MX` d'OVH reçoivent
+  le courrier (les redirections), le SPF `v=spf1 include:mx.ovh.com -all`
+  n'a pas à nommer Brevo — Brevo envoie sous sa propre adresse de retour, et
+  DMARC passe par DKIM (signé `mirandola.fr`).
+- [ ] La suite, ci-dessous.
 
-Ces clés ne vont **jamais** dans le dépôt ni dans une conversation : elles
-se collent directement dans Supabase (étapes 3 et 5).
+## 1. Brevo : finir le domaine (1 minute)
 
-## 2. OVH : le DNS de mirandola.fr (10 minutes, puis jusqu'à une heure de propagation)
+Paramètres → **Expéditeurs, domaine, IP** → onglet **Domaines** →
+`mirandola.fr` → **Authentifiez** → à l'étape 4, **Vérifier les
+enregistrements**, puis **Authentifier le domaine**. Le domaine passe à
+« Authentifié » (point vert). S'il reste rouge : attendre dix minutes, puis
+« Vérifier » encore (les DNS sont déjà publiés).
 
-1. **ovh.com → Web Cloud → Noms de domaine → mirandola.fr → Zone DNS →
-   Ajouter une entrée**, pour chacun des 4 enregistrements de Brevo :
-   - TXT : sous-domaine vide (la racine), valeur `brevo-code:…` ;
-   - CNAME : sous-domaine `brevo1._domainkey`, cible donnée par Brevo ;
-   - CNAME : sous-domaine `brevo2._domainkey`, cible donnée par Brevo ;
-   - TXT : sous-domaine `_dmarc`, valeur donnée par Brevo
-     (`v=DMARC1; p=none; rua=mailto:…`).
+## 2. OVH : créer les deux adresses (5 minutes)
 
-   Ne touche ni aux enregistrements `A`/`CNAME` du site (ceux de Vercel), ni
-   aux `MX` d'OVH (ils servent à recevoir).
-2. Reviens dans Brevo → **Authentifier**. Tant que ce n'est pas vert,
-   attends (jusqu'à une heure) et réessaie. Sans cette étape, les e-mails
-   partent… dans les indésirables.
-3. **Recevoir** (facultatif, gratuit) : **Web Cloud → Emails →
-   mirandola.fr → Redirections → Ajouter une redirection** :
-   `contact@mirandola.fr` → ton adresse Gmail (garde « copie locale » coupée).
-   Fais de même pour `noreply@mirandola.fr` si tu veux voir les réponses
-   des étourdis. Si OVH demande d'activer l'offre e-mail du domaine (MX
-   Plan), c'est l'offre gratuite livrée avec le nom de domaine.
+Web Cloud → **Emails** → `mirandola.fr` → **Gestion des redirections** →
+**Ajouter une redirection**, deux fois :
 
-## 3. Supabase Auth : la confirmation de l'adresse (5 minutes)
+| De | Vers | Copie |
+|---|---|---|
+| `contact@mirandola.fr` | ton adresse Gmail | **sans** copie (il n'y a pas de boîte) |
+| `noreply@mirandola.fr` | ton adresse Gmail | **sans** copie |
 
-Projet `qqbzefpdeinlynjtarqr` :
+Vérifier : depuis une autre adresse, écrire à `contact@mirandola.fr` → le
+message arrive dans Gmail (la première fois, regarder aussi « Spam » et
+« Promotions »). Compter quelques minutes après la création.
 
-1. **Authentication → Emails → SMTP Settings → Enable Custom SMTP** :
-   - Sender email `noreply@mirandola.fr`, sender name `Mirandola` ;
-   - Host `smtp-relay.brevo.com`, port `587` ;
-   - Username : l'identifiant SMTP de Brevo, Password : la clé SMTP ;
-   - Minimum interval : 60 secondes (défaut). Enregistrer.
-2. **Authentication → Emails → Templates** : pour chaque modèle, l'objet et
-   le corps des fichiers de `supabase/courriels/` (l'objet est écrit en tête
-   de chaque fichier, en commentaire ; le reste se colle tel quel) :
+## 3. Brevo : l'expéditeur (2 minutes)
 
-   | Modèle Supabase | Fichier |
-   |---|---|
-   | Confirm sign up | `confirmation.html` |
-   | Reset password | `mot-de-passe.html` |
-   | Change email address | `changement-adresse.html` |
-   | Magic link | `lien-magique.html` |
-   | Invite user | `invitation.html` |
-   | Reauthentication | `code-verification.html` |
+Paramètres → **Expéditeurs, domaine, IP** → onglet **Expéditeurs** →
+**Ajouter un expéditeur** : nom `Mirandola`, adresse `noreply@mirandola.fr`.
+Le domaine étant authentifié, Brevo le valide d'office ; s'il envoie un code,
+il arrive dans Gmail par la redirection. Ajouter de même
+`contact@mirandola.fr` (nom `Mirandola`) si tu veux répondre sous cette
+adresse depuis Gmail (§ 8).
 
-   Ils se refont par `node tools/courriels-auth.js` (la même mise en page
-   que les e-mails de la fonction `prevenir`).
-3. **Authentication → Rate Limits → Rate limit for sending emails** : 100
-   par heure (un SMTP neuf démarre à 30).
-4. **Envoie-toi un essai** : crée un compte sur `https://mirandola.fr/inscription`
-   avec une de tes adresses, **avant** l'étape 5 ; puis « Mot de passe
-   oublié » : l'e-mail doit arriver en moins d'une minute, hors des
-   indésirables, et son lien ouvrir « Choisis un nouveau mot de passe ».
-5. **Authentication → Sign In / Providers → Email → coche « Confirm
-   email »**. Dès lors, un compte ne s'ouvre qu'une fois son adresse
-   confirmée. L'app sait déjà tout dire : « Compte créé : ouvre le lien reçu
-   par e-mail », « Renvoyer l'e-mail », le vrai motif d'un refus
-   (docs/CONNEXION.md § 1). Les comptes Google, ceux qu'ouvrent l'éditeur
-   et le référent, et les élèves entrés avec un code ne sont pas concernés.
+## 4. Brevo : les deux clés et la sécurité (5 minutes)
 
-## 4. Être prévenu d'une demande de démo (2 minutes)
+Paramètres → **SMTP et API** :
+
+1. Onglet **SMTP** : noter le **serveur** (`smtp-relay.brevo.com`), le
+   **port** (`587`) et l'**identifiant** (de la forme `…@smtp-brevo.com` —
+   pas ton adresse Gmail). **Générer une nouvelle clé SMTP**, nommée
+   « Supabase Auth » : la copier aussitôt (Brevo ne la remontre plus).
+2. Onglet **Clés API** : **Générer une nouvelle clé API**, nommée
+   « Mirandola prevenir » : une clé `xkeysib-…`, à copier aussitôt.
+
+Ces deux clés ne vont **jamais** dans le dépôt ni dans une conversation :
+elles se collent directement dans Supabase (§ 5 et § 7).
+
+Puis Paramètres → **Sécurité** → **IP autorisées** : désactiver le blocage
+des adresses IP inconnues. Supabase n'a pas d'adresse fixe : sinon Brevo
+bloque ses envois et t'écrit « adresse IP non reconnue ». Si Brevo demande
+de compléter le profil de l'entreprise (site `https://mirandola.fr`) ou
+d'activer les e-mails transactionnels, le faire.
+
+## 5. Supabase : le SMTP de Brevo (3 minutes)
+
+Projet `qqbzefpdeinlynjtarqr` → **Authentication** → **Emails** → onglet
+**SMTP Settings** → **Enable Custom SMTP** :
+
+| Champ | Valeur |
+|---|---|
+| Sender email address | `noreply@mirandola.fr` |
+| Sender name | `Mirandola` |
+| Host | `smtp-relay.brevo.com` |
+| Port number | `587` |
+| Minimum interval per user | `60` (laisser) |
+| Username | l'identifiant SMTP de Brevo (`…@smtp-brevo.com`) |
+| Password | la clé SMTP |
+
+**Save**. Puis **Authentication → Rate Limits → Rate limit for sending
+emails** : `100` par heure (un SMTP neuf démarre à 30).
+
+Les modèles, **Authentication → Emails → Templates**, pour chacun : l'objet
+(écrit en tête du fichier, en commentaire), puis tout le fichier dans
+« Message body » (sur GitHub, « Copy raw file ») :
+
+| Modèle Supabase | Objet | Fichier |
+|---|---|---|
+| Confirm sign up | Confirme ton adresse pour Mirandola | `supabase/courriels/confirmation.html` |
+| Reset password | Ton nouveau mot de passe Mirandola | `supabase/courriels/mot-de-passe.html` |
+| Change email address | Confirme ta nouvelle adresse Mirandola | `supabase/courriels/changement-adresse.html` |
+| Magic link | Ton lien de connexion à Mirandola | `supabase/courriels/lien-magique.html` |
+| Invite user | Ton compte Mirandola t’attend | `supabase/courriels/invitation.html` |
+| Reauthentication | Ton code Mirandola | `supabase/courriels/code-verification.html` |
+
+Les deux premiers comptent ; les autres servent rarement. Ils se refont par
+`node tools/courriels-auth.js`.
+
+## 6. Essayer, PUIS rallumer la confirmation (10 minutes)
+
+Dans cet ordre : tant que « Confirm email » est coupé, une inscription
+n'envoie rien ; le mot de passe oublié, si.
+
+1. **Le premier e-mail** : `https://mirandola.fr/connexion` → « Mot de passe
+   oublié » avec l'adresse de ton propre compte. En moins d'une minute :
+   l'e-mail « Ton nouveau mot de passe Mirandola », expéditeur
+   `Mirandola <noreply@mirandola.fr>`, dans la boîte de réception. Son
+   bouton ouvre « Choisis un nouveau mot de passe ».
+2. **Sa signature** : dans Gmail, ⋮ → **Afficher l'original** : il faut lire
+   `DKIM : 'PASS' avec le domaine mirandola.fr` et `DMARC : 'PASS'` (le SPF
+   est celui de Brevo : PASS aussi).
+3. **Sa note** (facultatif, le plus parlant) : sur mail-tester.com, copier
+   l'adresse affichée ; créer un compte Mirandola avec cette adresse (rien
+   ne part encore), puis « Mot de passe oublié » avec elle ; revenir sur
+   mail-tester → **Vérifier votre score** : viser 9/10 ou plus. Ce compte
+   d'essai se supprime ensuite (Claude peut le faire en base).
+4. **Brevo** → menu **Transactionnel** → **Logs** : chaque envoi y est, avec
+   son état (« Délivré »). C'est là qu'on regarde si un e-mail n'arrive pas.
+5. **Rallumer la confirmation** : Supabase → **Authentication → Sign In /
+   Providers → Email** → cocher **Confirm email** → **Save**.
+6. **L'inscription pour de vrai** : créer un compte avec une adresse neuve
+   (une variante Gmail fait l'affaire : `ton.adresse+essai1@gmail.com`
+   arrive dans ta boîte) → l'écran dit « Compte créé : ouvre le lien reçu
+   par e-mail » → l'e-mail « Confirme ton adresse pour Mirandola » arrive →
+   son bouton ouvre Mirandola, connecté. Puis essayer une adresse qui
+   n'existe pas : le compte ne s'ouvre pas (« adresse pas encore
+   confirmée », « Renvoyer l'e-mail »).
+
+Les comptes Google, ceux qu'ouvrent l'éditeur et le référent (mot de passe
+provisoire) et les élèves entrés avec un code ne sont pas concernés : ils
+n'attendent aucun e-mail.
+
+## 7. L'alerte d'une demande de démo (2 minutes)
 
 La fonction `prevenir` (2026-11-02) est appelée par la base à chaque
 « Demander une démo » (déclencheur `prevenir_demande`, migration
-`20261102191527`) : elle t'envoie la demande (établissement, contact,
+`20261102191527`) : l'alerte à `ALERTE_EMAIL` (établissement, contact,
 fonction, e-mail, téléphone, nombre d'élèves, message, un bouton vers la
-console ; « Répondre » écrit au contact), et envoie au demandeur un accusé
-de réception (« Nous revenons vers vous très vite », « Répondre » t'écrit).
+console ; « Répondre » écrit au contact) et l'accusé de réception au
+demandeur (« Répondre » écrit à `ALERTE_EMAIL`). Une demande ne prévient
+qu'une fois (`org_suivi.prevenu_le`).
 
-Supabase → **Edge Functions → Secrets** :
+Supabase → **Edge Functions → Secrets** → **Add new secret** :
 
 | Secret | Valeur |
 |---|---|
-| `BREVO_API_KEY` | la clé API `xkeysib-…` (Brevo, étape 5) |
-| `ALERTE_EMAIL` | l'adresse où tu veux recevoir les demandes |
-| `EXPEDITEUR` | facultatif, `noreply@mirandola.fr` par défaut |
+| `BREVO_API_KEY` | la clé API `xkeysib-…` (§ 4, pas la clé SMTP) |
+| `ALERTE_EMAIL` | `contact@mirandola.fr` |
 
-Sans `BREVO_API_KEY` ou `ALERTE_EMAIL`, la fonction ne fait rien : la
-demande reste dans la console, comme avant. Essai : une demande sur
-`https://mirandola.fr/demande-demo` avec une de tes adresses en contact.
-Chaque demande ne prévient qu'une fois (`org_suivi.prevenu_le`).
+(`EXPEDITEUR` est facultatif : `noreply@mirandola.fr` par défaut.) Sans
+ces deux secrets, la fonction ne fait rien et la demande reste dans la
+console, comme avant.
+
+Essai : `https://mirandola.fr/demande-demo`, avec en contact une variante
+de ton Gmail (`ton.adresse+demo@gmail.com`) → deux e-mails : « Demande de
+démo : … » (par `contact@`) et « Votre demande de démo Mirandola Campus ».
+Puis effacer l'établissement d'essai dans la console (Établissements → sa
+fiche → effacer). Le journal de la fonction (Supabase → Edge Functions →
+`prevenir` → Logs) dit `prevenir <id> alerte accusé`.
+
+## 8. Répondre sous `contact@mirandola.fr` depuis Gmail (facultatif)
+
+Gmail → ⚙ → **Voir tous les paramètres** → **Comptes et importation** →
+**Envoyer des e-mails en tant que** → **Ajouter une autre adresse** : nom
+`Mirandola`, adresse `contact@mirandola.fr` → serveur SMTP
+`smtp-relay.brevo.com`, port `587`, l'identifiant SMTP de Brevo, une clé SMTP
+(en générer une seconde, « Gmail »), TLS → Gmail envoie un code à
+`contact@mirandola.fr`, qui revient dans Gmail par la redirection → le
+saisir. Ensuite, « De : » propose `contact@mirandola.fr` (signé DKIM
+`mirandola.fr`, comme le reste). Ces envois comptent dans les 300 par jour.
+
+## Plus tard
+
+- DMARC : une fois que tout passe depuis quelques semaines (rapports dans
+  Brevo), passer `p=none` à `p=quarantine` dans la zone d'OVH.
+- Une vraie boîte (`contact@` lisible ailleurs que dans Gmail) : Zimbra
+  Starter d'OVH (gratuit avec certains domaines) ou une offre payante ; les
+  redirections suffisent tant qu'on est seul.
 
 ## Ce qui est dans le dépôt
 
