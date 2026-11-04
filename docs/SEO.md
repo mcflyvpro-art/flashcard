@@ -117,7 +117,10 @@ ville en quelques mois si la marque est cherchée.
    racine cohabitent.)
 4. Revenir dans la Search Console → « Valider ». Si ça échoue, attendre
    une heure (le temps que le DNS se propage) et recommencer.
-5. Menu **Sitemaps** → `sitemap.xml` → Envoyer.
+5. Menu **Sitemaps** → l'adresse **complète** `https://mirandola.fr/sitemap.xml`
+   → Envoyer. (Une propriété « Domaine » n'a pas de préfixe devant le
+   champ : `sitemap.xml` seul y est refusé, « Adresse de sitemap
+   incorrecte ».)
 6. Menu **Inspection de l'URL** → coller `https://mirandola.fr/tarifs` →
    « Demander une indexation ». Refaire pour chaque page du tableau
    ci-dessus (une dizaine par jour au plus).
