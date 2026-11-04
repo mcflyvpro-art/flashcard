@@ -397,6 +397,9 @@ button{font:inherit;color:inherit}
 .bento .rv:nth-child(3){transition-delay:.04s}
 .bento .rv:nth-child(4){transition-delay:.12s}
 .bento .rv:nth-child(5){transition-delay:.2s}
+/* un lien vers une autre page du site, sous une section (2026-11-02) */
+.suite-lien{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 14px;margin-top:26px;font-weight:650}
+.questions details p a{color:var(--az5);font-weight:650;text-underline-offset:3px}
 /* après les tuiles, le moment de commencer */
 .relance{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:14px 26px;margin-top:clamp(36px,5vw,56px);font-weight:650}
 
@@ -542,7 +545,7 @@ button{font:inherit;color:inherit}
   box-shadow:0 0 0 3px var(--nuit)}
 .campus-ecole .ic{width:15px;height:15px;color:#FFF;stroke-width:2.2}
 /* la même marque, en petit, sur l'offre des tarifs */
-.offre-campus h3{display:flex;align-items:center;gap:12px}
+.offre-campus :is(h2,h3){display:flex;align-items:center;gap:12px}
 .offre-campus .campus-ic{width:40px;border-radius:12px;box-shadow:inset 0 0 0 1px var(--filet2)}
 .offre-campus .campus-ecole{right:-6px;bottom:-6px;width:20px;height:20px;box-shadow:0 0 0 2.5px #FFF}
 .offre-campus .campus-ecole .ic{width:12px;height:12px}
@@ -671,7 +674,7 @@ button{font:inherit;color:inherit}
 .remise{padding:4px 8px;border-radius:99px;background:var(--degrade);color:#FFF;font-size:12px;font-weight:800;letter-spacing:.02em}
 .offres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:stretch;margin-top:44px}
 .offre{position:relative;display:flex;flex-direction:column;padding:30px 28px 32px;border-radius:30px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
-.offre h3{font:700 26px/1.1 var(--serif);letter-spacing:-.02em}
+.offre :is(h2,h3){font:700 26px/1.1 var(--serif);letter-spacing:-.02em}
 .prix{display:flex;align-items:baseline;gap:6px;margin-top:22px;min-height:62px}
 .prix b{display:inline-block;font:700 clamp(42px,4.6vw,58px)/1 var(--serif);letter-spacing:-.04em;white-space:nowrap}
 .prix span{color:var(--doux);font-weight:650}
@@ -745,7 +748,7 @@ button{font:inherit;color:inherit}
 /* les professeurs particuliers */
 .particulier{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px 32px;align-items:center;margin-top:18px;
   padding:clamp(22px,3vw,34px);border-radius:30px;background:var(--papier2);box-shadow:inset 0 0 0 1px var(--filet)}
-.particulier h3{grid-column:1 / -1;font:700 clamp(22px,2.4vw,27px)/1.2 var(--serif);letter-spacing:-.02em}
+.particulier :is(h2,h3){grid-column:1 / -1;font:700 clamp(22px,2.4vw,27px)/1.2 var(--serif);letter-spacing:-.02em}
 .particulier ul{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
 .particulier li{display:flex;gap:10px;align-items:flex-start;color:var(--encre2);line-height:1.45}
 .particulier li .ic{flex:none;width:20px;height:20px;margin-top:1px;color:var(--ok);stroke-width:2.6}
@@ -792,9 +795,9 @@ button{font:inherit;color:inherit}
 
 /* ---------- le pied de page ---------- */
 .pied{margin-top:clamp(70px,9vw,110px);padding:56px 0 28px;border-top:1px solid var(--filet)}
-.pied-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:40px}
+.pied-in{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,3fr);gap:40px}
 .pied-marque p{margin-top:12px;color:var(--doux);font-family:var(--serif);font-style:italic;font-size:17px}
-.pied-liens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.pied-liens{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
 .pied-liens h2{margin-bottom:12px;font:800 12px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--doux)}
 .pied-liens a,.pied-liens .lien{display:block;padding:6px 0;color:var(--encre2);text-decoration:none;font-size:15px;text-align:left}
 .pied-liens a:hover,.pied-liens .lien:hover{color:var(--encre)}
@@ -834,6 +837,14 @@ button{font:inherit;color:inherit}
   .t-partout{grid-column:span 3;display:flex;align-items:stretch}
   .t-partout h3{margin-top:auto;align-self:auto}
   .t-partout .tuile-dessin{height:170px}
+}
+/* cinq liens dans l'en-tête depuis qu'il mène aux pages du site
+   (2026-11-02) : sur un petit écran d'ordinateur, « Démo » et « J'ai un
+   code » laissent la place (ils restent dans le héros, l'appel final et le
+   pied de page) */
+@media (max-width:1180px){
+  .tete-demo,.tete-code{display:none}
+  .tete-liens a{padding:9px 11px}
 }
 @media (max-width:900px){
   /* au téléphone, l'inscription reste en vue ; « Se connecter » est dans le menu */

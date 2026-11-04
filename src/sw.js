@@ -9,6 +9,11 @@
 const C = 'folio-__BUILD__';
 const BASE = '__BASE__';
 const SHELL = __SHELL__;
+/* Les pages du site autres que l'accueil (/tarifs, /etablissements…,
+   src/site/pages.js) : des pages à lire, en ligne, que le service worker ne
+   sert ni ne range — rangées sous « app » comme une navigation de l'app,
+   elles prenaient sa place hors ligne. */
+const PAGES = __PAGES__;
 
 /* L'ancien domaine (2026-10-29 : « tout est mirandola.fr ») : Vercel y
    renvoie toute adresse vers mirandola.fr, sauf ce fichier — l'app installée
@@ -59,6 +64,7 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (ANCIEN || req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   const page = req.mode === 'navigate';
+  if (page && PAGES.includes(new URL(req.url).pathname.replace(/\/$/, ''))) return;
   const cle = !page ? req : new URL(req.url).pathname === BASE ? BASE : BASE + 'app';
   e.respondWith(
     fetch(req)

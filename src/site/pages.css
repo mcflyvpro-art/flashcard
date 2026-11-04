@@ -1,0 +1,202 @@
+/* Les pages du site autres que l'accueil (src/site/pages.js, docs/SEO.md) :
+   des pages à lire, qui gardent la charte de l'accueil (site.css, chargée
+   avant celle-ci : papier, encre, titres en serif, la lumière de la marque)
+   et n'y ajoutent que ce qu'une page de lecture demande : un haut de page
+   avec son fil d'Ariane, de la prose, des cartes, des étapes, un tableau,
+   des appareils posés à plat. Rien qui tourne en boucle ici, sauf la
+   lumière du haut, comme sur l'accueil. Même règle : n'animer que
+   transform et opacity, et se taire sous « mouvement réduit ». */
+
+/* ---------- le haut de page ---------- */
+.p-heros{position:relative;isolation:isolate;padding:clamp(22px,4vw,52px) 0 clamp(20px,3vw,36px)}
+/* la lumière du haut s'éteint en fondu (coupée net, son bas se voyait) */
+.p-heros .heros-fond{inset:-140px 0 -220px;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
+.p-heros-in{display:flex;flex-direction:column;align-items:center;text-align:center}
+.ariane ol{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:0 0 22px;padding:0;list-style:none;font-size:14px;font-weight:600;color:var(--doux)}
+.ariane li+li::before{content:'›';margin-right:6px;color:var(--creme2)}
+.ariane a{color:var(--encre2);text-decoration:none}
+.ariane a:hover{color:var(--encre);text-decoration:underline;text-underline-offset:3px}
+.p-titre{font-family:var(--serif);font-weight:700;font-size:clamp(40px,6.6vw,84px);line-height:1;letter-spacing:-.035em;max-width:13em;text-wrap:balance;
+  animation:monte .8s var(--e) both}
+.p-titre em{font-style:italic;background:var(--degrade-texte);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.1em;margin-right:-.06em}
+.p-chapeau{font-size:clamp(18px,1.9vw,22px);line-height:1.45;color:var(--encre2);max-width:31em;margin-top:24px;text-wrap:balance;animation:monte .8s var(--e) .12s both}
+.p-heros .actions{animation:monte .8s var(--e) .22s both}
+.p-heros .campus-marque{color:var(--encre);margin-bottom:22px}
+.p-heros .campus-marque em{background:var(--degrade-texte);-webkit-background-clip:text;background-clip:text}
+.p-heros .campus-ic{box-shadow:inset 0 0 0 1px var(--filet2),var(--ombre1);background:#FFF}
+
+/* ---------- les sections ---------- */
+.p-section{position:relative;padding-top:clamp(72px,10vw,128px)}   /* au-dessus de la lumière du haut, qui descend en fondu */
+.p-section>.titre,.p-tete .titre{font-size:clamp(30px,4.2vw,52px)}
+.p-tete{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:clamp(30px,4.4vw,52px)}
+.p-tete .texte{max-width:36em}
+.p-section .titre em{font-style:italic}
+
+/* la prose : une colonne qui se lit, des liens qui se voient */
+.prose{max-width:44em;margin-inline:auto;font-size:clamp(17px,1.4vw,19px);line-height:1.7;color:var(--encre2)}
+.prose>*+*{margin-top:1.05em}
+.prose h2{margin-top:2.2em;font:700 clamp(26px,3vw,36px)/1.12 var(--serif);letter-spacing:-.025em;color:var(--encre);text-wrap:balance}
+.prose h3{margin-top:1.8em;font:700 clamp(20px,2vw,24px)/1.25 var(--serif);letter-spacing:-.015em;color:var(--encre)}
+.prose h2+*,.prose h3+*{margin-top:.6em}
+.prose strong,.prose b{color:var(--encre)}
+.prose a,.p-lien{color:var(--az5);font-weight:650;text-decoration:underline;text-decoration-color:rgba(57,80,165,.35);text-underline-offset:3px;text-decoration-thickness:1.5px}
+.prose a:hover,.p-lien:hover{text-decoration-color:currentColor}
+.prose ul,.prose ol{padding-left:1.25em}
+.prose li+li{margin-top:.45em}
+.prose li::marker{color:var(--az4)}
+.prose blockquote{margin:1.6em 0;padding:4px 0 4px 22px;border-left:3px solid var(--az3);font:italic 600 clamp(19px,1.8vw,22px)/1.45 var(--serif);color:var(--encre)}
+.prose blockquote cite{display:block;margin-top:8px;font:600 14px var(--sans);font-style:normal;color:var(--doux)}
+.prose figure{margin:2em 0}
+.prose small,.p-source{display:block;font-size:14px;line-height:1.5;color:var(--doux)}
+
+/* ---------- les cartes ---------- */
+.p-grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+.p-grille.deux{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.p-carte{position:relative;display:flex;flex-direction:column;gap:10px;padding:26px 26px 28px;border-radius:26px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
+.p-carte h3{font:700 clamp(20px,1.9vw,23px)/1.2 var(--serif);letter-spacing:-.015em}
+.p-carte p,.p-carte li{color:var(--encre2);line-height:1.55}
+.p-carte ul{display:flex;flex-direction:column;gap:9px;margin:4px 0 0;padding:0;list-style:none}
+.p-carte li{display:flex;gap:10px;align-items:flex-start}
+.p-carte li .ic{flex:none;width:19px;height:19px;margin-top:2px;color:var(--ok);stroke-width:2.6}
+.p-carte .bt{align-self:flex-start;margin-top:auto}
+.p-ic{display:grid;place-items:center;width:46px;height:46px;margin-bottom:4px;border-radius:14px;color:var(--az5);
+  background:linear-gradient(135deg,rgba(90,118,208,.14),rgba(215,100,141,.12));box-shadow:inset 0 0 0 1px rgba(90,118,208,.16)}
+.p-ic .ic{width:23px;height:23px}
+.p-carte.sombre{background:var(--nuit);color:var(--creme);box-shadow:var(--ombre3)}
+.p-carte.sombre p,.p-carte.sombre li{color:var(--creme2)}
+.p-carte.sombre .p-ic{color:#F3C1D4;background:rgba(243,238,227,.08);box-shadow:inset 0 0 0 1px rgba(243,238,227,.14)}
+
+/* ---------- les étapes ---------- */
+.p-etapes{counter-reset:etape;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px;margin:0;padding:0;list-style:none}
+.p-etapes li{counter-increment:etape;position:relative;padding:62px 24px 26px;border-radius:26px;background:var(--papier2);box-shadow:inset 0 0 0 1px var(--filet)}
+.p-etapes li::before{content:counter(etape);position:absolute;left:24px;top:20px;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;
+  background:var(--encre);color:#FFF;font:700 16px var(--sans)}
+.p-etapes h3{font:700 20px/1.25 var(--serif);letter-spacing:-.01em}
+.p-etapes p{margin-top:8px;color:var(--encre2);line-height:1.55}
+
+/* ---------- deux colonnes : un texte et un appareil ---------- */
+.p-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(30px,5vw,72px);align-items:center}
+.p-duo.inverse>:first-child{order:2}
+.p-duo .prose{margin:0}
+.p-duo h2{font:700 clamp(28px,3.6vw,44px)/1.06 var(--serif);letter-spacing:-.03em;text-wrap:balance}
+.p-duo h2+p{margin-top:16px}
+.p-duo p{color:var(--encre2);font-size:clamp(17px,1.4vw,19px);line-height:1.6}
+.p-duo p+p{margin-top:12px}
+.p-points{display:flex;flex-direction:column;gap:10px;margin:22px 0 0;padding:0;list-style:none}
+.p-points li{display:flex;gap:11px;align-items:flex-start;color:var(--encre2);line-height:1.5}
+.p-points li .ic{flex:none;width:20px;height:20px;margin-top:2px;color:var(--ok);stroke-width:2.6}
+.p-points b{color:var(--encre)}
+
+/* l'appareil, posé à plat (sur l'accueil il se redresse au défilement) */
+.p-appareils{position:relative;width:100%;padding-bottom:6%}
+.p-appareils .portable{width:92%;margin-left:0;transform:none}
+.p-appareils .telephone{right:0;bottom:0;width:27%;transform:none;rotate:3deg}
+.p-appareils.seul .portable{width:100%}
+.p-appareils .ecran::after{animation:none}
+
+/* ---------- l'IA à qui l'on parle : une conversation dessinée ---------- */
+.p-fil{display:flex;flex-direction:column;gap:10px;max-width:440px;margin-inline:auto;padding:22px;border-radius:28px;background:#FFF;box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
+.p-fil p{max-width:86%;padding:11px 15px;border-radius:18px;line-height:1.4;font-size:15.5px}
+.p-fil .moi{align-self:flex-end;background:var(--encre);color:#FFF;border-bottom-right-radius:6px}
+.p-fil .ia{align-self:flex-start;background:var(--papier2);color:var(--encre);border-bottom-left-radius:6px}
+.p-fil .ia b{display:block;margin-bottom:2px;font:800 11px/1.2 var(--sans);letter-spacing:.08em;text-transform:uppercase;background:var(--degrade-texte);-webkit-background-clip:text;background-clip:text;color:transparent}
+.p-fil .pages{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-self:stretch;margin-top:2px}
+.p-fil .pages span{--sr:10px;--sw:9px;position:relative;padding:11px 26px 11px 12px;border-radius:12px;background:var(--c);box-shadow:inset 0 0 0 1px var(--b);font:700 14px/1.25 var(--serif);color:var(--encre)}
+.p-fil .pages span::before{content:'';position:absolute;top:0;right:var(--sr);width:var(--sw);height:calc(var(--sw) * 2);
+  background:linear-gradient(90deg,rgba(255,255,255,.14),transparent 45%,rgba(0,0,0,.14)) var(--d);clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%)}
+.js .p-fil.rv>*{opacity:0;transform:translateY(8px)}
+.p-fil.vu>*{opacity:1;transform:none;transition:opacity .5s var(--e),transform .5s var(--e)}
+.p-fil.vu>:nth-child(2){transition-delay:.35s}.p-fil.vu>:nth-child(3){transition-delay:.7s}.p-fil.vu>:nth-child(4){transition-delay:1.05s}.p-fil.vu>:nth-child(5){transition-delay:1.4s}
+
+/* ---------- la courbe de l'oubli (dessinée au build, tools/site/gabarit.js) ---------- */
+.p-courbe{margin:clamp(30px,4vw,44px) auto 0;max-width:1000px;padding:clamp(20px,3vw,34px) clamp(14px,3vw,34px) clamp(16px,2.4vw,26px);border-radius:30px;background:#FFF;
+  box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
+.co-svg{width:100%;height:auto;overflow:visible}
+.co-svg text{font:600 15px var(--sans);fill:var(--doux)}
+.co-y{text-anchor:end}
+.co-x{text-anchor:start}
+.co-grille{stroke:var(--filet);stroke-width:1}
+.co-seuil{stroke:var(--az3);stroke-width:1.5;stroke-dasharray:4 7}
+.co-sans{fill:none;stroke:#B9B3A8;stroke-width:3;stroke-dasharray:2 7;stroke-linecap:round}
+.co-avec{fill:none;stroke:url(#co-g);stroke-width:4.5;stroke-linejoin:round;stroke-linecap:round}
+.co-rev line{stroke:var(--rose);stroke-width:1.5;opacity:.5}
+.co-rev circle{fill:#FFF;stroke:var(--rose);stroke-width:3.5}
+.co-rev text{text-anchor:middle;font-weight:750;fill:var(--encre2)}
+.co-legende{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 26px;margin-top:14px;font-size:15px;font-weight:650;color:var(--encre2)}
+.co-legende span{display:inline-flex;align-items:center;gap:9px}
+.co-legende i{width:26px;height:4px;border-radius:2px;background:var(--degrade)}
+.co-legende .l-sans i{height:0;border-top:3px dotted #B9B3A8;background:none}
+.co-legende .l-seuil i{height:0;border-top:2px dashed var(--az3);background:none}
+.js .p-courbe .co-avec{stroke-dasharray:4000;stroke-dashoffset:4000}
+.p-courbe.vu .co-avec{stroke-dashoffset:0;transition:stroke-dashoffset 2.6s var(--e) .2s}
+.js .p-courbe .co-rev{opacity:0}
+.p-courbe.vu .co-rev{opacity:1;transition:opacity .5s var(--e) 1.4s}
+
+/* ---------- les tableaux de comparaison ---------- */
+.p-table{margin-top:clamp(26px,4vw,40px);border:1px solid var(--filet);border-radius:28px;background:#FFF;box-shadow:var(--ombre1);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.p-table table{width:100%;min-width:640px;border-collapse:collapse}
+.p-table th,.p-table td{padding:15px 18px;text-align:left;vertical-align:top;border-bottom:1px solid var(--filet);font-size:15px;line-height:1.45}
+.p-table tbody tr:last-child th,.p-table tbody tr:last-child td{border-bottom:0}
+.p-table thead th{padding-top:20px;font:700 19px var(--serif);color:var(--encre)}
+.p-table tbody th{font-weight:650;color:var(--encre);width:24%}
+.p-table td{color:var(--encre2)}
+.p-table .nous{background:rgba(154,120,207,.08)}
+.p-table thead .nous{border-radius:18px 18px 0 0}
+
+/* ---------- les chiffres ---------- */
+.p-chiffres{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:16px;margin:0;padding:0;list-style:none}
+.p-chiffres li{padding:24px 24px 22px;border-radius:24px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
+.p-chiffres b{display:block;font:700 clamp(36px,4vw,50px)/1 var(--serif);letter-spacing:-.03em;color:var(--az5);font-variant-numeric:tabular-nums}
+.p-chiffres span{display:block;margin-top:8px;color:var(--encre2);line-height:1.45}
+
+/* ---------- une note, un encadré ---------- */
+.p-note{display:flex;gap:14px;align-items:flex-start;max-width:44em;margin:clamp(26px,3vw,36px) auto 0;padding:18px 20px;border-radius:20px;background:var(--papier2);
+  box-shadow:inset 0 0 0 1px var(--filet);color:var(--encre2);line-height:1.55}
+.p-note .ic{flex:none;margin-top:2px;color:var(--az5)}
+.p-note b{color:var(--encre)}
+
+/* ---------- les liens vers les autres pages ---------- */
+.p-suite{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.p-suite a{display:flex;flex-direction:column;gap:6px;padding:22px 24px;border-radius:22px;background:#FFF;text-decoration:none;color:var(--encre);
+  box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet);transition:transform .3s var(--e),box-shadow .3s var(--e)}
+.p-suite a:hover{transform:translateY(-3px);box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet2)}
+.p-suite b{display:flex;align-items:center;justify-content:space-between;gap:10px;font:700 19px/1.25 var(--serif)}
+.p-suite b .ic{color:var(--az5)}
+.p-suite span{color:var(--encre2);font-size:15px;line-height:1.45}
+
+/* le lien de la page où l'on est, dans l'en-tête */
+.tete-liens a[aria-current="page"]{color:var(--encre);background:rgba(29,28,25,.06)}
+.menu-mobile a[aria-current="page"]{color:var(--az5)}
+.fin-marque{justify-content:center}
+.fin-petit{color:var(--creme2)}
+
+/* ---------- tailles ---------- */
+@media (max-width:860px){
+  .p-duo,.p-duo.inverse{grid-template-columns:minmax(0,1fr)}
+  .p-duo.inverse>:first-child{order:0}
+}
+@media (max-width:640px){
+  .p-heros .actions{width:100%;flex-direction:column;align-items:center}
+  .p-carte{padding:22px 20px 24px}
+  .p-table table{min-width:560px}
+  .p-table th,.p-table td{padding:12px 12px;font-size:14px}
+  .co-svg text{font-size:21px}
+  .co-x:nth-of-type(3){display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .js .p-fil.rv>*,.js .p-courbe .co-rev{opacity:1;transform:none}
+  .js .p-courbe .co-avec{stroke-dashoffset:0}
+}
+
+/* /tarifs : le haut de page ne porte que le fil d'Ariane, les offres suivent */
+.p-heros-court{padding-bottom:0}
+.p-heros-court .surtitre{margin-bottom:0}
+.p-heros-court+.tarifs{position:relative;padding-top:clamp(14px,2vw,24px)}
+/* les rôles de Campus : un ordinateur posé sur chaque carte */
+.p-role .portable{margin:4px 5% 20px;width:auto}
+.p-role .ecran::after{animation:none}
+.p-tuile,.p-duo .tuile{grid-column:auto;min-height:0}
+/* /tarifs : la lumière du haut descend derrière le titre des offres */
+.p-heros-court .heros-fond{inset:-140px 0 -520px}
+/* au téléphone, le tableau défile de côté : le critère reste en vue */
+.p-table tbody th{position:sticky;left:0;z-index:1;background:#FFF}

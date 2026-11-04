@@ -2,6 +2,8 @@ import { defineConfig, loadEnv } from 'vite';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, relative } from 'node:path';
+import { entrees, fichierDe, pagesDuSite } from './tools/site/gabarit.js';
+import { SOUS_PAGES } from './src/site/pages.js';
 
 /* Fabrique sw.js à partir de src/sw.js : empreinte du build et liste des
    fichiers à mettre en cache pour le hors-ligne.
@@ -41,10 +43,14 @@ function serviceWorker(base) {
       const shell = [abs('app'), base, ...built, ...statics].filter(f => f !== abs('sw.js'));
       const hash = createHash('sha256');
       for (const f of Object.values(bundle)) hash.update(f.code ?? f.source ?? '');
+      /* Les autres pages du site (src/site/pages.js) : le service worker ne
+         touche pas à leurs navigations — sans cela, /tarifs, rangé sous
+         « app », prenait la place de l'app hors ligne. */
       const code = readFileSync('src/sw.js', 'utf8')
         .replace('__BUILD__', hash.digest('hex').slice(0, 12))
         .replace('__BASE__', base)
-        .replace('__SHELL__', JSON.stringify(shell));
+        .replace('__SHELL__', JSON.stringify(shell))
+        .replace('__PAGES__', JSON.stringify(SOUS_PAGES.map(p => abs(p.chemin))));
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: code });
     }
   };
@@ -56,13 +62,17 @@ function serviceWorker(base) {
    relais fait de même pour `npm run dev` et `vite preview` (les parcours
    e2e), avant le repli de Vite, qui servirait index.html — la page
    d'accueil — à toute adresse inconnue. Un fichier (une extension), les
-   modules de Vite et ce qui n'est pas une page passent tels quels. */
+   modules de Vite et ce qui n'est pas une page passent tels quels. Les
+   autres pages du site (/tarifs, /etablissements… src/site/pages.js) ont
+   leur fichier, comme sur Vercel (`cleanUrls`) : /tarifs sert tarifs.html. */
 function adressesDeLApp() {
   const relais = (req, res, next) => {
     const i = req.url.search(/[?#]/);
     const chemin = i < 0 ? req.url : req.url.slice(0, i), reste = i < 0 ? '' : req.url.slice(i);
     const page = req.method === 'GET' && (req.headers.accept || '').includes('text/html');
-    if (page && chemin !== '/' && !/\.[a-z0-9]+$/i.test(chemin)
+    const fichier = page && fichierDe(chemin);
+    if (fichier) req.url = '/' + fichier + reste;
+    else if (page && chemin !== '/' && !/\.[a-z0-9]+$/i.test(chemin)
       && !/^\/(assets|icons|site|src|node_modules|@)/.test(chemin)) req.url = '/app.html' + reste;
     next();
   };
@@ -88,10 +98,11 @@ export default defineConfig(({ mode }) => {
   const base = '/';
   return {
     base,
-    plugins: [serviceWorker(base), adressesDeLApp()],
-    /* Deux pages : la page d'accueil du site (index.html, servie à `/`) et
-       l'app (app.html, servie à `/app`). docs/LANDING.md. */
-    build: { target: 'es2022', sourcemap: true, rollupOptions: { input: { site: 'index.html', app: 'app.html' } } },
+    plugins: [pagesDuSite(), serviceWorker(base), adressesDeLApp()],
+    /* Les pages du site (index.html, servie à `/`, et une par sujet :
+       tarifs.html à `/tarifs`… src/site/pages.js, docs/SEO.md) et l'app
+       (app.html, servie à `/app`). docs/LANDING.md. */
+    build: { target: 'es2022', sourcemap: true, rollupOptions: { input: entrees() } },
     server: { port: 5173 }
   };
 });

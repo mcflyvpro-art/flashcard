@@ -328,6 +328,28 @@ sur mobile doit être revu, et le logo Mirandola Campus mieux cadré ».
 - [x] T6.2 La marque Campus : sur iPhone, « Mirandola *Campus* » passait sur deux lignes et le carré du logo restait seul en haut à gauche. **Fait** : au téléphone, la marque se met en colonne — le logo centré au-dessus, le nom sur une ligne dessous, à la taille de l'écran (`min(36px, 8.6vw)`).
 - [x] T6.3 Les textes au téléphone : le surtitre du moteur se coupe entre ses deux morceaux et jamais ailleurs (`.surtitre .bloc` : il finissait « … · LE » en bout de ligne) ; l'axe du graphique perd « 1 sem. », collé à « 1 mois » ; à 320 px, « Ouvrir mon espace professeur » dépassait l'écran de 10 px (la page défilait de côté) : il prend la largeur. Vérifié à 320, 360, 375 et 390 px : aucune page plus large que l'écran, aucun texte qui déborde de sa boîte.
 
+## Tour 7 : le référencement « à fond » (2026-11-02)
+
+La demande : « gère en totalité le SEO de mirandola.fr, à fond ; dis-moi
+comment tester, visualiser, comprendre ; rends le résultat Google hyper
+beau, avec des sous-liens ». Branche `claude/mirandola-seo-optimization-gucemk`.
+Décision : l'accueil reste tel quel ; le site gagne **sept pages**, une par
+recherche (les sous-liens de Google se font à partir de pages distinctes).
+L'utilisateur a demandé une pause pour comprendre (« tu refais tout le
+site ? ») ; réponse donnée, puis son accord : « oui on continue », et il
+retouchera le look des pages lui-même (docs/SEO.md, § 7 : ce qui se
+change librement, ce qui ne se change pas). Le menu de l'accueil mène aux
+nouvelles pages. Le guide de l'utilisateur et la mémoire technique :
+**`docs/SEO.md`**.
+
+- [x] T7.1 Le site à plusieurs pages : `src/site/pages.js` (la liste : adresse, titre, description, date), `tools/site/gabarit.js` (les marqueurs `<!-- @meta -->`, `@icones`, `@tete`, `@pied`, `@tarifs h=…`, `@calcul`, `@appel`, `@appel-campus`, `@ariane`, `@courbe`, posés depuis `src/site/partiels/` ; la FAQ en données structurées tirée du texte affiché ; le sitemap généré), `vite.config.js` (entrées, relais `/tarifs` → `tarifs.html`), `src/sw.js` (ne sert ni ne range les pages du site : rangées sous « app », elles prenaient sa place hors ligne), `src/site/commun.js` (partagé par `site.js` et `page.js`), `src/site/pages.css`. `public/sitemap.xml` retiré (il est fabriqué au build).
+- [x] T7.2 Les sept pages écrites : `flashcards-ia.html`, `repetition-espacee.html` (article, courbe de l'oubli dessinée au build), `etablissements.html`, `professeurs.html`, `tarifs.html`, `anki-quizlet.html` (comparatif daté, marques citées), `a-propos.html` (Pic de la Mirandole, la ville, données structurées qui les distinguent de l'app). Captures 390 et 1440 px relues, aucun débordement, aucune erreur de console.
+- [x] T7.3 `vercel.json` : `/tarifs/` → `/tarifs` (et chaque page), sinon l'app répond ; vérifier sur une préversion que `/tarifs` sert bien `tarifs.html` (le système de fichiers passe avant la réécriture).
+- [x] T7.4 Accueil : `Organization`/`WebSite` renforcés (`alternateName`, `slogan`), liens contextuels vers les pages, `favicon.ico` et `favicon-48.png` et `apple-touch-icon.png` à la racine (`tools/icones.js`), `llms.txt`, clé IndexNow + `tools/indexnow.js`, images de partage par page (`public/site/og/*.jpg`, `tools/affiches.js`).
+- [x] T7.5 `tools/budget.js` : une part par page du site (« pages » : la plus lourde, ≤ 40 Ko ; `repetition-espacee.html` 37,5). L'accueil passe de 48 à 50 Ko (47,7 → 48,9 : l'en-tête qui mène aux pages, la colonne du pied, les liens sous les sections, le nom du site et le logo en données structurées).
+- [x] T7.6 Tests : `test/seo.test.js` (titre ≤ 60 signes, description 110 à 160, canonique, un seul h1, JSON-LD, fil d'Ariane, FAQ identique, liens internes valides, aucune adresse qui croise `src/routes.js`, sitemap = la liste, aucun tiret long ni « fiche »), `e2e/pages.e2e.js`, Lighthouse. **Fait** : `npm run check` vert (748 tests, dont 75 de `test/seo.test.js`) ; e2e 121 verts et 1 repassé au second essai (`espace-prof.e2e.js` à 1440 px, la machine chargée par Lighthouse en même temps : 2 sur 2 seul) ; Lighthouse au téléphone sur `/`, `/tarifs`, `/etablissements`, `/repetition-espacee`, `/anki-quizlet` : SEO 100, accessibilité 100, bonnes pratiques 100, performance 96 à 100 sur les nouvelles pages (l'accueil mesuré pendant les e2e, non représentatif). Reste à vérifier une fois en ligne : `/tarifs` sert bien sa page sur Vercel (le réseau de la session ne joint pas mirandola.fr).
+- [x] T7.7 `docs/SEO.md` : Search Console (DNS chez OVH), Bing, outils de test, sous-liens, la ville de Mirandola, actions hors site ; CLAUDE.md et PROGRESS.md ; push branche puis `main` après accord.
+
 ## Ce qui reste à décider (l'utilisateur)
 
 - **Les prix** (2026-10-28) : Mirandola+ 6,99 €/mois ou

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<!-- @meta -->
+</head>
+<body>
+<a class="saut" href="#contenu">Aller au contenu</a>
+<!-- @icones -->
+<!-- @tete -->
+
+<main id="contenu">
+  <article>
+    <header class="p-heros" aria-labelledby="titre">
+      <div class="heros-fond" aria-hidden="true"><i class="tache t1"></i><i class="tache t2"></i><i class="tache t3"></i></div>
+      <div class="enveloppe p-heros-in">
+        <!-- @ariane -->
+        <p class="surtitre">Le guide</p>
+        <h1 id="titre" class="p-titre">La répétition espacée, <em>expliquée</em> simplement.</h1>
+        <p class="p-chapeau">On oublie vite ce qu’on vient d’apprendre. Le revoir au bon moment, juste avant qu’il s’efface, suffit à le garder des mois. Voici pourquoi, et comment t’en servir.</p>
+        <p class="petit">Par l’équipe Mirandola · mis à jour le <time datetime="2026-11-02">2 novembre 2026</time> · 7 minutes de lecture</p>
+      </div>
+    </header>
+
+    <section class="p-section enveloppe" aria-labelledby="oubli-t">
+      <div class="prose">
+        <h2 id="oubli-t">La courbe de l’oubli</h2>
+        <p>En 1885, le psychologue allemand Hermann Ebbinghaus apprend par cœur des listes de syllabes sans aucun sens, puis mesure, jour après jour, ce qu’il en reste. Le résultat tient en une courbe&#8239;: <strong>l’essentiel s’en va dans les premiers jours</strong>, puis l’oubli ralentit. C’est la courbe de l’oubli.</p>
+        <p>Il remarque autre chose&#8239;: une liste revue s’oublie moins vite que la première fois. Et plus on attend avant de la revoir, sans attendre trop, plus elle tient ensuite. Toute la répétition espacée est là.</p>
+      </div>
+      <figure class="p-courbe rv">
+        <!-- @courbe -->
+        <figcaption class="co-legende">
+          <span><i aria-hidden="true"></i>Avec la répétition espacée</span>
+          <span class="l-sans"><i aria-hidden="true"></i>Sans révision</span>
+          <span class="l-seuil"><i aria-hidden="true"></i>Le moment de revoir la page&#8239;: 90&nbsp;%</span>
+        </figcaption>
+      </figure>
+      <p class="p-source enveloppe centre">Une page, d’après le modèle de mémoire de FSRS, l’algorithme de Mirandola. Chaque page a son rythme&#8239;: celle-ci est d’une difficulté moyenne.</p>
+    </section>
+
+    <section class="p-section enveloppe" aria-labelledby="pourquoi-t">
+      <div class="prose">
+        <h2 id="pourquoi-t">Pourquoi ça marche</h2>
+        <p>Deux effets parmi les mieux établis de la psychologie de la mémoire travaillent ensemble.</p>
+        <h3>L’effet d’espacement</h3>
+        <p>À temps de travail égal, on retient bien mieux en répartissant ses révisions qu’en les entassant la veille. Une synthèse de plus de 300 expériences (Cepeda et ses collègues, 2006) le retrouve presque partout, et montre que l’écart idéal entre deux révisions grandit avec le temps qui reste avant l’examen.</p>
+        <h3>L’effet de test</h3>
+        <p>Se forcer à retrouver une réponse renforce le souvenir bien plus que la relire. Dans une étude devenue classique (Roediger et Karpicke, 2006), des étudiants qui s’étaient testés retenaient nettement mieux un texte une semaine plus tard que ceux qui l’avaient relu, alors même qu’ils se sentaient moins sûrs d’eux.</p>
+        <p>Une flashcard fait les deux&#8239;: elle t’oblige à chercher la réponse avant de la voir, et elle revient à des moments choisis. C’est pour ça qu’on dit <a href="/flashcards-ia">un livre de flashcards</a> plutôt qu’un cours relu.</p>
+        <blockquote>Relire donne l’impression de savoir. Chercher la réponse, c’est apprendre.</blockquote>
+      </div>
+    </section>
+
+    <section class="p-section enveloppe" aria-labelledby="algos-t">
+      <div class="prose">
+        <h2 id="algos-t">Le bon moment&#8239;: de la boîte de Leitner à FSRS</h2>
+        <p>Toute la question est de savoir quand revoir chaque page. Trois réponses se sont succédé.</p>
+        <h3>La boîte de Leitner</h3>
+        <p>Dans les années 1970, le journaliste allemand Sebastian Leitner range ses cartes dans une boîte à compartiments. Une carte sue passe au compartiment suivant, revu moins souvent&#8239;; une carte ratée revient au premier. Simple, mais les intervalles sont les mêmes pour tout le monde.</p>
+        <h3>SM-2, et des intervalles calculés</h3>
+        <p>En 1987, le chercheur polonais Piotr Woźniak écrit SM-2 pour son logiciel SuperMemo&#8239;: chaque carte a son facteur de facilité, qui allonge l’intervalle à chaque réussite. Anki l’a repris et l’a fait tourner pendant des années.</p>
+        <h3>FSRS, un modèle de ta mémoire</h3>
+        <p>FSRS (Free Spaced Repetition Scheduler) est un algorithme libre, écrit par Jarrett Ye à partir de 2022 et intégré à Anki depuis sa version 23.10. Pour chaque page, il estime trois choses&#8239;: sa <strong>difficulté</strong>, la <strong>stabilité</strong> de ton souvenir (combien de temps il tient) et la <strong>probabilité</strong> que tu t’en souviennes aujourd’hui. Ses paramètres sont appris sur des centaines de millions de révisions réelles, et il peut se régler sur ta propre mémoire.</p>
+      </div>
+      <div class="p-table rv">
+        <table>
+          <caption class="cache">Trois façons de choisir le moment de revoir une page</caption>
+          <thead><tr><th scope="col">Méthode</th><th scope="col">Comment elle choisit</th><th scope="col">Ce qu’elle sait de toi</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Boîte de Leitner</th><td>Des intervalles fixes, compartiment par compartiment</td><td>Rien&#8239;: tout le monde a les mêmes</td></tr>
+            <tr><th scope="row">SM-2</th><td>Un facteur de facilité par carte, qui allonge l’intervalle</td><td>Tes réponses, carte par carte</td></tr>
+            <tr><th scope="row" class="nous">FSRS</th><td class="nous">La probabilité que tu t’en souviennes, page par page</td><td class="nous">Ta mémoire, apprise sur tout ton historique</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="p-section enveloppe" aria-labelledby="mirandola-t">
+      <div class="prose">
+        <h2 id="mirandola-t">Dans Mirandola</h2>
+        <p>Mirandola fait tourner FSRS, compilé depuis le même code que celui d’Anki, avec les mêmes réglages. Tu n’as rien à régler&#8239;: tu lis le recto, tu cherches, tu retournes la page et tu dis comment c’était.</p>
+      </div>
+      <ul class="p-chiffres">
+        <li class="rv"><b>90&nbsp;%</b><span>La mémoire visée&#8239;: chaque page revient quand tu as encore 9 chances sur 10 de t’en souvenir.</span></li>
+        <li class="rv"><b>4</b><span>Réponses possibles&#8239;: Encore, Difficile, Correct, Facile. Le moteur en tire le jour suivant.</span></li>
+        <li class="rv"><b>20</b><span>Pages nouvelles par jour et par livre, pour que les révisions ne s’empilent pas.</span></li>
+        <li class="rv"><b>0</b><span>Réglage à faire&#8239;: tu révises, le moteur s’occupe du reste.</span></li>
+      </ul>
+      <div class="p-grille deux p-moteurs">
+        <article class="p-carte rv">
+          <h3>Memory Engine Lite</h3>
+          <p>Dans Mirandola gratuit&#8239;: la répétition espacée avec les réglages de base de FSRS, les mêmes pour tout le monde.</p>
+        </article>
+        <article class="p-carte sombre rv">
+          <h3>Memory Engine Ultra</h3>
+          <p>Dans Mirandola+ et Mirandola Campus&#8239;: le moteur se règle sur ta mémoire à mesure que tu révises, et étale ta charge pour qu’aucun jour ne déborde.</p>
+          <a class="bt bt-creme" href="/tarifs">Voir les tarifs<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        </article>
+      </div>
+    </section>
+
+    <section class="p-section enveloppe" aria-labelledby="methode-t">
+      <div class="prose">
+        <h2 id="methode-t">Comment t’y prendre, concrètement</h2>
+        <ol>
+          <li><strong>Un peu chaque jour.</strong> Dix à vingt minutes valent mieux qu’un après-midi par semaine. La journée de Mirandola commence à 4&nbsp;h du matin&#8239;: réviser après minuit compte encore pour la veille.</li>
+          <li><strong>Cherche avant de retourner.</strong> Le gain vient de l’effort de retrouver la réponse. Même une réponse fausse, cherchée, aide à retenir la bonne.</li>
+          <li><strong>Note honnêtement.</strong> «&nbsp;Correct&nbsp;» si tu l’as trouvée, «&nbsp;Encore&nbsp;» si non. Te mentir, c’est revoir la page trop tard.</li>
+          <li><strong>Commence tôt.</strong> Plus l’examen est loin, plus l’espacement paie. Un livre ouvert dès le début du chapitre se révise presque seul.</li>
+          <li><strong>Une idée par page.</strong> Une page courte se retient, une page longue se relit. <a href="/flashcards-ia">Les cinq règles d’une bonne flashcard</a>.</li>
+        </ol>
+        <p>Et si tu sautes un jour&#8239;? Rien de grave&#8239;: les pages en retard t’attendent le lendemain, et le moteur tient compte du retard pour fixer la suite.</p>
+      </div>
+    </section>
+
+    <section class="faq enveloppe p-section" id="faq" aria-labelledby="faq-t">
+      <h2 id="faq-t" class="titre centre rv">Questions fréquentes</h2>
+      <div class="questions">
+        <details class="rv"><summary>La répétition espacée, c’est quoi en une phrase&#8239;?</summary><p>Revoir ce qu’on apprend juste avant de l’oublier, à des intervalles qui s’allongent à chaque fois qu’on s’en souvient.</p></details>
+        <details class="rv"><summary>Combien de temps par jour&#8239;?</summary><p>Dix à vingt minutes suffisent pour la plupart des élèves. Le temps dépend du nombre de pages nouvelles&#8239;: Mirandola en propose 20 par jour et par livre, et tu peux en lire plus.</p></details>
+        <details class="rv"><summary>Est-ce que ça marche pour le bac ou un concours&#8239;?</summary><p>C’est là que ça marche le mieux&#8239;: des dates, des définitions, du vocabulaire, des formules, des cas, à retenir sur des mois. Mirandola a été testé et validé en classe prépa.</p></details>
+        <details class="rv"><summary>Et la veille d’un contrôle&#8239;?</summary><p>«&nbsp;Tout lire&nbsp;» repasse un livre en entier, sans attendre le moteur. Mais ce qu’on bachote la veille s’oublie vite&#8239;: commencer plus tôt, c’est retenir pour de bon.</p></details>
+        <details class="rv"><summary>Quelle différence entre Anki et Mirandola&#8239;?</summary><p>Le même moteur, FSRS, réglé de la même façon. Mirandola y ajoute l’IA qui écrit les pages, les classes et les devoirs, et se passe de tout réglage. Le détail est dans <a href="/anki-quizlet">notre comparatif</a>.</p></details>
+      </div>
+    </section>
+
+    <section class="p-section enveloppe" aria-labelledby="sources-t">
+      <div class="prose">
+        <h2 id="sources-t">Pour aller plus loin</h2>
+        <ul>
+          <li>Hermann Ebbinghaus, <cite>Über das Gedächtnis</cite> (Sur la mémoire), 1885.</li>
+          <li>Nicholas Cepeda et al., «&nbsp;Distributed practice in verbal recall tasks&nbsp;», <cite>Psychological Bulletin</cite>, 2006.</li>
+          <li>Henry Roediger et Jeffrey Karpicke, «&nbsp;Test-enhanced learning&nbsp;», <cite>Psychological Science</cite>, 2006.</li>
+          <li>Jarrett Ye et al., FSRS, l’algorithme libre de répétition espacée (projet open-spaced-repetition).</li>
+        </ul>
+      </div>
+    </section>
+  </article>
+
+  <!-- @appel -->
+</main>
+
+<!-- @pied -->
+</body>
+</html>

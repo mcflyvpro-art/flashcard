@@ -1,0 +1,193 @@
+/* Ce que toutes les pages du site partagent (2026-11-02, le site passe à
+   plusieurs pages, docs/SEO.md) : les apparitions au défilement, l'en-tête
+   et son menu du téléphone, « J'ai un code », la bascule des tarifs et le
+   calculateur de Campus. La page d'accueil (site.js) y ajoute ses scènes,
+   les autres pages (page.js) s'en tiennent là. Chaque fonction ne fait
+   rien si sa partie de la page n'est pas là. Aucun appel à la base. */
+import { codeComplet, normCode } from '../classe.js';
+import { pinComplet, pinDepuisTexte } from '../defi.js';
+import { TRANCHES, eurosHT, parPlace, prixCampus } from '../tarifs.js';
+
+export const doc = document.documentElement;
+export const reduit = matchMedia('(prefers-reduced-motion: reduce)');
+export const vu = (el, fn, opts) => {
+  const io = new IntersectionObserver(es => es.forEach(e => fn(e, io)), opts);
+  (el.length === undefined ? [el] : el).forEach(x => io.observe(x));
+};
+
+/* ---------- les apparitions, une seule fois ---------- */
+export function apparitions() {
+  vu(document.querySelectorAll('.rv'), (e, io) => {
+    if (!e.isIntersecting) return;
+    e.target.classList.add('vu');
+    io.unobserve(e.target);
+  }, { rootMargin: '0px 0px -10% 0px', threshold: .1 });
+}
+
+/* ---------- l'en-tête et le menu du téléphone ---------- */
+export function entete() {
+  const t = document.getElementById('tete');
+  if (!t) return;
+  const b = t.querySelector('.burger'), m = document.getElementById('menu-mobile');
+  const colle = () => t.classList.toggle('colle', scrollY > 8);
+  addEventListener('scroll', colle, { passive: true });
+  colle();
+  const ouvrir = o => {
+    m.hidden = !o;
+    b.setAttribute('aria-expanded', String(o));
+    b.setAttribute('aria-label', o ? 'Fermer le menu' : 'Ouvrir le menu');
+    t.classList.toggle('colle', o || scrollY > 8);
+  };
+  b.addEventListener('click', () => ouvrir(m.hidden));
+  m.addEventListener('click', e => { if (e.target.closest('a,button')) ouvrir(false); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !m.hidden) ouvrir(false); });
+}
+
+/* ---------- les radios et les onglets au clavier ---------- */
+export function auClavier(groupe, sel, choisir) {
+  groupe.addEventListener('keydown', e => {
+    const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!k) return;
+    const bs = [...groupe.querySelectorAll(sel)];
+    const i = (bs.indexOf(document.activeElement) + k + bs.length) % bs.length;
+    e.preventDefault();
+    bs[i].focus();
+    choisir(bs[i]);
+  });
+}
+
+/* ---------- les tarifs : au mois ou à l'année ---------- */
+export function tarifs() {
+  const t = document.getElementById('tarifs');
+  if (!t) return;
+  const g = t.querySelector('.bascule');
+  const choisir = b => {
+    const p = b.dataset.periode;
+    if (t.dataset.periode === p) return;
+    t.dataset.periode = p;
+    g.querySelectorAll('[role="radio"]').forEach(x => {
+      x.setAttribute('aria-checked', String(x === b));
+      x.tabIndex = x === b ? 0 : -1;
+    });
+    relierVente(t);
+    t.querySelectorAll('[data-an][data-mois]').forEach(el => {
+      el.classList.remove('roule');
+      void el.offsetWidth;                 // relancer l'animation sur le même élément
+      el.innerHTML = el.dataset[p === 'an' ? 'an' : 'mois'];
+      el.classList.add('roule');
+    });
+  };
+  g.querySelectorAll('[role="radio"]').forEach(x => { x.tabIndex = x.getAttribute('aria-checked') === 'true' ? 0 : -1; });
+  relierVente(t);
+  g.addEventListener('click', e => { const b = e.target.closest('[role="radio"]'); if (b) choisir(b); });
+  auClavier(g, '[role="radio"]', choisir);
+  // les lignes du tableau arrivent l'une après l'autre
+  t.querySelectorAll('.comparatif tbody tr').forEach((r, i) => r.style.setProperty('--i', String(i)));
+}
+
+/* ---------- combien pour mon établissement ----------
+   La grille de src/tarifs.js, la même que la console de l'éditeur : le
+   champ et le curseur se suivent, le total et le prix moyen d'une place
+   suivent les deux, et la tranche où l'on tombe s'allume. */
+export function calcul() {
+  const c = document.getElementById('calcul-campus');
+  if (!c) return;
+  const champ = c.querySelector('#calcul-places'), curseur = c.querySelector('#calcul-curseur');
+  const prix = c.querySelector('#calcul-prix'), moyen = c.querySelector('#calcul-moyen');
+  const poser = n => {
+    const places = Math.min(20000, Math.max(1, Math.round(+n) || 1));
+    prix.textContent = eurosHT(prixCampus(places), false) + '\u00a0HT';
+    moyen.textContent = `, soit ${eurosHT(parPlace(places))}\u00a0HT la place`;
+    const t = TRANCHES.findIndex(x => places <= x.jusqua);
+    c.querySelectorAll('[data-tranche]').forEach(r => r.classList.toggle('ici', +r.dataset.tranche === t));
+    return places;
+  };
+  champ.addEventListener('input', () => { if (champ.value !== '') curseur.value = String(poser(champ.value)); });
+  champ.addEventListener('change', () => { champ.value = String(poser(champ.value)); });
+  curseur.addEventListener('input', () => { champ.value = curseur.value; poser(curseur.value); });
+  poser(champ.value);
+}
+
+/* La vente ouverte (VENTE_OUVERTE de src/abonnement.js, et dans
+   index.html les adresses data-vente-an et data-vente-mois du bouton),
+   « Passer à Mirandola+ » mène à l'écran Mirandola+ de l'app, la formule choisie
+   ici déjà cochée ; sans session, elle attend la connexion
+   (ui/plus-porte.js). D'ici là, le bouton n'a pas ces adresses et mène à
+   l'inscription. Le module n'est pas importé ici : partagé avec le
+   démarrage de l'app, il ferait charger à la page d'accueil un morceau
+   commun bien plus gros (test/site.test.js garde les deux d'accord). */
+function relierVente(t) {
+  const mois = t.dataset.periode === 'mois';
+  t.querySelectorAll('[data-vente-an][data-vente-mois]').forEach(a => { a.href = mois ? a.dataset.venteMois : a.dataset.venteAn; });
+}
+
+/* ---------- « J'ai un code » ----------
+   Une classe, un établissement ou un professeur particulier : 8 signes
+   (classe.js) ; une partie en direct : 6 chiffres (defi.js) ; un club :
+   8 signes du même alphabet. Le code part dans l'adresse de l'app, qui le
+   garde le temps de la connexion (ui/liens-entrants.js). */
+const SORTES = {
+  classe: { lire: normCode, juste: codeComplet, aller: c => '/app?rejoindre=' + c,
+    aide: '8 lettres ou chiffres, comme ABCD 2345.', modele: 'ABCD 2345' },
+  defi: { lire: pinDepuisTexte, juste: pinComplet, aller: c => '/app?defi=' + c,
+    aide: '6 chiffres, comme 482 913.', modele: '482 913' },
+  club: { lire: normCode, juste: codeComplet, aller: c => '/app?club=' + c,
+    aide: 'Le code du club : 8 lettres ou chiffres.', modele: 'ABCD 2345' }
+};
+const lisible = (sorte, c) => (sorte === 'defi'
+  ? (c.length > 3 ? c.slice(0, 3) + ' ' + c.slice(3) : c)
+  : (c.length > 4 ? c.slice(0, 4) + ' ' + c.slice(4) : c));
+
+export function fenetreCode() {
+  const d = document.getElementById('fenetre-code');
+  if (!d || typeof d.showModal !== 'function') return;
+  const f = d.querySelector('form'), champ = d.querySelector('#code-champ'), err = d.querySelector('#code-erreur');
+  const types = d.querySelector('.code-types');
+  let sorte = 'classe';
+  const choisir = b => {
+    sorte = b.dataset.type;
+    types.querySelectorAll('[role="radio"]').forEach(x => {
+      x.setAttribute('aria-checked', String(x === b));
+      x.tabIndex = x === b ? 0 : -1;
+    });
+    champ.placeholder = SORTES[sorte].modele;
+    err.textContent = '';
+    mettreEnForme();
+  };
+  const bouton = t => types.querySelector(`[data-type="${t}"]`);
+  const mettreEnForme = () => {
+    const brut = champ.value;
+    // six chiffres tapés : c'est une partie ; une lettre : c'est un code de classe
+    if (sorte === 'classe' && /^\d{6}$/.test(brut.replace(/\s/g, ''))) return choisir(bouton('defi'));
+    if (sorte === 'defi' && /[a-z]/i.test(brut)) return choisir(bouton('classe'));
+    const c = SORTES[sorte].lire(brut);
+    const l = lisible(sorte, c);
+    if (l !== brut) champ.value = l;
+  };
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-code]')) return;
+    e.preventDefault();
+    err.textContent = '';
+    d.showModal();
+    setTimeout(() => champ.focus(), 60);
+  });
+  d.addEventListener('click', e => {
+    if (e.target === d || e.target.closest('[data-fermer]')) d.close();
+  });
+  types.addEventListener('click', e => { const b = e.target.closest('[role="radio"]'); if (b) { choisir(b); champ.focus(); } });
+  auClavier(types, '[role="radio"]', choisir);
+  champ.addEventListener('input', () => { err.textContent = ''; mettreEnForme(); });
+  f.addEventListener('submit', e => {
+    e.preventDefault();
+    const s = SORTES[sorte], c = s.lire(champ.value);
+    if (!s.juste(c)) {
+      err.textContent = s.aide;
+      champ.classList.remove('secoue');
+      void champ.offsetWidth;              // relancer l'animation
+      champ.classList.add('secoue');
+      champ.focus();
+      return;
+    }
+    location.href = s.aller(c);
+  });
+}

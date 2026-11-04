@@ -98,6 +98,70 @@ const CAPTURES = [
     async chemin(p) { await p.click('[data-act="tab-home"]'); } }
 ];
 
+/* L'image de partage de chaque page du site (2026-11-02, docs/SEO.md) :
+   public/site/og/<page>.jpg, 1200 × 630, ce qu'affichent un message, un
+   réseau social ou Google Discover quand on partage l'adresse. Le logo, le
+   sujet de la page, sa phrase, et l'écran de l'app qui lui va (des
+   affiches déjà faites : rien à photographier, pas besoin de serveur).
+     node tools/affiches.js pages */
+const OG_PAGES = {
+  'flashcards-ia': { sujet: 'Flashcards avec l’IA', titre: 'L’IA fait tes <em>flashcards.</em>', ligne: 'Un cours, une photo, un PDF :<br>un livre de flashcards en quelques secondes.', pc: 'pc', tel: 'mobile' },
+  'repetition-espacee': { sujet: 'Le guide', titre: 'La répétition <em>espacée.</em>', ligne: 'Revoir chaque page juste avant<br>de l’oublier, et la garder des mois.', courbe: true },
+  etablissements: { sujet: 'Mirandola Campus', titre: 'Tout l’établissement, <em>en deux codes.</em>', ligne: 'Collège, lycée, prépa :<br>ouvert en dix minutes.', pc: 'prof', tel: 'eleve-mobile' },
+  professeurs: { sujet: 'Pour les professeurs', titre: 'Vos élèves révisent. <em>Vous le voyez.</em>', ligne: 'Devoirs suivis, ce qui bloque,<br>défis en direct au tableau.', pc: 'prof', tel: 'prof-mobile' },
+  tarifs: { sujet: 'Tarifs', titre: 'Gratuit pour <em>réviser.</em>', ligne: 'Mirandola+ dès 4,17 € par mois.<br>Campus de 5 à 2 € HT par élève et par an.', pc: 'pc', tel: 'mobile' },
+  'anki-quizlet': { sujet: 'Le comparatif', titre: 'Anki, Quizlet <em>ou Mirandola ?</em>', ligne: 'Trois apps de flashcards,<br>et comment passer de l’une à l’autre.', pc: 'pc', tel: 'mobile' },
+  'a-propos': { sujet: 'Le nom', titre: 'Pourquoi <em>Mirandola ?</em>', ligne: 'D’après Pic de la Mirandole,<br>l’érudit à la mémoire prodigieuse.', logo: true }
+};
+
+async function imagesDesPages() {
+  const { courbeOubli } = await import('./site/gabarit.js');
+  const css = readFileSync('src/site/pages.css', 'utf8').match(/\.co-svg\{[\s\S]*?\.co-rev text\{[^}]*\}/)[0];
+  const logo = readFileSync('public/site/logo.svg', 'utf8');
+  const uri = f => 'data:image/webp;base64,' + readFileSync(SORTIE + f + '.webp').toString('base64');
+  mkdirSync('public/site/og', { recursive: true });
+  const p = await (await navigateur.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 })).newPage();
+  for (const [nom, o] of Object.entries(OG_PAGES)) {
+    const visuel = o.courbe ? `<div class="courbe">${courbeOubli()}</div>`
+      : o.logo ? `<div class="grand-logo">${logo}</div>`
+        : `<div class="pc"><img src="${uri(o.pc)}"></div><div class="socle"></div><div class="tel"><img src="${uri(o.tel)}"><i></i></div>`;
+    await p.setContent(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
+      body{margin:0;width:1200px;height:630px;overflow:hidden;font-family:Inter,system-ui,sans-serif;color:#1D1C19;
+        --az3:#91A8EB;--rose:#D7648D;--doux:#6B675F;--encre2:#4B4842;--filet:rgba(29,28,25,.09);
+        background:radial-gradient(48% 64% at 6% 0%,rgba(90,118,208,.30),transparent),radial-gradient(44% 60% at 100% 24%,rgba(215,100,141,.26),transparent),
+        radial-gradient(40% 50% at 42% 30%,rgba(154,120,207,.16),transparent),#F6F5F1}
+      .g{position:absolute;left:72px;top:66px;width:540px}
+      .m{display:flex;align-items:center;gap:14px;font:700 40px 'Bitstream Charter',Charter,Georgia,serif;letter-spacing:-1px}
+      .m svg{width:66px;height:auto}
+      .p{display:inline-flex;align-items:center;gap:8px;margin-top:40px;padding:9px 16px;border-radius:99px;background:#fff;
+        box-shadow:inset 0 0 0 1px rgba(29,28,25,.14);font-weight:700;font-size:19px}
+      .p i{width:10px;height:10px;border-radius:50%;background:linear-gradient(115deg,#5A76D0,#9A78CF,#D7648D)}
+      h1{margin:22px 0 0;font:700 66px/1 'Bitstream Charter',Charter,Georgia,serif;letter-spacing:-2px}
+      h1 em{font-style:italic;background:linear-gradient(100deg,#3E4FA0 8%,#80439C 55%,#B33F6C 94%);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
+      .s{margin-top:22px;font-size:24px;color:#4B4842;line-height:1.4}
+      .pc{position:absolute;left:640px;top:130px;width:590px;background:#121211;border-radius:16px 16px 4px 4px;padding:9px 9px 13px;box-shadow:0 40px 80px -30px rgba(29,28,25,.5)}
+      .pc img{display:block;width:100%;aspect-ratio:1440/900;object-fit:cover;object-position:top;border-radius:3px}
+      .socle{position:absolute;left:615px;top:516px;width:640px;height:13px;border-radius:2px 2px 12px 12px;background:linear-gradient(#E2DFD8,#C3BFB7 55%,#8E8A83)}
+      .tel{position:absolute;left:1010px;top:258px;width:158px;background:#121211;border-radius:28px;padding:7px;transform:rotate(4deg);box-shadow:0 40px 70px -24px rgba(29,28,25,.55)}
+      .tel img{display:block;width:100%;border-radius:22px}
+      .tel i{position:absolute;top:13px;left:50%;width:46px;height:13px;margin-left:-23px;border-radius:9px;background:#0A0A09}
+      .courbe{position:absolute;left:630px;top:120px;width:510px;padding:26px 26px 18px;border-radius:28px;background:#fff;box-shadow:0 30px 70px -30px rgba(29,28,25,.45)}
+      ${css.replace(/var\(--sans\)/g, 'Inter,system-ui,sans-serif')}
+      .co-sans{fill:none;stroke:#B9B3A8;stroke-width:3;stroke-dasharray:2 7}.co-avec{fill:none;stroke:url(#co-g);stroke-width:5}
+      .grand-logo{position:absolute;left:720px;top:110px;width:380px}.grand-logo svg{width:100%;height:auto}
+    </style></head><body>
+      <div class="g"><div class="m">${logo}<span>Mirandola</span></div>
+        <div class="p"><i></i>${o.sujet}</div>
+        <h1>${o.titre}</h1>
+        <p class="s">${o.ligne}</p></div>
+      ${visuel}
+    </body></html>`);
+    await p.waitForTimeout(300);
+    writeFileSync(`public/site/og/${nom}.jpg`, await p.screenshot({ type: 'jpeg', quality: 86 }));
+    console.log(`site/og/${nom}.jpg`);
+  }
+}
+
 /* Dix heures du matin, aujourd'hui : l'accueil du professeur dit
    « Bonjour », quelle que soit l'heure où l'on photographie (la démo se
    sème autour de cette heure-là, rien d'autre ne bouge). */
@@ -124,6 +188,11 @@ async function ouvrir(a) {
 
 const navigateur = await chromium.launch({ executablePath: chrome });
 mkdirSync(SORTIE, { recursive: true });
+if (process.argv.includes('pages')) {
+  await imagesDesPages();
+  await navigateur.close();
+  process.exit(0);
+}
 const seulOg = process.argv.includes('og');
 // des noms d'affiches (node tools/affiches.js prof-mobile …) : celles-là seules
 const noms = process.argv.slice(2).filter(x => x !== 'og');

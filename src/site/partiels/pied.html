@@ -1,0 +1,56 @@
+<footer class="pied">
+  <div class="enveloppe pied-in">
+    <div class="pied-marque">
+      <a class="marque" href="/" aria-label="{{marque}}">{{logo}}<span>Mirandola</span></a>
+      <p>Tes cours, reliés en livres.</p>
+    </div>
+    <nav class="pied-liens" aria-label="Pied de page">
+      <div>
+        <h2>Mirandola</h2>
+        <a href="/connexion">Se connecter</a>
+        <a href="/inscription">Créer un compte</a>
+        <button class="lien" type="button" data-code>J’ai un code</button>
+        <a href="/essayer">Essayer sans compte</a>
+      </div>
+      <div>
+        <h2>Apprendre</h2>
+        <a href="/flashcards-ia">Flashcards avec l’IA</a>
+        <a href="/repetition-espacee">La répétition espacée</a>
+        <a href="/anki-quizlet">Anki, Quizlet ou Mirandola</a>
+        <a href="/a-propos">Pourquoi Mirandola</a>
+      </div>
+      <div>
+        <h2>Établissements</h2>
+        <a href="/etablissements">Mirandola Campus</a>
+        <a href="/professeurs">Professeurs</a>
+        <a href="/tarifs">Tarifs</a>
+        <a href="/demande-demo">Demander une démo</a>
+      </div>
+      <div>
+        <h2>Le cadre</h2>
+        <a href="/mentions/mentions">Mentions légales</a>
+        <a href="/mentions/confidentialite">Confidentialité</a>
+        <a href="/mentions/cgu">Conditions d’utilisation</a>
+      </div>
+    </nav>
+  </div>
+  <p class="enveloppe pied-bas">© 2026 Mirandola · mirandola.fr</p>
+</footer>
+
+<dialog class="fenetre" id="fenetre-code" aria-labelledby="code-t">
+  <form class="code-form" method="dialog" novalidate>
+    <button class="fenetre-x" type="button" data-fermer aria-label="Fermer"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+    <svg class="ic code-ic" aria-hidden="true"><use href="#i-cle"/></svg>
+    <h2 id="code-t">Tu as un code&#8239;?</h2>
+    <div class="code-types" role="radiogroup" aria-label="Le code est celui">
+      <button type="button" role="radio" aria-checked="true" data-type="classe">D’une classe ou d’un établissement</button>
+      <button type="button" role="radio" aria-checked="false" data-type="defi">D’une partie</button>
+      <button type="button" role="radio" aria-checked="false" data-type="club">D’un club</button>
+    </div>
+    <label class="cache" for="code-champ">Le code</label>
+    <input class="code-champ" id="code-champ" name="code" autocomplete="off" autocapitalize="characters" autocorrect="off"
+      spellcheck="false" enterkeyhint="go" placeholder="ABCD 2345" maxlength="14">
+    <p class="code-erreur" id="code-erreur" role="alert"></p>
+    <button class="bt bt-encre bt-plein bt-grand" type="submit">Continuer<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></button>
+  </form>
+</dialog>
