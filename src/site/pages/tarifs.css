@@ -1,0 +1,16 @@
+/* /tarifs : le haut de page court, ce qui ne change pas, les deux moteurs. Chargée par sa seule page, après site.css et pages.css. */
+
+/* le haut de page ne porte que le fil d'Ariane, les offres suivent ; la lumière du haut descend derrière leur titre */
+.p-heros-court{padding-bottom:0}
+.p-heros-court .surtitre{margin-bottom:0}
+.p-heros-court+.tarifs{position:relative;padding-top:clamp(14px,2vw,24px)}
+.p-heros-court .heros-fond{inset:-140px 0 -520px}
+/* ce qui ne change pas, puis les deux moteurs */
+.p-rassure{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:clamp(36px,5vw,56px);padding-inline:var(--gout);list-style:none}
+.p-rassure li{display:inline-flex;align-items:center;gap:9px;padding:11px 16px;border-radius:99px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet);font-weight:650;color:var(--encre2)}
+.p-rassure .ic{width:19px;height:19px;color:var(--az5)}
+.p-nuit-cartes.deux{grid-template-columns:repeat(2,minmax(0,1fr));max-width:900px;margin-inline:auto}
+.nc-courbe{width:100%;height:auto;margin-bottom:8px}
+.nc-courbe path{fill:none;stroke:#B996EC;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.nc-courbe.lite path{stroke:#A29CAF;stroke-dasharray:3 8}
+@media (max-width:760px){.p-nuit-cartes.deux{grid-template-columns:minmax(0,1fr)}}

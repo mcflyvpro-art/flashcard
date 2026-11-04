@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- @meta -->
+<link rel="stylesheet" href="/src/site/pages/tarifs.css">
 </head>
 <body>
 <a class="saut" href="#contenu">Aller au contenu</a>
@@ -20,20 +21,32 @@
 
   <!-- @tarifs h=h1 sous=h2 -->
 
-  <section class="p-section enveloppe" aria-labelledby="moteurs-t">
-    <div class="p-tete">
-      <h2 id="moteurs-t" class="titre">Deux moteurs de révision.</h2>
-      <p class="texte">Le même principe, <a class="p-lien" href="/repetition-espacee">la répétition espacée</a>&#8239;: chaque page revient juste avant que tu l’oublies. Ce qui change, c’est ce que le moteur sait de toi.</p>
-    </div>
-    <div class="p-grille deux">
-      <article class="p-carte rv">
-        <h3>Memory Engine Lite</h3>
-        <p>Dans Mirandola gratuit. Les réglages de base, les mêmes pour tout le monde.</p>
-      </article>
-      <article class="p-carte sombre rv">
-        <h3>Memory Engine Ultra</h3>
-        <p>Dans Mirandola+ et Mirandola Campus. Il se règle sur ta mémoire à mesure que tu révises, et étale ta charge pour qu’aucun jour ne déborde.</p>
-      </article>
+  <ul class="p-rassure enveloppe" aria-label="Ce qui ne change pas">
+    <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-cle"/></svg>Sans carte bancaire pour commencer</li>
+    <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Résiliable en un geste</li>
+    <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-bouclier"/></svg>Sans publicité</li>
+    <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-europe"/></svg>Données dans l’Union européenne</li>
+  </ul>
+
+  <section class="p-nuit" aria-labelledby="moteurs-t">
+    <div class="enveloppe">
+      <div class="p-tete">
+        <h2 id="moteurs-t" class="titre rv">Deux moteurs de <em>révision</em>.</h2>
+        <p class="texte rv">Le même principe, <a class="p-lien" href="/repetition-espacee">la répétition espacée</a>. Ce qui change, c’est ce que le moteur sait de toi.</p>
+      </div>
+      <div class="p-nuit-cartes deux">
+        <article class="rv">
+          <svg class="nc-courbe lite" viewBox="0 0 200 70" aria-hidden="true"><path d="M4 10C40 42 90 54 196 62"/></svg>
+          <h3>Memory Engine Lite</h3>
+          <p>Dans Mirandola gratuit. Les réglages de base, les mêmes pour tout le monde.</p>
+        </article>
+        <article class="rv fort">
+          <svg class="nc-courbe" viewBox="0 0 200 70" aria-hidden="true"><path d="M4 10Q16 22 36 26L36 10Q62 20 92 24L92 10Q140 18 196 22"/></svg>
+          <h3>Memory Engine Ultra</h3>
+          <p>Dans Mirandola+ et Mirandola Campus. Il se règle sur ta mémoire, et étale ta charge pour qu’aucun jour ne déborde.</p>
+          <a class="bt bt-creme" href="/moteur">Le moteur, formule par formule<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        </article>
+      </div>
     </div>
   </section>
 

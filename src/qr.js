@@ -244,8 +244,19 @@ export function qrSvg(texte, titre) {
   if (!m) return '';
   const n = m.length, t = n + 8;
   const lib = String(titre || 'QR code').replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
+  /* Une bande par suite de modules noirs sur une ligne, plutôt qu'un carré
+     par module : le même dessin, un chemin deux fois plus court (le QR de
+     la démo pèse sur le budget des pages du site, tools/budget.js). */
   let d = '';
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (m[y][x]) d += `M${x + 4} ${y + 4}h1v1h-1z`;
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      if (!m[y][x]) continue;
+      let l = 1;
+      while (x + l < n && m[y][x + l]) l++;
+      d += `M${x + 4} ${y + 4}h${l}v1h-${l}z`;
+      x += l - 1;
+    }
+  }
   return `<svg class="qr" viewBox="0 0 ${t} ${t}" role="img" aria-label="${lib}"
     shape-rendering="crispEdges"><rect width="${t}" height="${t}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
 }

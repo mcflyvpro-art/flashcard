@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- @meta -->
+<link rel="stylesheet" href="/src/site/pages/flashcards-ia.css">
 </head>
 <body>
 <a class="saut" href="#contenu">Aller au contenu</a>
@@ -10,56 +11,104 @@
 <!-- @tete -->
 
 <main id="contenu">
-  <section class="p-heros" aria-labelledby="titre">
+  <section class="p-heros split" aria-labelledby="titre">
     <div class="heros-fond" aria-hidden="true"><i class="tache t1"></i><i class="tache t2"></i><i class="tache t3"></i></div>
     <div class="enveloppe p-heros-in">
-      <!-- @ariane -->
-      <p class="surtitre">Flashcards avec l’IA</p>
-      <h1 id="titre" class="p-titre">L’IA fait tes <em>flashcards</em>, à partir de ton cours.</h1>
-      <p class="p-chapeau">Colle un cours, prends ton cahier en photo ou donne un PDF. En quelques secondes, Mirandola en tire un livre de flashcards&#8239;: une question au recto de chaque page, la réponse au verso.</p>
-      <div class="actions">
-        <a class="bt bt-encre bt-grand" href="/inscription">Commencer gratuitement<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
-        <a class="bt bt-blanc bt-grand" href="/essayer"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer sans compte</a>
+      <div class="p-texte">
+        <!-- @ariane -->
+        <p class="surtitre">Flashcards avec l’IA</p>
+        <h1 id="titre" class="p-titre">L’IA fait tes <em>flashcards</em>, à partir de ton cours.</h1>
+        <p class="p-chapeau">Un texte, une photo, un PDF&#8239;: un livre de flashcards en quelques secondes. La question au recto, la réponse au verso.</p>
+        <div class="actions">
+          <a class="bt bt-encre bt-grand" href="/inscription">Commencer gratuitement<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+          <a class="bt bt-blanc bt-grand" href="/essayer"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer sans compte</a>
+        </div>
+      </div>
+
+      <!-- Un cours qui devient un livre : les mots qui comptent s'allument,
+           l'IA les reprend, trois pages en sortent. Joué une fois. -->
+      <div class="p-visuel tr" aria-hidden="true">
+        <div class="tr-cours">
+          <p class="tr-mat">Histoire · Chapitre 3</p>
+          <p class="tr-titre">La Révolution française</p>
+          <p>Le <mark>14 juillet 1789</mark>, le peuple de Paris prend la <mark>Bastille</mark>, symbole du pouvoir royal.</p>
+          <p>Dans la nuit du <mark>4 août</mark>, l’Assemblée abolit les <mark>privilèges</mark>.</p>
+          <p>Le <mark>26 août</mark>, elle adopte la <mark>Déclaration des droits</mark> de l’homme et du citoyen.</p>
+          <i class="tr-l"></i><i class="tr-l"></i><i class="tr-l court"></i>
+        </div>
+        <span class="tr-orbe"><svg class="ic"><use href="#i-etincelle"/></svg>IA</span>
+        <div class="tr-cartes">
+          <div class="tr-carte" data-teinte="yellow"><small>Histoire</small><b>Prise de la Bastille</b><span>14 juillet 1789</span></div>
+          <div class="tr-carte" data-teinte="yellow"><small>Histoire</small><b>Abolition des privilèges</b><span>Nuit du 4 août 1789</span></div>
+          <div class="tr-carte" data-teinte="yellow"><small>Histoire</small><b>Déclaration des droits de l’homme</b><span>26 août 1789</span></div>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="p-section enveloppe" aria-labelledby="sources-t">
-    <div class="p-duo">
-      <div>
-        <h2 id="sources-t">Trois façons de lui donner ton cours.</h2>
-        <p>Tu choisis ce que tu as sous la main. L’IA lit, repère ce qu’il faut savoir et l’écrit en questions et réponses, une par page.</p>
-        <ul class="p-points">
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Un texte.</b> Ton cours tapé, un chapitre de manuel, tes notes&#8239;: colle, c’est parti.</span></li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Une photo.</b> Ton cahier, un polycopié, le tableau en fin d’heure, même écrit à la main.</span></li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Un PDF.</b> Un cours en diaporama, un polycopié de fac, un chapitre entier.</span></li>
-        </ul>
-      </div>
-      <article class="tuile t-import p-tuile rv" aria-label="Un cours qui devient un livre de flashcards">
-        <div class="tuile-dessin" aria-hidden="true">
-          <div class="feuille"><i></i><i></i><i></i><i></i><i></i><b class="faisceau"></b></div>
-          <span class="ia-orbe"><svg class="ic"><use href="#i-etincelle"/></svg>IA</span>
-          <div class="paquet" data-teinte="yellow"><i></i><i></i><i></i></div>
-          <svg class="ic eclat e1"><use href="#i-etincelle"/></svg><svg class="ic eclat e2"><use href="#i-etincelle"/></svg><svg class="ic eclat e3"><use href="#i-etincelle"/></svg>
+    <div class="p-tete">
+      <h2 id="sources-t" class="titre rv">Cinq façons de <em>commencer</em>.</h2>
+    </div>
+    <div class="bento p-cinq">
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-ecrire" aria-hidden="true">
+          <div class="dw-page" data-teinte="green"><small>Recto</small><b>Mitochondrie<i class="dw-curseur"></i></b></div>
+          <div class="dw-page verso" data-teinte="green"><small>Verso</small><b>Centrale de la cellule</b></div>
         </div>
-        <h3>Ton cours devient un livre</h3>
-        <p>Une question au recto de chaque page, la réponse au verso.</p>
-        <ul class="sources">
-          <li><svg class="ic" aria-hidden="true"><use href="#i-photo"/></svg>Photo</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-fichier"/></svg>PDF</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-texte"/></svg>Texte</li>
-          <li class="source-ia"><svg class="ic" aria-hidden="true"><use href="#i-etincelle"/></svg>IA</li>
-        </ul>
+        <h3>Écrire</h3>
+        <p>Le recto, le verso, et la page suivante.</p>
+      </article>
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-coller" aria-hidden="true">
+          <div class="dw-presse"><span>to cope with ; faire face à</span><span>to take for granted ; tenir pour acquis</span><span>to look forward to ; avoir hâte de</span></div>
+          <svg class="ic dw-fl"><use href="#i-fleche"/></svg>
+          <div class="dw-mini" data-teinte="red"><i></i><i></i><i></i></div>
+        </div>
+        <h3>Coller</h3>
+        <p>Une liste, un tableur, tes cartes d’Anki ou de Quizlet.</p>
+      </article>
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-pdf" aria-hidden="true">
+          <div class="dw-doc d3"></div><div class="dw-doc d2"></div>
+          <div class="dw-doc d1"><b>PDF</b><i></i><i></i><i></i><i></i></div>
+        </div>
+        <h3>Un fichier</h3>
+        <p>Un polycopié, un diaporama, un chapitre entier.</p>
+      </article>
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-photo" aria-hidden="true">
+          <div class="dw-cahier">
+            <svg viewBox="0 0 200 92"><path d="M10 18c14-6 22 4 34-2s20-6 30 0 18 4 28-1"/><path d="M10 44c10-5 20 3 32-1s24-5 36 1 22 2 34-2 18-3 26 1"/><path d="M10 70c16-5 26 3 38-1s18-4 30 0"/></svg>
+          </div>
+          <span class="dw-viseur"><i></i><i></i><i></i><i></i></span>
+          <span class="dw-flash"></span>
+        </div>
+        <h3>Une photo</h3>
+        <p>Ton cahier, même écrit à la main.</p>
+      </article>
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-prompt" aria-hidden="true">
+          <span class="dw-bulle moi">La date au recto, l’événement au verso.</span>
+          <span class="dw-bulle ia"><svg class="ic"><use href="#i-etincelle"/></svg>12 pages, dans l’ordre du cours.</span>
+        </div>
+        <h3>Le Prompt</h3>
+        <p>Tu dis ce que tu veux. L’IA écrit les pages.</p>
       </article>
     </div>
   </section>
 
-  <section class="p-section enveloppe" aria-labelledby="parle-t">
-    <div class="p-duo inverse">
+  <section class="p-nuit" aria-labelledby="parle-t">
+    <div class="enveloppe p-duo">
       <div>
-        <h2 id="parle-t">Tu lui dis ce que tu veux, comme à quelqu’un.</h2>
-        <p>«&nbsp;La date au recto, l’événement au verso.&nbsp;» «&nbsp;Seulement les définitions.&nbsp;» «&nbsp;Ajoute les auteurs.&nbsp;» L’IA écrit les pages, puis tu les retouches en lui parlant&#8239;: elle ajoute, retire, inverse le recto et le verso.</p>
-        <p>Rien n’entre dans ton livre sans toi. Tu relis, tu gardes ce qui te va, et Mirandola écarte les pages en double.</p>
+        <h2 id="parle-t" class="titre">Tu lui parles. <em>Elle réécrit.</em></h2>
+        <p class="texte">Elle ajoute, retire, inverse le recto et le verso. Rien n’entre dans ton livre sans toi, et les pages en double s’écartent seules.</p>
+        <ul class="p-puces">
+          <li>«&nbsp;Seulement les définitions&nbsp;»</li>
+          <li>«&nbsp;Ajoute les auteurs&nbsp;»</li>
+          <li>«&nbsp;Inverse recto et verso&nbsp;»</li>
+          <li>«&nbsp;Enlève les dates&nbsp;»</li>
+        </ul>
       </div>
       <div class="p-fil rv" aria-label="Exemple de conversation avec l’IA de Mirandola">
         <p class="moi">Mon cours sur la Révolution. La date au recto, l’événement au verso.</p>
@@ -76,48 +125,53 @@
     </div>
   </section>
 
-  <section class="p-section enveloppe" aria-labelledby="etapes-t">
-    <div class="p-tete">
-      <h2 id="etapes-t" class="titre">De ton cours à ta première révision.</h2>
-    </div>
-    <ol class="p-etapes">
-      <li class="rv"><h3>Crée un livre</h3><p>Un titre, une matière. Un livre par chapitre, c’est le plus simple.</p></li>
-      <li class="rv"><h3>Donne ton cours</h3><p>Texte, photo ou PDF, puis ce que tu veux au recto et au verso.</p></li>
-      <li class="rv"><h3>Relis les pages</h3><p>Garde, corrige ou demande d’autres pages. Tout reste modifiable.</p></li>
-      <li class="rv"><h3>Révise</h3><p>Mirandola te repose chaque page juste avant que tu l’oublies.</p></li>
-    </ol>
-  </section>
-
   <section class="p-section enveloppe" aria-labelledby="conseils-t">
-    <div class="prose">
-      <h2 id="conseils-t">Cinq règles pour de bonnes flashcards</h2>
-      <p>L’IA fait le gros du travail, mais une bonne page se reconnaît toujours aux mêmes signes. Garde-les en tête pour relire les siennes, ou pour écrire les tiennes.</p>
-      <h3>1. Une question, une réponse</h3>
-      <p>Une page qui demande trois choses à la fois, tu la rates pour une seule et tu ne sais plus laquelle. Coupe&#8239;: trois pages courtes valent mieux qu’une longue.</p>
-      <h3>2. Une réponse courte</h3>
-      <p>Si le verso fait un paragraphe, tu le relis au lieu de le retrouver. Vise quelques mots&#8239;: une date, un nom, une formule, une phrase.</p>
-      <h3>3. Dans tes mots</h3>
-      <p>Une définition recopiée se reconnaît sans se comprendre. Reformule le recto comme tu poserais la question à un ami.</p>
-      <h3>4. Du contexte au recto</h3>
-      <p>«&nbsp;1789&nbsp;» seul peut vouloir dire dix choses. «&nbsp;Révolution&#8239;: l’année de la prise de la Bastille&nbsp;» n’en veut dire qu’une.</p>
-      <h3>5. Dans les deux sens, quand ça compte</h3>
-      <p>En langues, on apprend le mot depuis sa traduction et l’inverse. Demande à l’IA d’inverser le recto et le verso, ou garde les deux.</p>
-      <p>Ensuite, ne relis pas ton livre en entier&#8239;: laisse Mirandola choisir le moment de chaque page. C’est <a href="/repetition-espacee">la répétition espacée</a>, et c’est elle qui fait que ça reste.</p>
+    <div class="p-tete">
+      <h2 id="conseils-t" class="titre rv">Cinq règles pour de <em>bonnes</em> flashcards.</h2>
+      <p class="texte rv">L’IA les suit. Garde-les en tête pour relire ses pages, ou écrire les tiennes.</p>
     </div>
+    <ol class="p-regles">
+      <li class="rv">
+        <h3>Une question, une réponse</h3>
+        <p class="ex non">La Révolution&#8239;: dates, causes, conséquences&#8239;?</p>
+        <p class="ex oui">En quelle année la Bastille est-elle prise&#8239;?</p>
+      </li>
+      <li class="rv">
+        <h3>Une réponse courte</h3>
+        <p class="ex non">La mitochondrie est un organite présent dans le cytoplasme de la plupart des cellules qui…</p>
+        <p class="ex oui">La centrale énergétique de la cellule.</p>
+      </li>
+      <li class="rv">
+        <h3>Dans tes mots</h3>
+        <p class="ex non">Hérédité&#8239;: définition.</p>
+        <p class="ex oui">Qu’est-ce qui passe des parents aux enfants&#8239;?</p>
+      </li>
+      <li class="rv">
+        <h3>Du contexte au recto</h3>
+        <p class="ex non">1789&#8239;?</p>
+        <p class="ex oui">Révolution&#8239;: l’année de la prise de la Bastille&#8239;?</p>
+      </li>
+      <li class="rv">
+        <h3>Dans les deux sens, quand ça compte</h3>
+        <p class="ex oui sens"><span>to take for granted</span><svg class="ic"><use href="#i-fleche"/></svg><span>tenir pour acquis</span></p>
+        <p class="ex oui sens"><span>tenir pour acquis</span><svg class="ic"><use href="#i-fleche"/></svg><span>to take for granted</span></p>
+      </li>
+    </ol>
+    <p class="p-apres rv">Ensuite, ne relis pas tout&#8239;: Mirandola choisit le moment de chaque page. C’est <a class="p-lien" href="/repetition-espacee">la répétition espacée</a>.</p>
   </section>
 
   <section class="p-section enveloppe" aria-labelledby="offre-t">
-    <div class="p-grille deux">
-      <article class="p-carte rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-texte"/></svg></span>
-        <h3>Avec Mirandola gratuit</h3>
-        <p>Tu écris tes pages, tu colles une liste ou tu reprends tes anciennes flashcards (Anki, Quizlet, un tableur en CSV). Jusqu’à 5 livres.</p>
+    <div class="p-offres">
+      <article class="p-offre rv">
+        <p class="p-offre-nom">Mirandola gratuit</p>
+        <p class="p-offre-grand">5 <small>livres</small></p>
+        <p>Tu écris, tu colles, tu importes tes anciennes flashcards.</p>
         <a class="bt bt-clair" href="/inscription">Créer un compte</a>
       </article>
-      <article class="p-carte sombre rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-etincelle"/></svg></span>
-        <h3 id="offre-t">Avec Mirandola<span class="plus">+</span></h3>
-        <p>L’IA&#8239;: 30 cours par mois en flashcards, photos et PDF compris, des livres sans limite, les QCM, les images et les sons. 4,17&nbsp;€ par mois à l’année, ou 6,99&nbsp;€ au mois.</p>
+      <article class="p-offre sombre rv">
+        <h2 id="offre-t" class="p-offre-nom">Mirandola<span class="plus">+</span></h2>
+        <p class="p-offre-grand">30 <small>cours par mois avec l’IA</small></p>
+        <p>Photos et PDF compris, livres sans limite, QCM, images et sons. 4,17&nbsp;€ par mois à l’année, ou 6,99&nbsp;€ au mois.</p>
         <a class="bt bt-creme" href="/tarifs">Voir les tarifs<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
       </article>
     </div>

@@ -3,72 +3,85 @@
 <head>
 <meta charset="utf-8">
 <!-- @meta -->
+<link rel="stylesheet" href="/src/site/pages/professeurs.css">
 </head>
 <body>
 <a class="saut" href="#contenu">Aller au contenu</a>
 <!-- @icones -->
+<!-- @visages -->
 <!-- @tete -->
 
 <main id="contenu">
-  <section class="p-heros" aria-labelledby="titre">
+  <section class="p-heros split" aria-labelledby="titre">
     <div class="heros-fond" aria-hidden="true"><i class="tache t1"></i><i class="tache t2"></i><i class="tache t3"></i></div>
     <div class="enveloppe p-heros-in">
-      <!-- @ariane -->
-      <p class="surtitre">Pour les professeurs</p>
-      <h1 id="titre" class="p-titre">Vos élèves révisent. <em>Vous</em> voyez où ils en sont.</h1>
-      <p class="p-chapeau">Donnez un livre de flashcards en devoir, suivez qui l’a lu et ce qui bloque, lancez un défi en direct au tableau. Dans votre établissement comme pour vos cours particuliers.</p>
-      <div class="actions">
-        <a class="bt bt-encre bt-grand" href="/demo/prof"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer en professeur</a>
-        <a class="bt bt-blanc bt-grand" href="/demande-demo">Ouvrir mon espace<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+      <div class="p-texte">
+        <!-- @ariane -->
+        <p class="surtitre">Pour les professeurs</p>
+        <h1 id="titre" class="p-titre">Vos élèves révisent. <em>Vous</em> voyez où ils en sont.</h1>
+        <p class="p-chapeau">Un livre en devoir, qui l’a lu, ce qui bloque, un défi au tableau. Dans votre établissement comme en cours particuliers.</p>
+        <div class="actions">
+          <a class="bt bt-encre bt-grand" href="/demo/prof"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer en professeur</a>
+          <a class="bt bt-blanc bt-grand" href="/demande-demo">Ouvrir mon espace<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        </div>
+        <p class="petit">La démo est un vrai lycée fictif&#8239;: ce que vous donnez, ses élèves le reçoivent.</p>
       </div>
-      <p class="petit">La démo est un vrai lycée fictif&#8239;: ce que vous donnez, ses élèves le reçoivent.</p>
-    </div>
-  </section>
-
-  <section class="p-section enveloppe" aria-labelledby="devoir-t">
-    <div class="p-duo">
-      <div>
-        <h2 id="devoir-t">Un devoir, et vous savez qui l’a fait.</h2>
-        <p>Choisissez un livre, une classe et une date. Chaque élève le reçoit dans son espace, et vous voyez son avancement en direct&#8239;: les pages lues, la réussite, le retard.</p>
-        <ul class="p-points">
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Ce qui bloque&#8239;:</b> les pages que la classe rate le plus, sans nom d’élève, pour savoir quoi reprendre en cours.</span></li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Le suivi d’un élève&#8239;:</b> ses devoirs et son avancement, un par un.</span></li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Un mot à la classe,</b> qui arrive dans le courrier de chacun.</span></li>
-        </ul>
-      </div>
-      <div class="p-appareils rv">
-        <figure class="appareil portable">
-          <div class="portable-ecran">
-            <div class="ecran">
-              <img class="affiche" src="/site/affiches/prof.webp" width="1440" height="900" decoding="async"
-                srcset="/site/affiches/prof-petit.webp 720w, /site/affiches/prof.webp 1440w" sizes="(max-width: 860px) 92vw, 620px"
-                alt="Le tableau de bord du professeur : ses classes, les devoirs et l’avancement de chaque élève">
+      <div class="p-visuel pv">
+        <div class="p-appareils">
+          <figure class="appareil portable">
+            <div class="portable-ecran">
+              <div class="ecran">
+                <img class="affiche" src="/site/affiches/prof.webp" width="1440" height="900" fetchpriority="high" decoding="async"
+                  srcset="/site/affiches/prof-petit.webp 720w, /site/affiches/prof.webp 1440w" sizes="(max-width: 900px) 92vw, 600px"
+                  alt="Le tableau de bord du professeur : ses classes, les devoirs et l’avancement de chaque élève">
+              </div>
             </div>
-          </div>
-          <div class="portable-socle" aria-hidden="true"></div>
-        </figure>
-        <figure class="appareil telephone">
-          <div class="telephone-corps">
-            <div class="ecran">
-              <img class="affiche" src="/site/affiches/prof-mobile.webp" width="390" height="844" loading="lazy" decoding="async"
-                srcset="/site/affiches/prof-mobile-petit.webp 390w, /site/affiches/prof-mobile.webp 780w" sizes="(max-width: 860px) 26vw, 170px"
-                alt="L’espace professeur sur téléphone : le code de l’établissement, les élèves en retard et ce qui est à traiter">
+            <div class="portable-socle" aria-hidden="true"></div>
+          </figure>
+          <figure class="appareil telephone">
+            <div class="telephone-corps">
+              <div class="ecran">
+                <img class="affiche" src="/site/affiches/prof-mobile.webp" width="390" height="844" decoding="async"
+                  srcset="/site/affiches/prof-mobile-petit.webp 390w, /site/affiches/prof-mobile.webp 780w" sizes="(max-width: 900px) 26vw, 160px"
+                  alt="L’espace professeur sur téléphone : le code de l’établissement, les élèves en retard et ce qui est à traiter">
+              </div>
+              <i class="ilot" aria-hidden="true"></i>
             </div>
-            <i class="ilot" aria-hidden="true"></i>
-          </div>
-        </figure>
+          </figure>
+        </div>
+        <div class="pv-devoir" aria-hidden="true">
+          <p><b>Fonctions affines</b><small>2<sup>de</sup>&nbsp;3 · pour vendredi</small></p>
+          <span class="pv-anneau" style="--v:.86"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle class="v" cx="20" cy="20" r="16"/></svg><b>24/28</b></span>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="p-section enveloppe" aria-labelledby="defi-t">
-    <div class="p-duo inverse">
-      <div>
-        <h2 id="defi-t">Un défi en direct, projeté au tableau.</h2>
-        <p>Vous lancez une partie depuis un livre&#8239;: un code à six chiffres et son QR s’affichent, les élèves entrent au téléphone. Une question à l’écran, quatre réponses en couleur, et le plus rapide marque le plus.</p>
-        <p>QCM, vrai ou faux, réponse écrite&#8239;: à la fin, le podium, et ce que la classe a raté.</p>
-      </div>
-      <article class="tuile t-defi p-tuile rv" aria-label="Un défi en direct : le chrono et quatre réponses">
+  <section class="p-section enveloppe" aria-labelledby="outils-t">
+    <div class="p-tete">
+      <h2 id="outils-t" class="titre rv">Tout ce qu’il faut, <em>rien de plus</em>.</h2>
+    </div>
+    <div class="bento p-six">
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-suivi" aria-hidden="true">
+          <div class="dm-l" style="--w:1"><span class="av" style="--j:#B0475F"><svg class="visage"><use href="#visage-eleve"/></svg></span><i class="barre"><i></i></i><svg class="ic ok"><use href="#i-ok"/></svg></div>
+          <div class="dm-l" style="--w:.72"><span class="av" style="--j:#2E7A86"><svg class="visage"><use href="#visage-4"/></svg></span><i class="barre"><i></i></i></div>
+          <div class="dm-l" style="--w:1"><span class="av" style="--j:#3F7D55"><svg class="visage"><use href="#visage-3"/></svg></span><i class="barre"><i></i></i><svg class="ic ok"><use href="#i-ok"/></svg></div>
+          <div class="dm-l retard" style="--w:.18"><span class="av" style="--j:#9A6512"><svg class="visage"><use href="#visage-5"/></svg></span><i class="barre"><i></i></i><span class="pastille-r">en retard</span></div>
+        </div>
+        <h3>Un devoir, suivi</h3>
+        <p>Qui l’a lu, sa réussite, son retard.</p>
+      </article>
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-bloque" aria-hidden="true">
+          <p><b>Coefficient directeur</b><i style="--w:.62"></i><span>62&nbsp;%</span></p>
+          <p><b>Ordonnée à l’origine</b><i style="--w:.48"></i><span>48&nbsp;%</span></p>
+          <p><b>Sens de variation</b><i style="--w:.31"></i><span>31&nbsp;%</span></p>
+        </div>
+        <h3>Ce qui bloque</h3>
+        <p>Les pages que la classe rate le plus.</p>
+      </article>
+      <article class="tuile t-defi rv">
         <div class="tuile-dessin" aria-hidden="true">
           <div class="chrono"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16"/><circle class="reste" cx="20" cy="20" r="16"/></svg><b>12</b></div>
           <div class="boutons4">
@@ -78,59 +91,61 @@
             <i class="b-vert"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg></i>
           </div>
         </div>
-        <h3>Défis en direct</h3>
-        <p>En classe, entre amis, en club. Le plus rapide marque le plus.</p>
+        <h3>Un défi en direct</h3>
+        <p>Une question, quatre couleurs, le podium.</p>
       </article>
-    </div>
-  </section>
-
-  <section class="p-section enveloppe" aria-labelledby="outils-t">
-    <div class="p-tete">
-      <h2 id="outils-t" class="titre">Tout ce qu’il faut, rien de plus.</h2>
-    </div>
-    <div class="p-grille">
-      <article class="p-carte rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-etincelle"/></svg></span>
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-tableau" aria-hidden="true">
+          <div class="dw-ecran"><span><small>Code de la partie</small><b>482 913</b><em>18 joueurs</em></span><span class="dw-qr"><!-- @qr-essai --></span></div>
+        </div>
+        <h3>Projeté au tableau</h3>
+        <p>Un code, un QR, ils entrent au téléphone.</p>
+      </article>
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-ia" aria-hidden="true">
+          <b>400</b><span><svg class="ic"><use href="#i-etincelle"/></svg>cours par mois</span>
+        </div>
         <h3>L’IA pour vos livres</h3>
-        <p>Votre cours, une photo ou un PDF deviennent un livre de flashcards en quelques secondes. Jusqu’à 400 cours par mois.</p>
+        <p>Un cours, une photo, un PDF, en flashcards.</p>
       </article>
-      <article class="p-carte rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-horloge"/></svg></span>
+      <article class="tuile rv">
+        <div class="tuile-dessin dw-agenda" aria-hidden="true">
+          <div><small>Lun</small><i data-teinte="blue">2<sup>de</sup>&nbsp;3</i></div>
+          <div><small>Mar</small></div>
+          <div><small>Mer</small><i data-teinte="red">1<sup>re</sup>&nbsp;B</i><i data-teinte="green">Spé</i></div>
+          <div><small>Jeu</small></div>
+          <div><small>Ven</small><i data-teinte="blue">2<sup>de</sup>&nbsp;3</i></div>
+        </div>
         <h3>L’agenda</h3>
-        <p>Les devoirs de toutes vos classes, semaine après semaine, au même endroit.</p>
-      </article>
-      <article class="p-carte rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-courbe"/></svg></span>
-        <h3>Le bilan d’une classe</h3>
-        <p>Où en est chacun, la répartition des réussites, et les élèves à reprendre.</p>
-      </article>
-      <article class="p-carte rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-groupe"/></svg></span>
-        <h3>Vos classes et vos groupes</h3>
-        <p>Vous choisissez vos classes, et formez des groupes d’élèves pour une option ou un soutien.</p>
+        <p>Les devoirs de toutes vos classes.</p>
       </article>
     </div>
   </section>
 
-  <section class="p-section enveloppe" aria-labelledby="particulier-t">
-    <div class="p-tete">
-      <h2 id="particulier-t" class="titre">Vous donnez des cours particuliers&#8239;?</h2>
-      <p class="texte">Vous avez votre code&#8239;: vos élèves le tapent, vous acceptez chacun dans votre salle d’attente, et ils arrivent dans votre classe.</p>
-    </div>
-    <div class="p-grille">
-      <article class="p-carte rv">
-        <h3>Votre espace, gratuit</h3>
-        <p>Votre code, vos classes, les devoirs suivis et les défis en direct, pour vous et vos élèves.</p>
-      </article>
-      <article class="p-carte rv">
-        <h3>Mirandola<span class="plus">+</span> pour vous</h3>
-        <p>L’IA sans compter pour préparer vos livres, au prix d’un élève&#8239;: 4,17&nbsp;€ par mois à l’année.</p>
-      </article>
-      <article class="p-carte sombre rv">
-        <h3>Vous et vos élèves</h3>
-        <p>Mirandola+ pour toute votre classe&#8239;: 100&nbsp;€&nbsp;HT par an jusqu’à 20 places.</p>
-        <a class="bt bt-creme" href="/demande-demo">Ouvrir mon espace<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
-      </article>
+  <section class="p-nuit" aria-labelledby="particulier-t">
+    <div class="enveloppe">
+      <div class="p-tete">
+        <h2 id="particulier-t" class="titre rv">Des cours <em>particuliers</em>&#8239;?</h2>
+        <p class="texte rv">Vos élèves tapent votre code, vous acceptez chacun, ils arrivent dans votre classe.</p>
+      </div>
+      <div class="p-nuit-cartes">
+        <article class="rv">
+          <p class="nc-prix">0&nbsp;€</p>
+          <h3>Votre espace</h3>
+          <p>Votre code, vos classes, les devoirs suivis, les défis.</p>
+        </article>
+        <article class="rv">
+          <p class="nc-prix">4,17&nbsp;€<small>/mois</small></p>
+          <h3>Mirandola<span class="plus">+</span> pour vous</h3>
+          <p>L’IA sans compter pour vos livres, au prix d’un élève.</p>
+        </article>
+        <article class="rv fort">
+          <p class="nc-prix">100&nbsp;€&nbsp;HT<small>/an</small></p>
+          <h3>Vous et vos élèves</h3>
+          <p>Mirandola+ pour toute votre classe, jusqu’à 20 places.</p>
+          <a class="bt bt-creme" href="/demande-demo">Ouvrir mon espace<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        </article>
+      </div>
     </div>
   </section>
 

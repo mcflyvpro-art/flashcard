@@ -350,6 +350,20 @@ nouvelles pages. Le guide de l'utilisateur et la mémoire technique :
 - [x] T7.6 Tests : `test/seo.test.js` (titre ≤ 60 signes, description 110 à 160, canonique, un seul h1, JSON-LD, fil d'Ariane, FAQ identique, liens internes valides, aucune adresse qui croise `src/routes.js`, sitemap = la liste, aucun tiret long ni « fiche »), `e2e/pages.e2e.js`, Lighthouse. **Fait** : `npm run check` vert (748 tests, dont 75 de `test/seo.test.js`) ; e2e 121 verts et 1 repassé au second essai (`espace-prof.e2e.js` à 1440 px, la machine chargée par Lighthouse en même temps : 2 sur 2 seul) ; Lighthouse au téléphone sur `/`, `/tarifs`, `/etablissements`, `/repetition-espacee`, `/anki-quizlet` : SEO 100, accessibilité 100, bonnes pratiques 100, performance 96 à 100 sur les nouvelles pages (l'accueil mesuré pendant les e2e, non représentatif). Reste à vérifier une fois en ligne : `/tarifs` sert bien sa page sur Vercel (le réseau de la session ne joint pas mirandola.fr).
 - [x] T7.7 `docs/SEO.md` : Search Console (DNS chez OVH), Bing, outils de test, sous-liens, la ville de Mirandola, actions hors site ; CLAUDE.md et PROGRESS.md ; push branche puis `main` après accord.
 
+## Tour 8 : les pages au niveau de l'accueil, et la page du moteur (2026-11-04)
+
+La demande : « améliore le design de toutes les nouvelles pages, le même
+niveau d'exigence que la page d'accueil ; le visuel d'abord, pas de texte
+parasite, juste ce qu'il faut, que ça attire l'œil. Et une page réservée au
+moteur, ultra nerd, les maths en détail, pour impressionner le lecteur sur
+sa puissance. » Même branche. Les adresses, les titres, les descriptions et
+les h1 ne bougent pas (docs/SEO.md, § 7) : seul le dessin change, et le
+texte se resserre.
+
+- [x] T8.1 `/moteur` (neuvième page, `moteur.html`, `src/site/moteur-calc.js`, `src/site/moteur.js`, `src/site/moteur.css`) : FSRS-6 formule par formule en MathML natif, la table des 21 paramètres, le banc d'essai `srs-benchmark` relevé le 2026-11-04 (FSRS-6 : log loss 0,3460, RMSE 0,0653), quatre laboratoires. Tout est calculé par `src/fsrs.js` (le site en reçoit sa copie, `moteurDuSite` de `vite.config.js`), chaque chiffre recalculé par `test/moteur.test.js`. En-tête et pied y mènent ; image de partage sombre (`node tools/affiches.js pages`) ; plafond à part, 56 Ko (50,7).
+- [x] T8.2 Les sept pages refaites, chacune avec un haut de page en deux colonnes (`.p-heros.split` : le texte, et ce qu'il montre) et une bande de nuit (`.p-nuit`) : `/flashcards-ia` (un cours dont les mots s'allument et qui devient trois pages ; cinq tuiles dessinées pour les cinq façons de commencer ; les règles en exemples, un mauvais, un bon), `/etablissements` (les deux codes d'un lycée, un vrai QR vers la démo, les visages qui entrent ; le bloc Campus de l'accueil repris, `@campus variante=page`, sans sa marque ni ses boutons), `/professeurs` (l'espace sur ordinateur et téléphone, un devoir à 24/28 ; six tuiles : le suivi, ce qui bloque, le défi, le tableau, l'IA, l'agenda ; les cours particuliers sur la nuit), `/repetition-espacee` (la courbe dans le haut de page, les révisions qui s'espacent, `@paliers`, tirées du même programme ; les deux effets dessinés ; la citation sur la nuit ; une frise de 1885 à FSRS ; six conseils), `/tarifs` (ce qui ne change pas, les deux moteurs sur la nuit), `/anki-quizlet` (trois profils en éventail ; l'import en deux parcours, du texte exporté à la page), `/a-propos` (un médaillon autour du logo, la vie de Pic en frise, la promesse sur la nuit, le panneau de la ville). Rien ne tourne en boucle sauf la lumière, comme avant ; « mouvement réduit » pose tout d'emblée.
+- [x] T8.3 Le poids : chaque page a sa feuille (`src/site/pages/<page>.css`, liée depuis sa tête), `pages.css` ne garde que le commun ; `qrSvg` dessine une bande par suite de modules noirs (même dessin au pixel près, vérifié sur cinq codes, chemin deux fois plus court) ; la plus lourde des pages, `/repetition-espacee`, 39,7 Ko sur 40 (`/etablissements` passait à 40,2 avant le QR allégé).
+
 ## Ce qui reste à décider (l'utilisateur)
 
 - **Les prix** (2026-10-28) : Mirandola+ 6,99 €/mois ou

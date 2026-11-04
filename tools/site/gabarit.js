@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import { PAGES, SITE, SOUS_PAGES, adresse } from '../../src/site/pages.js';
 import { DEPART, programme, rappel } from '../../src/site/courbes.js';
 import * as M from '../../src/site/moteur-calc.js';
+import { qrSvg } from '../../src/qr.js';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const partiel = nom => readFileSync(join(RACINE, 'src/site/partiels', nom + '.html'), 'utf8').trim();
@@ -130,8 +131,15 @@ ${json(donnees(p))}
 
 /* Le lien de la page où l'on est porte aria-current : le lecteur d'écran
    le dit, la feuille de style le marque. */
-const ici = (h, p) => p.chemin === '/' ? h
-  : h.replaceAll(`<a href="${p.chemin}">`, `<a href="${p.chemin}" aria-current="page">`);
+/* Dans un morceau commun, un lien de relance vers la page où l'on est
+   (« Tout sur Mirandola Campus » sur /etablissements) s'efface, avec son
+   séparateur ; un lien du menu y prend aria-current. */
+const ici = (h, p) => {
+  if (p.chemin === '/') return h;
+  const soi = `<a class="lien" href="${p.chemin}">[^<]*</a>`, point = '<span aria-hidden="true">·</span>';
+  return h.replace(new RegExp(soi + point, 'g'), '').replace(new RegExp(point + soi, 'g'), '').replace(new RegExp(soi, 'g'), '')
+    .replaceAll(`<a href="${p.chemin}">`, `<a href="${p.chemin}" aria-current="page">`);
+};
 
 /* Le fil d'Ariane qu'on voit (le même que celui des données structurées). */
 const ariane = p => `<nav class="ariane" aria-label="Fil d’Ariane"><ol><li><a href="/">Mirandola</a></li>`
@@ -141,6 +149,23 @@ const ariane = p => `<nav class="ariane" aria-label="Fil d’Ariane"><ol><li><a 
    depuis le modèle du graphique de l'accueil (src/site/courbes.js : la
    courbe d'oubli de FSRS, une révision quand le rappel tombe à 90 %). Le
    temps est droit, sur deux mois : on y voit les révisions s'espacer. */
+/* Les révisions d'une page, de plus en plus espacées : des sauts qui
+   s'allongent, depuis le même programme que la courbe (/repetition-espacee). */
+export function paliers() {
+  const j = programme(DEPART[1]).slice(1, 6).map(d => Math.round(d.debut)), max = j[j.length - 1];
+  const x = d => 50 + 900 * Math.sqrt(d / max), Y = 150;
+  let prec = 0, arcs = '', points = '';
+  j.forEach((d, k) => {
+    const a = x(prec), b = x(d), h = 24 + 26 * k;
+    arcs += `<path class="pa-arc" style="--k:${k}" d="M${a.toFixed(1)} ${Y}Q${((a + b) / 2).toFixed(1)} ${Y - 2 * h} ${b.toFixed(1)} ${Y}"/>`;
+    points += `<circle class="pa-pt" style="--k:${k}" cx="${b.toFixed(1)}" cy="${Y}" r="9"/><text class="pa-t" x="${b.toFixed(1)}" y="${Y + 44}">J+${d}</text>`;
+    prec = d;
+  });
+  return `<svg class="pa-svg" viewBox="0 0 1000 210" role="img" aria-label="Une page revue au bon moment : au bout de ${j.slice(0, -1).join(', ')} puis ${max} jours">`
+    + `<defs><linearGradient id="pa-g" x1="0" x2="1"><stop offset="0" stop-color="#5A76D0"/><stop offset=".55" stop-color="#9A78CF"/><stop offset="1" stop-color="#D7648D"/></linearGradient></defs>`
+    + `<line class="pa-base" x1="50" x2="950" y1="${Y}" y2="${Y}"/><circle class="pa-pt pa-0" cx="50" cy="${Y}" r="9"/><text class="pa-t" x="50" y="${Y + 44}">J 0</text>${arcs}${points}</svg>`;
+}
+
 export function courbeOubli() {
   const S0 = DEPART[1], T = 64, x = t => (60 + 920 * t / T).toFixed(1), y = r => (20 + 360 * (1 - r)).toFixed(1);
   let sans = `M${x(0)} ${y(1)}`;
@@ -180,13 +205,15 @@ export function rendre(html, p) {
   };
   /* Ce qui se calcule au lieu de se lire dans un morceau. */
   const sim = () => M.simuler(M.SCENARIOS.correct.notes);
-  const calcules = { meta: () => accueil ? '' : meta(p), ariane: () => ariane(p), courbe: courbeOubli,
+  const calcules = { meta: () => accueil ? '' : meta(p), ariane: () => ariane(p), courbe: courbeOubli, paliers,
     /* la page du moteur : ses graphiques écrits au build, par le moteur lui-même
        (src/site/moteur-calc.js), puis redessinés par moteur.js quand on y joue */
     'moteur-famille': () => M.svgFamille(), 'moteur-courbe': () => M.svgCourbe(10, true, 15.2),
     'moteur-gain': () => M.svgGain(), 'moteur-banc': () => M.barresBanc('rmse'), 'moteur-banc-ll': () => M.barresBanc('logloss'),
     'moteur-simulation': () => M.svgSimulation(sim()), 'moteur-lignes': () => M.lignesSimulation(sim()), 'moteur-bilan': () => M.bilanSimulation(sim()),
-    'moteur-parametres': () => M.tableParametres() };
+    'moteur-parametres': () => M.tableParametres(),
+    /* le QR de la démo : le scanner ouvre vraiment « Essayer sans compte » */
+    'qr-essai': () => qrSvg(SITE + '/essayer', 'QR code vers la démo de Mirandola') };
   /* `<!-- @tarifs h=h1 -->` : le morceau tarifs.html, où {{h}} vaut h1 ; un
      morceau peut en poser un autre (tarifs.html pose le calculateur). */
   const marqueurs = (t, prof = 0) => t.replace(/<!-- @([\w-]+)((?: \w+=\S+)*) -->/g, (_, nom, args) => {

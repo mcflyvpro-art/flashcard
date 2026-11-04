@@ -231,8 +231,12 @@ de liens. Tout cela finit en pénalité pour le site entier.
 - La liste : `src/site/pages.js`. Le gabarit et le sitemap :
   `tools/site/gabarit.js` (greffon Vite `pagesDuSite`, `rendre`,
   `sitemap`, `llms`, `courbeOubli`). Les morceaux : `src/site/partiels/`.
-  Le style des pages : `src/site/pages.css` (après `site.css`). Le script :
-  `src/site/page.js` (et `commun.js`, partagé avec `site.js`).
+  Le style des pages : `src/site/pages.css` (après `site.css`) pour le
+  commun, puis la feuille de chaque page, `src/site/pages/<page>.css`
+  (liée depuis sa tête ; la page du moteur a la sienne,
+  `src/site/moteur.css`). Le script : `src/site/page.js` (et `commun.js`,
+  partagé avec `site.js`) ; la page du moteur, `src/site/moteur.js` et
+  `moteur-calc.js`, qui appellent le moteur de l'app (`src/fsrs.js`).
 - Vercel sert un fichier avant d'appliquer la réécriture vers l'app : avec
   `cleanUrls`, `/tarifs` sert `tarifs.html`. Sous `npm run dev` et
   `vite preview`, c'est le relais `adressesDeLApp` de `vite.config.js`.

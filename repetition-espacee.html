@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- @meta -->
+<link rel="stylesheet" href="/src/site/pages/repetition-espacee.css">
 </head>
 <body>
 <a class="saut" href="#contenu">Aller au contenu</a>
@@ -11,58 +12,80 @@
 
 <main id="contenu">
   <article>
-    <header class="p-heros" aria-labelledby="titre">
+    <header class="p-heros split" aria-labelledby="titre">
       <div class="heros-fond" aria-hidden="true"><i class="tache t1"></i><i class="tache t2"></i><i class="tache t3"></i></div>
       <div class="enveloppe p-heros-in">
-        <!-- @ariane -->
-        <p class="surtitre">Le guide</p>
-        <h1 id="titre" class="p-titre">La répétition espacée, <em>expliquée</em> simplement.</h1>
-        <p class="p-chapeau">On oublie vite ce qu’on vient d’apprendre. Le revoir au bon moment, juste avant qu’il s’efface, suffit à le garder des mois. Voici pourquoi, et comment t’en servir.</p>
-        <p class="petit">Par l’équipe Mirandola · mis à jour le <time datetime="2026-11-02">2 novembre 2026</time> · 7 minutes de lecture</p>
+        <div class="p-texte">
+          <!-- @ariane -->
+          <p class="surtitre">Le guide</p>
+          <h1 id="titre" class="p-titre">La répétition espacée, <em>expliquée</em> simplement.</h1>
+          <p class="p-chapeau">On oublie vite ce qu’on vient d’apprendre. Le revoir juste avant qu’il s’efface suffit à le garder des mois.</p>
+          <p class="petit">Par l’équipe Mirandola · mis à jour le <time datetime="2026-11-04">4 novembre 2026</time> · 5 minutes de lecture</p>
+        </div>
+        <figure class="p-visuel p-courbe rv">
+          <!-- @courbe -->
+          <figcaption class="co-legende">
+            <span><i aria-hidden="true"></i>Avec la répétition espacée</span>
+            <span class="l-sans"><i aria-hidden="true"></i>Sans révision</span>
+            <span class="l-seuil"><i aria-hidden="true"></i>Revoir à 90&nbsp;%</span>
+          </figcaption>
+        </figure>
       </div>
     </header>
 
     <section class="p-section enveloppe" aria-labelledby="oubli-t">
-      <div class="prose">
-        <h2 id="oubli-t">La courbe de l’oubli</h2>
-        <p>En 1885, le psychologue allemand Hermann Ebbinghaus apprend par cœur des listes de syllabes sans aucun sens, puis mesure, jour après jour, ce qu’il en reste. Le résultat tient en une courbe&#8239;: <strong>l’essentiel s’en va dans les premiers jours</strong>, puis l’oubli ralentit. C’est la courbe de l’oubli.</p>
-        <p>Il remarque autre chose&#8239;: une liste revue s’oublie moins vite que la première fois. Et plus on attend avant de la revoir, sans attendre trop, plus elle tient ensuite. Toute la répétition espacée est là.</p>
+      <div class="p-duo">
+        <div>
+          <h2 id="oubli-t">La courbe de l’oubli</h2>
+          <p>En 1885, Hermann Ebbinghaus apprend des listes de syllabes sans aucun sens et mesure, jour après jour, ce qu’il en reste&#8239;: <strong>l’essentiel s’en va dans les premiers jours</strong>, puis l’oubli ralentit.</p>
+          <p>Une liste revue s’oublie ensuite moins vite. Et plus on attend avant de la revoir, sans attendre trop, plus elle tient. Toute la répétition espacée est là.</p>
+        </div>
+        <figure class="p-paliers rv"><!-- @paliers --></figure>
       </div>
-      <figure class="p-courbe rv">
-        <!-- @courbe -->
-        <figcaption class="co-legende">
-          <span><i aria-hidden="true"></i>Avec la répétition espacée</span>
-          <span class="l-sans"><i aria-hidden="true"></i>Sans révision</span>
-          <span class="l-seuil"><i aria-hidden="true"></i>Le moment de revoir la page&#8239;: 90&nbsp;%</span>
-        </figcaption>
-      </figure>
-      <p class="p-source enveloppe centre">Une page, d’après le modèle de mémoire de FSRS, l’algorithme de Mirandola. Chaque page a son rythme&#8239;: celle-ci est d’une difficulté moyenne.</p>
+      <p class="p-source centre">Une page de difficulté moyenne, d’après le modèle de mémoire de FSRS, l’algorithme de Mirandola.</p>
     </section>
 
     <section class="p-section enveloppe" aria-labelledby="pourquoi-t">
-      <div class="prose">
-        <h2 id="pourquoi-t">Pourquoi ça marche</h2>
-        <p>Deux effets parmi les mieux établis de la psychologie de la mémoire travaillent ensemble.</p>
-        <h3>L’effet d’espacement</h3>
-        <p>À temps de travail égal, on retient bien mieux en répartissant ses révisions qu’en les entassant la veille. Une synthèse de plus de 300 expériences (Cepeda et ses collègues, 2006) le retrouve presque partout, et montre que l’écart idéal entre deux révisions grandit avec le temps qui reste avant l’examen.</p>
-        <h3>L’effet de test</h3>
-        <p>Se forcer à retrouver une réponse renforce le souvenir bien plus que la relire. Dans une étude devenue classique (Roediger et Karpicke, 2006), des étudiants qui s’étaient testés retenaient nettement mieux un texte une semaine plus tard que ceux qui l’avaient relu, alors même qu’ils se sentaient moins sûrs d’eux.</p>
-        <p>Une flashcard fait les deux&#8239;: elle t’oblige à chercher la réponse avant de la voir, et elle revient à des moments choisis. C’est pour ça qu’on dit <a href="/flashcards-ia">un livre de flashcards</a> plutôt qu’un cours relu.</p>
-        <blockquote>Relire donne l’impression de savoir. Chercher la réponse, c’est apprendre.</blockquote>
+      <div class="p-tete">
+        <h2 id="pourquoi-t" class="titre rv">Pourquoi ça <em>marche</em>.</h2>
+        <p class="texte rv">Deux effets parmi les mieux établis de la psychologie de la mémoire.</p>
       </div>
+      <div class="p-effets">
+        <article class="rv">
+          <div class="ef-dessin ef-espace" aria-hidden="true">
+            <p><small>Tout la veille</small><span class="ef-ligne"><i></i><i></i><i></i><i></i><i></i></span></p>
+            <p class="bien"><small>Réparti</small><span class="ef-ligne"><i></i><i></i><i></i><i></i><i></i></span></p>
+          </div>
+          <h3>L’effet d’espacement</h3>
+          <p>À temps égal, on retient bien mieux en répartissant ses révisions qu’en les entassant la veille. Une synthèse de plus de 300 expériences le retrouve presque partout <cite>(Cepeda et al., 2006)</cite>.</p>
+        </article>
+        <article class="rv">
+          <div class="ef-dessin ef-test" aria-hidden="true">
+            <p><small>Relu</small><span class="ef-barre" style="--w:.42"></span></p>
+            <p class="bien"><small>Testé</small><span class="ef-barre" style="--w:.82"></span></p>
+            <em>Ce qu’il en reste une semaine après</em>
+          </div>
+          <h3>L’effet de test</h3>
+          <p>Chercher une réponse la fixe bien mieux que la relire. Une semaine après, ceux qui s’étaient testés retenaient nettement plus, en se sentant pourtant moins sûrs d’eux <cite>(Roediger et Karpicke, 2006)</cite>.</p>
+        </article>
+      </div>
+      <p class="p-apres rv">Une flashcard fait les deux&#8239;: elle te fait chercher, et elle revient au bon moment. D’où <a class="p-lien" href="/flashcards-ia">un livre de flashcards</a> plutôt qu’un cours relu.</p>
+    </section>
+
+    <section class="p-nuit p-citation" aria-label="À retenir">
+      <blockquote class="enveloppe">Relire donne l’impression de savoir. <em>Chercher la réponse, c’est apprendre.</em></blockquote>
     </section>
 
     <section class="p-section enveloppe" aria-labelledby="algos-t">
-      <div class="prose">
-        <h2 id="algos-t">Le bon moment&#8239;: de la boîte de Leitner à FSRS</h2>
-        <p>Toute la question est de savoir quand revoir chaque page. Trois réponses se sont succédé.</p>
-        <h3>La boîte de Leitner</h3>
-        <p>Dans les années 1970, le journaliste allemand Sebastian Leitner range ses cartes dans une boîte à compartiments. Une carte sue passe au compartiment suivant, revu moins souvent&#8239;; une carte ratée revient au premier. Simple, mais les intervalles sont les mêmes pour tout le monde.</p>
-        <h3>SM-2, et des intervalles calculés</h3>
-        <p>En 1987, le chercheur polonais Piotr Woźniak écrit SM-2 pour son logiciel SuperMemo&#8239;: chaque carte a son facteur de facilité, qui allonge l’intervalle à chaque réussite. Anki l’a repris et l’a fait tourner pendant des années.</p>
-        <h3>FSRS, un modèle de ta mémoire</h3>
-        <p>FSRS (Free Spaced Repetition Scheduler) est un algorithme libre, écrit par Jarrett Ye à partir de 2022 et intégré à Anki depuis sa version 23.10. Pour chaque page, il estime trois choses&#8239;: sa <strong>difficulté</strong>, la <strong>stabilité</strong> de ton souvenir (combien de temps il tient) et la <strong>probabilité</strong> que tu t’en souviennes aujourd’hui. Ses paramètres sont appris sur des centaines de millions de révisions réelles, et il peut se régler sur ta propre mémoire.</p>
+      <div class="p-tete">
+        <h2 id="algos-t" class="titre rv">Le bon moment&#8239;: de la boîte de Leitner à <em>FSRS</em>.</h2>
       </div>
+      <ol class="p-frise">
+        <li class="rv"><span class="an">1885</span><b>Ebbinghaus</b><p>La courbe de l’oubli, mesurée sur lui-même.</p></li>
+        <li class="rv"><span class="an">1970</span><b>La boîte de Leitner</b><p>Des compartiments&#8239;: une carte sue avance, une carte ratée revient au premier. Les mêmes intervalles pour tous.</p></li>
+        <li class="rv"><span class="an">1987</span><b>SM-2</b><p>Piotr Woźniak donne à chaque carte un facteur de facilité. Anki l’a fait tourner des années.</p></li>
+        <li class="rv nous"><span class="an">2022</span><b>FSRS</b><p>Jarrett Ye modélise ta mémoire, page par page&#8239;: difficulté, stabilité, probabilité de t’en souvenir. Dans Anki depuis 23.10.</p></li>
+      </ol>
       <div class="p-table rv">
         <table>
           <caption class="cache">Trois façons de choisir le moment de revoir une page</caption>
@@ -77,41 +100,41 @@
     </section>
 
     <section class="p-section enveloppe" aria-labelledby="mirandola-t">
-      <div class="prose">
-        <h2 id="mirandola-t">Dans Mirandola</h2>
-        <p>Mirandola fait tourner FSRS, compilé depuis le même code que celui d’Anki, avec les mêmes réglages. Tu n’as rien à régler&#8239;: tu lis le recto, tu cherches, tu retournes la page et tu dis comment c’était.</p>
+      <div class="p-tete">
+        <h2 id="mirandola-t" class="titre rv">Dans <em>Mirandola</em>.</h2>
+        <p class="texte rv">FSRS, compilé depuis le même code que celui d’Anki, avec les mêmes réglages. Tu lis, tu cherches, tu retournes la page et tu dis comment c’était.</p>
       </div>
       <ul class="p-chiffres">
         <li class="rv"><b>90&nbsp;%</b><span>La mémoire visée&#8239;: chaque page revient quand tu as encore 9 chances sur 10 de t’en souvenir.</span></li>
-        <li class="rv"><b>4</b><span>Réponses possibles&#8239;: Encore, Difficile, Correct, Facile. Le moteur en tire le jour suivant.</span></li>
-        <li class="rv"><b>20</b><span>Pages nouvelles par jour et par livre, pour que les révisions ne s’empilent pas.</span></li>
-        <li class="rv"><b>0</b><span>Réglage à faire&#8239;: tu révises, le moteur s’occupe du reste.</span></li>
+        <li class="rv"><b>4</b><span>Réponses&#8239;: Encore, Difficile, Correct, Facile.</span></li>
+        <li class="rv"><b>20</b><span>Pages nouvelles par jour et par livre.</span></li>
+        <li class="rv"><b>0</b><span>Réglage à faire.</span></li>
       </ul>
       <div class="p-grille deux p-moteurs">
         <article class="p-carte rv">
           <h3>Memory Engine Lite</h3>
-          <p>Dans Mirandola gratuit&#8239;: la répétition espacée avec les réglages de base de FSRS, les mêmes pour tout le monde.</p>
+          <p>Dans Mirandola gratuit&#8239;: les réglages de base de FSRS, les mêmes pour tout le monde.</p>
         </article>
         <article class="p-carte sombre rv">
           <h3>Memory Engine Ultra</h3>
-          <p>Dans Mirandola+ et Mirandola Campus&#8239;: le moteur se règle sur ta mémoire à mesure que tu révises, et étale ta charge pour qu’aucun jour ne déborde.</p>
-          <a class="bt bt-creme" href="/tarifs">Voir les tarifs<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+          <p>Dans Mirandola+ et Mirandola Campus&#8239;: le moteur se règle sur ta mémoire et étale ta charge pour qu’aucun jour ne déborde.</p>
+          <a class="bt bt-creme" href="/moteur">Le moteur, formule par formule<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
         </article>
       </div>
     </section>
 
     <section class="p-section enveloppe" aria-labelledby="methode-t">
-      <div class="prose">
-        <h2 id="methode-t">Comment t’y prendre, concrètement</h2>
-        <ol>
-          <li><strong>Un peu chaque jour.</strong> Dix à vingt minutes valent mieux qu’un après-midi par semaine. La journée de Mirandola commence à 4&nbsp;h du matin&#8239;: réviser après minuit compte encore pour la veille.</li>
-          <li><strong>Cherche avant de retourner.</strong> Le gain vient de l’effort de retrouver la réponse. Même une réponse fausse, cherchée, aide à retenir la bonne.</li>
-          <li><strong>Note honnêtement.</strong> «&nbsp;Correct&nbsp;» si tu l’as trouvée, «&nbsp;Encore&nbsp;» si non. Te mentir, c’est revoir la page trop tard.</li>
-          <li><strong>Commence tôt.</strong> Plus l’examen est loin, plus l’espacement paie. Un livre ouvert dès le début du chapitre se révise presque seul.</li>
-          <li><strong>Une idée par page.</strong> Une page courte se retient, une page longue se relit. <a href="/flashcards-ia">Les cinq règles d’une bonne flashcard</a>.</li>
-        </ol>
-        <p>Et si tu sautes un jour&#8239;? Rien de grave&#8239;: les pages en retard t’attendent le lendemain, et le moteur tient compte du retard pour fixer la suite.</p>
+      <div class="p-tete">
+        <h2 id="methode-t" class="titre rv">Comment t’y prendre, <em>concrètement</em>.</h2>
       </div>
+      <ol class="p-conseils">
+        <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-horloge"/></svg><b>Un peu chaque jour</b><span>Dix à vingt minutes valent mieux qu’un après-midi par semaine. La journée commence à 4&nbsp;h&#8239;: après minuit, c’est encore la veille.</span></li>
+        <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-cible"/></svg><b>Cherche avant de retourner</b><span>Le gain vient de l’effort. Même une réponse fausse, cherchée, aide à retenir la bonne.</span></li>
+        <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><b>Note honnêtement</b><span>«&nbsp;Correct&nbsp;» si tu l’as trouvée, «&nbsp;Encore&nbsp;» si non. Te mentir, c’est revoir la page trop tard.</span></li>
+        <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-courbe"/></svg><b>Commence tôt</b><span>Plus l’examen est loin, plus l’espacement paie.</span></li>
+        <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-livre"/></svg><b>Une idée par page</b><span>Une page courte se retient. <a class="p-lien" href="/flashcards-ia">Les cinq règles d’une bonne flashcard</a>.</span></li>
+        <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-avion"/></svg><b>Un jour sauté&#8239;?</b><span>Rien de grave&#8239;: les pages t’attendent le lendemain, le moteur tient compte du retard.</span></li>
+      </ol>
     </section>
 
     <section class="faq enveloppe p-section" id="faq" aria-labelledby="faq-t">
@@ -126,7 +149,7 @@
     </section>
 
     <section class="p-section enveloppe" aria-labelledby="sources-t">
-      <div class="prose">
+      <div class="prose p-sources">
         <h2 id="sources-t">Pour aller plus loin</h2>
         <ul>
           <li>Hermann Ebbinghaus, <cite>Über das Gedächtnis</cite> (Sur la mémoire), 1885.</li>
