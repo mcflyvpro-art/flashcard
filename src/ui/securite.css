@@ -1,0 +1,42 @@
+/* ══════════ « Sécurité du compte » (2026-11-02, ui/securite.js) ══════════ */
+.sc .sc-l{height:auto;min-height:52px}
+.sc .sc-l > span{flex:1;min-width:0}
+.sc .sc-l > i{font-style:normal;font-size:13px;font-weight:620;color:var(--soft);max-width:46%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc .sc-l > i.sc-on{color:var(--ok)}
+.sc-f{display:flex;flex-direction:column;gap:10px;padding:2px 14px 4px}
+.sc-champ{display:flex;align-items:center;gap:10px;height:52px;padding:0 6px 0 14px;border-radius:14px;
+  background:var(--bg2);box-shadow:var(--edge)}
+.sc-champ:focus-within{box-shadow:inset 0 0 0 1px rgba(29,28,25,.24),var(--ring)}
+.sc-champ > svg{width:18px;height:18px;color:var(--soft);flex:none}
+.sc-champ input{flex:1;min-width:0;height:100%;font-size:16px;font-weight:550}
+.sc-code{width:100%;height:58px;border-radius:14px;background:var(--bg2);box-shadow:var(--edge);text-align:center;
+  font:700 26px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.3em;padding-left:.3em;
+  font-variant-numeric:tabular-nums}
+.sc-code::placeholder{color:var(--soft);opacity:.35}
+.sc-code:focus{box-shadow:inset 0 0 0 1px rgba(29,28,25,.24),var(--ring)}
+.sc-e{min-height:18px;margin:0;text-align:center;font-size:13.5px;font-weight:650;color:var(--ko)}
+.sc-ok{border-radius:99px}
+.sc-non{background:var(--ko)}
+.sc .sc-ok[data-sc]{margin:4px 14px 0;width:calc(100% - 28px)}
+.sc-ret{display:flex;margin:6px auto 2px}
+.sc-p{display:flex;gap:10px;align-items:flex-start;margin:0 14px 12px;padding:12px 14px;border-radius:14px;
+  background:var(--bg2);font-size:14px;line-height:1.45;color:var(--ink2)}
+.sc-p > svg{width:18px;height:18px;flex:none;margin-top:1px;color:var(--soft)}
+.sc-att{justify-content:center}
+.sc-qr{display:grid;place-items:center;margin:0 14px 10px}
+.sc-qr svg{width:min(200px,60vw);height:auto;border-radius:12px;background:#fff;box-shadow:var(--edge)}
+.sc-ajout{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 14px 10px;height:46px;border-radius:99px;
+  background:var(--bg2);box-shadow:var(--edge);font-weight:700;font-size:14.5px;color:var(--ink)}
+.sc-ajout svg{width:17px;height:17px}
+/* sur ordinateur, le QR code se lit avec le téléphone : le lien ne sert qu'au téléphone */
+@media (hover:hover) and (pointer:fine){.sc-ajout{display:none}}
+.sc-cle{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 10px;margin:0 14px 10px;text-align:center}
+.sc-cle span{width:100%;font-size:12.5px;font-weight:650;color:var(--soft)}
+.sc-cle b{font:700 15px/1.4 ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.06em;word-break:break-all}
+.sc-cle .lnk{margin:0}
+.sc-dbl{display:flex;flex-direction:column;gap:6px;font-size:13.5px;font-weight:600;color:var(--ink2)}
+.sc-dbl b{color:var(--ink);word-break:break-all}
+.sc-dbl i{display:flex;align-items:center;justify-content:center;gap:6px;height:44px;border-radius:14px;
+  background:var(--bg2);font-style:normal;font-weight:700;color:var(--ok)}
+.sc-dbl i svg{width:17px;height:17px}

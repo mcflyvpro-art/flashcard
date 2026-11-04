@@ -96,19 +96,31 @@
 // après un code, l'élève et le professeur voient la salle d'attente bouger
 // sans recharger. Tout cela doit être là dès le premier écran (le lien
 // arrive avant tout) : 0,6 Ko de plus, et le démarrage passe de 126 à 127 Ko.
+//
+// 2026-11-02 : la sécurité du compte. Les écrans des codes (ui/verif.js :
+// confirmer son adresse, mot de passe oublié, connexion par code, la
+// vérification en deux étapes) et « Sécurité du compte » (ui/securite.js,
+// src/securite.js, core/compte-auth.js, le QR code) ne servent qu'à la
+// connexion ou quelques fois par an : un plafond à eux (12 Ko JS, 4 Ko CSS),
+// comme la porte d'installation (`verif-…`, `securite-…`, `compte-auth-…`).
+// Ce qui doit garder le démarrage reste au démarrage : la porte de la
+// vérification en deux étapes (rien ne se lit ni ne s'envoie avant le code),
+// la session révoquée à la déconnexion, le gestionnaire de mots de passe
+// prévenu à la connexion — 0,6 Ko, et le démarrage passe de 127 à 128 Ko.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 127 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
+const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
   jsGestion: 30 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
-  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, site: 48 * 1024 };
+  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, site: 48 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',
   jsGestion: 'JS des consoles (référent, éditeur)', cssGestion: 'CSS des consoles (référent, éditeur)',
   jsPorte: 'JS de la porte d’installation', cssPorte: 'CSS de la porte d’installation',
   jsPlus: 'JS de l’écran Mirandola+', cssPlus: 'CSS de l’écran Mirandola+',
   jsPremiers: 'JS des premiers pas (accueil, tuto)', cssPremiers: 'CSS des premiers pas (accueil, tuto)',
+  jsSecurite: 'JS de la sécurité du compte', cssSecurite: 'CSS de la sécurité du compte',
   site: 'Page d’accueil (HTML + CSS + JS)' };
 const dir = 'dist/assets';
 const gz = b => gzipSync(b, { level: 9 }).length;
@@ -117,7 +129,7 @@ const site = readFileSync('dist/index.html', 'utf8');
 const auDemarrage = f => app.includes('/assets/' + f);
 const duSite = f => site.includes('/assets/' + f);
 const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, jsDemo: 0, cssDemo: 0, jsGestion: 0, cssGestion: 0,
-  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, site: gz(site) };
+  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, jsSecurite: 0, cssSecurite: 0, site: gz(site) };
 for (const f of readdirSync(dir)) {
   const ext = f.split('.').pop();
   if (ext !== 'js' && ext !== 'css') continue;
@@ -126,7 +138,7 @@ for (const f of readdirSync(dir)) {
   if (duSite(f) && !auDemarrage(f)) continue;
   const part = auDemarrage(f) ? ext : /^demo-/.test(f) ? ext + 'Demo' : /^pwa-/.test(f) ? ext + 'Porte'
     : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion'
-      : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : ext + 'Demande';
+      : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : /^(verif|securite|compte-auth)-/.test(f) ? ext + 'Securite' : ext + 'Demande';
   total[part] += n;
 }
 let ok = true;

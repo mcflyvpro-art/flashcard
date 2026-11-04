@@ -23,6 +23,7 @@ import {
 } from './menus-b.js';
 import { paintMenuRename } from './menus-c.js';
 import { paintMenuPseudo } from './pseudo-porte.js';
+import { paintMenuSecurite } from './securite-porte.js';
 import { installSheet } from './onboarding.js';
 import { paintMenuPdf } from './pdf-porte.js';
 
@@ -311,6 +312,7 @@ function menuPainter(m) {
     preview: paintMenuPreview,
     sharepick: paintMenuSharepick,
     handle: paintMenuPseudo,
+    secu: paintMenuSecurite,
     mate: paintMenuMate,
     help: paintMenuHelp,
     vers: paintMenuVers,
@@ -324,7 +326,7 @@ function menuPainter(m) {
     mateprof: paintMenuMateprof,
     move: paintMenuMove,
     split: paintMenuSplit,
-    rename: paintMenuRename, pwd: paintMenuRename, delacc: paintMenuRename,
+    rename: paintMenuRename, delacc: paintMenuRename,
     pdf: paintMenuPdf
   }[m];
 }

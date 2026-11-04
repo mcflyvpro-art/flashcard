@@ -25,7 +25,6 @@ import {
   deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
   setMeta, slugify, solveConflict, subj
 } from '../core/coeur-sync.js';
-import { PWMIN } from './connexion.js';
 import { duelStart } from './defis.js';
 import { duelDrop } from '../core/defis.js';
 import { ouvrirDefi } from './defi-nouveau.js';
@@ -33,7 +32,7 @@ import {
   cloneDeck, fnrApply, mergeDecks, savePrefs, splitDeck, spreadBacklog, toast
 } from './import-cartes.js';
 import { closeMenu, mountMenu, openMenu, paintMenu, vientDOuvrir } from './menus-a.js';
-import { changePassword, deleteAccount, mateProfPull } from '../core/menus-c.js';
+import { deleteAccount, mateProfPull } from '../core/menus-c.js';
 import { doPrompt, logout } from './onboarding.js';
 import { versRestore } from './reglages-corbeille.js';
 import {
@@ -61,7 +60,6 @@ function magasinCourt() {
 export function paintMenuRename(w) {
   const conf = {
       rename: ['Nom affiché', I.user, 'text', 'Comment on t’appelle', prefs.name || '', 'Enregistrer'],
-      pwd: ['Nouveau mot de passe', I.lock, 'password', `Au moins ${PWMIN} caractères`, '', 'Changer'],
       delacc: ['Supprimer le compte', I.trash, null, '', '', 'Tout supprimer']
     }[menu];
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
@@ -219,15 +217,6 @@ async function clickMedField(a) {
 function clickDoRename() {
   prefs.name = document.getElementById('fld').value.trim(); savePrefs();
   closeMenu(); render(); toast(I.check, 'Nom enregistré');
-}
-
-function clickDoPwd() {
-  const v = document.getElementById('fld').value, err = document.getElementById('mrr');
-  if (v.length < PWMIN) { err.textContent = `Au moins ${PWMIN} caractères`; return; }
-  err.textContent = 'Envoi…';
-  changePassword(v)
-    .then(() => { closeMenu(); toast(I.check, 'Mot de passe changé'); })
-    .catch(() => { err.textContent = 'Changement impossible'; });
 }
 
 function clickDoDelacc(a, b) {
@@ -524,7 +513,6 @@ const CLICK_RULES = [
   [a => a && a.startsWith('med-'), clickMedField],
   [a => a === 'deckset', () => { closeMenu(); return openMenu('deckset'); }],
   [a => a === 'do-rename', clickDoRename],
-  [a => a === 'do-pwd', clickDoPwd],
   [a => a === 'do-delacc', clickDoDelacc],
   [(a, b) => !!b.dataset.color, clickColor],
   [a => a === 'studyall' || a === 'studyleech', clickStudyAll],

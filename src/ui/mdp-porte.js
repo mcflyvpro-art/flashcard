@@ -33,3 +33,27 @@ export function mdpView() {
 }
 
 
+
+/* ══════════ les codes et la vérification en deux étapes (2026-11-02) ══════════
+   Confirmer son adresse par le code reçu, « mot de passe oublié » et la
+   connexion par code passent par l'écran de connexion (`etatVerif.mode` :
+   « inscription », « oubli », « code ») ; la vérification en deux étapes,
+   elle, prend tout l'écran tant qu'elle n'est pas faite (`auth.mfa`, posé
+   par keepSession : un facteur validé et une session de premier niveau),
+   quel que soit l'écran d'en dessous — rien ne se lit ni ne s'envoie avant
+   (envoyer, core/coeur-sync.js). L'écran (ui/verif.js) se charge à la
+   demande, comme celui du mot de passe. Jamais dans la démo. */
+export const etatVerif = { mode: '', email: '' };
+export const mfaAFaire = () => !!(auth && auth.mfa && !demoEtab);
+
+export function ouvrirVerif(mode, email) {
+  Object.assign(etatVerif, { mode, email: String(email || '').trim(), etape: '', erreur: '', info: '' });
+  render();
+}
+
+let vmod = null, vcharge = null;
+export function verifView() {
+  if (vmod) return vmod.verifView();
+  $.innerHTML = '<div class="pub pub-connexion"></div>';
+  if (!vcharge) vcharge = import('./verif.js').then(m => { vmod = m; render(); }).catch(() => { vcharge = null; });
+}

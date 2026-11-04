@@ -1,0 +1,20 @@
+/* ══════════ l'écran des codes (2026-11-02, ui/verif.js) ══════════
+   Habillé comme la connexion (.pub, .login) ; seul le champ du code est à
+   lui : grand, centré, en chiffres à chasse fixe, qu'on lit d'un coup d'œil
+   et que le clavier du téléphone remplit seul (one-time-code). */
+.vf-dit{display:flex;gap:10px;align-items:flex-start;margin:-8px 0 18px;padding:12px 14px;border-radius:14px;
+  background:var(--card);box-shadow:var(--edge);font-size:14px;line-height:1.45;color:var(--ink2)}
+.vf-dit svg{width:18px;height:18px;flex:none;margin-top:1px;color:var(--soft)}
+.vf-dit b{color:var(--ink);font-weight:700;word-break:break-all}
+.vf .lsub{margin-top:-14px}
+.vf-code{width:100%;height:64px;border-radius:16px;background:var(--card);box-shadow:var(--edge);text-align:center;
+  font:700 30px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.32em;padding-left:.32em;
+  font-variant-numeric:tabular-nums;color:var(--ink);transition:box-shadow .2s}
+.vf-code::placeholder{color:var(--soft);opacity:.35;letter-spacing:.32em}
+.vf-code:focus{box-shadow:inset 0 0 0 1px rgba(29,28,25,.24),var(--ring)}
+.vf-liens{display:flex;flex-wrap:wrap;justify-content:center;gap:2px 6px;margin-top:6px}
+.vf-liens .lnk{margin-top:6px}
+.vf-liens .lnk:disabled{opacity:.55;cursor:default}
+.vf-aide{margin:6px 0 0;text-align:center;font-size:12.5px;color:var(--soft)}
+.vf-aide a{color:var(--ink2);text-decoration:underline}
+@media (max-width:379px){.vf-code{font-size:24px;letter-spacing:.24em;padding-left:.24em}}

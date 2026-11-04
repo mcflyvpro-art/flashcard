@@ -36,6 +36,8 @@ export function lireRetour(hash) {
       expires_in: +p.get('expires_in') || 3600, type: p.get('type') || '' };
   }
   if (p.get('error') || p.get('error_code')) return { erreur: p.get('error_description') || p.get('error_code') || p.get('error') };
+  // la première des deux confirmations d'un changement d'adresse (« Secure email change »)
+  if (p.get('message')) return { message: p.get('message') };
   return null;
 }
 
@@ -47,6 +49,6 @@ export async function sessionDepuisRetour(r) {
   const j = await u.json().catch(() => ({}));
   if (!u.ok || !j.id) throw new Error(j.msg || j.error_description || 'Lien expiré');
   keepSession({ access_token: r.access_token, refresh_token: r.refresh_token, expires_in: r.expires_in,
-    user: { id: j.id, email: j.email } });
+    user: { id: j.id, email: j.email, factors: j.factors } });
   return r.type;
 }

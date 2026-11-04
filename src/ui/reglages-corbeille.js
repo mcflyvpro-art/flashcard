@@ -5,7 +5,7 @@ import { couleurLibre } from '../matieres.js';
 import { I, svg } from '../icones.js';
 import { DAY, MIN } from '../fsrs.js';
 import {
-  accounts, auth, blocks, compte, db, iAmMod, me, mods, myRole, offre, online, prefs, ref,
+  accounts, auth, blocks, compte, db, demoEtab, iAmMod, me, mods, myRole, offre, online, prefs, ref,
   setSubjColor, setSubjEdit, setSubjName, shared, trash, vers, view
 } from '../data/etat.js';
 import { gestion, render } from './bibliotheque.js';
@@ -109,6 +109,11 @@ function lignePlus() {
           <span class="c">${esc(etat)}</span>${svg(I.arrow)}</button>`;
 }
 
+/* « Sécurité du compte » (2026-11-04, ui/securite-porte.js) : l'adresse, le
+   mot de passe, la vérification en deux étapes. Jamais dans la démo sans
+   compte : ni vraie adresse, ni vrai mot de passe. */
+const ligneSecu = () => (demoEtab ? '' : `<button class="sr flat" data-act="secu">${svg(I.lock)}<span class="n">Sécurité du compte</span>${svg(I.arrow)}</button>`);
+
 function settingsCompteHtml() {
   return `
       <div class="lbl"><span>Mon compte</span></div>
@@ -122,7 +127,7 @@ function settingsCompteHtml() {
         <button class="sr flat" data-act="commu">${svg(I.users)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
         ${(myRole === 'eleve' || myRole === 'prof') && !atSchool() ? `<button class="sr flat" data-ce="ouvrir">${svg(I.key)}
           <span class="n">J’ai un code</span><span class="c">établissement, professeur</span>${svg(I.arrow)}</button>` : ''}
-        <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
+        ${ligneSecu()}
       </div>`;
 }
 
@@ -183,7 +188,7 @@ function settingsGestionHtml() {
           <span class="c">${esc(auth.email || '')}</span></div>
         <button class="sr flat" data-act="handle">${svg(I.hash)}<span class="n">Pseudo</span>
           <span class="c">${me && me.handle ? '@' + esc(me.handle) : ''}</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="chpwd">${svg(I.lock)}<span class="n">Changer le mot de passe</span>${svg(I.arrow)}</button>
+        ${ligneSecu()}
         ${myRole === 'ref' ? `<button class="sr flat" data-act="tuto">${svg(I.play)}<span class="n">Revoir le tuto</span>${svg(I.arrow)}</button>` : ''}
         ${installed() ? '' : `<button class="sr flat" data-act="install">${svg(I.plus)}
           <span class="n">Ajouter à l’écran d’accueil</span>${svg(I.arrow)}</button>`}

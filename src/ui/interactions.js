@@ -46,6 +46,7 @@ import {
   saveResume, startStudy
 } from './revision.js';
 import { lancerTuto } from './tuto-porte.js';
+import { ouvrirSecurite } from './securite-porte.js';
 
 
 
@@ -294,7 +295,7 @@ const tapTglboth = () => { prefs.both = !prefs.both; savePrefs(); return render(
 const tapTglfast = () => { prefs.fast = !prefs.fast; savePrefs(); return render(); };
 const tapTglsound = () => { prefs.sound = !prefs.sound; savePrefs(); render(); if (prefs.sound) beep(true); };
 const tapRename = () => openMenu('rename');
-const tapChpwd = () => openMenu('pwd');
+const tapSecu = () => ouvrirSecurite();
 const tapDelacc = () => openMenu('delacc');
 const tapPuball = () => openMenu('backup');
 const tapNew = () => { resetComp(); return go('import'); };
@@ -482,7 +483,7 @@ const CLICK_RULES = [
   [a => a === 'tglfast', tapTglfast],
   [a => a === 'tglsound', tapTglsound],
   [a => a === 'rename', tapRename],
-  [a => a === 'chpwd', tapChpwd],
+  [a => a === 'secu', tapSecu],
   [a => a === 'delacc', tapDelacc],
   [a => a === 'puball', tapPuball],
   [a => a === 'new', tapNew],

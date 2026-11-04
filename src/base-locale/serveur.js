@@ -45,24 +45,33 @@ export function nouveauStore() {
 
 const table = (store, name) => (store.tables[name] = store.tables[name] || []);
 
-function jeton(user) {
-  return { access_token: 'tok-' + user.id + '-' + randomUUID(), refresh_token: 'ref-' + user.id,
-    expires_in: 3600, token_type: 'bearer', user: { id: user.id, email: user.email } };
+/* Le jeton d'accès a la forme d'un JWT dont seule la charge compte : son
+   niveau (`aal`), que l'app lit pour la vérification en deux étapes
+   (2026-11-02). La signature est l'ancien jeton opaque, `tok-<id>-…`, que
+   `userOf` reconnaît toujours. */
+const b64 = o => btoa(JSON.stringify(o)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+export function jeton(user, aal = 'aal1') {
+  const factors = (user.facteurs || []).map(f => ({ id: f.id, factor_type: 'totp', status: f.status, friendly_name: f.friendly_name }));
+  return { access_token: `e30.${b64({ aal })}.tok-${user.id}-${randomUUID()}`, refresh_token: 'ref-' + user.id + (aal === 'aal2' ? '-2' : ''),
+    expires_in: 3600, token_type: 'bearer', user: { id: user.id, email: user.email, ...(factors.length ? { factors } : {}) } };
 }
 
-const userOf = (store, req) => {
+export const userOf = (store, req) => {
   const m = /tok-([0-9a-f-]{36})-/.exec(req.headers.authorization || '');
   return m && store.users.find(u => u.id === m[1]);
 };
 
-// un e-mail d'authentification qui part, s'il reste de la place sous le plafond
-function courriel(store, type, email) {
+/* Un e-mail d'authentification qui part, s'il reste de la place sous le
+   plafond. Il porte son code à 8 chiffres (`store.courriels`, que les
+   parcours lisent comme on lirait sa boîte). */
+export function courriel(store, type, email) {
   store.courriels = store.courriels || [];
   if (store.limiteCourriels != null && store.courriels.length >= store.limiteCourriels) return false;
-  store.courriels.push({ type, email });
-  return true;
+  const code = String(10000000 + Math.floor(Math.random() * 90000000));
+  store.courriels.push({ type, email, code });
+  return code;
 }
-const limite = () => [429, { code: 429, error_code: 'over_email_send_rate_limit', msg: 'email rate limit exceeded' }];
+export const limite = () => [429, { code: 429, error_code: 'over_email_send_rate_limit', msg: 'email rate limit exceeded' }];
 
 function auth(store, path, url, body, req) {
   /* La confirmation d'adresse (2026-10-29) : `store.confirmation` la demande,
@@ -72,31 +81,35 @@ function auth(store, path, url, body, req) {
      l'e-mail se joue en posant `confirme: true` sur le compte. */
   if (path.endsWith('/signup')) {
     if (store.users.some(u => u.email === body.email)) return [422, { error_code: 'user_already_exists', msg: 'User already registered' }];
-    if (store.confirmation && !courriel(store, 'signup', body.email)) return limite();
+    const code = store.confirmation && courriel(store, 'signup', body.email);
+    if (store.confirmation && !code) return limite();
     const user = { id: randomUUID(), email: body.email, password: body.password };
     store.users.push(user);
-    if (store.confirmation) { user.confirme = false; return [200, { id: user.id, email: user.email }]; }
+    if (store.confirmation) { user.confirme = false; user.codes = { signup: code }; return [200, { id: user.id, email: user.email }]; }
     return [200, jeton(user)];
   }
   if (path.endsWith('/resend')) {
     const user = store.users.find(u => u.email === body.email && u.confirme === false);
-    if (user && !courriel(store, body.type, body.email)) return limite();
+    const code = user && courriel(store, body.type, body.email);
+    if (user && !code) return limite();
+    if (user) user.codes = { ...user.codes, signup: code };
     return [200, {}];
   }
   if (path.endsWith('/token')) {
     const grant = url.searchParams.get('grant_type');
+    const r = /^ref-([0-9a-f-]{36})(-2)?$/.exec(body.refresh_token || '');
     const user = grant === 'refresh_token'
-      ? store.users.find(u => 'ref-' + u.id === body.refresh_token)
+      ? r && store.users.find(u => u.id === r[1])
       : store.users.find(u => u.email === body.email && u.password === body.password);
     if (user && user.confirme === false) return [400, { error_code: 'email_not_confirmed', msg: 'Email not confirmed' }];
-    return user ? [200, jeton(user)] : [400, { error_code: 'invalid_credentials', msg: 'Invalid login credentials' }];
+    return user ? [200, jeton(user, r && r[2] ? 'aal2' : 'aal1')] : [400, { error_code: 'invalid_credentials', msg: 'Invalid login credentials' }];
   }
-  if (path.endsWith('/recover')) return [200, {}];
   /* Google (2026-10-29) : les fournisseurs allumés (`store.fournisseurs`,
      aucun d'office), et la page du fournisseur jouée d'un coup — elle renvoie
      à l'app avec la session dans l'adresse, comme Supabase en flux implicite.
      `store.oauth[fournisseur]` : l'adresse du compte qui « choisit » ce compte
      chez le fournisseur ; il est créé s'il n'existe pas. */
+  if (path.endsWith('/recover') || path.endsWith('/logout')) return [200, {}];
   if (path.endsWith('/settings')) return [200, { external: store.fournisseurs || {} }];
   if (path.endsWith('/authorize')) {
     const p = url.searchParams.get('provider'), email = (store.oauth || {})[p];
@@ -109,7 +122,7 @@ function auth(store, path, url, body, req) {
   }
   if (path.endsWith('/user') && req && req.method === 'GET') {
     const user = userOf(store, req);
-    return user ? [200, { id: user.id, email: user.email }] : [401, { msg: 'Invalid token' }];
+    return user ? [200, { ...jeton(user).user, factors: jeton(user).user.factors || [] }] : [401, { msg: 'Invalid token' }];
   }
   /* PUT /user : un mot de passe changé n'est plus provisoire (le
      déclencheur mdp_choisi de la vraie base, 20261029090000). */
@@ -117,7 +130,7 @@ function auth(store, path, url, body, req) {
     const user = userOf(store, req);
     if (!user) return [401, { msg: 'JWT expired' }];
     if (body.password) {
-      if (String(body.password).length < 6) return [422, { msg: 'Password should be at least 6 characters.' }];
+      if (String(body.password).length < 6) return [422, { error_code: 'weak_password', msg: 'Password should be at least 6 characters.' }];
       user.password = body.password;
       mdpChoisi(store, user.id);
     }
@@ -308,3 +321,4 @@ export function semerLivre(store, email, nom, cartes) {
     front: f, back: b, reviews_count: 0, lapses: 0, meta: extra || {} }));
   return deckId;
 }
+

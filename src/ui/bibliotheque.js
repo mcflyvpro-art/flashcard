@@ -22,7 +22,7 @@ import { refAller, refView } from './etablissement.js';
 import { bienvenueView } from './bienvenue-porte.js';
 import { entreePlus, ongletPlus, ouvrirPlus, plusView } from './plus-porte.js';
 import { aInstaller, porteView } from './pwa-porte.js';
-import { mdpAChoisir, mdpView } from './mdp-porte.js';
+import { mdpAChoisir, mdpView, mfaAFaire, verifView } from './mdp-porte.js';
 import { admPull, boardPull, modPull, refPull } from '../core/classement.js';
 import { deck, esc, flush, live, pending, plur, pushUndo, save, sty, subj } from '../core/coeur-sync.js';
 import { decouvrirView, deckView, demandeView, legalView, loginView, selOff } from './connexion.js';
@@ -108,7 +108,8 @@ function placerDefilement() {
 /* Un écran seul à la place de tout le reste : la porte d'installation (un
    téléphone dans son navigateur, ui/pwa-porte.js), puis le mot de passe
    provisoire à remplacer (ui/mdp-porte.js). */
-const ecranSeul = () => (aInstaller() ? ['porte', porteView] : mdpAChoisir() ? ['mdp', mdpView] : null);
+const ecranSeul = () => (aInstaller() ? ['porte', porteView] : mfaAFaire() ? ['mfa', verifView]
+  : mdpAChoisir() ? ['mdp', mdpView] : null);
 
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
@@ -312,7 +313,7 @@ function railClick(e) {
 }
 
 /* Pas de barre sans session, ni pendant l'accueil d'un nouveau compte : rien n'y mène encore. */
-const sansRail = () => !auth || view.name === 'login' || view.name === 'bienvenue' || aInstaller() || mdpAChoisir();
+const sansRail = () => !auth || view.name === 'login' || view.name === 'bienvenue' || aInstaller() || mfaAFaire() || mdpAChoisir();
 
 /* Un compte d'établissement (et l'éditeur) travaille, il ne révise pas : ni
    journal de lecture, ni cercle des lecteurs. Ses entrées passent en barre

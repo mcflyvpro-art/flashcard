@@ -19,21 +19,24 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-11-02 · Retours de l'utilisateur, ses captures à
-          l'appui : « Reprendre » ne montre plus un livre supprimé ; la
-          page d'accueil au téléphone (les trois noms d'offres du tableau
-          se chevauchaient, la marque Campus décentrée, un bouton plus
-          large qu'un écran de 320 px) ; la porte d'installation refaite
-          (une scène par étape, « En voir plus » d'iOS 26, les mots dans
-          la langue du téléphone) ; le PDF d'un livre (tableau, champs
-          modifiables, imprimable) ; « Brancher Stripe » (une clé, un
-          bouton) ; l'alerte e-mail d'une demande de démo et les e-mails
-          de Supabase Auth en français (Brevo, docs/COURRIELS.md). M12.T1
-          avance : reste la clé Stripe. Le soir : Brevo créé, ses 4
-          enregistrements DNS posés chez OVH et publiés (vérifié) ;
-          docs/COURRIELS.md refait en liste de cases, d'après les écrans
-          (adresses par redirection OVH, MX Plan « redirect »). Aucune
-          tâche cochée.
+DERNIER   2026-11-04 · La sécurité du compte, demandée : « que tous
+          les e-mails servent ». L'inscription ne s'ouvre qu'avec le code
+          à 8 chiffres reçu (une adresse qui n'existe pas ne reçoit rien ;
+          « gmial.com » se voit proposer « gmail.com ») ; mot de passe
+          oublié et connexion par code ; la vérification en deux étapes
+          (TOTP, une fois par connexion, rien n'est lu avant) ; « Sécurité
+          du compte » dans les Réglages (adresse avec ses deux codes, mot
+          de passe avec le code de réauthentification, 2FA) ; les
+          gestionnaires de mots de passe (autocomplete, PasswordCredential,
+          /.well-known/change-password) ; les modèles d'e-mail portent le
+          code. Base : migration 20261104090000 et son test SQL écrits dans le
+          dépôt (2FA tenue par la RLS, adresse suivie, purge des comptes
+          jamais confirmés) — PAS ENCORE APPLIQUÉE (le serveur Supabase a
+          demandé une confirmation restée sans réponse). Aucune tâche cochée.
+Avant :   2026-11-02 · Retours de l'utilisateur, ses captures à
+          l'appui : Reprendre, l'accueil au téléphone, la porte
+          d'installation, le PDF d'un livre, « Brancher Stripe », les
+          e-mails (Brevo, docs/COURRIELS.md). Aucune tâche cochée.
 Avant :   2026-10-29 (soir, quater) · « IA indisponible » pour tous :
           la fonction ai n'autorisait pas l'en-tête apikey que l'app
           envoie — le navigateur n'envoyait jamais la demande (OPTIONS 200,
