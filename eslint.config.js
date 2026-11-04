@@ -45,9 +45,9 @@ export default [
     files: ['tools/pages-redirection/sw.js'],
     languageOptions: { sourceType: 'script', globals: globals.serviceworker }
   },
-  /* les affiches du site : Node, et le navigateur dans page.evaluate() */
+  /* les affiches du site et le kit des réseaux : Node, et le navigateur dans page.evaluate() */
   {
-    files: ['tools/affiches.js'],
+    files: ['tools/affiches.js', 'tools/reseaux.js'],
     languageOptions: { sourceType: 'module', globals: { ...globals.node, ...globals.browser } }
   },
   /* la Mirandola Academy : Node, et la page cadre dans page.evaluate() (son objet A) */

@@ -133,9 +133,13 @@ ville en quelques mois si la marque est cherchée.
 ### Des profils officiels (les signaux d'identité)
 
 Créer, au nom de Mirandola, avec le même logo et le lien mirandola.fr :
-une page **LinkedIn** (entreprise), un compte **Instagram** ou **TikTok**
+une page **LinkedIn** (entreprise), un compte **Instagram** et **TikTok**
 (là où sont les élèves), une chaîne **YouTube** (les vidéos de la Mirandola
-Academy y ont leur place). Envoie-moi les adresses : je les ajoute dans
+Academy y ont leur place). **Le kit est prêt dans `marque/reseaux/`** :
+avatars, bannières, couvertures, filigrane aux tailles de chaque réseau, et
+`TEXTES.md` (noms, bios, descriptions, longueurs vérifiées) ; la notice
+dit quel fichier va où (`LISEZMOI.md`). Tout se refait par
+`node tools/reseaux.js`. Envoie-moi les adresses : je les ajoute dans
 `sameAs` de l'accueil (`index.html`, `Organization`), et Google relie le
 tout à la marque.
 

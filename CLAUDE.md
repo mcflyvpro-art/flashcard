@@ -1212,6 +1212,7 @@ python3 tools/logo.py                # le logo (public/site/, public/favicon.svg
 node tools/affiches.js               # affiches du site, image de partage, captures du manifeste, depuis la démo (vite preview --port 4190 d'abord) ; `node tools/affiches.js prof-mobile` : celles-là seules
 node tools/icones.js                 # icônes de l'app installée (public/icons/), depuis public/site/icone.svg, et le favicon de la racine (favicon.ico, favicon-48.png, apple-touch-icon.png)
 node tools/affiches.js pages         # l'image de partage de chaque page du site (public/site/og/), sans serveur
+node tools/reseaux.js                # le kit des réseaux sociaux (marque/reseaux/ : avatars, bannières YouTube et LinkedIn, couvertures « À la une », filigrane, et TEXTES.md dont chaque longueur est vérifiée) ; notice : marque/reseaux/LISEZMOI.md
 node tools/indexnow.js               # après une mise en ligne qui change le texte d'une page : prévient Bing (IndexNow) ; `node tools/indexnow.js /tarifs` : celle-là seule
 node tools/paiement/essai.js         # les fonctions paiement (dont « Brancher Stripe »), stripe-webhook et magasins sous Deno, face à un faux Stripe et un faux RevenueCat (DENO=chemin, sinon npx deno@2)
 node tools/courriels-auth.js         # les modèles d'e-mail de Supabase Auth, en français (supabase/courriels/, à coller dans le tableau de bord : docs/COURRIELS.md)
