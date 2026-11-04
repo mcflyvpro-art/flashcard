@@ -1,0 +1,137 @@
+<section class="campus" id="campus" aria-labelledby="campus-t">
+  <div class="enveloppe">
+    <div class="campus-tete rv">
+      <p class="campus-marque"><span class="campus-ic" aria-hidden="true">{{logo}}<i class="campus-ecole"><svg class="ic"><use href="#i-ecole"/></svg></i></span><span>Mirandola <em>Campus</em></span></p>
+      <{{h}} id="campus-t" class="titre">Tout l’établissement, en deux codes.</{{h}}>
+      <p class="texte">Dix minutes pour ouvrir Mirandola à tous vos élèves et professeurs&#8239;: un code, et chacun entre dans sa classe.</p>
+      <div class="actions">
+        <a class="bt bt-creme bt-grand" href="/demande-demo">Demander une démo<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="bt bt-fantome bt-grand" href="/demo/prof"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer en professeur</a>
+      </div>
+      <p class="petit">Démo gratuite&#8239;: 30 jours, 60 élèves, sans engagement.</p>
+    </div>
+
+    <!-- Trois gestes, trois petites scènes qui se jouent en boucle. -->
+    <ol class="etapes">
+      <li class="etape rv">
+        <div class="etape-scene" aria-hidden="true">
+          <div class="mini-carte codes">
+            <p class="mc-t"><svg class="ic"><use href="#i-ecole"/></svg>Lycée Victor Hugo</p>
+            <div class="code-l l1"><small>Élèves</small><b>K7QM 2XPR</b><span class="copier"><i>Copier</i><i class="fait"><svg class="ic"><use href="#i-ok"/></svg>Copié</i><svg class="curseur"><use href="#i-curseur"/></svg></span></div>
+            <div class="code-l l2"><small>Professeurs</small><b>9HWT 4FZD</b><span class="copier"><i>Copier</i><i class="fait"><svg class="ic"><use href="#i-ok"/></svg>Copié</i><svg class="curseur"><use href="#i-curseur"/></svg></span></div>
+          </div>
+        </div>
+        <h3 class="etape-t"><span class="num">1</span>Deux codes, et c’est ouvert</h3>
+      </li>
+      <li class="etape rv">
+        <div class="etape-scene s-entree" aria-hidden="true">
+          <div class="tel-mini">
+            <span class="tm-champ"><span class="tm-frappe">K7QM 2XPR</span></span>
+            <span class="tm-ok"><svg class="ic"><use href="#i-ok"/></svg><span>2<sup>de</sup>&nbsp;3</span></span>
+          </div>
+          <div class="mini-carte classe-mini">
+            <p class="mc-t"><b>2<sup>de</sup> 3</b><small>28 élèves</small></p>
+            <div class="arrives">
+              <span style="--j:#B0475F;--i:0"><svg class="visage"><use href="#visage-eleve"/></svg></span>
+              <span style="--j:#2E7A86;--i:1"><svg class="visage"><use href="#visage-4"/></svg></span>
+              <span style="--j:#3F7D55;--i:2"><svg class="visage"><use href="#visage-3"/></svg></span>
+              <span style="--j:#9A6512;--i:3"><svg class="visage"><use href="#visage-5"/></svg></span>
+              <span style="--j:#5E4E8A;--i:4"><svg class="visage"><use href="#visage-6"/></svg></span>
+              <span style="--j:#2F5D8A;--i:5"><svg class="visage"><use href="#visage-2"/></svg></span>
+            </div>
+          </div>
+        </div>
+        <h3 class="etape-t"><span class="num">2</span>Chacun entre avec son code</h3>
+      </li>
+      <li class="etape rv">
+        <div class="etape-scene" aria-hidden="true">
+          <div class="mini-carte devoir-mini">
+            <p class="mc-t"><b>Fonctions affines</b><small>2<sup>de</sup> 3 · pour vendredi</small></p>
+            <div class="dm-l" style="--w:1;--i:0"><span class="av" style="--j:#B0475F"><svg class="visage"><use href="#visage-eleve"/></svg></span><i class="barre"><i></i></i><svg class="ic ok"><use href="#i-ok"/></svg></div>
+            <div class="dm-l" style="--w:.72;--i:1"><span class="av" style="--j:#2E7A86"><svg class="visage"><use href="#visage-4"/></svg></span><i class="barre"><i></i></i></div>
+            <div class="dm-l" style="--w:1;--i:2"><span class="av" style="--j:#3F7D55"><svg class="visage"><use href="#visage-3"/></svg></span><i class="barre"><i></i></i><svg class="ic ok"><use href="#i-ok"/></svg></div>
+            <div class="dm-l" style="--w:.4;--i:3"><span class="av" style="--j:#9A6512"><svg class="visage"><use href="#visage-5"/></svg></span><i class="barre"><i></i></i></div>
+          </div>
+        </div>
+        <h3 class="etape-t"><span class="num">3</span>Tout se suit en direct</h3>
+      </li>
+    </ol>
+
+    <div class="espaces rv">
+      <div class="roles" role="tablist" aria-label="Les trois espaces">
+        <button type="button" role="tab" id="o-eleve" aria-selected="false" aria-controls="p-eleve" data-demo="/demo/eleve" tabindex="-1">
+          <span class="role-av" style="--j:#B0475F"><svg class="visage" aria-hidden="true"><use href="#visage-eleve"/></svg></span>
+          <span class="role-t"><b>Élève</b><small>Révise et fait ses devoirs</small></span>
+        </button>
+        <button type="button" role="tab" id="o-prof" aria-selected="true" aria-controls="p-prof" data-demo="/demo/prof">
+          <span class="role-av" style="--j:#2F5D8A"><svg class="visage" aria-hidden="true"><use href="#visage-prof"/></svg></span>
+          <span class="role-t"><b>Professeur</b><small>Donne des devoirs, suit chacun</small></span>
+        </button>
+        <button type="button" role="tab" id="o-ref" aria-selected="false" aria-controls="p-ref" data-demo="/demo/referent" tabindex="-1">
+          <span class="role-av" style="--j:#5E4E8A"><svg class="visage" aria-hidden="true"><use href="#visage-ref"/></svg></span>
+          <span class="role-t"><b>Référent de l’établissement</b><small>Ouvre Mirandola à tous, garde la main</small></span>
+        </button>
+      </div>
+      <div class="campus-appareils">
+        <figure class="appareil portable portable-campus">
+          <div class="portable-ecran">
+            <div class="ecran" data-ecran="eleve" role="tabpanel" id="p-eleve" aria-labelledby="o-eleve" hidden>
+              <img class="affiche" src="/site/affiches/eleve.webp" width="1440" height="900" loading="lazy" decoding="async"
+                srcset="/site/affiches/eleve-petit.webp 720w, /site/affiches/eleve.webp 1440w" sizes="(max-width: 640px) 92vw, 940px"
+                alt="L’espace élève sur ordinateur : sa classe, ses devoirs à faire et leur avancement">
+              <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+            </div>
+            <div class="ecran" data-ecran="prof" role="tabpanel" id="p-prof" aria-labelledby="o-prof">
+              <img class="affiche" src="/site/affiches/prof.webp" width="1440" height="900" loading="lazy" decoding="async"
+                srcset="/site/affiches/prof-petit.webp 720w, /site/affiches/prof.webp 1440w" sizes="(max-width: 640px) 92vw, 940px"
+                alt="L’espace professeur sur ordinateur : ses classes, les devoirs et l’avancement de chaque élève">
+              <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+            </div>
+            <div class="ecran" data-ecran="referent" role="tabpanel" id="p-ref" aria-labelledby="o-ref" hidden>
+              <img class="affiche" src="/site/affiches/referent.webp" width="1440" height="900" loading="lazy" decoding="async"
+                srcset="/site/affiches/referent-petit.webp 720w, /site/affiches/referent.webp 1440w" sizes="(max-width: 640px) 92vw, 940px"
+                alt="La console du référent de l’établissement : les codes, la licence, les classes et les comptes">
+              <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+            </div>
+          </div>
+          <div class="portable-socle" aria-hidden="true"></div>
+        </figure>
+        <!-- Le même espace au téléphone, posé contre l'ordinateur : site.js
+             montre l'écran du rôle choisi (data-onglet = son panneau) et range
+             le téléphone pour un rôle qui n'en a pas (le référent). -->
+        <figure class="appareil telephone telephone-campus" id="tel-campus">
+          <div class="telephone-corps">
+            <div class="ecran" data-ecran="eleve-mobile" data-onglet="p-eleve" hidden>
+              <img class="affiche" src="/site/affiches/eleve-mobile.webp" width="390" height="844" loading="lazy" decoding="async"
+                srcset="/site/affiches/eleve-mobile-petit.webp 390w, /site/affiches/eleve-mobile.webp 780w" sizes="(max-width: 640px) 30vw, 210px"
+                alt="L’espace élève sur téléphone : ses devoirs à faire et ses classes">
+              <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+            </div>
+            <div class="ecran" data-ecran="prof-mobile" data-onglet="p-prof">
+              <img class="affiche" src="/site/affiches/prof-mobile.webp" width="390" height="844" loading="lazy" decoding="async"
+                srcset="/site/affiches/prof-mobile-petit.webp 390w, /site/affiches/prof-mobile.webp 780w" sizes="(max-width: 640px) 30vw, 210px"
+                alt="L’espace professeur sur téléphone : le code de l’établissement, les élèves en retard et ce qui est à traiter">
+              <video class="video" muted loop playsinline preload="none" data-src="" hidden></video>
+            </div>
+            <i class="ilot" aria-hidden="true"></i>
+          </div>
+          <figcaption class="cache">Le même espace sur téléphone</figcaption>
+        </figure>
+      </div>
+      <a class="bt bt-fantome espace-essai" id="essai-espace" href="/demo/prof">Essayer cet espace<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+    </div>
+
+    <ul class="campus-atouts">
+      <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-devoir"/></svg>Devoirs suivis en direct</li>
+      <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-eclair"/></svg>Défis projetés au tableau</li>
+      <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-cible"/></svg>Les points faibles de la classe, repérés</li>
+      <li class="rv"><svg class="ic" aria-hidden="true"><use href="#i-europe"/></svg>Données hébergées dans l’UE</li>
+    </ul>
+
+    <div class="campus-fin rv">
+      <a class="bt bt-creme bt-grand" href="/demande-demo">Équiper mon établissement<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+      <p class="petit">30 jours gratuits pour 60 élèves, puis de 5 à 2&nbsp;€&nbsp;HT par place et par an, dégressif.</p>
+      <p class="suite-lien"><a class="lien" href="/etablissements">Tout sur Mirandola Campus</a><span aria-hidden="true">·</span><a class="lien" href="/professeurs">Pour les professeurs</a></p>
+    </div>
+  </div>
+</section>

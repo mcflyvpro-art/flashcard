@@ -56,7 +56,7 @@ l'air de marcher ».
 
 - **Build Vite, sans framework ni dépendance à l'exécution.**
   - **Le site et l'app** (build multi-pages, `vite.config.js`), depuis le 2026-10-26 ;
-    **huit pages de site** depuis le 2026-11-02 (le référencement, plus bas) :
+    **neuf pages de site** depuis le 2026-11-04 (le référencement, plus bas) :
     `index.html` — la **page d'accueil du site**, servie à `/` (B2C et B2B,
     tarifs, SEO ; tout son texte en HTML statique), `src/site/` pour son
     style et son script ; elle ne charge jamais l'app ni n'enregistre le
@@ -97,14 +97,32 @@ l'air de marcher ».
     canonique et `hreflang`, données structurées (Organization et WebSite
     avec leur `alternateName` et le logo, SoftwareApplication avec ses
     offres — Mirandola+ au mois et à l'année, Campus par place —, ses
-    fonctions et ses captures), `public/robots.txt`. **Le site a huit pages**
+    fonctions et ses captures), `public/robots.txt`. **Le site a neuf pages**
     (2026-11-02 : sans plusieurs pages, ni sous-liens sous le résultat, ni
-    place sur « répétition espacée » ou « Anki ou Quizlet ») :
+    place sur « répétition espacée » ou « Anki ou Quizlet » ; la neuvième,
+    `/moteur`, le 2026-11-04) :
     `flashcards-ia.html`, `repetition-espacee.html` (un article, la courbe de
     l'oubli dessinée au build), `etablissements.html`, `professeurs.html`,
     `tarifs.html`, `anki-quizlet.html` (comparatif daté, marques citées),
     `a-propos.html` (Pic de la Mirandole ; la ville, distinguée de l'app en
-    données structurées), servies à leur adresse sans extension (Vercel
+    données structurées), **`moteur.html`** (2026-11-04, demandé : « ultra
+    nerd, les maths en détail, pour impressionner » : FSRS-6 formule par
+    formule en MathML natif — la courbe, l'intervalle, le départ, le gain
+    après un succès, l'oubli, la difficulté, le jour même, le flou,
+    l'équilibreur, la perte de l'optimiseur —, la table des 21 paramètres,
+    le banc d'essai public `srs-benchmark` relevé ce jour-là, et quatre
+    laboratoires : la courbe selon S et t, l'intervalle selon la rétention,
+    une page sur un an selon ses notes, la mesure du banc. **Rien n'y est
+    recopié** : `src/site/moteur-calc.js` (pur, sans DOM) appelle
+    `src/fsrs.js`, et le gabarit écrit au build ses graphiques et ses tables
+    (`@moteur-famille`, `@moteur-courbe`, `@moteur-gain`, `@moteur-banc`,
+    `@moteur-simulation`, `@moteur-lignes`, `@moteur-bilan`,
+    `@moteur-parametres`) ; `src/site/moteur.js` les redessine quand on joue,
+    `src/site/moteur.css` (préfixe `m-`) ; `test/moteur.test.js` recalcule
+    chaque chiffre que la page avance. Le site reçoit sa **propre copie** de
+    `src/fsrs.js` (`moteurDuSite` de `vite.config.js`, un module virtuel au
+    même texte) : partagé, le moteur sortait de `app.js` en un morceau à
+    part et l'app le chargeait en plus), servies à leur adresse sans extension (Vercel
     sert le fichier avant la réécriture vers l'app ; `/tarifs/` redirige
     vers `/tarifs`). **`src/site/pages.js` est la seule liste** (adresse,
     fichier, nom, titre ≤ 60 signes, description de 110 à 160, `maj`,
@@ -114,12 +132,15 @@ l'air de marcher ».
     fichier à la main) et `llms.txt` ; il pose aussi les morceaux communs de
     `src/site/partiels/` (`@icones`, `@tete`, `@pied` avec « J'ai un code »,
     `@tarifs h=h1|h2` — les offres, écrites une fois pour l'accueil et
-    `/tarifs` —, `@calcul`, `@appel`, `@appel-campus`, `@ariane`, `@courbe`)
+    `/tarifs` —, `@calcul`, `@appel`, `@appel-campus`, `@ariane`, `@courbe`,
+    `@visages` — les visages des trois rôles —, `@campus h=h1|h2` — le bloc
+    Mirandola Campus et ses rôles, l'accueil et `/etablissements`)
     et tire la FAQ en données structurées du texte affiché (`.questions
     details`, sur toute page qui en a). Les autres pages chargent `site.css`
     puis `src/site/pages.css`, et `src/site/page.js` ; l'accueil et elles
     partagent `src/site/commun.js` (en-tête, menu, « J'ai un code », tarifs,
-    calculateur). L'en-tête mène aux pages (Flashcards IA, Le moteur,
+    calculateur, apparitions, calendrier, vidéos, onglets des rôles).
+    L'en-tête mène aux pages (Flashcards IA, Le moteur — `/moteur` —,
     Établissements, Tarifs, Démo), le pied a quatre colonnes. **Le service
     worker ne sert ni ne range ces pages** (`PAGES` de `src/sw.js`, rempli au
     build) : rangées sous « app », elles en prenaient la place hors ligne.
@@ -1204,7 +1225,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 127 Ko (les visages, puis les codes qui attendent la connexion, 2026-10-29 ; 126,9 le 2026-11-02, avec la porte du PDF : plus de place), CSS ≤ 25 Ko ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 50 (les liens vers les autres pages, 2026-11-02), la plus lourde des autres pages du site ≤ 40 (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 127 Ko (les visages, puis les codes qui attendent la connexion, 2026-10-29 ; 126,9 le 2026-11-02, avec la porte du PDF : plus de place), CSS ≤ 25 Ko ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 50 (les liens vers les autres pages, 2026-11-02), la plus lourde des autres pages du site ≤ 40, la page du moteur à part ≤ 56 (ses formules et ses graphiques écrits au build, 2026-11-04) (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans

@@ -22,6 +22,7 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PAGES, SITE, SOUS_PAGES, adresse } from '../../src/site/pages.js';
 import { DEPART, programme, rappel } from '../../src/site/courbes.js';
+import * as M from '../../src/site/moteur-calc.js';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const partiel = nom => readFileSync(join(RACINE, 'src/site/partiels', nom + '.html'), 'utf8').trim();
@@ -178,7 +179,14 @@ export function rendre(html, p) {
     marque: accueil ? 'Mirandola, retour en haut de l’accueil' : 'Mirandola, l’accueil'
   };
   /* Ce qui se calcule au lieu de se lire dans un morceau. */
-  const calcules = { meta: () => accueil ? '' : meta(p), ariane: () => ariane(p), courbe: courbeOubli };
+  const sim = () => M.simuler(M.SCENARIOS.correct.notes);
+  const calcules = { meta: () => accueil ? '' : meta(p), ariane: () => ariane(p), courbe: courbeOubli,
+    /* la page du moteur : ses graphiques écrits au build, par le moteur lui-même
+       (src/site/moteur-calc.js), puis redessinés par moteur.js quand on y joue */
+    'moteur-famille': () => M.svgFamille(), 'moteur-courbe': () => M.svgCourbe(10, true, 15.2),
+    'moteur-gain': () => M.svgGain(), 'moteur-banc': () => M.barresBanc('rmse'), 'moteur-banc-ll': () => M.barresBanc('logloss'),
+    'moteur-simulation': () => M.svgSimulation(sim()), 'moteur-lignes': () => M.lignesSimulation(sim()), 'moteur-bilan': () => M.bilanSimulation(sim()),
+    'moteur-parametres': () => M.tableParametres() };
   /* `<!-- @tarifs h=h1 -->` : le morceau tarifs.html, où {{h}} vaut h1 ; un
      morceau peut en poser un autre (tarifs.html pose le calculateur). */
   const marqueurs = (t, prof = 0) => t.replace(/<!-- @([\w-]+)((?: \w+=\S+)*) -->/g, (_, nom, args) => {

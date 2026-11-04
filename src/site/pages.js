@@ -47,6 +47,13 @@ export const PAGES = [
     imageAlt: 'La courbe de l’oubli, et la mémoire qui reste haute avec la répétition espacée'
   },
   {
+    chemin: '/moteur', fichier: 'moteur.html', nom: 'Le moteur FSRS', type: 'Article',
+    titre: 'Le moteur FSRS de Mirandola, formule par formule',
+    description: 'FSRS-6 dans le détail : la courbe d’oubli, la stabilité, la difficulté, les 21 paramètres, l’optimiseur et le banc d’essai. Les vraies équations du moteur.',
+    maj: '2026-11-04', image: '/site/og/moteur.jpg',
+    imageAlt: 'Les équations de FSRS-6, le moteur de révision de Mirandola, et ses courbes d’oubli'
+  },
+  {
     chemin: '/etablissements', fichier: 'etablissements.html', nom: 'Mirandola Campus',
     titre: 'Mirandola Campus : la révision pour tout l’établissement',
     description: 'Collèges, lycées, prépas : Mirandola Campus ouvre la révision par flashcards à tous vos élèves et professeurs en dix minutes. Démo gratuite 30 jours.',

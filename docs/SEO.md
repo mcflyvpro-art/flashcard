@@ -16,6 +16,7 @@ donc une page par recherche :
 | `/` | Mirandola, flashcards IA, répétition espacée (l'accueil, inchangé) |
 | `/flashcards-ia` | créer des flashcards avec l'IA, depuis un cours, une photo, un PDF |
 | `/repetition-espacee` | la répétition espacée, la courbe de l'oubli, FSRS, comment réviser |
+| `/moteur` | l'algorithme FSRS en détail : ses formules, ses 21 paramètres, le banc d'essai (depuis le 2026-11-04) |
 | `/etablissements` | Mirandola Campus : une app de révision pour un collège, un lycée, une prépa |
 | `/professeurs` | devoirs suivis, défis en direct, cours particuliers |
 | `/tarifs` | le prix de Mirandola+, de Campus |

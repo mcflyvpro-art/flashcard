@@ -191,3 +191,70 @@ export function fenetreCode() {
     location.href = s.aller(c);
   });
 }
+
+/* Ce qui tourne en boucle s'arrête hors de l'écran (batterie d'un
+   téléphone, ventilateur d'un portable). */
+export function sommeil() {
+  vu(document.querySelectorAll('.heros, .matieres, .bento .tuile, .tuile, .campus, .fin, .p-nuit'),
+    e => e.target.classList.toggle('dort', !e.isIntersecting), { rootMargin: '120px 0px' });
+}
+
+/* ---------- le calendrier du journal : des jours plus ou moins pleins ---------- */
+export function calendrier() {
+  const c = document.querySelector('.calendrier');
+  if (!c) return;
+  let graine = 7;
+  const hasard = () => (graine = (graine * 16807) % 2147483647) / 2147483647;
+  const cases = [];
+  for (let i = 0; i < 98; i++) {
+    // plus on approche d'aujourd'hui, plus les jours sont pleins
+    const n = hasard() < .12 + i / 140 ? Math.min(4, 1 + Math.floor(hasard() * (1 + i / 30))) : 0;
+    cases.push(`<i data-n="${n}" style="--d:${(i * 14).toFixed(0)}ms"></i>`);
+  }
+  c.innerHTML = cases.join('');
+}
+
+/* ---------- les vidéos : chargées et jouées seulement à l'écran ---------- */
+export function videos() {
+  const vs = [...document.querySelectorAll('video[data-src]')].filter(v => v.dataset.src);
+  if (!vs.length) return;
+  vu(vs, e => {
+    const v = e.target;
+    if (!e.isIntersecting || v.closest('[hidden]')) { v.pause(); return; }
+    if (!v.getAttribute('src')) {
+      v.hidden = false;
+      v.addEventListener('playing', () => v.closest('.ecran').classList.add('joue'), { once: true });
+      v.src = v.dataset.src;
+    }
+    if (!reduit.matches) v.play().catch(() => { /* lecture refusée (économie d'énergie) : l'affiche reste */ });
+  }, { threshold: .3 });
+}
+
+/* ---------- Mirandola Campus : un espace par rôle ----------
+   Chaque rôle est un onglet : il montre son écran sur l'ordinateur, le
+   même au téléphone posé à côté (`data-onglet`), et « Essayer cet
+   espace » mène à la démo dans ce rôle. Un rôle sans écran de téléphone
+   (le référent, dont la console est faite pour l'ordinateur) range le
+   téléphone. */
+export function onglets() {
+  const o = document.querySelector('.roles');
+  if (!o) return;
+  const essayer = document.getElementById('essai-espace');
+  const tel = document.getElementById('tel-campus');
+  const choisir = b => {
+    const id = b.getAttribute('aria-controls');
+    o.querySelectorAll('[role="tab"]').forEach(x => {
+      const oui = x === b;
+      x.setAttribute('aria-selected', String(oui));
+      x.tabIndex = oui ? 0 : -1;
+      document.getElementById(x.getAttribute('aria-controls')).hidden = !oui;
+    });
+    document.querySelectorAll('[data-onglet]').forEach(x => { x.hidden = x.dataset.onglet !== id; });
+    if (tel) tel.classList.toggle('range', !tel.querySelector(`[data-onglet="${id}"]`));
+    if (essayer) essayer.href = b.dataset.demo;
+    if (!reduit.matches) document.querySelectorAll(`#${id} video[src], [data-onglet="${id}"] video[src]`)
+      .forEach(v => v.play().catch(() => { /* lecture refusée : l'affiche reste */ }));
+  };
+  o.addEventListener('click', e => { const b = e.target.closest('[role="tab"]'); if (b) choisir(b); });
+  auClavier(o, '[role="tab"]', choisir);
+}

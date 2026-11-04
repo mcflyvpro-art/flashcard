@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<!-- @meta -->
+<link rel="stylesheet" href="/src/site/moteur.css">
+<script type="module" src="/src/site/moteur.js"></script>
+</head>
+<body class="page-moteur">
+<a class="saut" href="#contenu">Aller au contenu</a>
+<!-- @icones -->
+<!-- @tete -->
+
+<main id="contenu">
+  <article>
+    <header class="m-heros" aria-labelledby="titre">
+      <div class="m-heros-fond" aria-hidden="true"><i class="tache fa"></i><i class="tache fb"></i><i class="tache fc"></i></div>
+      <div class="enveloppe">
+        <!-- @ariane -->
+        <div class="m-heros-in">
+          <div class="m-heros-texte">
+            <p class="surtitre">Memory Engine · FSRS-6</p>
+            <h1 id="titre" class="m-titre">Le moteur, <em>formule par formule.</em></h1>
+            <p class="m-chapeau">Trois nombres par page, vingt et un paramètres, une courbe. Voici, sans rien arrondir, ce que Mirandola calcule chaque fois que tu notes une page.</p>
+            <p class="m-signe">Par l’équipe Mirandola · <time datetime="2026-11-04">4 novembre 2026</time> · pour les curieux</p>
+          </div>
+          <figure class="m-heros-fig">
+            <math display="block" class="m-eq m-eq-grande"><mi>R</mi><mo stretchy="false">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>f</mi><mo>&#x2062;</mo><mfrac><mi>t</mi><mi>S</mi></mfrac><mo>)</mo></mrow><mrow><mo>−</mo><msub><mi>w</mi><mn>20</mn></msub></mrow></msup></math>
+            <div class="m-carte-graph">
+              <!-- @moteur-famille -->
+              <figcaption class="m-leg">
+                <span class="m-c0"><i></i>S = 1 jour</span><span class="m-c1"><i></i>7 jours</span><span class="m-c2"><i></i>30 jours</span><span class="m-c3"><i></i>180 jours</span>
+              </figcaption>
+            </div>
+          </figure>
+        </div>
+        <ul class="m-chiffres">
+          <li><b>3</b><span>variables par page : D, S, R</span></li>
+          <li><b>21</b><span>paramètres appris</span></li>
+          <li><b>0,3460</b><span>log loss au banc d’essai public</span></li>
+          <li><b>184&nbsp;Ko</b><span>de WebAssembly pour l’optimiseur</span></li>
+        </ul>
+      </div>
+    </header>
+
+    <nav class="m-sommaire enveloppe" aria-label="Sommaire">
+      <a href="#dsr">D, S, R</a><a href="#oubli">La courbe</a><a href="#intervalle">Le bon jour</a><a href="#depart">Le départ</a>
+      <a href="#succes">Après un succès</a><a href="#echec">Après un oubli</a><a href="#difficulte">La difficulté</a>
+      <a href="#jour-meme">Le jour même</a><a href="#annee">Une page, un an</a><a href="#parametres">Les 21 paramètres</a>
+      <a href="#optimiseur">L’optimiseur</a><a href="#flou">Flou et charge</a><a href="#banc">Le banc d’essai</a>
+    </nav>
+
+    <section class="m-sec enveloppe" id="dsr" aria-labelledby="dsr-t">
+      <h2 id="dsr-t" class="m-h2"><span>1</span>Trois nombres par page</h2>
+      <p class="m-intro">FSRS (Free Spaced Repetition Scheduler) décrit chaque souvenir par trois variables, le modèle DSR de Ye, Su et Cao. Chaque page de chaque livre porte les siennes.</p>
+      <div class="m-trois">
+        <article class="m-var rv"><b class="m-lettre">D</b><h3>Difficulté</h3><p>À quel point cette page résiste. Entre 1 et 10.</p><span class="m-plage">D ∈ [1, 10]</span></article>
+        <article class="m-var rv"><b class="m-lettre">S</b><h3>Stabilité</h3><p>Le nombre de jours au bout duquel ton rappel tombe à 90&nbsp;%.</p><span class="m-plage">S ∈ [0,0001 ; 36 500] jours</span></article>
+        <article class="m-var rv"><b class="m-lettre">R</b><h3>Récupérabilité</h3><p>La probabilité que tu retrouves la réponse, là, maintenant.</p><span class="m-plage">R ∈ ]0, 1]</span></article>
+      </div>
+    </section>
+
+    <section class="m-sec enveloppe" id="oubli" aria-labelledby="oubli-t">
+      <h2 id="oubli-t" class="m-h2"><span>2</span>La courbe d’oubli</h2>
+      <div class="m-duo">
+        <div>
+          <div class="m-formule">
+            <math display="block" class="m-eq"><mi>R</mi><mo stretchy="false">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>f</mi><mo>&#x2062;</mo><mfrac><mi>t</mi><mi>S</mi></mfrac><mo>)</mo></mrow><mrow><mo>−</mo><msub><mi>w</mi><mn>20</mn></msub></mrow></msup></math>
+            <math display="block" class="m-eq"><mi>f</mi><mo>=</mo><msup><mn>0,9</mn><mrow><mo>−</mo><mn>1</mn><mo>/</mo><msub><mi>w</mi><mn>20</mn></msub></mrow></msup><mo>−</mo><mn>1</mn><mo>≈</mo><mn>0,9803</mn><mspace width="0.8em"></mspace><mo>⟹</mo><mspace width="0.8em"></mspace><mi>R</mi><mo stretchy="false">(</mo><mi>S</mi><mo>,</mo><mi>S</mi><mo stretchy="false">)</mo><mo>=</mo><mn>0,9</mn></math>
+          </div>
+          <p class="m-p"><i>t</i> est le nombre de jours depuis la dernière lecture, comptés en jours de calendrier, la journée changeant à 4&nbsp;h comme dans Anki. Le facteur <i>f</i> est choisi pour que le rappel vaille exactement 90&nbsp;% au bout de <i>S</i> jours : c’est la définition même de la stabilité. Avec les paramètres par défaut, <i>w</i><sub>20</sub> = 0,1542.</p>
+          <aside class="m-encart">
+            <h3>Pourquoi une puissance, pas une exponentielle&#8239;?</h3>
+            <p>Un souvenir n’est pas une trace, c’en est mille, qui s’effacent chacune à leur vitesse <i>λ</i>. Si ces vitesses suivent une loi gamma, leur moyenne n’est plus une exponentielle :</p>
+            <math display="block" class="m-eq"><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><mi>t</mi></mrow></msup><mspace width="0.2em"></mspace><mi>g</mi><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mspace width="0.2em"></mspace><mi>d</mi><mi>λ</mi><mo>=</mo><msup><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mfrac><mi>t</mi><mi>β</mi></mfrac><mo>)</mo></mrow><mrow><mo>−</mo><mi>α</mi></mrow></msup></math>
+            <p>C’est exactement la forme de FSRS. La queue est plus lourde : on oublie vite au début, puis de moins en moins.</p>
+          </aside>
+        </div>
+        <figure class="m-labo" id="labo-courbe">
+          <div class="m-labo-graph"><!-- @moteur-courbe --></div>
+          <figcaption class="m-leg"><span class="m-l-fsrs"><i></i>FSRS-6</span><span class="m-l-expo"><i></i>Exponentielle passant par le même point</span></figcaption>
+          <div class="m-reglages">
+            <label for="labo-s">Stabilité <output id="labo-s-v">10 jours</output></label>
+            <input id="labo-s" type="range" min="0" max="100" value="50">
+            <label for="labo-t">Jours écoulés <output id="labo-t-v">15 jours · R = 86,9&nbsp;%</output></label>
+            <input id="labo-t" type="range" min="0" max="100" value="38">
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="m-sec enveloppe" id="intervalle" aria-labelledby="intervalle-t">
+      <h2 id="intervalle-t" class="m-h2"><span>3</span>Le bon jour pour revenir</h2>
+      <div class="m-duo">
+        <div>
+          <p class="m-p">On inverse la courbe : quel <i>t</i> donne le rappel <i>r</i> qu’on vise&#8239;?</p>
+          <div class="m-formule">
+            <math display="block" class="m-eq"><mi>I</mi><mo stretchy="false">(</mo><mi>r</mi><mo>,</mo><mi>S</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mi>S</mi><mi>f</mi></mfrac><mo>&#x2062;</mo><mrow><mo>(</mo><msup><mi>r</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><msub><mi>w</mi><mn>20</mn></msub></mrow></msup><mo>−</mo><mn>1</mn><mo>)</mo></mrow></math>
+          </div>
+          <p class="m-p">Mirandola vise <b>r = 0,90</b>, comme Anki, sans curseur : l’intervalle vaut alors exactement <i>S</i>, arrondi au jour, au moins un jour, au plus 36&nbsp;500.</p>
+        </div>
+        <figure class="m-labo m-labo-r" id="labo-r">
+          <div class="m-gros"><output id="labo-r-f">×1,00</output><span>l’intervalle, en multiples de <i>S</i></span></div>
+          <label class="m-label-r" for="labo-r-in">Rétention visée <output id="labo-r-v">90&nbsp;%</output></label>
+          <input id="labo-r-in" type="range" min="70" max="99" value="90">
+          <table class="m-table m-table-r">
+            <caption class="cache">Intervalle selon la rétention visée</caption>
+            <thead><tr><th scope="col">Rétention visée</th><th scope="col">Intervalle</th></tr></thead>
+            <tbody><tr><td>80&nbsp;%</td><td>3,32 × S</td></tr><tr><td>85&nbsp;%</td><td>1,91 × S</td></tr><tr class="ici"><td>90&nbsp;%</td><td>1,00 × S</td></tr><tr><td>95&nbsp;%</td><td>0,40 × S</td></tr><tr><td>97&nbsp;%</td><td>0,22 × S</td></tr></tbody>
+          </table>
+        </figure>
+      </div>
+    </section>
+
+    <section class="m-sec enveloppe" id="depart" aria-labelledby="depart-t">
+      <h2 id="depart-t" class="m-h2"><span>4</span>La première lecture</h2>
+      <div class="m-duo m-duo-egal">
+        <div class="m-formule">
+          <math display="block" class="m-eq"><msub><mi>S</mi><mn>0</mn></msub><mo stretchy="false">(</mo><mi>G</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>w</mi><mrow><mi>G</mi><mo>−</mo><mn>1</mn></mrow></msub></math>
+          <math display="block" class="m-eq"><msub><mi>D</mi><mn>0</mn></msub><mo stretchy="false">(</mo><mi>G</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>w</mi><mn>4</mn></msub><mo>−</mo><msup><mi>e</mi><mrow><msub><mi>w</mi><mn>5</mn></msub><mo stretchy="false">(</mo><mi>G</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></msup><mo>+</mo><mn>1</mn></math>
+          <p class="m-note"><i>G</i> est la note : 1 Encore, 2 Difficile, 3 Correct, 4 Facile.</p>
+        </div>
+        <table class="m-table">
+          <caption class="cache">Stabilité et difficulté de départ selon la note</caption>
+          <thead><tr><th scope="col">Note</th><th scope="col">S<sub>0</sub></th><th scope="col">D<sub>0</sub> (borné à [1, 10])</th></tr></thead>
+          <tbody>
+            <tr><td>Encore</td><td>0,21 jour</td><td>6,41</td></tr>
+            <tr><td>Difficile</td><td>1,29 jour</td><td>5,11</td></tr>
+            <tr><td>Correct</td><td>2,31 jours</td><td>2,12</td></tr>
+            <tr><td>Facile</td><td>8,30 jours</td><td>1 (−4,77 avant bornage)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="m-sec enveloppe" id="succes" aria-labelledby="succes-t">
+      <h2 id="succes-t" class="m-h2"><span>5</span>Après une bonne réponse</h2>
+      <div class="m-formule m-formule-large">
+        <math display="block" class="m-eq"><msubsup><mi>S</mi><mi>r</mi><mo>′</mo></msubsup><mo>=</mo><mi>S</mi><mo>&#x2062;</mo><mrow><mo>(</mo><mn>1</mn><mo>+</mo><munder><munder><msup><mi>e</mi><msub><mi>w</mi><mn>8</mn></msub></msup><mo>⏟</mo></munder><mtext>échelle</mtext></munder><mo>&#x2062;</mo><munder><munder><mrow><mo stretchy="false">(</mo><mn>11</mn><mo>−</mo><mi>D</mi><mo stretchy="false">)</mo></mrow><mo>⏟</mo></munder><mtext>difficulté</mtext></munder><mo>&#x2062;</mo><munder><munder><msup><mi>S</mi><mrow><mo>−</mo><msub><mi>w</mi><mn>9</mn></msub></mrow></msup><mo>⏟</mo></munder><mtext>saturation</mtext></munder><mo>&#x2062;</mo><munder><munder><mrow><mo stretchy="false">(</mo><msup><mi>e</mi><mrow><msub><mi>w</mi><mn>10</mn></msub><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>R</mi><mo stretchy="false">)</mo></mrow></msup><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><mo>⏟</mo></munder><mtext>espacement</mtext></munder><mo>&#x2062;</mo><mi>h</mi><mo>&#x2062;</mo><mi>b</mi><mo>)</mo></mrow></math>
+      </div>
+      <div class="m-facteurs">
+        <article class="rv"><b>(11 − D)</b><p>Une page facile gagne plus. À D = 10, le gain est dix fois plus petit qu’à D = 1.</p></article>
+        <article class="rv"><b>S<sup>−w₉</sup></b><p>Plus un souvenir est solide, moins chaque lecture l’allonge : la stabilisation sature.</p></article>
+        <article class="rv"><b>e<sup>w₁₀(1−R)</sup> − 1</b><p>L’effet d’espacement, chiffré : relire quand on a un peu oublié rapporte plus que relire trop tôt.</p></article>
+        <article class="rv"><b>h, b</b><p><i>h</i> = <i>w</i><sub>15</sub> = 0,60 si « Difficile », <i>b</i> = <i>w</i><sub>16</sub> = 1,87 si « Facile », 1 sinon.</p></article>
+      </div>
+      <figure class="m-carte-graph m-gain-fig">
+        <!-- @moteur-gain -->
+        <figcaption class="m-leg"><span class="m-g0"><i></i>D = 2</span><span class="m-g1"><i></i>D = 5</span><span class="m-g2"><i></i>D = 8</span><span class="m-leg-note">S′/S pour S = 10 jours, selon le rappel au moment de lire. Calculé par le moteur.</span></figcaption>
+      </figure>
+    </section>
+
+    <section class="m-sec enveloppe" id="echec" aria-labelledby="echec-t">
+      <h2 id="echec-t" class="m-h2"><span>6</span>Après un oubli</h2>
+      <div class="m-formule m-formule-large">
+        <math display="block" class="m-eq"><msubsup><mi>S</mi><mi>f</mi><mo>′</mo></msubsup><mo>=</mo><mo movablelimits="false">min</mo><mrow><mo>(</mo><msub><mi>w</mi><mn>11</mn></msub><mo>&#x2062;</mo><msup><mi>D</mi><mrow><mo>−</mo><msub><mi>w</mi><mn>12</mn></msub></mrow></msup><mo>&#x2062;</mo><mrow><mo>(</mo><msup><mrow><mo stretchy="false">(</mo><mi>S</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><msub><mi>w</mi><mn>13</mn></msub></msup><mo>−</mo><mn>1</mn><mo>)</mo></mrow><mo>&#x2062;</mo><msup><mi>e</mi><mrow><msub><mi>w</mi><mn>14</mn></msub><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>R</mi><mo stretchy="false">)</mo></mrow></msup><mo>,</mo><mspace width="0.5em"></mspace><mfrac><mi>S</mi><msup><mi>e</mi><mrow><msub><mi>w</mi><mn>17</mn></msub><msub><mi>w</mi><mn>18</mn></msub></mrow></msup></mfrac><mo>)</mo></mrow></math>
+      </div>
+      <p class="m-p m-centre">Un oubli ne remet pas à zéro : la nouvelle stabilité garde la trace de l’ancienne, <i>(S + 1)</i><sup><i>w</i>₁₃</sup>, et ne peut jamais dépasser ce qu’on avait. La page repasse ensuite par un palier de dix minutes.</p>
+    </section>
+
+    <section class="m-sec enveloppe" id="difficulte" aria-labelledby="difficulte-t">
+      <h2 id="difficulte-t" class="m-h2"><span>7</span>La difficulté</h2>
+      <div class="m-trois m-trois-eq">
+        <div class="m-formule"><span class="m-etape">Le pas</span><math display="block" class="m-eq"><mi>Δ</mi><mi>D</mi><mo>=</mo><mo>−</mo><msub><mi>w</mi><mn>6</mn></msub><mo>&#x2062;</mo><mo stretchy="false">(</mo><mi>G</mi><mo>−</mo><mn>3</mn><mo stretchy="false">)</mo></math></div>
+        <div class="m-formule"><span class="m-etape">L’amortissement</span><math display="block" class="m-eq"><msup><mi>D</mi><mo>′</mo></msup><mo>=</mo><mi>D</mi><mo>+</mo><mi>Δ</mi><mi>D</mi><mo>&#x2062;</mo><mfrac><mrow><mn>10</mn><mo>−</mo><mi>D</mi></mrow><mn>9</mn></mfrac></math></div>
+        <div class="m-formule"><span class="m-etape">Le retour à la moyenne</span><math display="block" class="m-eq"><msup><mi>D</mi><mo>″</mo></msup><mo>=</mo><msub><mi>w</mi><mn>7</mn></msub><mo>&#x2062;</mo><msub><mi>D</mi><mn>0</mn></msub><mo stretchy="false">(</mo><mn>4</mn><mo stretchy="false">)</mo><mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>w</mi><mn>7</mn></msub><mo stretchy="false">)</mo><mo>&#x2062;</mo><msup><mi>D</mi><mo>′</mo></msup></math></div>
+      </div>
+      <p class="m-p m-centre">« Correct » ne bouge rien, « Difficile » ajoute 3,02, « Encore » 6,04, « Facile » retire 3,02, et plus une page est déjà difficile, moins elle peut l’être encore : le facteur (10 − D)/9 l’amortit avant 10. Le retour vers <i>D</i><sub>0</sub>(4) est presque nul par défaut (<i>w</i><sub>7</sub> = 0,001), l’optimiseur le règle. Puis D est borné à [1, 10].</p>
+    </section>
+
+    <section class="m-sec enveloppe" id="jour-meme" aria-labelledby="jour-meme-t">
+      <h2 id="jour-meme-t" class="m-h2"><span>8</span>Le jour même</h2>
+      <div class="m-duo">
+        <div class="m-formule">
+          <math display="block" class="m-eq"><msup><mi>S</mi><mo>′</mo></msup><mo>=</mo><mi>S</mi><mo>&#x2062;</mo><msup><mi>e</mi><mrow><msub><mi>w</mi><mn>17</mn></msub><mo stretchy="false">(</mo><mi>G</mi><mo>−</mo><mn>3</mn><mo>+</mo><msub><mi>w</mi><mn>18</mn></msub><mo stretchy="false">)</mo></mrow></msup><mo>&#x2062;</mo><msup><mi>S</mi><mrow><mo>−</mo><msub><mi>w</mi><mn>19</mn></msub></mrow></msup></math>
+          <p class="m-note">Pour G ≥ 2, le facteur ne descend jamais sous 1 : une bonne réponse ne fait jamais perdre de stabilité.</p>
+        </div>
+        <ul class="m-liste">
+          <li><b>1 min, 10 min</b><span>les paliers d’une page neuve, comme Anki</span></li>
+          <li><b>10 min</b><span>le palier d’une page oubliée</span></li>
+          <li><b>4 h</b><span>l’heure où la journée change : 23 h puis 3 h, c’est le même jour</span></li>
+          <li><b>20</b><span>pages neuves par jour et par livre, sauf un devoir</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="m-nuit-bande" id="annee" aria-labelledby="annee-t">
+      <div class="enveloppe">
+        <h2 id="annee-t" class="m-h2 m-h2-clair"><span>9</span>Une page, un an</h2>
+        <p class="m-intro m-intro-clair">Calculé à l’instant, dans ton navigateur, par <code>src/fsrs.js</code> : le code même qui choisit l’échéance de chaque page dans l’app. Paramètres par défaut, rétention 90&nbsp;%, sans flou.</p>
+        <div class="m-scenarios" role="radiogroup" aria-label="Scénario">
+          <button type="button" role="radio" aria-checked="true" data-scenario="correct">Toujours « Correct »</button>
+          <button type="button" role="radio" aria-checked="false" data-scenario="oubli">Un oubli au 3ᵉ passage</button>
+          <button type="button" role="radio" aria-checked="false" data-scenario="facile">Toujours « Facile »</button>
+          <button type="button" role="radio" aria-checked="false" data-scenario="difficile">Toujours « Difficile »</button>
+        </div>
+        <div class="m-sim">
+          <figure class="m-sim-graph" id="sim-graph"><!-- @moteur-simulation --></figure>
+          <div class="m-sim-table">
+            <table class="m-table m-table-nuit">
+              <caption class="cache">Chaque lecture de la page sur un an</caption>
+              <thead><tr><th scope="col">Jour</th><th scope="col">Rappel</th><th scope="col">Note</th><th scope="col">S après</th><th scope="col">D après</th></tr></thead>
+              <tbody id="sim-lignes"><!-- @moteur-lignes --></tbody>
+            </table>
+            <p class="m-sim-bilan" id="sim-bilan"><!-- @moteur-bilan --></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="m-sec enveloppe" id="parametres" aria-labelledby="parametres-t">
+      <h2 id="parametres-t" class="m-h2"><span>10</span>Les 21 paramètres</h2>
+      <p class="m-intro">Ceux du crate <code>fsrs</code> 6.6.2, ceux d’Anki. Le Memory Engine Lite (Mirandola gratuit) les garde ; le Memory Engine Ultra (Mirandola+, Campus) les réapprend sur ton historique.</p>
+      <div class="m-table-defile">
+        <table class="m-table m-params">
+          <caption class="cache">Les 21 paramètres de FSRS-6 et leur valeur par défaut</caption>
+          <thead><tr><th scope="col">Paramètre</th><th scope="col">Par défaut</th><th scope="col">Rôle</th></tr></thead>
+          <tbody><!-- @moteur-parametres --></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="m-sec enveloppe" id="optimiseur" aria-labelledby="optimiseur-t">
+      <h2 id="optimiseur-t" class="m-h2"><span>11</span>L’optimiseur</h2>
+      <div class="m-duo">
+        <div>
+          <div class="m-formule">
+            <math display="block" class="m-eq"><mi>ℒ</mi><mo stretchy="false">(</mo><mi>w</mi><mo stretchy="false">)</mo><mo>=</mo><mo>−</mo><mfrac><mn>1</mn><mi>N</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><mrow><mo>[</mo><msub><mi>y</mi><mi>i</mi></msub><mo>&#x2062;</mo><mi>ln</mi><mo>&#x2061;</mo><msub><mi>R</mi><mi>i</mi></msub><mo stretchy="false">(</mo><mi>w</mi><mo stretchy="false">)</mo><mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>y</mi><mi>i</mi></msub><mo stretchy="false">)</mo><mo>&#x2062;</mo><mi>ln</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>R</mi><mi>i</mi></msub><mo stretchy="false">(</mo><mi>w</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>]</mo></mrow></math>
+          </div>
+          <p class="m-p">Chaque révision d’un jour différent devient un exemple : tout l’historique de la page jusque-là, et <i>y</i> = 1 si tu as retrouvé la réponse. Le moteur rejoue l’historique, prédit <i>R</i>, et la descente de gradient (Adam) ajuste les 21 paramètres pour que ses prédictions collent à ta mémoire.</p>
+        </div>
+        <ul class="m-liste">
+          <li><b>Sur ton appareil</b><span>le crate <code>fsrs</code> 6.6.2 compilé en WebAssembly, lancé dans un fil à part</span></li>
+          <li><b>184&nbsp;Ko</b><span>aucun import, aucune bibliothèque, un calcul reproductible</span></li>
+          <li><b>14 jours</b><span>ou 25&nbsp;% de révisions en plus : il recommence seul</span></li>
+          <li><b>60 s</b><span>au plus ; au-delà, il attend la prochaine fois</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="m-sec enveloppe" id="flou" aria-labelledby="flou-t">
+      <h2 id="flou-t" class="m-h2"><span>12</span>Le flou et l’équilibreur</h2>
+      <div class="m-duo m-duo-egal">
+        <div class="m-formule">
+          <span class="m-etape">Le flou</span>
+          <div class="m-lignes"><math display="block" class="m-eq"><mi>δ</mi><mo stretchy="false">(</mo><mi>I</mi><mo stretchy="false">)</mo><mo>=</mo><mn>1</mn><mo>+</mo><mn>0,15</mn><msub><mrow><mo stretchy="false">[</mo><mi>min</mi><mo stretchy="false">(</mo><mi>I</mi><mo>,</mo><mn>7</mn><mo stretchy="false">)</mo><mo>−</mo><mn>2,5</mn><mo stretchy="false">]</mo></mrow><mo>+</mo></msub></math>
+          <math display="block" class="m-eq m-suite"><mo>+</mo><mn>0,1</mn><msub><mrow><mo stretchy="false">[</mo><mi>min</mi><mo stretchy="false">(</mo><mi>I</mi><mo>,</mo><mn>20</mn><mo stretchy="false">)</mo><mo>−</mo><mn>7</mn><mo stretchy="false">]</mo></mrow><mo>+</mo></msub></math>
+          <math display="block" class="m-eq m-suite"><mo>+</mo><mn>0,05</mn><msub><mrow><mo stretchy="false">[</mo><mi>I</mi><mo>−</mo><mn>20</mn><mo stretchy="false">]</mo></mrow><mo>+</mo></msub></math></div>
+          <p class="m-note">Le jour tombe dans [<i>I</i> − δ, <i>I</i> + δ] : 30 jours deviennent un jour entre 27 et 33. Les pages apprises ensemble ne reviennent pas toutes ensemble.</p>
+        </div>
+        <div class="m-formule">
+          <span class="m-etape">L’équilibreur (Ultra)</span>
+          <math display="block" class="m-eq"><msub><mi>p</mi><mi>j</mi></msub><mo>∝</mo><msup><mrow><mo>(</mo><mfrac><mn>1</mn><msub><mi>n</mi><mi>j</mi></msub></mfrac><mo>)</mo></mrow><mn>2,15</mn></msup><mo>&#x2062;</mo><msup><mrow><mo>(</mo><mfrac><mn>1</mn><mi>j</mi></mfrac><mo>)</mo></mrow><mn>3</mn></msup></math>
+          <p class="m-note">Dans la fourchette du flou, chaque jour <i>j</i> pèse selon les <i>n<sub>j</sub></i> pages qui l’attendent déjà (1 s’il est vide), jusqu’à 90 jours : les journées s’égalisent au lieu de s’empiler. Le tirage vient d’un hachage de la page (FNV-1a) : le délai écrit sous chaque bouton est celui qui arrivera.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="m-sec enveloppe" id="banc" aria-labelledby="banc-t">
+      <h2 id="banc-t" class="m-h2"><span>13</span>Le banc d’essai</h2>
+      <p class="m-intro">open-spaced-repetition/srs-benchmark : 9&nbsp;999 collections d’Anki, 349&nbsp;923&nbsp;850 révisions, chaque algorithme prédit chaque rappel avant de le voir. Plus c’est bas, mieux il connaît ta mémoire.</p>
+      <div class="m-banc-choix" role="radiogroup" aria-label="Mesure">
+        <button type="button" role="radio" aria-checked="true" data-mesure="rmse">RMSE (bins)</button>
+        <button type="button" role="radio" aria-checked="false" data-mesure="logloss">Log loss</button>
+      </div>
+      <figure class="m-carte-graph m-banc-fig">
+        <div id="banc-rmse"><!-- @moteur-banc --></div>
+        <div id="banc-logloss" hidden><!-- @moteur-banc-ll --></div>
+        <figcaption class="m-leg"><span class="m-leg-note">Relevé le 4 novembre 2026, révisions du jour même exclues. SM-2 n’y figure pas : il donne un intervalle, jamais une probabilité, et ne se mesure donc pas ainsi.</span></figcaption>
+      </figure>
+    </section>
+
+    <section class="faq enveloppe p-section" id="faq" aria-labelledby="faq-t">
+      <h2 id="faq-t" class="titre centre rv">Questions de curieux</h2>
+      <div class="questions">
+        <details class="rv"><summary>Pourquoi viser 90&nbsp;% et pas 100&nbsp;%&#8239;?</summary><p>Parce que le coût explose : à 97&nbsp;%, l’intervalle tombe à 0,22 fois la stabilité, chaque page revient plus de quatre fois plus tôt qu’à 90&nbsp;%. 90&nbsp;% est le réglage par défaut d’Anki et de FSRS, le meilleur rapport entre ce qu’on retient et le temps passé.</p></details>
+        <details class="rv"><summary>Mon historique sert-il à entraîner un modèle commun&#8239;?</summary><p>Non. L’optimiseur tourne sur ton appareil et n’apprend que ta mémoire. Sans assez d’historique, ou en Mirandola gratuit, ce sont les paramètres par défaut, ceux d’Anki.</p></details>
+        <details class="rv"><summary>Mirandola fait-il exactement comme Anki&#8239;?</summary><p>Le même moteur, FSRS-6 du crate fsrs 6.6.2 qu’Anki épingle, les mêmes paramètres par défaut, les mêmes paliers, la même journée qui change à 4&nbsp;h, le même flou et le même équilibreur. Ce qui change : aucun réglage à faire.</p></details>
+      </div>
+    </section>
+
+    <section class="m-sec enveloppe" aria-labelledby="sources-t">
+      <h2 id="sources-t" class="m-h2 m-h2-petit">Sources</h2>
+      <ul class="m-sources">
+        <li>Junyao Ye, Jingyong Su, Yilong Cao, «&nbsp;A Stochastic Shortest Path Algorithm for Optimizing Spaced Repetition Scheduling&nbsp;», KDD 2022.</li>
+        <li>Jingyong Su, Junyao Ye, Liqiang Nie, Yilong Cao, Yongyong Chen, «&nbsp;Optimizing Spaced Repetition Schedule by Capturing the Dynamics of Memory&nbsp;», IEEE TKDE, 2023.</li>
+        <li>open-spaced-repetition : le crate <code>fsrs</code> 6.6.2, <code>py-fsrs</code>, et le banc d’essai <code>srs-benchmark</code>.</li>
+        <li>Anki : l’équilibreur de charge, <code>rslib/src/scheduler/states/load_balancer.rs</code>.</li>
+      </ul>
+      <p class="m-p m-centre">Plus simple&#8239;? <a class="p-lien" href="/repetition-espacee">La répétition espacée, expliquée sans formule</a>.</p>
+    </section>
+  </article>
+
+  <!-- @appel -->
+</main>
+
+<!-- @pied -->
+</body>
+</html>
