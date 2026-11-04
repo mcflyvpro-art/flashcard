@@ -83,6 +83,25 @@ function adressesDeLApp() {
   };
 }
 
+/* La page du moteur (/moteur) fait tourner le moteur de l'app, src/fsrs.js.
+   Importé tel quel, il devenait un morceau partagé entre l'app et le site,
+   et l'app le chargeait à part au démarrage (0,3 Ko de plus, au-delà du
+   budget). Le site en reçoit donc sa propre copie : un module virtuel au
+   texte identique, que seuls les fichiers de src/site/ voient. Le code
+   source garde son import ordinaire — Node (le gabarit du build) et les
+   tests le lisent tel quel. */
+function moteurDuSite() {
+  const ID = '\0fsrs-du-site';
+  return {
+    name: 'fsrs-du-site',
+    enforce: 'pre',
+    resolveId(source, importer) {
+      return source === '../fsrs.js' && importer && /[\\/]src[\\/]site[\\/]/.test(importer) ? ID : null;
+    },
+    load(id) { return id === ID ? readFileSync('src/fsrs.js', 'utf8') : null; }
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   /* Sans ces deux valeurs, l'app se construirait quand même et
@@ -98,7 +117,7 @@ export default defineConfig(({ mode }) => {
   const base = '/';
   return {
     base,
-    plugins: [pagesDuSite(), serviceWorker(base), adressesDeLApp()],
+    plugins: [pagesDuSite(), moteurDuSite(), serviceWorker(base), adressesDeLApp()],
     /* Les pages du site (index.html, servie à `/`, et une par sujet :
        tarifs.html à `/tarifs`… src/site/pages.js, docs/SEO.md) et l'app
        (app.html, servie à `/app`). docs/LANDING.md. */

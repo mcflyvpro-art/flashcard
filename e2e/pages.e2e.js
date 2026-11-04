@@ -33,6 +33,11 @@ test('de l’accueil aux pages et retour, par le menu du téléphone et le pied 
   await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
   await expect(page.locator('#menu-mobile [aria-current="page"]')).toHaveText('Établissements');
   await page.locator('#menu-mobile').getByRole('link', { name: 'Le moteur' }).click();
+  await expect(page).toHaveURL(/\/moteur$/);
+  await expect(page.locator('.m-heros .m-svg')).toBeVisible();              // la famille de courbes, dessinée au build
+
+  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
+  await page.locator('#menu-mobile').getByRole('link', { name: 'La répétition espacée' }).click();
   await expect(page).toHaveURL(/\/repetition-espacee$/);
   await expect(page.locator('.co-svg')).toBeVisible();                      // la courbe, dessinée au build
 
@@ -58,6 +63,25 @@ test('les tarifs basculent, le calculateur compte, et « Passer à Mirandola+ »
   await expect(page.locator('#calcul-prix')).toHaveText(/^100\s€\sHT$/);
   await page.locator('.p-heros').getByRole('link', { name: 'Demander une démo' }).click();
   await expect(page).toHaveURL(/\/demande-demo$/);
+});
+
+test('les laboratoires du moteur répondent : la courbe, la rétention, une année, le banc', async ({ page }) => {
+  const erreurs = [];
+  page.on('pageerror', e => erreurs.push(e.message));
+  await page.goto('./moteur');
+  await expect(page.locator('#labo-t-v')).toHaveText(/^15 jours · R = 86,9\s%$/);
+  await page.locator('#labo-s').fill('80');                                  // 10^(-0,5 + 2,4) ≈ 79 jours
+  await expect(page.locator('#labo-s-v')).toHaveText('79 jours');
+  await page.locator('#labo-r-in').fill('80');
+  await expect(page.locator('#labo-r-f')).toHaveText('×3,32');
+  await expect(page.locator('#labo-r .m-table-r tr.ici td').first()).toHaveText(/^80\s%$/);
+  await page.getByRole('radio', { name: 'Un oubli au 3ᵉ passage' }).click();
+  await expect(page.locator('#sim-bilan')).toContainText('9 lectures');
+  await expect(page.locator('#sim-lignes tr.m-rechute')).toHaveCount(1);
+  await page.getByRole('radio', { name: 'Log loss' }).click();
+  await expect(page.locator('#banc-logloss')).toBeVisible();
+  await expect(page.locator('#banc-rmse')).toBeHidden();
+  expect(erreurs).toEqual([]);
 });
 
 test('« J’ai un code » s’ouvre sur une page du site et mène à l’app', async ({ page }) => {

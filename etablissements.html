@@ -3,167 +3,69 @@
 <head>
 <meta charset="utf-8">
 <!-- @meta -->
+<link rel="stylesheet" href="/src/site/pages/etablissements.css">
 </head>
 <body>
 <a class="saut" href="#contenu">Aller au contenu</a>
 <!-- @icones -->
+<!-- @visages -->
 <!-- @tete -->
 
 <main id="contenu">
-  <section class="p-heros" aria-labelledby="titre">
+  <section class="p-heros split" aria-labelledby="titre">
     <div class="heros-fond" aria-hidden="true"><i class="tache t1"></i><i class="tache t2"></i><i class="tache t3"></i></div>
     <div class="enveloppe p-heros-in">
-      <!-- @ariane -->
-      <p class="campus-marque"><span class="campus-ic" aria-hidden="true"><img class="marque-livres" src="/site/logo.svg" alt="" width="34" height="36"><i class="campus-ecole"><svg class="ic"><use href="#i-ecole"/></svg></i></span><span>Mirandola <em>Campus</em></span></p>
-      <h1 id="titre" class="p-titre">La révision par flashcards, pour <em>tout</em> l’établissement.</h1>
-      <p class="p-chapeau">Collège, lycée, classe prépa&#8239;: en dix minutes, chaque élève et chaque professeur a son espace. Un code pour les élèves, un pour les professeurs, et chacun entre dans sa classe.</p>
-      <div class="actions">
-        <a class="bt bt-encre bt-grand" href="/demande-demo">Demander une démo<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
-        <a class="bt bt-blanc bt-grand" href="/demo/prof"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer en professeur</a>
+      <div class="p-texte">
+        <!-- @ariane -->
+        <p class="campus-marque"><span class="campus-ic" aria-hidden="true"><img class="marque-livres" src="/site/logo.svg" alt="" width="34" height="36"><i class="campus-ecole"><svg class="ic"><use href="#i-ecole"/></svg></i></span><span>Mirandola <em>Campus</em></span></p>
+        <h1 id="titre" class="p-titre">La révision par flashcards, pour <em>tout</em> l’établissement.</h1>
+        <p class="p-chapeau">Collège, lycée, classe prépa&#8239;: un code pour les élèves, un pour les professeurs. Chacun entre dans sa classe, en dix minutes.</p>
+        <div class="actions">
+          <a class="bt bt-encre bt-grand" href="/demande-demo">Demander une démo<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+          <a class="bt bt-blanc bt-grand" href="/demo/prof"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer en professeur</a>
+        </div>
+        <p class="petit">30 jours gratuits pour 60 élèves, sans engagement.</p>
       </div>
-      <p class="petit">30 jours gratuits pour 60 élèves, sans engagement.</p>
-    </div>
-  </section>
 
-  <section class="p-section enveloppe" aria-labelledby="codes-t">
-    <div class="p-duo">
-      <div>
-        <h2 id="codes-t">Deux codes, et c’est ouvert.</h2>
-        <p>Pas de liste à importer, pas de compte à créer un par un. Vous donnez le code élèves en classe ou par l’ENT, chacun entre avec son prénom, son nom et sa classe, et arrive dans son espace.</p>
-        <ul class="p-points">
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Des codes qui se renouvellent seuls,</b> chaque semaine, chaque mois ou chaque trimestre&#8239;: ceux qui sont entrés restent.</span></li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Une classe par élève,</b> et des groupes que forment les professeurs pour leurs options.</span></li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span><b>Rien à installer&#8239;:</b> le navigateur suffit, sur ordinateur, tablette et téléphone.</span></li>
-        </ul>
-      </div>
-      <div class="p-appareils rv">
-        <figure class="appareil portable">
-          <div class="portable-ecran">
-            <div class="ecran">
-              <img class="affiche" src="/site/affiches/prof.webp" width="1440" height="900" decoding="async"
-                srcset="/site/affiches/prof-petit.webp 720w, /site/affiches/prof.webp 1440w" sizes="(max-width: 860px) 92vw, 620px"
-                alt="L’espace professeur de Mirandola Campus sur ordinateur : ses classes, les devoirs et l’avancement de chaque élève">
-            </div>
-          </div>
-          <div class="portable-socle" aria-hidden="true"></div>
-        </figure>
-        <figure class="appareil telephone">
-          <div class="telephone-corps">
-            <div class="ecran">
-              <img class="affiche" src="/site/affiches/eleve-mobile.webp" width="390" height="844" loading="lazy" decoding="async"
-                srcset="/site/affiches/eleve-mobile-petit.webp 390w, /site/affiches/eleve-mobile.webp 780w" sizes="(max-width: 860px) 26vw, 170px"
-                alt="L’espace élève sur téléphone : ses devoirs à faire et ses classes">
-            </div>
-            <i class="ilot" aria-hidden="true"></i>
-          </div>
-        </figure>
+      <!-- Les deux codes d'un établissement, et ceux qui entrent avec. -->
+      <div class="p-visuel cx" aria-hidden="true">
+        <div class="cx-carte">
+          <p class="cx-ecole"><span class="cx-ic"><svg class="ic"><use href="#i-ecole"/></svg></span><span><b>Lycée Victor Hugo</b><small>Console du référent</small></span></p>
+          <div class="cx-code"><span><small>Code élèves</small><b>K7QM 2XPR</b></span><span class="cx-qr"><!-- @qr-essai --></span></div>
+          <div class="cx-code prof"><span><small>Code professeurs</small><b>9HWT 4FZD</b></span><span class="cx-copie"><svg class="ic"><use href="#i-ok"/></svg>Copié</span></div>
+          <p class="cx-renouv"><svg class="ic"><use href="#i-horloge"/></svg>Nouveaux codes lundi, ceux qui sont entrés restent</p>
+        </div>
+        <div class="cx-arrivent">
+          <span style="--j:#B0475F;--i:0"><svg class="visage"><use href="#visage-eleve"/></svg></span>
+          <span style="--j:#2E7A86;--i:1"><svg class="visage"><use href="#visage-4"/></svg></span>
+          <span style="--j:#3F7D55;--i:2"><svg class="visage"><use href="#visage-3"/></svg></span>
+          <span style="--j:#9A6512;--i:3"><svg class="visage"><use href="#visage-5"/></svg></span>
+          <span style="--j:#5E4E8A;--i:4"><svg class="visage"><use href="#visage-6"/></svg></span>
+          <b>+ 412</b>
+        </div>
+        <p class="cx-entre"><svg class="ic"><use href="#i-ok"/></svg><span>Léa est entrée en <b>2<sup>de</sup>&nbsp;3</b></span></p>
       </div>
     </div>
   </section>
 
-  <section class="p-section enveloppe" aria-labelledby="etapes-t">
-    <div class="p-tete">
-      <h2 id="etapes-t" class="titre">Dix minutes, de la démo à la classe.</h2>
-    </div>
-    <ol class="p-etapes">
-      <li class="rv"><h3>Demandez la démo</h3><p>Un formulaire, et nous ouvrons votre établissement&#8239;: 30 jours, 60 élèves, des classes d’exemple pour voir.</p></li>
-      <li class="rv"><h3>Recevez vos codes</h3><p>Le référent de l’établissement reçoit le sien, puis trouve dans sa console le code élèves et le code professeurs.</p></li>
-      <li class="rv"><h3>Chacun entre</h3><p>Les professeurs choisissent leurs classes, les élèves entrent dans la leur. Personne n’attend de validation.</p></li>
-      <li class="rv"><h3>Tout se suit</h3><p>Devoirs, défis en direct, ce qui bloque&#8239;: chaque professeur voit sa classe avancer, jour après jour.</p></li>
-    </ol>
-  </section>
-
-  <section class="p-section enveloppe" aria-labelledby="roles-t">
-    <div class="p-tete">
-      <h2 id="roles-t" class="titre">Un espace pour chacun.</h2>
-    </div>
-    <div class="p-grille p-roles">
-      <article class="p-carte p-role rv">
-        <figure class="appareil portable portable-campus">
-          <div class="portable-ecran"><div class="ecran">
-            <img class="affiche" src="/site/affiches/eleve-petit.webp" width="720" height="450" loading="lazy" decoding="async"
-              alt="L’espace élève sur ordinateur : sa classe, ses devoirs à faire et leur avancement">
-          </div></div>
-          <div class="portable-socle" aria-hidden="true"></div>
-        </figure>
-        <h3>L’élève</h3>
-        <ul>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Ses devoirs, ses livres et sa classe</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Le Memory Engine Ultra, réglé sur sa mémoire</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>L’IA&#8239;: 30 cours par mois en flashcards</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Hors ligne, sur son téléphone</li>
-        </ul>
-        <a class="bt bt-clair" href="/demo/eleve">Essayer en élève</a>
-      </article>
-      <article class="p-carte p-role rv">
-        <figure class="appareil portable portable-campus">
-          <div class="portable-ecran"><div class="ecran">
-            <img class="affiche" src="/site/affiches/prof-petit.webp" width="720" height="450" loading="lazy" decoding="async"
-              alt="L’espace professeur sur ordinateur : ses classes et l’avancement de chaque élève">
-          </div></div>
-          <div class="portable-socle" aria-hidden="true"></div>
-        </figure>
-        <h3>Le professeur</h3>
-        <ul>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Des devoirs suivis élève par élève</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Les pages que la classe rate le plus</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Des défis en direct, projetés au tableau</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>L’IA pour préparer ses livres, sans compter</li>
-        </ul>
-        <a class="bt bt-clair" href="/professeurs">L’espace professeur</a>
-      </article>
-      <article class="p-carte p-role rv">
-        <figure class="appareil portable portable-campus">
-          <div class="portable-ecran"><div class="ecran">
-            <img class="affiche" src="/site/affiches/referent-petit.webp" width="720" height="450" loading="lazy" decoding="async"
-              alt="La console du référent de l’établissement : les codes, la licence, les classes et les comptes">
-          </div></div>
-          <div class="portable-socle" aria-hidden="true"></div>
-        </figure>
-        <h3>Le référent de l’établissement</h3>
-        <ul>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Les codes, à copier ou projeter avec leur QR</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Classes, élèves, professeurs, en un écran</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>Les comptes d’une classe ouverts d’un coup</li>
-          <li><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg>La licence, les factures, l’historique</li>
-        </ul>
-        <a class="bt bt-clair" href="/demo/referent">Essayer en référent</a>
-      </article>
-    </div>
-  </section>
+  <!-- @campus h=h2 variante=page -->
 
   <section class="p-section enveloppe" aria-labelledby="donnees-t">
     <div class="p-tete">
-      <h2 id="donnees-t" class="titre">Des élèves mineurs&#8239;: leurs données sont protégées.</h2>
+      <h2 id="donnees-t" class="titre rv">Des élèves mineurs. <em>Leurs données protégées.</em></h2>
     </div>
-    <div class="p-grille">
-      <article class="p-carte rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-europe"/></svg></span>
-        <h3>Hébergées dans l’Union européenne</h3>
-        <p>La base de Mirandola est en Europe. Aucune publicité, aucun traceur.</p>
-      </article>
-      <article class="p-carte rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-bouclier"/></svg></span>
-        <h3>Le minimum, et pas plus</h3>
-        <p>Un prénom, un nom, une classe et une adresse. Le nom d’un élève est figé&#8239;: seul le référent le corrige.</p>
-      </article>
-      <article class="p-carte rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-devoir"/></svg></span>
-        <h3>Les documents du contrat</h3>
-        <p>Conditions générales, contrat de sous-traitance (article 28 du RGPD) et la description du traitement pour votre registre, dans la console du référent.</p>
-      </article>
-      <article class="p-carte rv">
-        <span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-cle"/></svg></span>
-        <h3>Vous gardez la main</h3>
-        <p>Retirer un compte de l’établissement libère sa place&#8239;; changer un code se fait en deux appuis.</p>
-      </article>
-    </div>
+    <ul class="p-garanties">
+      <li class="rv"><span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-europe"/></svg></span><b>Hébergées dans l’Union européenne</b><span>Aucune publicité, aucun traceur.</span></li>
+      <li class="rv"><span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-bouclier"/></svg></span><b>Le minimum</b><span>Un prénom, un nom, une classe, une adresse. Le nom d’un élève, seul le référent le corrige.</span></li>
+      <li class="rv"><span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-devoir"/></svg></span><b>Les documents du contrat</b><span>Conditions générales, sous-traitance (article 28 du RGPD), description du traitement pour votre registre.</span></li>
+      <li class="rv"><span class="p-ic"><svg class="ic" aria-hidden="true"><use href="#i-cle"/></svg></span><b>Vous gardez la main</b><span>Un compte retiré libère sa place, un code change en deux appuis.</span></li>
+    </ul>
   </section>
 
   <section class="p-section enveloppe" aria-labelledby="calcul-t">
     <div class="p-tete">
-      <h2 id="calcul-t" class="titre">Un prix qui baisse avec vous.</h2>
-      <p class="texte">Une place par élève et par professeur, de 5 à 2&nbsp;€&nbsp;HT par an selon votre taille. Factures prêtes pour Chorus Pro, paiement par virement.</p>
+      <h2 id="calcul-t" class="titre rv">Un prix qui <em>baisse</em> avec vous.</h2>
+      <p class="texte rv">Une place par élève et par professeur, de 5 à 2&nbsp;€&nbsp;HT par an. Factures prêtes pour Chorus Pro.</p>
     </div>
     <!-- @calcul -->
     <p class="centre petit"><a class="p-lien" href="/tarifs">Toutes les offres et le comparatif</a></p>

@@ -1,0 +1,28 @@
+/* /a-propos : le médaillon, le panneau de la ville. Chargée par sa seule page, après site.css et pages.css. */
+
+/* ---------- le nom (/a-propos) ---------- */
+.medaille{display:grid;place-items:center;width:min(100%,420px);margin-inline:auto;aspect-ratio:1}
+.medaille>*{grid-area:1 / 1}
+.medaille-anneau{width:100%;height:100%;overflow:visible;animation:anneau-tourne 2.4s var(--e) .2s both}
+.medaille-anneau circle{fill:#FFF;stroke:var(--filet2);stroke-width:1;filter:drop-shadow(0 30px 50px rgba(29,28,25,.22))}
+.medaille-anneau text{font:700 17px var(--serif);letter-spacing:.32em;fill:var(--az5)}
+@keyframes anneau-tourne{from{opacity:0;transform:scale(.9)}}
+.medaille-coeur{position:relative;z-index:1;display:grid;place-items:center;width:52%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF,var(--creme));
+  box-shadow:inset 0 0 0 1px var(--filet2),0 18px 40px -20px rgba(29,28,25,.45)}
+.medaille-coeur img{width:56%;height:auto}
+.p-ville{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(24px,4vw,56px);align-items:center;padding:clamp(24px,4vw,44px);border-radius:32px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
+.p-ville h2{font:700 clamp(28px,3.4vw,40px)/1.08 var(--serif);letter-spacing:-.03em}
+.p-ville p{margin-top:12px;color:var(--encre2);line-height:1.6}
+.p-ville .petit{font-size:15px;color:var(--doux)}
+.ville-panneau{display:flex;flex-direction:column;align-items:center;padding:30px 20px 0;border-radius:24px;background:linear-gradient(#DCE6F7,#F3EEE3 70%)}
+.vp-plaque{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 26px;border-radius:10px;background:#FFF;rotate:-2deg;
+  box-shadow:inset 0 0 0 4px #FFF,inset 0 0 0 7px #1D1C19,0 18px 30px -16px rgba(29,28,25,.5)}
+.vp-plaque b{font:800 clamp(24px,2.6vw,34px)/1 var(--sans);letter-spacing:.04em;color:#1D1C19}
+.vp-plaque small{font:600 13px var(--sans);color:#4B4842}
+.vp-pied{display:block;width:10px;height:70px;background:linear-gradient(90deg,#9A968E,#C9C5BD,#8E8A83)}
+@media (max-width:640px){
+  .p-ville{grid-template-columns:minmax(0,1fr)}
+  .medaille{width:min(86%,340px)}
+  .medaille-anneau text{font-size:18px}
+}
+@media (prefers-reduced-motion:reduce){.medaille-anneau{animation:none}}

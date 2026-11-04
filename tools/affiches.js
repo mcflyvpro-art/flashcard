@@ -111,18 +111,21 @@ const OG_PAGES = {
   professeurs: { sujet: 'Pour les professeurs', titre: 'Vos élèves révisent. <em>Vous le voyez.</em>', ligne: 'Devoirs suivis, ce qui bloque,<br>défis en direct au tableau.', pc: 'prof', tel: 'prof-mobile' },
   tarifs: { sujet: 'Tarifs', titre: 'Gratuit pour <em>réviser.</em>', ligne: 'Mirandola+ dès 4,17 € par mois.<br>Campus de 5 à 2 € HT par élève et par an.', pc: 'pc', tel: 'mobile' },
   'anki-quizlet': { sujet: 'Le comparatif', titre: 'Anki, Quizlet <em>ou Mirandola ?</em>', ligne: 'Trois apps de flashcards,<br>et comment passer de l’une à l’autre.', pc: 'pc', tel: 'mobile' },
-  'a-propos': { sujet: 'Le nom', titre: 'Pourquoi <em>Mirandola ?</em>', ligne: 'D’après Pic de la Mirandole,<br>l’érudit à la mémoire prodigieuse.', logo: true }
+  'a-propos': { sujet: 'Le nom', titre: 'Pourquoi <em>Mirandola ?</em>', ligne: 'D’après Pic de la Mirandole,<br>l’érudit à la mémoire prodigieuse.', logo: true },
+  moteur: { sujet: 'Memory Engine · FSRS-6', titre: 'Le moteur, <em>formule par formule.</em>', ligne: 'Trois variables, vingt et un paramètres,<br>une courbe. Sans rien arrondir.', moteur: true }
 };
 
 async function imagesDesPages() {
   const { courbeOubli } = await import('./site/gabarit.js');
+  const { svgFamille } = await import('../src/site/moteur-calc.js');
   const css = readFileSync('src/site/pages.css', 'utf8').match(/\.co-svg\{[\s\S]*?\.co-rev text\{[^}]*\}/)[0];
   const logo = readFileSync('public/site/logo.svg', 'utf8');
   const uri = f => 'data:image/webp;base64,' + readFileSync(SORTIE + f + '.webp').toString('base64');
   mkdirSync('public/site/og', { recursive: true });
   const p = await (await navigateur.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 })).newPage();
   for (const [nom, o] of Object.entries(OG_PAGES)) {
-    const visuel = o.courbe ? `<div class="courbe">${courbeOubli()}</div>`
+    const visuel = o.moteur ? `<div class="moteur"><math display="block"><mi>R</mi><mo stretchy="false">(</mo><mi>t</mi><mo>,</mo><mi>S</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>f</mi><mfrac><mi>t</mi><mi>S</mi></mfrac><mo>)</mo></mrow><mrow><mo>−</mo><msub><mi>w</mi><mn>20</mn></msub></mrow></msup></math>${svgFamille()}</div>`
+      : o.courbe ? `<div class="courbe">${courbeOubli()}</div>`
       : o.logo ? `<div class="grand-logo">${logo}</div>`
         : `<div class="pc"><img src="${uri(o.pc)}"></div><div class="socle"></div><div class="tel"><img src="${uri(o.tel)}"><i></i></div>`;
     await p.setContent(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
@@ -149,7 +152,17 @@ async function imagesDesPages() {
       ${css.replace(/var\(--sans\)/g, 'Inter,system-ui,sans-serif')}
       .co-sans{fill:none;stroke:#B9B3A8;stroke-width:3;stroke-dasharray:2 7}.co-avec{fill:none;stroke:url(#co-g);stroke-width:5}
       .grand-logo{position:absolute;left:720px;top:110px;width:380px}.grand-logo svg{width:100%;height:auto}
-    </style></head><body>
+      body.nuit{color:#F3EEE3;background:radial-gradient(50% 70% at 0% 100%,rgba(215,100,141,.32),transparent),radial-gradient(50% 70% at 90% 0%,rgba(90,118,208,.38),transparent),#17161E}
+      .nuit .s{color:#CFC8BA}.nuit .p{background:rgba(243,238,227,.08);box-shadow:inset 0 0 0 1px rgba(243,238,227,.18)}
+      .nuit h1 em{background:linear-gradient(100deg,#8DA2F0 8%,#B996EC 55%,#F38DB2 94%);-webkit-background-clip:text;background-clip:text}
+      .moteur{position:absolute;left:640px;top:84px;width:500px}
+      .moteur math{font-size:44px;color:#F3EEE3;margin-bottom:26px}
+      .moteur svg{display:block;width:100%;height:auto;padding:22px 22px 10px;box-sizing:border-box;border-radius:26px;background:rgba(243,238,227,.05);box-shadow:inset 0 0 0 1px rgba(243,238,227,.14)}
+      .moteur text{font:600 22px Inter,system-ui,sans-serif;fill:#A29CAF}.m-ty{text-anchor:end}.m-tx{text-anchor:middle}
+      .m-grille{stroke:rgba(243,238,227,.12);stroke-width:1}
+      .m-fam{fill:none;stroke-width:5;stroke-linecap:round}.m-fam-pt{stroke:#17161E;stroke-width:3}
+      .m-fam0{stroke:#91A8EB;fill:#91A8EB}.m-fam1{stroke:#B996EC;fill:#B996EC}.m-fam2{stroke:#E58BB7;fill:#E58BB7}.m-fam3{stroke:#F3C1D4;fill:#F3C1D4}path.m-fam{fill:none}
+    </style></head><body${o.moteur ? ' class="nuit"' : ''}>
       <div class="g"><div class="m">${logo}<span>Mirandola</span></div>
         <div class="p"><i></i>${o.sujet}</div>
         <h1>${o.titre}</h1>

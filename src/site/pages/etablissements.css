@@ -1,0 +1,41 @@
+/* /etablissements : les deux codes d'un établissement, le bloc Campus repris de l'accueil. Chargée par sa seule page, après site.css et pages.css. */
+
+/* ---------- les deux codes d'un établissement (/etablissements) ---------- */
+.cx{display:flex;flex-direction:column;align-items:center;padding:10px 0 20px;text-align:left}
+.cx-carte{position:relative;width:min(100%,470px);padding:24px;border-radius:28px;background:#FFF;rotate:2deg;box-shadow:var(--ombre3),inset 0 0 0 1px var(--filet)}
+.cx-ecole{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.cx-ecole b{display:block;font:700 19px/1.2 var(--serif)}
+.cx-ecole small{display:block;margin-top:2px;font-size:13px;font-weight:600;color:var(--doux)}
+.cx-ic{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:var(--degrade);color:#FFF;box-shadow:0 10px 20px -10px rgba(128,67,156,.7)}
+.cx-ic .ic{width:22px;height:22px}
+.cx-code{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:18px;background:var(--papier);box-shadow:inset 0 0 0 1px var(--filet)}
+.cx-code+.cx-code{margin-top:10px}
+.cx-code small{display:block;font:800 10.5px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--doux)}
+.cx-code b{display:block;margin-top:7px;font:700 clamp(24px,2.6vw,32px)/1 var(--mono);letter-spacing:.06em;color:var(--encre)}
+.cx-qr{flex:none;width:84px;padding:4px;border-radius:10px;background:#FFF;box-shadow:inset 0 0 0 1px var(--filet)}
+.cx-qr svg{display:block;width:100%;height:auto}
+.cx-copie{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;background:#E4F1E8;color:var(--ok);font-weight:750;font-size:14px;
+  animation:apparait .4s var(--rebond) 1.8s both}
+.cx-copie .ic{width:16px;height:16px;stroke-width:2.8}
+.cx-renouv{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13.5px;font-weight:600;color:var(--doux)}
+.cx-renouv .ic{flex:none;width:17px;height:17px;color:var(--az4)}
+.cx-arrivent{position:relative;z-index:2;display:flex;align-items:center;margin-top:-18px;padding:8px 16px 8px 10px;border-radius:99px;background:#FFF;box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
+.cx-arrivent span{display:grid;width:44px;height:44px;margin-left:-8px;border-radius:50%;overflow:hidden;background:var(--j);box-shadow:0 0 0 3px #FFF;animation:arrive .5s var(--rebond) both;animation-delay:calc(1s + var(--i) * .14s)}
+.cx-arrivent span:first-child{margin-left:0}
+.cx-arrivent .visage{width:100%;height:100%}
+.cx-arrivent b{margin-left:12px;font:800 16px var(--sans);color:var(--encre2)}
+@keyframes arrive{from{opacity:0;transform:translateY(12px) scale(.6)}}
+.cx-entre{position:absolute;right:0;top:0;z-index:3;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:16px;background:var(--nuit);color:var(--creme);
+  font-size:14px;font-weight:600;box-shadow:var(--ombre3);rotate:-3deg;animation:apparait .5s var(--rebond) 2.2s both}
+.cx-entre .ic{width:18px;height:18px;padding:3px;border-radius:50%;background:var(--ok);color:#FFF;stroke-width:3}
+
+/* le bloc Campus de l'accueil, repris sous le haut de page : sans la marque ni les boutons, déjà au-dessus */
+.campus.page{margin-top:clamp(70px,9vw,120px)}
+.campus.page .campus-marque,.campus.page .campus-tete .actions,.campus.page .campus-tete .petit{display:none}
+
+@media (max-width:640px){
+  .cx-code b{font-size:22px}
+  .cx-qr{width:64px}
+  .cx-entre{position:relative;margin-top:14px;rotate:0deg}
+}
+@media (prefers-reduced-motion:reduce){.cx-copie,.cx-arrivent span,.cx-entre{animation:none}}

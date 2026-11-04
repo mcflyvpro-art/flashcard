@@ -1,0 +1,46 @@
+/* /anki-quizlet : trois profils en éventail, l'import en deux parcours. Chargée par sa seule page, après site.css et pages.css. */
+
+/* ---------- le comparatif (/anki-quizlet) ---------- */
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;padding:20px 0}
+.trio-c{display:flex;flex-direction:column;gap:8px;min-height:300px;padding:20px 18px 18px;border-radius:24px;background:#FFF;box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet);animation:monte .8s var(--e) both}
+.trio-c.anki{rotate:-4deg;translate:0 18px;animation-delay:.35s}
+.trio-c.quizlet{rotate:3deg;translate:0 28px;animation-delay:.5s}
+.trio-c.nous{position:relative;z-index:2;background:var(--nuit);color:var(--creme);scale:1.06;animation-delay:.7s;
+  box-shadow:0 0 0 1.5px rgba(185,150,236,.55),0 26px 60px -16px rgba(128,67,156,.65),var(--ombre3)}
+.trio-c h2{font:700 22px/1.1 var(--serif);letter-spacing:-.015em}
+.trio-c p{font-size:14.5px;line-height:1.45;color:var(--encre2)}
+.trio-c.nous p{color:var(--creme2)}
+.trio-pour{margin-top:auto;padding-top:10px;border-top:1px solid var(--filet);font:750 12.5px/1.3 var(--sans);color:var(--az5)}
+.trio-c.nous .trio-pour{border-top-color:rgba(243,238,227,.14);background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text;color:transparent}
+.trio-dessin{display:flex;flex-direction:column;justify-content:center;gap:8px;height:74px;margin-bottom:6px;padding:12px;border-radius:16px;background:var(--papier)}
+.trio-dessin i{position:relative;display:block;height:4px;border-radius:2px;background:var(--papier3)}
+.trio-dessin i::after{content:'';position:absolute;left:calc(var(--v) * 100% - 7px);top:-5px;width:14px;height:14px;border-radius:50%;background:#FFF;box-shadow:inset 0 0 0 3px var(--encre2)}
+.trio-dessin.jeux{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.trio-dessin.jeux i{height:auto;border-radius:7px;background:#5B77D0}
+.trio-dessin.jeux i:nth-child(2){background:#D7648D}.trio-dessin.jeux i:nth-child(3){background:#E2A93B}.trio-dessin.jeux i:nth-child(4){background:#3F9A6A}
+.trio-dessin.jeux i::after{display:none}
+.trio-dessin.logo{align-items:center;background:var(--creme)}
+.trio-dessin.logo img{width:40px;height:auto}
+.p-passer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.p-passer article{display:flex;flex-direction:column;gap:16px;padding:clamp(22px,3vw,32px);border-radius:30px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
+.p-passer h3{font:700 24px/1.15 var(--serif);letter-spacing:-.015em}
+.p-pas{counter-reset:pas;display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.p-pas li{counter-increment:pas;position:relative;padding-left:42px;color:var(--encre2);line-height:1.55}
+.p-pas li::before{content:counter(pas);position:absolute;left:0;top:-1px;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--encre);color:#FFF;font:800 13px var(--sans)}
+.p-pas li:not(:last-child)::after{content:'';position:absolute;left:13px;top:30px;bottom:-12px;width:2px;background:var(--papier3)}
+.menu{display:inline-block;padding:1px 8px;border-radius:7px;background:var(--papier2);box-shadow:inset 0 0 0 1px var(--filet);font-weight:700;color:var(--encre);white-space:nowrap}
+.p-flux{display:flex;align-items:center;gap:12px;margin-top:auto;padding:14px;border-radius:20px;background:var(--papier)}
+.p-flux pre{flex:1;min-width:0;margin:0;overflow:hidden;font:600 12px/1.6 var(--mono);color:var(--encre2);white-space:pre;text-overflow:ellipsis;tab-size:2}
+.p-flux .ic{flex:none;width:20px;height:20px;color:var(--az4)}
+.flux-page{--sr:10px;--sw:8px;position:relative;flex:none;padding:14px 26px 14px 14px;border-radius:12px;background:var(--c);box-shadow:inset 0 0 0 1px var(--b),var(--ombre1);font:700 15px var(--serif);color:var(--encre)}
+.flux-page::before{content:'';position:absolute;top:0;right:var(--sr);width:var(--sw);height:calc(var(--sw) * 2);
+  background:linear-gradient(90deg,rgba(255,255,255,.14),transparent 45%,rgba(0,0,0,.14)) var(--d);clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%)}
+@media (max-width:760px){.p-passer{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){
+  .trio{grid-template-columns:minmax(0,1fr);gap:14px;padding:6px 6px 0}
+  .trio-c,.trio-c.anki,.trio-c.quizlet{min-height:0;rotate:0deg;translate:0 0;display:grid;grid-template-columns:64px minmax(0,1fr);gap:4px 14px;text-align:left}
+  .trio-c.nous{scale:1}
+  .trio-dessin{grid-row:span 3;height:64px;margin:0;padding:8px}
+  .trio-pour{grid-column:2}
+}
+@media (prefers-reduced-motion:reduce){.trio-c{animation:none}}

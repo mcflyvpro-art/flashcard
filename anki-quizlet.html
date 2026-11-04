@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <!-- @meta -->
+<link rel="stylesheet" href="/src/site/pages/anki-quizlet.css">
 </head>
 <body>
 <a class="saut" href="#contenu">Aller au contenu</a>
@@ -10,37 +11,42 @@
 <!-- @tete -->
 
 <main id="contenu">
-  <section class="p-heros" aria-labelledby="titre">
+  <section class="p-heros split" aria-labelledby="titre">
     <div class="heros-fond" aria-hidden="true"><i class="tache t1"></i><i class="tache t2"></i><i class="tache t3"></i></div>
     <div class="enveloppe p-heros-in">
-      <!-- @ariane -->
-      <p class="surtitre">Le comparatif</p>
-      <h1 id="titre" class="p-titre">Anki, Quizlet ou Mirandola&#8239;: <em>laquelle</em> choisir&#8239;?</h1>
-      <p class="p-chapeau">Trois apps de flashcards, trois façons de réviser. Ce que fait chacune, pour qui, et comment passer de l’une à l’autre sans rien perdre.</p>
-    </div>
-  </section>
-
-  <section class="p-section enveloppe" aria-labelledby="mots-t">
-    <h2 id="mots-t" class="cache">En deux mots</h2>
-    <div class="p-grille">
-      <article class="p-carte rv">
-        <h3>Anki</h3>
-        <p>Un logiciel libre de répétition espacée, créé en 2006 par Damien Elmes. Très puissant, tout se règle&#8239;: modèles de cartes, options, modules complémentaires. Le choix de ceux qui aiment régler leur outil.</p>
-      </article>
-      <article class="p-carte rv">
-        <h3>Quizlet</h3>
-        <p>L’une des plateformes de flashcards les plus utilisées au monde, avec des millions de listes partagées et des jeux pour apprendre. Le choix de ceux qui veulent apprendre une liste vite, en jouant.</p>
-      </article>
-      <article class="p-carte sombre rv">
-        <h3>Mirandola</h3>
-        <p>Le moteur d’Anki, FSRS, sans un seul réglage, et une IA qui écrit les pages depuis ton cours. Le choix de ceux qui veulent retenir sur des mois, sans y penser.</p>
-      </article>
+      <div class="p-texte">
+        <!-- @ariane -->
+        <p class="surtitre">Le comparatif</p>
+        <h1 id="titre" class="p-titre">Anki, Quizlet ou Mirandola&#8239;: <em>laquelle</em> choisir&#8239;?</h1>
+        <p class="p-chapeau">Trois apps de flashcards, trois façons de réviser. Et comment passer de l’une à l’autre sans rien perdre.</p>
+      </div>
+      <!-- En deux mots : trois profils, en éventail. -->
+      <div class="p-visuel trio">
+        <article class="trio-c anki">
+          <span class="trio-dessin" aria-hidden="true"><i style="--v:.3"></i><i style="--v:.75"></i><i style="--v:.5"></i></span>
+          <h2>Anki</h2>
+          <p>Libre, créé en 2006 par Damien Elmes. Très puissant&#8239;: tout se règle.</p>
+          <span class="trio-pour">Pour qui aime régler son outil</span>
+        </article>
+        <article class="trio-c quizlet">
+          <span class="trio-dessin jeux" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <h2>Quizlet</h2>
+          <p>Des millions de listes partagées, et des jeux pour apprendre.</p>
+          <span class="trio-pour">Pour apprendre une liste vite</span>
+        </article>
+        <article class="trio-c nous">
+          <span class="trio-dessin logo" aria-hidden="true"><img src="/site/logo.svg" alt="" width="34" height="36"></span>
+          <h2>Mirandola</h2>
+          <p>Le moteur d’Anki sans un seul réglage, et une IA qui écrit les pages.</p>
+          <span class="trio-pour">Pour retenir des mois</span>
+        </article>
+      </div>
     </div>
   </section>
 
   <section class="p-section enveloppe" aria-labelledby="table-t">
     <div class="p-tete">
-      <h2 id="table-t" class="titre">Côte à côte.</h2>
+      <h2 id="table-t" class="titre rv">Côte à <em>côte</em>.</h2>
     </div>
     <div class="p-table rv">
       <table>
@@ -61,23 +67,42 @@
     <p class="p-source centre">Établi en novembre 2026 d’après ce que publient leurs éditeurs&#8239;; leurs offres peuvent changer. Anki est une marque d’Ankitects Pty Ltd, Quizlet une marque de Quizlet Inc.</p>
   </section>
 
-  <section class="p-section enveloppe" aria-labelledby="anki-t">
-    <div class="prose">
-      <h2 id="anki-t">Passer d’Anki à Mirandola</h2>
-      <p>Tes paquets se reprennent en texte. Rien ne disparaît d’Anki&#8239;: tu peux garder les deux.</p>
-      <ol>
-        <li>Dans Anki sur ordinateur, choisis le paquet, puis <strong>Fichier, Exporter</strong>, et le format <strong>Notes en texte brut</strong>.</li>
-        <li>Ouvre le fichier exporté et copie tout son texte.</li>
-        <li>Dans Mirandola, crée un livre, choisis <strong>Coller</strong> et colle&#8239;: chaque note devient une page, le recto et le verso à leur place.</li>
-      </ol>
-      <p>Les pages arrivent neuves&#8239;: ton historique de révision reste dans Anki, et le moteur de Mirandola apprend ta mémoire à mesure que tu révises.</p>
-      <h2 id="quizlet-t">Passer de Quizlet à Mirandola</h2>
-      <ol>
-        <li>Sur une liste que tu as créée, utilise <strong>Exporter</strong>&#8239;: Quizlet donne le texte, un terme et sa définition par ligne. Sinon, copie simplement la liste.</li>
-        <li>Dans Mirandola, crée un livre, choisis <strong>Coller</strong> et colle le texte.</li>
-      </ol>
-      <p>Tu peux aussi partir de zéro&#8239;: <a href="/flashcards-ia">l’IA écrit tes pages</a> depuis ton cours, en quelques secondes.</p>
+  <section class="p-section enveloppe" aria-labelledby="passer-t">
+    <div class="p-tete">
+      <h2 id="passer-t" class="titre rv">Passer à Mirandola, <em>en une minute</em>.</h2>
+      <p class="texte rv">Tes cartes se reprennent en texte. Rien ne disparaît d’Anki ni de Quizlet&#8239;: tu peux garder les deux.</p>
     </div>
+    <div class="p-passer">
+      <article class="rv">
+        <h3 id="anki-t">Depuis Anki</h3>
+        <ol class="p-pas">
+          <li>Choisis le paquet, puis <span class="menu">Fichier › Exporter</span></li>
+          <li>Prends le format <span class="menu">Notes en texte brut</span>, et copie tout le fichier</li>
+          <li>Dans Mirandola, un livre, <span class="menu">Coller</span>&#8239;: chaque note devient une page</li>
+        </ol>
+        <div class="p-flux" aria-hidden="true">
+          <pre>Mitochondrie	Centrale de la cellule
+Ribosome	Usine à protéines</pre>
+          <svg class="ic"><use href="#i-fleche"/></svg>
+          <span class="flux-page" data-teinte="green"><b>Mitochondrie</b></span>
+        </div>
+      </article>
+      <article class="rv">
+        <h3 id="quizlet-t">Depuis Quizlet</h3>
+        <ol class="p-pas">
+          <li>Sur une liste que tu as créée, <span class="menu">Exporter</span>&#8239;: un terme et sa définition par ligne</li>
+          <li>Sinon, copie simplement la liste</li>
+          <li>Dans Mirandola, un livre, <span class="menu">Coller</span></li>
+        </ol>
+        <div class="p-flux" aria-hidden="true">
+          <pre>to cope with	faire face à
+to take for granted	tenir pour acquis</pre>
+          <svg class="ic"><use href="#i-fleche"/></svg>
+          <span class="flux-page" data-teinte="red"><b>to cope with</b></span>
+        </div>
+      </article>
+    </div>
+    <p class="p-apres rv">Les pages arrivent neuves&#8239;: le moteur apprend ta mémoire à mesure que tu révises. Ou pars de zéro&#8239;: <a class="p-lien" href="/flashcards-ia">l’IA écrit tes pages</a> depuis ton cours.</p>
   </section>
 
   <section class="faq enveloppe p-section" id="faq" aria-labelledby="faq-t">

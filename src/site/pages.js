@@ -36,49 +36,56 @@ export const PAGES = [
     chemin: '/flashcards-ia', fichier: 'flashcards-ia.html', nom: 'Flashcards avec l’IA',
     titre: 'Créer des flashcards avec l’IA, depuis ton cours | Mirandola',
     description: 'Colle ton cours, prends une photo de ton cahier ou importe un PDF : l’IA de Mirandola en fait un livre de flashcards en quelques secondes, prêt à réviser.',
-    maj: '2026-11-02', image: '/site/og/flashcards-ia.jpg',
+    maj: '2026-11-04', image: '/site/og/flashcards-ia.jpg',
     imageAlt: 'Un cours transformé en livre de flashcards par l’IA de Mirandola'
   },
   {
     chemin: '/repetition-espacee', fichier: 'repetition-espacee.html', nom: 'La répétition espacée', type: 'Article',
     titre: 'La répétition espacée, expliquée simplement | Mirandola',
     description: 'Courbe de l’oubli, intervalles, algorithme FSRS : comment la répétition espacée fait retenir 9 pages sur 10, et comment t’en servir pour tes examens.',
-    maj: '2026-11-02', image: '/site/og/repetition-espacee.jpg',
+    maj: '2026-11-04', image: '/site/og/repetition-espacee.jpg',
     imageAlt: 'La courbe de l’oubli, et la mémoire qui reste haute avec la répétition espacée'
+  },
+  {
+    chemin: '/moteur', fichier: 'moteur.html', nom: 'Le moteur FSRS', type: 'Article',
+    titre: 'Le moteur FSRS de Mirandola, formule par formule',
+    description: 'FSRS-6 dans le détail : la courbe d’oubli, la stabilité, la difficulté, les 21 paramètres, l’optimiseur et le banc d’essai. Les vraies équations du moteur.',
+    maj: '2026-11-04', image: '/site/og/moteur.jpg',
+    imageAlt: 'Les équations de FSRS-6, le moteur de révision de Mirandola, et ses courbes d’oubli'
   },
   {
     chemin: '/etablissements', fichier: 'etablissements.html', nom: 'Mirandola Campus',
     titre: 'Mirandola Campus : la révision pour tout l’établissement',
     description: 'Collèges, lycées, prépas : Mirandola Campus ouvre la révision par flashcards à tous vos élèves et professeurs en dix minutes. Démo gratuite 30 jours.',
-    maj: '2026-11-02', image: '/site/og/etablissements.jpg',
+    maj: '2026-11-04', image: '/site/og/etablissements.jpg',
     imageAlt: 'Mirandola Campus : l’espace du professeur, de l’élève et du référent de l’établissement'
   },
   {
     chemin: '/professeurs', fichier: 'professeurs.html', nom: 'Professeurs',
     titre: 'Mirandola pour les professeurs : devoirs, suivi, défis',
     description: 'Donnez un livre de flashcards en devoir, voyez qui l’a lu et ce qui bloque, lancez un défi en direct en classe. Gratuit pour les cours particuliers.',
-    maj: '2026-11-02', image: '/site/og/professeurs.jpg',
+    maj: '2026-11-04', image: '/site/og/professeurs.jpg',
     imageAlt: 'Le tableau de bord du professeur dans Mirandola'
   },
   {
     chemin: '/tarifs', fichier: 'tarifs.html', nom: 'Tarifs',
     titre: 'Tarifs : Mirandola gratuit, Mirandola+ et Mirandola Campus',
     description: 'Mirandola est gratuit. Mirandola+ ouvre l’IA et le Memory Engine Ultra pour 4,17 € par mois à l’année. Campus : de 5 à 2 € HT par élève et par an.',
-    maj: '2026-11-02', image: '/site/og/tarifs.jpg',
+    maj: '2026-11-04', image: '/site/og/tarifs.jpg',
     imageAlt: 'Les trois offres de Mirandola : gratuit, Mirandola+ et Mirandola Campus'
   },
   {
     chemin: '/anki-quizlet', fichier: 'anki-quizlet.html', nom: 'Anki, Quizlet ou Mirandola',
     titre: 'Anki, Quizlet ou Mirandola : quelle app de flashcards ?',
     description: 'Anki, Quizlet, Mirandola : ce que fait chaque app de flashcards, pour qui, et à quel prix. Et comment reprendre tes paquets Anki et tes listes Quizlet.',
-    maj: '2026-11-02', image: '/site/og/anki-quizlet.jpg',
+    maj: '2026-11-04', image: '/site/og/anki-quizlet.jpg',
     imageAlt: 'Trois apps de flashcards comparées : Anki, Quizlet et Mirandola'
   },
   {
     chemin: '/a-propos', fichier: 'a-propos.html', nom: 'Pourquoi Mirandola', type: 'AboutPage',
     titre: 'Pourquoi Mirandola ? D’après Pic de la Mirandole',
     description: 'Mirandola tient son nom de Pic de la Mirandole, l’érudit à la mémoire prodigieuse né à Mirandola, en Italie. Ce que l’app veut faire, et comment.',
-    maj: '2026-11-02', image: '/site/og/a-propos.jpg',
+    maj: '2026-11-04', image: '/site/og/a-propos.jpg',
     imageAlt: 'Mirandola, d’après Pic de la Mirandole'
   }
 ];

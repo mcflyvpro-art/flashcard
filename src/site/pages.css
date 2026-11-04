@@ -2,8 +2,9 @@
    des pages à lire, qui gardent la charte de l'accueil (site.css, chargée
    avant celle-ci : papier, encre, titres en serif, la lumière de la marque)
    et n'y ajoutent que ce qu'une page de lecture demande : un haut de page
-   avec son fil d'Ariane, de la prose, des cartes, des étapes, un tableau,
-   des appareils posés à plat. Rien qui tourne en boucle ici, sauf la
+   avec son fil d'Ariane, de la prose, des cartes, un tableau. Ce qui n'est
+   qu'à une page vit dans sa propre feuille (src/site/pages/<page>.css,
+   liée depuis sa tête) : chaque page ne charge que ce qu'elle montre. Rien qui tourne en boucle ici, sauf la
    lumière du haut, comme sur l'accueil. Même règle : n'animer que
    transform et opacity, et se taire sous « mouvement réduit ». */
 
@@ -66,14 +67,6 @@
 .p-carte.sombre p,.p-carte.sombre li{color:var(--creme2)}
 .p-carte.sombre .p-ic{color:#F3C1D4;background:rgba(243,238,227,.08);box-shadow:inset 0 0 0 1px rgba(243,238,227,.14)}
 
-/* ---------- les étapes ---------- */
-.p-etapes{counter-reset:etape;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px;margin:0;padding:0;list-style:none}
-.p-etapes li{counter-increment:etape;position:relative;padding:62px 24px 26px;border-radius:26px;background:var(--papier2);box-shadow:inset 0 0 0 1px var(--filet)}
-.p-etapes li::before{content:counter(etape);position:absolute;left:24px;top:20px;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;
-  background:var(--encre);color:#FFF;font:700 16px var(--sans)}
-.p-etapes h3{font:700 20px/1.25 var(--serif);letter-spacing:-.01em}
-.p-etapes p{margin-top:8px;color:var(--encre2);line-height:1.55}
-
 /* ---------- deux colonnes : un texte et un appareil ---------- */
 .p-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(30px,5vw,72px);align-items:center}
 .p-duo.inverse>:first-child{order:2}
@@ -82,55 +75,6 @@
 .p-duo h2+p{margin-top:16px}
 .p-duo p{color:var(--encre2);font-size:clamp(17px,1.4vw,19px);line-height:1.6}
 .p-duo p+p{margin-top:12px}
-.p-points{display:flex;flex-direction:column;gap:10px;margin:22px 0 0;padding:0;list-style:none}
-.p-points li{display:flex;gap:11px;align-items:flex-start;color:var(--encre2);line-height:1.5}
-.p-points li .ic{flex:none;width:20px;height:20px;margin-top:2px;color:var(--ok);stroke-width:2.6}
-.p-points b{color:var(--encre)}
-
-/* l'appareil, posé à plat (sur l'accueil il se redresse au défilement) */
-.p-appareils{position:relative;width:100%;padding-bottom:6%}
-.p-appareils .portable{width:92%;margin-left:0;transform:none}
-.p-appareils .telephone{right:0;bottom:0;width:27%;transform:none;rotate:3deg}
-.p-appareils.seul .portable{width:100%}
-.p-appareils .ecran::after{animation:none}
-
-/* ---------- l'IA à qui l'on parle : une conversation dessinée ---------- */
-.p-fil{display:flex;flex-direction:column;gap:10px;max-width:440px;margin-inline:auto;padding:22px;border-radius:28px;background:#FFF;box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
-.p-fil p{max-width:86%;padding:11px 15px;border-radius:18px;line-height:1.4;font-size:15.5px}
-.p-fil .moi{align-self:flex-end;background:var(--encre);color:#FFF;border-bottom-right-radius:6px}
-.p-fil .ia{align-self:flex-start;background:var(--papier2);color:var(--encre);border-bottom-left-radius:6px}
-.p-fil .ia b{display:block;margin-bottom:2px;font:800 11px/1.2 var(--sans);letter-spacing:.08em;text-transform:uppercase;background:var(--degrade-texte);-webkit-background-clip:text;background-clip:text;color:transparent}
-.p-fil .pages{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-self:stretch;margin-top:2px}
-.p-fil .pages span{--sr:10px;--sw:9px;position:relative;padding:11px 26px 11px 12px;border-radius:12px;background:var(--c);box-shadow:inset 0 0 0 1px var(--b);font:700 14px/1.25 var(--serif);color:var(--encre)}
-.p-fil .pages span::before{content:'';position:absolute;top:0;right:var(--sr);width:var(--sw);height:calc(var(--sw) * 2);
-  background:linear-gradient(90deg,rgba(255,255,255,.14),transparent 45%,rgba(0,0,0,.14)) var(--d);clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%)}
-.js .p-fil.rv>*{opacity:0;transform:translateY(8px)}
-.p-fil.vu>*{opacity:1;transform:none;transition:opacity .5s var(--e),transform .5s var(--e)}
-.p-fil.vu>:nth-child(2){transition-delay:.35s}.p-fil.vu>:nth-child(3){transition-delay:.7s}.p-fil.vu>:nth-child(4){transition-delay:1.05s}.p-fil.vu>:nth-child(5){transition-delay:1.4s}
-
-/* ---------- la courbe de l'oubli (dessinée au build, tools/site/gabarit.js) ---------- */
-.p-courbe{margin:clamp(30px,4vw,44px) auto 0;max-width:1000px;padding:clamp(20px,3vw,34px) clamp(14px,3vw,34px) clamp(16px,2.4vw,26px);border-radius:30px;background:#FFF;
-  box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
-.co-svg{width:100%;height:auto;overflow:visible}
-.co-svg text{font:600 15px var(--sans);fill:var(--doux)}
-.co-y{text-anchor:end}
-.co-x{text-anchor:start}
-.co-grille{stroke:var(--filet);stroke-width:1}
-.co-seuil{stroke:var(--az3);stroke-width:1.5;stroke-dasharray:4 7}
-.co-sans{fill:none;stroke:#B9B3A8;stroke-width:3;stroke-dasharray:2 7;stroke-linecap:round}
-.co-avec{fill:none;stroke:url(#co-g);stroke-width:4.5;stroke-linejoin:round;stroke-linecap:round}
-.co-rev line{stroke:var(--rose);stroke-width:1.5;opacity:.5}
-.co-rev circle{fill:#FFF;stroke:var(--rose);stroke-width:3.5}
-.co-rev text{text-anchor:middle;font-weight:750;fill:var(--encre2)}
-.co-legende{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 26px;margin-top:14px;font-size:15px;font-weight:650;color:var(--encre2)}
-.co-legende span{display:inline-flex;align-items:center;gap:9px}
-.co-legende i{width:26px;height:4px;border-radius:2px;background:var(--degrade)}
-.co-legende .l-sans i{height:0;border-top:3px dotted #B9B3A8;background:none}
-.co-legende .l-seuil i{height:0;border-top:2px dashed var(--az3);background:none}
-.js .p-courbe .co-avec{stroke-dasharray:4000;stroke-dashoffset:4000}
-.p-courbe.vu .co-avec{stroke-dashoffset:0;transition:stroke-dashoffset 2.6s var(--e) .2s}
-.js .p-courbe .co-rev{opacity:0}
-.p-courbe.vu .co-rev{opacity:1;transition:opacity .5s var(--e) 1.4s}
 
 /* ---------- les tableaux de comparaison ---------- */
 .p-table{margin-top:clamp(26px,4vw,40px);border:1px solid var(--filet);border-radius:28px;background:#FFF;box-shadow:var(--ombre1);overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -142,18 +86,6 @@
 .p-table td{color:var(--encre2)}
 .p-table .nous{background:rgba(154,120,207,.08)}
 .p-table thead .nous{border-radius:18px 18px 0 0}
-
-/* ---------- les chiffres ---------- */
-.p-chiffres{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:16px;margin:0;padding:0;list-style:none}
-.p-chiffres li{padding:24px 24px 22px;border-radius:24px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
-.p-chiffres b{display:block;font:700 clamp(36px,4vw,50px)/1 var(--serif);letter-spacing:-.03em;color:var(--az5);font-variant-numeric:tabular-nums}
-.p-chiffres span{display:block;margin-top:8px;color:var(--encre2);line-height:1.45}
-
-/* ---------- une note, un encadré ---------- */
-.p-note{display:flex;gap:14px;align-items:flex-start;max-width:44em;margin:clamp(26px,3vw,36px) auto 0;padding:18px 20px;border-radius:20px;background:var(--papier2);
-  box-shadow:inset 0 0 0 1px var(--filet);color:var(--encre2);line-height:1.55}
-.p-note .ic{flex:none;margin-top:2px;color:var(--az5)}
-.p-note b{color:var(--encre)}
 
 /* ---------- les liens vers les autres pages ---------- */
 .p-suite{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
@@ -170,33 +102,114 @@
 .fin-marque{justify-content:center}
 .fin-petit{color:var(--creme2)}
 
+
+
+/* le lien de la page où l'on est, dans l'en-tête */
+.tete-liens a[aria-current="page"]{color:var(--encre);background:rgba(29,28,25,.06)}
+.menu-mobile a[aria-current="page"]{color:var(--az5)}
+.fin-marque{justify-content:center}
+.fin-petit{color:var(--creme2)}
+/* au téléphone, le tableau défile de côté : le critère reste en vue */
+.p-table tbody th{position:sticky;left:0;z-index:1;background:#FFF}
+
+/* ══════════ la refonte du 2026-11-04 ══════════
+   Demandé : « le même niveau d'exigence que la page d'accueil, le visuel
+   d'abord, juste ce qu'il faut de texte ». Les pièces ci-dessous servent à
+   toutes les pages : un haut de page en deux colonnes (le texte, et ce
+   qu'il montre), une bande de nuit comme Campus et la fin de l'accueil, des
+   tuiles dessinées, des exemples plutôt que des paragraphes. Chaque dessin
+   se joue une fois, à son arrivée ; « mouvement réduit » les pose d'emblée. */
+
+/* ---------- le haut de page en deux colonnes ---------- */
+.p-heros.split{padding-bottom:clamp(10px,2vw,24px)}
+.p-heros.split .p-heros-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(30px,5vw,76px);align-items:center;text-align:left}
+.p-texte{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.p-heros.split .ariane ol{justify-content:flex-start}
+.p-heros.split .p-titre{font-size:clamp(40px,4.6vw,66px);max-width:none;line-height:1.02}
+.p-heros.split .p-chapeau{max-width:25em;text-wrap:pretty}
+.p-heros.split .actions{justify-content:flex-start}
+.p-heros.split .actions .bt-grand{padding:0 22px}
+.p-heros.split .petit{margin-top:14px;font-size:14px;color:var(--doux)}
+.p-visuel{position:relative;min-width:0;animation:monte 1s var(--e) .25s both}
+
+/* ---------- la bande de nuit ---------- */
+.p-nuit{position:relative;max-width:calc(var(--large) + 120px);margin:clamp(84px,11vw,150px) auto 0;padding:clamp(56px,8vw,104px) 0;
+  border-radius:clamp(26px,4vw,48px);background:var(--nuit);color:var(--creme);overflow:hidden;isolation:isolate}
+.p-nuit::before{content:'';position:absolute;inset:-30% -14% auto auto;width:68%;aspect-ratio:1;z-index:-1;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(90,118,208,.34),transparent);animation:derive 22s ease-in-out infinite alternate}
+.p-nuit::after{content:'';position:absolute;inset:auto auto -28% -16%;width:60%;aspect-ratio:1;z-index:-1;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(215,100,141,.26),transparent);animation:derive 26s ease-in-out infinite alternate-reverse}
+.p-nuit .titre{color:var(--creme)}
+.p-nuit .titre em,.p-nuit h2 em{font-style:italic;background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
+.p-nuit .texte,.p-nuit .p-duo>div>p{color:var(--creme2)}
+.p-nuit .p-lien{color:#B9C6F5;text-decoration-color:rgba(185,198,245,.4)}
+.p-puces{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 0;padding:0;list-style:none}
+.p-puces li{padding:9px 15px;border-radius:99px;background:rgba(243,238,227,.07);box-shadow:inset 0 0 0 1px rgba(243,238,227,.16);color:var(--creme);font-weight:600;font-size:15px}
+.p-nuit .p-fil{background:rgba(243,238,227,.05);box-shadow:inset 0 0 0 1px rgba(243,238,227,.14),0 40px 80px -40px rgba(0,0,0,.8)}
+.p-nuit .p-fil .moi{background:var(--creme);color:var(--encre)}
+.p-nuit .p-fil .ia{background:rgba(243,238,227,.1);color:var(--creme)}
+.p-nuit .p-fil .ia b{background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text}
+
+/* ---------- des garanties : une icône, un mot, une ligne ---------- */
+.p-garanties{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0;padding:0;list-style:none}
+.p-garanties li{display:flex;flex-direction:column;gap:8px;padding:24px;border-radius:26px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
+.p-garanties .p-ic{width:54px;height:54px;border-radius:17px;margin-bottom:8px}
+.p-garanties .p-ic .ic{width:27px;height:27px}
+.p-garanties b{font:700 20px/1.2 var(--serif);letter-spacing:-.01em}
+.p-garanties span:last-child{color:var(--doux);line-height:1.5;font-size:15.5px}
+
+.p-citation{padding:clamp(60px,9vw,120px) 0}
+.p-citation blockquote{margin:0 auto;max-width:18em;text-align:center;font:700 clamp(32px,4.8vw,62px)/1.08 var(--serif);letter-spacing:-.03em;color:var(--creme);text-wrap:balance}
+.p-citation em{font-style:italic;background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.06em}
+.p-frise{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 8px;padding:34px 0 0;list-style:none}
+.p-frise::before{content:'';position:absolute;left:0;right:0;top:10px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--papier3),var(--az3) 60%,#D7648D)}
+.p-frise li{position:relative;display:flex;flex-direction:column;gap:6px;padding:22px;border-radius:24px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
+.p-frise li::before{content:'';position:absolute;left:22px;top:-31px;width:17px;height:17px;border-radius:50%;background:#FFF;box-shadow:inset 0 0 0 4px var(--az4)}
+.p-frise .an{font:700 clamp(30px,3vw,40px)/1 var(--serif);letter-spacing:-.03em;color:var(--az5)}
+.p-frise b{font:700 19px/1.2 var(--serif)}
+.p-frise p{color:var(--doux);font-size:15px;line-height:1.5}
+.p-frise .nous{background:var(--nuit);color:var(--creme);box-shadow:var(--ombre3)}
+.p-frise .nous::before{box-shadow:inset 0 0 0 4px #D7648D}
+.p-frise .nous .an{background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text;color:transparent}
+.p-frise .nous p{color:var(--creme2)}
+
+/* trois offres sur la nuit (/professeurs) */
+.p-nuit-cartes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.p-nuit-cartes article{display:flex;flex-direction:column;gap:8px;padding:28px;border-radius:26px;background:rgba(243,238,227,.05);box-shadow:inset 0 0 0 1px rgba(243,238,227,.12)}
+.p-nuit-cartes .fort{background:rgba(243,238,227,.1);box-shadow:inset 0 0 0 1px rgba(243,238,227,.22),0 30px 60px -30px rgba(0,0,0,.8)}
+.nc-prix{font:700 clamp(36px,4vw,50px)/1 var(--serif);letter-spacing:-.03em;background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text;color:transparent}
+.nc-prix small{font:650 15px var(--sans);letter-spacing:0;-webkit-text-fill-color:#A29CAF}
+.p-nuit-cartes h3{margin-top:6px;font:700 21px/1.2 var(--serif);color:var(--creme)}
+.p-nuit-cartes p:not(.nc-prix){color:var(--creme2);line-height:1.5}
+.p-nuit-cartes .bt{align-self:flex-start;margin-top:10px}
+
 /* ---------- tailles ---------- */
+@media (max-width:980px){
+  .p-garanties{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .p-frise{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .p-heros.split .p-heros-in{grid-template-columns:minmax(0,1fr);text-align:center}
+  .p-texte{align-items:center}
+  .p-heros.split .ariane ol,.p-heros.split .actions{justify-content:center}
+  .p-heros.split .p-chapeau{text-wrap:balance}
+}
 @media (max-width:860px){
   .p-duo,.p-duo.inverse{grid-template-columns:minmax(0,1fr)}
   .p-duo.inverse>:first-child{order:0}
 }
+@media (max-width:760px){.p-nuit-cartes{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:640px){
   .p-heros .actions{width:100%;flex-direction:column;align-items:center}
   .p-carte{padding:22px 20px 24px}
   .p-table table{min-width:560px}
   .p-table th,.p-table td{padding:12px 12px;font-size:14px}
-  .co-svg text{font-size:21px}
-  .co-x:nth-of-type(3){display:none}
+  .p-nuit{margin-inline:10px}
+  .p-garanties,.p-frise{grid-template-columns:minmax(0,1fr)}
+  .p-garanties li{display:grid;grid-template-columns:54px minmax(0,1fr);gap:4px 16px;padding:18px}
+  .p-garanties .p-ic{grid-row:span 2;margin:0}
+  .p-frise{padding:0 0 0 30px}
+  .p-frise::before{left:8px;right:auto;top:0;bottom:0;width:3px;height:auto;background:linear-gradient(var(--papier3),var(--az3) 60%,#D7648D)}
+  .p-frise li::before{left:-30px;top:26px}
 }
-@media (prefers-reduced-motion:reduce){
-  .js .p-fil.rv>*,.js .p-courbe .co-rev{opacity:1;transform:none}
-  .js .p-courbe .co-avec{stroke-dashoffset:0}
-}
-
-/* /tarifs : le haut de page ne porte que le fil d'Ariane, les offres suivent */
-.p-heros-court{padding-bottom:0}
-.p-heros-court .surtitre{margin-bottom:0}
-.p-heros-court+.tarifs{position:relative;padding-top:clamp(14px,2vw,24px)}
-/* les rôles de Campus : un ordinateur posé sur chaque carte */
-.p-role .portable{margin:4px 5% 20px;width:auto}
-.p-role .ecran::after{animation:none}
-.p-tuile,.p-duo .tuile{grid-column:auto;min-height:0}
-/* /tarifs : la lumière du haut descend derrière le titre des offres */
-.p-heros-court .heros-fond{inset:-140px 0 -520px}
-/* au téléphone, le tableau défile de côté : le critère reste en vue */
-.p-table tbody th{position:sticky;left:0;z-index:1;background:#FFF}
+@media (prefers-reduced-motion:reduce){.p-visuel{animation:none}}

@@ -16,6 +16,7 @@ donc une page par recherche :
 | `/` | Mirandola, flashcards IA, répétition espacée (l'accueil, inchangé) |
 | `/flashcards-ia` | créer des flashcards avec l'IA, depuis un cours, une photo, un PDF |
 | `/repetition-espacee` | la répétition espacée, la courbe de l'oubli, FSRS, comment réviser |
+| `/moteur` | l'algorithme FSRS en détail : ses formules, ses 21 paramètres, le banc d'essai (depuis le 2026-11-04) |
 | `/etablissements` | Mirandola Campus : une app de révision pour un collège, un lycée, une prépa |
 | `/professeurs` | devoirs suivis, défis en direct, cours particuliers |
 | `/tarifs` | le prix de Mirandola+, de Campus |
@@ -230,8 +231,12 @@ de liens. Tout cela finit en pénalité pour le site entier.
 - La liste : `src/site/pages.js`. Le gabarit et le sitemap :
   `tools/site/gabarit.js` (greffon Vite `pagesDuSite`, `rendre`,
   `sitemap`, `llms`, `courbeOubli`). Les morceaux : `src/site/partiels/`.
-  Le style des pages : `src/site/pages.css` (après `site.css`). Le script :
-  `src/site/page.js` (et `commun.js`, partagé avec `site.js`).
+  Le style des pages : `src/site/pages.css` (après `site.css`) pour le
+  commun, puis la feuille de chaque page, `src/site/pages/<page>.css`
+  (liée depuis sa tête ; la page du moteur a la sienne,
+  `src/site/moteur.css`). Le script : `src/site/page.js` (et `commun.js`,
+  partagé avec `site.js`) ; la page du moteur, `src/site/moteur.js` et
+  `moteur-calc.js`, qui appellent le moteur de l'app (`src/fsrs.js`).
 - Vercel sert un fichier avant d'appliquer la réécriture vers l'app : avec
   `cleanUrls`, `/tarifs` sert `tarifs.html`. Sous `npm run dev` et
   `vite preview`, c'est le relais `adressesDeLApp` de `vite.config.js`.
