@@ -109,9 +109,12 @@ ville en quelques mois si la marque est cherchée.
 2. « Ajouter une propriété » → **Domaine** → `mirandola.fr`.
 3. Google donne un enregistrement **TXT** (`google-site-verification=…`).
    Chez **OVH** : Web Cloud → Noms de domaine → `mirandola.fr` → Zone DNS →
-   « Ajouter une entrée » → **TXT**, sous-domaine **vide**, valeur : le
-   texte de Google entier. Valider. (Brevo a déjà ses entrées dans la même
-   zone : ne pas les toucher, elles cohabitent.)
+   « Ajouter une entrée » → **TXT**, sous-domaine **`@`** (la racine : le
+   champ est obligatoire, l'aperçu doit dire `mirandola.fr. IN TXT
+   "google-site-verification=…"`), TTL par défaut, valeur : le texte de
+   Google entier, guillemets non compris. « Ajouter ». (Brevo a déjà ses
+   entrées dans la même zone : ne pas les toucher, plusieurs TXT à la
+   racine cohabitent.)
 4. Revenir dans la Search Console → « Valider ». Si ça échoue, attendre
    une heure (le temps que le DNS se propage) et recommencer.
 5. Menu **Sitemaps** → `sitemap.xml` → Envoyer.
