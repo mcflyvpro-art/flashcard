@@ -65,7 +65,7 @@ l'air de marcher ».
     installée ou l'app native, et tout lien de l'app (`?rejoindre=
     ?defi= ?club= ?go=`, `#s= #i=`, retours d'e-mail) : les QR imprimés et
     les liens fabriqués sur `SITE` continuent d'ouvrir l'app. `?site` force
-    l'accueil. Son empreinte sha256 est dans la CSP de `vercel.json`
+    l'accueil. Son empreinte sha256 est dans la CSP de `vercel.json` — **appliquée** depuis le 2026-11-05, plus en observation : 0 violation sur toute la suite de parcours servie sous la même politique (`tools/pw-csp.config.js`), donc un script en ligne, une police ou une image d'ailleurs sont bloqués ; mesurer avant d'en ajouter une
     (`test/site.test.js` le vérifie, avec l'absence de tiret cadratin dans le
     texte affiché et ses teintes : une page, un livre, une matière y prend
     sa teinte du nuancier de l'app par `data-teinte`, recopiée de

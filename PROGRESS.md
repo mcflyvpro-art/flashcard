@@ -18,8 +18,21 @@
 ```
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
-FAIT      48 / 148
-DERNIER   2026-11-06 · Le cadre légal, demandé : « le légal, en entier,
+FAIT      49 / 148
+DERNIER   2026-11-05 · Session de débogage, demandée : « que tout soit
+          nickel, fais-toi attaquer ». Le partage d'un livre passe par un
+          CODE (« J'ai un code », dans Nouveau livre et les Réglages ; le
+          lien attend la connexion ou l'app installée) ; shared_deck ne
+          rend plus que recto et verso. Cinq trous de la base fermés, chacun
+          prouvé avant : amitié forcée, demande détournée, courrier d'un
+          inconnu sous un faux nom, adresse e-mail et vrai nom d'un élève
+          lisibles par une demande ou un pseudo deviné, code de partage sur
+          le livre d'un autre. L'IA réservée avant l'appel (une rafale ne
+          vide plus le budget du mois). Ce qu'on tape au mot de passe ne
+          s'efface plus (l'instabilité des parcours de connexion). « J'ai
+          un code » sorti du démarrage (123,6 Ko). M10.T5 cochée : CSP
+          appliquée, 0 violation sur toute la suite.
+Avant :   2026-11-06 · Le cadre légal, demandé : « le légal, en entier,
           parfait ». Le site ne dit plus que FSRS est « l'algorithme
           d'Anki », ni « le meilleur moteur au monde » (le banc public en
           classe d'autres devant FSRS-6), ni de prix barré ; le comparatif
@@ -314,12 +327,12 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M09.T3 · lecteur d'écran sur les 6 écrans principaux — cible: 0 élément sans nom accessible — preuve: axe-core
 - [ ] M09.T4 · taille de cible tactile ≥ 44 px — cible: 0 bouton en dessous — preuve: test
 
-## M10 · Sécurité [P0] 1/8
+## M10 · Sécurité [P0] 2/8
 - [x] M10.T1 · `anon` ne peut plus appeler les fonctions d'administration — preuve: migration `20260917210000` + curl 400 — **corrigé le 2026-10-24** : ce retrait visait `anon`, mais Postgres accorde `execute` à PUBLIC, dont `anon` hérite — 30 fonctions restaient appelables sans compte, et `ref_trace` par tout compte connecté (faux journal d'audit). Migration `20261024122609` : PUBLIC retiré partout, privilèges par défaut changés ; `anon` n'appelle plus que `shared_deck` (vérifié par `has_function_privilege`)
 - [ ] M10.T2 · revue des 100+ politiques RLS, une par une — cible: 0 avertissement Supabase — preuve: `get_advisors security`
 - [ ] M10.T3 · chaque fonction `security definer` teste son appelant en première ligne — cible: 100 % — preuve: revue documentée
 - [ ] M10.T4 · protection mots de passe compromis + longueur 10 — preuve: réglage Supabase actif
-- [ ] M10.T5 · CSP en application réelle (plus en observation) — cible: 0 violation sur les parcours de test — preuve: console vide
+- [x] M10.T5 · CSP en application réelle (plus en observation) — cible: 0 violation sur les parcours de test — preuve: console vide — **fait le 2026-11-05** : `vite preview` sert la CSP de `vercel.json` appliquée avec un `report-uri` (`cspStricte`, `tools/pw-csp.config.js`) ; 138 parcours et ~1 200 gestes du singe (élève, téléphone et ordinateur) : 0 violation (une violation provoquée exprès arrive bien dans le fichier : le canal marche) ; `vercel.json` passe de `Content-Security-Policy-Report-Only` à `Content-Security-Policy`
 - [ ] M10.T6 · limitation de débit sur inscription, connexion, IA — cible: 5 tentatives / 15 min — preuve: 6ᵉ tentative refusée
 - [ ] M10.T7 · audit des jetons: expiration, rotation, déconnexion partout — preuve: test
 - [ ] M10.T8 · revue de sécurité automatisée avant chaque livraison — preuve: `/security-review` en CI

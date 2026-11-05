@@ -431,5 +431,10 @@ refaire depuis `icone.svg` est une décision à prendre avec l'utilisateur.
   `vercel.json`.
 - `main` bouge pendant qu'on travaille (d'autres sessions y poussent) :
   `git fetch origin main` et fusionner avant de pousser, jamais forcer.
-- La CSP est en *Report-Only* : un script en ligne y est signalé, pas bloqué
-  (l'empreinte sha256 de l'aiguillage y est ajoutée, vérifiée par un test).
+- La CSP est **appliquée** depuis le 2026-11-05 (elle était en *Report-Only*) :
+  un script en ligne est bloqué. L'empreinte sha256 de l'aiguillage y est,
+  vérifiée par `test/site.test.js` — changer l'aiguillage sans changer
+  l'empreinte casserait l'accueil. Avant de toucher à la CSP ou d'ajouter
+  une ressource d'ailleurs (police, image, script), mesurer :
+  `CSP_STRICTE=/tmp/csp.ndjson CI=1 npx playwright test -c tools/pw-csp.config.js`,
+  le fichier doit rester vide.
