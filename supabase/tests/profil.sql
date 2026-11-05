@@ -21,7 +21,7 @@ declare
   sam uuid := gen_random_uuid(); ami uuid := gen_random_uuid(); attente uuid := gen_random_uuid();
   club uuid := gen_random_uuid(); camarade uuid := gen_random_uuid(); inconnu uuid := gen_random_uuid();
   bloque uuid := gen_random_uuid(); prof uuid := gen_random_uuid(); u record;
-  livre uuid := gen_random_uuid(); cid uuid; gid uuid; j jsonb; k integer;
+  livre uuid := gen_random_uuid(); cid uuid; gid uuid; j jsonb; k integer; r record;
 begin
   for u in select * from (values
       (sam, 'Sam François', 'zzsamp'), (ami, 'Tibo', 'zztibop'), (attente, 'Inès', 'zzinesp'),
@@ -89,10 +89,23 @@ begin
     j->>'statut' = 'ok' and j->'clubs'->0->>'nom' = 'ZZ Les Lecteurs' and not (j->>'ami')::boolean, (j->'clubs')::text);
 
   -- ══════════ le profil réduit ══════════
+  -- une demande en attente (Inès → Sam) : Sam, qui la reçoit, voit qui la fait (nom, pas de chiffres) ;
+  -- Inès, qui l'envoie, ne voit rien de Sam tant qu'il n'a pas accepté (20261105193314)
+  perform public.zz_comme(sam);
+  j := public.profil_lecteur(attente);
+  insert into public.zz_res (nom, ok, vu) values ('une demande reçue : le nom de qui la fait, pas les chiffres',
+    j->>'statut' = 'prive' and j->>'nom' = 'Inès' and not j ? 'mois', j::text);
   perform public.zz_comme(attente);
   j := public.profil_lecteur(sam);
-  insert into public.zz_res (nom, ok, vu) values ('une demande en attente : le nom, pas les chiffres',
-    j->>'statut' = 'prive' and j->>'nom' = 'Sam François' and not j ? 'mois', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('une demande envoyée : rien de celui qu''on demande', j->>'statut' = 'inconnu', j::text);
+  select * into r from public.find_user('zzsamp');
+  insert into public.zz_res (nom, ok, vu) values ('find_user : le pseudo seul, pas le nom, à qui ne voit pas la personne',
+    r.name = 'zzsamp' and r.id = sam, r.name);
+  select * into r from public.my_friends() where id = sam;
+  insert into public.zz_res (nom, ok, vu) values ('my_friends : une demande envoyée garde le pseudo seul', r.name = 'zzsamp', r.name);
+  perform public.zz_comme(ami);
+  select * into r from public.find_user('zzsamp');
+  insert into public.zz_res (nom, ok, vu) values ('find_user : un ami voit le nom', r.name = 'Sam François', r.name);
   perform public.zz_comme(camarade);
   j := public.profil_lecteur(sam);
   insert into public.zz_res (nom, ok, vu) values ('un camarade de classe : le nom, pas les chiffres',

@@ -76,8 +76,12 @@ begin
   perform public.zz_comme(b2);
   insert into public.zz_res (nom, ok, vu) values ('un ami voit le jeton choisi', exists (
     select 1 from public.visuels(array[b1], '{}') v where v.cle = 'renard'), 'ami');
+  -- une demande en attente (b3 → b1) : b1, qui la reçoit, voit le jeton de b3 ; b3, qui l'envoie, rien (20261105193314)
+  perform public.zz_comme(b1);
+  insert into public.zz_res (nom, ok, vu) values ('une demande d''ami reçue suffit', exists (
+    select 1 from public.visuels(array[b3], '{}') v where v.id = b3), 'demande');
   perform public.zz_comme(b3);
-  insert into public.zz_res (nom, ok, vu) values ('une demande d''ami en attente suffit', exists (
+  insert into public.zz_res (nom, ok, vu) values ('une demande envoyée ne suffit pas', not exists (
     select 1 from public.visuels(array[b1], '{}') v where v.id = b1), 'demande');
   perform public.zz_comme(b4);
   select count(*) into n from public.visuels(array[b1, e1, pa], '{}');
