@@ -8,6 +8,12 @@
      node tools/supabase-auth.js --appliquer --confirmation
                                                  # … et rallume « Confirm email » (après l'essai
                                                  # d'envoi, étape 6 de docs/COURRIELS.md)
+     … --reauthentification                      # allume aussi « Secure password change » :
+                                                 # au-delà de 24 h de session, changer son mot de
+                                                 # passe demande le code envoyé par e-mail — un
+                                                 # compte à adresse fictive ne le recevrait pas,
+                                                 # d'où un choix à part (décidé le 2026-11-05 :
+                                                 # « rien ne doit casser »)
 
    Lit dans l'environnement, jamais dans le dépôt :
    - SUPABASE_ACCESS_TOKEN : une clé d'accès (supabase.com → Access Tokens) ;
@@ -26,6 +32,7 @@ const API = `https://api.supabase.com/v1/projects/${REF}/config/auth`;
 const SITE = 'https://mirandola.fr';
 const appliquer = process.argv.includes('--appliquer');
 const confirmation = process.argv.includes('--confirmation');
+const reauthentification = process.argv.includes('--reauthentification');
 
 // fichier de supabase/courriels/ → [modèle de l'API, alerte à allumer (true/false) ou rien]
 const MODELES = {
@@ -63,7 +70,6 @@ function voulu(actuel) {
     ...modeles(),
     site_url: SITE,
     mailer_secure_email_change_enabled: true,               // un code à l'ancienne adresse aussi
-    security_update_password_require_reauthentication: true, // au-delà de 24 h, le code « Reauthentication »
     password_min_length: 10,                                 // PWMIN de l'app
     mailer_otp_exp: 3600,                                    // « une heure », disent les e-mails
     mailer_otp_length: 8,                                    // CODE_EMAIL de l'app
@@ -83,6 +89,7 @@ function voulu(actuel) {
     console.log('SMTP : BREVO_SMTP_KEY et BREVO_SMTP_LOGIN manquent, le SMTP n’est pas touché.');
   }
   if (confirmation) v.mailer_autoconfirm = false;            // « Confirm email » allumé
+  if (reauthentification) v.security_update_password_require_reauthentication = true;
   return v;
 }
 
