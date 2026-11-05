@@ -193,24 +193,6 @@ export function paintMenuPreview(w) {
     return;
 }
 
-export function paintMenuSharepick(w) {
-  const d = deck(view.id); if (!d) { setMenu(null); return; }
-    const m = metaOf(d);
-    w.innerHTML = `<div class="scrim" data-mact="close"></div>
-      <div class="menu">
-        <div class="mi" style="font-weight:750">${svg(I.share)}Partager « ${esc(d.name)} »</div>
-        <button class="mi" data-mact="sendfriend">${svg(I.mail)}Prêter à un lecteur<span class="tail">${mates ? mates.length : ''}</span></button>
-        <button class="mi" data-mact="rolink">${svg(I.link)}${m.tok ? 'Copier le lien de consultation' : 'Créer un lien de consultation'}</button>
-        ${m.tok ? `<button class="mi warn" data-mact="roff">${svg(I.eyeoff)}Révoquer le lien</button>` : ''}
-        <div class="msep"></div>
-        <button class="mi" data-mact="duelnew2">${svg(I.bolt)}Lancer un défi sur ce livre<span class="tail">en direct ou à son rythme</span></button>
-        <div class="msep"></div>
-        <button class="mi" data-mact="copylink">${svg(I.down)}Lien hors ligne (tout le livre)</button>
-      </div>`;
-    mountMenu(w);
-    return;
-}
-
 export function paintMenuMate(w) {
   const f = (mates || []).find(x => x.id === mateOpen);
     if (!f) { setMenu(null); return; }

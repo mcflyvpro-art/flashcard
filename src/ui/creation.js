@@ -148,6 +148,11 @@ function okLabel(t) {
   return t ? 'Ajouter au livre' : comp.pour === 'devoir' ? 'Continuer' : 'Créer le livre';
 }
 
+/* Recevoir le livre de quelqu'un, par son code (src/livre-code.js) : une
+   façon d'avoir un nouveau livre, à côté de l'écrire. */
+const boutonCode = t => (t || comp.pour === 'devoir' ? ''
+  : `<button class="pbtn cr-code" data-ce="ouvrir">${svg(I.key)}J’ai un code</button>`);
+
 export function importView() {
   const t = view.id ? deck(view.id) : null;
   const s = subj(t ? t.subject : comp.subject);
@@ -159,6 +164,7 @@ export function importView() {
       <button class="ic" data-act="${t ? 'deck' : comp.pour === 'devoir' ? 'prof' : 'home'}"
         aria-label="Retour">${svg(I.back)}</button>
       <h1>${titre(t)}</h1>
+      ${boutonCode(t)}
     </div>
     <div class="crea">
       <div class="cr-main">

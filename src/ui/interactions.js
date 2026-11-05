@@ -28,6 +28,7 @@ import {
   beep, dueCount, importPayload, savePrefs, toast
 } from './import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from './menus-a.js';
+import { ouvrirPartage } from './partage-porte.js';
 import { logout, openInstall } from './onboarding.js';
 import { allerAccueil, donnerLivre } from './prof-porte.js';
 import { ouvrirPseudo } from './pseudo-porte.js';
@@ -189,7 +190,7 @@ const tapMcqMatch = a => startStudy(view.id, false, null, { mode: a });
 
 /* Partager est posé sur l'écran du livre : sans cette ligne, seul le
    menu « … » le connaissait et le bouton ne faisait rien. */
-const tapSharepick = () => { if (!friends) friendsPull(); return openMenu('sharepick'); };
+const tapSharepick = () => ouvrirPartage();
 const tapStats = () => { statsPull(); return go('stats'); };
 const tapTuto = () => lancerTuto({ rejoue: true });
 const tapInstall = () => openInstall();

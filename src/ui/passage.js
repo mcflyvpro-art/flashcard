@@ -3,6 +3,7 @@ import { I, svg } from '../icones.js';
 import { pinLisible } from '../defi.js';
 import { codeClubLisible } from '../club.js';
 import { formatCode } from '../classe.js';
+import { codeLivre } from '../livre-code.js';
 import { toast } from './import-cartes.js';
 import { garder, lire } from '../lien-garde.js';
 import { mobile, plateforme } from '../plateformes.js';
@@ -21,7 +22,8 @@ import { mobile, plateforme } from '../plateformes.js';
 const ATTENTES = [
   ['folio.defi', I.bolt, pinLisible, 'Dans l’app : Entrer un code'],
   ['folio.club', I.users, codeClubLisible, 'Dans l’app : J’ai un code'],
-  ['folio.rejoindre', I.school, formatCode, 'Dans l’app : Classe → Rejoindre']
+  ['folio.rejoindre', I.school, formatCode, 'Dans l’app : J’ai un code'],
+  ['folio.livre', I.book, codeLivre, 'Dans l’app : Nouveau livre → J’ai un code']
 ];
 
 const dansLApp = () => {
@@ -65,7 +67,7 @@ export function lierPassage() {
    plus : un code oublié ne doit pas ressurgir des jours après. Sur iPhone
    le stockage est à part : rien ne passe, la carte ci-dessus le montre. */
 const PASSAGE = 'folio.passage';
-const CONFIES = ['folio.rejoindre', 'folio.defi', 'folio.club', 'folio.plus'];
+const CONFIES = ['folio.rejoindre', 'folio.defi', 'folio.club', 'folio.plus', 'folio.livre', 'folio.import'];
 
 export function confierPassage() {
   try {

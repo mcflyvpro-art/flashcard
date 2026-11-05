@@ -18,11 +18,12 @@ import {
   paintMenuFnr, paintMenuHelp, paintMenuLeave,
   paintMenuLend, paintMenuMate, paintMenuMateprof,
   paintMenuMerge, paintMenuMove, paintMenuPreview, paintMenuSendfriend,
-  paintMenuSharepick, paintMenuSortpick, paintMenuSplit,
+  paintMenuSortpick, paintMenuSplit,
   paintMenuVers
 } from './menus-b.js';
 import { paintMenuRename } from './menus-c.js';
 import { paintMenuPseudo } from './pseudo-porte.js';
+import { paintMenuSharepick } from './partage-porte.js';
 import { paintMenuSecurite } from './securite-porte.js';
 import { installSheet } from './onboarding.js';
 import { paintMenuPdf } from './pdf-porte.js';

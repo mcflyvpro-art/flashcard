@@ -1993,6 +1993,10 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,[contenteditable
 .cf-qr{width:118px;flex:none;padding:4px;border-radius:10px;background:#fff}
 .cf-qr svg{display:block;width:100%;height:auto;stroke:none}
 .cf-code b{font-size:23px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums}
+/* le code d'un livre (12 signes) : sous son QR, sur une ligne (ui/livre-partage.js) */
+.cf-invit.lc{flex-direction:column;gap:10px;text-align:center}
+.lc .cf-code b{display:block;white-space:nowrap}
+.lc .cf-code i{display:block;margin-top:2px;font-size:13px;font-style:normal;color:var(--soft)}
 .cf-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 16px 12px}
 .cf-stats span{display:flex;flex-direction:column;align-items:center;padding:10px 6px;border-radius:12px;
   background:var(--bg);font-size:12px;color:var(--soft);text-align:center}

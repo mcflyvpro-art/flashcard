@@ -13,6 +13,9 @@ import { lireRetour, sessionDepuisRetour } from '../core/connexion-externe.js';
 import { demanderNouveauMdp } from './mdp-porte.js';
 import { toast } from './import-cartes.js';
 import { I } from '../icones.js';
+import { openShared } from '../core/reglages-corbeille.js';
+import { garder, prendre } from '../lien-garde.js';
+import { tokComplet, tokDepuisTexte } from '../livre-code.js';
 
 /* ══════════ les liens qui entrent dans l'app ══════════
    Une seule porte pour tout lien qui ouvre l'app : « #i= » / « #s= » (un
@@ -61,10 +64,33 @@ async function consumeRetour() {
 /* Les codes de l'adresse, rangés pour plus tard : sans session, ou devant
    la porte d'installation (ui/pwa.js), qui les confie à l'app installée. */
 export async function rangerLiens() {
+  rangerLivre();
   consumeRejoindre(false);
   await consumeDefi(false);
   consumeClub(false);
   consumePlus(false);
+}
+
+/* Un livre partagé (« #s= », src/livre-code.js) ou envoyé tout entier
+   (« #i= ») : sans session, il se perdait — l'adresse repartait à la
+   connexion, ou à la porte d'installation. Il attend désormais comme les
+   autres codes (src/lien-garde.js, une heure), montré sur la carte de
+   passage (ui/passage.js), et s'ouvre une fois le compte connu. */
+function rangerLivre() {
+  const h = location.hash;
+  if (!/^#[si]=/.test(h)) return;
+  if (h[1] === 's') { const t = tokDepuisTexte(h); if (tokComplet(t)) garder('folio.livre', t); }
+  else garder('folio.import', h.slice(3));
+  history.replaceState(history.state, '', location.pathname + location.search);
+}
+
+function consumeLivre() {
+  const t = prendre('folio.livre');
+  if (tokComplet(t)) { openShared(t); return true; }
+  const i = prendre('folio.import');
+  if (!i) return false;
+  history.replaceState(history.state, '', location.pathname + location.search + '#i=' + i);
+  return consumeHash();
 }
 
 /* Un élève qui commence (2026-10-29) : son accueil n'est pas fait, ou son
@@ -82,6 +108,7 @@ export async function lienApresRole() {
   if (consumeRejoindre()) return true;
   if (await consumeDefi(true)) return true;
   if (consumeClub(true)) return true;
+  if (consumeLivre()) return true;
   return consumePlus(true);
 }
 
