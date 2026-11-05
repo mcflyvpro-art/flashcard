@@ -8,7 +8,7 @@ et personne ne peut vérifier qu'ils sont bien posés.
 
 | Réglage | Valeur attendue | Pourquoi |
 |---|---|---|
-| Longueur minimale du mot de passe | **10** | L'app refuse déjà en dessous (`PWMIN` dans `app.js`), mais ce contrôle-là ne protège que la personne qui se sert du formulaire. Celui qui appelle l'API directement passe outre tant que la base accepte six caractères. |
+| Longueur minimale du mot de passe | **10** (posée le 2026-11-05 par `node tools/supabase-auth.js --appliquer` ; elle était à 6) | L'app refuse déjà en dessous (`PWMIN` dans `app.js`), mais ce contrôle-là ne protège que la personne qui se sert du formulaire. Celui qui appelle l'API directement passe outre tant que la base accepte six caractères. |
 | Protection contre les mots de passe compromis | **activée** | Compare le mot de passe choisi à la base HaveIBeenPwned. Signalé par l'audit de sécurité Supabase tant qu'elle est éteinte. |
 | Confirmation de l'adresse e-mail | **coupée depuis le 2026-10-29** (décision, en attendant le SMTP Brevo) ; **exigée** une fois le SMTP posé | Sans elle, n'importe qui ouvre un compte avec l'adresse d'un autre — accepté pour l'instant, pour que l'inscription marche. |
 
@@ -50,6 +50,15 @@ et « mot de passe oublié » n'arrive à personne.
 
 Les modèles (confirmation, mot de passe oublié, changement d'adresse) et le
 nom d'expéditeur du SMTP disent **Mirandola**, jamais « Folio » (2026-10-28).
+
+**Posé le 2026-11-05** par `node tools/supabase-auth.js --appliquer` : le
+SMTP de Brevo (déjà en place), les treize modèles de `supabase/courriels/`
+et leurs objets, les alertes de sécurité (téléphone changé et connexion
+Google retirée éteintes : l'app n'a ni l'un ni l'autre), les codes à 8
+chiffres valables une heure, la vérification en deux étapes, 100 e-mails
+par heure. Un code de connexion envoyé ce jour-là est parti sans erreur
+(journal d'Auth) ; la confirmation de l'adresse reste coupée jusqu'à ce que
+l'éditeur ait vu l'e-mail arriver (`--confirmation` ensuite).
 
 ## Authentication → Rate limits
 

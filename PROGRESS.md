@@ -19,7 +19,24 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-11-04 · La sécurité du compte, demandée : « que tous
+DERNIER   2026-11-05 · L'éditeur sur tous les comptes, demandé :
+          « le compte god : supprimer les comptes, trier les comptes de
+          toute l'app ». Console → Comptes : trier (récents, anciens,
+          dernière connexion, dernière révision, révisions, livres, nom),
+          filtrer (rôle, offre, actifs 30 j, jamais connectés, adresse à
+          confirmer, suspendus), la fiche dit tout sauf le contenu ;
+          confirmer une adresse, suspendre (1, 7, 30 j, sans fin) et
+          rétablir, supprimer un compte ou une sélection (deux appuis ; un
+          abonné Stripe qui court est refusé). Base : migration
+          20261105122753 appliquée (admin_comptes, admin_supprimer_compte,
+          admin_suspendre, admin_confirmer), supabase/tests/
+          editeur_comptes.sql 22/22 à blanc avant ; src/comptes.js pur et
+          testé ; e2e/editeur.e2e.js 6/6. Le même jour : les réglages
+          d'Authentication posés par tools/supabase-auth.js (modèles,
+          longueur 10, 100 e-mails/h ; SMTP Brevo déjà là), un code
+          d'essai parti sans erreur — la confirmation d'adresse attend que
+          l'éditeur l'ait vu arriver. Aucune tâche cochée.
+Avant :   2026-11-04 · La sécurité du compte, demandée : « que tous
           les e-mails servent ». L'inscription ne s'ouvre qu'avec le code
           à 8 chiffres reçu (une adresse qui n'existe pas ne reçoit rien ;
           « gmial.com » se voit proposer « gmail.com ») ; mot de passe

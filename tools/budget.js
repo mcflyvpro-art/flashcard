@@ -123,13 +123,19 @@
 // sont écrits au build dans son HTML, pour se lire sans JavaScript et être
 // lus par les moteurs de recherche ; son script charge le moteur de l'app
 // (src/fsrs.js) pour les redessiner. Les autres pages gardent leurs 40 Ko.
+// 2026-11-05 : la console de l'éditeur gagne tous les comptes de l'app —
+// trier, filtrer, choisir plusieurs, supprimer, suspendre, confirmer une
+// adresse (ui/admin-comptes.js, src/comptes.js) : 1,9 Ko, et le plafond des
+// consoles passe de 30 à 33 Ko. Elles ne se chargent que chez un référent
+// ou l'éditeur. Les mêmes fonctions rejouées en mémoire
+// (src/base-locale/comptes.js) ne vont qu'aux parcours, jamais à la démo.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { SOUS_PAGES } from '../src/site/pages.js';
 
 // octets gzip, tous fichiers de la part cumulés
 const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
-  jsGestion: 30 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
+  jsGestion: 33 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
   jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, site: 50 * 1024, pages: 40 * 1024, moteur: 56 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',

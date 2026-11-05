@@ -3,7 +3,10 @@ import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { accounts, adm, auth, setAnimate, view } from '../data/etat.js';
 import { esc, plur } from '../core/coeur-sync.js';
-import { admCreerCompte, admIa, admLicenceProf, admMdp } from '../core/admin.js';
+import { admConfirmer, admCreerCompte, admIa, admLicenceProf, admMdp, admSupprimer, admSuspendre } from '../core/admin.js';
+import {
+  bilanSuppression, compterFiltres, FILTRES, filtrerComptes, finSuspension, sansFin, SUSPENSIONS, TRIS, trierComptes
+} from '../comptes.js';
 import { nomPropre, nomValide } from '../classe.js';
 import { coutIA, eurosDe } from '../cout-ia.js';
 import { courrielCompte, lienCourriel, motDePasseProvisoire } from '../etablissement.js';
@@ -156,6 +159,120 @@ export function tuileIa(o) {
     </form>`;
 }
 
+/* ══════════ tous les comptes, et la main sur chacun (2026-11-05) ══════════
+   Trier et filtrer toute l'app (src/comptes.js), choisir plusieurs comptes
+   pour les supprimer d'un coup, et dans la fiche : ce qu'on sait du compte
+   (jamais le contenu de ses livres), confirmer son adresse, le suspendre,
+   le supprimer. Tout ce qui efface demande deux appuis. */
+const ORDRE_SUSPENSIONS = ['1', '7', '30', '0'];
+const leJour = x => new Date(x).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+export const comptesVus = () => trierComptes(filtrerComptes(accounts || [],
+  { role: adm.crole, filtre: adm.cfiltre, q: adm.cq }), adm.ctri);
+
+// ce que la ligne dit à droite, selon le tri : on voit pourquoi elle est là
+export function detailLigne(a) {
+  const t = adm.ctri;
+  if (t === 'vu') return a.vu ? timeAgo(a.vu) : 'jamais';
+  if (t === 'revise') return a.revise ? timeAgo(a.revise) : 'aucune';
+  if (t === 'revisions') return plur(+a.revisions || 0, 'révision');
+  if (t === 'livres') return plur(+a.livres || 0, 'livre');
+  return a.cree ? timeAgo(a.cree) : '';
+}
+
+export function outilsComptes() {
+  const n = compterFiltres(accounts || [], { role: adm.crole, q: adm.cq }), sel = adm.csel;
+  return `<div class="ed-outils">
+      <label class="ed-ch"><span>Trier</span><select id="edctri">${Object.entries(TRIS).map(([k, t]) =>
+        `<option value="${k}"${adm.ctri === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label class="ed-ch"><span>Afficher</span><select id="edcfiltre">${Object.entries(FILTRES).map(([k, [t]]) =>
+        `<option value="${k}"${adm.cfiltre === k ? ' selected' : ''}>${t} (${n[k]})</option>`).join('')}</select></label>
+      <button class="ed-b${sel ? ' pri' : ''}" data-adm="csel">${svg(I.check)}${sel ? 'Fini' : 'Choisir'}</button>
+    </div>
+    ${sel ? `<div class="ed-lot">
+      <b>${plur(sel.length, 'compte')}</b>
+      <button class="ed-b sm" data-adm="ctout">Tous ceux affichés</button>
+      <button class="ed-b sm" data-adm="caucun" ${sel.length ? '' : 'disabled'}>Aucun</button>
+      <button class="ed-b sm ko" data-adm="csuppr-lot" ${sel.length ? '' : 'disabled'}>${svg(I.trash)}<span>Supprimer</span></button>
+    </div>` : ''}`;
+}
+
+const oui = (v, o, n) => (v ? o : n);
+export function infosCompte(a) {
+  if (!('vu' in a)) return '';     // une base sans admin_comptes : rien de plus à dire
+  const ligne = (t, v, cls = '') => `<div class="${cls}"><span>${t}</span><b>${v}</b></div>`;
+  return `<div class="ed-infos">
+      ${ligne('Dernière connexion', a.vu ? timeAgo(a.vu) : 'jamais', a.vu ? '' : 'chaud')}
+      ${ligne('Adresse', oui(a.confirme, 'confirmée', 'à confirmer'), a.confirme ? '' : 'chaud')}
+      ${ligne('Offre', { gratuit: 'Gratuit', plus: 'Mirandola+', campus: 'Campus' }[a.offre] || '—')}
+      ${a.etablissement ? ligne('Établissement', esc(a.etablissement)) : ''}
+      ${ligne('Livres', +a.livres || 0)}${ligne('Pages', +a.cartes || 0)}${ligne('Révisions', +a.revisions || 0)}
+      ${ligne('Dernière révision', a.revise ? timeAgo(a.revise) : 'aucune')}
+      ${ligne('Connexion', [a.google ? 'Google' : 'e-mail', a.deux_etapes ? 'deux étapes' : ''].filter(Boolean).join(' · '))}
+      ${a.provisoire ? ligne('Mot de passe', 'provisoire', 'chaud') : ''}
+    </div>`;
+}
+
+export function blocGestion(a) {
+  if (a.id === auth.uid) return '';
+  const s = a.suspendu;
+  return `<h2 class="ed-h2">Accès</h2><div class="ed-acces">
+    ${'confirme' in a && !a.confirme ? `<button class="ed-b" data-adm="cconfirmer">${svg(I.mail)}Confirmer son adresse</button>` : ''}
+    ${s ? `<p class="ed-message ko">${svg(I.lock)}<span><b>Suspendu ${sansFin(s) ? 'sans fin' : 'jusqu’au ' + leJour(s)}</b> : il ne peut plus se connecter.</span></p>
+      <button class="ed-b" data-adm="cretablir">${svg(I.redo)}Rétablir le compte</button>`
+    : `<div class="ed-seg ed-suspendre"><span>${svg(I.lock)}Suspendre</span>${ORDRE_SUSPENSIONS.map(k =>
+      `<button data-adm="csuspendre" data-id="${k}">${SUSPENSIONS[k]}</button>`).join('')}</div>`}
+    <button class="ed-b ko discret" data-adm="csupprimer">${svg(I.trash)}<span>Supprimer ce compte et tout ce qui est à lui</span></button>
+  </div>`;
+}
+
+/* Deux appuis : le premier arme le bouton, le second efface. */
+function arme(b, texte) {
+  if (b.dataset.arme === '1') return true;
+  b.dataset.arme = '1';
+  const t = b.querySelector('span'); if (t) t.textContent = texte;
+  return false;
+}
+
+function direBilan(r) {
+  const b = bilanSuppression(r);
+  if (!b.ko) return toast(I.check, b.ok > 1 ? plur(b.ok, 'compte') + ' supprimés' : 'Compte supprimé');
+  toast(I.x, (b.ok ? plur(b.ok, 'compte') + ' supprimés · ' : '') + `${b.ko} refusé${b.ko > 1 ? 's' : ''} : ${b.motif}`.slice(0, 160));
+}
+
+async function supprimerUn(id, b) {
+  const a = (accounts || []).find(x => x.id === adm.copen); if (!a) return;
+  if (!arme(b, `Sûr ? ${a.email} part pour de bon`)) return;
+  const r = await admSupprimer([a.id]);
+  direBilan(r);
+  if (r[0] && r[0].ok) adm.copen = null;
+  repeint();
+}
+
+async function supprimerLot(id, b) {
+  const sel = adm.csel || []; if (!sel.length) return;
+  if (!arme(b, `Sûr ? ${plur(sel.length, 'compte')} pour de bon`)) return;
+  const r = await admSupprimer(sel.filter(x => x !== auth.uid));
+  direBilan(r);
+  adm.csel = r.filter(x => !x.ok).map(x => x.id);
+  if (r.some(x => x.ok && x.id === adm.copen)) adm.copen = null;
+  repeint();
+}
+
+function choisir(id) {
+  const sel = adm.csel || [];
+  adm.csel = sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id];
+  repeint();
+}
+
+/* Les deux listes déroulantes du haut : le tri et le filtre. */
+export function suivreTri(e) {
+  if (e.target.id === 'edctri') adm.ctri = e.target.value;
+  else if (e.target.id === 'edcfiltre') adm.cfiltre = e.target.value;
+  else return;
+  repeint();
+}
+
 /* ---------- les gestes ---------- */
 async function copierAcces() {
   const n = adm.neuf; if (!n) return;
@@ -187,7 +304,16 @@ export const ACTIONS_COMPTES = {
   'nouveau-compte': () => { Object.assign(adm, { tab: 'comptes', copen: 'nouveau', neuf: { role: 'prof' } }); repeint();
     premierChamp('nc-prenom'); },
   'copier-acces': copierAcces,
-  'nouveau-mdp': nouveauMdp
+  'nouveau-mdp': nouveauMdp,
+  csel: () => { adm.csel = adm.csel ? null : []; repeint(); },
+  cchoisir: choisir,
+  ctout: () => { adm.csel = comptesVus().map(a => a.id).filter(x => x !== auth.uid); repeint(); },
+  caucun: () => { adm.csel = []; repeint(); },
+  'csuppr-lot': supprimerLot,
+  csupprimer: supprimerUn,
+  csuspendre: k => { if (adm.copen) admSuspendre(adm.copen, finSuspension(k)); },
+  cretablir: () => { if (adm.copen) admSuspendre(adm.copen, null); },
+  cconfirmer: () => { if (adm.copen) admConfirmer(adm.copen); }
 };
 
 export const FORMULAIRES_COMPTES = {

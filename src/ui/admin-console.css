@@ -187,3 +187,25 @@ button.ed-ligne:hover{background:var(--surf)}
 .ed-doux{margin:0;font-size:13.5px;color:var(--ink2);line-height:1.5}
 .ed-etapes{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5}
 .ed-etapes code,.ed-doux code{font-size:12.5px;padding:1px 5px;border-radius:5px;background:var(--bg2)}
+/* tous les comptes (2026-11-05) : trier, filtrer, choisir plusieurs, la main sur un compte */
+.ed-outils{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px}
+.ed-outils .ed-ch{flex:1 1 140px}
+.ed-lot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;border-radius:12px;background:var(--card);box-shadow:var(--edge)}
+.ed-lot b{margin-right:auto;font-size:13.5px}
+.ed-lot .ed-b.sm{margin:0}
+.ed-lot .ed-b[data-arme="1"]{background:color-mix(in srgb,var(--ko) 13%,var(--card))}
+.ed-case{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:7px;box-shadow:inset 0 0 0 1.5px var(--line)}
+.ed-case svg{width:15px;height:15px}
+.ed-ligne.coche{background:var(--card);box-shadow:var(--edge)}
+.ed-ligne.coche .ed-case{background:var(--ink);color:#fff;box-shadow:none}
+.ed-dr.ko{color:var(--ko)}
+.ed-infos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:4px 0 6px}
+.ed-infos div{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:11px;background:var(--surf)}
+.ed-infos span{font-size:11.5px;font-weight:650;color:var(--soft)}
+.ed-infos b{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ed-infos .chaud b{color:var(--am)}
+.ed-message.ko{background:color-mix(in srgb,var(--ko) 10%,var(--card))}.ed-message.ko svg{color:var(--ko)}
+.ed-suspendre{align-items:center}
+.ed-suspendre > span{display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;font-size:13px;font-weight:650;color:var(--soft)}
+.ed-suspendre > span svg{width:15px;height:15px}
+.ed-acces{display:flex;flex-direction:column;align-items:flex-start;gap:10px}.ed-acces .ed-message{align-self:stretch}.ed-acces .ed-b.discret{margin-top:12px}

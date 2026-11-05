@@ -265,6 +265,8 @@ export let accounts = null;
    comptes. */
 export const admNeuf = () => ({ charge: false, orgs: null, etat: null, err: 0, tab: 'suivi',
             etape: 'tous', q: '', open: null, copen: null, cq: '', crole: '',
+            // les comptes : le tri, le filtre, la sélection (null : pas en train de choisir) — 20261105122753
+            ctri: 'recent', cfiltre: 'tous', csel: null,
             // la facturation (20261026130000) : l'identité du vendeur, la licence ouverte, la pièce ouverte
             vendeur: null, licence: null, facture: null, fid: null, attente: {},
             // les professeurs particuliers et leur licence, le coût de l'IA, l'IA des établissements,

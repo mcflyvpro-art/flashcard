@@ -102,6 +102,9 @@ function auth(store, path, url, body, req) {
       ? r && store.users.find(u => u.id === r[1])
       : store.users.find(u => u.email === body.email && u.password === body.password);
     if (user && user.confirme === false) return [400, { error_code: 'email_not_confirmed', msg: 'Email not confirmed' }];
+    // suspendu par l'éditeur (banned_until à venir) : ni connexion, ni renouvellement
+    if (user && user.suspendu && Date.parse(user.suspendu) > Date.now()) return [400, { error_code: 'user_banned', msg: 'User is banned' }];
+    if (user && grant !== 'refresh_token') user.vu = new Date().toISOString();
     return user ? [200, jeton(user, r && r[2] ? 'aal2' : 'aal1')] : [400, { error_code: 'invalid_credentials', msg: 'Invalid login credentials' }];
   }
   /* Google (2026-10-29) : les fournisseurs allumés (`store.fournisseurs`,

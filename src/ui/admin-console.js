@@ -21,7 +21,8 @@ import {
 } from './admin-facturation.js';
 import { admFacturePull } from '../core/admin.js';
 import {
-  ACTIONS_COMPTES, blocMdp, blocProf, FORMULAIRES_COMPTES, nouveauCompte, premierChamp, suivreCout, suivreRole, tuileIa
+  ACTIONS_COMPTES, blocGestion, blocMdp, blocProf, comptesVus, detailLigne, FORMULAIRES_COMPTES, infosCompte, nouveauCompte,
+  outilsComptes, premierChamp, suivreCout, suivreRole, suivreTri, tuileIa
 } from './admin-comptes.js';
 import './admin-console.css';
 
@@ -230,28 +231,43 @@ function ficheOrg() {
     </div>`;
 }
 
-/* ---------- les comptes ---------- */
-function comptesFiltres() {
-  const l = accounts || [], v = adm.cq.trim().toLowerCase();
-  return l.filter(a => (!adm.crole || a.role === adm.crole)
-    && (!v || [a.name, a.handle, a.email].some(x => String(x || '').toLowerCase().includes(v))));
+/* ---------- les comptes ----------
+   Toute l'app, triée et filtrée (src/comptes.js) ; en mode « Choisir »,
+   toucher une ligne la coche au lieu d'ouvrir sa fiche. */
+// les marques à droite d'une ligne : son rôle, ce qui demande l'œil, et ce que dit le tri
+const marques = a => `<em class="ed-role ${esc(a.role)}">${ROLES[a.role] || esc(a.role)}</em>${
+  a.suspendu ? '<em class="ed-dr ko">suspendu</em>' : ''}${
+  (adm.profs || {})[a.id] && adm.profs[a.id].demande_places ? '<em class="ed-dr chaud">places</em>' : ''}<em class="ed-dr">${
+  esc(detailLigne(a))}</em>`;
+
+function ligneCompte(a) {
+  const sel = adm.csel;
+  if (!sel) {
+    return `<button class="ed-ligne${adm.copen === a.id ? ' on' : ''}" data-adm="compte" data-id="${esc(a.id)}">
+      ${avatar(a.id, a.handle || a.name || '', 'sm')}
+      <span class="ed-l1"><b>${esc(a.name || a.handle || a.email)}</b><i>${esc(a.email)}</i></span>
+      <span class="ed-l2">${marques(a)}</span></button>`;
+  }
+  const coche = sel.includes(a.id);
+  return `<button class="ed-ligne choix${coche ? ' coche' : ''}" data-adm="cchoisir" data-id="${esc(a.id)}"
+      aria-pressed="${coche}" ${a.id === auth.uid ? 'disabled' : ''}>
+    <span class="ed-case">${coche ? svg(I.check) : ''}</span>
+    ${avatar(a.id, a.handle || a.name || '', 'sm')}
+    <span class="ed-l1"><b>${esc(a.name || a.handle || a.email)}</b><i>${esc(a.email)}</i></span>
+    <span class="ed-l2">${marques(a)}</span></button>`;
 }
 
 function listeComptes() {
   if (!accounts) return vide(I.users, 'Chargement…');
-  const n = r => accounts.filter(a => a.role === r).length, l = comptesFiltres(), montres = l.slice(0, 200);
+  const n = r => accounts.filter(a => a.role === r).length, l = comptesVus(), montres = l.slice(0, 300);
   return `<div class="ed-filtres">
       <div class="ed-puces">${['', 'eleve', 'prof', 'ref', 'admin'].map(k => `<button class="${adm.crole === k ? 'on' : ''}"
         data-adm="crole" data-id="${k}">${k ? ROLES[k] : 'Tous'}<i>${k ? n(k) : accounts.length}</i></button>`).join('')}</div>
-      <input id="edcq" type="search" value="${esc(adm.cq)}" placeholder="Nom, pseudo, adresse" autocomplete="off"
+      ${outilsComptes()}
+      <input id="edcq" type="search" value="${esc(adm.cq)}" placeholder="Nom, pseudo, adresse, établissement" autocomplete="off"
         spellcheck="false" aria-label="Chercher un compte">
     </div>
-    ${montres.map(a => `<button class="ed-ligne${adm.copen === a.id ? ' on' : ''}" data-adm="compte" data-id="${esc(a.id)}">
-      ${avatar(a.id, a.handle || a.name || '', 'sm')}
-      <span class="ed-l1"><b>${esc(a.name || a.handle || a.email)}</b><i>${esc(a.email)}</i></span>
-      <span class="ed-l2"><em class="ed-role ${esc(a.role)}">${ROLES[a.role] || esc(a.role)}</em>${
-        (adm.profs || {})[a.id] && adm.profs[a.id].demande_places ? '<em class="ed-dr chaud">places</em>' : ''}</span></button>`).join('')
-      || vide(I.search, 'Personne')}
+    ${montres.map(ligneCompte).join('') || vide(I.search, 'Personne')}
     ${l.length > montres.length ? `<p class="ed-rien">et ${l.length - montres.length} autres : affine la recherche</p>` : ''}`;
 }
 
@@ -264,6 +280,7 @@ function ficheCompte() {
       ${PC() ? '' : `<button class="ed-b sm" data-adm="fermer">${svg(I.back)}Retour</button>`}
       <div class="ed-qui">${avatar(a.id, a.handle || a.name || '', 'lg')}<div><b>${esc(a.name || a.handle || a.email)}</b>
         <i>${esc(a.email)}${a.handle ? ' · @' + esc(a.handle) : ''} · ${plur(+a.livres || 0, 'livre')}${a.cree ? ' · ' + timeAgo(a.cree) : ''}</i></div></div>
+      ${infosCompte(a)}
       <h2 class="ed-h2">Rôle</h2>
       <div class="ed-seg" role="radiogroup">${Object.entries(ROLES).map(([k, t]) => `<button role="radio" aria-checked="${a.role === k}"
         class="${a.role === k ? 'on' : ''}" data-adm="role" data-id="${k}" ${moi && k !== 'admin' ? 'disabled' : ''}>${t}</button>`).join('')}</div>
@@ -272,7 +289,7 @@ function ficheCompte() {
       <div class="ed-seg"><button data-adm="offrir">${svg(I.spark)}Offrir Mirandola+</button>
         <button data-adm="reprendre">Reprendre</button></div>
       <p class="ed-rien">Offert sans fin. Un abonnement payé reste à Stripe ou au magasin.</p>
-      ${blocProf(a)}${blocMdp(a)}
+      ${blocProf(a)}${blocMdp(a)}${blocGestion(a)}
     </div>`;
 }
 
@@ -356,7 +373,7 @@ const ACTIONS = {
   nouveau: () => { adm.open = 'nouveau'; adm.tab = 'suivi'; repeint(); premierChamp('ef-nom'); },
   fermer: () => { adm.open = null; adm.copen = null; repeint(); },
   crole: k => { adm.crole = k; repeint(); },
-  compte: id => { adm.copen = id; if (adm.neuf && adm.neuf.mdpDe !== id) adm.neuf = null; adm.tab = 'comptes'; repeint(); },
+  compte: id => { adm.copen = id; adm.csel = null; if (adm.neuf && adm.neuf.mdpDe !== id) adm.neuf = null; adm.tab = 'comptes'; repeint(); },
   role: k => { const a = (accounts || []).find(x => x.id === adm.copen); if (a && a.role !== k) admRole(a.id, k); },
   offrir: () => { if (adm.copen) admOffrirPlus(adm.copen, false); },
   reprendre: () => { if (adm.copen) admOffrirPlus(adm.copen, true); },
@@ -417,7 +434,7 @@ document.addEventListener('submit', e => {
 
 /* L'étape changée en tête de fiche s'enregistre aussitôt. */
 document.addEventListener('change', e => {
-  if (view.name === 'admin') suivreRole(e);
+  if (view.name === 'admin') { suivreRole(e); suivreTri(e); }
   if (e.target.id !== 'edetape' || view.name !== 'admin') return;
   const o = orgOuverte(); if (!o) return;
   admAgir('admin_etab_enregistrer', { org: o.id, fiche: { ...ficheDe(o), statut: e.target.value } }, 'Étape : ' + ETAPES[e.target.value]);
