@@ -40,7 +40,32 @@ export function entete() {
   };
   b.addEventListener('click', () => ouvrir(m.hidden));
   m.addEventListener('click', e => { if (e.target.closest('a,button')) ouvrir(false); });
-  addEventListener('keydown', e => { if (e.key === 'Escape' && !m.hidden) ouvrir(false); });
+  /* Les deux menus de l'ordinateur : la souris les ouvre au survol (CSS) ;
+     le toucher et le clavier par leur bouton. Un clic ailleurs, Échap ou le
+     focus qui s'en va les referment. */
+  const groupes = [...t.querySelectorAll('.nav-groupe')];
+  const fermer = (sauf = null) => groupes.forEach(g => {
+    if (g === sauf) return;
+    g.classList.remove('ouvert');
+    g.querySelector('.nav-bouton').setAttribute('aria-expanded', 'false');
+  });
+  groupes.forEach(g => {
+    const bt = g.querySelector('.nav-bouton');
+    bt.addEventListener('click', () => {
+      const o = !g.classList.contains('ouvert');
+      fermer(g);
+      g.classList.toggle('ouvert', o);
+      bt.setAttribute('aria-expanded', String(o));
+    });
+    g.addEventListener('focusout', e => { if (!g.contains(e.relatedTarget)) fermer(); });
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('.nav-groupe')) fermer(); });
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!m.hidden) ouvrir(false);
+    const g = groupes.find(x => x.classList.contains('ouvert'));
+    if (g) { fermer(); g.querySelector('.nav-bouton').focus(); }
+  });
 }
 
 /* ---------- les radios et les onglets au clavier ---------- */

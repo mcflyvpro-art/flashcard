@@ -95,17 +95,11 @@
 .p-suite b{display:flex;align-items:center;justify-content:space-between;gap:10px;font:700 19px/1.25 var(--serif)}
 .p-suite b .ic{color:var(--az5)}
 
-/* le lien de la page où l'on est, dans l'en-tête */
-.tete-liens a[aria-current="page"]{color:var(--encre);background:rgba(29,28,25,.06)}
-.menu-mobile a[aria-current="page"]{color:var(--az5)}
 .fin-marque{justify-content:center}
 .fin-petit{color:var(--creme2)}
 
 
 
-/* le lien de la page où l'on est, dans l'en-tête */
-.tete-liens a[aria-current="page"]{color:var(--encre);background:rgba(29,28,25,.06)}
-.menu-mobile a[aria-current="page"]{color:var(--az5)}
 .fin-marque{justify-content:center}
 .fin-petit{color:var(--creme2)}
 /* au téléphone, le tableau défile de côté : le critère reste en vue */

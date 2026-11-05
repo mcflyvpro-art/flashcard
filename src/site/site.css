@@ -120,23 +120,60 @@ button{font:inherit;color:inherit}
 .lien:hover{text-decoration-color:currentColor}
 .lien .ic{width:17px;height:17px}
 
-/* ---------- l'en-tête ---------- */
+/* ---------- l'en-tête ----------
+   2026-11-06 : la marque ne se serre jamais (flex:none — serrée, son logo
+   tombait à 7 px sur l'accueil et « Mirandola » débordait sur les liens des
+   autres pages) ; deux menus, « Apprendre » et « Établissements », et trois
+   liens : tout tient sur une ligne, Professeurs compris. Les menus s'ouvrent
+   au survol (souris), au toucher et au clavier (entete() de commun.js). */
 .tete{position:sticky;top:0;z-index:50;transition:background-color .3s,box-shadow .3s}
 .tete.colle{background:rgba(246,245,241,.8);-webkit-backdrop-filter:saturate(170%) blur(16px);backdrop-filter:saturate(170%) blur(16px);box-shadow:0 1px 0 var(--filet)}
-.tete-in{display:flex;align-items:center;gap:18px;height:68px}
-.marque{display:inline-flex;align-items:center;gap:10px;color:var(--encre);text-decoration:none;font:700 25px/1 var(--serif);letter-spacing:-.02em}
-.marque-livres{width:34px;height:36px}
-.tete-liens{display:flex;gap:2px;list-style:none;margin:0 auto;padding:0}
-.tete-liens a{display:block;padding:9px 14px;border-radius:99px;color:var(--encre2);text-decoration:none;font-weight:600;font-size:15px;transition:background-color .2s,color .2s}
-.tete-liens a:hover{background:rgba(29,28,25,.05);color:var(--encre)}
-.tete-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
+.tete-in{display:flex;align-items:center;gap:20px;height:68px}
+.marque{flex:none;display:inline-flex;align-items:center;gap:10px;color:var(--encre);text-decoration:none;font:700 25px/1 var(--serif);letter-spacing:-.02em;white-space:nowrap}
+.marque-livres{flex:none;width:34px;height:36px}
+.tete-liens{display:flex;align-items:center;gap:2px;list-style:none;margin:0 auto;padding:0}
+.tete-liens>li>a,.nav-bouton{display:inline-flex;align-items:center;gap:5px;height:40px;padding:0 14px;border:0;border-radius:99px;background:none;color:var(--encre2);
+  font:600 15px var(--sans);text-decoration:none;white-space:nowrap;cursor:pointer;transition:background-color .2s,color .2s}
+.tete-liens>li>a:hover,.nav-bouton:hover,.nav-groupe.ouvert>.nav-bouton{background:rgba(29,28,25,.05);color:var(--encre)}
+.tete-liens>li>a[aria-current="page"],.nav-groupe:has([aria-current="page"])>.nav-bouton{background:rgba(29,28,25,.06);color:var(--encre)}
+.nav-bouton .ic{width:15px;height:15px;stroke-width:2.4;transition:transform .25s var(--e)}
+.nav-groupe{position:relative}
+.nav-panneau{position:absolute;left:50%;top:calc(100% + 10px);z-index:60;display:grid;gap:2px;min-width:260px;padding:8px;border-radius:20px;background:#FFF;
+  box-shadow:var(--ombre3),inset 0 0 0 1px var(--filet);opacity:0;visibility:hidden;transform:translate(-50%,-6px);
+  transition:opacity .2s var(--e),transform .2s var(--e),visibility 0s .2s}
+/* un pont invisible : la souris passe du bouton au menu sans le refermer */
+.nav-panneau::before{content:'';position:absolute;left:0;right:0;top:-12px;height:12px}
+.nav-groupe.ouvert>.nav-panneau{opacity:1;visibility:visible;transform:translate(-50%,0);transition:opacity .2s var(--e),transform .2s var(--e)}
+.nav-groupe.ouvert>.nav-bouton .ic{transform:rotate(180deg)}
+@media (hover:hover){
+  .nav-groupe:hover>.nav-panneau{opacity:1;visibility:visible;transform:translate(-50%,0);transition:opacity .2s var(--e),transform .2s var(--e)}
+  .nav-groupe:hover>.nav-bouton .ic{transform:rotate(180deg)}
+}
+.nav-panneau a{display:flex;align-items:center;gap:12px;padding:8px 14px 8px 8px;border-radius:13px;color:var(--encre);text-decoration:none;font-weight:600;font-size:15px;
+  white-space:nowrap;transition:background-color .15s}
+.nav-panneau a:hover,.nav-panneau a:focus-visible,.nav-panneau a[aria-current="page"]{background:var(--papier)}
+.nav-ic{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:11px;color:var(--az5);
+  background:linear-gradient(135deg,rgba(90,118,208,.14),rgba(215,100,141,.12));box-shadow:inset 0 0 0 1px rgba(90,118,208,.16)}
+.nav-ic .ic{width:19px;height:19px}
+.nav-euro{font:700 18px/1 var(--serif)}
+.tete-actions{flex:none;display:flex;align-items:center;gap:10px;margin-left:auto}
+.tete-actions .bt,.tete-code{white-space:nowrap}
 .tete-code{font-weight:600;font-size:15px;color:var(--encre2);text-decoration:none;padding:9px 10px}
 .burger{display:none;width:44px;height:44px;border:0;border-radius:50%;background:rgba(29,28,25,.06);align-items:center;justify-content:center;cursor:pointer}
-.menu-mobile{display:flex;flex-direction:column;gap:4px;padding:8px var(--gout) 18px;background:rgba(246,245,241,.97);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 18px 30px -20px rgba(29,28,25,.35)}
+/* le menu du téléphone : les mêmes groupes, en tuiles */
+.menu-mobile{max-height:calc(100dvh - 62px);overflow-y:auto;overscroll-behavior:contain;padding:4px 0 22px;background:rgba(246,245,241,.98);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 18px 30px -20px rgba(29,28,25,.35)}
 .menu-mobile[hidden]{display:none}
-.menu-mobile a:not(.bt),.menu-mobile .lien{padding:13px 4px;font-size:18px;font-weight:600;text-decoration:none;border-bottom:1px solid var(--filet)}
-.menu-mobile .bt{margin-top:12px;height:52px}
 .menu-mobile:not([hidden]){animation:descend .35s var(--e)}
+.mm-titre{margin:16px 2px 8px;font:800 11.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--doux)}
+.mm-liens{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mm-liens a{display:flex;align-items:center;gap:10px;min-height:58px;padding:9px 10px;border-radius:16px;background:#FFF;color:var(--encre);text-decoration:none;
+  font-weight:650;font-size:15px;line-height:1.2;box-shadow:inset 0 0 0 1px var(--filet)}
+.mm-liens a[aria-current="page"]{box-shadow:inset 0 0 0 2px var(--az4)}
+.mm-liens a:last-child:nth-child(odd){grid-column:1 / -1}
+.mm-liens .nav-ic{width:34px;height:34px}
+.mm-actions{display:grid;gap:10px;margin-top:20px}
+.mm-actions p{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:6px;font-weight:600;color:var(--encre2)}
 @keyframes descend{from{opacity:0;transform:translateY(-8px)}}
 
 /* ---------- le fond organique : des halos qui dérivent lentement ---------- */
@@ -838,18 +875,13 @@ button{font:inherit;color:inherit}
   .t-partout h3{margin-top:auto;align-self:auto}
   .t-partout .tuile-dessin{height:170px}
 }
-/* cinq liens dans l'en-tête depuis qu'il mène aux pages du site
-   (2026-11-02) : sur un petit écran d'ordinateur, « Démo » et « J'ai un
-   code » laissent la place (ils restent dans le héros, l'appel final et le
-   pied de page) */
+/* sur un petit écran d'ordinateur, « Démo » et « J'ai un code » laissent
+   la place (ils restent dans le pied de page et le menu du téléphone) ;
+   sous 1 040 px, « Se connecter » aussi */
 @media (max-width:1180px){
   .tete-demo,.tete-code{display:none}
-  .tete-liens a{padding:9px 11px}
+  .tete-liens>li>a,.nav-bouton{padding:0 11px}
 }
-/* six liens depuis la Mirandola Academy (2026-11-05) : jamais sur deux
-   lignes ; entre 900 et 1 040 px, « Se connecter » laisse la place (il
-   reste dans le pied de page, et sous 900 px dans le menu) */
-.tete-liens a,.tete-actions .bt,.tete-code{white-space:nowrap}
 @media (max-width:1040px){.tete-connexion{display:none}}
 @media (max-width:900px){
   /* au téléphone, l'inscription reste en vue ; « Se connecter » est dans le menu */

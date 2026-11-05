@@ -26,7 +26,10 @@ DERNIER   2026-11-05 · La Mirandola Academy (/academie, docs/LANDING.md
           des codes renouvelés retirée. Puis moins de texte sur toutes les
           pages du site sauf l'accueil (les vignettes de l'Academy sans
           description, une ligne courte au lieu d'un paragraphe ailleurs).
-          Aucune tâche cochée.
+          Puis l'en-tête refait : la marque ne se serre plus (elle
+          chevauchait les liens), deux menus « Apprendre » et
+          « Établissements » (Professeurs aussi sur ordinateur), le menu du
+          téléphone en tuiles. Aucune tâche cochée.
 Avant :   2026-11-04 · La sécurité du compte, demandée : « que tous
           les e-mails servent ». L'inscription ne s'ouvre qu'avec le code
           à 8 chiffres reçu (une adresse qui n'existe pas ne reçoit rien ;

@@ -26,12 +26,12 @@ test('chaque page s’ouvre à son adresse : son titre, un seul h1, aucune erreu
 test('de l’accueil aux pages et retour, par le menu du téléphone et le pied de page', async ({ page }) => {
   await page.goto('./?site');
   await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
-  await page.locator('#menu-mobile').getByRole('link', { name: 'Établissements' }).click();
+  await page.locator('#menu-mobile').getByRole('link', { name: 'Mirandola Campus' }).click();
   await expect(page).toHaveURL(/\/etablissements$/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('tout');
 
   await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
-  await expect(page.locator('#menu-mobile [aria-current="page"]')).toHaveText('Établissements');
+  await expect(page.locator('#menu-mobile [aria-current="page"]')).toHaveText('Mirandola Campus');
   await page.locator('#menu-mobile').getByRole('link', { name: 'Le moteur' }).click();
   await expect(page).toHaveURL(/\/moteur$/);
   await expect(page.locator('.m-heros .m-svg')).toBeVisible();              // la famille de courbes, dessinée au build
@@ -82,6 +82,38 @@ test('les laboratoires du moteur répondent : la courbe, la rétention, une ann�
   await expect(page.locator('#banc-logloss')).toBeVisible();
   await expect(page.locator('#banc-rmse')).toBeHidden();
   expect(erreurs).toEqual([]);
+});
+
+test('sur ordinateur, l’en-tête tient sur une ligne et ses deux menus s’ouvrent', async ({ page }) => {
+  for (const w of [1440, 1180, 1024, 920]) {
+    await page.setViewportSize({ width: w, height: 800 });
+    for (const u of ['./?site', './etablissements']) {
+      await page.goto(u);
+      // la marque garde toute sa place, rien ne la recouvre, rien ne passe à la ligne
+      const r = await page.evaluate(() => {
+        const box = s => document.querySelector(s).getBoundingClientRect();
+        const m = box('.tete .marque'), l = box('.tete-liens'), a = box('.tete-actions'), logo = box('.tete .marque-livres');
+        const hauts = [...document.querySelectorAll('.tete-liens>li>a,.nav-bouton,.tete-actions .bt')].filter(e => e.offsetParent).map(e => e.getBoundingClientRect().height);
+        return { logo: logo.width, ecart: l.left - m.right, fin: a.left - l.right, haut: Math.max(...hauts) };
+      });
+      expect(r.logo, `${u} ${w}`).toBeGreaterThan(30);
+      expect(r.ecart, `${u} ${w}`).toBeGreaterThan(16);
+      expect(r.fin, `${u} ${w}`).toBeGreaterThan(16);
+      expect(r.haut, `${u} ${w}`).toBeLessThanOrEqual(44);
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('./flashcards-ia');
+  const etab = page.getByRole('button', { name: 'Établissements' });
+  await etab.click();
+  await expect(etab).toHaveAttribute('aria-expanded', 'true');
+  await page.locator('#nav-etab').getByRole('link', { name: 'Professeurs' }).click();
+  await expect(page).toHaveURL(/\/professeurs$/);
+  await page.getByRole('button', { name: 'Apprendre' }).click();
+  await expect(page.locator('#nav-apprendre')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Apprendre' })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#nav-etab [aria-current="page"]')).toHaveText('Professeurs');
 });
 
 test('la Mirandola Academy : le menu y mène, chaque rôle a ses tutos, l’écran se choisit', async ({ page }) => {

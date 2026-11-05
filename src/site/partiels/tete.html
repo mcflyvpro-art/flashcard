@@ -3,12 +3,29 @@
     <a class="marque" href="/" aria-label="{{marque}}">
       {{logo}}<span>Mirandola</span>
     </a>
+    <!-- Deux menus (« Apprendre », « Établissements ») et trois liens : tout
+         tient sur une ligne, la marque ne se serre plus jamais. Les menus
+         s'ouvrent au survol, au clavier et au toucher (commun.js). -->
     <ul class="tete-liens">
-      <li><a href="/flashcards-ia">Flashcards IA</a></li>
-      <li><a href="/moteur">Le moteur</a></li>
-      <li><a href="/etablissements">Établissements</a></li>
-      <li><a href="/tarifs">Tarifs</a></li>
+      <li class="nav-groupe">
+        <button class="nav-bouton" type="button" aria-expanded="false" aria-controls="nav-apprendre">Apprendre<svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+        <div class="nav-panneau" id="nav-apprendre">
+          <a href="/flashcards-ia"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-etincelle"/></svg></span>Flashcards avec l’IA</a>
+          <a href="/repetition-espacee"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-courbe"/></svg></span>La répétition espacée</a>
+          <a href="/moteur"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-cible"/></svg></span>Le moteur FSRS</a>
+          <a href="/anki-quizlet"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-livre"/></svg></span>Anki, Quizlet ou Mirandola</a>
+        </div>
+      </li>
+      <li class="nav-groupe">
+        <button class="nav-bouton" type="button" aria-expanded="false" aria-controls="nav-etab">Établissements<svg class="ic" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+        <div class="nav-panneau" id="nav-etab">
+          <a href="/etablissements"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-ecole"/></svg></span>Mirandola Campus</a>
+          <a href="/professeurs"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-groupe"/></svg></span>Professeurs</a>
+          <a href="/demande-demo"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></span>Demander une démo</a>
+        </div>
+      </li>
       <li><a href="/academie">Academy</a></li>
+      <li><a href="/tarifs">Tarifs</a></li>
       <li class="tete-demo"><a href="/essayer">Démo</a></li>
     </ul>
     <div class="tete-actions">
@@ -21,16 +38,27 @@
     </div>
   </nav>
   <div class="menu-mobile" id="menu-mobile" hidden>
-    <a href="/flashcards-ia">Flashcards IA</a>
-    <a href="/moteur">Le moteur</a>
-    <a href="/repetition-espacee">La répétition espacée</a>
-    <a href="/etablissements">Établissements</a>
-    <a href="/professeurs">Professeurs</a>
-    <a href="/tarifs">Tarifs</a>
-    <a href="/academie">Mirandola Academy</a>
-    <a href="/essayer">Essayer sans compte</a>
-    <button class="lien" type="button" data-code>J’ai un code</button>
-    <a href="/connexion">Se connecter</a>
-    <a class="bt bt-encre" href="/inscription">Créer un compte</a>
+    <div class="enveloppe mm-in">
+      <p class="mm-titre">Apprendre</p>
+      <div class="mm-liens">
+        <a href="/flashcards-ia"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-etincelle"/></svg></span>Flashcards IA</a>
+        <a href="/repetition-espacee"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-courbe"/></svg></span>La répétition espacée</a>
+        <a href="/moteur"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-cible"/></svg></span>Le moteur</a>
+        <a href="/anki-quizlet"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-livre"/></svg></span>Anki ou Quizlet</a>
+        <a href="/academie"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg></span>Mirandola Academy</a>
+      </div>
+      <p class="mm-titre">Établissements</p>
+      <div class="mm-liens">
+        <a href="/etablissements"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-ecole"/></svg></span>Mirandola Campus</a>
+        <a href="/professeurs"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-groupe"/></svg></span>Professeurs</a>
+        <a href="/tarifs"><span class="nav-ic nav-euro" aria-hidden="true">€</span>Tarifs</a>
+        <a href="/demande-demo"><span class="nav-ic"><svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></span>Demander une démo</a>
+      </div>
+      <div class="mm-actions">
+        <a class="bt bt-encre bt-grand" href="/inscription">Créer un compte</a>
+        <a class="bt bt-clair bt-grand" href="/connexion">Se connecter</a>
+        <p><a class="lien" href="/essayer">Essayer sans compte</a><span aria-hidden="true">·</span><button class="lien" type="button" data-code>J’ai un code</button></p>
+      </div>
+    </div>
   </div>
 </header>

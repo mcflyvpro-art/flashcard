@@ -177,10 +177,20 @@ l'air de marcher ».
     (`ici()`) ; l'accueil et elles
     partagent `src/site/commun.js` (en-tête, menu, « J'ai un code », tarifs,
     calculateur, apparitions, calendrier, vidéos, onglets des rôles).
-    L'en-tête mène aux pages (Flashcards IA, Le moteur — `/moteur` —,
-    Établissements, Tarifs, Academy, Démo ; jamais sur deux lignes : entre
-    900 et 1 040 px, « Se connecter » laisse la place), le pied a quatre
-    colonnes. **Le service
+    **L'en-tête** (`src/site/partiels/tete.html`, refait le 2026-11-06 :
+    sur les pages, « Mirandola » débordait sur les liens, et sur l'accueil
+    son logo tombait à 7 px — l'en-tête portait plus que sa largeur et la
+    marque se serrait) : la marque ne se serre jamais (`flex:none`), deux
+    menus — « Apprendre » (Flashcards IA, la répétition espacée, le moteur,
+    Anki ou Quizlet) et « Établissements » (Mirandola Campus, Professeurs,
+    demander une démo), `.nav-groupe`/`.nav-panneau`, ouverts au survol
+    (CSS, souris), au toucher et au clavier (`entete()` de `commun.js` :
+    `aria-expanded`, Échap, clic ailleurs, focus qui s'en va) — puis
+    Academy, Tarifs, Démo ; « Démo » et « J'ai un code » partent sous
+    1 180 px, « Se connecter » sous 1 040, le menu du téléphone sous 900 :
+    les mêmes groupes en tuiles à icônes, la page en cours entourée, puis
+    « Créer un compte », « Se connecter », « Essayer sans compte » et
+    « J'ai un code ». Le pied a quatre colonnes. **Le service
     worker ne sert ni ne range ces pages** (`PAGES` de `src/sw.js`, rempli au
     build) : rangées sous « app », elles en prenaient la place hors ligne.
     Le favicon est aussi à la racine (`favicon.ico`, `favicon-48.png`,
@@ -1265,7 +1275,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 128 Ko (les visages, puis les codes qui attendent la connexion, 2026-10-29 ; 127,5 le 2026-11-04 avec la porte de la vérification en deux étapes), CSS ≤ 25 Ko ; la sécurité du compte à part (fichiers `verif-…`, `securite-…`, `compte-auth-…`) JS ≤ 12, CSS ≤ 4 ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 50 (les liens vers les autres pages, 2026-11-02), la plus lourde des autres pages du site ≤ 40, la page du moteur à part ≤ 56 (ses formules et ses graphiques écrits au build, 2026-11-04) (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 128 Ko (les visages, puis les codes qui attendent la connexion, 2026-10-29 ; 127,5 le 2026-11-04 avec la porte de la vérification en deux étapes), CSS ≤ 25 Ko ; la sécurité du compte à part (fichiers `verif-…`, `securite-…`, `compte-auth-…`) JS ≤ 12, CSS ≤ 4 ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 68, CSS ≤ 27 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 32, CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 30, CSS ≤ 8 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la page d'accueil du site (HTML + CSS + JS) ≤ 51 (les liens vers les autres pages, 2026-11-02 ; l'en-tête à deux menus, 2026-11-06), la plus lourde des autres pages du site ≤ 41, la page du moteur à part ≤ 56 (ses formules et ses graphiques écrits au build, 2026-11-04) (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
