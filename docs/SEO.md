@@ -22,6 +22,7 @@ donc une page par recherche :
 | `/tarifs` | le prix de Mirandola+, de Campus |
 | `/anki-quizlet` | Anki ou Quizlet, une alternative à Anki sur iPhone |
 | `/a-propos` | Pourquoi Mirandola, Pic de la Mirandole |
+| `/academie` | la Mirandola Academy : les tutos vidéo, par rôle et par écran (depuis le 2026-11-05 ; les vidéos arrivent une à une) |
 
 **Sur chaque page**, ce que Google lit : un titre (60 signes au plus) et
 une description (110 à 160) écrits pour donner envie de cliquer, l'adresse

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<!-- @meta -->
+<!-- @academie-ld -->
+<link rel="stylesheet" href="/src/site/pages/academie.css">
+<script type="module" src="/src/site/academie-page.js"></script>
+</head>
+<body>
+<a class="saut" href="#contenu">Aller au contenu</a>
+<!-- @icones -->
+<!-- @visages -->
+<!-- Les icônes des seuls tutos (Lucide, licence ISC) : le téléphone,
+     l'ordinateur, la lecture. Ici plutôt que dans @icones, que toutes
+     les pages chargent. -->
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="i-tel" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+  <symbol id="i-pc" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M1.5 20h21"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.2v13.6L19 12z" fill="currentColor" stroke-linejoin="round"/></symbol>
+</svg>
+<!-- @tete -->
+
+<main id="contenu">
+  <section class="p-heros split" aria-labelledby="titre">
+    <div class="heros-fond" aria-hidden="true"><i class="tache t1"></i><i class="tache t2"></i><i class="tache t3"></i></div>
+    <div class="enveloppe p-heros-in">
+      <div class="p-texte">
+        <!-- @ariane -->
+        <p class="surtitre">Mirandola Academy</p>
+        <h1 id="titre" class="p-titre">Tout Mirandola, en <em>vidéos courtes</em>.</h1>
+        <p class="p-chapeau">Élève, professeur, référent&#8239;: un tuto par geste, au téléphone comme sur ordinateur.</p>
+        <div class="actions">
+          <a class="bt bt-encre bt-grand" href="#eleve">Voir les tutos<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+          <a class="bt bt-blanc bt-grand" href="/essayer"><svg class="ic" aria-hidden="true"><use href="#i-lecture"/></svg>Essayer sans compte</a>
+        </div>
+      </div>
+
+      <!-- Un lecteur, et les trois rôles qui ont chacun leurs tutos. -->
+      <div class="p-visuel lecteur" aria-hidden="true">
+        <div class="lecteur-ecran">
+          <img src="/site/affiches/eleve-petit.webp" width="720" height="450" alt="" decoding="async" fetchpriority="high">
+          <span class="lecteur-voile"></span>
+          <span class="lecteur-titre"><small>Élève · 6</small>Réviser chaque jour</span>
+          <span class="lecteur-play"><svg class="ic"><use href="#i-play"/></svg></span>
+          <span class="lecteur-barre"><i></i></span>
+        </div>
+        <ul class="lecteur-roles">
+          <li style="--j:#B0475F"><span class="ac-av"><svg class="visage"><use href="#visage-eleve"/></svg></span>Élève</li>
+          <li style="--j:#2F5D8A"><span class="ac-av"><svg class="visage"><use href="#visage-prof"/></svg></span>Professeur</li>
+          <li style="--j:#5E4E8A"><span class="ac-av"><svg class="visage"><use href="#visage-ref"/></svg></span>Référent</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="p-section enveloppe ac" aria-label="Les tutos">
+    <!-- @academie -->
+  </section>
+
+  <section class="p-nuit" aria-labelledby="faire-t">
+    <div class="enveloppe">
+      <div class="p-tete">
+        <h2 id="faire-t" class="titre rv">Ou apprendre <em>en faisant</em>.</h2>
+        <p class="texte rv">La démo sans compte, un vrai lycée fictif&#8239;: ce que fait le professeur, l’élève le reçoit.</p>
+      </div>
+      <div class="ac-demo">
+        <a class="rv" href="/demo/eleve" style="--j:#B0475F"><span class="ac-av"><svg class="visage" aria-hidden="true"><use href="#visage-eleve"/></svg></span><span><b>Léa</b><small>élève de 2<sup>de</sup>&nbsp;B</small></span><svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="rv" href="/demo/prof" style="--j:#2F5D8A"><span class="ac-av"><svg class="visage" aria-hidden="true"><use href="#visage-prof"/></svg></span><span><b>Marc</b><small>professeur</small></span><svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+        <a class="rv" href="/demo/referent" style="--j:#5E4E8A"><span class="ac-av"><svg class="visage" aria-hidden="true"><use href="#visage-ref"/></svg></span><span><b>Claire</b><small>référente du lycée</small></span><svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq enveloppe p-section" id="faq" aria-labelledby="faq-t">
+    <h2 id="faq-t" class="titre centre rv">Questions fréquentes</h2>
+    <div class="questions">
+      <details class="rv"><summary>Les vidéos sont-elles gratuites&#8239;?</summary><p>Oui, pour tout le monde, sans compte. Elles arrivent une à une&#8239;: chaque tuto marqué «&nbsp;Bientôt&nbsp;» aura la sienne.</p></details>
+      <details class="rv"><summary>Y a-t-il de l’aide dans l’app&#8239;?</summary><p>Oui&#8239;: à la première connexion, un guide te fait faire chaque geste sur ton vrai compte. Tu le retrouves dans les Réglages, «&nbsp;Revoir le tuto&nbsp;».</p></details>
+      <details class="rv"><summary>Pour former les professeurs d’un établissement&#8239;?</summary><p>Les tutos du professeur et du référent suffisent pour commencer, et Mirandola Campus comprend une mise en place accompagnée.</p></details>
+      <details class="rv"><summary>Au téléphone ou sur ordinateur&#8239;?</summary><p>Chaque tuto dit sur quel écran il se joue. Choisis «&nbsp;Téléphone&nbsp;» ou «&nbsp;Ordinateur&nbsp;» pour ne voir que les tiens.</p></details>
+    </div>
+  </section>
+
+  <section class="p-section enveloppe" aria-labelledby="suite-t">
+    <h2 id="suite-t" class="cache">À lire aussi</h2>
+    <nav class="p-suite" aria-label="À lire aussi">
+      <a href="/flashcards-ia"><b>Les flashcards avec l’IA<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></b><span>Un cours, une photo ou un PDF en livre de flashcards.</span></a>
+      <a href="/professeurs"><b>Pour les professeurs<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></b><span>Devoirs suivis, ce qui bloque, défis en direct.</span></a>
+      <a href="/etablissements"><b>Mirandola Campus<svg class="ic" aria-hidden="true"><use href="#i-fleche"/></svg></b><span>Tout l’établissement, en deux codes.</span></a>
+    </nav>
+  </section>
+
+  <!-- @appel -->
+</main>
+
+<!-- <dialog> du lecteur : le script y pose la vidéo du tuto touché. -->
+<dialog class="fenetre ac-lecteur" id="ac-lecteur" aria-label="Tuto vidéo">
+  <button class="fenetre-x" type="button" data-fermer aria-label="Fermer"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <video controls playsinline preload="none"></video>
+</dialog>
+
+<!-- @pied -->
+</body>
+</html>

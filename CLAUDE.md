@@ -56,7 +56,7 @@ l'air de marcher ».
 
 - **Build Vite, sans framework ni dépendance à l'exécution.**
   - **Le site et l'app** (build multi-pages, `vite.config.js`), depuis le 2026-10-26 ;
-    **neuf pages de site** depuis le 2026-11-04 (le référencement, plus bas) :
+    **dix pages de site** depuis le 2026-11-05 (le référencement, plus bas) :
     `index.html` — la **page d'accueil du site**, servie à `/` (B2C et B2B,
     tarifs, SEO ; tout son texte en HTML statique), `src/site/` pour son
     style et son script ; elle ne charge jamais l'app ni n'enregistre le
@@ -97,10 +97,10 @@ l'air de marcher ».
     canonique et `hreflang`, données structurées (Organization et WebSite
     avec leur `alternateName` et le logo, SoftwareApplication avec ses
     offres — Mirandola+ au mois et à l'année, Campus par place —, ses
-    fonctions et ses captures), `public/robots.txt`. **Le site a neuf pages**
+    fonctions et ses captures), `public/robots.txt`. **Le site a dix pages**
     (2026-11-02 : sans plusieurs pages, ni sous-liens sous le résultat, ni
     place sur « répétition espacée » ou « Anki ou Quizlet » ; la neuvième,
-    `/moteur`, le 2026-11-04) :
+    `/moteur`, le 2026-11-04 ; la dixième, `/academie`, le 2026-11-05) :
     `flashcards-ia.html`, `repetition-espacee.html` (un article, la courbe de
     l'oubli dessinée au build), `etablissements.html`, `professeurs.html`,
     `tarifs.html`, `anki-quizlet.html` (comparatif daté, marques citées),
@@ -122,7 +122,24 @@ l'air de marcher ».
     chaque chiffre que la page avance. Le site reçoit sa **propre copie** de
     `src/fsrs.js` (`moteurDuSite` de `vite.config.js`, un module virtuel au
     même texte) : partagé, le moteur sortait de `app.js` en un morceau à
-    part et l'app le chargeait en plus), servies à leur adresse sans extension (Vercel
+    part et l'app le chargeait en plus), **`academie.html`** (2026-11-05,
+    la **Mirandola Academy**, demandée : « des vidéos tuto de tout dans
+    l'app, pour tous les types de compte et d'interface — mobile, PC,
+    référent, prof, élève ; pour l'instant pas de vidéo » : un tuto par
+    geste, 13 pour l'élève, 11 pour le professeur, 9 pour le référent, chacun
+    avec ses écrans — le référent au téléphone : ses codes et sa licence,
+    comme dans l'app —, en vignettes « Bientôt » tant que la vidéo manque ;
+    les rôles en ancres, pas en onglets, pour que tout se lise sans script ;
+    le choix de l'écran et le lecteur par `src/site/academie-page.js`. **La
+    liste est `src/site/academie.js`** (pur, `test/academie.test.js` : les
+    voix — « tu » pour l'élève, « vous » sinon —, les écrans, une vidéo
+    déclarée en entier) : le gabarit en écrit le catalogue (`@academie`) et,
+    pour chaque tuto qui a sa vidéo, un VideoObject (`@academie-ld`, rien
+    aujourd'hui). **Ajouter une vidéo** : le fichier sous
+    `public/site/academie/` (hors du cache du service worker, comme tout
+    `public/site/`), puis `video`, `affiche`, `date` et `duree` du tuto ; la
+    carte devient un bouton qui ouvre le lecteur. Les scénarios se tournent
+    dans la démo, `tools/academie/`), servies à leur adresse sans extension (Vercel
     sert le fichier avant la réécriture vers l'app ; `/tarifs/` redirige
     vers `/tarifs`). **`src/site/pages.js` est la seule liste** (adresse,
     fichier, nom, titre ≤ 60 signes, description de 110 à 160, `maj`,
@@ -155,7 +172,9 @@ l'air de marcher ».
     partagent `src/site/commun.js` (en-tête, menu, « J'ai un code », tarifs,
     calculateur, apparitions, calendrier, vidéos, onglets des rôles).
     L'en-tête mène aux pages (Flashcards IA, Le moteur — `/moteur` —,
-    Établissements, Tarifs, Démo), le pied a quatre colonnes. **Le service
+    Établissements, Tarifs, Academy, Démo ; jamais sur deux lignes : entre
+    900 et 1 040 px, « Se connecter » laisse la place), le pied a quatre
+    colonnes. **Le service
     worker ne sert ni ne range ces pages** (`PAGES` de `src/sw.js`, rempli au
     build) : rangées sous « app », elles en prenaient la place hors ligne.
     Le favicon est aussi à la racine (`favicon.ico`, `favicon-48.png`,

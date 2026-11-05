@@ -24,6 +24,7 @@ import { PAGES, SITE, SOUS_PAGES, adresse } from '../../src/site/pages.js';
 import { DEPART, programme, rappel } from '../../src/site/courbes.js';
 import * as M from '../../src/site/moteur-calc.js';
 import { qrSvg } from '../../src/qr.js';
+import { catalogue, videosLD } from '../../src/site/academie.js';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const partiel = nom => readFileSync(join(RACINE, 'src/site/partiels', nom + '.html'), 'utf8').trim();
@@ -62,7 +63,7 @@ const titreCourt = p => p.titre.replace(/ \| Mirandola$/, '');
 function donnees(p) {
   const url = adresse(p), image = SITE + p.image;
   const page = {
-    '@type': p.type === 'AboutPage' ? 'AboutPage' : 'WebPage', '@id': url + '#page', url, name: titreCourt(p),
+    '@type': ['AboutPage', 'CollectionPage'].includes(p.type) ? p.type : 'WebPage', '@id': url + '#page', url, name: titreCourt(p),
     description: p.description, inLanguage: 'fr-FR', isPartOf: { '@id': SITE + '/#site' },
     about: { '@id': SITE + '/#app' }, breadcrumb: { '@id': url + '#ariane' },
     primaryImageOfPage: { '@type': 'ImageObject', url: image, width: 1200, height: 630 },
@@ -213,7 +214,11 @@ export function rendre(html, p) {
     'moteur-simulation': () => M.svgSimulation(sim()), 'moteur-lignes': () => M.lignesSimulation(sim()), 'moteur-bilan': () => M.bilanSimulation(sim()),
     'moteur-parametres': () => M.tableParametres(),
     /* le QR de la démo : le scanner ouvre vraiment « Essayer sans compte » */
-    'qr-essai': () => qrSvg(SITE + '/essayer', 'QR code vers la démo de Mirandola') };
+    'qr-essai': () => qrSvg(SITE + '/essayer', 'QR code vers la démo de Mirandola'),
+    /* la Mirandola Academy : le catalogue des tutos, et les données
+       structurées de ceux qui ont leur vidéo (rien tant qu'il n'y en a pas) */
+    academie: catalogue,
+    'academie-ld': () => videosLD(SITE).map(v => `<script type="application/ld+json">\n${json(v)}\n</script>`).join('\n') };
   /* `<!-- @tarifs h=h1 -->` : le morceau tarifs.html, où {{h}} vaut h1 ; un
      morceau peut en poser un autre (tarifs.html pose le calculateur). */
   const marqueurs = (t, prof = 0) => t.replace(/<!-- @([\w-]+)((?: \w+=\S+)*) -->/g, (_, nom, args) => {

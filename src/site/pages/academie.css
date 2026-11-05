@@ -1,0 +1,108 @@
+/* /academie : la Mirandola Academy, un lecteur dans le haut de page, puis les tutos de chaque rôle en vignettes. Chargée par sa seule page, après site.css et pages.css. */
+
+/* ---------- le lecteur du haut de page ---------- */
+.lecteur{display:flex;flex-direction:column;align-items:center;padding:6px 0 10px}
+.lecteur-ecran{position:relative;display:block;width:100%;aspect-ratio:16/10;border-radius:24px;overflow:hidden;background:var(--nuit);
+  box-shadow:var(--ombre3),0 0 0 8px #FFF,0 0 0 9px var(--filet2);rotate:-1.5deg}
+.lecteur-ecran img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.lecteur-voile{position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,22,30,.05) 30%,rgba(23,22,30,.78))}
+.lecteur-titre{position:absolute;left:24px;bottom:34px;display:flex;flex-direction:column;gap:6px;font:700 clamp(22px,2.4vw,30px)/1.1 var(--serif);color:var(--creme);letter-spacing:-.02em}
+.lecteur-titre small{font:800 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:#C9B8E8}
+.lecteur-play{position:absolute;left:50%;top:44%;display:grid;place-items:center;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;
+  background:var(--degrade);color:#FFF;box-shadow:0 0 0 10px rgba(255,255,255,.22),0 20px 40px -14px rgba(128,67,156,.8);animation:apparait .6s var(--rebond) .9s both}
+.lecteur-play .ic{width:34px;height:34px;margin-left:5px}
+.lecteur-barre{position:absolute;left:24px;right:24px;bottom:16px;height:5px;border-radius:3px;background:rgba(243,238,227,.25)}
+.lecteur-barre i{display:block;width:38%;height:100%;border-radius:3px;background:var(--degrade-clair);transform-origin:left;animation:barre 1.6s var(--e) 1.1s both}
+@keyframes barre{from{transform:scaleX(0)}}
+.lecteur-roles{position:relative;z-index:2;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:-24px 0 0;padding:0;list-style:none}
+.lecteur-roles li{display:inline-flex;align-items:center;gap:9px;padding:6px 14px 6px 6px;border-radius:99px;background:#FFF;box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet);
+  font-weight:700;font-size:15px;animation:monte .6s var(--e) both}
+.lecteur-roles li:nth-child(1){animation-delay:1.2s}.lecteur-roles li:nth-child(2){animation-delay:1.35s}.lecteur-roles li:nth-child(3){animation-delay:1.5s}
+.lecteur-roles .ac-av{width:36px;height:36px}
+
+/* un visage de rôle, sur sa couleur */
+.ac-av{flex:none;display:grid;width:48px;height:48px;border-radius:50%;overflow:hidden;background:var(--j)}
+.ac-av .visage{width:100%;height:100%}
+
+/* ---------- les rôles, puis le choix de l'écran ---------- */
+.ac{padding-top:clamp(56px,8vw,96px)}
+.ac-roles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ac-roles a{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:24px;background:#FFF;color:var(--encre);text-decoration:none;
+  box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet);transition:transform .3s var(--e),box-shadow .3s var(--e)}
+.ac-roles a:hover{transform:translateY(-3px);box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet2)}
+.ac-roles b{display:block;font:700 21px/1.15 var(--serif)}
+.ac-roles small{display:block;margin-top:3px;font-size:14px;font-weight:600;color:var(--doux)}
+.ac-filtre{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:24px}
+.ac-filtre[hidden]{display:none}
+.ac-filtre button{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border:0;border-radius:99px;background:#FFF;color:var(--encre2);
+  font:650 15px var(--sans);cursor:pointer;box-shadow:inset 0 0 0 1px var(--filet2);transition:background-color .2s,color .2s}
+.ac-filtre button[aria-checked="true"]{background:var(--encre);color:#FFF;box-shadow:none}
+.ac-filtre .ic{width:18px;height:18px}
+
+/* ---------- un rôle et ses tutos ---------- */
+.ac-role{margin-top:clamp(48px,6vw,72px);scroll-margin-top:90px}
+.ac-role-tete{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.ac-role-tete .ac-av{width:62px;height:62px;box-shadow:0 12px 26px -12px rgba(29,28,25,.5)}
+.ac-role-tete h2{font:700 clamp(28px,3.4vw,40px)/1.05 var(--serif);letter-spacing:-.03em}
+.ac-role-tete p{margin-top:4px;color:var(--encre2);font-size:16.5px}
+.ac-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:16px;margin:0;padding:0;list-style:none}
+.ac-carte{display:flex;flex-direction:column;gap:6px;width:100%;height:100%;padding:10px 10px 18px;border:0;border-radius:24px;background:#FFF;text-align:left;
+  font:inherit;color:var(--encre);box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet);transition:transform .3s var(--e),box-shadow .3s var(--e)}
+button.ac-carte{cursor:pointer}
+.ac-carte:hover{transform:translateY(-3px);box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
+.ac-vignette{position:relative;display:grid;place-items:center;aspect-ratio:16/9;margin-bottom:8px;border-radius:16px;overflow:hidden;
+  background:radial-gradient(120% 120% at 0% 0%,color-mix(in srgb,var(--j) 70%,#FFF),var(--j) 55%,color-mix(in srgb,var(--j) 62%,#17161E))}
+.ac-vignette::after{content:'';position:absolute;inset:auto -20% -60% 30%;height:100%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.18),transparent)}
+.ac-geste{width:46px;height:46px;color:#FFF;stroke-width:1.6;filter:drop-shadow(0 6px 12px rgba(0,0,0,.25))}
+.ac-num{position:absolute;left:10px;top:10px;display:grid;place-items:center;min-width:26px;height:26px;padding:0 7px;border-radius:9px;background:rgba(255,255,255,.92);
+  color:var(--encre);font:800 13px var(--sans)}
+.ac-ecrans{position:absolute;left:10px;bottom:9px;display:flex;gap:6px;color:rgba(255,255,255,.9)}
+.ac-ecrans .ic{width:17px;height:17px}
+.ac-bientot{position:absolute;right:10px;top:10px;padding:5px 10px;border-radius:99px;background:rgba(23,22,30,.38);color:#FFF;font:750 11.5px var(--sans);
+  letter-spacing:.04em;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.ac-lire{position:absolute;inset:0;display:grid;place-items:center}
+.ac-lire .ic{width:52px;height:52px;padding:14px 12px 14px 16px;border-radius:50%;background:rgba(255,255,255,.95);color:var(--j);box-shadow:var(--ombre2)}
+.ac-duree{position:absolute;right:10px;bottom:9px;padding:3px 8px;border-radius:7px;background:rgba(23,22,30,.6);color:#FFF;font:700 12px var(--sans)}
+.ac-t{padding:0 6px;font:700 18px/1.2 var(--serif);letter-spacing:-.01em}
+.ac-l{padding:0 6px;color:var(--doux);font-size:14.5px;line-height:1.45}
+
+/* ---------- apprendre en faisant : la démo, sur la nuit ---------- */
+.ac-demo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:960px;margin-inline:auto}
+.ac-demo a{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:24px;background:rgba(243,238,227,.06);color:var(--creme);text-decoration:none;
+  box-shadow:inset 0 0 0 1px rgba(243,238,227,.14);transition:background-color .25s}
+.ac-demo a:hover{background:rgba(243,238,227,.12)}
+.ac-demo b{display:block;font:700 20px/1.15 var(--serif)}
+.ac-demo small{display:block;margin-top:2px;color:#A29CAF;font-size:14px;font-weight:600}
+.ac-demo>a>.ic{margin-left:auto;color:#C9B8E8}
+
+/* ---------- le lecteur d'un tuto ---------- */
+.ac-lecteur{width:min(980px,94vw);padding:0;background:#000;overflow:hidden}
+.ac-lecteur video{display:block;width:100%;max-height:82vh;background:#000}
+.ac-lecteur .fenetre-x{z-index:2;background:rgba(255,255,255,.9)}
+
+@media (max-width:900px){
+  .ac-roles{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto}
+  .ac-demo{grid-template-columns:minmax(0,1fr);max-width:520px}
+  .lecteur{max-width:560px;width:100%;margin-inline:auto}
+}
+@media (max-width:640px){
+  .ac-roles{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .ac-roles a{flex-direction:column;gap:8px;padding:14px 8px;text-align:center}
+  .ac-roles b{font-size:17px}
+  .ac-roles small{font-size:12.5px}
+  .ac-grille{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .ac-carte{padding:6px 6px 12px;border-radius:18px}
+  .ac-vignette{border-radius:13px;margin-bottom:4px}
+  .ac-geste{width:34px;height:34px}
+  .ac-bientot{right:6px;top:6px;padding:3px 7px;font-size:10px}
+  .ac-num{left:6px;top:6px;min-width:22px;height:22px;font-size:12px}
+  .ac-ecrans{left:7px;bottom:6px}.ac-ecrans .ic{width:14px;height:14px}
+  .ac-t{padding:0 4px;font-size:15.5px}
+  .ac-l{padding:0 4px;font-size:13px}
+  .lecteur-titre{left:16px;bottom:40px;font-size:20px}
+  .lecteur-play{width:64px;height:64px;margin:-32px 0 0 -32px}
+  .lecteur-play .ic{width:26px;height:26px}
+  .lecteur-roles li{font-size:13.5px;padding:4px 11px 4px 4px}
+  .lecteur-roles .ac-av{width:28px;height:28px}
+}
+@media (prefers-reduced-motion:reduce){.lecteur-play,.lecteur-barre i,.lecteur-roles li{animation:none}}

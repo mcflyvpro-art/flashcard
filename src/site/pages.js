@@ -54,6 +54,13 @@ export const PAGES = [
     imageAlt: 'Les équations de FSRS-6, le moteur de révision de Mirandola, et ses courbes d’oubli'
   },
   {
+    chemin: '/academie', fichier: 'academie.html', nom: 'Mirandola Academy', type: 'CollectionPage',
+    titre: 'Mirandola Academy : les tutos vidéo, geste par geste',
+    description: 'Les tutos vidéo de Mirandola : réviser, créer un livre avec l’IA, donner un devoir, gérer un établissement. Pour élèves, profs et référents.',
+    maj: '2026-11-05', image: '/site/og/academie.jpg',
+    imageAlt: 'La Mirandola Academy : les tutos vidéo de l’élève, du professeur et du référent'
+  },
+  {
     chemin: '/etablissements', fichier: 'etablissements.html', nom: 'Mirandola Campus',
     titre: 'Mirandola Campus : la révision pour tout l’établissement',
     description: 'Collèges, lycées, prépas : Mirandola Campus ouvre la révision par flashcards à tous vos élèves et professeurs en dix minutes. Démo gratuite 30 jours.',

@@ -36,6 +36,11 @@ DERNIER   2026-11-05 · L'éditeur sur tous les comptes, demandé :
           longueur 10, 100 e-mails/h ; SMTP Brevo déjà là), un code
           d'essai parti sans erreur — la confirmation d'adresse attend que
           l'éditeur l'ait vu arriver. Aucune tâche cochée.
+Avant :   2026-11-05 · La Mirandola Academy (/academie, docs/LANDING.md
+          tour 9) : 33 tutos vidéo listés par rôle et par écran, en
+          « Bientôt » tant que leur vidéo manque (src/site/academie.js,
+          test/academie.test.js) ; « ∞ livres » pour Mirandola+, la ligne
+          des codes renouvelés retirée. Aucune tâche cochée.
 Avant :   2026-11-04 · La sécurité du compte, demandée : « que tous
           les e-mails servent ». L'inscription ne s'ouvre qu'avec le code
           à 8 chiffres reçu (une adresse qui n'existe pas ne reçoit rien ;
