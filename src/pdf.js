@@ -60,6 +60,7 @@ const symbole = () => {
 const SYM = 0xE000;
 
 // ce qui se remplace sans perdre le sens : les espaces et les tirets d'imprimerie, le mu grec (le micro de WinAnsi)
+/** @type {Array<[RegExp, string]>} */
 const SUBSTITUTS = [
   [/[\u2000-\u200A\u202F\u205F]/g, '\u00A0'], [/[\u200B-\u200D\u2060\uFEFF]/g, ''], [/\t/g, ' '],
   [/[\u2010\u2011\u2012]/g, '-'], [/\u03BC/g, '\u00B5']

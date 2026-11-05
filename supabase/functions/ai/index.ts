@@ -58,6 +58,8 @@ const MODELES = [
   { id: "claude-sonnet-5-5", entree: 200 / 1e6, sortie: 1000 / 1e6 },
   { id: "claude-haiku-5-5", entree: 10 / 1e6, sortie: 50 / 1e6 },
 ];
+/* L'API Messages ; ANTHROPIC_URL ne sert qu'à l'essai sous Deno (tools/ia/essai.js). */
+const ANTHROPIC_URL = Deno.env.get("ANTHROPIC_URL") ?? "https://api.anthropic.com/v1/messages";
 const REESSAYER = new Set([404, 408, 409, 429, 500, 502, 503, 504, 529]);
 /* Une fonction vit 150 s : passé ce temps, on ne lance plus de secours. */
 const BUDGET_MS = 75_000;
@@ -118,7 +120,7 @@ async function demander(corps: Record<string, unknown>, key: string): Promise<Es
     if (i) await new Promise((r) => setTimeout(r, 400 * i));
     let res: Response;
     try {
-      res = await fetch("https://api.anthropic.com/v1/messages", {
+      res = await fetch(ANTHROPIC_URL, {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({ ...corps, model: modele.id }),
@@ -318,39 +320,41 @@ Deno.serve(async (req) => {
     if (text.length > MAX_CHARS) return json({ error: "long", max: MAX_CHARS }, 413);
   }
 
-  /* garde-fous de dépense : plafond du mois, puis quota du jour */
+  /* garde-fous de dépense : plafond du mois, budget du projet, quota du jour.
+     Contrôlés ET réservés d'un seul tenant par la base (ia_reserver, un
+     compte à la fois) : compter ici puis écrire après l'appel laissait
+     passer ensemble cinquante appels lancés ensemble (2026-11-05). */
   const now = new Date();
   const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
     .toISOString().slice(0, 10);
   const today = now.toISOString().slice(0, 10);
 
-  const [{ data: month }, { count: mine }, { count: myFiles }, { count: myMonth }, { data: offre, error: sansOffre },
-    { data: roles }, { data: quota }] =
-    await Promise.all([
-      admin.from("ai_usage").select("cents").gte("day", firstOfMonth),
-      admin.from("ai_usage").select("id", { count: "exact", head: true })
-        .eq("user_id", uid).eq("day", today),
-      isFile
-        ? admin.from("ai_usage").select("id", { count: "exact", head: true })
-          .eq("user_id", uid).eq("day", today).in("op", ["ocr", "pdf"])
-        : Promise.resolve({ count: 0 }),
-      admin.from("ai_usage").select("id", { count: "exact", head: true })
-        .eq("user_id", uid).gte("day", firstOfMonth),
-      admin.rpc("offre_de", { u: uid }),
-      admin.from("user_roles").select("role").eq("user_id", uid),
-      admin.rpc("ia_quota", { u: uid }),
-    ]);
+  const [{ data: offre, error: sansOffre }, { data: roles }, { data: quota }] = await Promise.all([
+    admin.rpc("offre_de", { u: uid }),
+    admin.from("user_roles").select("role").eq("user_id", uid),
+    admin.rpc("ia_quota", { u: uid }),
+  ]);
   const prof = (roles ?? []).some((r: { role: string }) => ["prof", "ref", "admin"].includes(r.role));
   if (!sansOffre && offre === "gratuit") return json({ error: "plus" }, 402);
   // le quota de la licence Campus d'abord ; nul (Mirandola+, ou une base sans la fonction) : celui des secrets
   const mensuel = typeof quota === "number" ? quota : prof ? MONTHLY_PROF : MONTHLY_PLUS;
-  if (!sansOffre && (myMonth ?? 0) >= mensuel) {
-    return json({ error: "mquota", quota: mensuel, mois: { fait: myMonth ?? 0, quota: mensuel } }, 429);
+  const { data: resa, error: sansResa } = await admin.rpc("ia_reserver", {
+    u: uid, p_op: op, p_jour: today, p_mois: firstOfMonth, p_mensuel: sansOffre ? null : mensuel,
+    p_par_jour: prof ? DAILY_PROF : DAILY_CALLS, p_fichiers_par_jour: prof ? DAILY_FILES_PROF : DAILY_FILES,
+    p_budget_cents: BUDGET_CENTS,
+  });
+  if (sansResa || !resa) {
+    console.error("ia_reserver", sansResa?.message ?? "vide");
+    return json({ error: "upstream" }, 503);
   }
-  const spent = (month ?? []).reduce((a, r) => a + Number(r.cents), 0);
-  if (spent >= BUDGET_CENTS) return json({ error: "budget" }, 402);
-  if ((mine ?? 0) >= (prof ? DAILY_PROF : DAILY_CALLS)) return json({ error: "quota" }, 429);
-  if (isFile && (myFiles ?? 0) >= (prof ? DAILY_FILES_PROF : DAILY_FILES)) return json({ error: "fquota" }, 429);
+  const r = resa as { statut: string; id?: number; fait?: number; jour?: number; fichiers?: number };
+  const myMonth = r.fait ?? 0, mine = r.jour ?? 0, myFiles = r.fichiers ?? 0;
+  if (r.statut === "mquota") return json({ error: "mquota", quota: mensuel, mois: { fait: myMonth, quota: mensuel } }, 429);
+  if (r.statut === "budget") return json({ error: "budget" }, 402);
+  if (r.statut === "quota") return json({ error: "quota" }, 429);
+  if (r.statut === "fquota") return json({ error: "fquota" }, 429);
+  if (r.statut !== "ok" || !r.id) return json({ error: "upstream" }, 503);
+  const rid = r.id;
 
   const hint = String(body.hint ?? "").slice(0, 200).trim();
   const pages = String(body.pages ?? "").slice(0, 60).trim();
@@ -386,19 +390,19 @@ Deno.serve(async (req) => {
     },
     messages: [{ role: "user", content }],
   }, key);
-  // rien n'est compté : le mois reste tel quel
+  // rien n'est compté : la réservation est rendue, le mois reste tel quel
   if (!essai.ok) {
-    return json({ error: essai.erreur, mois: { fait: myMonth ?? 0, quota: sansOffre ? null : mensuel } }, essai.statut);
+    await admin.rpc("ia_annuler", { rid }).then(() => {}, () => {});
+    return json({ error: essai.erreur, mois: { fait: myMonth, quota: sansOffre ? null : mensuel } }, essai.statut);
   }
   const data = essai.data;
 
   const inTok = data.usage?.input_tokens ?? 0;
   const outTok = data.usage?.output_tokens ?? 0;
   const cents = inTok * essai.modele.entree + outTok * essai.modele.sortie;
-  admin.from("ai_usage").insert({
-    user_id: uid, day: today, op,
-    in_tok: inTok, out_tok: outTok, cents: cents.toFixed(4),
-  }).then(() => {}, () => {});
+  // le coût de l'appel sur sa réservation (attendu : une fonction peut s'arrêter dès sa réponse partie)
+  const { error: sansSolde } = await admin.rpc("ia_solder", { rid, p_in: inTok, p_out: outTok, p_cents: +cents.toFixed(4) });
+  if (sansSolde) console.error("ia_solder", sansSolde.message);
 
   let cards: { f: string; b: string }[] = [];
   const parsed = (data as { parsed_output?: { cards?: unknown; note?: unknown } }).parsed_output;
@@ -414,7 +418,7 @@ Deno.serve(async (req) => {
       .slice(0, MAX_CARDS);
   }
   // le compte du mois, cet appel compris : l'écran le pose sur ses onglets
-  const mois = { fait: (myMonth ?? 0) + 1, quota: sansOffre ? null : mensuel };
+  const mois = { fait: myMonth + 1, quota: sansOffre ? null : mensuel };
   const note = op === "prompt" ? String((raw as { note?: unknown } | null)?.note ?? "").trim().slice(0, 300) : "";
   /* Un Prompt peut légitimement tout retirer (« enlève tout ce qui parle
      de… ») : une liste vide n'est une erreur que pour une génération. */
@@ -425,7 +429,7 @@ Deno.serve(async (req) => {
     note,
     mois,
     usage: { in: inTok, out: outTok, cents: +cents.toFixed(4) },
-    left: Math.max(0, DAILY_CALLS - (mine ?? 0) - 1),
-    filesLeft: isFile ? Math.max(0, DAILY_FILES - (myFiles ?? 0) - 1) : undefined,
+    left: Math.max(0, DAILY_CALLS - mine - 1),
+    filesLeft: isFile ? Math.max(0, DAILY_FILES - myFiles - 1) : undefined,
   });
 });

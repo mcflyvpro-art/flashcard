@@ -17,7 +17,7 @@ import {
 } from '../bienvenue.js';
 import { MAX, message, motif, proposer, saisie } from '../pseudo.js';
 import { go } from './bibliotheque.js';
-import { ouvrirCode } from './code-entree.js';
+import { ouvrirCode } from './code-porte.js';
 import { toast } from './import-cartes.js';
 import { grilleCouleurs, grilleTrait, ongletsAvatar } from './jeton.js';
 import { avancer } from './mouvement.js';

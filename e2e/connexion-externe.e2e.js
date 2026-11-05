@@ -54,6 +54,32 @@ test('le lien « mot de passe oublié » : un nouveau mot de passe d’abord', a
   expect(store.users.find(u => u.id === id).password).toBe('tout-neuf-2026');
 });
 
+/* Un render() de fond (ici l'offre, relue en retard) repeint l'écran du mot de
+   passe pendant qu'on tape : ce qui était tapé restait-il ? Il s'effaçait, et
+   « Enregistrer » répondait « 10 caractères au moins » (ui/garde-saisie.js,
+   2026-11-05 ; avant, ce parcours-ci échouait 1 fois sur 12 sans délai). */
+test('un repeint pendant la frappe n’efface pas le nouveau mot de passe', async ({ page }) => {
+  const store = nouveauStore();
+  const id = semerCompte(store, 'lea@exemple.fr', 'oublie-depuis-longtemps');
+  sansTuto(store, 'lea@exemple.fr');
+  await brancher(page, store);
+  let retarder = true;
+  await page.route(/rpc\/(mon_offre|my_role)/, async route => {
+    if (retarder) await new Promise(r => setTimeout(r, 2500));
+    return route.fallback();
+  });
+  await page.goto(`./app#access_token=tok-${id}-lien&refresh_token=ref-${id}&expires_in=3600&token_type=bearer&type=recovery`);
+  await expect(page.getByRole('heading', { name: 'Choisis un nouveau mot de passe.' })).toBeVisible({ timeout: 10000 });
+  await page.locator('#mdp1').fill('tout-neuf-2026');
+  await page.locator('#mdp2').fill('tout-neuf-2026');
+  await page.waitForTimeout(3500);                       // l'offre et le rôle arrivent : l'écran se repeint
+  retarder = false;
+  await expect(page.locator('#mdp1')).toHaveValue('tout-neuf-2026');
+  await page.getByRole('button', { name: 'Enregistrer' }).click();
+  await expect(page.getByRole('heading', { name: 'Choisis un nouveau mot de passe.' })).toHaveCount(0, { timeout: 10000 });
+  expect(store.users.find(u => u.id === id).password).toBe('tout-neuf-2026');
+});
+
 test('un lien expiré : la connexion, et ce qu’il faut faire', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);

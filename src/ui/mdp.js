@@ -10,6 +10,7 @@ import { PWMIN, pubTete } from './connexion.js';
 import { toast } from './import-cartes.js';
 import { maybeTuto } from './tuto-porte.js';
 import { etatMdp, mdpAChoisir } from './mdp-porte.js';
+import { repeindreEnGardant } from './garde-saisie.js';
 
 /* ══════════ « Choisis ton mot de passe » (2026-10-29) ══════════
    L'écran lui-même, chargé à la demande par sa porte, ui/mdp-porte.js (qui
@@ -22,7 +23,8 @@ let erreur = '', envoi = false;
 let reauth = false, memo = '';
 
 export function mdpView() {
-  $.innerHTML = `<div class="pub pub-connexion">
+  // un render() de fond repeint aussi cet écran : ce qu'on tape reste (ui/garde-saisie.js)
+  const garde = repeindreEnGardant($, `<div class="pub pub-connexion">
     ${pubTete(false)}
     <div class="pub-duo"><div class="login">
       <h1 class="lt">${etatMdp.recuperation ? 'Choisis un nouveau mot de passe.' : 'Choisis ton mot de passe.'}</h1>
@@ -43,8 +45,14 @@ export function mdpView() {
       </form>
       <button class="lnk" data-act="logout" type="button">Se déconnecter</button>
     </div></div>
-  </div>`;
-  if (!envoi) setTimeout(() => document.getElementById(reauth ? 'mdpc' : 'mdp1')?.focus(), 80);
+  </div>`, ['mdp1', 'mdp2', 'mdpc']);
+  // le curseur d'arrivée, jamais pris à un champ où l'on tape déjà
+  if (!envoi && !garde) {
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (!(a && a.tagName === 'INPUT')) document.getElementById(reauth ? 'mdpc' : 'mdp1')?.focus();
+    }, 80);
+  }
 }
 
 /* Ce que Supabase Auth répond, en clair (src/securite.js). */

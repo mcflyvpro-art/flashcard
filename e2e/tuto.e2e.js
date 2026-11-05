@@ -205,7 +205,7 @@ test('« J’ai un code » dès l’accueil : l’accueil de sa classe, son tuto
   // puis son tuto, côté classe ; « Passer » dit où le retrouver
   await expect(page.locator('#tu .tu-debut h2')).toHaveText('Bienvenue, Zoé', { timeout: 10000 });
   await passerTuto(page);
-  await expect(page.locator('.toast')).toContainText('Le tuto t’attend dans les Réglages');
+  await expect(page.locator('.toast:not(.sort)')).toContainText('Le tuto t’attend dans les Réglages');
   await expect.poll(() => prefsDe(store, zoe).tuto).toBe(1);
 
   // il ne revient pas de lui-même ; les Réglages le rejouent, depuis le début
@@ -219,7 +219,7 @@ test('« J’ai un code » dès l’accueil : l’accueil de sa classe, son tuto
   // la croix le quitte, et dit où le retrouver
   await bulle(page).getByRole('button', { name: 'Quitter le tuto' }).click();
   await expect(page.locator('#tu')).toHaveCount(0);
-  await expect(page.locator('.toast')).toContainText('Le tuto t’attend dans les Réglages');
+  await expect(page.locator('.toast:not(.sort)')).toContainText('Le tuto t’attend dans les Réglages');
 });
 
 test('un professeur particulier : sa classe créée pour de vrai, puis le tour de son espace, et c’est prêt', async ({ page }) => {

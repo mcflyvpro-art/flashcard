@@ -7,7 +7,7 @@ import {
 import { render } from './bibliotheque.js';
 import { sansMouvement } from './mouvement.js';
 import { paintMenuCercle } from './cercle-feuilles.js';
-import { paintMenuCode } from './code-entree.js';
+import { paintMenuCode } from './code-porte.js';
 import { paintMedia } from './carte-media.js';
 import { blockedSheet, reportSheet } from './classement.js';
 import { PALETTE, canUndo, deck, esc, sty, subj, undoLabel } from '../core/coeur-sync.js';

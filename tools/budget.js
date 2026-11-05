@@ -134,6 +134,14 @@
 // consoles passe de 30 à 33 Ko. Elles ne se chargent que chez un référent
 // ou l'éditeur. Les mêmes fonctions rejouées en mémoire
 // (src/base-locale/comptes.js) ne vont qu'aux parcours, jamais à la démo.
+// 2026-11-05 : « J'ai un code » quitte le démarrage. La feuille
+// (ui/code-entree.js) et ce qu'elle seule y amenait — les messages de chaque
+// statut d'un code (src/etablissement.js, que partagent les consoles) et le
+// code d'un livre (src/livre-code.js, le partage par code) — se chargent à
+// la demande, par ui/code-porte.js : le démarrage repasse de 128 à 123,6 Ko
+// (le cadre légal et le partage par code l'avaient mené au plafond). Un
+// plafond à eux, 8 Ko JS (6,1 aujourd'hui), comme la sécurité du compte
+// (`code-entree-…`, `etablissement-…`).
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { SOUS_PAGES } from '../src/site/pages.js';
@@ -141,7 +149,7 @@ import { SOUS_PAGES } from '../src/site/pages.js';
 // octets gzip, tous fichiers de la part cumulés
 const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
   jsGestion: 33 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
-  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, site: 51 * 1024, pages: 41 * 1024, moteur: 56 * 1024 };
+  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, site: 51 * 1024, pages: 41 * 1024, moteur: 56 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',
   jsGestion: 'JS des consoles (référent, éditeur)', cssGestion: 'CSS des consoles (référent, éditeur)',
@@ -149,6 +157,7 @@ const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS 
   jsPlus: 'JS de l’écran Mirandola+', cssPlus: 'CSS de l’écran Mirandola+',
   jsPremiers: 'JS des premiers pas (accueil, tuto)', cssPremiers: 'CSS des premiers pas (accueil, tuto)',
   jsSecurite: 'JS de la sécurité du compte', cssSecurite: 'CSS de la sécurité du compte',
+  jsCode: 'JS de « J’ai un code »', cssCode: 'CSS de « J’ai un code »',
   site: 'Page d’accueil (HTML + CSS + JS)', pages: 'Autres pages du site, la plus lourde (HTML + CSS + JS)',
   moteur: 'Page du moteur (HTML + CSS + JS)' };
 const dir = 'dist/assets';
@@ -160,7 +169,7 @@ const auDemarrage = f => app.includes('/assets/' + f);
 const duSite = f => site.includes('/assets/' + f);
 const dUnePage = f => autres.some(x => x.html.includes('/assets/' + f));
 const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, jsDemo: 0, cssDemo: 0, jsGestion: 0, cssGestion: 0,
-  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, jsSecurite: 0, cssSecurite: 0, site: gz(site), pages: 0, moteur: 0 };
+  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, jsSecurite: 0, cssSecurite: 0, jsCode: 0, cssCode: 0, site: gz(site), pages: 0, moteur: 0 };
 const parPage = Object.fromEntries(autres.map(x => [x.nom, gz(x.html)]));
 for (const f of readdirSync(dir)) {
   const ext = f.split('.').pop();
@@ -171,7 +180,8 @@ for (const f of readdirSync(dir)) {
   if ((duSite(f) || dUnePage(f)) && !auDemarrage(f)) continue;
   const part = auDemarrage(f) ? ext : /^demo-/.test(f) ? ext + 'Demo' : /^pwa-/.test(f) ? ext + 'Porte'
     : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion'
-      : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : /^(verif|securite|compte-auth)-/.test(f) ? ext + 'Securite' : ext + 'Demande';
+      : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : /^(verif|securite|compte-auth)-/.test(f) ? ext + 'Securite'
+        : /^(code-entree|etablissement)-/.test(f) ? ext + 'Code' : ext + 'Demande';
   total[part] += n;
 }
 total.moteur = parPage['moteur.html'] || 0;

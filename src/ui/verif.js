@@ -1,5 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
+import { repeindreEnGardant } from './garde-saisie.js';
 import { I, svg } from '../icones.js';
 import { auth, online, setLoginMode } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
@@ -74,7 +75,8 @@ function bouton() {
 
 export function verifView() {
   const titre = deux() ? 'Code de vérification.' : TITRES[e.mode] || TITRES.code;
-  $.innerHTML = `<div class="pub pub-connexion">
+  // un render() de fond repeint aussi cet écran : l'adresse ou le code qu'on tape reste (ui/garde-saisie.js)
+  repeindreEnGardant($, `<div class="pub pub-connexion">
     ${pubTete(false)}
     <div class="pub-duo"><div class="login vf" data-etape="${deux() ? 'deux' : e.mode + (etapeCode() ? '-code' : '')}">
       <h1 class="lt">${titre}</h1>
@@ -88,7 +90,7 @@ export function verifView() {
       </form>
       ${liens()}
     </div></div>
-  </div>`;
+  </div>`, ['vfa', 'vfc']);
   armerMinuteur();
   setTimeout(() => {
     const c = document.getElementById(etapeCode() ? 'vfc' : 'vfa');
@@ -178,7 +180,8 @@ async function valider() {
     e.envoi = false;
     if (b && b.isConnected) { b.disabled = false; b.firstChild.textContent = 'Valider'; }
     dire(messageSecurite(x));
-    if (c && c.isConnected) { c.value = ''; c.focus(); }
+    const n = document.getElementById('vfc');            // l'écran a pu être repeint pendant l'attente
+    if (n) { n.value = ''; n.focus(); }
   }
 }
 
