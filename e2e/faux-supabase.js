@@ -2,6 +2,7 @@
 // (serveur.js et ses voisins), où la démo sans compte le sert aussi, dans le
 // navigateur. Ici, seulement ce qui le branche sur une page Playwright.
 import { nouveauStore as storeNeuf, repondre } from '../src/base-locale/serveur.js';
+import { repondreSecurite } from '../src/base-locale/securite.js';
 
 export { semerLivre, semerPaquetDu } from '../src/base-locale/serveur.js';
 
@@ -39,7 +40,8 @@ export async function brancher(cible, store, { navigateur = false } = {}) {
     if (body == null && req.postDataBuffer()) {                  // WebKit ne rend parfois le corps qu'en octets
       try { body = JSON.parse(req.postDataBuffer().toString('utf8')); } catch { body = null; }
     }
-    const [status, json, headers] = repondre(store, { method: req.method(), url: new URL(req.url()), headers: req.headers(), body });
+    const demande = { method: req.method(), url: new URL(req.url()), headers: req.headers(), body };
+    const [status, json, headers] = repondreSecurite(store, demande) || repondre(store, demande);
     return route.fulfill({ status, headers: { 'content-type': 'application/json', ...(headers || {}) },
       body: json == null ? '' : JSON.stringify(json) });
   });

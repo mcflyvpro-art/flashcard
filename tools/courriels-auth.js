@@ -6,7 +6,10 @@
    fichier se colle dans Supabase → Authentication → Emails (onglets
    « Templates » et « Security notifications »), son modèle et son objet
    écrits en tête, en commentaire (docs/COURRIELS.md). Les {{ … }} sont ceux
-   de Supabase. On tutoie, comme dans l'app ; aucun prénom (le profil n'en a
+   de Supabase. Depuis le 2026-11-04, les e-mails qui ouvrent quelque chose
+   (confirmation, connexion, changement d'adresse, mot de passe oublié)
+   portent aussi le code à 8 chiffres que l'app attend (ui/verif.js,
+   ui/securite.js). On tutoie, comme dans l'app ; aucun prénom (le profil n'en a
    pas toujours) : « Bonjour » seul vaut mieux que « Bonjour , ». */
 import { writeFileSync } from 'node:fs';
 import { bouton, code, encadre, gabarit, liste, para, secours } from '../supabase/functions/_shared/courriels.js';
@@ -17,14 +20,19 @@ const PIED_DEMANDE = 'E-mail automatique, envoyé une seule fois à la suite d�
 const PIED_ALERTE = 'Alerte de sécurité automatique : elle part à chaque changement important sur ton compte.';
 const rien = 'Tu n’es pas à l’origine de cette demande&#8239;? Ignore simplement cet e-mail&#8239;: rien ne change sur ton compte.';
 const pasToi = suite => encadre(`<b style="color:#1D1C19">C’était toi&#8239;?</b> Rien à faire.<br><b style="color:#1D1C19">Ce n’était pas toi&#8239;?</b> ${suite}`);
+// le code de 8 chiffres (réglage « Email OTP length ») : sur iPhone, l'app posée sur l'écran
+// d'accueil n'intercepte pas le lien d'un e-mail — le code se tape là où l'on est (ui/verif.js)
+const DUREE = para('Le code et le bouton valent une heure, et ne servent qu’une fois.', 14).replace('<p style="', '<p style="font-size:13.5px;color:#6B675F;');
+const avecCode = phrase => para(phrase) + code('{{ .Token }}');
 const secu = 'Change ton mot de passe tout de suite (« Mot de passe oublié » sur l’écran de connexion) et écris-nous à <a href="mailto:contact@mirandola.fr" style="color:#3E4FA0">contact@mirandola.fr</a>.';
 
 // [fichier, modèle de Supabase, objet, titre, aperçu, corps, pied]
 const MODELES = [
   ['confirmation', 'Confirm sign up', 'Confirme ton adresse e-mail pour Mirandola', 'Bienvenue sur Mirandola',
-    'Un clic pour confirmer ton adresse et ouvrir ton compte.',
-    para('Bonjour,', 0) + para('Il ne reste qu’une étape&#8239;: confirmer que cette adresse est bien la tienne. Ton compte s’ouvre aussitôt.')
-      + bouton(L, 'Confirmer mon adresse')
+    'Ton code pour confirmer ton adresse et ouvrir ton compte.',
+    para('Bonjour,', 0) + para('Il ne reste qu’une étape&#8239;: confirmer que cette adresse est bien la tienne.')
+      + avecCode('Tape ce code dans Mirandola, ton compte s’ouvre aussitôt&#8239;:')
+      + para('Ou touche le bouton&#8239;:', 18) + bouton(L, 'Confirmer mon adresse') + DUREE
       + liste(['Tes cours deviennent des livres de flashcards, écrits par toi ou par l’IA.',
         'Le Memory Engine te repose chaque page juste avant que tu l’oublies.',
         'Hors ligne, sur ton téléphone comme sur ton ordinateur.'])
@@ -34,24 +42,26 @@ const MODELES = [
     para('Bonjour,', 0) + para('Un compte Mirandola a été créé pour <b style="color:#1D1C19">{{ .Email }}</b>. Accepte l’invitation pour choisir ton mot de passe et retrouver tes livres.')
       + bouton(L, 'Accepter l’invitation') + secours(L)
       + encadre('Tu ne t’attendais pas à cette invitation&#8239;? Ignore cet e-mail, ou écris-nous à <a href="mailto:contact@mirandola.fr" style="color:#3E4FA0">contact@mirandola.fr</a>.'), PIED_DEMANDE],
-  ['lien-magique', 'Magic link', 'Ton lien de connexion à Mirandola', 'Te connecter en un clic',
-    'Ton lien pour ouvrir Mirandola, sans mot de passe.',
-    para('Bonjour,', 0) + para('Touche le bouton pour ouvrir Mirandola, sans mot de passe. Pour ta sécurité, le lien ne sert qu’une fois et expire bientôt.')
-      + bouton(L, 'Ouvrir Mirandola') + secours(L) + encadre(rien), PIED_DEMANDE],
+  ['lien-magique', 'Magic link', 'Ton code de connexion à Mirandola', 'Te connecter en un clic',
+    'Ton code pour ouvrir Mirandola, sans mot de passe.',
+    para('Bonjour,', 0) + avecCode('Tape ce code dans Mirandola pour te connecter, sans mot de passe&#8239;:')
+      + para('Ou touche le bouton&#8239;:', 18) + bouton(L, 'Ouvrir Mirandola') + DUREE + secours(L) + encadre(rien), PIED_DEMANDE],
   ['changement-adresse', 'Change email address', 'Confirme ta nouvelle adresse e-mail', 'Confirme ta nouvelle adresse',
-    'Un clic pour que ta nouvelle adresse prenne effet.',
-    para('Bonjour,', 0) + para('Tu as demandé à remplacer <b style="color:#1D1C19">{{ .Email }}</b> par <b style="color:#1D1C19">{{ .NewEmail }}</b> pour te connecter à Mirandola. Confirme pour que le changement prenne effet&#8239;; d’ici là, rien ne change.')
-      + bouton(L, 'Confirmer le changement') + secours(L)
+    'Ton code pour confirmer le changement d’adresse.',
+    para('Bonjour,', 0) + para('Tu as demandé à remplacer <b style="color:#1D1C19">{{ .Email }}</b> par <b style="color:#1D1C19">{{ .NewEmail }}</b> pour te connecter à Mirandola. Un code part à chacune des deux adresses&#8239;: rien ne change avant le second.')
+      + avecCode('Tape celui-ci dans Mirandola (Réglages, Sécurité du compte)&#8239;:')
+      + para('Ou touche le bouton&#8239;:', 18) + bouton(L, 'Confirmer le changement') + DUREE + secours(L)
       + encadre('Tu n’as pas demandé ce changement&#8239;? Ignore cet e-mail et, par prudence, change ton mot de passe.'), PIED_DEMANDE],
   ['mot-de-passe', 'Reset password', 'Réinitialise ton mot de passe Mirandola', 'Choisis un nouveau mot de passe',
-    'Ton lien pour choisir un nouveau mot de passe.',
-    para('Bonjour,', 0) + para('Une demande de réinitialisation a été faite pour le compte <b style="color:#1D1C19">{{ .Email }}</b>. Touche le bouton pour choisir un nouveau mot de passe. Le lien ne sert qu’une fois et expire bientôt.')
-      + bouton(L, 'Choisir mon mot de passe') + secours(L)
+    'Ton code pour choisir un nouveau mot de passe.',
+    para('Bonjour,', 0) + para('Une demande de réinitialisation a été faite pour le compte <b style="color:#1D1C19">{{ .Email }}</b>.')
+      + avecCode('Tape ce code dans Mirandola pour choisir un nouveau mot de passe&#8239;:')
+      + para('Ou touche le bouton&#8239;:', 18) + bouton(L, 'Choisir mon mot de passe') + DUREE + secours(L)
       + encadre('Tu n’es pas à l’origine de cette demande&#8239;? Ignore cet e-mail&#8239;: ton mot de passe actuel reste valable.'), PIED_DEMANDE],
   ['code-verification', 'Reauthentication', 'Ton code de vérification Mirandola', 'Ton code de vérification',
     'Ton code pour confirmer que c’est bien toi.',
     para('Bonjour,', 0) + para('Pour confirmer qu’il s’agit bien de toi, saisis ce code dans Mirandola&#8239;:')
-      + code('{{ .Token }}') + para('Il expire bientôt et ne sert qu’une fois.', 10)
+      + code('{{ .Token }}') + para('Il vaut une heure et ne sert qu’une fois.', 10)
       + encadre('<b style="color:#1D1C19">Ne le communique à personne.</b> L’équipe Mirandola ne te le demandera jamais. Tu n’as rien demandé&#8239;? Change ton mot de passe par prudence.'), PIED_DEMANDE],
 
   ['alerte-mot-de-passe', 'Password changed (Security notifications)', 'Ton mot de passe Mirandola a été modifié', 'Mot de passe modifié',

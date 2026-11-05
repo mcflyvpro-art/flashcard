@@ -12,7 +12,7 @@
 
 const REGLES = [
   { codes: ['email_not_confirmed'], motif: /not confirmed/i, renvoyer: true,
-    texte: 'Ton adresse n’est pas encore confirmée : ouvre le lien reçu par e-mail (regarde aussi les indésirables).' },
+    texte: 'Ton adresse n’est pas encore confirmée : tape le code reçu par e-mail.' },
   { codes: ['over_email_send_rate_limit', 'email_address_not_authorized'], motif: /email rate limit|not authorized/i,
     texte: 'L’e-mail de confirmation ne peut pas partir pour l’instant. Réessaie dans un moment.' },
   { codes: ['over_request_rate_limit'], motif: /security purposes|rate limit|too many/i,
@@ -39,9 +39,3 @@ export function messageConnexion(erreur, inscription) {
   if (r) return { texte: r.texte, renvoyer: !!r.renvoyer };
   return { texte: inscription ? 'Inscription impossible pour l’instant.' : 'Connexion impossible pour l’instant.', renvoyer: false };
 }
-
-/* Après une inscription quand le projet demande de confirmer l'adresse. */
-export const CREE = 'Compte créé : ouvre le lien reçu par e-mail (regarde aussi les indésirables), puis connecte-toi.';
-
-/* Après « Renvoyer l'e-mail ». */
-export const RENVOYE = 'E-mail renvoyé : ouvre le lien qu’il contient, puis connecte-toi.';

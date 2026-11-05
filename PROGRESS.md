@@ -24,27 +24,42 @@ DERNIER   2026-11-05 · La Mirandola Academy (/academie, docs/LANDING.md
           « Bientôt » tant que leur vidéo manque (src/site/academie.js,
           test/academie.test.js) ; « ∞ livres » pour Mirandola+, la ligne
           des codes renouvelés retirée. Aucune tâche cochée.
-Avant :   2026-11-04 · Les pages du site au niveau de l'accueil : /moteur
-          (FSRS-6 formule par formule) et les sept autres refaites.
+Avant :   2026-11-04 · La sécurité du compte, demandée : « que tous
+          les e-mails servent ». L'inscription ne s'ouvre qu'avec le code
+          à 8 chiffres reçu (une adresse qui n'existe pas ne reçoit rien ;
+          « gmial.com » se voit proposer « gmail.com ») ; mot de passe
+          oublié et connexion par code ; la vérification en deux étapes
+          (TOTP, une fois par connexion, rien n'est lu avant) ; « Sécurité
+          du compte » dans les Réglages (adresse avec ses deux codes, mot
+          de passe avec le code de réauthentification, 2FA) ; les
+          gestionnaires de mots de passe (autocomplete, PasswordCredential,
+          /.well-known/change-password) ; les modèles d'e-mail portent le
+          code. Base : migration 20261105115806 appliquée le 2026-11-05
+          (2FA tenue par la RLS sur 13 tables, adresse suivie, purge des
+          comptes jamais confirmés chaque nuit) ; supabase/tests/
+          securite_compte.sql 17/17 à blanc avant. Puis, demandé : la purge
+          ne touche plus aucun compte d'avant le 2026-11-06 (migration
+          purge_jamais_les_comptes_existants, 0 compte visable vérifié) ;
+          sam@gmail.com devient samuel.francois.pro@gmail.com (profil
+          suivi, 16 livres intacts). Les réglages d'Authentication : un
+          script, tools/supabase-auth.js, qui attend SUPABASE_ACCESS_TOKEN
+          dans une session neuve. Aucune tâche cochée.
+Avant :   2026-11-04 · Les pages du site au niveau de l'accueil
+          (docs/LANDING.md, tour 8) : une neuvième page, /moteur,
+          FSRS-6 formule par formule (MathML, 21 paramètres, banc
+          d'essai, quatre laboratoires, tout calculé par src/fsrs.js et
+          recalculé par test/moteur.test.js) ; les sept autres refaites,
+          le visuel d'abord (haut de page en deux colonnes, bande de
+          nuit, tuiles dessinées, exemples), une feuille par page.
+          Aucune tâche cochée.
 Avant :   2026-11-02 (nuit) · Le référencement « à fond »
           (docs/SEO.md) : le site passe de une à huit pages, une par
           recherche, tirées d'une seule liste (src/site/pages.js) par un
           gabarit ; favicon, images de partage, llms.txt, IndexNow.
 Avant :   2026-11-02 · Retours de l'utilisateur, ses captures à
-          l'appui : « Reprendre » ne montre plus un livre supprimé ; la
-          page d'accueil au téléphone (les trois noms d'offres du tableau
-          se chevauchaient, la marque Campus décentrée, un bouton plus
-          large qu'un écran de 320 px) ; la porte d'installation refaite
-          (une scène par étape, « En voir plus » d'iOS 26, les mots dans
-          la langue du téléphone) ; le PDF d'un livre (tableau, champs
-          modifiables, imprimable) ; « Brancher Stripe » (une clé, un
-          bouton) ; l'alerte e-mail d'une demande de démo et les e-mails
-          de Supabase Auth en français (Brevo, docs/COURRIELS.md). M12.T1
-          avance : reste la clé Stripe. Le soir : Brevo créé, ses 4
-          enregistrements DNS posés chez OVH et publiés (vérifié) ;
-          docs/COURRIELS.md refait en liste de cases, d'après les écrans
-          (adresses par redirection OVH, MX Plan « redirect »). Aucune
-          tâche cochée.
+          l'appui : Reprendre, l'accueil au téléphone, la porte
+          d'installation, le PDF d'un livre, « Brancher Stripe », les
+          e-mails (Brevo, docs/COURRIELS.md). Aucune tâche cochée.
 Avant :   2026-10-29 (soir, quater) · « IA indisponible » pour tous :
           la fonction ai n'autorisait pas l'en-tête apikey que l'app
           envoie — le navigateur n'envoyait jamais la demande (OPTIONS 200,

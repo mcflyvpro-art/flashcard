@@ -77,25 +77,31 @@ async function connecter(page, email, pw) {
   await page.locator('#go').click();
 }
 
-test('confirmer son adresse : le compte attend son lien, la connexion dit pourquoi et renvoie l’e-mail', async ({ page }) => {
+test('confirmer son adresse par le code reçu : l’inscription y mène, la connexion aussi tant qu’il manque', async ({ page }) => {
   const store = nouveauStore();
   store.confirmation = true;
   await brancher(page, store);
   await ouvrir(page);
   await inscrire(page, 'zoe@exemple.fr', 'un-mot-de-passe');
-  await expect(page.locator('#le')).toContainText('Compte créé', { timeout: 10000 });
+  await expect(page.getByRole('heading', { name: 'Vérifie ta boîte mail.' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText('zoe@exemple.fr')).toBeVisible();
 
-  // pas encore confirmée : le vrai motif, et de quoi recevoir le lien de nouveau
+  // l'écran quitté sans le code : la connexion dit pourquoi, et y ramène
+  await page.getByRole('button', { name: 'Changer d’adresse' }).click();
+  await page.locator('[data-lm="in"]').click();
   await connecter(page, 'zoe@exemple.fr', 'un-mot-de-passe');
   await expect(page.locator('#le')).toContainText('pas encore confirmée', { timeout: 10000 });
-  await page.getByRole('button', { name: 'Renvoyer l’e-mail' }).click();
-  await expect(page.locator('#le')).toContainText('E-mail renvoyé');
+  await page.getByRole('button', { name: 'Saisir mon code' }).click();
+  await page.getByRole('button', { name: 'Renvoyer le code' }).click();
+  await expect(page.locator('#vfe')).toContainText('Nouveau code envoyé', { timeout: 10000 });
   expect(store.courriels.map(c => c.type)).toEqual(['signup', 'signup']);
 
-  // le lien suivi, la même connexion entre
-  store.users.find(u => u.email === 'zoe@exemple.fr').confirme = true;
-  await connecter(page, 'zoe@exemple.fr', 'un-mot-de-passe');
-  await expect(page.locator('#app')).not.toHaveAttribute('data-view', 'login', { timeout: 10000 });
+  // l'ancien code ne vaut plus rien, le nouveau ouvre le compte
+  await page.getByRole('textbox', { name: 'Code à 8 chiffres' }).fill(store.courriels[0].code);
+  await expect(page.locator('#vfe')).toContainText('Code faux ou expiré', { timeout: 10000 });
+  await page.getByRole('textbox', { name: 'Code à 8 chiffres' }).fill(store.courriels[1].code);
+  await expect(page.locator('#app')).toHaveAttribute('data-view', /^(?!login$)\w+/, { timeout: 10000 });
+  expect(store.users.find(u => u.email === 'zoe@exemple.fr').confirme).toBe(true);
 });
 
 test('la limite d’e-mails du projet : l’inscription le dit, au lieu de « Inscription impossible »', async ({ page }) => {

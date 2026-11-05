@@ -134,7 +134,7 @@ le modèle et l'objet) :
 |---|---|---|
 | Confirm sign up | Confirme ton adresse e-mail pour Mirandola | `confirmation.html` |
 | Invite user | Ton compte Mirandola t’attend | `invitation.html` |
-| Magic link | Ton lien de connexion à Mirandola | `lien-magique.html` |
+| Magic link | Ton code de connexion à Mirandola | `lien-magique.html` |
 | Change email address | Confirme ta nouvelle adresse e-mail | `changement-adresse.html` |
 | Reset password | Réinitialise ton mot de passe Mirandola | `mot-de-passe.html` |
 | Reauthentication | Ton code de vérification Mirandola | `code-verification.html` |
@@ -146,10 +146,47 @@ le modèle et l'objet) :
 | Verification method added | Vérification en deux étapes ajoutée à ton compte Mirandola | `alerte-verification-ajoutee.html` |
 | Verification method removed | Vérification en deux étapes retirée de ton compte Mirandola | `alerte-verification-retiree.html` |
 
-Les deux qui comptent tout de suite : « Confirm sign up » et « Reset
-password ». Parmi les alertes, allumer au moins « Password changed »,
-« Email address changed » et « Sign-in method linked » (un compte Google
-relié). Les modèles se refont par `node tools/courriels-auth.js` (la mise
+**Chaque modèle a son usage dans l'app** (2026-11-04) : « Confirm sign up »
+— le code de l'inscription (l'écran « Vérifie ta boîte mail. ») ; « Magic
+link » — « Recevoir un code » sur l'écran de connexion ; « Reset password »
+— « Mot de passe oublié » ; « Change email address » — Réglages → Sécurité
+du compte → Adresse e-mail (un code à chacune des deux adresses) ;
+« Reauthentication » — changer de mot de passe quand la session a plus de
+24 h ; « Invite user » — une invitation envoyée depuis le tableau de bord de
+Supabase (Authentication → Users → Invite) : l'app n'en envoie pas, les
+comptes ouverts par l'éditeur ou le référent ont un mot de passe provisoire.
+Les quatre premiers portent le code à 8 chiffres **et** le bouton : sur
+iPhone, l'app de l'écran d'accueil ne reçoit pas les liens — on tape le
+code. Parmi les alertes, **allumer** « Password changed », « Email address
+changed », « Sign-in method linked » (Google relié à un compte existant),
+« Verification method added » et « Verification method removed » (la
+vérification en deux étapes) ; « Phone number changed » et « Sign-in method
+removed » peuvent rester éteintes (l'app n'a ni téléphone ni de quoi
+délier Google).
+
+### Les réglages d'Authentication → Sign In / Providers → Email
+
+D'après les captures du 2026-11-04, ce qu'il faut y mettre :
+
+| Réglage | Valeur | Pourquoi |
+|---|---|---|
+| Enable email provider | ✅ | — |
+| Confirm email | ✅ **à l'étape 6, pas avant** | le compte ne s'ouvre qu'avec le code reçu |
+| Secure email change | ✅ (déjà) | un code à l'ancienne adresse aussi |
+| Secure password change | ✅ **à allumer** | au-delà de 24 h de session, le code « Reauthentication » |
+| Require current password when updating | ❌ laisser éteint | l'app ne le demande pas : le code le remplace |
+| Prevent use of leaked passwords | ❌ (offre Pro) | — |
+| Minimum password length | **10** (aujourd'hui 6) | l'app en demande 10 (`PWMIN`) ; la base doit refuser pareil |
+| Password requirements | « Lowercase, uppercase letters and digits » ou rien | rien de plus dans l'app ; la longueur compte plus |
+| Email OTP expiration | `3600` (déjà) | les e-mails disent « une heure » |
+| Email OTP length | `8` (déjà) | l'app attend 8 chiffres (`CODE_EMAIL`) |
+
+Et **Authentication → Multi-Factor** : « TOTP (App Authenticator) »
+**Enabled** (c'est le réglage par défaut ; « Phone » reste coupé).
+
+**URL Configuration** : *Site URL* `https://mirandola.fr`, et dans
+*Redirect URLs* `https://mirandola.fr/**` (les liens des e-mails y
+reviennent). Les modèles se refont par `node tools/courriels-auth.js` (la mise
 en page est celle de `supabase/functions/_shared/courriels.js`, la même que
 les e-mails de `prevenir`).
 
@@ -177,11 +214,20 @@ n'envoie rien ; le mot de passe oublié, si.
    Providers → Email** → cocher **Confirm email** → **Save**.
 6. **L'inscription pour de vrai** : créer un compte avec une adresse neuve
    (une variante Gmail fait l'affaire : `ton.adresse+essai1@gmail.com`
-   arrive dans ta boîte) → l'écran dit « Compte créé : ouvre le lien reçu
-   par e-mail » → l'e-mail « Confirme ton adresse pour Mirandola » arrive →
-   son bouton ouvre Mirandola, connecté. Puis essayer une adresse qui
-   n'existe pas : le compte ne s'ouvre pas (« adresse pas encore
-   confirmée », « Renvoyer l'e-mail »).
+   arrive dans ta boîte) → l'écran « Vérifie ta boîte mail. » → l'e-mail
+   « Confirme ton adresse e-mail pour Mirandola » arrive avec son code à 8
+   chiffres → le taper (au téléphone, le clavier le propose seul) : le
+   compte s'ouvre. Puis essayer une adresse qui n'existe pas : rien
+   n'arrive, le compte ne s'ouvre jamais, et il part tout seul au bout de 7
+   jours (`purge-comptes-non-confirmes`).
+7. **Le reste, en deux minutes** : « Recevoir un code » sur l'écran de
+   connexion (e-mail « Ton code de connexion ») ; Réglages → Sécurité du
+   compte → Vérification en deux étapes → « Activer », lire le QR code avec
+   l'app Mots de passe de l'iPhone, Google Authenticator ou 1Password, taper
+   son code (e-mail d'alerte « Vérification en deux étapes ajoutée ») ; se
+   déconnecter, se reconnecter : le code de l'application est demandé une
+   fois ; Sécurité du compte → Mot de passe (e-mail « Mot de passe
+   modifié »).
 
 Les comptes Google, ceux qu'ouvrent l'éditeur et le référent (mot de passe
 provisoire) et les élèves entrés avec un code ne sont pas concernés : ils

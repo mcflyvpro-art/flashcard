@@ -47,9 +47,15 @@ souffre du même mal, pour tout le monde.
 
 Côté app (corrigé le même jour) : l'écran disait seulement « Inscription
 impossible » ; il dit maintenant le vrai motif (`src/connexion-erreurs.js`,
-`ui/connexion-refus.js`), propose **« Renvoyer l'e-mail »** quand l'adresse
-attend sa confirmation (`core/confirmation.js`), et le message « Compte créé : ouvre le lien reçu par
-e-mail » ne disparaît plus (il partait avec l'écran redessiné).
+`ui/connexion-refus.js`), et, depuis le 2026-11-04, une inscription mène à
+l'écran « Vérifie ta boîte mail. » où l'on tape le code à 8 chiffres reçu
+(`ui/verif.js`, `core/compte-auth.js` ; « Saisir mon code » depuis la
+connexion quand l'adresse attend encore sa confirmation). Mot de passe
+oublié, connexion par code, vérification en deux étapes et « Sécurité du
+compte » : CLAUDE.md (Auth) et `docs/COURRIELS.md`. **Un compte dont on a perdu
+l'application d'authentification** : l'éditeur retire son facteur en base
+(`delete from auth.mfa_factors where user_id = '<id>'`, après avoir vérifié
+qui écrit — jamais sur une simple demande par e-mail d'une autre adresse).
 
 **Le remède, dans Supabase : un SMTP à soi.** Brevo (français, serveurs en
 Europe, 300 e-mails par jour gratuits) ; Resend ou Postmark conviennent aussi.

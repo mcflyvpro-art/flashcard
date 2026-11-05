@@ -52,6 +52,7 @@ async function consumeRetour() {
   if (!r) return;
   history.replaceState(history.state, '', location.pathname + location.search);
   if (r.erreur) { toast(I.x, /expired|invalid/i.test(r.erreur) ? 'Ce lien a expiré : redemande-le' : 'Connexion refusée'); return; }
+  if (r.message) { toast(I.mail, 'C’est noté : ouvre aussi le lien envoyé à l’autre adresse'); return; }
   try {
     if (await sessionDepuisRetour(r) === 'recovery') demanderNouveauMdp();
   } catch (e) { toast(I.x, 'Ce lien a expiré : redemande-le'); }

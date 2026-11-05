@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { estNeuve, isLeech } from '../file.js';
 import {
-  db, deckOpen, DECKPAGE, deckQ, deckShow, dirty, legalBack, legalTab, loginBusy, loginMode,
+  auth, db, deckOpen, DECKPAGE, deckQ, deckShow, dirty, legalBack, legalTab, loginBusy, loginMode,
   prof, sel, setAnimate, setDb, setDeckQ, setDeckShow, setLoginBusy, setLoginMode, setSel,
   setTyping, typing, view
 } from '../data/etat.js';
@@ -15,7 +15,7 @@ import {
 } from './carte-media.js';
 import { accueil } from '../core/classement.js';
 import {
-  PALETTE, deck, esc, load, plur, pull, resetPassword, saveDeck, signIn, signUp, sty, subj
+  PALETTE, deck, esc, load, plur, pull, saveDeck, signIn, signUp, sty, subj
 } from '../core/coeur-sync.js';
 import { dueCount, simpleMode, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
@@ -28,6 +28,7 @@ import { bindReorder } from './reordonner.js';
 import { CONTACT, EDITEUR } from '../editeur.js';
 import { armer, desarmer, installee, synchroniser } from './routeur.js';
 import { chargerDemo } from './demo-porte.js';
+import { etatVerif, ouvrirVerif, verifView } from './mdp-porte.js';
 
 /* ---------- sélection multiple ----------
    `sel` est nul hors du mode ; sinon c'est l'ensemble des cartes cochées.
@@ -388,24 +389,24 @@ function validateLoginForm(up, em, pw, err) {
 }
 
 /* Rend true quand l'inscription vient de s'arrêter net (compte créé mais
-   e-mail à confirmer) : la vue a déjà été repeinte, l'appelant n'a plus
-   rien à faire. */
-async function submitSignUp(em, pw) {
+   adresse à confirmer, ou adresse sans doute mal tapée) : la vue a déjà été
+   repeinte, l'appelant n'a plus rien à faire. Le compte attend le code reçu
+   par e-mail (2026-11-02, ui/verif.js) : une adresse qui n'existe pas ne
+   reçoit rien, et le compte ne s'ouvre jamais. */
+async function submitSignUp(em, pw, err) {
+  if (await import('./connexion-refus.js').then(m => m.adresseDouteuse(em, err), () => false)) return true;
   const done = await signUp(em.value, pw.value);
   if (done) return false;
-  /* L'écran se refait en mode connexion : le message va dans le NOUVEAU champ
-     (écrit avant, il partait avec l'ancien, et l'inscription semblait n'avoir
-     rien fait), et l'adresse reste remplie. */
-  const email = em.value;
-  setLoginMode('in'); setLoginBusy(false); loginView(); synchroniser();
-  document.getElementById('em').value = email;
-  import('./connexion-refus.js').then(m => m.direCree(document.getElementById('le')));
+  setLoginMode('in'); setLoginBusy(false);
+  ouvrirVerif('inscription', em.value);
   return true;
 }
 
 
-/* Ce qui suit toute connexion réussie, quelle qu'en soit la porte. */
-async function apresConnexion() {
+/* Ce qui suit toute connexion réussie, quelle qu'en soit la porte (le code
+   reçu par e-mail et la vérification en deux étapes compris, ui/verif.js). */
+export async function apresConnexion() {
+  Object.assign(etatVerif, { mode: '' });
   desarmer();                              // l'adresse attend le rôle : un professeur n'a pas d'espace « élève »
   noterConnexion();                        // l'app installée n'accueille plus par « C'est installé »
   setDb(load());
@@ -420,11 +421,24 @@ async function apresConnexion() {
   maybeTuto(pret);
 }
 
+/* Le gestionnaire de mots de passe du navigateur (Chrome, Edge, Android)
+   propose de garder l'identifiant dès qu'on le lui donne : une app d'une
+   seule page ne « soumet » jamais vraiment son formulaire, il pouvait ne
+   rien voir. Safari et les gestionnaires installés (1Password, Bitwarden…)
+   lisent le formulaire lui-même (autocomplete). */
+function offrirAuCoffre(id, password) {
+  try {
+    if (window.PasswordCredential && password) navigator.credentials.store(new window.PasswordCredential({ id: id.trim().toLowerCase(), password })).catch(() => {});
+  } catch (e) { /* le navigateur refuse : rien à proposer, la connexion continue */ }
+}
+
 async function doLogin(up, em, pw, err, btn) {
   try {
     if (up) {
-      if (await submitSignUp(em, pw)) return;
+      if (await submitSignUp(em, pw, err)) { btn.disabled = false; btn.firstChild.textContent = 'Créer le compte'; return; }
     } else await signIn(em.value, pw.value);
+    if (auth.mfa) { offrirAuCoffre(em.value, pw.value); return render(); }    // le code de l'application d'abord (ui/verif.js)
+    offrirAuCoffre(em.value, pw.value);
     await apresConnexion();
   } catch (x) {
     btn.disabled = false;
@@ -477,6 +491,7 @@ function enTete() {
 }
 
 export function loginView() {
+  if (etatVerif.mode) return verifView();
   const up = loginMode === 'up';
   $.innerHTML = `<div class="pub pub-connexion">
     ${pubTete(false)}
@@ -489,17 +504,18 @@ export function loginView() {
     </div>
     <form class="lf" id="lf" autocomplete="on">
       <div class="lrow">${svg(I.mail)}
-        <input id="em" type="email" placeholder="Adresse e-mail" autocomplete="username"
+        <input id="em" name="email" type="email" placeholder="Adresse e-mail" autocomplete="username" value="${esc(etatVerif.email || '')}"
           autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next"></div>
       <div class="lrow">${svg(I.lock)}
-        <input id="pw" type="password" placeholder="Mot de passe" autocomplete="current-password"
-          autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go">
+        <input id="pw" name="password" type="password" placeholder="Mot de passe" autocomplete="${up ? 'new-password' : 'current-password'}"
+          ${up ? `minlength="${PWMIN}" passwordrules="minlength: ${PWMIN}; maxlength: 72;" ` : ''}autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go">
         <button type="button" class="peek" id="pk">${svg(I.eye)}</button></div>
       <div class="lerr" id="le"></div>
       ${up ? `<label class="lage"><input type="checkbox" id="age">
         <span>J’ai 15 ans ou plus, et j’accepte les conditions d’utilisation.</span></label>` : ''}
       <button class="cta" id="go" type="submit">${up ? 'Créer le compte' : 'Se connecter'}${svg(I.arrow)}</button>
-      ${up ? '' : `<button class="lnk" id="forgot" type="button">Mot de passe oublié</button>`}
+      ${up ? '' : `<div class="lliens"><button class="lnk" data-verif="oubli" type="button">Mot de passe oublié</button>
+        <button class="lnk" data-verif="code" type="button">Recevoir un code</button></div>`}
     </form>
     <div class="lext" id="lext" hidden></div>
     <div class="ldemos"><button class="lnk ldemo" data-act="decouvrir" type="button">${svg(I.play)}Essayer sans compte</button>
@@ -522,13 +538,8 @@ export function loginView() {
     document.getElementById('pk').innerHTML = svg(on ? I.eyeoff : I.eye);
     pw.focus();
   };
-  const fg = document.getElementById('forgot');
-  if (fg) fg.onclick = async () => {
-    if (!em.value.trim()) { err.textContent = 'Renseigne ton adresse d’abord'; em.focus(); return; }
-    err.textContent = 'Envoi…';
-    try { await resetPassword(em.value); err.textContent = 'Lien envoyé à ' + em.value.trim(); }
-    catch (x) { err.textContent = 'Envoi impossible'; }
-  };
+  // « Mot de passe oublié », « Recevoir un code » : l'écran des codes (ui/verif.js), l'adresse reprise
+  document.querySelectorAll('[data-verif]').forEach(b => { b.onclick = () => ouvrirVerif(b.dataset.verif, em.value); });
   document.getElementById('lf').onsubmit = async e => {
     e.preventDefault();
     if (loginBusy) return;

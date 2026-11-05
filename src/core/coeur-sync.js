@@ -253,7 +253,11 @@ async function throwIfError(r) {
 
 /* La démo sans compte (ui/demo.js) branche ici sa base locale : la même
    requête, servie dans l'onglet au lieu de partir sur le réseau. */
-const envoyer = (url, init) => (demoEtab ? demoEtab(url, init) : fetch(url, init));
+const envoyer = (url, init) => (demoEtab ? demoEtab(url, init)
+  /* la vérification en deux étapes pas encore faite : rien ne se lit ni ne
+     s'envoie (la base le refuserait, ou ne rendrait rien) — comme hors ligne,
+     la file attend */
+  : auth && auth.mfa && !url.includes('/auth/v1/') ? Promise.reject(apiError('aal2', 0)) : fetch(url, init));
 
 export async function api(path, method = 'GET', body, extra = {}) {
   if (!demoEtab && tokenExpiring()) await refreshToken();
@@ -307,11 +311,20 @@ export function keepSession(j) {
      Mettre ce nettoyage dans le formulaire de connexion aurait laissé
      passer les autres chemins ; ici, aucun ne l'évite. */
   if (auth && auth.uid && j.user && auth.uid !== j.user.id) resetSession();
+  /* La vérification en deux étapes (2026-11-02) : un facteur validé et une
+     session de premier niveau (`aal` du jeton) — il reste le code de
+     l'application d'authentification à taper (ui/verif.js). */
+  const deux = (j.user.factors || []).some(f => f.status === 'verified') && aalDe(j.access_token) !== 'aal2';
   saveAuth({
     token: j.access_token, refresh: j.refresh_token,
     exp: Date.now() + (j.expires_in || 3600) * 1000,
-    uid: j.user.id, email: j.user.email
+    uid: j.user.id, email: j.user.email, ...(deux ? { mfa: 1 } : {})
   });
+}
+
+function aalDe(t) {
+  try { return JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).aal; }
+  catch (e) { return ''; }               // pas un JWT lisible : rien ne dit qu'il manque une étape
 }
 
 export async function signUp(email, password) {
@@ -324,14 +337,6 @@ export async function signUp(email, password) {
   if (!r.ok) throw Object.assign(new Error(j.msg || j.error_description || j.message || 'Inscription refusée'), { code: j.error_code });
   if (j.access_token) { keepSession(j); return true; }
   return false;                       // confirmation par e-mail exigée par le projet
-}
-
-export async function resetPassword(email) {
-  const r = await fetch(SB.url + '/auth/v1/recover', {
-    method: 'POST', headers: { apikey: SB.key, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: email.trim().toLowerCase() })
-  });
-  if (!r.ok) throw new Error('Envoi impossible');
 }
 
 export async function signIn(email, password) {

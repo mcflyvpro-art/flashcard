@@ -11,6 +11,7 @@ import { toast } from './import-cartes.js';
 import { closeMenu } from './menus-a.js';
 import { mailPull } from '../core/reglages-corbeille.js';
 import { resetComp } from './creation.js';
+import { ouvrirSecurite } from './securite-porte.js';
 import {
   answerTF, cardOf, fling, isTF, pickMCQ, startStudy, toggleFlip
 } from './revision.js';
@@ -73,7 +74,10 @@ const GOTO = {
   new: () => { resetComp(); go('import'); },
   mail: () => { mailPull(); go('mail'); },
   commu: () => { commuPull(); go('commu'); },
-  stats: () => { statsPull(); go('stats'); }
+  stats: () => { statsPull(); go('stats'); },
+  /* « Changer le mot de passe » des gestionnaires de mots de passe :
+     /.well-known/change-password mène ici (vercel.json) */
+  mdp: () => { go('settings'); ouvrirSecurite('mdp'); }
 };
 
 export function consumeGoto() {

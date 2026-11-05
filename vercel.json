@@ -6,6 +6,11 @@
   "installCommand": "npm ci",
   "cleanUrls": true,
   "redirects": [
+    {
+      "source": "/.well-known/change-password",
+      "destination": "/app?go=mdp",
+      "permanent": false
+    },
     { "source": "/:chemin((?!sw\\.js$).*)", "has": [{ "type": "host", "value": "www.folioflashcard.online" }], "destination": "https://mirandola.fr/:chemin*", "permanent": true },
     { "source": "/:chemin((?!sw\\.js$).*)", "has": [{ "type": "host", "value": "folioflashcard.online" }], "destination": "https://mirandola.fr/:chemin*", "permanent": true },
     { "source": "/:chemin((?!sw\\.js$).*)", "has": [{ "type": "host", "value": "flashcard-roan-chi.vercel.app" }], "destination": "https://mirandola.fr/:chemin*", "permanent": true },

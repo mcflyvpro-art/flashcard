@@ -18,7 +18,7 @@ import {
 import { go, render } from './bibliotheque.js';
 import { dec, fsrsMigrate } from './carte-media.js';
 import { accueil } from '../core/classement.js';
-import { cacheKey, flush, load, plur, pull, refreshToken, save, saveAuth, setOnline } from '../core/coeur-sync.js';
+import { cacheKey, flush, load, plur, pull, refreshToken, save, saveAuth, SB, setOnline } from '../core/coeur-sync.js';
 import { lienAvantSession } from './liens-entrants.js';
 import { armer, armerSansSession, cibleDepart, desarmer, installee } from './routeur.js';
 import { effacerDemo, ouvrirDemo } from './demo-porte.js';
@@ -113,6 +113,9 @@ export function logout() {
   if (demoEtab) { try { sessionStorage.removeItem('folio.demo'); } catch (e) { /* rien à effacer */ } return location.replace('/'); }
   const envoi = flush();
   const key = cacheKey();
+  /* la session est révoquée chez Supabase aussi : un jeton de
+     renouvellement resté sur l'appareil ne rouvrirait plus rien */
+  if (auth) fetch(SB.url + '/auth/v1/logout?scope=local', { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + auth.token } }).catch(() => {});
   saveAuth(null);
   if (key) { try { localStorage.removeItem(key); } catch (e) { /* stockage indisponible : la déconnexion continue sans ce nettoyage */ } }
   resetSession();
@@ -238,6 +241,7 @@ export async function boot() {
   desarmer();
   noterConnexion();
   setDb(load());
+  if (auth.mfa) return render();          // le code de l'application d'abord (ui/verif.js), puis apresConnexion()
   offreLocale();                         // Mirandola gratuit ou Mirandola+ dès le premier écran, hors ligne aussi
   fsrsMigrate();                         // hors ligne aussi : le moteur a besoin de son état
   if (!consumeHash()) render();          // le cache s'affiche tout de suite
