@@ -111,11 +111,21 @@ function licenceHtml(p) {
 function formule(cle) {
   const f = FORMULES[cle], on = plus.formule === cle;
   const prix = cle === 'annuel' ? euros(f.mois) : euros(f.prix);
-  const note = cle === 'annuel' ? `${euros(f.prix)} par an, au lieu de <s>${euros(f.sans)}</s>` : 'Sans engagement';
+  // jamais un prix barré : 83,88 € n'a jamais été un prix de vente (article L112-1-1)
+  const note = cle === 'annuel' ? `${euros(f.prix)} par an, ${f.remise}&#8239;% de moins qu’au mois` : 'Sans engagement';
   return `<button class="fp-f${on ? ' on' : ''}" role="radio" aria-checked="${on}" data-fp="formule" data-v="${cle}">
       <span class="fp-f-nom">${cle === 'annuel' ? 'Annuel' : 'Mensuel'}${cle === 'annuel' ? `<em>−${f.remise}&#8239;%</em>` : ''}</span>
       <span class="fp-f-prix"><b>${prix}</b>/mois</span><span class="fp-f-note">${note}</span></button>`;
 }
+
+/* L'accord, avant de payer (2026-11-05) : les conditions de vente, et la
+   demande expresse que Mirandola+ commence tout de suite — sans elle, le
+   service ne pourrait pas s'ouvrir pendant les 14 jours de rétractation
+   (article L221-25). Le bouton reste éteint tant qu'on n'a pas coché ; la
+   version acceptée part avec la commande (CGV_VERSION). */
+const accord = () => `<label class="fp-accord" id="fp-accord"><input type="checkbox" data-fp="accord"${plus.accord ? ' checked' : ''}>
+    <span>J’accepte les <button type="button" class="lnk" data-legal="cgv">conditions de vente</button> et je demande que
+    Mirandola+ commence tout de suite. Si je me rétracte dans les 14 jours, je ne paie que les jours écoulés.</span></label>`;
 
 // qui encaisse, dit sous le bouton : Stripe sur le web, le magasin dans son app
 const garantie = p => (vente(p) === 'stripe' ? 'Paiement sécurisé par Stripe · Résiliable en un geste'
@@ -126,7 +136,8 @@ function offreHtml(p) {
   return `${r.ligne !== 'Gratuit' ? `<p class="fp-alerte">${svg(I.warn)}${esc(r.ligne)}</p>` : ''}
     <section class="fp-offre">
       <div class="fp-formules" role="radiogroup" aria-label="Formule">${formule('annuel')}${formule('mensuel')}</div>
-      <button class="fp-payer" data-fp="payer" ${plus.envoi ? 'disabled' : ''}>${plus.envoi === 'payer' ? 'Ouverture du paiement…'
+      ${accord()}
+      <button class="fp-payer" data-fp="payer" ${plus.envoi || !plus.accord ? 'disabled' : ''} aria-describedby="fp-accord">${plus.envoi === 'payer' ? 'Ouverture du paiement…'
         : `Passer à Mirandola+`}${svg(I.arrow)}</button>
       <p class="fp-note">${svg(I.lock)}${garantie(p)}</p>
       ${p.natif ? `<button class="lnk fp-restaurer" data-fp="restaurer" ${plus.envoi ? 'disabled' : ''}>${
@@ -199,7 +210,7 @@ function vers(action) {
   plus.envoi = action; plus.err = '';
   render();
   const p = ici();
-  if (vente(p) === 'stripe') return versStripe(action, plus.formule).then(url => location.assign(url)).catch(echec);
+  if (vente(p) === 'stripe') return versStripe(action, plus.formule, plus.accord).then(url => location.assign(url)).catch(echec);
   /* l'achat intégré : la feuille d'Apple ou de Google s'ouvre par-dessus
      l'app, puis l'on revient ici — Mirandola+ s'active comme après Stripe */
   const geste = action === 'restaurer' ? restaurerAchats(p.os) : versMagasin(p.os, plus.formule);
@@ -208,7 +219,8 @@ function vers(action) {
 
 const GESTES = {
   formule: b => { plus.formule = b.dataset.v === 'mensuel' ? 'mensuel' : 'annuel'; plus.err = ''; render(); },
-  payer: () => vers('payer'),
+  payer: () => { if (plus.accord) vers('payer'); },
+  accord: b => { plus.accord = !!b.checked; render(); },
   gerer: () => vers('gerer'),
   resilier: () => vers('resilier'),
   restaurer: () => vers('restaurer'),

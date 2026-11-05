@@ -205,33 +205,35 @@ const verifie = (nom, ok, vu) => { resultats.push({ nom, ok: !!ok }); console.lo
 const ligne = uid => abonnements.find(r => r.user_id === uid);
 
 async function essaisPaiement() {
-  let r = await appel({ action: 'payer', formule: 'annuel' }, 'u1');
+  let r = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u1');
   const f = recu.checkout[0] || {};
   verifie('payer : une page de paiement Stripe', r.statut === 200 && /^https:\/\/checkout\.stripe\.com\//.test(r.j.url), r);
+  const sansAccord = await appel({ action: 'payer', formule: 'annuel' }, 'u1');
+  verifie('payer sans l’accord de l’app (conditions de vente, démarrage immédiat) : refusé', sansAccord.statut === 400 && sansAccord.j.error === 'accord', sansAccord);
   verifie('… pour ce compte, au prix annuel, en abonnement', f.mode === 'subscription' && f['line_items[0][price]'] === 'price_an'
     && f.client_reference_id === 'u1' && f['subscription_data[metadata][user_id]'] === 'u1' && f.customer_email === 'u1@exemple.fr', f);
   verifie('… qui revient dans l’app', f.success_url === 'https://mirandola.fr/app?plus=merci&session={CHECKOUT_SESSION_ID}'
     && f.cancel_url === 'https://mirandola.fr/app?plus=annule', f);
-  const r2 = await appel({ action: 'payer', formule: 'annuel' }, 'u1');
+  const r2 = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u1');
   verifie('un double appui : la même page, une seule session', r2.j.url === r.j.url && recu.checkout.length === 1, recu.checkout.length);
-  const rafale = await Promise.all(Array.from({ length: 20 }, () => appel({ action: 'payer', formule: 'annuel' }, 'u1')));
+  const rafale = await Promise.all(Array.from({ length: 20 }, () => appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u1')));
   verifie('vingt appuis à la fois : toujours une seule page de paiement', rafale.every(x => x.j.url === r.j.url)
     && recu.checkout.length === 1, recu.checkout.length);
-  r = await appel({ action: 'payer', formule: 'mensuel' }, 'u1');
+  r = await appel({ action: 'payer', formule: 'mensuel', cgv: '2026-11-05' }, 'u1');
   verifie('la formule mensuelle : son prix', r.statut === 200 && recu.checkout[1]['line_items[0][price]'] === 'price_mois', recu.checkout[1]);
-  r = await appel({ action: 'payer', formule: 'a-vie' }, 'u1');
+  r = await appel({ action: 'payer', formule: 'a-vie', cgv: '2026-11-05' }, 'u1');
   verifie('une formule inconnue : refusée', r.statut === 400 && r.j.error === 'formule', r);
-  r = await appel({ action: 'payer', formule: 'annuel' }, 'u2');
+  r = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u2');
   verifie('Mirandola+ court déjà : pas de second abonnement', r.statut === 409 && r.j.error === 'deja', r);
-  r = await appel({ action: 'payer', formule: 'annuel' }, 'u3');
+  r = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u3');
   verifie('l’établissement l’offre : rien à payer', r.statut === 409 && r.j.error === 'campus', r);
-  r = await appel({ action: 'payer', formule: 'annuel' }, 'u5');
+  r = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u5');
   verifie('Mirandola+ offert, ou pris dans un magasin : rien à payer ici', r.statut === 409 && r.j.error === 'deja', r);
   r = await appel({ action: 'gerer' }, 'u1');
   verifie('gérer sans abonnement : rien à gérer', r.statut === 404 && r.j.error === 'aucun', r);
   r = await appel({ action: 'gerer' }, 'u2');
   verifie('gérer : le portail Stripe du bon client', r.statut === 200 && r.j.url === 'https://billing.stripe.com/p/session/cus_u2', r);
-  r = await appel({ action: 'payer', formule: 'annuel' });
+  r = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' });
   verifie('sans compte : refusé', r.statut === 401, r);
 }
 
@@ -281,7 +283,7 @@ const SANS_REGLAGES = { ...ENV, STRIPE_PRIX_ANNUEL: '', STRIPE_PRIX_MENSUEL: '',
 async function essaisBrancher() {
   let r = await appel({ action: 'etat' }, 'u1');
   verifie('brancher : réservé à l’éditeur', r.statut === 403 && r.j.error === 'editeur', r);
-  r = await appel({ action: 'payer', formule: 'annuel' }, 'u7');
+  r = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u7');
   verifie('avant de brancher, sans prix : la page de paiement ne s’ouvre pas', r.statut === 503 && r.j.error === 'noprix', r);
   r = await appel({ action: 'etat' }, 'editeur');
   verifie('l’état : la clé de test est là, rien d’autre', r.statut === 200 && r.j.cle && r.j.mode === 'test' && !r.j.prix && !r.j.webhook, r.j);
@@ -302,7 +304,7 @@ async function essaisBrancher() {
   r = await appel({ action: 'preparer' }, 'editeur');
   verifie('rebrancher ne crée rien deux fois (prix, point d’arrivée, portail)', r.statut === 200 && monde.prix.length === 2
     && monde.points.length === 1 && monde.portails.length === 1, { prix: monde.prix.length, points: monde.points.length, portails: monde.portails.length });
-  r = await appel({ action: 'payer', formule: 'mensuel' }, 'u7');
+  r = await appel({ action: 'payer', formule: 'mensuel', cgv: '2026-11-05' }, 'u7');
   verifie('payer : le prix posé par « Brancher Stripe »', r.statut === 200 && recu.checkout.at(-1)['line_items[0][price]'] === mois.id, recu.checkout.at(-1));
   r = await appel({ action: 'gerer' }, 'u2');
   verifie('gérer : le portail configuré par « Brancher Stripe »', r.statut === 200 && recu.portail.configuration === 'bpc_0', recu.portail);

@@ -303,7 +303,10 @@ export const PWMIN = 10;
 /* ══════════ le cadre : mentions, confidentialité, conditions ══════════
    Les textes et ce qui les remplit : src/editeur.js, ui/legal-textes.js. */
 
-export const LEGAL_TITRES = { cgu: 'Conditions d’utilisation', vie: 'Confidentialité', mentions: 'Mentions légales' };
+export const LEGAL_TITRES = { cgu: 'Conditions d’utilisation', cgv: 'Conditions de vente', vie: 'Confidentialité',
+  mentions: 'Mentions légales', logiciels: 'Logiciels libres' };
+// sous l'écran de connexion et la porte d'installation : les trois qu'on lit avant d'entrer (2026-11-05)
+export const LEGAL_PIED = ['cgu', 'vie', 'mentions'];
 
 /* Tant qu'un ⟦crochet⟧ traîne dans l'identité ou le contact de l'éditeur,
    l'app ne dit pas qui traite les données ni comment le joindre — exigé dès
@@ -521,7 +524,7 @@ export function loginView() {
     <div class="ldemos"><button class="lnk ldemo" data-act="decouvrir" type="button">${svg(I.play)}Essayer sans compte</button>
       <button class="lnk ldemo" data-act="demande" type="button">${svg(I.school)}Un établissement ? Demander une démo</button></div>
     </div></div>
-    <div class="lleg">${Object.entries(LEGAL_TITRES).map(([k, t]) =>
+    <div class="lleg">${LEGAL_PIED.map(k => [k, LEGAL_TITRES[k]]).map(([k, t]) =>
       `<button data-legal="${k}">${esc(t)}</button>`).join('<i>·</i>')}</div>
   </div>`;
   document.getElementById('lmode').onclick = e => {

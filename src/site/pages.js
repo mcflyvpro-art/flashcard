@@ -28,8 +28,8 @@ export const PAGES = [
   {
     chemin: '/', fichier: 'index.html', nom: 'Accueil',
     titre: 'Mirandola : flashcards IA et répétition espacée pour réviser',
-    description: 'L’IA fait de ton cours des flashcards, Mirandola te les repose juste avant l’oubli, avec l’algorithme d’Anki. Gratuit, hors ligne, pour élèves, profs et lycées.',
-    maj: '2026-11-02', image: '/site/og.jpg',
+    description: 'L’IA fait de ton cours des flashcards, Mirandola te les repose juste avant l’oubli, avec l’algorithme FSRS. Gratuit, hors ligne, pour élèves, profs et lycées.',
+    maj: '2026-11-05', image: '/site/og.jpg',
     imageAlt: 'Mirandola, l’app de révision : trois livres empilés, l’app sur ordinateur et téléphone, et une page de flashcard'
   },
   {
@@ -43,14 +43,14 @@ export const PAGES = [
     chemin: '/repetition-espacee', fichier: 'repetition-espacee.html', nom: 'La répétition espacée', type: 'Article',
     titre: 'La répétition espacée, expliquée simplement | Mirandola',
     description: 'Courbe de l’oubli, intervalles, algorithme FSRS : comment la répétition espacée fait retenir 9 pages sur 10, et comment t’en servir pour tes examens.',
-    maj: '2026-11-04', image: '/site/og/repetition-espacee.jpg',
+    maj: '2026-11-05', image: '/site/og/repetition-espacee.jpg',
     imageAlt: 'La courbe de l’oubli, et la mémoire qui reste haute avec la répétition espacée'
   },
   {
     chemin: '/moteur', fichier: 'moteur.html', nom: 'Le moteur FSRS', type: 'Article',
     titre: 'Le moteur FSRS de Mirandola, formule par formule',
     description: 'FSRS-6 dans le détail : la courbe d’oubli, la stabilité, la difficulté, les 21 paramètres, l’optimiseur et le banc d’essai. Les vraies équations du moteur.',
-    maj: '2026-11-04', image: '/site/og/moteur.jpg',
+    maj: '2026-11-05', image: '/site/og/moteur.jpg',
     imageAlt: 'Les équations de FSRS-6, le moteur de révision de Mirandola, et ses courbes d’oubli'
   },
   {
@@ -85,14 +85,14 @@ export const PAGES = [
     chemin: '/anki-quizlet', fichier: 'anki-quizlet.html', nom: 'Anki, Quizlet ou Mirandola',
     titre: 'Anki, Quizlet ou Mirandola : quelle app de flashcards ?',
     description: 'Anki, Quizlet, Mirandola : ce que fait chaque app de flashcards, pour qui, et à quel prix. Et comment reprendre tes paquets Anki et tes listes Quizlet.',
-    maj: '2026-11-04', image: '/site/og/anki-quizlet.jpg',
+    maj: '2026-11-05', image: '/site/og/anki-quizlet.jpg',
     imageAlt: 'Trois apps de flashcards comparées : Anki, Quizlet et Mirandola'
   },
   {
     chemin: '/a-propos', fichier: 'a-propos.html', nom: 'Pourquoi Mirandola', type: 'AboutPage',
     titre: 'Pourquoi Mirandola ? D’après Pic de la Mirandole',
     description: 'Mirandola tient son nom de Pic de la Mirandole, l’érudit à la mémoire prodigieuse né à Mirandola, en Italie. Ce que l’app veut faire, et comment.',
-    maj: '2026-11-04', image: '/site/og/a-propos.jpg',
+    maj: '2026-11-05', image: '/site/og/a-propos.jpg',
     imageAlt: 'Mirandola, d’après Pic de la Mirandole'
   }
 ];

@@ -167,9 +167,12 @@ describe('Mirandola+ et les appareils', async () => {
   const plat = s => s.replace(/&nbsp;|&#8239;|\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ');
   const page = plat(html);
   it('les prix de la page sont ceux de l’app', () => {
-    for (const c of [FORMULES.annuel.prix, FORMULES.annuel.mois, FORMULES.annuel.sans, FORMULES.mensuel.prix]) {
+    for (const c of [FORMULES.annuel.prix, FORMULES.annuel.mois, FORMULES.mensuel.prix]) {
       expect(page).toContain(plat(euros(c)));
     }
+    // jamais un prix barré : douze mois au mois n'ont jamais été un prix de vente (article L112-1-1, 2026-11-05)
+    expect(page).not.toContain(plat(euros(FORMULES.annuel.sans)));
+    expect(html).not.toMatch(/<s>|&lt;s&gt;/);
   });
   it('la FAQ dit l’écran d’accueil, plus les magasins', () => {
     expect(page).toContain('sans passer par un magasin');

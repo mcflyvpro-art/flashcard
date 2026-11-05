@@ -17,6 +17,14 @@ const ecran = page => page.locator('#app[data-view="plus"]');
 const gratuit = () => ({ ...nouveauStore(), parDefaut: 'gratuit' });
 const pages = i => [1, 2, 3, 4].map(k => [`question ${i}.${k}`, `réponse ${i}.${k}`]);
 
+/* L'accord avant de payer (2026-11-05) : le bouton reste éteint tant que les
+   conditions de vente et le démarrage immédiat ne sont pas acceptés. */
+async function accepter(page) {
+  await expect(page.getByRole('button', { name: 'Passer à Mirandola+' })).toBeDisabled({ timeout: 10000 });
+  await page.getByRole('checkbox', { name: /J’accepte les/ }).check();
+  await expect(page.getByRole('button', { name: 'Passer à Mirandola+' })).toBeEnabled();
+}
+
 test('un compte gratuit : l’onglet Mirandola+, le paiement, le retour ; l’onglet s’en va, Mirandola+ se voit', async ({ page }) => {
   const store = gratuit();
   await brancher(page, store);
@@ -35,6 +43,7 @@ test('un compte gratuit : l’onglet Mirandola+, le paiement, le retour ; l’on
   await page.getByRole('radio', { name: /Mensuel/ }).click();
   await expect(page.getByRole('radio', { name: /Mensuel/ })).toHaveAttribute('aria-checked', 'true');
 
+  await accepter(page);
   await page.getByRole('button', { name: 'Passer à Mirandola+' }).click();
   await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola+' })).toBeVisible({ timeout: 10000 });
   await expect(page).toHaveURL(/\/eleve\/mirandola-plus$/);                // ?plus=merci&session=… consommé
@@ -114,6 +123,7 @@ test('le paiement pas encore branché, hors ligne : chaque cas dit ce qu’il en
   await page.goto('./eleve/mirandola-plus');
   await expect(ecran(page)).toBeVisible({ timeout: 10000 });
   store.paiement = 'absent';                                             // la fonction n'est pas déployée
+  await accepter(page);
   await page.getByRole('button', { name: 'Passer à Mirandola+' }).click();
   await expect(page.locator('.fp-err')).toHaveText('Le paiement ouvre bientôt');
   store.paiement = 'nokey';                                              // déployée, sans clé Stripe
@@ -133,6 +143,7 @@ test('Stripe ramène avant que l’abonnement soit écrit : l’écran attend, p
   await inscrire(page);
   store.paiement = 'lent';
   await page.goto('./eleve/mirandola-plus');
+  await accepter(page);
   await page.getByRole('button', { name: 'Passer à Mirandola+' }).click({ timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Paiement reçu' })).toBeVisible({ timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola+' })).toBeVisible({ timeout: 15000 });
@@ -225,6 +236,7 @@ test('dans l’app des magasins : l’achat intégré, jamais Stripe', async ({ 
   await expect(page.locator('.fp-offre')).toContainText('Paiement par Google Play');
   await expect(page.locator('.fp-offre')).not.toContainText('Stripe');
   await expect(page.getByRole('button', { name: 'Restaurer mes achats' })).toBeVisible();
+  await accepter(page);
   await page.getByRole('button', { name: 'Passer à Mirandola+' }).click();
   await expect(page.locator('.fp-err')).toHaveText('Le paiement ouvre bientôt');
   expect(store.tables.abonnements || []).toHaveLength(0);

@@ -7,7 +7,7 @@ import { installer, plateforme } from '../plateformes.js';
 import { enGras, guide, langueEcran, lienChrome, navigateur } from '../installation.js';
 import { esc } from '../core/coeur-sync.js';
 import { render } from './bibliotheque.js';
-import { LEGAL_TITRES, pubTete } from './connexion.js';
+import { LEGAL_PIED, LEGAL_TITRES, pubTete } from './connexion.js';
 import { toast } from './import-cartes.js';
 import { rangerLiens } from './liens-entrants.js';
 import { cartePassage, confierPassage, lierPassage } from './passage.js';
@@ -270,7 +270,7 @@ export function pwaEcran() {
     ${pubTete(false)}
     <div class="pw-centre"><div class="login pw-carte" data-k="pw">${e.html}</div></div>
     ${auth ? '' : `<div class="ldemos"><button class="lnk ldemo" data-act="decouvrir" type="button">${svg(I.play)}Essayer sans compte</button></div>`}
-    <div class="lleg">${Object.entries(LEGAL_TITRES).map(([k, t]) => `<button data-legal="${k}">${esc(t)}</button>`).join('<i>·</i>')}</div>
+    <div class="lleg">${LEGAL_PIED.map(k => [k, LEGAL_TITRES[k]]).map(([k, t]) => `<button data-legal="${k}">${esc(t)}</button>`).join('<i>·</i>')}</div>
     ${e.fleche ? `<span class="pw-fleche ${e.fleche}" aria-hidden="true">${FLECHE}</span>` : ''}
   </div>`;
   lierPassage();

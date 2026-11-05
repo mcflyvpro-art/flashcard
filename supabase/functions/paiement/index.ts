@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
   const { sub: uid, email } = claims(req);
   if (!uid) return json({ error: "auth" }, 401);
 
-  let body: { action?: string; formule?: string };
+  let body: { action?: string; formule?: string; cgv?: string };
   try {
     body = await req.json();
   } catch {
@@ -227,6 +227,10 @@ Deno.serve(async (req) => {
     if (body.action !== "payer") return json({ error: "body" }, 400);
     const formule = String(body.formule ?? "");
     if (!FORMULES.includes(formule)) return json({ error: "formule" }, 400);
+    /* Pas de paiement sans l'accord donné dans l'app : les conditions de
+       vente et le démarrage immédiat (article L221-25), une version datée. */
+    const accord = /^\d{4}-\d{2}-\d{2}$/.test(String(body.cgv ?? "")) ? String(body.cgv) : "";
+    if (!accord) return json({ error: "accord" }, 400);
     const prix = Deno.env.get(formule === "annuel" ? "STRIPE_PRIX_ANNUEL" : "STRIPE_PRIX_MENSUEL")
       || rangs[formule === "annuel" ? "prix_annuel" : "prix_mensuel"];
     if (!prix) return json({ error: "noprix" }, 503);
@@ -244,7 +248,7 @@ Deno.serve(async (req) => {
     const minute = Math.floor(Date.now() / 60000);
     const s = await stripe("checkout/sessions", demandePaiement({
       formule, prix, userId: uid, email, client: ligne?.client_stripe ?? null, site: SITE,
-      taxe: Deno.env.get("STRIPE_TAXE") === "1", cgv: Deno.env.get("STRIPE_CGV") === "1",
+      taxe: Deno.env.get("STRIPE_TAXE") === "1", cgv: Deno.env.get("STRIPE_CGV") === "1", accord,
     }), cle, `folio-${uid}-${formule}-${minute}`);
     return json({ url: s.url });
   } catch (e) {

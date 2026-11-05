@@ -115,13 +115,20 @@ describe('ce qu’on demande à Stripe', () => {
     expect(d.cancel_url).toBe('https://mirandola.fr/app?plus=annule');
     expect(d['automatic_tax[enabled]']).toBeUndefined();
     expect(d['consent_collection[terms_of_service]']).toBeUndefined();
-    expect(d['custom_text[submit][message]']).toMatch(/résiliable/);
+    expect(d['custom_text[submit][message]']).toMatch(/sauf résiliation/);   // l'annuel : payé pour un an, renouvelé sauf résiliation
   });
   it('l’adresse technique d’un élève à carte ne part pas chez Stripe', () => {
     expect(demandePaiement({ ...base, email: 'lea.martin@eleves.folio.invalid' }).customer_email).toBeUndefined();
   });
   it('les conditions de vente à cocher, une fois posées dans Stripe', () => {
     expect(demandePaiement({ ...base, cgv: true })['consent_collection[terms_of_service]']).toBe('required');
+    // la preuve de l'accord donné dans l'app, rangée chez Stripe (2026-11-05)
+    const ok = demandePaiement({ ...base, accord: '2026-11-05' });
+    expect(ok['subscription_data[metadata][cgv]']).toBe('2026-11-05');
+    expect(ok['subscription_data[metadata][demarrage_immediat]']).toBe('oui');
+    // l'annuel ne se dit pas « sans engagement »
+    expect(demandePaiement({ ...base, formule: 'annuel' })['custom_text[submit][message]']).toMatch(/Payé pour un an/);
+    expect(demandePaiement({ ...base, formule: 'mensuel' })['custom_text[submit][message]']).toMatch(/Sans engagement/);
   });
   it('un ancien client garde son identifiant ; la TVA de Stripe Tax si demandée', () => {
     const d = demandePaiement({ ...base, email: 'x@y.fr', client: 'cus_1', taxe: true });
