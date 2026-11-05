@@ -24,9 +24,41 @@ export async function admEtatPull() {
   repeint();
 }
 
+/* Tous les comptes et de quoi les trier (admin_comptes, 20261105122753) ;
+   une base qui ne l'a pas encore rend l'ancienne liste (admin_accounts). */
 export async function admComptesPull() {
-  try { setAccounts(await rpc('admin_accounts') || []); } catch (e) { setAccounts([]); adm.err = 1; }
+  try { setAccounts(await rpc('admin_comptes') || []); } catch (e) {
+    try { setAccounts(await rpc('admin_accounts') || []); } catch (e2) { setAccounts([]); adm.err = 1; }
+  }
   repeint();
+}
+
+/* ══════════ la main sur un compte (20261105122753) ══════════
+   Supprimer (un compte ou une sélection : un appel par compte, un refus
+   n'arrête pas les suivants — la base dit pourquoi, un abonnement Stripe qui
+   court par exemple), suspendre jusqu'à une date (nulle : rétabli), confirmer
+   une adresse. La base refuse qu'on se supprime ou se suspende soi-même. */
+export async function admSupprimer(ids) {
+  if (!online) { toast(I.cloud, 'Hors ligne : la console demande le réseau'); return []; }
+  const res = [];
+  for (const cible of ids) {
+    try { await rpc('admin_supprimer_compte', { cible }); res.push({ id: cible, ok: true }); }
+    catch (e) { res.push({ id: cible, ok: false, motif: messageErreur(e) }); }
+  }
+  await Promise.allSettled([admComptesPull(), admEtatPull(), admOrgsPull()]);
+  return res;
+}
+
+export async function admSuspendre(cible, jusqua) {
+  const r = await admAgir('admin_suspendre', { cible, jusqua }, jusqua ? 'Compte suspendu' : 'Compte rétabli');
+  if (r) await admComptesPull();
+  return r;
+}
+
+export async function admConfirmer(cible) {
+  const r = await admAgir('admin_confirmer', { cible }, 'Adresse confirmée');
+  if (r) await admComptesPull();
+  return r;
 }
 
 export async function admCharger() {

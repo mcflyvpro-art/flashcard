@@ -16,6 +16,12 @@ describe('ce que dit l’écran de connexion quand Supabase Auth refuse', () => 
       .toMatch(/ne peut pas partir/);
     expect(messageConnexion(err('Email address not authorized'), true).texte).toMatch(/ne peut pas partir/);
   });
+  it('un compte suspendu par l’éditeur (banned_until) : le dire, ne rien renvoyer', () => {
+    const r = messageConnexion(err('User is banned', 'user_banned'), false);
+    expect(r.texte).toMatch(/suspendu/);
+    expect(r.renvoyer).toBe(false);
+    expect(messageConnexion(err('User is banned'), false).texte).toMatch(/suspendu/);
+  });
   it('trop d’essais d’affilée', () => {
     expect(messageConnexion(err('For security purposes, you can only request this after 13 seconds.'), false).texte)
       .toMatch(/patiente/);

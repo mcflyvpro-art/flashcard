@@ -23,6 +23,8 @@ const REGLES = [
     texte: 'Cette adresse e-mail n’est pas valide.' },
   { codes: ['weak_password'], motif: /password should|weak password|at least/i,
     texte: 'Mot de passe trop faible : choisis-en un plus long.' },
+  { codes: ['user_banned'], motif: /banned/i,
+    texte: 'Ce compte est suspendu. Écris à Mirandola si tu penses que c’est une erreur.' },
   { codes: ['invalid_credentials'], motif: /invalid login|credentials|refus/i,
     texte: 'E-mail ou mot de passe incorrect.' },
   { codes: ['signup_disabled', 'email_provider_disabled'], motif: /signups not allowed|disabled/i,

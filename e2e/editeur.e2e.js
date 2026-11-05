@@ -174,6 +174,79 @@ test.describe('sur ordinateur', () => {
     const facture = page.locator('.ed-piece').filter({ has: page.getByText(`F-${an}-0001`, { exact: true }) });
     await expect(facture).toContainText('Annulée par avoir');
   });
+
+  test('tous les comptes : trier, suspendre (la connexion refusée), supprimer un compte puis une sélection', async ({ page, browser }) => {
+    const store = { ...nouveauStore(), parDefaut: 'gratuit' };
+    editeurEtProspect(store);
+    const m = modele(store);
+    const lea = semerCompte(store, 'lea@exemple.fr'), tom = semerCompte(store, 'tom@exemple.fr'),
+      zoe = semerCompte(store, 'zoe@exemple.fr');
+    m.noms[lea] = 'Léa Petit'; m.noms[tom] = 'Tom Roux'; m.noms[zoe] = 'Zoé Blanc';
+    store.tables.decks = [lea, lea, zoe].map((u, i) => ({ id: 'dk' + i, user_id: u, name: 'Livre ' + i, deleted_at: null }));
+    store.tables.abonnements = [{ user_id: zoe, source: 'stripe', statut: 'actif', formule: 'annuel', fin_prevue: false,
+      fin_periode: new Date(Date.now() + 200 * 864e5).toISOString() }];
+    await brancher(page, store);
+    await entrer(page);
+    await page.locator('#rail [data-r="adm:comptes"]').click();
+
+    // trier par livres : Léa (2), puis Zoé (1)
+    await page.locator('#edctri').selectOption('livres');
+    await expect(page.locator('.ed-ligne').first()).toContainText('lea@exemple.fr');
+    await expect(page.locator('.ed-ligne').first()).toContainText('2 livres');
+    await page.locator('#edcfiltre').selectOption('plus');
+    await expect(page.locator('.ed-ligne')).toHaveCount(1);
+    await expect(page.locator('.ed-ligne')).toContainText('zoe@exemple.fr');
+    await page.locator('#edcfiltre').selectOption('tous');
+
+    // suspendre Tom une semaine, le rétablir, puis sans fin : il ne se connecte plus
+    await page.locator('.ed-ligne', { hasText: 'tom@exemple.fr' }).click();
+    await expect(page.locator('.ed-infos')).toContainText('Dernière connexion');
+    await page.locator('[data-adm="csuspendre"][data-id="7"]').click();
+    await expect(page.locator('.ed-message.ko')).toContainText('Suspendu jusqu’au');
+    await expect.poll(() => store.users.find(u => u.id === tom).suspendu).toBeTruthy();
+    await page.locator('[data-adm="cretablir"]').click();
+    await expect(page.locator('[data-adm="csuspendre"]').first()).toBeVisible();
+    expect(store.users.find(u => u.id === tom).suspendu).toBeNull();
+    await page.locator('[data-adm="csuspendre"][data-id="0"]').click();
+    await expect(page.locator('.ed-message.ko')).toContainText('Suspendu sans fin');
+    await expect(page.locator('.ed-ligne', { hasText: 'tom@exemple.fr' })).toContainText('suspendu');
+
+    const autre = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const p2 = await autre.newPage();
+    await brancher(p2, store);
+    await p2.goto('./app');
+    await expect(p2.locator('#boot')).toHaveCount(0, { timeout: 10000 });
+    await p2.getByRole('textbox', { name: 'Adresse e-mail' }).fill('tom@exemple.fr');
+    await p2.getByRole('textbox', { name: 'Mot de passe' }).fill('motdepasse-solide-42');
+    await p2.getByRole('button', { name: 'Se connecter' }).click();
+    await expect(p2.getByText('Ce compte est suspendu', { exact: false })).toBeVisible();
+    await autre.close();
+
+    // supprimer Tom : deux appuis
+    const suppr = page.locator('[data-adm="csupprimer"]');
+    await suppr.click();
+    await expect(suppr).toContainText('Sûr ?');
+    expect(store.users.some(u => u.id === tom)).toBe(true);
+    await suppr.click();
+    await expect(page.locator('.ed-ligne', { hasText: 'tom@exemple.fr' })).toHaveCount(0);
+    expect(store.users.some(u => u.id === tom)).toBe(false);
+
+    // une sélection : Léa part avec ses livres, Zoé reste (son abonnement Stripe court)
+    await page.locator('[data-adm="csel"]').click();
+    await page.locator('.ed-ligne', { hasText: 'lea@exemple.fr' }).click();
+    await page.locator('.ed-ligne', { hasText: 'zoe@exemple.fr' }).click();
+    await expect(page.locator('.ed-lot b')).toHaveText('2 comptes');
+    const lot = page.locator('[data-adm="csuppr-lot"]');
+    await lot.click();
+    await expect(lot).toContainText('Sûr ?');
+    await lot.click();
+    await expect(page.locator('.toast:not(.sort)')).toContainText('Stripe');
+    await expect(page.locator('.ed-ligne', { hasText: 'lea@exemple.fr' })).toHaveCount(0);
+    expect(store.users.some(u => u.id === lea)).toBe(false);
+    expect(store.tables.decks.some(d => d.user_id === lea)).toBe(false);
+    expect(store.users.some(u => u.id === zoe)).toBe(true);
+    await expect(page.locator('.ed-lot b')).toHaveText('1 compte');
+  });
 });
 
 test('au téléphone : la liste, puis la fiche, et retour', async ({ page }) => {

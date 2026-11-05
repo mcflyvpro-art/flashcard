@@ -3,6 +3,7 @@
 // navigateur. Ici, seulement ce qui le branche sur une page Playwright.
 import { nouveauStore as storeNeuf, repondre } from '../src/base-locale/serveur.js';
 import { repondreSecurite } from '../src/base-locale/securite.js';
+import { repondreComptes } from '../src/base-locale/comptes.js';
 
 export { semerLivre, semerPaquetDu } from '../src/base-locale/serveur.js';
 
@@ -41,7 +42,8 @@ export async function brancher(cible, store, { navigateur = false } = {}) {
       try { body = JSON.parse(req.postDataBuffer().toString('utf8')); } catch { body = null; }
     }
     const demande = { method: req.method(), url: new URL(req.url()), headers: req.headers(), body };
-    const [status, json, headers] = repondreSecurite(store, demande) || repondre(store, demande);
+    const [status, json, headers] = repondreSecurite(store, demande) || repondreComptes(store, demande)
+      || repondre(store, demande);
     return route.fulfill({ status, headers: { 'content-type': 'application/json', ...(headers || {}) },
       body: json == null ? '' : JSON.stringify(json) });
   });
