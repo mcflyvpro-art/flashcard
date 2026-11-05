@@ -364,6 +364,19 @@ texte se resserre.
 - [x] T8.2 Les sept pages refaites, chacune avec un haut de page en deux colonnes (`.p-heros.split` : le texte, et ce qu'il montre) et une bande de nuit (`.p-nuit`) : `/flashcards-ia` (un cours dont les mots s'allument et qui devient trois pages ; cinq tuiles dessinées pour les cinq façons de commencer ; les règles en exemples, un mauvais, un bon), `/etablissements` (les deux codes d'un lycée, un vrai QR vers la démo, les visages qui entrent ; le bloc Campus de l'accueil repris, `@campus variante=page`, sans sa marque ni ses boutons), `/professeurs` (l'espace sur ordinateur et téléphone, un devoir à 24/28 ; six tuiles : le suivi, ce qui bloque, le défi, le tableau, l'IA, l'agenda ; les cours particuliers sur la nuit), `/repetition-espacee` (la courbe dans le haut de page, les révisions qui s'espacent, `@paliers`, tirées du même programme ; les deux effets dessinés ; la citation sur la nuit ; une frise de 1885 à FSRS ; six conseils), `/tarifs` (ce qui ne change pas, les deux moteurs sur la nuit), `/anki-quizlet` (trois profils en éventail ; l'import en deux parcours, du texte exporté à la page), `/a-propos` (un médaillon autour du logo, la vie de Pic en frise, la promesse sur la nuit, le panneau de la ville). Rien ne tourne en boucle sauf la lumière, comme avant ; « mouvement réduit » pose tout d'emblée.
 - [x] T8.3 Le poids : chaque page a sa feuille (`src/site/pages/<page>.css`, liée depuis sa tête), `pages.css` ne garde que le commun ; `qrSvg` dessine une bande par suite de modules noirs (même dessin au pixel près, vérifié sur cinq codes, chemin deux fois plus court) ; la plus lourde des pages, `/repetition-espacee`, 39,7 Ko sur 40 (`/etablissements` passait à 40,2 avant le QR allégé).
 
+## Tour 9 : la Mirandola Academy, et deux retouches (2026-11-05)
+
+La demande, captures à l'appui : « corrige les 30 par infini livres, et
+enlève "Nouveaux codes lundi…" ; et il va falloir créer une page Académie
+avec des vidéos tuto de tout dans l'app, pour tous les types de compte et
+d'interface (mobile, PC, référent, prof, élève), accessible depuis le
+site, des vidéos intégrées ; pour l'instant, ne fais pas de vidéo. »
+
+- [x] T9.1 `/flashcards-ia` : l'offre Mirandola+ montre « ∞ livres » face aux « 5 livres » du gratuit ; les 30 cours d'IA par mois passent dans la ligne. `/etablissements` : la ligne « Nouveaux codes lundi, ceux qui sont entrés restent » est partie de la carte des codes.
+- [x] T9.2 `/academie` : `src/site/academie.js` (la liste : 33 tutos, leurs rôles, leurs écrans, leur vidéo à venir), `academie.html`, `src/site/pages/academie.css`, `src/site/academie-page.js` (le choix de l'écran, le lecteur). Un lecteur dans le haut de page, les trois rôles en ancres, chaque tuto en vignette à la couleur de son rôle (son geste dessiné, ses écrans, « Bientôt »), la démo des trois rôles sur la nuit. Une vidéo posée (`video`, `affiche`, `date`, `duree`) fait de la vignette un bouton et ajoute son VideoObject. L'en-tête (« Academy »), le menu du téléphone et le pied y mènent ; l'en-tête ne passe plus jamais sur deux lignes. Image de partage (`node tools/affiches.js pages`, réparé : il lisait le style de la courbe dans `pages.css`, parti dans la feuille de `/repetition-espacee`).
+- [x] T9.3 Vérifs : `test/academie.test.js` (11), `test/seo.test.js` la prend d'office, `e2e/pages.e2e.js` (le menu, le filtre : le référent a 2 tutos au téléphone et 9 en tout). La plus lourde des pages, `/academie`, 39,9 Ko sur 40.
+- [ ] T9.4 Les vidéos : tourner les tutos dans la démo (`tools/academie/`, un scénario par tuto, plus court que les trois formations d'aujourd'hui), les poser sous `public/site/academie/`, remplir la liste. À décider avec l'utilisateur : la voix (clé Gemini), et si les vidéos vivent dans le dépôt (quelques Mo chacune) ou chez un hébergeur.
+
 ## Ce qui reste à décider (l'utilisateur)
 
 - **Les prix** (2026-10-28) : Mirandola+ 6,99 €/mois ou

@@ -846,6 +846,11 @@ button{font:inherit;color:inherit}
   .tete-demo,.tete-code{display:none}
   .tete-liens a{padding:9px 11px}
 }
+/* six liens depuis la Mirandola Academy (2026-11-05) : jamais sur deux
+   lignes ; entre 900 et 1 040 px, « Se connecter » laisse la place (il
+   reste dans le pied de page, et sous 900 px dans le menu) */
+.tete-liens a,.tete-actions .bt{white-space:nowrap}
+@media (max-width:1040px){.tete-connexion{display:none}}
 @media (max-width:900px){
   /* au téléphone, l'inscription reste en vue ; « Se connecter » est dans le menu */
   .tete-liens,.tete-code,.tete-connexion{display:none}

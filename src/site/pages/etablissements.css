@@ -17,8 +17,6 @@
 .cx-copie{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;background:#E4F1E8;color:var(--ok);font-weight:750;font-size:14px;
   animation:apparait .4s var(--rebond) 1.8s both}
 .cx-copie .ic{width:16px;height:16px;stroke-width:2.8}
-.cx-renouv{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13.5px;font-weight:600;color:var(--doux)}
-.cx-renouv .ic{flex:none;width:17px;height:17px;color:var(--az4)}
 .cx-arrivent{position:relative;z-index:2;display:flex;align-items:center;margin-top:-18px;padding:8px 16px 8px 10px;border-radius:99px;background:#FFF;box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
 .cx-arrivent span{display:grid;width:44px;height:44px;margin-left:-8px;border-radius:50%;overflow:hidden;background:var(--j);box-shadow:0 0 0 3px #FFF;animation:arrive .5s var(--rebond) both;animation-delay:calc(1s + var(--i) * .14s)}
 .cx-arrivent span:first-child{margin-left:0}

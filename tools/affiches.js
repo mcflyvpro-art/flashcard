@@ -112,13 +112,14 @@ const OG_PAGES = {
   tarifs: { sujet: 'Tarifs', titre: 'Gratuit pour <em>réviser.</em>', ligne: 'Mirandola+ dès 4,17 € par mois.<br>Campus de 5 à 2 € HT par élève et par an.', pc: 'pc', tel: 'mobile' },
   'anki-quizlet': { sujet: 'Le comparatif', titre: 'Anki, Quizlet <em>ou Mirandola ?</em>', ligne: 'Trois apps de flashcards,<br>et comment passer de l’une à l’autre.', pc: 'pc', tel: 'mobile' },
   'a-propos': { sujet: 'Le nom', titre: 'Pourquoi <em>Mirandola ?</em>', ligne: 'D’après Pic de la Mirandole,<br>l’érudit à la mémoire prodigieuse.', logo: true },
+  academie: { sujet: 'Mirandola Academy', titre: 'Tout Mirandola, en <em>vidéos courtes.</em>', ligne: 'Élève, professeur, référent :<br>un tuto par geste, téléphone et ordinateur.', pc: 'referent', tel: 'eleve-mobile' },
   moteur: { sujet: 'Memory Engine · FSRS-6', titre: 'Le moteur, <em>formule par formule.</em>', ligne: 'Trois variables, vingt et un paramètres,<br>une courbe. Sans rien arrondir.', moteur: true }
 };
 
 async function imagesDesPages() {
   const { courbeOubli } = await import('./site/gabarit.js');
   const { svgFamille } = await import('../src/site/moteur-calc.js');
-  const css = readFileSync('src/site/pages.css', 'utf8').match(/\.co-svg\{[\s\S]*?\.co-rev text\{[^}]*\}/)[0];
+  const css = readFileSync('src/site/pages/repetition-espacee.css', 'utf8').match(/\.co-svg\{[\s\S]*?\.co-rev text\{[^}]*\}/)[0];
   const logo = readFileSync('public/site/logo.svg', 'utf8');
   const uri = f => 'data:image/webp;base64,' + readFileSync(SORTIE + f + '.webp').toString('base64');
   mkdirSync('public/site/og', { recursive: true });

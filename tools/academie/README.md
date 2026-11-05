@@ -14,6 +14,14 @@ Le reste (créer ses livres, journal, Cercle, groupes, défis en direct,
 licence…) n'y est pas exprès : chaque vidéo finit par une carte « À
 découvrir » qui le nomme.
 
+**Leur page sur le site : `/academie`** (2026-11-05). Elle liste un tuto
+par geste, pour chaque rôle et chaque écran (`src/site/academie.js`), en
+« Bientôt » tant que la vidéo manque. Pour en publier une : la poser sous
+`public/site/academie/` (le service worker ne la range pas), avec son
+affiche, puis remplir `video`, `affiche`, `date` et `duree` de son tuto ;
+la page en fait un bouton qui ouvre le lecteur, et Google la lit en
+VideoObject.
+
 ## La voix
 
 `voix.py` choisit le meilleur moteur disponible :

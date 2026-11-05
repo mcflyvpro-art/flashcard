@@ -19,14 +19,13 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-11-04 · Les pages du site au niveau de l'accueil
-          (docs/LANDING.md, tour 8) : une neuvième page, /moteur,
-          FSRS-6 formule par formule (MathML, 21 paramètres, banc
-          d'essai, quatre laboratoires, tout calculé par src/fsrs.js et
-          recalculé par test/moteur.test.js) ; les sept autres refaites,
-          le visuel d'abord (haut de page en deux colonnes, bande de
-          nuit, tuiles dessinées, exemples), une feuille par page.
-          Aucune tâche cochée.
+DERNIER   2026-11-05 · La Mirandola Academy (/academie, docs/LANDING.md
+          tour 9) : 33 tutos vidéo listés par rôle et par écran, en
+          « Bientôt » tant que leur vidéo manque (src/site/academie.js,
+          test/academie.test.js) ; « ∞ livres » pour Mirandola+, la ligne
+          des codes renouvelés retirée. Aucune tâche cochée.
+Avant :   2026-11-04 · Les pages du site au niveau de l'accueil : /moteur
+          (FSRS-6 formule par formule) et les sept autres refaites.
 Avant :   2026-11-02 (nuit) · Le référencement « à fond »
           (docs/SEO.md) : le site passe de une à huit pages, une par
           recherche, tirées d'une seule liste (src/site/pages.js) par un

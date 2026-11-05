@@ -84,6 +84,25 @@ test('les laboratoires du moteur répondent : la courbe, la rétention, une ann�
   expect(erreurs).toEqual([]);
 });
 
+test('la Mirandola Academy : le menu y mène, chaque rôle a ses tutos, l’écran se choisit', async ({ page }) => {
+  await page.goto('./?site');
+  await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
+  await page.locator('#menu-mobile').getByRole('link', { name: 'Mirandola Academy' }).click();
+  await expect(page).toHaveURL(/\/academie$/);
+  const visibles = role => page.locator(`#${role} .ac-grille>li:visible`);
+  await expect(visibles('ref')).toHaveCount(9);
+  await page.getByRole('radio', { name: 'Téléphone' }).click();
+  await expect(visibles('ref')).toHaveCount(2);                             // ses codes et sa licence, comme dans l'app
+  await expect(page.locator('#tuto-installer')).toBeVisible();
+  await page.getByRole('radio', { name: 'Ordinateur' }).click();
+  await expect(page.locator('#tuto-installer')).toBeHidden();
+  await expect(visibles('ref')).toHaveCount(9);
+  await page.getByRole('radio', { name: 'Tous' }).click();
+  await expect(page.locator('#tuto-installer')).toBeVisible();
+  await page.locator('.ac-roles').getByRole('link', { name: /Référent/ }).click();
+  await expect(page).toHaveURL(/#ref$/);
+});
+
 test('« J’ai un code » s’ouvre sur une page du site et mène à l’app', async ({ page }) => {
   await page.goto('./flashcards-ia');
   await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
