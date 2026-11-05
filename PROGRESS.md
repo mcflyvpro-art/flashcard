@@ -29,10 +29,12 @@ DERNIER   2026-11-04 · La sécurité du compte, demandée : « que tous
           de passe avec le code de réauthentification, 2FA) ; les
           gestionnaires de mots de passe (autocomplete, PasswordCredential,
           /.well-known/change-password) ; les modèles d'e-mail portent le
-          code. Base : migration 20261104090000 et son test SQL écrits dans le
-          dépôt (2FA tenue par la RLS, adresse suivie, purge des comptes
-          jamais confirmés) — PAS ENCORE APPLIQUÉE (le serveur Supabase a
-          demandé une confirmation restée sans réponse). Aucune tâche cochée.
+          code. Base : migration 20261105115806 appliquée le 2026-11-05
+          (2FA tenue par la RLS sur 13 tables, adresse suivie, purge des
+          comptes jamais confirmés chaque nuit) ; supabase/tests/
+          securite_compte.sql 17/17 à blanc avant. Reste à l'utilisateur :
+          les réglages d'Authentication (docs/COURRIELS.md). Aucune tâche
+          cochée.
 Avant :   2026-11-04 · Les pages du site au niveau de l'accueil
           (docs/LANDING.md, tour 8) : une neuvième page, /moteur,
           FSRS-6 formule par formule (MathML, 21 paramètres, banc

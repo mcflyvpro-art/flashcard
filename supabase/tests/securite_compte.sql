@@ -79,8 +79,9 @@ begin
          ('00000000-0000-0000-0000-000000000000', google, 'authenticated', 'authenticated', 'zz-' || google || '@exemple.invalid', null, null, now() - interval '30 days'),
          ('00000000-0000-0000-0000-000000000000', venu, 'authenticated', 'authenticated', 'zz-' || venu || '@exemple.invalid', null, now() - interval '9 days', now() - interval '10 days'),
          ('00000000-0000-0000-0000-000000000000', confirme, 'authenticated', 'authenticated', 'zz-' || confirme || '@exemple.invalid', now(), null, now() - interval '30 days');
-  insert into auth.identities (provider_id, user_id, identity_data, provider, email)
-  values (google::text, google, jsonb_build_object('sub', google::text), 'google', 'zz-' || google || '@exemple.invalid');
+  -- auth.identities.email se calcule depuis identity_data
+  insert into auth.identities (provider_id, user_id, identity_data, provider)
+  values (google::text, google, jsonb_build_object('sub', google::text, 'email', 'zz-' || google || '@exemple.invalid'), 'google');
   insert into public.profiles (id, email, name) values (vieux, 'zz-' || vieux || '@exemple.invalid', 'Zz') on conflict (id) do nothing;
   perform public.purger_comptes_non_confirmes();
   insert into public.zz_res (nom, ok, vu) values ('jamais confirmé depuis 8 jours : parti, son profil avec',
