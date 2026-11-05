@@ -76,6 +76,13 @@ const DAILY_PROF = Number(Deno.env.get("AI_DAILY_PROF") ?? 80);
 const DAILY_FILES_PROF = Number(Deno.env.get("AI_DAILY_FILES_PROF") ?? 30);
 const MAX_CHARS = 24000;
 const MAX_CARDS = 120;
+/* Mirandola Infini (2026-11-05) : l'IA sans compter — 150 générations par
+   mois sur le meilleur modèle, puis Claude Haiku 5.5 (vingt fois moins
+   cher) sans limite de mois, sous usage raisonnable (60 appels et 20
+   fichiers par jour) —, des documents plus gros, plus de pages, une
+   conversation plus longue. L'essai, lui, s'arrête à 10. */
+const INFINI = { premium: 150, jour: 60, fichiers: 20, cartes: 300, hist: 40, pdf: 20 * 1024 * 1024, jetons: 32000 };
+const ESSAI = 10;
 /* en octets une fois décodé — l'API accepte 5 Mo par image, 32 Mo par PDF,
    mais on reste bien en dessous : au-delà, c'est la facture qui parle */
 const MAX_IMG = 4 * 1024 * 1024;
@@ -110,10 +117,10 @@ type Essai =
 /* Un appel à l'API Messages, modèle par modèle (MODELES). Ce qui revient
    d'Anthropic en erreur part au journal de la fonction (le type et le
    message de l'API, jamais la demande de l'élève). */
-async function demander(corps: Record<string, unknown>, key: string): Promise<Essai> {
+async function demander(corps: Record<string, unknown>, key: string, modeles = MODELES): Promise<Essai> {
   const debut = Date.now();
   let dernier: Essai = { ok: false, erreur: "upstream", statut: 502 };
-  for (const [i, modele] of MODELES.entries()) {
+  for (const [i, modele] of modeles.entries()) {
     if (i && Date.now() - debut > BUDGET_MS) break;
     if (i) await new Promise((r) => setTimeout(r, 400 * i));
     let res: Response;
@@ -279,6 +286,18 @@ Deno.serve(async (req) => {
   if (op !== "cards" && op !== "ocr" && op !== "pdf" && op !== "prompt") return json({ error: "op" }, 400);
   const isFile = op === "ocr" || op === "pdf";
 
+  /* Ce que ce compte a le droit de faire, en une lecture (ia_droits,
+     migration infini_et_essai) : son offre, son niveau, l'essai, s'il est
+     professeur, le quota de sa licence. Une base sans la fonction laisse
+     passer, comme avant. */
+  const { data: droits, error: sansOffre } = await admin.rpc("ia_droits", { u: uid });
+  const d = (droits ?? {}) as { offre?: string; niveau?: string; essai?: boolean; prof?: boolean; licence?: number | null };
+  const infini = !sansOffre && d.niveau === "infini" && !d.essai;
+  const prof = !!d.prof;
+  const maxCartes = infini ? INFINI.cartes : MAX_CARDS;
+  const maxHist = infini ? INFINI.hist : MAX_HIST;
+  const maxPdf = infini ? INFINI.pdf : MAX_PDF;
+
   /* Le Prompt : un message (de quoi faire au moins une consigne), les pages
      en cours (bornées comme celles qu'il rendra) et les messages d'avant. */
   let message = "", actuelles: { f: string; b: string }[] = [], hist: string[] = [];
@@ -287,14 +306,14 @@ Deno.serve(async (req) => {
     if (message.length < 2) return json({ error: "short" }, 400);
     if (message.length > MAX_CHARS) return json({ error: "long", max: MAX_CHARS }, 413);
     const brutes = Array.isArray(body.cards) ? body.cards : [];
-    if (brutes.length > MAX_CARDS) return json({ error: "long", max: MAX_CARDS }, 413);
+    if (brutes.length > maxCartes) return json({ error: "long", max: maxCartes }, 413);
     actuelles = brutes.map((c) => {
       const x = (c ?? {}) as { f?: unknown; b?: unknown };
       return { f: String(x.f ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_PAGE),
                b: String(x.b ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_PAGE) };
     }).filter((c) => c.f || c.b);
     hist = (Array.isArray(body.historique) ? body.historique : [])
-      .map((h) => String(h ?? "").replace(/\s+/g, " ").trim().slice(0, 600)).filter(Boolean).slice(-MAX_HIST);
+      .map((h) => String(h ?? "").replace(/\s+/g, " ").trim().slice(0, 600)).filter(Boolean).slice(-maxHist);
   }
 
   let text = "";
@@ -310,7 +329,7 @@ Deno.serve(async (req) => {
       if (bytes > MAX_IMG) return json({ error: "big", max: MAX_IMG }, 413);
     } else {
       if (mime !== "application/pdf") return json({ error: "mime" }, 415);
-      if (bytes > MAX_PDF) return json({ error: "big", max: MAX_PDF }, 413);
+      if (bytes > maxPdf) return json({ error: "big", max: maxPdf }, 413);
     }
   } else if (op === "cards") {
     text = String(body.text ?? "").trim();
@@ -324,8 +343,7 @@ Deno.serve(async (req) => {
     .toISOString().slice(0, 10);
   const today = now.toISOString().slice(0, 10);
 
-  const [{ data: month }, { count: mine }, { count: myFiles }, { count: myMonth }, { data: offre, error: sansOffre },
-    { data: roles }, { data: quota }] =
+  const [{ data: month }, { count: mine }, { count: myFiles }, { count: myMonth }] =
     await Promise.all([
       admin.from("ai_usage").select("cents").gte("day", firstOfMonth),
       admin.from("ai_usage").select("id", { count: "exact", head: true })
@@ -336,21 +354,23 @@ Deno.serve(async (req) => {
         : Promise.resolve({ count: 0 }),
       admin.from("ai_usage").select("id", { count: "exact", head: true })
         .eq("user_id", uid).gte("day", firstOfMonth),
-      admin.rpc("offre_de", { u: uid }),
-      admin.from("user_roles").select("role").eq("user_id", uid),
-      admin.rpc("ia_quota", { u: uid }),
     ]);
-  const prof = (roles ?? []).some((r: { role: string }) => ["prof", "ref", "admin"].includes(r.role));
-  if (!sansOffre && offre === "gratuit") return json({ error: "plus" }, 402);
-  // le quota de la licence Campus d'abord ; nul (Mirandola+, ou une base sans la fonction) : celui des secrets
-  const mensuel = typeof quota === "number" ? quota : prof ? MONTHLY_PROF : MONTHLY_PLUS;
-  if (!sansOffre && (myMonth ?? 0) >= mensuel) {
+  if (!sansOffre && d.offre === "gratuit") return json({ error: "plus" }, 402);
+  /* Le quota du mois : celui de la licence Campus d'abord ; puis l'essai
+     (10), Infini (150 sur le meilleur modèle, puis Haiku sans limite :
+     jamais « mquota »), un professeur, un élève. */
+  const mensuel = typeof d.licence === "number" ? d.licence : d.essai ? ESSAI
+    : infini ? INFINI.premium : prof ? MONTHLY_PROF : MONTHLY_PLUS;
+  const auDela = (myMonth ?? 0) >= mensuel;
+  if (!sansOffre && auDela && !infini) {
     return json({ error: "mquota", quota: mensuel, mois: { fait: myMonth ?? 0, quota: mensuel } }, 429);
   }
   const spent = (month ?? []).reduce((a, r) => a + Number(r.cents), 0);
   if (spent >= BUDGET_CENTS) return json({ error: "budget" }, 402);
-  if ((mine ?? 0) >= (prof ? DAILY_PROF : DAILY_CALLS)) return json({ error: "quota" }, 429);
-  if (isFile && (myFiles ?? 0) >= (prof ? DAILY_FILES_PROF : DAILY_FILES)) return json({ error: "fquota" }, 429);
+  const parJour = infini ? INFINI.jour : prof ? DAILY_PROF : DAILY_CALLS;
+  const fichiersJour = infini ? INFINI.fichiers : prof ? DAILY_FILES_PROF : DAILY_FILES;
+  if ((mine ?? 0) >= parJour) return json({ error: "quota" }, 429);
+  if (isFile && (myFiles ?? 0) >= fichiersJour) return json({ error: "fquota" }, 429);
 
   const hint = String(body.hint ?? "").slice(0, 200).trim();
   const pages = String(body.pages ?? "").slice(0, 60).trim();
@@ -368,15 +388,19 @@ Deno.serve(async (req) => {
         type: "text",
         text: (hint ? `Consigne : ${hint}\n` : "")
           + (pages ? `N'utilise que ces pages : ${pages}. Ignore toutes les autres.\n` : "")
-          + "Fabrique les cartes à partir de ce document.",
+          + "Fabrique les cartes à partir de ce document."
+          + (infini ? ` Ce compte peut recevoir jusqu'à ${INFINI.cartes} cartes.` : ""),
       },
     ]
     : op === "prompt"
     ? [{ type: "text", text: messagePrompt(message, actuelles, hist, hint) }]
-    : [{ type: "text", text: (hint ? `Consigne : ${hint}\n\n` : "") + "Texte :\n\n" + text }];
+    : [{ type: "text", text: (hint ? `Consigne : ${hint}\n\n` : "")
+      + (infini ? `Ce compte peut recevoir jusqu'à ${INFINI.cartes} cartes.\n\n` : "") + "Texte :\n\n" + text }];
 
+  // au-delà des 150 du mois, Infini continue sur Haiku seul : le meilleur reste pour le gros de l'usage
+  const modeles = infini && auDela ? MODELES.filter((m) => m.id.startsWith("claude-haiku")) : MODELES;
   const essai = await demander({
-    max_tokens: 16000,
+    max_tokens: infini ? INFINI.jetons : 16000,
     system: op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM,
     thinking: { type: "adaptive" },
     output_config: {
@@ -385,7 +409,7 @@ Deno.serve(async (req) => {
       format: { type: "json_schema", schema: op === "prompt" ? SCHEMA_PROMPT : SCHEMA },
     },
     messages: [{ role: "user", content }],
-  }, key);
+  }, key, modeles);
   // rien n'est compté : le mois reste tel quel
   if (!essai.ok) {
     return json({ error: essai.erreur, mois: { fait: myMonth ?? 0, quota: sansOffre ? null : mensuel } }, essai.statut);
@@ -411,10 +435,10 @@ Deno.serve(async (req) => {
     cards = ((raw as { cards: { f?: unknown; b?: unknown }[] }).cards)
       .map((c) => ({ f: String(c.f ?? "").trim(), b: String(c.b ?? "").trim() }))
       .filter((c) => c.f && c.b)
-      .slice(0, MAX_CARDS);
+      .slice(0, maxCartes);
   }
   // le compte du mois, cet appel compris : l'écran le pose sur ses onglets
-  const mois = { fait: (myMonth ?? 0) + 1, quota: sansOffre ? null : mensuel };
+  const mois = { fait: (myMonth ?? 0) + 1, quota: sansOffre ? null : mensuel, sans_compter: infini };
   const note = op === "prompt" ? String((raw as { note?: unknown } | null)?.note ?? "").trim().slice(0, 300) : "";
   /* Un Prompt peut légitimement tout retirer (« enlève tout ce qui parle
      de… ») : une liste vide n'est une erreur que pour une génération. */
@@ -425,7 +449,7 @@ Deno.serve(async (req) => {
     note,
     mois,
     usage: { in: inTok, out: outTok, cents: +cents.toFixed(4) },
-    left: Math.max(0, DAILY_CALLS - (mine ?? 0) - 1),
-    filesLeft: isFile ? Math.max(0, DAILY_FILES - (myFiles ?? 0) - 1) : undefined,
+    left: Math.max(0, parJour - (mine ?? 0) - 1),
+    filesLeft: isFile ? Math.max(0, fichiersJour - (myFiles ?? 0) - 1) : undefined,
   });
 });

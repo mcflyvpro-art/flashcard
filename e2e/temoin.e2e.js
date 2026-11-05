@@ -32,7 +32,7 @@ test('les conditions d’utilisation s’ouvrent depuis l’écran de connexion'
   await expect(page.locator('.bar h1')).toHaveText('Conditions d’utilisation');
   await expect(page.locator('.legal')).toContainText('Ce que Mirandola est');
   await page.locator('#lgTabs [data-legal="vie"]').click();
-  await expect(page.locator('.legal')).toContainText('Qui traite tes données');
+  await expect(page.locator('.legal')).toContainText('Qui est responsable');
   await expect(page).toHaveURL(/\/mentions\/confidentialite$/);
   await page.getByRole('button', { name: 'Retour' }).click();
   await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible();
@@ -46,7 +46,7 @@ test('/mentions/confidentialite ouvre la confidentialité, dans un navigateur', 
   page.on('pageerror', e => erreurs.push(e.message));
   await page.goto('./mentions/confidentialite');
   await expect(page.locator('.bar h1')).toHaveText('Confidentialité', { timeout: 10000 });
-  await expect(page.locator('.legal')).toContainText('Qui traite tes données');
+  await expect(page.locator('.legal')).toContainText('Qui est responsable');
   expect(erreurs).toEqual([]);
 });
 

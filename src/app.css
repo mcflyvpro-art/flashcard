@@ -260,6 +260,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .head .s span{display:flex;align-items:center;gap:5px}
 .head .s svg{width:14px;height:14px;stroke-width:2.2}
 .head .s b{width:3px;height:3px;border-radius:50%;background:currentColor;opacity:.5}
+.head .s .exa{display:flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:99px;font:inherit;color:inherit;
+  background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px var(--b)}
 .duo{display:flex;gap:10px;margin-bottom:18px}
 .duo button{flex:1;height:50px;border-radius:13px;display:flex;align-items:center;
   justify-content:center;gap:9px;font-weight:650;font-size:15px;letter-spacing:-.2px;
@@ -573,6 +575,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   background:radial-gradient(closest-side,var(--card) 52%,transparent 56%),conic-gradient(var(--az5) calc(var(--p,0)*1%),var(--az2) 0)}
 .cr-reste.vide{color:var(--ko)}
 .cr-reste.vide::before{background:radial-gradient(closest-side,var(--card) 52%,transparent 56%),var(--ko)}
+.cr-reste.infini{padding:0 6px;font-size:13px;color:var(--az5)}.cr-reste.infini::before{content:none}
 /* fermée par la licence : grisé sans « + », la raison au survol (au toucher, un message) */
 .cr-tabs .ferme[data-astuce]:hover::after,.cr-tabs .ferme[data-astuce]:focus-visible::after{white-space:normal;width:max-content;
   max-width:210px;text-align:center;line-height:1.35}

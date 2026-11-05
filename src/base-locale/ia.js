@@ -67,8 +67,9 @@ function retoucher(cartes, msg) {
 export function aiFaux(store, b, user) {
   const ia = monIa(store, user.id);
   if (ia.offre === 'gratuit') return [402, { error: 'plus' }];
-  const mois = { fait: ia.fait, quota: ia.quota };
-  if (ia.fait >= ia.quota) return [429, { error: 'mquota', quota: ia.quota, mois }];
+  // Infini (2026-11-05) : au-delà de ses 150, la vraie passe sur Haiku, jamais « mquota »
+  const mois = { fait: ia.fait, quota: ia.quota, sans_compter: !!ia.sans_compter };
+  if (ia.fait >= ia.quota && !ia.sans_compter) return [429, { error: 'mquota', quota: ia.quota, mois }];
   // une panne jouée par un parcours (store.iaPanne : « credit », « surcharge »…) : rien n'est compté, comme en vrai
   if (store.iaPanne) return [503, { error: store.iaPanne, mois }];
   const op = String(b.op || '');

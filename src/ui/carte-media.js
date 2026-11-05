@@ -12,7 +12,8 @@ import {
 import { fsrsTune } from '../core/carte-media.js';
 import { norm } from './quiz.js';
 import { debutJour, estNeuve } from '../file.js';
-import { moteurLite } from './bridage.js';
+import { moteurLite, aInfini } from './bridage.js';
+import { reglageExamen } from '../examen.js';
 
 /* ---------- rendu du contenu d'une carte ----------
    Sous-ensemble volontairement étroit : ce qu'on écrit vraiment sur une fiche.
@@ -420,7 +421,13 @@ function chargeDes(now) {
   return charge.f;
 }
 
-const fsrsCfg = now => ({ w: fsrsW(), dr: fsrsDR(), maxIvl: fsrsMax(), charge: moteurLite() ? null : chargeDes(now || Date.now()) });
+/* `d`, le livre de la page : sa date d'examen (src/examen.js, Mirandola
+   Infini) relève la rétention et plafonne l'intervalle à la veille. */
+const fsrsCfg = (now, d) => {
+  const t = now || Date.now();
+  const r = reglageExamen(d && d.meta && d.meta.examen, t, { dr: fsrsDR(), maxIvl: fsrsMax() }, aInfini());
+  return { w: fsrsW(), dr: r.dr, maxIvl: r.maxIvl, charge: moteurLite() ? null : chargeDes(t) };
+};
 
 /* Probabilité de se rappeler la fiche à l'instant t : c'est la grandeur
    que FSRS optimise, et celle qui décide de l'échéance. */
@@ -433,7 +440,7 @@ function recall(c, at) {
 /* Les quatre boutons, calculés ensemble : l'aperçu affiché et ce qui sera
    réellement appliqué sortent du même calcul, donc ils ne peuvent pas
    diverger. */
-const etats = (c, now) => fsrsStates(c, now || Date.now(), fsrsCfg(now));
+const etats = (c, now, d) => fsrsStates(c, now || Date.now(), fsrsCfg(now, d));
 
 export const cstate = c => {
   if (c.x) return 'susp';
@@ -447,9 +454,9 @@ export const cstate = c => {
 export const STATE = { new: 'À lire', learn: 'En cours', young: 'Relue',
                 mature: 'Sue', susp: 'De côté' };
 
-export function grade(c, rating) {
+export function grade(c, rating, d) {
   const now = Date.now();
-  const p = etats(c, now)[cl(rating | 0, 0, 3)];
+  const p = etats(c, now, d)[cl(rating | 0, 0, 3)];
   /* l'heure de la première lecture : le quota de pages neuves du jour se
      compte là-dessus (src/file.js, `neuvesPermises`) */
   if (estNeuve(c)) c.fl = now;
@@ -497,8 +504,8 @@ export function memLine(c) {
 
 /* Ce que proposerait chaque bouton, pour l'afficher dessus. Le flou étant
    dérivé de la fiche, l'aperçu dit exactement la vérité. */
-export function preview(c, rating) {
-  const p = etats(c)[cl(rating | 0, 0, 3)];
+export function preview(c, rating, d) {
+  const p = etats(c, 0, d)[cl(rating | 0, 0, 3)];
   return nextIn({ d: p.d });
 }
 

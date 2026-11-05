@@ -7,7 +7,7 @@ import {
 import { render } from './bibliotheque.js';
 import { sansMouvement } from './mouvement.js';
 import { paintMenuCercle } from './cercle-feuilles.js';
-import { paintMenuCode } from './code-entree.js';
+import { paintMenuCode } from './code-porte.js';
 import { paintMedia } from './carte-media.js';
 import { blockedSheet, reportSheet } from './classement.js';
 import { PALETTE, canUndo, deck, esc, sty, subj, undoLabel } from '../core/coeur-sync.js';
@@ -26,6 +26,8 @@ import { paintMenuPseudo } from './pseudo-porte.js';
 import { paintMenuSecurite } from './securite-porte.js';
 import { installSheet } from './onboarding.js';
 import { paintMenuPdf } from './pdf-porte.js';
+import { paintMenuExamen } from './examen-porte.js';
+import { aInfini } from './bridage.js';
 
 /* ---------- menu contextuel ----------
    Sur ordinateur, une feuille n'est pas un tiroir de téléphone posé au
@@ -327,7 +329,8 @@ function menuPainter(m) {
     move: paintMenuMove,
     split: paintMenuSplit,
     rename: paintMenuRename, delacc: paintMenuRename,
-    pdf: paintMenuPdf
+    pdf: paintMenuPdf,
+    examen: paintMenuExamen
   }[m];
 }
 
@@ -345,6 +348,7 @@ function paintMenuDeck(w) {
       <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
       <button class="mi" data-mact="mcq">${svg(I.grid)}QCM</button>
       <button class="mi" data-mact="match">${svg(I.link)}Association</button>
+      ${aInfini() ? `<button class="mi" data-mact="examen">${svg(I.target)}Objectif examen</button>` : ''}
       <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du livre</button>
       ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
       <div class="msep"></div>

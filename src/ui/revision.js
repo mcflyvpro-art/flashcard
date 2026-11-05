@@ -482,11 +482,12 @@ function paintFoot() {
         </div>`;
     return;
   }
+  const dc = study.flip && !study.simple ? findCard(c.id)[1] : null;
   f.innerHTML = study.flip && !study.simple
     ? `<div class="grades">
         ${[[0, 'Encore', 'g0'], [1, 'Difficile', 'g1'], [2, 'Correct', 'g2'], [3, 'Facile', 'g3']]
           .map(([r, lab, cl]) => `<button class="gr ${cl}" data-g="${r}">
-            <span>${lab}</span><i>${esc(preview(c, r))}</i></button>`).join('')}
+            <span>${lab}</span><i>${esc(preview(c, r, dc))}</i></button>`).join('')}
       </div>`
     : `<div class="hint">${SWIPE}<span class="keys">
         <kbd>←</kbd>${svg(I.x)}<kbd>→</kbd>${svg(I.check)}<kbd>espace</kbd>${svg(I.swap)}</span></div>`;
@@ -637,9 +638,9 @@ export function fling(dir, v, fx, fy) {
 /* Mode simple : on ne planifie pas et on ne touche ni à n, ni à i, ni à d.
    La carte garde son état exact, seul le compteur de ratés avance —
    il sert au tri « ratées » et vaut dans les deux modes. */
-function applyGrade(c, ok, r) {
+function applyGrade(c, ok, r, d) {
   if (study.simple) { if (!ok) c.l = (c.l || 0) + 1; }
-  else grade(c, r);
+  else grade(c, r, d);
 }
 
 /* Une révision est un fait, écrit une fois avec son contexte du moment
@@ -683,7 +684,7 @@ function scoreCard(id, ok, rating) {
   const ms = Date.now() - (study.tq || Date.now());
   study.tq = Date.now();
   const ecart = c.lr ? Math.floor(Math.max(0, Date.now() - c.lr) / DAY) : null;
-  applyGrade(c, ok, r);
+  applyGrade(c, ok, r, d);
   if (d) { dirty[d.id] = 1; save(); scheduleFlush(); }
   const row = scoreRow(id, d, r, ok, ms, rv, ecart);
   /* Sans paquet identifié, la ligne serait refusée par la base (deck_id

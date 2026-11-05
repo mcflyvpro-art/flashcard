@@ -74,7 +74,8 @@ function ongletHtml(m, mode) {
   const e = etatOnglet(m.id), f = e && e.cle === 'ferme';
   const attrs = payant(m.id) ? `aria-disabled="true" data-astuce="${ASTUCE_PAYANT}" data-offre="plus"`
     : f ? `aria-disabled="true" data-astuce="${esc(e.texte)}"` : `title="${m.aide}"`;
-  const pin = e && e.reste != null ? `<i class="cr-reste${e.reste ? '' : ' vide'}" style="--p:${e.pc}" title="${esc(e.titre)}">${e.reste}</i>` : '';
+  const pin = e && e.cle === 'infini' ? `<i class="cr-reste infini" title="${esc(e.titre)}">∞</i>`
+    : e && e.reste != null ? `<i class="cr-reste${e.reste ? '' : ' vide'}" style="--p:${e.pc}" title="${esc(e.titre)}">${e.reste}</i>` : '';
   return `<button role="tab" class="${m.id === mode ? 'on' : ''}${payant(m.id) ? ' payant' : ''}${f ? ' payant ferme' : ''}"
       data-cmode="${m.id}" aria-selected="${m.id === mode}" ${attrs}>${svg(I[m.icon])}<span>${m.nom}</span>${pin}</button>`;
 }

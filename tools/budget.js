@@ -134,12 +134,18 @@
 // consoles passe de 30 à 33 Ko. Elles ne se chargent que chez un référent
 // ou l'éditeur. Les mêmes fonctions rejouées en mémoire
 // (src/base-locale/comptes.js) ne vont qu'aux parcours, jamais à la démo.
+//
+// 2026-11-05 : « J’ai un code » (ui/code-entree.js et ses règles, 4,4 Ko) sort du
+// démarrage — on ne s'en sert qu'une fois, pour entrer dans une école —, et
+// l'objectif examen de Mirandola Infini (ui/examen.js, 1,3 Ko) arrive à la
+// demande : le plafond « à la demande »
+// passe de 68 à 76 Ko (JS) pour les recevoir ; le démarrage retombe à 124 Ko.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { SOUS_PAGES } from '../src/site/pages.js';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 68 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
+const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 76 * 1024, cssDemande: 27 * 1024, jsDemo: 32 * 1024, cssDemo: 3 * 1024,
   jsGestion: 33 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
   jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, site: 51 * 1024, pages: 41 * 1024, moteur: 56 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',

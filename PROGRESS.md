@@ -19,7 +19,13 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-11-05 · Les prix, demandés « psychologiques, un peu à la
+DERNIER   2026-11-05 · Mirandola Infini, ses premiers avantages : l'IA
+          sans compter (150 sur le meilleur modèle puis Haiku, gros
+          documents, fonction ai — pas encore déployée) et l'objectif
+          examen (src/examen.js : 95 % visés à 30 jours, rien après le
+          jour J ; test/examen.test.js 9/9, e2e/examen.e2e.js) ; « J'ai un
+          code » à la demande, le démarrage retombe à 124 Ko.
+          Avant : les prix, demandés « psychologiques, un peu à la
           baisse, rentables avec l'IA » : Mirandola+ 5,99 € / 44,99 €
           (3,75 €/mois), Mirandola Infini 9,99 € / 79,99 € (en base,
           migration 20261105174551 : niveau, essai, quota d'IA ;

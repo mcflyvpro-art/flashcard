@@ -16,7 +16,7 @@ import {
 } from '../core/eleve-classes.js';
 import { importPayload, toast } from './import-cartes.js';
 import { closeMenu } from './menus-a.js';
-import { ouvrirCode } from './code-entree.js';
+import { ouvrirCode } from './code-porte.js';
 import { garder, lire as lireGarde, oublier } from '../lien-garde.js';
 import { offrePull } from '../core/abonnement.js';
 

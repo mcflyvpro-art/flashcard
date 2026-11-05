@@ -175,8 +175,8 @@ async function entrer() {
   peindre();
 }
 
+// « ouvrir » (les Réglages, « Ma classe ») : la porte, ui/code-porte.js, qui charge ce fichier
 const ACTIONS = {
-  ouvrir: () => ouvrirCode(),
   lire,
   entrer,
   retour: () => { Object.assign(E(), { fiche: null, reponse: null }); peindre(); },

@@ -33,6 +33,8 @@ export const moteurLite = () => MOTEUR[offreActive()] === 'lite';
 
 // Mirandola+ se voit (app.css, html.offre-plus) : un abonnement, offert ou payé — pas Campus, qui ne s'achète pas
 export const aFolioPlus = () => !demoEtab && !!offre && offre.offre === 'plus';
+// Mirandola Infini (2026-11-05) : l'objectif examen, l'examen blanc — essai compris
+export const aInfini = () => !demoEtab && !!offre && offre.niveau === 'infini';
 
 const mesLivres = () => ((db && db.decks) || []).filter(d => !d.deleted_at && !deDevoir(d.cards || [])).length;
 export const plein = () => offreActive() === 'gratuit' && mesLivres() >= LIVRES_GRATUITS;
