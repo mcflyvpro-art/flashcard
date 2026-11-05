@@ -151,6 +151,8 @@ function settingsDonneesHtml() {
       <div class="slist">
         ${canUndo() ? `<button class="sr flat" data-act="undo2">${svg(I.redo)}
           <span class="n">Annuler ${esc(undoLabel().toLowerCase())}</span></button>` : ''}
+        <button class="sr flat" data-act="backup2">${svg(I.share)}<span class="n">Sauvegarde</span>
+          <span class="c">exporter, restaurer</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="trash">${svg(I.trash)}<span class="n">Corbeille</span>
           <span class="c">${trash.n || ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="tuto">${svg(I.play)}<span class="n">Revoir le tuto</span>${svg(I.arrow)}</button>
@@ -161,7 +163,7 @@ function settingsDonneesHtml() {
           <span class="n">Comptes bloqués</span>
           <span class="c">${blocks && blocks.length ? blocks.length : ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-legal="cgu">${svg(I.file)}
-          <span class="n">Conditions et confidentialité</span>${svg(I.arrow)}</button>
+          <span class="n">Conditions, vente et confidentialité</span>${svg(I.arrow)}</button>
       </div>`;
 }
 

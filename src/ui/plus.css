@@ -122,3 +122,7 @@
 @media (prefers-reduced-motion:reduce){
   .fp-attente .fp-merci-ic svg,.fp-merci.neuf{animation:none}
 }
+/* l'accord avant de payer (2026-11-05) */
+.fp-accord{display:flex;align-items:flex-start;gap:10px;margin:0;font-size:13px;font-weight:550;line-height:1.45;color:var(--ink2);cursor:pointer}
+.fp-accord input{flex:none;width:18px;height:18px;margin:1px 0 0;accent-color:var(--ink)}
+.fp-accord .lnk{padding:0;font:inherit;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px}

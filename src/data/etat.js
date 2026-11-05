@@ -310,7 +310,7 @@ export let compte = null;                  // { gere, nom, identifiant } | null
    l'étape (merci, annule, retour : l'adresse de retour de Stripe), la
    formule choisie, ce qui part (payer, gerer), l'erreur à dire. */
 export let offre = null;
-export const plusNeuf = () => ({ etape: null, formule: 'annuel', envoi: null, err: '', attente: 0, raison: null, ia: null });
+export const plusNeuf = () => ({ etape: null, formule: 'annuel', envoi: null, err: '', attente: 0, raison: null, ia: null, accord: false });
 export let plus = plusNeuf();
 /* L'IA du mois (mon_ia, src/ia-mois.js) : { fait, quota }, null tant que la
    base n'a rien dit ; chaque appel à la fonction ai la remet à jour. */

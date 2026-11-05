@@ -85,6 +85,8 @@ function ecrire(store, ligne) {
 
 function payer(store, b, uid) {
   if (!['annuel', 'mensuel'].includes(b.formule)) return [400, { error: 'formule' }];
+  // comme la vraie fonction : pas de paiement sans l'accord daté de l'app (2026-11-05)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(b.cgv || ''))) return [400, { error: 'accord' }];
   const offre = offreDe(store, uid);
   if (offre === 'plus') return [409, { error: 'deja' }];
   if (offre === 'campus') return [409, { error: 'campus' }];

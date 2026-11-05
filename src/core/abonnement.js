@@ -9,7 +9,7 @@
    réponse de mon_offre est gardée par compte (folio.offre.<uid>) pour
    s'afficher hors ligne ; jamais en démo, qui ne touche pas au stockage. */
 import { auth, demoEtab, ia, offre, online, plus, setIa, setOffre } from '../data/etat.js';
-import { REVENUECAT, lireOffre } from '../abonnement.js';
+import { CGV_VERSION, REVENUECAT, lireOffre } from '../abonnement.js';
 import { api, apiPage } from './coeur-sync.js';
 
 const cle = () => 'folio.offre.' + (auth && auth.uid);
@@ -88,11 +88,13 @@ function codeDe(e) {
 /* `action` : « payer » (avec la formule) ou « gerer ». Rend l'adresse de la
    page Stripe ; sinon lève une Error dont le message est un code de
    src/abonnement.js (erreurDe). */
-export async function versStripe(action, formule) {
+export async function versStripe(action, formule, accord) {
   if (demoEtab) throw new Error('demo');
   if (!online) throw new Error('hors');
   let r;
-  try { r = await api('/functions/v1/paiement', 'POST', { action, formule }); }
+  // l'accord (conditions de vente et démarrage immédiat) ne voyage qu'avec un paiement
+  const corps = action === 'payer' ? { action, formule, cgv: accord ? CGV_VERSION : null } : { action, formule };
+  try { r = await api('/functions/v1/paiement', 'POST', corps); }
   catch (e) { throw new Error(codeDe(e), { cause: e }); }
   if (!r || typeof r.url !== 'string' || !/^https:\/\//.test(r.url) && !r.url.startsWith('/app?')) throw new Error('stripe');
   return r.url;

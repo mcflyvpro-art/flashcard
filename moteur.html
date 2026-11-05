@@ -210,7 +210,7 @@
 
     <section class="m-sec enveloppe" id="parametres" aria-labelledby="parametres-t">
       <h2 id="parametres-t" class="m-h2"><span>10</span>Les 21 paramètres</h2>
-      <p class="m-intro">Ceux du crate <code>fsrs</code> 6.6.2, ceux d’Anki. Le Memory Engine Lite (Mirandola gratuit) les garde ; le Memory Engine Ultra (Mirandola+, Campus) les réapprend sur ton historique.</p>
+      <p class="m-intro">Ceux du crate <code>fsrs</code> 6.6.2, les mêmes que les paramètres par défaut d’Anki. Le Memory Engine Lite (Mirandola gratuit) les garde ; le Memory Engine Ultra (Mirandola+, Campus) les réapprend sur ton historique.</p>
       <div class="m-table-defile">
         <table class="m-table m-params">
           <caption class="cache">Les 21 paramètres de FSRS-6 et leur valeur par défaut</caption>
@@ -258,7 +258,7 @@
 
     <section class="m-sec enveloppe" id="banc" aria-labelledby="banc-t">
       <h2 id="banc-t" class="m-h2"><span>13</span>Le banc d’essai</h2>
-      <p class="m-intro">open-spaced-repetition/srs-benchmark : 9&nbsp;999 collections d’Anki, 349&nbsp;923&nbsp;850 révisions, chaque algorithme prédit chaque rappel avant de le voir. Plus c’est bas, mieux il connaît ta mémoire.</p>
+      <p class="m-intro">open-spaced-repetition/srs-benchmark : 9&nbsp;999 collections d’Anki, 349&nbsp;923&nbsp;850 révisions, chaque algorithme prédit chaque rappel avant de le voir. Plus c’est bas, mieux il connaît ta mémoire. Ci-dessous, les algorithmes de la famille de Mirandola et deux références ; le banc en classe d’autres devant FSRS-6, dont des réseaux de neurones à des milliers ou des millions de paramètres et FSRS-7, encore en développement.</p>
       <div class="m-banc-choix" role="radiogroup" aria-label="Mesure">
         <button type="button" role="radio" aria-checked="true" data-mesure="rmse">RMSE (bins)</button>
         <button type="button" role="radio" aria-checked="false" data-mesure="logloss">Log loss</button>
@@ -275,7 +275,7 @@
       <div class="questions">
         <details class="rv"><summary>Pourquoi viser 90&nbsp;% et pas 100&nbsp;%&#8239;?</summary><p>Parce que le coût explose : à 97&nbsp;%, l’intervalle tombe à 0,22 fois la stabilité, chaque page revient plus de quatre fois plus tôt qu’à 90&nbsp;%. 90&nbsp;% est le réglage par défaut d’Anki et de FSRS, le meilleur rapport entre ce qu’on retient et le temps passé.</p></details>
         <details class="rv"><summary>Mon historique sert-il à entraîner un modèle commun&#8239;?</summary><p>Non. L’optimiseur tourne sur ton appareil et n’apprend que ta mémoire. Sans assez d’historique, ou en Mirandola gratuit, ce sont les paramètres par défaut, ceux d’Anki.</p></details>
-        <details class="rv"><summary>Mirandola fait-il exactement comme Anki&#8239;?</summary><p>Le même moteur, FSRS-6 du crate fsrs 6.6.2 qu’Anki épingle, les mêmes paramètres par défaut, les mêmes paliers, la même journée qui change à 4&nbsp;h, le même flou et le même équilibreur. Ce qui change : aucun réglage à faire.</p></details>
+        <details class="rv"><summary>Mirandola fait-il exactement comme Anki&#8239;?</summary><p>Le même algorithme, FSRS-6 tel que le publie le crate fsrs 6.6.2 (la version qu’Anki épingle) : ses formules portées en JavaScript et vérifiées contre py-fsrs, son optimiseur compilé tel quel, les mêmes paramètres par défaut, les mêmes paliers, la même journée qui change à 4&nbsp;h, le même flou et le même équilibreur. Ce qui change : aucun réglage à faire.</p></details>
       </div>
     </section>
 
@@ -284,7 +284,7 @@
       <ul class="m-sources">
         <li>Junyao Ye, Jingyong Su, Yilong Cao, «&nbsp;A Stochastic Shortest Path Algorithm for Optimizing Spaced Repetition Scheduling&nbsp;», KDD 2022.</li>
         <li>Jingyong Su, Junyao Ye, Liqiang Nie, Yilong Cao, Yongyong Chen, «&nbsp;Optimizing Spaced Repetition Schedule by Capturing the Dynamics of Memory&nbsp;», IEEE TKDE, 2023.</li>
-        <li>open-spaced-repetition : le crate <code>fsrs</code> 6.6.2, <code>py-fsrs</code>, et le banc d’essai <code>srs-benchmark</code>.</li>
+        <li>open-spaced-repetition : le crate <code>fsrs</code> 6.6.2 (licence BSD-3), <code>py-fsrs</code> (licence MIT), et le banc d’essai <code>srs-benchmark</code>. Leurs auteurs ne sont pas liés à Mirandola. <a class="p-lien" href="/mentions/logiciels">Les licences</a>.</li>
         <li>Anki : l’équilibreur de charge, <code>rslib/src/scheduler/states/load_balancer.rs</code>.</li>
       </ul>
       <p class="m-p m-centre">Plus simple&#8239;? <a class="p-lien" href="/repetition-espacee">La répétition espacée, expliquée sans formule</a>.</p>

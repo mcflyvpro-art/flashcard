@@ -22,6 +22,13 @@ export const REVENUECAT = { ios: '', android: '' };
 /* En centimes, TVA comprise (2026-10-28). Le prix d'un élève qui révise
    son bac ou son concours : moins qu'une heure de cours particulier pour
    l'année, et le mensuel assez cher pour que l'annuel soit l'évidence. */
+/* La version des conditions de vente qu'on accepte en payant (2026-11-05) :
+   envoyée avec la commande, gardée dans les métadonnées Stripe de
+   l'abonnement — la preuve de l'accord et de la demande de démarrage
+   immédiat (article L221-25 du code de la consommation). Elle change avec
+   le texte « cgv » de ui/legal-textes.js. */
+export const CGV_VERSION = '2026-11-05';
+
 export const FORMULES = {
   annuel: { prix: 4999, par: 'an', mois: 417, sans: 8388, remise: 40 },
   mensuel: { prix: 699, par: 'mois' }

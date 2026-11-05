@@ -36,8 +36,8 @@ function cgv(l) {
       + '(livres de pages à apprendre, révision espacée, devoirs, suivi de classe, défis), pour la durée de la licence.')}
     ${art('2. Commande', 'La licence est commandée par devis accepté ou bon de commande. Le nombre de places, la période et le prix '
       + 'figurent sur la facture. Pour un acheteur public, la commande vaut marché public de faible montant.')}
-    ${art('3. Places', `Une place est prise par chaque élève et chaque professeur qui a un compte dans l’établissement ; le référent `
-      + `n’en prend pas. Licence actuelle : ${l.places ?? '⟦nombre de places⟧'} places${l.licence_fin ? `, jusqu’au ${dateFr(l.licence_fin)}` : ''}. `
+    ${art('3. Places', `Une place est prise par chaque élève, chaque professeur et chaque référent qui a un compte dans `
+      + `l’établissement. Licence actuelle : ${l.places ?? '⟦nombre de places⟧'} places${l.licence_fin ? `, jusqu’au ${dateFr(l.licence_fin)}` : ''}. `
       + 'Une place se libère quand le référent retire le compte de l’établissement. Quand toutes les places sont prises, les codes '
       + 'd’accès ne font plus entrer personne ; des places supplémentaires se commandent à tout moment.')}
     ${art('4. Prix', `${prix}. Le régime de TVA applicable est indiqué sur chaque facture.`)}
@@ -52,6 +52,10 @@ function cgv(l) {
       + 'Mirandola agit comme sous-traitant, dans les conditions du contrat de sous-traitance joint (art. 28 du RGPD).')}
     ${art('8. Service', 'Mirandola est hébergé et entretenu par l’éditeur, qui s’engage à mettre en œuvre les moyens raisonnables pour en '
       + 'assurer la disponibilité et la sécurité (obligation de moyens). Les interruptions pour maintenance sont aussi brèves que possible.')}
+    ${art('8 bis. Intelligence artificielle', 'La création de pages par l’IA n’est ouverte qu’aux comptes et dans les limites mensuelles '
+      + 'que fixe la licence ; l’établissement peut demander qu’elle soit fermée. Le texte, la photo ou le document envoyés sont traités '
+      + 'par Anthropic le temps de la génération et ne servent pas à entraîner de modèle ; les pages produites peuvent contenir des '
+      + 'erreurs et se relisent avant d’être données à apprendre.')}
     ${art('9. Sécurité des accès', 'Les codes élèves et professeurs se renouvellent seuls, chaque semaine par défaut ; le référent peut '
       + 'les changer à tout moment. Chaque geste du référent est inscrit à l’historique de sa console.')}
     ${art('10. Droit applicable', 'Le contrat est soumis au droit français. Pour un acheteur public, les litiges relèvent du tribunal '
@@ -62,7 +66,8 @@ function cgv(l) {
 const SOUS_TRAITANTS = [
   ['Supabase Inc.', 'Base de données, authentification, stockage des fichiers', 'Union européenne (Irlande, région eu-west-1)'],
   ['Vercel Inc.', 'Diffusion de l’application (fichiers du site, journaux techniques)', 'Réseau mondial ; États-Unis — clauses contractuelles types'],
-  ['Anthropic PBC', 'Génération de pages par l’IA, seulement quand un utilisateur s’en sert', 'États-Unis — clauses contractuelles types']
+  ['Anthropic PBC', 'Génération de pages par l’IA, seulement quand un utilisateur s’en sert et que la licence l’ouvre', 'États-Unis — clauses contractuelles types'],
+  ['Brevo (Sendinblue SAS)', 'Envoi des e-mails du service : codes de connexion, alertes de sécurité', 'France, Union européenne']
 ];
 
 function dpa(l) {
@@ -72,8 +77,9 @@ function dpa(l) {
     ${art('2. Nature et finalités', 'Créer et gérer les comptes ; permettre la révision, les devoirs, le suivi pédagogique et les défis ; '
       + 'assurer la sécurité du service. Aucune publicité, aucune revente, aucun profilage commercial.')}
     ${art('3. Données et personnes concernées', 'Élèves, dont des mineurs, professeurs et référent. Identité scolaire (prénom, nom, '
-      + 'classe), identifiant de connexion (adresse e-mail ou identifiant de carte élève), contenus créés, réponses et dates de '
-      + 'révision, devoirs. Ni donnée sensible, ni photographie de personne, ni géolocalisation.')}
+      + 'classe), adresse e-mail de connexion, pseudo et visage dessiné (des traits choisis dans des listes, jamais une photo), '
+      + 'contenus créés, réponses et dates de révision, devoirs, participation aux défis. Aucune donnée sensible n’est demandée, '
+      + 'aucune géolocalisation, aucune publicité ni aucun traceur.')}
     ${art('4. Obligations de Mirandola', 'Mirandola ne traite les données que sur instruction documentée de l’établissement ; garantit la '
       + 'confidentialité de ses personnels autorisés ; met en œuvre les mesures de sécurité de l’article 32 (chiffrement en transit, '
       + 'cloisonnement des données par compte et par établissement en base, droits par rôle, historique des actes du référent, '
@@ -99,9 +105,9 @@ function registre(l) {
     ['Finalités', 'Révision, devoirs, suivi pédagogique, défis en classe'],
     ['Base légale', 'Mission d’intérêt public (art. 6.1.e du RGPD) pour un établissement public ; intérêt légitime ou contrat sinon'],
     ['Personnes', 'Élèves (dont mineurs), professeurs, référent'],
-    ['Données', 'Prénom, nom, classe, identifiant de connexion, contenus, réponses et dates de révision, devoirs'],
+    ['Données', 'Prénom, nom, classe, adresse e-mail, pseudo, contenus, réponses et dates de révision, devoirs'],
     ['Destinataires', 'Les professeurs de la classe, le référent de l’établissement, Mirandola et ses sous-traitants (contrat de sous-traitance)'],
-    ['Transferts', 'Base de données dans l’Union européenne ; diffusion et IA : États-Unis, clauses contractuelles types'],
+    ['Transferts', 'Base de données et e-mails dans l’Union européenne ; diffusion et IA : États-Unis, clauses contractuelles types'],
     ['Conservation', 'Tant que le compte est dans l’établissement ; un livre supprimé est effacé au bout de 30 jours, une partie '
       + 'en direct le lendemain ; les factures dix ans'],
     ['Sécurité', 'Chiffrement en transit, cloisonnement par compte et par établissement, droits par rôle, historique du référent, '

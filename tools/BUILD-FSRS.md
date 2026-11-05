@@ -61,3 +61,21 @@ Le binaire wasm et une compilation native du même crate rendent des
 paramètres identiques au millionième près sur les mêmes données. Et sur un
 historique fabriqué avec des paramètres connus, l'optimiseur les retrouve.
 La suite `opt.mjs` rejoue ces deux contrôles.
+
+## Les licences de ce qui est compilé dedans
+
+`fsrs.wasm` embarque `fsrs` (BSD-3) et ses dépendances Rust (MIT ou
+Apache-2.0, et `priority-queue` sous MPL-2.0 ou LGPL-3.0). Leurs notices
+sont dans `public/licences.txt` (servi à `mirandola.fr/licences.txt`, lié
+depuis le texte « Logiciels libres » de l'app, `/mentions/logiciels`). À
+chaque nouveau binaire, relire la liste depuis le dossier de construction :
+
+```sh
+cargo tree --target wasm32-unknown-unknown -e normal --prefix none --format "{p}|{l}" | sort -u
+```
+
+puis mettre à jour la section 5 de `public/licences.txt` (les macros de
+compilation — `serde_derive`, `snafu-derive`, `strum_macros`, `syn`,
+`quote`, `proc-macro2`, `heck`, `unicode-ident` — ne sont pas dans le
+binaire). `test/licences.test.js` vérifie que chaque bibliothèque connue y
+est.

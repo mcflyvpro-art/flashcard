@@ -26,7 +26,7 @@ const PUBLICS = { demande: 'demande-demo', decouvrir: 'essayer' };
    et son adresse publique — celle du pied de la page d'accueil et de l'écran
    de consentement de Google. « vie » se lit /mentions/confidentialite : sans
    cette table, l'adresse ouvrait un texte qui n'existe pas. */
-export const TEXTES = { cgu: 'cgu', vie: 'confidentialite', mentions: 'mentions' };
+export const TEXTES = { cgu: 'cgu', cgv: 'cgv', vie: 'confidentialite', mentions: 'mentions', logiciels: 'logiciels' };
 const TEXTE_DE = Object.fromEntries(Object.entries(TEXTES).map(([k, v]) => [v, k]));
 
 /* Dans un espace : l'écran, son motif (`:id` = un identifiant), puis, au

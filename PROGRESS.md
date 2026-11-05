@@ -19,7 +19,21 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-11-06 · La Mirandola Academy (/academie, docs/LANDING.md
+DERNIER   2026-11-06 · Le cadre légal, demandé : « le légal, en entier,
+          parfait ». Le site ne dit plus que FSRS est « l'algorithme
+          d'Anki », ni « le meilleur moteur au monde » (le banc public en
+          classe d'autres devant FSRS-6), ni de prix barré ; le comparatif
+          vérifié et daté. Cinq textes dans l'app : conditions
+          d'utilisation (DSA, IA, mineurs), conditions de vente de
+          Mirandola+ (nouvelles : prix, renouvellement, résiliation,
+          rétractation et son modèle, garantie, médiation), confidentialité
+          (chaque donnée, chaque prestataire), mentions LCEN, logiciels
+          libres (fsrs, py-fsrs, Lucide, Feather, et les 28 bibliothèques
+          Rust de fsrs.wasm dans public/licences.txt). Payer demande
+          l'accord coché (L221-25), gardé chez Stripe. Sauvegarde revenue
+          dans les Réglages. Reste : l'identité de l'entreprise (crochets),
+          le rappel de renouvellement annuel. Aucune tâche cochée.
+Avant :   2026-11-06 · La Mirandola Academy (/academie, docs/LANDING.md
           tour 9) : 33 tutos vidéo listés par rôle et par écran, en
           « Bientôt » tant que leur vidéo manque (src/site/academie.js,
           test/academie.test.js) ; « ∞ livres » pour Mirandola+, la ligne

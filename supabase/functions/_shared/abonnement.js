@@ -118,7 +118,7 @@ export const EVENEMENTS = [
    (à activer dans son tableau de bord ; sinon, le prix affiché est le prix
    payé, TVA française comprise). `cgv` : faire cocher les conditions de
    vente (STRIPE_CGV=1, une fois leur adresse donnée à Stripe). */
-export function demandePaiement({ formule, prix, userId, email, client, site, taxe, cgv }) {
+export function demandePaiement({ formule, prix, userId, email, client, site, taxe, cgv, accord }) {
   const d = {
     mode: 'subscription',
     'line_items[0][price]': prix,
@@ -127,12 +127,20 @@ export function demandePaiement({ formule, prix, userId, email, client, site, ta
     'metadata[user_id]': userId,
     'metadata[formule]': formule,
     'subscription_data[metadata][user_id]': userId,
+    /* la preuve de l'accord donné dans l'app (2026-11-05) : la version des
+       conditions de vente et la demande de démarrage immédiat (L221-25) */
+    'metadata[cgv]': accord || '',
+    'subscription_data[metadata][cgv]': accord || '',
+    'subscription_data[metadata][demarrage_immediat]': accord ? 'oui' : '',
     success_url: `${site}/app?plus=merci&session={CHECKOUT_SESSION_ID}`,
     cancel_url: `${site}/app?plus=annule`,
     allow_promotion_codes: 'true',
     locale: 'fr',
     billing_address_collection: 'auto',
-    'custom_text[submit][message]': 'Sans engagement : résiliable à tout moment, depuis Mirandola.'
+    // ce que l'on s'engage à payer, dit juste au-dessus du bouton de Stripe
+    'custom_text[submit][message]': formule === 'annuel'
+      ? 'Payé pour un an, renouvelé chaque année sauf résiliation, depuis Mirandola, avant l’échéance.'
+      : 'Sans engagement : résiliable à tout moment, depuis Mirandola.'
   };
   /* l'adresse technique d'un élève à carte (…@eleves.folio.invalid) n'en
      est pas une : Stripe demandera la vraie sur sa page */
