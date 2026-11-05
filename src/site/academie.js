@@ -14,13 +14,15 @@
 
    Pur et sans DOM ; test/academie.test.js le vérifie. */
 
+/* `ligne` ne s'affiche pas (demandé le 2026-11-05 : « enlève les micro descriptions ») : elle
+   reste la description de la vidéo que lit Google (VideoObject). */
 /** @typedef {{ id: string, role: 'eleve'|'prof'|'ref', ecrans: ('tel'|'pc')[], titre: string, ligne: string,
  *   icone: string, video?: string, affiche?: string, date?: string, duree?: number }} Tuto */
 
 export const ROLES = [
-  { cle: 'eleve', nom: 'Élève', visage: 'visage-eleve', teinte: '#B0475F', ligne: 'Réviser, faire ses devoirs, défier ses amis.' },
-  { cle: 'prof', nom: 'Professeur', visage: 'visage-prof', teinte: '#2F5D8A', ligne: 'Donner des devoirs, suivre chacun, animer la classe.' },
-  { cle: 'ref', nom: 'Référent', visage: 'visage-ref', teinte: '#5E4E8A', ligne: 'Ouvrir Mirandola à tout l’établissement, garder la main.' }
+  { cle: 'eleve', nom: 'Élève', visage: 'visage-eleve', teinte: '#B0475F' },
+  { cle: 'prof', nom: 'Professeur', visage: 'visage-prof', teinte: '#2F5D8A' },
+  { cle: 'ref', nom: 'Référent', visage: 'visage-ref', teinte: '#5E4E8A' }
 ];
 
 export const ECRANS = { tel: 'Téléphone', pc: 'Ordinateur' };
@@ -90,7 +92,7 @@ function carte(t, n) {
     + `<span class="ac-ecrans">${t.ecrans.map(e => ic(e === 'tel' ? 'i-tel' : 'i-pc')).join('')}</span>`
     + (prete(t) ? `<span class="ac-lire">${ic('i-play')}</span><span class="ac-duree">${dureeLisible(t.duree)}</span>` : '<span class="ac-bientot">Bientôt</span>')
     + '</span>';
-  const texte = `<span class="ac-t">${t.titre}</span><span class="ac-l">${t.ligne}</span>`
+  const texte = `<span class="ac-t">${t.titre}</span>`
     + `<span class="cache">${role.nom}, ${t.ecrans.map(e => ECRANS[e].toLowerCase()).join(' et ')}${prete(t) ? '' : ', bientôt'}</span>`;
   const attrs = `class="ac-carte" data-ecrans="${t.ecrans.join(' ')}" id="tuto-${t.id}"`;
   return prete(t)
@@ -113,7 +115,7 @@ export function catalogue(tutos = TUTOS) {
     + Object.entries(ECRANS).map(([e, nom]) => `<button type="button" role="radio" aria-checked="false" data-ecran="${e}">${ic(e === 'tel' ? 'i-tel' : 'i-pc')}${nom}</button>`).join('')
     + '</div>';
   const sections = ROLES.map(r => `<section class="ac-role" id="${r.cle}" aria-labelledby="ac-${r.cle}-t" style="--j:${r.teinte}">`
-    + `<div class="ac-role-tete">${visage(r)}<div><h2 id="ac-${r.cle}-t">${r.nom}</h2><p>${r.ligne}</p></div></div>`
+    + `<div class="ac-role-tete">${visage(r)}<h2 id="ac-${r.cle}-t">${r.nom}</h2></div>`
     + '<ol class="ac-grille">' + duRole(r.cle, tutos).map((t, k) => carte(t, k + 1)).join('') + '</ol></section>').join('');
   return roles + filtre + sections;
 }

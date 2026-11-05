@@ -44,9 +44,8 @@
 .ac-role-tete{display:flex;align-items:center;gap:16px;margin-bottom:20px}
 .ac-role-tete .ac-av{width:62px;height:62px;box-shadow:0 12px 26px -12px rgba(29,28,25,.5)}
 .ac-role-tete h2{font:700 clamp(28px,3.4vw,40px)/1.05 var(--serif);letter-spacing:-.03em}
-.ac-role-tete p{margin-top:4px;color:var(--encre2);font-size:16.5px}
 .ac-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:16px;margin:0;padding:0;list-style:none}
-.ac-carte{display:flex;flex-direction:column;gap:6px;width:100%;height:100%;padding:10px 10px 18px;border:0;border-radius:24px;background:#FFF;text-align:left;
+.ac-carte{display:flex;flex-direction:column;gap:6px;width:100%;height:100%;padding:10px 10px 16px;border:0;border-radius:24px;background:#FFF;text-align:left;
   font:inherit;color:var(--encre);box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet);transition:transform .3s var(--e),box-shadow .3s var(--e)}
 button.ac-carte{cursor:pointer}
 .ac-carte:hover{transform:translateY(-3px);box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet)}
@@ -63,8 +62,7 @@ button.ac-carte{cursor:pointer}
 .ac-lire{position:absolute;inset:0;display:grid;place-items:center}
 .ac-lire .ic{width:52px;height:52px;padding:14px 12px 14px 16px;border-radius:50%;background:rgba(255,255,255,.95);color:var(--j);box-shadow:var(--ombre2)}
 .ac-duree{position:absolute;right:10px;bottom:9px;padding:3px 8px;border-radius:7px;background:rgba(23,22,30,.6);color:#FFF;font:700 12px var(--sans)}
-.ac-t{padding:0 6px;font:700 18px/1.2 var(--serif);letter-spacing:-.01em}
-.ac-l{padding:0 6px;color:var(--doux);font-size:14.5px;line-height:1.45}
+.ac-t{padding:2px 6px 0;font:700 18px/1.2 var(--serif);letter-spacing:-.01em}
 
 /* ---------- apprendre en faisant : la démo, sur la nuit ---------- */
 .ac-demo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:960px;margin-inline:auto}
@@ -98,7 +96,6 @@ button.ac-carte{cursor:pointer}
   .ac-num{left:6px;top:6px;min-width:22px;height:22px;font-size:12px}
   .ac-ecrans{left:7px;bottom:6px}.ac-ecrans .ic{width:14px;height:14px}
   .ac-t{padding:0 4px;font-size:15.5px}
-  .ac-l{padding:0 4px;font-size:13px}
   .lecteur-titre{left:16px;bottom:40px;font-size:20px}
   .lecteur-play{width:64px;height:64px;margin:-32px 0 0 -32px}
   .lecteur-play .ic{width:26px;height:26px}

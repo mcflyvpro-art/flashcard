@@ -128,7 +128,9 @@ l'air de marcher ».
     référent, prof, élève ; pour l'instant pas de vidéo » : un tuto par
     geste, 13 pour l'élève, 11 pour le professeur, 9 pour le référent, chacun
     avec ses écrans — le référent au téléphone : ses codes et sa licence,
-    comme dans l'app —, en vignettes « Bientôt » tant que la vidéo manque ;
+    comme dans l'app —, en vignettes « Bientôt » tant que la vidéo manque,
+    le titre seul, sans description (2026-11-05 : la `ligne` d'un tuto ne
+    sert plus qu'à la description de sa vidéo en données structurées) ;
     les rôles en ancres, pas en onglets, pour que tout se lise sans script ;
     le choix de l'écran et le lecteur par `src/site/academie-page.js`. **La
     liste est `src/site/academie.js`** (pur, `test/academie.test.js` : les
@@ -164,7 +166,11 @@ l'air de marcher ».
     2026-11-04, demandée : « le même niveau d'exigence que la page
     d'accueil, le visuel d'abord, juste ce qu'il faut de texte » ; chaque
     page ne charge que ce qu'elle dessine — tout dans `pages.css`, la plus
-    lourde passait à 45 Ko), et `src/site/page.js` ; le gabarit écrit aussi
+    lourde passait à 45 Ko ; **le moins de texte**, demandé le 2026-11-05
+    pour toutes les pages sauf l'accueil, « mais garde l'essentiel » : une
+    ligne courte sous une tuile, rien sous un lien « À lire aussi », pas de
+    phrase de transition ; `/moteur` garde ses explications, la FAQ repliée
+    reste entière), et `src/site/page.js` ; le gabarit écrit aussi
     `@paliers` (les révisions d'une page qui s'espacent, du même programme
     que `@courbe`) et `@qr-essai` (un vrai QR vers `/essayer`), et efface
     d'un morceau commun le lien de relance vers la page où l'on est

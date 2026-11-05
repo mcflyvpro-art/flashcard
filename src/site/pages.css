@@ -89,12 +89,11 @@
 
 /* ---------- les liens vers les autres pages ---------- */
 .p-suite{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
-.p-suite a{display:flex;flex-direction:column;gap:6px;padding:22px 24px;border-radius:22px;background:#FFF;text-decoration:none;color:var(--encre);
+.p-suite a{display:flex;flex-direction:column;gap:6px;padding:18px 22px;border-radius:22px;background:#FFF;text-decoration:none;color:var(--encre);
   box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet);transition:transform .3s var(--e),box-shadow .3s var(--e)}
 .p-suite a:hover{transform:translateY(-3px);box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet2)}
 .p-suite b{display:flex;align-items:center;justify-content:space-between;gap:10px;font:700 19px/1.25 var(--serif)}
 .p-suite b .ic{color:var(--az5)}
-.p-suite span{color:var(--encre2);font-size:15px;line-height:1.45}
 
 /* le lien de la page où l'on est, dans l'en-tête */
 .tete-liens a[aria-current="page"]{color:var(--encre);background:rgba(29,28,25,.06)}

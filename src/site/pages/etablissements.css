@@ -29,7 +29,7 @@
 
 /* le bloc Campus de l'accueil, repris sous le haut de page : sans la marque ni les boutons, déjà au-dessus */
 .campus.page{margin-top:clamp(70px,9vw,120px)}
-.campus.page .campus-marque,.campus.page .campus-tete .actions,.campus.page .campus-tete .petit{display:none}
+.campus.page .campus-marque,.campus.page .campus-tete .actions,.campus.page .campus-tete .petit,.campus.page .campus-tete .texte{display:none}
 
 @media (max-width:640px){
   .cx-code b{font-size:22px}
