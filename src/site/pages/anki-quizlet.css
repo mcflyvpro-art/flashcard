@@ -2,7 +2,7 @@
 
 /* ---------- le comparatif (/anki-quizlet) ---------- */
 .trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;padding:20px 0}
-.trio-c{display:flex;flex-direction:column;gap:8px;min-height:300px;padding:20px 18px 18px;border-radius:24px;background:#FFF;box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet);animation:monte .8s var(--e) both}
+.trio-c{display:flex;flex-direction:column;gap:8px;min-height:250px;padding:20px 18px 18px;border-radius:24px;background:#FFF;box-shadow:var(--ombre2),inset 0 0 0 1px var(--filet);animation:monte .8s var(--e) both}
 .trio-c.anki{rotate:-4deg;translate:0 18px;animation-delay:.35s}
 .trio-c.quizlet{rotate:3deg;translate:0 28px;animation-delay:.5s}
 .trio-c.nous{position:relative;z-index:2;background:var(--nuit);color:var(--creme);scale:1.06;animation-delay:.7s;

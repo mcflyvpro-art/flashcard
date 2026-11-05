@@ -23,7 +23,10 @@ DERNIER   2026-11-05 · La Mirandola Academy (/academie, docs/LANDING.md
           tour 9) : 33 tutos vidéo listés par rôle et par écran, en
           « Bientôt » tant que leur vidéo manque (src/site/academie.js,
           test/academie.test.js) ; « ∞ livres » pour Mirandola+, la ligne
-          des codes renouvelés retirée. Aucune tâche cochée.
+          des codes renouvelés retirée. Puis moins de texte sur toutes les
+          pages du site sauf l'accueil (les vignettes de l'Academy sans
+          description, une ligne courte au lieu d'un paragraphe ailleurs).
+          Aucune tâche cochée.
 Avant :   2026-11-04 · La sécurité du compte, demandée : « que tous
           les e-mails servent ». L'inscription ne s'ouvre qu'avec le code
           à 8 chiffres reçu (une adresse qui n'existe pas ne reçoit rien ;

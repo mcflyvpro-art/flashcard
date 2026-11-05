@@ -51,6 +51,7 @@ describe('la page', () => {
   it('montre chaque tuto, sous son rôle, avec ce qu’il en est de sa vidéo', () => {
     for (const t of TUTOS) expect(h, t.id).toContain(`id="tuto-${t.id}"`);
     for (const r of ROLES) expect(h).toContain(`id="${r.cle}"`);
+    for (const t of TUTOS) expect(h, t.id).not.toContain(t.ligne);              // pas de micro description sous une vignette
     expect(h.match(/class="ac-bientot"/g)).toHaveLength(TUTOS.filter(t => !t.video).length);
   });
   it('aucune donnée structurée de vidéo tant qu’il n’y a pas de vidéo', () => {
