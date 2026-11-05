@@ -32,9 +32,13 @@ DERNIER   2026-11-04 · La sécurité du compte, demandée : « que tous
           code. Base : migration 20261105115806 appliquée le 2026-11-05
           (2FA tenue par la RLS sur 13 tables, adresse suivie, purge des
           comptes jamais confirmés chaque nuit) ; supabase/tests/
-          securite_compte.sql 17/17 à blanc avant. Reste à l'utilisateur :
-          les réglages d'Authentication (docs/COURRIELS.md). Aucune tâche
-          cochée.
+          securite_compte.sql 17/17 à blanc avant. Puis, demandé : la purge
+          ne touche plus aucun compte d'avant le 2026-11-06 (migration
+          purge_jamais_les_comptes_existants, 0 compte visable vérifié) ;
+          sam@gmail.com devient samuel.francois.pro@gmail.com (profil
+          suivi, 16 livres intacts). Les réglages d'Authentication : un
+          script, tools/supabase-auth.js, qui attend SUPABASE_ACCESS_TOKEN
+          dans une session neuve. Aucune tâche cochée.
 Avant :   2026-11-04 · Les pages du site au niveau de l'accueil
           (docs/LANDING.md, tour 8) : une neuvième page, /moteur,
           FSRS-6 formule par formule (MathML, 21 paramètres, banc

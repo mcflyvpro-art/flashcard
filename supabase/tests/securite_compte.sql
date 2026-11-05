@@ -84,8 +84,11 @@ begin
   values (google::text, google, jsonb_build_object('sub', google::text, 'email', 'zz-' || google || '@exemple.invalid'), 'google');
   insert into public.profiles (id, email, name) values (vieux, 'zz-' || vieux || '@exemple.invalid', 'Zz') on conflict (id) do nothing;
   perform public.purger_comptes_non_confirmes();
-  insert into public.zz_res (nom, ok, vu) values ('jamais confirmé depuis 8 jours : parti, son profil avec',
-    not exists (select 1 from auth.users where id = vieux) and not exists (select 1 from public.profiles where id = vieux), null);
+  -- décidé le 2026-11-05 : rien de ce qui existait avant le 2026-11-06 ne se supprime
+  insert into public.zz_res (nom, ok, vu) values ('jamais confirmé depuis 8 jours, mais d’avant le 2026-11-06 : gardé, son profil avec',
+    exists (select 1 from auth.users where id = vieux) and exists (select 1 from public.profiles where id = vieux), null);
+  insert into public.zz_res (nom, ok, vu) values ('la purge ne vise que les comptes nés à partir du 2026-11-06',
+    position('2026-11-06' in pg_get_functiondef('public.purger_comptes_non_confirmes()'::regprocedure)) > 0, null);
   insert into public.zz_res (nom, ok, vu) values ('… créé il y a 2 jours : encore là', exists (select 1 from auth.users where id = neuf), null);
   insert into public.zz_res (nom, ok, vu) values ('… venu de Google : encore là', exists (select 1 from auth.users where id = google), null);
   insert into public.zz_res (nom, ok, vu) values ('… déjà connecté une fois : encore là', exists (select 1 from auth.users where id = venu), null);
