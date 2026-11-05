@@ -19,7 +19,20 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      48 / 148
-DERNIER   2026-11-06 · Le cadre légal, demandé : « le légal, en entier,
+DERNIER   2026-11-05 · Les prix, demandés « psychologiques, un peu à la
+          baisse, rentables avec l'IA » : Mirandola+ 5,99 € / 44,99 €
+          (3,75 €/mois), Mirandola Infini 9,99 € / 79,99 € (en base,
+          migration 20261105174551 : niveau, essai, quota d'IA ;
+          supabase/tests/infini.sql 10/10 — un tri desc plaçait un
+          Mirandola+ offert devant un Infini acheté, corrigé) ; essai de
+          7 jours pour un premier abonnement (IA 10, livres figés au-delà
+          de 5 après) ; code LANCEMENT −20 % trois mois, lien des réseaux
+          mirandola.fr/?promo=LANCEMENT jusqu'à la page de paiement ;
+          Campus sur devis, calculateur parti. tools/paiement/essai.js
+          52/52, parcours Mirandola+ et site verts. Reste : déployer
+          paiement et stripe-webhook (refusé dans la session), puis
+          Infini (ses avantages d'abord). Aucune tâche cochée.
+Avant :   2026-11-06 · Le cadre légal, demandé : « le légal, en entier,
           parfait ». Le site ne dit plus que FSRS est « l'algorithme
           d'Anki », ni « le meilleur moteur au monde » (le banc public en
           classe d'autres devant FSRS-6), ni de prix barré ; le comparatif

@@ -2,7 +2,7 @@
 import { esc } from '../core/coeur-sync.js';
 import { CONTACT, EDITEUR } from '../editeur.js';
 import { ENTREPRISE, HEBERGEUR } from '../entreprise.js';
-import { euros, FORMULES } from '../abonnement.js';
+import { ESSAI_JOURS, euros, FORMULES, PROMO } from '../abonnement.js';
 import { IA_PAR_MOIS, IA_PROF_PAR_MOIS, LIVRES_GRATUITS } from '../offres.js';
 // Lu au niveau module, mais sans risque : ce fichier n'est importé que par
 // import(), depuis legalView(), donc bien après l'évaluation de connexion.js.
@@ -25,7 +25,7 @@ import { PWMIN } from './connexion.js';
    (LCEN) et les logiciels libres (les notices que leurs licences exigent).
    Les prix et les quotas viennent des modules qui les appliquent : le texte
    ne peut pas dire autre chose que l'app. */
-const LEGALV = '5 novembre 2026';
+const LEGALV = '5 novembre 2026';  // l'essai et le code de lancement ajoutés le même jour
 const E = ENTREPRISE;
 const mois = FORMULES.mensuel, an = FORMULES.annuel;
 
@@ -148,6 +148,22 @@ les statistiques du journal.
 Le prix payé est celui affiché au moment de la commande. S’il change, tu en
 es prévenu au moins 30 jours avant ta prochaine échéance ; le nouveau prix ne
 s’applique qu’à partir d’elle, et tu peux résilier avant.
+
+**3 bis. L’essai gratuit.** Un premier abonnement commence par
+${ESSAI_JOURS} jours gratuits : la carte est demandée à la commande, rien n’est
+prélevé pendant l’essai, et l’IA y est limitée à 10 générations. Résilier
+avant la fin de l’essai ne coûte rien ; sinon l’abonnement commence au
+prix choisi, à la fin de l’essai. L’essai ne se donne qu’une fois par
+personne. À la fin d’un essai non poursuivi, tes livres restent ; au-delà
+de ${LIVRES_GRATUITS}, tu ne peux plus en créer de nouveaux tant que tu es en
+Mirandola gratuit.
+
+**3 ter. Le code de lancement.** Le code ${PROMO.code} donne −${PROMO.remise} % sur
+les ${PROMO.mois} premiers mois de la formule au mois, ou sur la première année
+de la formule à l’année, pour un premier abonnement. Il se saisit sur la
+page de paiement, ou arrive déjà posé par un lien. Il peut prendre fin à
+tout moment ; un abonnement pris avec lui garde sa remise jusqu’au bout de
+la période prévue.
 
 **4. La commande.** Tu choisis ta formule dans l’écran Mirandola+, tu
 acceptes ces conditions, puis tu paies sur la page sécurisée de Stripe.

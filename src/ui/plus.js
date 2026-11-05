@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { offre, plus, view } from '../data/etat.js';
-import { FORMULES, RAISONS, erreurDe, euros, gestion, resume } from '../abonnement.js';
+import { ESSAI_JOURS, FORMULES, RAISONS, erreurDe, euros, gestion, resume } from '../abonnement.js';
 import { AVANTAGES_DETAIL, iaDuMois, licence } from '../licence.js';
 import { iaParMois } from '../offres.js';
 import { NOMS, mobile, plateforme, vente } from '../plateformes.js';
@@ -131,15 +131,31 @@ const accord = () => `<label class="fp-accord" id="fp-accord"><input type="check
 const garantie = p => (vente(p) === 'stripe' ? 'Paiement sécurisé par Stripe · Résiliable en un geste'
   : `Paiement par ${NOMS[p.os] || 'le magasin'} · Résiliable à tout moment`);
 
+/* L'essai (2026-11-05) : un compte qui n'a jamais eu d'abonnement Stripe a
+   7 jours gratuits — la fonction paiement en décide, l'écran le dit, avec
+   le jour avant lequel rien n'est prélevé. */
+const essaiPossible = () => !offre.abonnement;
+const finEssai = () => new Date(Date.now() + ESSAI_JOURS * 864e5).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+
+/* Le code d'un lien des réseaux, gardé 14 jours par ui/plus-porte.js. */
+export function promoGardee() {
+  try {
+    const g = JSON.parse(localStorage.getItem('folio.promo') || 'null');
+    return g && /^[A-Za-z0-9]{1,30}$/.test(g.c) && Date.now() - g.t < 14 * 864e5 ? g.c.toUpperCase() : '';
+  } catch (e) { return ''; }                                   // stockage illisible : pas de code, le champ de Stripe reste
+}
+
 function offreHtml(p) {
-  const r = resume(offre);
+  const r = resume(offre), promo = promoGardee();
   return `${r.ligne !== 'Gratuit' ? `<p class="fp-alerte">${svg(I.warn)}${esc(r.ligne)}</p>` : ''}
     <section class="fp-offre">
       <div class="fp-formules" role="radiogroup" aria-label="Formule">${formule('annuel')}${formule('mensuel')}</div>
+      ${promo ? `<p class="fp-promo">${svg(I.tag)}<span>Code <b>${esc(promo)}</b> : posé sur la page de paiement</span></p>` : ''}
       ${accord()}
       <button class="fp-payer" data-fp="payer" ${plus.envoi || !plus.accord ? 'disabled' : ''} aria-describedby="fp-accord">${plus.envoi === 'payer' ? 'Ouverture du paiement…'
-        : `Passer à Mirandola+`}${svg(I.arrow)}</button>
-      <p class="fp-note">${svg(I.lock)}${garantie(p)}</p>
+        : essaiPossible() ? `Essayer ${ESSAI_JOURS} jours gratuits` : 'Passer à Mirandola+'}${svg(I.arrow)}</button>
+      <p class="fp-note">${svg(I.lock)}${essaiPossible() && vente(p) === 'stripe'
+        ? `Rien n’est prélevé avant le ${finEssai()}. Résiliable d’un geste.` : garantie(p)}</p>
       ${p.natif ? `<button class="lnk fp-restaurer" data-fp="restaurer" ${plus.envoi ? 'disabled' : ''}>${
         plus.envoi === 'restaurer' ? 'Recherche…' : 'Restaurer mes achats'}</button>` : ''}
       ${plus.err ? `<p class="fp-err" role="alert">${esc(plus.err)}</p>` : ''}
@@ -201,6 +217,11 @@ export function plusEcran() {
 /* ---------- les gestes ---------- */
 function echec(e) {
   plus.envoi = null; plus.err = erreurDe(e.message);
+  // un code qui n'est plus valable s'oublie : le prochain appui passe sans lui
+  if (e.message === 'promo') {
+    try { localStorage.removeItem('folio.promo'); } catch (x) { /* rien à oublier */ }
+    plus.err = 'Ce code n’est plus valable : il est retiré, réessaie.';
+  }
   if (e.message === 'deja' || e.message === 'campus') offrePull().then(() => { if (view.name === 'plus') render(); });
   render();
 }
@@ -210,7 +231,10 @@ function vers(action) {
   plus.envoi = action; plus.err = '';
   render();
   const p = ici();
-  if (vente(p) === 'stripe') return versStripe(action, plus.formule, plus.accord).then(url => location.assign(url)).catch(echec);
+  if (vente(p) === 'stripe') {
+    return versStripe(action, plus.formule, plus.accord, action === 'payer' ? promoGardee() : '')
+      .then(url => location.assign(url)).catch(echec);
+  }
   /* l'achat intégré : la feuille d'Apple ou de Google s'ouvre par-dessus
      l'app, puis l'on revient ici — Mirandola+ s'active comme après Stripe */
   const geste = action === 'restaurer' ? restaurerAchats(p.os) : versMagasin(p.os, plus.formule);

@@ -1,7 +1,7 @@
 // Mirandola+ dans l'app : lire ce que dit la base, le dire en clair (src/abonnement.js),
 // et l'appareil : la porte d'installation, le bon geste (src/plateformes.js).
 import { describe, expect, it } from 'vitest';
-import { FORMULES, GERER, RAISONS, VENTE_OUVERTE, dateLisible, erreurDe, euros, gestion, lireOffre, lireRetour, resume }
+import { FORMULES, GERER, formuleDe, niveauDe, RAISONS, VENTE_OUVERTE, dateLisible, erreurDe, euros, gestion, lireOffre, lireRetour, resume }
   from '../src/abonnement.js';
 import { AVANTAGES_DETAIL, iaDuMois, licence } from '../src/licence.js';
 import { PLUS_SEUL } from '../src/offres.js';
@@ -9,7 +9,13 @@ import { MAGASINS, installer, mobile, plateforme, porte, vente } from '../src/pl
 
 describe('ce que dit la base', () => {
   it('une réponse absente ou d’une base sans la fonction : Mirandola gratuit', () => {
-    for (const r of [null, undefined, [], 'x', {}]) expect(lireOffre(r)).toEqual({ offre: 'gratuit', etablissement: '', professeur: '', licenceFin: null, abonnement: null });
+    for (const r of [null, undefined, [], 'x', {}]) expect(lireOffre(r)).toEqual({ offre: 'gratuit', niveau: 'gratuit', etablissement: '', professeur: '', licenceFin: null, abonnement: null });
+  });
+  it('le niveau (2026-11-05) : Infini seulement sur une offre plus, jamais deviné', () => {
+    expect(lireOffre({ offre: 'plus', niveau: 'infini' }).niveau).toBe('infini');
+    expect(lireOffre({ offre: 'plus' }).niveau).toBe('plus');
+    expect(lireOffre({ offre: 'gratuit', niveau: 'infini' }).niveau).toBe('gratuit');
+    expect(lireOffre({ offre: 'campus', niveau: 'infini' }).niveau).toBe('campus');
   });
   it('un abonnement', () => {
     const o = lireOffre({ offre: 'plus', abonnement: { statut: 'actif', formule: 'annuel', source: 'stripe',
@@ -99,7 +105,7 @@ describe('la licence, ligne par ligne', () => {
   });
   it('mensuel sans montant connu : le prix de sa formule, sans engagement', () => {
     const l = licence({ offre: 'plus', abonnement: ab({ formule: 'mensuel', source: 'google' }) });
-    expect(lignes(l).Prix).toBe('6,99\u00a0€ par mois');
+    expect(lignes(l).Prix).toBe('5,99\u00a0€ par mois');
     expect(lignes(l).Paiement).toBe('Google Play');
     expect(l.engagement).toMatch(/^Sans engagement/);
   });
@@ -127,12 +133,25 @@ describe('la licence, ligne par ligne', () => {
 
 describe('les prix, les dates, les retours', () => {
   it('les prix de la page d’accueil (2026-10-28)', () => {
-    expect(euros(FORMULES.annuel.prix)).toBe('49,99\u00a0€');
-    expect(euros(FORMULES.annuel.mois)).toBe('4,17\u00a0€');
-    expect(euros(FORMULES.mensuel.prix)).toBe('6,99\u00a0€');
+    expect(euros(FORMULES.annuel.prix)).toBe('44,99\u00a0€');
+    expect(euros(FORMULES.annuel.mois)).toBe('3,75\u00a0€');
+    expect(euros(FORMULES.mensuel.prix)).toBe('5,99\u00a0€');
     expect(FORMULES.annuel.sans).toBe(FORMULES.mensuel.prix * 12);
     expect(FORMULES.annuel.mois).toBe(Math.round(FORMULES.annuel.prix / 12));
     expect(FORMULES.annuel.remise).toBe(Math.round((1 - FORMULES.annuel.prix / FORMULES.annuel.sans) * 100));
+  });
+  it('Infini (2026-11-05) : chaque annuel se dit au mois juste, sa remise est vraie, son niveau se lit', () => {
+    for (const [f, m] of [['annuel', 'mensuel'], ['infini_annuel', 'infini_mensuel']]) {
+      expect(FORMULES[f].sans).toBe(FORMULES[m].prix * 12);
+      expect(FORMULES[f].mois).toBe(Math.round(FORMULES[f].prix / 12));
+      expect(FORMULES[f].remise).toBe(Math.round((1 - FORMULES[f].prix / FORMULES[f].sans) * 100));
+    }
+    expect(niveauDe('infini_mensuel')).toBe('infini');
+    expect(niveauDe('annuel')).toBe('plus');
+    expect(niveauDe(null)).toBe('plus');
+    expect(formuleDe('infini', 'mensuel')).toBe('infini_mensuel');
+    expect(formuleDe('plus', 'annuel')).toBe('annuel');
+    expect(lireRetour('infini_annuel')).toEqual({ etape: null, formule: 'infini_annuel' });
   });
   it('la vente est ouverte (2026-10-27) : un compte gratuit a l’onglet Mirandola+', () => expect(VENTE_OUVERTE).toBe(true));
   it('une date lisible, rien pour une date fausse', () => {

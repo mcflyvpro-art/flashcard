@@ -47,20 +47,17 @@ test('de l’accueil aux pages et retour, par le menu du téléphone et le pied 
   await expect(page).toHaveURL(/\/$/);
 });
 
-test('les tarifs basculent, le calculateur compte, et « Passer à Mirandola+ » mène à l’app', async ({ page }) => {
-  await page.goto('./tarifs');
+test('les tarifs basculent, Campus est sur devis, un code des réseaux suit jusqu’à l’app', async ({ page }) => {
+  await page.goto('./tarifs?promo=LANCEMENT');
   const prix = page.locator('.offre-plus .prix b');
-  await expect(prix).toHaveText(/^4,17\s€$/);
+  await expect(prix).toHaveText(/^3,75\s€$/);
   await page.getByRole('radio', { name: 'Mensuel' }).click();
-  await expect(prix).toHaveText(/^6,99\s€$/);
-  await expect(page.locator('.offre-plus [data-vente]')).toHaveAttribute('href', '/app?plus=mensuel');
+  await expect(prix).toHaveText(/^5,99\s€$/);
+  await expect(page.locator('.offre-plus [data-vente]')).toHaveAttribute('href', '/app?plus=mensuel&promo=LANCEMENT');
+  await expect(page.locator('.offre-campus .prix')).toHaveText('Sur devis');
 
   await page.goto('./etablissements');
-  const places = page.locator('#calcul-places');
-  await places.scrollIntoViewIfNeeded();
-  await expect(page.locator('#calcul-prix')).toHaveText(/^1\s900\s€\sHT$/);
-  await places.fill('16');
-  await expect(page.locator('#calcul-prix')).toHaveText(/^100\s€\sHT$/);
+  await expect(page.locator('#calcul-places')).toHaveCount(0);
   await page.locator('.p-heros').getByRole('link', { name: 'Demander une démo' }).click();
   await expect(page).toHaveURL(/\/demande-demo$/);
 });

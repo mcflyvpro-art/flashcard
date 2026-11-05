@@ -4,7 +4,7 @@
    le reste. Les règles d'un code viennent du noyau (classe.js, defi.js),
    jamais réécrites ici. docs/LANDING.md. */
 import { courbes, duree, versT } from './courbes.js';
-import { apparitions, calcul, calendrier, doc, entete, fenetreCode, onglets, reduit, sommeil, tarifs, videos, vu } from './commun.js';
+import { apparitions, calendrier, doc, entete, fenetreCode, onglets, reduit, sommeil, tarifs, videos, vu } from './commun.js';
 
 /* ---------- la scène se redresse à mesure qu'on descend ---------- */
 function scene() {
@@ -221,7 +221,6 @@ function demarrer() {
   videos();
   onglets();
   tarifs();
-  calcul();
   fenetreCode();
 }
 

@@ -21,21 +21,14 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
 
   const prix = page.locator('.offre-plus .prix b');
   await prix.scrollIntoViewIfNeeded();
-  await expect(prix).toHaveText(/^4,17\s€$/);
+  await expect(prix).toHaveText(/^3,75\s€$/);
   await page.getByRole('radio', { name: 'Mensuel' }).click();
-  await expect(prix).toHaveText(/^6,99\s€$/);
+  await expect(prix).toHaveText(/^5,99\s€$/);
   await expect(page.locator('.offre-plus .prix-note')).toHaveText(/Sans engagement/);
 
-  // combien pour mon établissement : la grille de src/tarifs.js, tranche par tranche
-  const places = page.locator('#calcul-places');
-  await places.scrollIntoViewIfNeeded();
-  await expect(page.locator('#calcul-prix')).toHaveText(/^1\s900\s€\sHT$/);          // 500 places
-  await places.fill('16');                                                         // un professeur particulier et ses élèves
-  await expect(page.locator('#calcul-prix')).toHaveText(/^100\s€\sHT$/);
-  await places.fill('1080');
-  await expect(page.locator('#calcul-prix')).toHaveText(/^3\s350\s€\sHT$/);
-  await expect(page.locator('#calcul-moyen')).toContainText('3,10');
-  await expect(page.locator('.tranches tr.ici')).toHaveAttribute('data-tranche', '2');
+  // Campus : sur devis, plus de calculateur (2026-11-05)
+  await expect(page.locator('.offre-campus .prix')).toHaveText('Sur devis');
+  await expect(page.locator('#calcul-places')).toHaveCount(0);
 
   // au téléphone, l'inscription reste dans l'en-tête, « Se connecter » passe dans le menu
   await page.evaluate(() => scrollTo(0, 0));

@@ -18,6 +18,7 @@
 import { etab, orgDe } from './etablissement.js';
 import { modele } from './classes.js';
 import { campusProf, licences } from './licences.js';
+import { FORMULES, niveauDe } from '../abonnement.js';
 
 const table = store => (store.tables.abonnements = store.tables.abonnements || []);
 const ouvre = a => ['actif', 'essai', 'impaye'].includes(a.statut) && (!a.fin_periode || Date.parse(a.fin_periode) > Date.now());
@@ -41,6 +42,16 @@ export function offreDe(store, uid) {
   return ouvre(l[0]) ? 'plus' : 'gratuit';
 }
 
+/* niveau_de() (migration infini_et_essai, 2026-11-05) : Infini si un
+   abonnement Infini court, sinon l'offre. */
+export function niveauDuCompte(store, uid) {
+  const offre = offreDe(store, uid);
+  if (offre !== 'plus') return offre;
+  return lignesDe(store, uid).some(l => ouvre(l) && niveauDe(l.formule) === 'infini' && l.formule) ? 'infini' : 'plus';
+}
+// l'essai : l'abonnement qui court est encore dans ses 7 jours
+export const enEssai = (store, uid) => offreDe(store, uid) === 'plus' && lignesDe(store, uid).some(l => ouvre(l) && l.statut === 'essai');
+
 export function monOffre(store, uid) {
   if (store.enRetard && store.enRetard.uid === uid && --store.enRetard.n <= 0) {
     table(store).push(store.enRetard.ligne);
@@ -52,6 +63,7 @@ export function monOffre(store, uid) {
     ? { statut: 'actif', formule: null, source: 'offert', fin_periode: null, fin_prevue: false } : null);
   return {
     offre: offreDe(store, uid),
+    niveau: niveauDuCompte(store, uid),
     etablissement: campus ? o.nom : null,
     // le professeur particulier dont la licence ouvre Campus (20261029090000) ; pas pour lui-même
     professeur: p && p !== uid ? modele(store).noms[p] || 'Ton professeur' : null,
@@ -84,16 +96,23 @@ function ecrire(store, ligne) {
 }
 
 function payer(store, b, uid) {
-  if (!['annuel', 'mensuel'].includes(b.formule)) return [400, { error: 'formule' }];
+  if (!FORMULES[b.formule]) return [400, { error: 'formule' }];
   // comme la vraie fonction : pas de paiement sans l'accord daté de l'app (2026-11-05)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(b.cgv || ''))) return [400, { error: 'accord' }];
+  // ce que l'app a commandé (formule, code promo), pour qu'un parcours le relise
+  (store.commandes = store.commandes || []).push({ formule: b.formule, promo: b.promo || null });
+  if (b.promo && !['LANCEMENT'].includes(String(b.promo).toUpperCase())) return [404, { error: 'promo' }];
   const offre = offreDe(store, uid);
   if (offre === 'plus') return [409, { error: 'deja' }];
   if (offre === 'campus') return [409, { error: 'campus' }];
-  const ligne = { user_id: uid, offre: 'plus', statut: 'actif', source: 'stripe', formule: b.formule,
+  /* comme la vraie : 7 jours d'essai pour un premier abonnement Stripe
+     (`store.sansEssai` : un parcours qui veut un abonnement payé d'emblée) */
+  const essai = !store.sansEssai && !table(store).some(x => x.user_id === uid && x.source === 'stripe');
+  const annuel = FORMULES[b.formule].par === 'an';
+  const ligne = { user_id: uid, offre: 'plus', statut: essai ? 'essai' : 'actif', source: 'stripe', formule: b.formule,
     client_stripe: 'cus_' + uid.slice(0, 8), abonnement_stripe: 'sub_' + uid.slice(0, 8),
-    fin_periode: new Date(Date.now() + (b.formule === 'annuel' ? 365 : 31) * 864e5).toISOString(), fin_prevue: false,
-    montant: b.formule === 'annuel' ? 4999 : 699 };
+    fin_periode: new Date(Date.now() + (essai ? 7 : annuel ? 365 : 31) * 864e5).toISOString(), fin_prevue: false,
+    montant: FORMULES[b.formule].prix };
   store.tables.abonnements = table(store).filter(x => !(x.user_id === uid && x.source === 'stripe'));
   if (store.paiement === 'lent') store.enRetard = { uid, ligne, n: 3 };
   else ecrire(store, ligne);

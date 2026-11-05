@@ -57,9 +57,15 @@ export function ouvrirPlus(o = {}) {
    session, rangé jusqu'à la connexion ; avec, l'écran s'ouvre. Le paramètre
    `session` de Stripe part avec : recharger ne rejoue rien. */
 export function consumePlus(connecte) {
-  const p = new URLSearchParams(location.search), brut = p.get('plus');
-  if (brut != null) {
-    p.delete('plus'); p.delete('session');
+  const p = new URLSearchParams(location.search), brut = p.get('plus'), promo = p.get('promo');
+  /* le code d'un lien des réseaux (?promo=LANCEMENT, 2026-11-05) : gardé
+     14 jours sur l'appareil, posé d'avance sur la page de paiement */
+  if (promo) {
+    try { localStorage.setItem('folio.promo', JSON.stringify({ c: promo.slice(0, 30), t: Date.now() })); }
+    catch (e) { /* stockage indisponible : le code se tapera sur la page de paiement */ }
+  }
+  if (brut != null || promo) {
+    p.delete('plus'); p.delete('session'); p.delete('promo');
     history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
   }
   let v = brut;

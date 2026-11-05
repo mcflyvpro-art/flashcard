@@ -13,7 +13,8 @@
                            `stripe_reglages`
      STRIPE_PRIX_ANNUEL    facultatif : un prix annuel posé à la main (price_…),
                            qui passe avant celui de « Brancher Stripe »
-     STRIPE_PRIX_MENSUEL   facultatif : de même pour le mensuel
+     STRIPE_PRIX_MENSUEL   facultatif : de même pour le mensuel (Mirandola+ seulement :
+                           les prix d'Infini sont ceux de « Brancher Stripe »)
      STRIPE_TAXE           « 1 » si Stripe Tax est activé (TVA du pays de l'acheteur)
      STRIPE_CGV            « 1 » pour faire cocher les conditions de vente (leur
                            adresse posée dans Stripe → Paramètres → Détails publics)
@@ -27,16 +28,19 @@
    Pas de SDK (ni Stripe ni supabase-js) : du fetch brut, comme le reste de
    l'app — rien à télécharger au démarrage, rien qui casse au déploiement.
 
-   Actions : payer (avec une formule), gerer (le portail), resilier (le
+   Actions : payer (avec une formule — Mirandola+ ou Infini, à l'année ou au
+   mois —, l'essai de 7 jours pour un premier abonnement, un code promo venu
+   d'un lien), gerer (le portail), resilier (le
    portail ouvert sur la résiliation) ; pour l'éditeur seul, etat (ce qui est
    branché) et preparer (« Brancher Stripe »).
    Réponses : { url } ; sinon { error } parmi nokey, noprix, auth, body,
-   formule, deja (Mirandola+ court déjà : gérer plutôt que payer), campus
+   formule, accord (l'accord de l'app manque), promo (code inconnu ou fini),
+   deja (Mirandola+ court déjà : gérer plutôt que payer), campus
    (l'établissement l'offre déjà), aucun (rien à gérer), editeur (réservé à
    l'éditeur), stripe. */
 
 import {
-  FORMULES, PRIX, PRODUIT, demandePaiement, demandePortail, demandePortailConfig, demandePrix, demandeProduit,
+  FORMULES, PRIX, PRODUITS, demandeCodePromo, demandeCoupon, PROMO, demandePaiement, demandePortail, demandePortailConfig, demandePrix, demandeProduit,
   demandeWebhook, formulaire, modeDeLaCle, ouvre, prixConforme, reglagesDuMode, webhookConforme,
 } from "../_shared/abonnement.js";
 
@@ -118,14 +122,19 @@ async function estEditeur(req: Request) {
    rangé, on le refait), le portail client. Rien ne se crée deux fois. */
 async function preparer(cle: string, mode: string) {
   const r = await reglages(mode);
-  await stripe("products", demandeProduit(), cle, undefined, "POST", "resource_already_exists");
+  for (const n of Object.keys(PRODUITS)) {
+    await stripe("products", demandeProduit(n), cle, undefined, "POST", "resource_already_exists");
+  }
   const prix: Record<string, string> = {};
   for (const f of FORMULES) {
     const l = await lireStripe(`prices?active=true&lookup_keys[]=${encodeURIComponent(PRIX[f].cle)}`, cle);
     const p = l?.data?.[0];
-    prix[f] = prixConforme(p, f) && (p.product === PRODUIT || p.product?.id === PRODUIT)
-      ? p.id : (await stripe("prices", demandePrix(f), cle)).id;
+    prix[f] = prixConforme(p, f) ? p.id : (await stripe("prices", demandePrix(f), cle)).id;
   }
+  // le code de lancement : le coupon, puis son code (chacun une fois)
+  await stripe("coupons", demandeCoupon(), cle, undefined, "POST", "resource_already_exists");
+  const codes = (await lireStripe(`promotion_codes?code=${PROMO.code}&limit=1`, cle))?.data ?? [];
+  if (!codes.length) await stripe("promotion_codes", demandeCodePromo(), cle);
   const url = `${URL_SB}/functions/v1/stripe-webhook`;
   const points = (await lireStripe("webhook_endpoints?limit=100", cle))?.data ?? [];
   const nos = points.filter((w: any) => w.url === url);
@@ -137,12 +146,12 @@ async function preparer(cle: string, mode: string) {
     neuf.webhook_id = webhook.id;
     neuf.webhook_secret = webhook.secret;
   }
-  const config = demandePortailConfig({ site: SITE, annuel: prix.annuel, mensuel: prix.mensuel });
+  const config = demandePortailConfig({ site: SITE, ...prix });
   const portail = r.portail
     ? (await stripe(`billing_portal/configurations/${r.portail}`, config, cle).catch(() => null))
       ?? await stripe("billing_portal/configurations", config, cle)
     : await stripe("billing_portal/configurations", config, cle);
-  await ranger(mode, { ...neuf, prix_annuel: prix.annuel, prix_mensuel: prix.mensuel, portail: portail.id,
+  await ranger(mode, { ...neuf, ...Object.fromEntries(FORMULES.map(f => ["prix_" + f, prix[f]])), portail: portail.id,
     branche_le: new Date().toISOString() });
   return etat(cle, mode);
 }
@@ -151,7 +160,7 @@ async function preparer(cle: string, mode: string) {
 async function etat(cle: string | undefined, mode: string) {
   if (!cle) return { cle: false };
   const r = await reglages(mode);
-  return { cle: true, mode, prix: !!(r.prix_annuel && r.prix_mensuel), webhook: !!r.webhook_secret,
+  return { cle: true, mode, prix: FORMULES.every(f => !!r["prix_" + f]), webhook: !!r.webhook_secret,
     portail: !!r.portail, branche_le: r.branche_le || null,
     a_la_main: !!(Deno.env.get("STRIPE_PRIX_ANNUEL") && Deno.env.get("STRIPE_PRIX_MENSUEL")) };
 }
@@ -187,7 +196,7 @@ Deno.serve(async (req) => {
   const { sub: uid, email } = claims(req);
   if (!uid) return json({ error: "auth" }, 401);
 
-  let body: { action?: string; formule?: string; cgv?: string };
+  let body: { action?: string; formule?: string; cgv?: string; promo?: string };
   try {
     body = await req.json();
   } catch {
@@ -231,25 +240,47 @@ Deno.serve(async (req) => {
        vente et le démarrage immédiat (article L221-25), une version datée. */
     const accord = /^\d{4}-\d{2}-\d{2}$/.test(String(body.cgv ?? "")) ? String(body.cgv) : "";
     if (!accord) return json({ error: "accord" }, 400);
-    const prix = Deno.env.get(formule === "annuel" ? "STRIPE_PRIX_ANNUEL" : "STRIPE_PRIX_MENSUEL")
-      || rangs[formule === "annuel" ? "prix_annuel" : "prix_mensuel"];
-    if (!prix) return json({ error: "noprix" }, 503);
+    const infini = formule.startsWith("infini");
+    const manuel = { annuel: "STRIPE_PRIX_ANNUEL", mensuel: "STRIPE_PRIX_MENSUEL" }[formule];
+    const prix = (manuel && Deno.env.get(manuel)) || rangs["prix_" + formule];
 
-    /* Payer deux fois la même chose : jamais. Mirandola+ court déjà — payé
-       ici, dans un magasin, ou offert → rien à acheter ; l'établissement
-       l'offre → rien non plus. */
-    if (ligne && ouvre(ligne.statut, ligne.fin_periode)) return json({ error: "deja" }, 409);
+    /* Payer deux fois la même chose : jamais. Un abonnement Stripe qui court
+       → passer à Infini se fait dans le portail, au prorata ; le reste,
+       « deja ». Mirandola+ d'un magasin, ou l'établissement → rien à
+       acheter. Mirandola+ offert : Infini s'achète par-dessus. */
+    if (ligne && ouvre(ligne.statut, ligne.fin_periode)) {
+      if (infini && !String(ligne.formule ?? "").startsWith("infini") && ligne.abonnement_stripe) {
+        const s = await stripe("billing_portal/sessions", demandePortail({ client: ligne.client_stripe, site: SITE,
+          changer: ligne.abonnement_stripe, configuration: rangs.portail }), cle);
+        return json({ url: s.url });
+      }
+      return json({ error: "deja" }, 409);
+    }
+    if (!prix) return json({ error: "noprix" }, 503);
     const offre = await offreDe(req);
     if (offre?.offre === "campus") return json({ error: "campus" }, 409);
-    if (offre?.offre === "plus") return json({ error: "deja" }, 409);
+    if (offre?.offre === "plus" && !(infini && offre?.abonnement?.source === "offert")) return json({ error: "deja" }, 409);
+
+    /* L'essai : seulement pour qui n'a jamais eu d'abonnement Stripe (la
+       ligne garde le client d'un abonnement fini). Le code promo d'un lien :
+       retrouvé chez Stripe ; inconnu ou fini, on le dit plutôt que de
+       facturer plein tarif sans prévenir. */
+    const essai = !ligne;
+    let promo: string | undefined;
+    if (body.promo) {
+      const code = String(body.promo).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 30);
+      const l = await lireStripe(`promotion_codes?code=${code}&active=true&limit=1`, cle);
+      promo = l?.data?.[0]?.id;
+      if (!promo) return json({ error: "promo" }, 404);
+    }
 
     /* Deux appuis dans la même minute rendent la même page (clé
        d'idempotence) : jamais deux abonnements pour un double clic. */
     const minute = Math.floor(Date.now() / 60000);
     const s = await stripe("checkout/sessions", demandePaiement({
       formule, prix, userId: uid, email, client: ligne?.client_stripe ?? null, site: SITE,
-      taxe: Deno.env.get("STRIPE_TAXE") === "1", cgv: Deno.env.get("STRIPE_CGV") === "1", accord,
-    }), cle, `folio-${uid}-${formule}-${minute}`);
+      taxe: Deno.env.get("STRIPE_TAXE") === "1", cgv: Deno.env.get("STRIPE_CGV") === "1", accord, essai, promo,
+    }), cle, `folio-${uid}-${formule}-${promo ?? ""}-${minute}`);
     return json({ url: s.url });
   } catch (e) {
     console.error("paiement", e instanceof Error ? e.message : e);

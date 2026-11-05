@@ -13,7 +13,7 @@
 import { modele } from './classes.js';
 import { etab, orgDe } from './etablissement.js';
 import { licenceProf } from './licences.js';
-import { offreDe } from './abonnements.js';
+import { enEssai, niveauDuCompte, offreDe } from './abonnements.js';
 
 const auj = () => new Date().toISOString().slice(0, 10);
 const usage = store => (store.tables.ai_usage = store.tables.ai_usage || []);
@@ -32,10 +32,13 @@ function iaQuota(store, uid) {
   return c ? licenceProf(store, c.owner).ia_eleve : null;
 }
 
+// mon_ia (migration infini_et_essai) : l'essai 10, Infini 150 puis sans compter, un professeur 400, un élève 30
 export function monIa(store, uid) {
-  const q = iaQuota(store, uid), offre = offreDe(store, uid);
+  const q = iaQuota(store, uid), offre = offreDe(store, uid), niveau = niveauDuCompte(store, uid), essai = enEssai(store, uid);
   const prof = ['prof', 'ref', 'admin'].includes(modele(store).roles[uid]);
-  return { fait: faitDuMois(store, uid), quota: q ?? (offre === 'gratuit' ? 0 : prof ? 400 : 30), licence: q != null, offre };
+  const quota = q ?? (offre === 'gratuit' ? 0 : essai ? 10 : niveau === 'infini' ? 150 : prof ? 400 : 30);
+  return { fait: faitDuMois(store, uid), quota, licence: q != null, offre, niveau, essai,
+    sans_compter: niveau === 'infini' && !essai };
 }
 
 export const rpcIa = (store, nom, user) => (nom === 'mon_ia' ? [200, monIa(store, user.id)] : null);

@@ -9,7 +9,7 @@
 //   <!-- @icones -->  les icônes (tracés Lucide)
 //   <!-- @tete -->    l'en-tête et le menu du téléphone
 //   <!-- @pied -->    le pied de page et la fenêtre « J'ai un code »
-//   <!-- @tarifs h=h2 -->  les offres, le calculateur de Campus et le
+//   <!-- @tarifs h=h2 -->  les offres (Campus sur devis, 2026-11-06) et le
 //                     tableau comparatif (l'accueil et /tarifs), son titre
 //                     au niveau donné
 //
@@ -220,7 +220,7 @@ export function rendre(html, p) {
     academie: catalogue,
     'academie-ld': () => videosLD(SITE).map(v => `<script type="application/ld+json">\n${json(v)}\n</script>`).join('\n') };
   /* `<!-- @tarifs h=h1 -->` : le morceau tarifs.html, où {{h}} vaut h1 ; un
-     morceau peut en poser un autre (tarifs.html pose le calculateur). */
+     morceau peut en poser un autre. */
   const marqueurs = (t, prof = 0) => t.replace(/<!-- @([\w-]+)((?: \w+=\S+)*) -->/g, (_, nom, args) => {
     if (calcules[nom]) return calcules[nom]();
     if (prof > 3) throw new Error(`${p.fichier} : le morceau ${nom} se pose lui-même`);

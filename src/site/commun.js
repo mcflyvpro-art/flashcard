@@ -1,12 +1,11 @@
 /* Ce que toutes les pages du site partagent (2026-11-02, le site passe à
    plusieurs pages, docs/SEO.md) : les apparitions au défilement, l'en-tête
    et son menu du téléphone, « J'ai un code », la bascule des tarifs et le
-   calculateur de Campus. La page d'accueil (site.js) y ajoute ses scènes,
+   offres. La page d'accueil (site.js) y ajoute ses scènes,
    les autres pages (page.js) s'en tiennent là. Chaque fonction ne fait
    rien si sa partie de la page n'est pas là. Aucun appel à la base. */
 import { codeComplet, normCode } from '../classe.js';
 import { pinComplet, pinDepuisTexte } from '../defi.js';
-import { TRANCHES, eurosHT, parPlace, prixCampus } from '../tarifs.js';
 
 export const doc = document.documentElement;
 export const reduit = matchMedia('(prefers-reduced-motion: reduce)');
@@ -110,29 +109,6 @@ export function tarifs() {
   t.querySelectorAll('.comparatif tbody tr').forEach((r, i) => r.style.setProperty('--i', String(i)));
 }
 
-/* ---------- combien pour mon établissement ----------
-   La grille de src/tarifs.js, la même que la console de l'éditeur : le
-   champ et le curseur se suivent, le total et le prix moyen d'une place
-   suivent les deux, et la tranche où l'on tombe s'allume. */
-export function calcul() {
-  const c = document.getElementById('calcul-campus');
-  if (!c) return;
-  const champ = c.querySelector('#calcul-places'), curseur = c.querySelector('#calcul-curseur');
-  const prix = c.querySelector('#calcul-prix'), moyen = c.querySelector('#calcul-moyen');
-  const poser = n => {
-    const places = Math.min(20000, Math.max(1, Math.round(+n) || 1));
-    prix.textContent = eurosHT(prixCampus(places), false) + '\u00a0HT';
-    moyen.textContent = `, soit ${eurosHT(parPlace(places))}\u00a0HT la place`;
-    const t = TRANCHES.findIndex(x => places <= x.jusqua);
-    c.querySelectorAll('[data-tranche]').forEach(r => r.classList.toggle('ici', +r.dataset.tranche === t));
-    return places;
-  };
-  champ.addEventListener('input', () => { if (champ.value !== '') curseur.value = String(poser(champ.value)); });
-  champ.addEventListener('change', () => { champ.value = String(poser(champ.value)); });
-  curseur.addEventListener('input', () => { champ.value = curseur.value; poser(curseur.value); });
-  poser(champ.value);
-}
-
 /* La vente ouverte (VENTE_OUVERTE de src/abonnement.js, et dans
    index.html les adresses data-vente-an et data-vente-mois du bouton),
    « Passer à Mirandola+ » mène à l'écran Mirandola+ de l'app, la formule choisie
@@ -143,7 +119,11 @@ export function calcul() {
    commun bien plus gros (test/site.test.js garde les deux d'accord). */
 function relierVente(t) {
   const mois = t.dataset.periode === 'mois';
-  t.querySelectorAll('[data-vente-an][data-vente-mois]').forEach(a => { a.href = mois ? a.dataset.venteMois : a.dataset.venteAn; });
+  // un code des réseaux (mirandola.fr/?promo=LANCEMENT) suit jusqu'à la page de paiement
+  const promo = (/[?&]promo=([A-Za-z0-9]{1,30})/.exec(location.search) || [])[1];
+  t.querySelectorAll('[data-vente-an][data-vente-mois]').forEach(a => {
+    a.href = (mois ? a.dataset.venteMois : a.dataset.venteAn) + (promo ? '&promo=' + promo : '');
+  });
 }
 
 /* ---------- « J'ai un code » ----------

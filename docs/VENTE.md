@@ -225,6 +225,54 @@ Mirandola+ offert.
 | `src/ui/pwa-porte.js`, `src/ui/pwa.js`, `src/installation.js` | la porte d'installation : un téléphone dans son navigateur pose Mirandola sur son écran d'accueil (testé : `test/installation.test.js`, `e2e/installation.e2e.js`) |
 | `e2e/mirandola-plus.e2e.js` | l'onglet, le paiement, le retour, la licence et « Résilier », l'entrée de la barre latérale, ce qui est grisé, l'ancien compte, Campus, l'app des magasins, hors ligne |
 
+## Les prix, l'essai et le code de lancement (2026-11-05)
+
+Décidés le 2026-11-05 (« plus psychologiques, un peu à la baisse, rentables
+avec l'IA ») :
+
+| Formule | Prix TTC | Clé de recherche Stripe |
+|---|---|---|
+| Mirandola+ au mois | 5,99 € | `mirandola_plus_mensuel` |
+| Mirandola+ à l'année | 44,99 € (3,75 €/mois, −37 %) | `mirandola_plus_annuel` |
+| Mirandola Infini au mois | 9,99 € | `mirandola_infini_mensuel` |
+| Mirandola Infini à l'année | 79,99 € (6,67 €/mois, −33 %) | `mirandola_infini_annuel` |
+
+Deux produits chez Stripe (`mirandola_plus`, `mirandola_infini`), quatre
+prix ; le portail passe de l'un à l'autre au prorata. En base, l'offre
+reste `plus` pour les deux, le niveau (`niveau_de`, `mon_offre().niveau`)
+dit `infini` (migration `20261105174551_infini_et_essai`).
+
+- **L'essai** : 7 jours pour un premier abonnement Stripe, la carte
+  demandée d'emblée, l'abonnement arrêté sans carte valide à la fin ;
+  l'IA y est limitée à 10 générations (`mon_ia`, `ia_droits`). À la fin
+  d'un essai non poursuivi, les livres restent ; au-delà de 5, on n'en
+  crée plus (le bridage de Mirandola gratuit).
+- **Le code de lancement** `LANCEMENT` : −20 % sur les 3 premiers mois en
+  mensuel, la première année en annuel, premier abonnement seulement
+  (coupon `mirandola_lancement` et son code, créés par « Brancher
+  Stripe »). Sur les réseaux, un lien suffit :
+  **`https://mirandola.fr/?promo=LANCEMENT`** — le site le fait suivre
+  jusqu'à l'app, qui le garde 14 jours et le pose sur la page de paiement.
+  Pour le finir : Stripe → Produits → Coupons → `mirandola_lancement` →
+  désactiver le code (une date de fin peut aussi y être posée).
+- **Mirandola Campus est sur devis** : plus aucun prix d'établissement sur
+  le site ; la grille de `src/tarifs.js` reste celle de la console de
+  l'éditeur, qui fait les devis.
+
+**À faire avant d'appuyer sur « Brancher Stripe »** : redéployer les
+fonctions `paiement` et `stripe-webhook` (le 2026-11-05, le déploiement
+depuis la session a été refusé par ses garde-fous : à lancer depuis un
+poste avec la CLI Supabase — `supabase functions deploy paiement` et
+`supabase functions deploy stripe-webhook --no-verify-jwt` — ou à
+autoriser dans la session). Sinon la version en ligne poserait les
+anciens prix (6,99 € et 49,99 €).
+
+**Réglages à poser dans le tableau de bord de Stripe** (Paramètres →
+Facturation → Abonnements et e-mails) : « Envoyer un rappel avant la fin
+d'un essai » (7 jours, donc dès le début), et « Envoyer un rappel avant
+un renouvellement » pour les abonnements annuels, **au moins 30 jours
+avant** (article L215-1 : entre trois mois et un mois avant l'échéance).
+
 ## 1. Stripe, pas à pas (en mode test d'abord)
 
 **Depuis le 2026-11-02, une seule clé et un bouton.** Le produit, ses deux

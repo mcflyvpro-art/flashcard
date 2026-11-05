@@ -126,3 +126,7 @@
 .fp-accord{display:flex;align-items:flex-start;gap:10px;margin:0;font-size:13px;font-weight:550;line-height:1.45;color:var(--ink2);cursor:pointer}
 .fp-accord input{flex:none;width:18px;height:18px;margin:1px 0 0;accent-color:var(--ink)}
 .fp-accord .lnk{padding:0;font:inherit;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+/* le code d'un lien des réseaux (2026-11-05) */
+.fp-promo{display:flex;align-items:center;gap:8px;margin:0;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:600;
+  color:var(--ink2);background:color-mix(in srgb,var(--az3) 18%,var(--card))}
+.fp-promo svg{flex:none;width:16px;height:16px;color:var(--az5)}

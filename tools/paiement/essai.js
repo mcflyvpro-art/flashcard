@@ -26,7 +26,7 @@ const abonnements = [{ user_id: 'u2', statut: 'actif', source: 'stripe', client_
   fin_periode: new Date(AN * 1000).toISOString(), fin_prevue: false }];
 const evenements = [], sessions = new Map(), recu = { checkout: [], ecritures: 0 };
 // « Brancher Stripe » : ce que le faux Stripe a reçu, ce que la fausse base a rangé
-const reglages = {}, monde = { produits: {}, prix: [], points: [], portails: [] };
+const reglages = {}, monde = { produits: {}, prix: [], points: [], portails: [], coupons: {}, codes: [] };
 const offres = { u3: 'campus', u5: 'plus' };             // u5 : Mirandola+ offert (un compte d'avant le 2026-10-27)
 const RC_AN = new Date((AN + 86400) * 1000).toISOString();
 const abonnesRC = {
@@ -124,6 +124,19 @@ function stripe(req, res, url, corps) {
     monde.prix.push(x);
     return envoie(res, 200, x);
   }
+  // le code de lancement (2026-11-05) : son coupon, puis son code ; un code se cherche par son texte
+  if (p === 'coupons' && req.method === 'POST') {
+    if (monde.coupons[f.id]) return envoie(res, 400, { error: { code: 'resource_already_exists', message: 'existe' } });
+    monde.coupons[f.id] = f; return envoie(res, 200, { id: f.id });
+  }
+  if (p === 'promotion_codes' && req.method === 'GET') {
+    const code = url.searchParams.get('code');
+    return envoie(res, 200, { data: monde.codes.filter(c => c.code === code && (c.active || url.searchParams.get('active') !== 'true')) });
+  }
+  if (p === 'promotion_codes' && req.method === 'POST') {
+    const c = { id: 'promo_' + monde.codes.length, code: f.code, coupon: f.coupon, active: true, premier: f['restrictions[first_time_transaction]'] };
+    monde.codes.push(c); return envoie(res, 200, c);
+  }
   if (p === 'webhook_endpoints' && req.method === 'GET') return envoie(res, 200, { data: monde.points });
   if (p === 'webhook_endpoints' && req.method === 'POST') {
     const w = { id: 'we_' + monde.points.length + '_' + Date.now(), url: f.url, status: 'enabled', enabled_events: liste(f, 'enabled_events['),
@@ -214,6 +227,10 @@ async function essaisPaiement() {
     && f.client_reference_id === 'u1' && f['subscription_data[metadata][user_id]'] === 'u1' && f.customer_email === 'u1@exemple.fr', f);
   verifie('… qui revient dans l’app', f.success_url === 'https://mirandola.fr/app?plus=merci&session={CHECKOUT_SESSION_ID}'
     && f.cancel_url === 'https://mirandola.fr/app?plus=annule', f);
+  verifie('… un premier abonnement : 7 jours d’essai, la carte demandée, arrêté sans carte à la fin',
+    f['subscription_data[trial_period_days]'] === '7' && f.payment_method_collection === 'always'
+    && f['subscription_data[trial_settings][end_behavior][missing_payment_method]'] === 'cancel'
+    && /^7 jours gratuits/.test(f['custom_text[submit][message]']), f);
   const r2 = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u1');
   verifie('un double appui : la même page, une seule session', r2.j.url === r.j.url && recu.checkout.length === 1, recu.checkout.length);
   const rafale = await Promise.all(Array.from({ length: 20 }, () => appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u1')));
@@ -221,6 +238,16 @@ async function essaisPaiement() {
     && recu.checkout.length === 1, recu.checkout.length);
   r = await appel({ action: 'payer', formule: 'mensuel', cgv: '2026-11-05' }, 'u1');
   verifie('la formule mensuelle : son prix', r.statut === 200 && recu.checkout[1]['line_items[0][price]'] === 'price_mois', recu.checkout[1]);
+  monde.codes.push({ id: 'promo_lancement', code: 'LANCEMENT', active: true });
+  r = await appel({ action: 'payer', formule: 'mensuel', cgv: '2026-11-05', promo: 'lancement' }, 'u1');
+  const fp = recu.checkout.at(-1);
+  verifie('un code venu d’un lien : posé d’avance sur la page de Stripe', r.statut === 200
+    && fp['discounts[0][promotion_code]'] === 'promo_lancement' && !fp.allow_promotion_codes, fp);
+  r = await appel({ action: 'payer', formule: 'mensuel', cgv: '2026-11-05', promo: 'FAUX' }, 'u1');
+  verifie('… un code inconnu : dit, pas facturé plein tarif en silence', r.statut === 404 && r.j.error === 'promo', r);
+  monde.codes.length = 0;                                 // « Brancher Stripe » le créera lui-même
+  r = await appel({ action: 'payer', formule: 'infini_annuel', cgv: '2026-11-05' }, 'u1');
+  verifie('Infini sans son prix posé : la page ne s’ouvre pas', r.statut === 503 && r.j.error === 'noprix', r);
   r = await appel({ action: 'payer', formule: 'a-vie', cgv: '2026-11-05' }, 'u1');
   verifie('une formule inconnue : refusée', r.statut === 400 && r.j.error === 'formule', r);
   r = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' }, 'u2');
@@ -233,6 +260,10 @@ async function essaisPaiement() {
   verifie('gérer sans abonnement : rien à gérer', r.statut === 404 && r.j.error === 'aucun', r);
   r = await appel({ action: 'gerer' }, 'u2');
   verifie('gérer : le portail Stripe du bon client', r.statut === 200 && r.j.url === 'https://billing.stripe.com/p/session/cus_u2', r);
+  r = await appel({ action: 'payer', formule: 'infini_annuel', cgv: '2026-11-05' }, 'u2');
+  verifie('Mirandola+ qui court, passer à Infini : le portail s’ouvre sur le changement de formule, au prorata',
+    r.statut === 200 && recu.portail['flow_data[type]'] === 'subscription_update'
+    && recu.portail['flow_data[subscription_update][subscription]'] === 'sub_u2', recu.portail);
   r = await appel({ action: 'payer', formule: 'annuel', cgv: '2026-11-05' });
   verifie('sans compte : refusé', r.statut === 401, r);
 }
@@ -290,20 +321,28 @@ async function essaisBrancher() {
   r = await appel({ action: 'preparer' }, 'editeur');
   const [an, mois] = ['mirandola_plus_annuel', 'mirandola_plus_mensuel'].map(k => monde.prix.find(x => x.lookup_key === k) || {});
   verifie('brancher : tout est posé', r.statut === 200 && r.j.prix && r.j.webhook && r.j.portail, r.j);
-  verifie('… le produit et ses deux prix, ceux de l’app, TVA comprise', monde.produits.mirandola_plus && an.unit_amount === 4999
-    && an.recurring.interval === 'year' && mois.unit_amount === 699 && mois.recurring.interval === 'month'
-    && an.tax_behavior === 'inclusive' && monde.prix.length === 2, monde.prix);
+  const [ian, imois] = ['mirandola_infini_annuel', 'mirandola_infini_mensuel'].map(k => monde.prix.find(x => x.lookup_key === k) || {});
+  verifie('… deux produits et quatre prix, ceux de l’app, TVA comprise', monde.produits.mirandola_plus && monde.produits.mirandola_infini
+    && an.unit_amount === 4499 && an.recurring.interval === 'year' && mois.unit_amount === 599 && mois.recurring.interval === 'month'
+    && ian.unit_amount === 7999 && ian.product === 'mirandola_infini' && imois.unit_amount === 999
+    && an.tax_behavior === 'inclusive' && monde.prix.length === 4, monde.prix);
+  verifie('… le code de lancement : −20 % sur trois mois, premier abonnement seulement', monde.coupons.mirandola_lancement
+    && monde.coupons.mirandola_lancement.percent_off === '20' && monde.coupons.mirandola_lancement.duration_in_months === '3'
+    && monde.codes.length === 1 && monde.codes[0].code === 'LANCEMENT' && monde.codes[0].premier === 'true', { c: monde.coupons, p: monde.codes });
   const point = monde.points[0] || {};
   verifie('… un point d’arrivée vers stripe-webhook, tous les évènements', monde.points.length === 1
     && point.url === ICI + '/functions/v1/stripe-webhook' && point.enabled_events.length === 8, monde.points);
   verifie('… son secret rangé en base, pour ce mode', reglages['test:webhook_secret'] === point.secret
-    && reglages['test:prix_annuel'] === an.id && reglages['test:portail'] === 'bpc_0', reglages);
+    && reglages['test:prix_annuel'] === an.id && reglages['test:prix_infini_mensuel'] === imois.id
+    && reglages['test:portail'] === 'bpc_0', reglages);
   verifie('… le portail : résilier à la fin de la période, retour dans l’app', monde.portails.length === 1
     && monde.portails[0].f['features[subscription_cancel][mode]'] === 'at_period_end'
-    && monde.portails[0].f.default_return_url === 'https://mirandola.fr/app?plus=retour', monde.portails);
+    && monde.portails[0].f.default_return_url === 'https://mirandola.fr/app?plus=retour'
+    && monde.portails[0].f['features[subscription_update][products][1][product]'] === 'mirandola_infini', monde.portails);
   r = await appel({ action: 'preparer' }, 'editeur');
-  verifie('rebrancher ne crée rien deux fois (prix, point d’arrivée, portail)', r.statut === 200 && monde.prix.length === 2
-    && monde.points.length === 1 && monde.portails.length === 1, { prix: monde.prix.length, points: monde.points.length, portails: monde.portails.length });
+  verifie('rebrancher ne crée rien deux fois (prix, code, point d’arrivée, portail)', r.statut === 200 && monde.prix.length === 4
+    && monde.codes.length === 1 && monde.points.length === 1 && monde.portails.length === 1,
+    { prix: monde.prix.length, codes: monde.codes.length, points: monde.points.length, portails: monde.portails.length });
   r = await appel({ action: 'payer', formule: 'mensuel', cgv: '2026-11-05' }, 'u7');
   verifie('payer : le prix posé par « Brancher Stripe »', r.statut === 200 && recu.checkout.at(-1)['line_items[0][price]'] === mois.id, recu.checkout.at(-1));
   r = await appel({ action: 'gerer' }, 'u2');

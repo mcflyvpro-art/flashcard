@@ -9,7 +9,6 @@ import { PAGES, SITE, SOUS_PAGES, adresse } from '../src/site/pages.js';
 import { decoder, llms, questions, rendreFichier, sitemap, texte } from '../tools/site/gabarit.js';
 import { lireChemin } from '../src/routes.js';
 import { FORMULES } from '../src/abonnement.js';
-import { MINIMUM, TRANCHES, parPlace, prixCampus } from '../src/tarifs.js';
 
 const rendues = PAGES.map(p => ({ p, h: rendreFichier(p.fichier) }));
 const plat = s => s.replace(/&nbsp;|&#8239;|\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ');
@@ -129,11 +128,10 @@ describe.each(rendues.map(x => [x.p.chemin, x]))('la page %s', (_, { p, h }) => 
     }
   });
 
-  it('les prix écrits sont ceux de l’app, de Stripe et de la grille Campus', () => {
-    // en centimes : ceux des formules, de chaque tranche, du minimum, et le
-    // total que le calculateur écrit avant tout script (500 places), et 0
-    const justes = new Set([0, ...Object.values(FORMULES).flatMap(f => [f.prix, f.mois, f.sans]),
-      ...TRANCHES.map(t => t.prix), MINIMUM, prixCampus(500), parPlace(500)].filter(x => x != null));
+  it('les prix écrits sont ceux de l’app et de Stripe ; Campus est sur devis', () => {
+    // en centimes : ceux des formules, et 0 ; aucun prix d'établissement (2026-11-05)
+    const justes = new Set([0, ...Object.values(FORMULES).flatMap(f => [f.prix, f.mois, f.sans])].filter(x => x != null));
+    expect(plat(texte(h)), p.chemin).not.toMatch(/€ HT/);
     const centimes = n => Math.round(Number(n.replace(/ /g, '').replace(',', '.')) * 100);
     for (const [, n] of plat(texte(h)).matchAll(/(?<![\d,])(\d{1,3}(?: \d{3})*(?:,\d+)?) €/g)) {
       expect(justes.has(centimes(n.trim())), `${n} € sur ${p.chemin}`).toBe(true);
