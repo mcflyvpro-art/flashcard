@@ -25,7 +25,7 @@ import { PWMIN } from './connexion.js';
    (LCEN) et les logiciels libres (les notices que leurs licences exigent).
    Les prix et les quotas viennent des modules qui les appliquent : le texte
    ne peut pas dire autre chose que l'app. */
-const LEGALV = '5 novembre 2026';  // l'essai et le code de lancement ajoutés le même jour
+const LEGALV = '6 novembre 2026';  // l'examen blanc de Mirandola Infini (CGU § 7, confidentialité)
 const E = ENTREPRISE;
 const mois = FORMULES.mensuel, an = FORMULES.annuel;
 
@@ -72,9 +72,12 @@ tu veux. Tu garantis avoir le droit d’y mettre ce que tu y mets.
 
 **7. L’intelligence artificielle.** Dans Mirandola+ et Campus, une IA peut
 écrire des pages à partir d’un cours, d’une photo ou d’un document, et te
-répondre quand tu lui demandes de les retoucher : tu échanges alors avec une
-machine, pas avec une personne. Ce qu’elle écrit peut être inexact : relis
-avant d’apprendre. N’y envoie ni données personnelles d’autres personnes,
+répondre quand tu lui demandes de les retoucher ; avec Mirandola Infini, elle
+compose aussi un examen blanc à partir d’un livre et corrige ta copie, tapée
+ou photographiée. Tu échanges alors avec une machine, pas avec une personne.
+Ce qu’elle écrit, ou la note qu’elle donne, peut être inexact : relis avant
+d’apprendre, et vois l’examen blanc comme un entraînement, jamais comme une
+évaluation officielle. N’y envoie ni données personnelles d’autres personnes,
 ni informations sensibles, ni document que tu n’as pas le droit d’utiliser.
 L’usage est plafonné chaque mois, pour que le service reste soutenable.
 
@@ -256,6 +259,10 @@ par un contrat de sous-traitance.
 - *L’IA* : le nombre de générations et leur coût, pour tenir les plafonds.
   Le texte, la photo ou le document que tu envoies ne sont pas gardés par
   Mirandola.
+- *Un examen blanc* (Mirandola Infini) : la note, les questions, ce que l’IA
+  a lu de ta copie, sa correction et ses conseils, rangés avec le livre et
+  supprimés avec lui (ou avec ton compte). La photo de ta copie ne sert qu’à
+  la correction : elle n’est pas gardée.
 - *Un signalement* : son motif et une copie du contenu visé, lue seulement
   par la personne qui l’instruit. Gardé le temps de l’instruction et douze
   mois après sa clôture.

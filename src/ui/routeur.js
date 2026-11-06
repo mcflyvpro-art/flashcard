@@ -48,7 +48,7 @@ const pile = [];
 /* Un écran de passage (la création d'un livre, une révision, un quiz,
    l'accueil d'un compte, une partie) cède sa place à celui qui le suit :
    après « Créer », le retour mène à la bibliothèque, pas au formulaire. */
-const PASSAGE = /^(import|study|run|bienvenue|duel|direct|defi|shared)$/;
+const PASSAGE = /^(import|study|run|bienvenue|duel|direct|defi|shared|examen)$/;
 const dePassage = p => { const e = lireChemin(p || ''); return !!(e && PASSAGE.test(e.name)); };
 /* Passer d'un texte du cadre à un autre (ses onglets) n'est pas un nouvel
    écran : « Retour » ramène là d'où l'on venait, pas au texte d'avant. */

@@ -21,6 +21,8 @@
 .ex-date svg{width:18px;height:18px;color:var(--soft);flex:none}
 .ex-date input{flex:1;min-width:0;height:100%;font-size:16px;font-weight:600;background:none}
 .ex-f .cta{border-radius:99px}
+.ex-blanc{border-top:1px solid var(--hair);margin-top:4px;padding-top:4px}
+.ex-blanc .mi{font-weight:700}
 .ex-gestes{border-top:1px solid var(--hair);margin-top:2px;padding-top:4px}
 
 /* la pastille du livre (en tête de sa page) : posée dans app.css, `.exa` */

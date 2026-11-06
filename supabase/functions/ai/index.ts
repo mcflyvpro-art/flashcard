@@ -252,6 +252,79 @@ const SCHEMA_PROMPT = {
   additionalProperties: false,
 };
 
+/* L'examen blanc de Mirandola Infini (2026-11-06) : composer un sujet à
+   partir des pages d'un livre, puis corriger une copie — tapée ou
+   photographiée. La correction ne commente pas ce qui est juste : c'est sur
+   ce qui est faux que l'élève a besoin d'un vrai conseil. L'app revérifie
+   tout ce qui revient (src/examen-blanc.js). */
+const SYSTEM_EXAMEN = `Tu es un professeur exigeant et bienveillant. Tu composes un examen blanc à partir des pages d'un livre de révision : chaque page est numérotée, son recto ⟶ son verso.
+
+Compose exactement le nombre de questions demandé, dans un ordre qui monte en difficulté :
+- surtout de la restitution (le recto donné, retrouver le verso) ;
+- quelques questions inverses (le verso donné, retrouver le recto) ;
+- une ou deux questions qui demandent de relier plusieurs pages (comparer, expliquer une cause, ordonner des dates) ;
+- jamais deux questions sur la même chose.
+
+Chaque question : q l'énoncé, clair, sans la réponse dedans ; attendu la réponse attendue, juste et courte ; pages les numéros des pages sur lesquelles elle s'appuie.
+N'invente rien qui ne soit pas dans les pages. Respecte la langue et l'orthographe des pages. Vise le niveau du contexte quand il est donné.`;
+
+const SYSTEM_CORRIGER = `Tu corriges l'examen blanc d'un élève. Tu reçois le sujet (chaque question et sa réponse attendue) et sa copie : ses réponses tapées, ou les photos de sa copie manuscrite (plusieurs pages possibles, dans l'ordre ; les réponses y sont numérotées comme les questions, sinon retrouve-les par leur sens).
+
+Pour chaque question, dans l'ordre du sujet :
+- lu : la réponse de l'élève telle qu'il l'a écrite, mot pour mot (transcris l'écriture manuscrite ; vide s'il n'a rien répondu ; « illisible » si tu ne peux pas la lire) ;
+- sur : le barème, de 1 à 4 selon la difficulté de la question ;
+- points : ce que la réponse mérite, par demi-point ;
+- ok : vrai seulement si la réponse est juste et complète ;
+- correction : VIDE si la réponse est juste. Sinon la bonne réponse, en une ou deux phrases ;
+- conseil : VIDE si la réponse est juste. Sinon un conseil concret pour ne plus se tromper : nomme l'erreur exacte (confusion avec quoi, oubli de quoi), puis un moyen précis de la retenir. Jamais de généralité (« relis ton cours »), jamais de compliment.
+
+Sois juste : une réponse correcte dite autrement est juste ; une faute d'orthographe qui ne change pas le sens ne coûte rien, sauf si la question porte sur l'orthographe ; une réponse vague ou incomplète n'a qu'une partie des points.
+
+bilan : deux phrases au plus, en tutoyant : ce qui revient dans les erreurs et ce qu'il faut travailler d'abord. Ni félicitations ni formule.`;
+
+const SCHEMA_EXAMEN = {
+  type: "object",
+  properties: {
+    questions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { q: { type: "string" }, attendu: { type: "string" }, pages: { type: "array", items: { type: "integer" } } },
+        required: ["q", "attendu", "pages"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["questions"],
+  additionalProperties: false,
+};
+
+const SCHEMA_CORRIGER = {
+  type: "object",
+  properties: {
+    bilan: { type: "string" },
+    questions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          lu: { type: "string" }, sur: { type: "integer" }, points: { type: "number" }, ok: { type: "boolean" },
+          correction: { type: "string" }, conseil: { type: "string" },
+        },
+        required: ["lu", "sur", "points", "ok", "correction", "conseil"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["bilan", "questions"],
+  additionalProperties: false,
+};
+
+const EXAMEN_PAGES = 300;     // pages données pour composer
+const EXAMEN_QUESTIONS = 30;  // questions d'un sujet, au plus
+const EXAMEN_PHOTOS = 8;      // pages de copie manuscrite
+const EXAMEN_REPONSE = 1500;  // une réponse tapée, en caractères
+
 const MAX_HIST = 12;      // les messages d'avant qu'on rappelle au modèle
 const MAX_PAGE = 600;     // un recto ou un verso, en caractères
 
@@ -278,15 +351,17 @@ Deno.serve(async (req) => {
   if (!uid) return json({ error: "auth" }, 401);
 
   let body: { op?: string; text?: string; hint?: string; data?: string; mime?: string; pages?: string;
-    message?: string; cards?: unknown; historique?: unknown };
+    message?: string; cards?: unknown; historique?: unknown; n?: unknown; sujet?: unknown; reponses?: unknown;
+    photos?: unknown };
   try {
     body = await req.json();
   } catch {
     return json({ error: "body" }, 400);
   }
   const op = String(body.op ?? "");
-  if (op !== "cards" && op !== "ocr" && op !== "pdf" && op !== "prompt") return json({ error: "op" }, 400);
+  if (!["cards", "ocr", "pdf", "prompt", "examen", "corriger"].includes(op)) return json({ error: "op" }, 400);
   const isFile = op === "ocr" || op === "pdf";
+  const examen = op === "examen" || op === "corriger";
 
   /* Ce que ce compte a le droit de faire, en une lecture (ia_droits,
      migration infini_et_essai) : son offre, son niveau, l'essai, s'il est
@@ -299,6 +374,39 @@ Deno.serve(async (req) => {
   const maxCartes = infini ? INFINI.cartes : MAX_CARDS;
   const maxHist = infini ? INFINI.hist : MAX_HIST;
   const maxPdf = infini ? INFINI.pdf : MAX_PDF;
+
+  // l'examen blanc est à Mirandola Infini, son essai compris (ses 10 générations)
+  if (examen && !sansOffre && d.niveau !== "infini") return json({ error: "infini" }, 402);
+  const ligne = (v: unknown, n: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+  let pagesEx: { f: string; b: string }[] = [], nEx = 0;
+  let sujet: { q: string; attendu: string }[] = [], reponses: string[] = [];
+  let photos: { mime: string; data: string }[] = [];
+  if (op === "examen") {
+    const brutes = Array.isArray(body.cards) ? body.cards.slice(0, EXAMEN_PAGES) : [];
+    pagesEx = brutes.map((c) => {
+      const x = (c ?? {}) as { f?: unknown; b?: unknown };
+      return { f: ligne(x.f, MAX_PAGE), b: ligne(x.b, MAX_PAGE) };
+    });
+    nEx = Math.max(1, Math.min(EXAMEN_QUESTIONS, Math.floor(Number(body.n) || 10), pagesEx.length));
+    if (pagesEx.filter((c) => c.f && c.b).length < 5) return json({ error: "short" }, 400);
+  } else if (op === "corriger") {
+    sujet = (Array.isArray(body.sujet) ? body.sujet.slice(0, EXAMEN_QUESTIONS) : []).map((q) => {
+      const x = (q ?? {}) as { q?: unknown; attendu?: unknown };
+      return { q: ligne(x.q, MAX_PAGE), attendu: ligne(x.attendu, MAX_PAGE) };
+    });
+    if (!sujet.length) return json({ error: "short" }, 400);
+    reponses = (Array.isArray(body.reponses) ? body.reponses : []).slice(0, sujet.length)
+      .map((r) => String(r ?? "").trim().slice(0, EXAMEN_REPONSE));
+    photos = (Array.isArray(body.photos) ? body.photos : []).slice(0, EXAMEN_PHOTOS).map((p) => {
+      const x = (p ?? {}) as { mime?: unknown; data?: unknown };
+      return { mime: String(x.mime ?? ""), data: String(x.data ?? "") };
+    });
+    for (const p of photos) {
+      if (!IMG_TYPES.includes(p.mime) || !p.data) return json({ error: "mime" }, 415);
+      if (Math.floor(p.data.length * 3 / 4) > MAX_IMG) return json({ error: "big", max: MAX_IMG }, 413);
+    }
+    if (!photos.length && !reponses.some(Boolean)) return json({ error: "short" }, 400);
+  }
 
   /* Le Prompt : un message (de quoi faire au moins une consigne), les pages
      en cours (bornées comme celles qu'il rendra) et les messages d'avant. */
@@ -383,7 +491,19 @@ Deno.serve(async (req) => {
      on adjoint la consigne de pages. Choisir les pages côté navigateur
      demanderait une bibliothèque de lecture PDF ; les nommer au modèle
      donne le même résultat sans rien ajouter à l'app. */
-  const content: unknown[] = isFile
+  const sujetTexte = () => sujet.map((q, i) => `${i + 1}. ${q.q}\n   Réponse attendue : ${q.attendu}`).join("\n");
+  const content: unknown[] = op === "examen"
+    ? [{ type: "text", text: (hint ? `Contexte : ${hint}\n\n` : "")
+      + `Pages du livre (${pagesEx.length}) :\n${pagesEx.map((c, i) => `${i}. ${c.f} ⟶ ${c.b}`).join("\n")}\n\n`
+      + `Compose un examen blanc de ${nEx} questions.` }]
+    : op === "corriger"
+    ? [
+      ...photos.map((p) => ({ type: "image", source: { type: "base64", media_type: p.mime, data: p.data } })),
+      { type: "text", text: (hint ? `Contexte : ${hint}\n\n` : "") + `Sujet (${sujet.length} questions) :\n${sujetTexte()}\n\n`
+        + (photos.length ? `La copie de l'élève est dans les ${photos.length} photo(s) ci-dessus.`
+          : `Copie de l'élève :\n${sujet.map((_, i) => `${i + 1}. ${reponses[i] || "(pas de réponse)"}`).join("\n")}`) },
+    ]
+    : isFile
     ? [
       op === "ocr"
         ? { type: "image", source: { type: "base64", media_type: mime, data: b64 } }
@@ -405,12 +525,14 @@ Deno.serve(async (req) => {
   const modeles = infini && auDela ? MODELES.filter((m) => m.id.startsWith("claude-haiku")) : MODELES;
   const essai = await demander({
     max_tokens: infini ? INFINI.jetons : 16000,
-    system: op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM,
+    system: op === "examen" ? SYSTEM_EXAMEN : op === "corriger" ? SYSTEM_CORRIGER
+      : op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM,
     thinking: { type: "adaptive" },
     output_config: {
       // lire une page, ou suivre une consigne sur tout un paquet, demande plus d'attention
-      effort: isFile || op === "prompt" ? "medium" : "low",
-      format: { type: "json_schema", schema: op === "prompt" ? SCHEMA_PROMPT : SCHEMA },
+      effort: examen ? "high" : isFile || op === "prompt" ? "medium" : "low",
+      format: { type: "json_schema", schema: op === "examen" ? SCHEMA_EXAMEN : op === "corriger" ? SCHEMA_CORRIGER
+        : op === "prompt" ? SCHEMA_PROMPT : SCHEMA },
     },
     messages: [{ role: "user", content }],
   }, key, modeles);
@@ -427,6 +549,20 @@ Deno.serve(async (req) => {
   // le coût de l'appel sur sa réservation (attendu : une fonction peut s'arrêter dès sa réponse partie)
   const { error: sansSolde } = await admin.rpc("ia_solder", { rid, p_in: inTok, p_out: outTok, p_cents: +cents.toFixed(4) });
   if (sansSolde) console.error("ia_solder", sansSolde.message);
+
+  /* l'examen blanc : ce que le modèle rend, l'app le relit et le borne
+     (lireSujet, lireCorrection de src/examen-blanc.js) */
+  if (examen) {
+    const brut = (data as { parsed_output?: unknown }).parsed_output ?? (() => {
+      const t = ((data.content ?? []) as { type: string; text?: string }[])
+        .filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
+      try { return JSON.parse(t); } catch { return null; }
+    })();
+    const moisEx = { fait: myMonth + 1, quota: sansOffre ? null : mensuel, sans_compter: infini };
+    if (!brut || !Array.isArray((brut as { questions?: unknown }).questions)) return json({ error: "empty", mois: moisEx }, 422);
+    return json({ [op === "examen" ? "sujet" : "correction"]: brut, mois: moisEx,
+      usage: { in: inTok, out: outTok, cents: +cents.toFixed(4) } });
+  }
 
   let cards: { f: string; b: string }[] = [];
   const parsed = (data as { parsed_output?: { cards?: unknown; note?: unknown } }).parsed_output;

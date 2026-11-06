@@ -19,7 +19,16 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      49 / 148
-DERNIER   2026-11-06 · Mirandola Infini, ses premiers avantages : l'IA
+DERNIER   2026-11-06 · L'examen blanc de Mirandola Infini : l'IA compose
+          un sujet depuis un livre (les pages qui résistent d'abord), la
+          copie se tape ou se photographie (8 pages), l'IA corrige — rien
+          sur ce qui est juste, la correction et un conseil sur le reste —,
+          note sur 20, « Revoir N pages ». Table examens (migration
+          20261106054530, supabase/tests/examens.sql 13/13), règles dans
+          src/examen-blanc.js (test/examen-blanc.test.js 8/8), parcours
+          e2e/examen.e2e.js ; fonction ai : ops examen et corriger (pas
+          encore déployée). Avant :
+          2026-11-06 · Mirandola Infini, ses premiers avantages : l'IA
           sans compter (150 sur le meilleur modèle puis Haiku, gros
           documents ; posée sur la réservation de l'IA de main, fonction
           ai pas encore redéployée) et l'objectif examen (src/examen.js :

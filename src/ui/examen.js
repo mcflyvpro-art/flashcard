@@ -6,6 +6,8 @@ import { fsrsR } from '../fsrs.js';
 import { fsrsW } from './carte-media.js';
 import { mountMenu, paintMenu } from './menus-a.js';
 import { render } from './bibliotheque.js';
+import { ouvrirExamenBlanc } from './examen-porte.js';
+import { questionsPossibles } from '../examen-blanc.js';
 import { compte, dateExamen, joursAvant, FENETRE, RETENTION_EXAMEN } from '../examen.js';
 import { dateValable, prevision } from '../examen-feuille.js';
 import './examen.css';
@@ -66,6 +68,8 @@ export function peindre(w) {
     <div class="menu ex" data-etape="${vivant ? (s.modif ? 'modif' : 'etat') : 'choix'}">
       <div class="mhd">${svg(I.target)}<span class="mhx"><b>Objectif examen</b><i>${esc(d.name)}</i></span></div>
       ${vivant ? etatHtml(d, ex) : choixHtml(d, null)}
+      ${questionsPossibles(d.cards).length ? `<div class="ex-blanc"><button class="mi" data-ex="blanc">${svg(I.pen)}Examen blanc
+        <span class="tail">${svg(I.arrow)}</span></button></div>` : ''}
     </div>`;
   mountMenu(w);
 }
@@ -86,6 +90,7 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-ex]');
   if (!b || menu !== 'examen') return;
   if (b.dataset.ex === 'modif') { s.modif = true; paintMenu(); }
+  else if (b.dataset.ex === 'blanc') ouvrirExamenBlanc(view.id);
   else if (b.dataset.ex === 'retirer') poser(null);
 });
 

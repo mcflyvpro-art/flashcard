@@ -173,7 +173,7 @@ function projette(url, rows) {
 /* La RLS « user_id = auth.uid() », réduite à ce qu'il faut pour que deux
    comptes sur le même store (un professeur et un élève) ne voient pas les
    livres l'un de l'autre. Les autres tables restent lues telles quelles. */
-const PROPRES = new Set(['decks', 'cards', 'subjects', 'sessions', 'prefs', 'reviews', 'shares']);
+const PROPRES = new Set(['decks', 'cards', 'subjects', 'sessions', 'prefs', 'reviews', 'shares', 'examens']);
 const mien = (name, user) => r => (name === 'mail' ? !user || r.to_user === user.id      // une lettre : à qui elle est adressée
   : !PROPRES.has(name) || !r.user_id || !user || r.user_id === user.id);
 
@@ -215,6 +215,7 @@ function ecrit(store, name, body, prefer, user) {
     if (name === 'reviews' && i < 0) contexteRevision(store, r);
     if (name === 'profiles' && i < 0) r.handle = pseudoNeuf(store, r.name || 'lecteur', r.id);   // un pseudo d'office
     if (i >= 0) {
+      if (/ignore-duplicates/.test(prefer)) continue;                 // on conflict do nothing
       if (!/merge-duplicates/.test(prefer)) return [409, { message: 'duplicate key' }];
       if (name === 'decks') r.rev = (t[i].rev || 0) + 1;
       t[i] = { ...t[i], ...r };
