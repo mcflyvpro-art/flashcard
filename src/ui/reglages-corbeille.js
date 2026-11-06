@@ -125,8 +125,8 @@ function settingsCompteHtml() {
           <span class="c">${me && me.handle ? '@' + esc(me.handle) : ''}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="commu">${svg(I.users)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
-        ${(myRole === 'eleve' || myRole === 'prof') && !atSchool() ? `<button class="sr flat" data-ce="ouvrir">${svg(I.key)}
-          <span class="n">J’ai un code</span><span class="c">établissement, professeur</span>${svg(I.arrow)}</button>` : ''}
+        ${myRole === 'eleve' || myRole === 'prof' ? `<button class="sr flat" data-ce="ouvrir">${svg(I.key)}
+          <span class="n">J’ai un code</span><span class="c">${atSchool() ? 'livre' : 'établissement, livre'}</span>${svg(I.arrow)}</button>` : ''}
         ${ligneSecu()}
       </div>`;
 }
@@ -316,9 +316,9 @@ export function sharedView() {
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
       <h1>Livre partagé</h1></div>
     <div class="page">
-      ${s.st === 'load' ? `<div class="empty">${svg(I.link)}<p>Ouverture du lien…</p></div>`
-      : s.st !== 'ok' ? `<div class="empty">${svg(I.warn)}<p><b>${s.st === 'gone' ? 'Lien révoqué' : 'Lien illisible'}</b>${
-          s.st === 'gone' ? 'Ce livre n’est plus prêté.' : 'Réessaie une fois en ligne.'}</p></div>`
+      ${s.st === 'load' ? `<div class="empty">${svg(I.book)}<p>Ouverture du livre…</p></div>`
+      : s.st !== 'ok' ? `<div class="empty">${svg(I.warn)}<p><b>${s.st === 'gone' ? 'Aucun livre à ce code' : 'Livre injoignable'}</b>${
+          s.st === 'gone' ? 'Code mal recopié, ou livre plus prêté.' : 'Réessaie une fois en ligne.'}</p></div>`
       : `<div class="top"><div class="hero">${esc(d.name)}</div></div>
         <button class="cta" data-act="addshared">${svg(I.plus)}Ajouter à ma bibliothèque</button>
         <div class="rows">${cards.slice(0, 300).map(c => `<div class="pr">

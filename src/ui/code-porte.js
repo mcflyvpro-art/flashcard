@@ -4,28 +4,30 @@ import { setMenu } from '../data/etat.js';
 import { toast } from './import-cartes.js';
 
 /* ══════════ la porte de « J'ai un code » (2026-11-05) ══════════
-   La feuille (ui/code-entree.js) et ses règles arrivent à la demande : on
-   ne s'en sert qu'une fois, pour entrer dans une école, et le démarrage n'a
-   plus de marge. Le service worker la garde hors ligne avec le reste. Rien
-   d'autre ne doit importer ui/code-entree.js. */
+   La feuille (ui/code-entree.js) et ses règles — les messages de chaque
+   statut d'un code (src/etablissement.js), le code d'un livre
+   (src/livre-code.js) — arrivent à la demande : une dizaine de Ko qui
+   pesaient sur le démarrage pour une feuille qu'on ouvre rarement, et le
+   démarrage n'avait plus de marge. Rien d'autre ne doit importer
+   ui/code-entree.js : ouvrir la feuille passe par `ouvrirCode` d'ici, un
+   bouton `data-ce="ouvrir"` aussi (l'écouteur ci-dessous, tant que la
+   feuille n'est pas chargée ; ensuite, le sien). */
 let feuille = null;
-const charger = () => feuille || (feuille = import('./code-entree.js'));
-
-let pret = null;
+const charger = () => import('./code-entree.js').then(m => (feuille = m));
 
 export async function ouvrirCode(code, o) {
-  try { pret = await charger(); }
-  catch (e) { feuille = null; toast(I.x, 'Impossible hors ligne pour l’instant'); return; }
-  pret.ouvrirCode(code, o);
+  try { await (feuille || charger()); }
+  catch (e) { return toast(I.x, 'Impossible hors ligne pour l’instant'); }
+  feuille.ouvrirCode(code, o);
 }
 
 export function paintMenuCode(w) {
-  if (pret) return pret.paintMenuCode(w);
+  if (feuille) return feuille.paintMenuCode(w);
   setMenu(null);
 }
 
-// le bouton « J'ai un code » des Réglages et de « Ma classe » (`data-ce="ouvrir"`)
 document.addEventListener('click', e => {
+  if (feuille) return;                       // chargée : son propre écouteur répond
   const b = e.target.closest('[data-ce="ouvrir"]');
   if (!b || b.disabled) return;
   e.preventDefault();

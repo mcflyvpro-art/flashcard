@@ -6,6 +6,9 @@ import { codeApercu, eleveClassesPull, messageErreur, rejoindreAvecCode } from '
 import { cerclePull, refPull } from '../core/classement.js';
 import { offrePull } from '../core/abonnement.js';
 import { codeComplet, codeDepuisTexte, formatCode, nomPropre, nomValide, normCode } from '../classe.js';
+import { codeLivre, estCodeLivre, tokComplet, tokDepuisTexte } from '../livre-code.js';
+import { garder } from '../lien-garde.js';
+import { openShared } from '../core/reglages-corbeille.js';
 import { bienvenue, messageEtab, ROLES_CODE } from '../etablissement.js';
 import { go } from './bibliotheque.js';
 import { isProf } from './classement.js';
@@ -24,6 +27,10 @@ import { apresEntree } from './tuto-porte.js';
    « ?rejoindre= ». Un ancien code de classe continue dans « Ma classe »,
    où vit déjà son parcours.
 
+   Le code d'un livre partagé (2026-11-05, src/livre-code.js) entre aussi
+   par ici : dix signes, ou le lien collé — le livre s'ouvre, prêt à être
+   ajouté (vue `shared`).
+
    Chez un professeur particulier (2026-10-29), on n'entre pas tout de
    suite : on passe dans sa salle d'attente (statut « attente »), ce qui
    réserve une place de sa licence et ouvre déjà Mirandola Campus. Il
@@ -32,15 +39,20 @@ import { apresEntree } from './tuto-porte.js';
 
 const E = () => eleve.entree;
 
+/* Un code d'établissement (« XXXX-XXXX ») ou celui d'un livre
+   (« XXXX-XXXX-XX ») : la forme suit ce qu'on tape, par quatre. */
+const enForme = v => (estCodeLivre(v) ? codeLivre(v) : formatCode(/rejoindre=/.test(v) ? codeDepuisTexte(v) : v));
+const complet = v => (estCodeLivre(v) ? tokComplet(tokDepuisTexte(v)) : codeComplet(normCode(v)));
+
 /* `o.entre(r)` (2026-10-29) : qui a ouvert la feuille reprend la main une
    fois l'élève entré ou en salle d'attente — l'accueil d'un nouveau compte
    (ui/bienvenue.js) continue alors sur place, sans repasser par « Ma
    classe ». Rend vrai s'il s'en charge. */
 export function ouvrirCode(code, o = {}) {
-  Object.assign(E(), { code: formatCode(code || ''), fiche: null, reponse: null, envoi: false, classe: '', type: '',
+  Object.assign(E(), { code: enForme(code || ''), fiche: null, reponse: null, envoi: false, classe: '', type: '',
     entre: o.entre || null });
   openMenu('code');
-  if (codeComplet(normCode(code || ''))) lire();
+  if (complet(code || '')) lire();
 }
 
 const peindre = () => { if (menu === 'code') openMenu('code'); };
@@ -52,9 +64,9 @@ function feuilleCode(e) {
   return coque(`<div class="mhd">${svg(I.key)}<span class="mhx"><b>J’ai un code</b></span></div>
     <form class="ce-form" id="ceform" autocomplete="off">
       <input class="ce-code" id="cecode" data-cein="code" value="${esc(e.code)}" placeholder="XXXX-XXXX"
-        autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="40" enterkeyhint="go" aria-label="Code">
+        autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="400" enterkeyhint="go" aria-label="Code">
       <p class="ce-rep${m ? ' ' + m.ton : ''}" id="cerep">${m ? `<b>${esc(m.titre)}</b>${m.texte ? `<span>${esc(m.texte)}</span>` : ''}` : ''}</p>
-      <button class="cta" data-ce="lire" id="ceok" ${codeComplet(normCode(e.code)) && !e.envoi ? '' : 'disabled'}>Continuer</button>
+      <button class="cta" data-ce="lire" id="ceok" ${complet(e.code) && !e.envoi ? '' : 'disabled'}>Continuer</button>
     </form>`);
 }
 
@@ -109,8 +121,22 @@ async function dejaLa(r) {
   go('classes');
 }
 
+/* Le code d'un livre : le livre s'ouvre, prêt à être ajouté. Depuis
+   l'accueil d'un nouveau compte, il attend la fin des premiers pas
+   (liens-entrants.js, `consumeLivre`) : l'accueil ne se quitte pas. */
+function livre(tok) {
+  const e = E(), f = e.entre;
+  if (!tokComplet(tok) || e.envoi) return;
+  if (!online) return toast(I.cloud, 'Hors ligne : un code demande le réseau');
+  Object.assign(e, { code: '', entre: null });
+  closeMenu();
+  if (f) { garder('folio.livre', tok); return toast(I.card, 'Ton livre t’attend : il s’ouvre après tes premiers pas'); }
+  openShared(tok);
+}
+
 async function lire() {
   const e = E(), k = normCode(e.code);
+  if (estCodeLivre(e.code)) return livre(tokDepuisTexte(e.code));
   if (!codeComplet(k) || e.envoi) return;
   if (!online) return toast(I.cloud, 'Hors ligne : un code demande le réseau');
   e.envoi = true; e.reponse = null; peindre();
@@ -175,8 +201,8 @@ async function entrer() {
   peindre();
 }
 
-// « ouvrir » (les Réglages, « Ma classe ») : la porte, ui/code-porte.js, qui charge ce fichier
 const ACTIONS = {
+  ouvrir: () => ouvrirCode(),
   lire,
   entrer,
   retour: () => { Object.assign(E(), { fiche: null, reponse: null }); peindre(); },
@@ -205,11 +231,10 @@ document.addEventListener('input', e => {
   const n = e.target.closest('[data-cein]'); if (!n) return;
   const k = n.dataset.cein, s = E();
   if (k === 'code') {
-    const v = /rejoindre=/.test(n.value) ? codeDepuisTexte(n.value) : n.value;   // un lien collé se réduit à son code
-    s.code = formatCode(v);
+    s.code = enForme(n.value);                     // un lien collé se réduit à son code
     if (n.value !== s.code) { n.value = s.code; n.setSelectionRange(n.value.length, n.value.length); }
     s.reponse = null;
-    const b = document.getElementById('ceok'); if (b) b.disabled = !codeComplet(normCode(s.code));
+    const b = document.getElementById('ceok'); if (b) b.disabled = !complet(s.code);
     const p = document.getElementById('cerep'); if (p) { p.className = 'ce-rep'; p.innerHTML = ''; }
     return;
   }

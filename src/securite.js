@@ -23,6 +23,7 @@ export function attente(erreur) {
   return m ? +m[1] : 0;
 }
 
+/** @type {Array<[string[], RegExp, string]>} */
 const MESSAGES = [
   // avant les codes reçus par e-mail : « Invalid TOTP » contient « otp »
   [['mfa_verification_failed'], /invalid totp/i, 'Code faux : regarde ton application, il change toutes les 30 secondes.'],

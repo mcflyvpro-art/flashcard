@@ -173,7 +173,7 @@ function projette(url, rows) {
 /* La RLS « user_id = auth.uid() », réduite à ce qu'il faut pour que deux
    comptes sur le même store (un professeur et un élève) ne voient pas les
    livres l'un de l'autre. Les autres tables restent lues telles quelles. */
-const PROPRES = new Set(['decks', 'cards', 'subjects', 'sessions', 'prefs', 'reviews']);
+const PROPRES = new Set(['decks', 'cards', 'subjects', 'sessions', 'prefs', 'reviews', 'shares']);
 const mien = (name, user) => r => (name === 'mail' ? !user || r.to_user === user.id      // une lettre : à qui elle est adressée
   : !PROPRES.has(name) || !r.user_id || !user || r.user_id === user.id);
 
@@ -259,6 +259,7 @@ function rest(store, req, url, path, body) {
   const user = userOf(store, req);
   const name = path.replace('/rest/v1/', '');
   if (name === 'rpc/demander_demo') return [200, demanderDemoFaux(store, body || {})];   // ouverte à anon, comme la vraie
+  if (name === 'rpc/shared_deck') return [200, sharedDeckFaux(store, body || {})];       // elle aussi
   if (!user) return [401, { message: 'JWT expired' }];
   const prefer = req.headers.prefer || '';
   if (name === 'rpc/sync_deck_cards') return syncDeckCards(store, body, user);
@@ -296,6 +297,19 @@ export function repondre(store, req) {
     : [404, {}];
   store.journal.push(`${req.method} ${path} → ${status}`);
   return [status, json, headers];
+}
+
+/* Un livre prêté par son code (`shares`, src/livre-code.js) : son nom, le
+   nom de sa matière et ses pages — recto et verso, rien de l'état
+   d'apprentissage de qui le prête (comme la vraie, depuis 20261105174123). */
+function sharedDeckFaux(store, { tok }) {
+  const s = table(store, 'shares').find(x => x.token === tok);
+  const d = s && table(store, 'decks').find(x => x.id === s.deck_id && !x.deleted_at);
+  if (!d) return [];
+  const json = Array.isArray(d.cards) && d.cards.length ? d.cards
+    : table(store, 'cards').filter(c => c.deck_id === d.id).map(c => ({ f: c.front, b: c.back }));
+  const sj = table(store, 'subjects').find(x => x.user_id === d.user_id && x.id === d.subject);
+  return [{ name: d.name, subject: d.subject, cards: json.map(c => ({ f: c.f, b: c.b })), mode: s.mode || 'ro', subject_name: sj ? sj.name : null }];
 }
 
 /* Un paquet déjà travaillé, posé directement dans le faux serveur (le

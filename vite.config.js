@@ -1,5 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { appendFileSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, relative } from 'node:path';
 import { entrees, fichierDe, pagesDuSite } from './tools/site/gabarit.js';
@@ -102,6 +102,33 @@ function moteurDuSite() {
   };
 }
 
+/* La CSP de vercel.json, APPLIQUÉE par `vite preview` quand CSP_STRICTE
+   nomme un fichier (tools/pw-csp.config.js, M10.T5) : toute la suite des
+   parcours tourne alors sous la vraie politique, et chaque violation —
+   n'importe quelle page, n'importe quel test — arrive par `report-uri`
+   dans ce fichier. Sans la variable, rien ne change. */
+function cspStricte() {
+  const fichier = process.env.CSP_STRICTE;
+  if (!fichier) return null;
+  const v = JSON.parse(readFileSync('vercel.json', 'utf8'));
+  const h = v.headers.flatMap(x => x.headers).find(x => /^Content-Security-Policy/.test(x.key));
+  return {
+    name: 'csp-stricte',
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url === '/__csp' && req.method === 'POST') {
+          let corps = '';
+          req.on('data', c => { corps += c; });
+          req.on('end', () => { appendFileSync(fichier, corps + '\n'); res.statusCode = 204; res.end(); });
+          return;
+        }
+        res.setHeader('Content-Security-Policy', h.value + '; report-uri /__csp');
+        next();
+      });
+    }
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   /* Sans ces deux valeurs, l'app se construirait quand même et
@@ -117,7 +144,7 @@ export default defineConfig(({ mode }) => {
   const base = '/';
   return {
     base,
-    plugins: [pagesDuSite(), moteurDuSite(), serviceWorker(base), adressesDeLApp()],
+    plugins: [pagesDuSite(), moteurDuSite(), serviceWorker(base), adressesDeLApp(), cspStricte()].filter(Boolean),
     /* Les pages du site (index.html, servie à `/`, et une par sujet :
        tarifs.html à `/tarifs`… src/site/pages.js, docs/SEO.md) et l'app
        (app.html, servie à `/app`). docs/LANDING.md. */

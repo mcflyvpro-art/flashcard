@@ -26,6 +26,7 @@ import {
   deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
   setMeta, slugify, solveConflict, subj
 } from '../core/coeur-sync.js';
+import { clickPartage, ouvrirPartage } from './partage-porte.js';
 import { duelStart } from './defis.js';
 import { duelDrop } from '../core/defis.js';
 import { ouvrirDefi } from './defi-nouveau.js';
@@ -40,7 +41,7 @@ import {
   addMail, backupData, backupRestore, delMail, dropFriend, lireSauvegarde
 } from '../core/reglages-corbeille.js';
 import {
-  friendsPull, revokeShare, sendDeck, shareLink, versPull
+  friendsPull, sendDeck, versPull
 } from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
 
@@ -386,7 +387,7 @@ function clickPkDel(t) {
   return toast(I.trash, 'Livre dans la corbeille', true);
 }
 
-function clickPkShare() { if (!friends) friendsPull(); return openMenu('sharepick'); }
+const clickPkShare = () => ouvrirPartage();
 
 function clickPkFind() {
   setDeckOpen(true); setDeckQ(''); setAnimate(false); render();
@@ -410,18 +411,6 @@ function clickPkPrefix(a) {
   if (a === 'pkset') return openMenu('deckset');
 }
 
-async function clickRolink(a, b, d) {
-  if (!d) return;
-  closeMenu();
-  try {
-    const url = await shareLink(d);
-    if (navigator.share) partager({ url });
-    else await navigator.clipboard.writeText(url);
-    toast(I.link, 'Lien de consultation copié');
-  } catch (err) { toast(I.x, 'Lien impossible hors ligne'); }
-}
-
-async function clickRoff(a, b, d) { if (!d) return; closeMenu(); await revokeShare(d); return toast(I.check, 'Lien coupé'); }
 /* « Lancer un défi » depuis un livre : l'écran du défi, ce livre déjà choisi. */
 function clickDuelnew2(a, b, d) { if (!d) return; closeMenu(); ouvrirDefi({ livre: d.id, retour: { name: 'deck', id: d.id } }); }
 const clickMatedefi = () => { closeMenu(); ouvrirDefi({ ou: 'amis', mode: 'rythme', retour: { name: view.name, id: view.id } }); };
@@ -435,14 +424,6 @@ const clickCftheirs = () => solveConflict('theirs');
 const clickCfboth = () => solveConflict('both');
 function clickDuelgo() { const du = (duels.list || []).find(x => x.id === duels.open); if (du) duelStart(du); }
 const clickDueldrop = () => duelDrop(duels.open);
-
-function clickCopylink(a, b, d) {
-  closeMenu();
-  const url = SITE + '#i=' +
-    enc({ name: d.name, subject: d.subject, sn: d.subject ? subj(d.subject).name : '', cards: d.cards.map(c => [c.f, c.b]) });
-  if (navigator.share) partager({ url });
-  else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Lien copié'));
-}
 
 function clickSendfriend() {
   setSendTo(null); setSendMsg('');
@@ -541,8 +522,7 @@ const CLICK_RULES = [
   [a => a === 'sharepick', clickPkShare],
   [a => a === 'pdfopen' || (!!a && a.startsWith('pdf-')), clickPdf],
   [a => a === 'examen', () => ouvrirExamen()],
-  [a => a === 'rolink', clickRolink],
-  [a => a === 'roff', clickRoff],
+  [a => ['rolink', 'roff', 'lccopy', 'lcshare'].includes(a), clickPartage],
   [a => a === 'duelnew2', clickDuelnew2],
   [a => a === 'versopen', clickVersopen],
   [a => a === 'matedrop', clickMatedrop],
@@ -554,7 +534,6 @@ const CLICK_RULES = [
   [a => a === 'cfboth', clickCfboth],
   [a => a === 'duelgo', clickDuelgo],
   [a => a === 'dueldrop', clickDueldrop],
-  [a => a === 'copylink', clickCopylink],
   [a => a === 'sendfriend', clickSendfriend],
   [a => a === 'sendmail', clickSendmail],
   [a => a === 'addmail', clickAddmail],

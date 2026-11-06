@@ -19,7 +19,8 @@ import { go, render } from './bibliotheque.js';
 import { dec, fsrsMigrate } from './carte-media.js';
 import { accueil } from '../core/classement.js';
 import { cacheKey, flush, load, plur, pull, refreshToken, save, saveAuth, SB, setOnline } from '../core/coeur-sync.js';
-import { lienAvantSession } from './liens-entrants.js';
+import { lienAvantSession, rangerLiens } from './liens-entrants.js';
+import { aInstaller } from './pwa-porte.js';
 import { armer, armerSansSession, cibleDepart, desarmer, installee } from './routeur.js';
 import { effacerDemo, ouvrirDemo } from './demo-porte.js';
 import { importPayload, toast } from './import-cartes.js';
@@ -33,6 +34,9 @@ import { arreterTuto, maybeTuto } from './tuto-porte.js';
 
 /* ---------- lien d'injection ---------- */
 export function consumeHash() {
+  // sans session, ou devant la porte d'installation (le navigateur d'un téléphone), le lien attend :
+  // la connexion, ou l'app installée — la carte de passage montre son code (liens-entrants.js, rangerLivre)
+  if (!auth || aInstaller()) return false;
   if (location.hash.startsWith('#s=')) {
     const tok = location.hash.slice(3).replace(/[^a-z0-9]/gi, '').slice(0, 32);
     history.replaceState(null, '', location.pathname);
@@ -293,7 +297,9 @@ export async function boot() {
    parcouru. */
 queueMicrotask(boot);
 
-window.addEventListener('hashchange', consumeHash);
+/* Un lien collé dans la barre d'adresse, l'app ouverte : avec une session,
+   il s'ouvre ; sans, il attend la connexion, montré sur la carte de passage. */
+window.addEventListener('hashchange', () => (auth && !aInstaller() ? consumeHash() : rangerLiens().then(render)));
 
 window.addEventListener('online', flush);
 
