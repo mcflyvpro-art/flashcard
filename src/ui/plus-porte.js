@@ -47,7 +47,9 @@ export const entreePlus = () => !sansFolioPlus() && !!offre;
 /* `o` : { etape, formule, raison } — le retour de Stripe, la formule
    choisie sur le site, ce que l'élève vient de toucher (ui/bridage.js). */
 export function ouvrirPlus(o = {}) {
-  setPlus({ ...plusNeuf(), formule: o.formule || 'annuel', etape: o.etape || null, raison: o.raison || null });
+  // « infini_annuel » (un lien du site) : le niveau, puis la période
+  const f = String(o.formule || '');
+  setPlus({ ...plusNeuf(), formule: /mensuel$/.test(f) ? 'mensuel' : 'annuel', niveau: o.niveau === 'infini' || /^infini_/.test(f) ? 'infini' : 'plus', etape: o.etape || null, raison: o.raison || null });
   go('plus');
   offrePull().then(() => (offre && offre.offre !== 'gratuit' ? iaMoisPull() : null))
     .then(() => { if (view.name === 'plus') render(); });

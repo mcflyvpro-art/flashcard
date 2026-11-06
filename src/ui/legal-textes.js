@@ -27,7 +27,7 @@ import { PWMIN } from './connexion.js';
    ne peut pas dire autre chose que l'app. */
 const LEGALV = '6 novembre 2026';  // l'examen blanc de Mirandola Infini (CGU § 7, confidentialité)
 const E = ENTREPRISE;
-const mois = FORMULES.mensuel, an = FORMULES.annuel;
+const mois = FORMULES.mensuel, an = FORMULES.annuel, imois = FORMULES.infini_mensuel, ian = FORMULES.infini_annuel;
 
 export const LEGAL = {
   cgu: ['Conditions d’utilisation', `
@@ -141,12 +141,31 @@ ${IA_PAR_MOIS.plus} générations par mois (${IA_PROF_PAR_MOIS} pour un professe
 les QCM et les associations ; les images et les sons sur les pages ; toutes
 les statistiques du journal.
 
+**2 bis. Ce que Mirandola Infini ajoute.** Tout Mirandola+, et : l’IA sans
+compter — 150 générations par mois sur le modèle le plus avancé, puis sans
+limite sur un modèle plus rapide, dans les bornes d’un usage personnel
+(60 générations par jour) ; des documents jusqu’à 20 Mo et 300 pages par
+génération ; l’objectif examen (une date par livre, et le moteur qui vise
+95 % de souvenir dans les 30 jours qui la précèdent) ; l’examen blanc,
+composé et corrigé par l’IA, copie tapée ou photographiée. Ce qui est dit
+ici de Mirandola+ vaut pour Mirandola Infini, sauf ce qui est propre à ses
+prix.
+
 **3. Les prix.** Toutes taxes comprises :
 
 - *Mirandola+ au mois* : ${euros(mois.prix)} par mois, sans engagement.
 - *Mirandola+ à l’année* : ${euros(an.prix)} par an, payé en une fois, soit
   ${euros(an.mois)} par mois ou ${an.remise} % de moins que douze mois au mois
   (${euros(an.sans)}).
+- *Mirandola Infini au mois* : ${euros(imois.prix)} par mois, sans engagement.
+- *Mirandola Infini à l’année* : ${euros(ian.prix)} par an, payé en une fois,
+  soit ${euros(ian.mois)} par mois ou ${ian.remise} % de moins que douze mois au
+  mois (${euros(ian.sans)}).
+
+Changer de formule en cours d’abonnement (de Mirandola+ à Mirandola Infini,
+ou l’inverse) se fait depuis la gestion de l’abonnement : la nouvelle formule
+s’applique aussitôt, et la différence, calculée au prorata du temps qui
+reste, s’ajoute à ta prochaine échéance ou s’en déduit.
 
 Le prix payé est celui affiché au moment de la commande. S’il change, tu en
 es prévenu au moins 30 jours avant ta prochaine échéance ; le nouveau prix ne

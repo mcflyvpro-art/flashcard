@@ -2,7 +2,7 @@
    Module pur, testé (test/abonnement.test.js). Sorti de src/abonnement.js,
    qui part au démarrage de l'app : ceci ne sert qu'à l'écran Mirandola+
    (ui/plus.js), chargé à la demande. */
-import { FORMULES, dateLisible, euros } from './abonnement.js';
+import { FORMULES, dateLisible, euros, niveauDe } from './abonnement.js';
 
 /* Les avantages (AVANTAGES de src/abonnement.js), en détail : une icône (src/icones.js),
    un titre, une ligne. `prof` : ce qui change pour un professeur. */
@@ -16,6 +16,14 @@ export const AVANTAGES_DETAIL = [
   { ic: 'chart', t: 'Ton journal complet', s: 'Ce que tu sais vraiment, tes heures, tes matières, les pages qui résistent.' }
 ];
 
+/* Ce que Mirandola Infini ajoute (2026-11-06) : tout Mirandola+, et ceci.
+   Rien n'y est retiré à Mirandola+ : Infini est au-dessus, pas à côté. */
+export const AVANTAGES_INFINI = [
+  { ic: 'spark', t: 'L’IA sans compter', s: '150 générations du meilleur modèle chaque mois, puis sans limite. Des PDF de 20 Mo, 300 pages d’un coup.' },
+  { ic: 'pen', t: 'L’examen blanc', s: 'L’IA compose ton sujet et corrige ta copie, même écrite à la main : un conseil là où tu te trompes.' },
+  { ic: 'target', t: 'L’objectif examen', s: 'Une date sur un livre : le moteur vise 95 % de souvenir le jour J.' }
+];
+
 /* ---------- la licence, ligne par ligne (2026-10-28) ----------
    Ce que l'écran Mirandola+ dit d'un compte qui a Mirandola+ ou Campus : un état
    (une pastille), des lignes [libellé, valeur] — formule, prix, prochaine
@@ -26,7 +34,7 @@ const SOURCES = { stripe: 'Carte bancaire, par Stripe', apple: 'L’App Store', 
 const prixDe = a => {
   const f = FORMULES[a.formule];
   const c = a.montant ?? (f && f.prix);
-  return c == null ? '' : `${euros(c)} par ${a.formule === 'annuel' ? 'an' : 'mois'}`;
+  return c == null ? '' : `${euros(c)} par ${f && f.par === 'an' ? 'an' : 'mois'}`;
 };
 
 function etatLicence(a) {
@@ -36,11 +44,15 @@ function etatLicence(a) {
   return { k: 'ok', t: 'Actif' };
 }
 
+// Mirandola Infini (2026-11-05) : la même offre, un niveau au-dessus — son nom partout où l'abonnement se dit
+const nomDe = a => (niveauDe(a.formule) === 'infini' ? 'Mirandola Infini' : 'Mirandola+');
+const annuel = a => !!FORMULES[a.formule] && FORMULES[a.formule].par === 'an';
+
 function engagement(a, date) {
-  const jusqua = date ? ` jusqu’au ${date}` : '';
-  if (a.finPrevue) return `Résilié : Mirandola+ reste ouvert${jusqua}, sans nouveau prélèvement.`;
-  if (a.formule === 'annuel') return `Engagement d’un an, payé d’avance. Résilier arrête le renouvellement : Mirandola+ reste ouvert${jusqua}.`;
-  return `Sans engagement. Résilier arrête le prochain prélèvement : Mirandola+ reste ouvert${jusqua}.`;
+  const jusqua = date ? ` jusqu’au ${date}` : '', nom = nomDe(a);
+  if (a.finPrevue) return `Résilié : ${nom} reste ouvert${jusqua}, sans nouveau prélèvement.`;
+  if (annuel(a)) return `Engagement d’un an, payé d’avance. Résilier arrête le renouvellement : ${nom} reste ouvert${jusqua}.`;
+  return `Sans engagement. Résilier arrête le prochain prélèvement : ${nom} reste ouvert${jusqua}.`;
 }
 
 function licenceAbonne(a) {
@@ -48,7 +60,8 @@ function licenceAbonne(a) {
   const echeance = a.finPrevue ? ['Fin', date] : a.statut === 'essai' ? ['Fin de l’essai', date] : ['Prochain prélèvement', date];
   return {
     etat: etatLicence(a),
-    lignes: [['Formule', a.formule === 'annuel' ? 'Annuelle' : a.formule === 'mensuel' ? 'Mensuelle' : 'Abonnement'],
+    lignes: [['Formule', FORMULES[a.formule] ? `${niveauDe(a.formule) === 'infini' ? 'Infini, ' : ''}${annuel(a) ? 'annuelle' : 'mensuelle'}`
+      .replace(/^./, x => x.toUpperCase()) : 'Abonnement'],
       ['Prix', prixDe(a)], date ? echeance : null, ['Paiement', SOURCES[a.source] || '']].filter(l => l && l[1]),
     engagement: engagement(a, date)
   };

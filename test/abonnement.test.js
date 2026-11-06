@@ -109,6 +109,15 @@ describe('la licence, ligne par ligne', () => {
     expect(lignes(l).Paiement).toBe('Google Play');
     expect(l.engagement).toMatch(/^Sans engagement/);
   });
+  it('Infini : son nom dans la formule et l’engagement, « par an » pour l’annuel', () => {
+    const l = licence({ offre: 'plus', abonnement: ab({ formule: 'infini_annuel' }) });
+    expect(lignes(l).Formule).toBe('Infini, annuelle');
+    expect(lignes(l).Prix).toBe('79,99\u00a0€ par an');
+    expect(l.engagement).toMatch(/^Engagement d’un an.*Mirandola Infini reste ouvert/);
+    const m = licence({ offre: 'plus', abonnement: ab({ formule: 'infini_mensuel', finPrevue: true }) });
+    expect(lignes(m).Prix).toBe('9,99\u00a0€ par mois');
+    expect(m.engagement).toMatch(/^Résilié : Mirandola Infini reste ouvert/);
+  });
   it('résilié : la fin, sans nouveau prélèvement ; impayé : la pastille le dit', () => {
     const l = licence({ offre: 'plus', abonnement: ab({ finPrevue: true }) });
     expect(l.etat.t).toBe('Résilié');

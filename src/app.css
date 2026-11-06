@@ -1337,6 +1337,9 @@ html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:
 html.offre-plus :is(.tabs .sl,.fab,.prog i){background:var(--plus)}
 html.offre-plus .cta:not(:disabled){background:var(--plus);color:#fff;box-shadow:0 10px 22px -12px rgba(120,70,160,.75)}
 html.offre-plus #rail nav button.on svg{color:#8A6BCB}
+/* Mirandola Infini (2026-11-06) : la même lumière, plus profonde, et « ∞ » après le nom */
+html.offre-infini{--plus:linear-gradient(135deg,#243473,#5A76D0 48%,#D7648D)}
+html.offre-infini #rail .brand span::after{content:'\2009∞'}
 /* l'onglet Mirandola+ d'un compte gratuit : son nom et son icône dans la lumière de la marque */
 .tabs .t-plus svg{color:#9A78CF;fill:rgba(154,120,207,.18)} .tabs .t-plus.on svg{color:var(--bg);fill:none}
 #rail nav .r-plus span{background:var(--plus);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:750}

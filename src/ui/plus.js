@@ -3,8 +3,8 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { offre, plus, view } from '../data/etat.js';
-import { ESSAI_JOURS, FORMULES, RAISONS, erreurDe, euros, gestion, resume } from '../abonnement.js';
-import { AVANTAGES_DETAIL, iaDuMois, licence } from '../licence.js';
+import { ESSAI_JOURS, FORMULES, RAISONS, erreurDe, euros, formuleDe, gestion, resume } from '../abonnement.js';
+import { AVANTAGES_DETAIL, AVANTAGES_INFINI, iaDuMois, licence } from '../licence.js';
 import { iaParMois } from '../offres.js';
 import { NOMS, mobile, plateforme, vente } from '../plateformes.js';
 import { qrSvg } from '../qr.js';
@@ -61,13 +61,14 @@ function merci() {
   if (plus.etape !== 'merci') return '';
   if (actif()) {
     return `<section class="fp-merci" data-k="fp-merci"><i class="fp-merci-ic">${svg(I.check)}</i>
-      <h2>Bienvenue dans Mirandola<span class="fp-plus">+</span></h2><p>${esc(resume(offre).ligne)}</p></section>`;
+      <h2>Bienvenue dans ${offre.niveau === 'infini' ? 'Mirandola Infini' : 'Mirandola<span class="fp-plus">+</span>'}</h2>
+      <p>${esc(resume(offre).ligne)}</p></section>`;
   }
   attendreActivation();
   const long = plus.attente >= 15;
   return `<section class="fp-merci fp-attente" data-k="fp-merci"><i class="fp-merci-ic">${svg(long ? I.clock : I.refresh)}</i>
     <h2>Paiement reçu</h2><p>${long ? 'L’activation prend plus de temps que prévu : elle arrivera seule dans quelques minutes.'
-      : 'On active Mirandola+ sur ton compte…'}</p></section>`;
+      : `On active ${infini() ? 'Mirandola Infini' : 'Mirandola+'} sur ton compte…`}</p></section>`;
 }
 
 /* ---------- ma licence ---------- */
@@ -108,8 +109,20 @@ function licenceHtml(p) {
 }
 
 /* ---------- les formules (Mirandola gratuit) ---------- */
+/* Le niveau (2026-11-06) : Mirandola+ ou Mirandola Infini, au-dessus. Le
+   même choix de période en dessous, les prix du niveau choisi. */
+const infini = () => plus.niveau === 'infini';
+const commande = () => formuleDe(plus.niveau, plus.formule);
+
+function niveaux() {
+  const n = (cle, nom, depuis) => `<button class="fp-n${plus.niveau === cle ? ' on' : ''}" role="radio" aria-checked="${plus.niveau === cle}"
+      data-fp="niveau" data-v="${cle}"><b>${nom}</b><span>dès ${euros(depuis)}/mois</span></button>`;
+  return `<div class="fp-niveaux" role="radiogroup" aria-label="Niveau">${n('plus', 'Mirandola+', FORMULES.annuel.mois)}${
+    n('infini', 'Infini', FORMULES.infini_annuel.mois)}</div>`;
+}
+
 function formule(cle) {
-  const f = FORMULES[cle], on = plus.formule === cle;
+  const f = FORMULES[formuleDe(plus.niveau, cle)], on = plus.formule === cle;
   const prix = cle === 'annuel' ? euros(f.mois) : euros(f.prix);
   // jamais un prix barré : 83,88 € n'a jamais été un prix de vente (article L112-1-1)
   const note = cle === 'annuel' ? `${euros(f.prix)} par an, ${f.remise}&#8239;% de moins qu’au mois` : 'Sans engagement';
@@ -125,7 +138,7 @@ function formule(cle) {
    version acceptée part avec la commande (CGV_VERSION). */
 const accord = () => `<label class="fp-accord" id="fp-accord"><input type="checkbox" data-fp="accord"${plus.accord ? ' checked' : ''}>
     <span>J’accepte les <button type="button" class="lnk" data-legal="cgv">conditions de vente</button> et je demande que
-    Mirandola+ commence tout de suite. Si je me rétracte dans les 14 jours, je ne paie que les jours écoulés.</span></label>`;
+    ${infini() ? 'Mirandola Infini' : 'Mirandola+'} commence tout de suite. Si je me rétracte dans les 14 jours, je ne paie que les jours écoulés.</span></label>`;
 
 // qui encaisse, dit sous le bouton : Stripe sur le web, le magasin dans son app
 const garantie = p => (vente(p) === 'stripe' ? 'Paiement sécurisé par Stripe · Résiliable en un geste'
@@ -149,11 +162,12 @@ function offreHtml(p) {
   const r = resume(offre), promo = promoGardee();
   return `${r.ligne !== 'Gratuit' ? `<p class="fp-alerte">${svg(I.warn)}${esc(r.ligne)}</p>` : ''}
     <section class="fp-offre">
+      ${niveaux()}
       <div class="fp-formules" role="radiogroup" aria-label="Formule">${formule('annuel')}${formule('mensuel')}</div>
       ${promo ? `<p class="fp-promo">${svg(I.tag)}<span>Code <b>${esc(promo)}</b> : posé sur la page de paiement</span></p>` : ''}
       ${accord()}
       <button class="fp-payer" data-fp="payer" ${plus.envoi || !plus.accord ? 'disabled' : ''} aria-describedby="fp-accord">${plus.envoi === 'payer' ? 'Ouverture du paiement…'
-        : essaiPossible() ? `Essayer ${ESSAI_JOURS} jours gratuits` : 'Passer à Mirandola+'}${svg(I.arrow)}</button>
+        : essaiPossible() ? `Essayer ${ESSAI_JOURS} jours gratuits` : infini() ? 'Passer à Mirandola Infini' : 'Passer à Mirandola+'}${svg(I.arrow)}</button>
       <p class="fp-note">${svg(I.lock)}${essaiPossible() && vente(p) === 'stripe'
         ? `Rien n’est prélevé avant le ${finEssai()}. Résiliable d’un geste.` : garantie(p)}</p>
       ${p.natif ? `<button class="lnk fp-restaurer" data-fp="restaurer" ${plus.envoi ? 'disabled' : ''}>${
@@ -172,6 +186,16 @@ function gauche(p) {
 /* ---------- les avantages ---------- */
 function avantagesHtml() {
   const prof = isProf(), gratuit = !offre || offre.offre === 'gratuit';
+  const li = a => `<li><i class="fp-av-ic">${svg(I[a.ic] || I.check)}</i><span><b>${esc(a.t)}</b>${esc(prof && a.prof ? a.prof : a.s)}</span></li>`;
+  const aInfini = offre && offre.niveau === 'infini';
+  if ((gratuit && infini()) || aInfini) {
+    return `<section class="fp-avantages fp-av-infini">
+      <h2 class="fp-h2">${aInfini ? 'Tes avantages' : 'Ce que Mirandola Infini t’ouvre'}</h2>
+      <ul class="fp-av">${AVANTAGES_INFINI.map(li).join('')}</ul>
+      <p class="fp-et">Et tout Mirandola+ :</p>
+      <ul class="fp-av fp-av-court">${AVANTAGES_DETAIL.map(a => `<li><i class="fp-av-ic">${svg(I[a.ic] || I.check)}</i><span><b>${esc(a.t)}</b></span></li>`).join('')}</ul>
+    </section>`;
+  }
   return `<section class="fp-avantages">
       <h2 class="fp-h2">${gratuit ? 'Ce que Mirandola+ t’ouvre' : 'Tes avantages'}</h2>
       <ul class="fp-av">${AVANTAGES_DETAIL.map(a => `<li><i class="fp-av-ic">${svg(I[a.ic] || I.check)}</i><span><b>${esc(a.t)}</b>${
@@ -196,7 +220,9 @@ function installHtml(p) {
 const raison = () => (plus.raison && RAISONS[plus.raison] && offre && offre.offre === 'gratuit'
   ? `<p class="fp-raison">${svg(I.spark)}${esc(RAISONS[plus.raison])}</p>` : '');
 
-const titre = () => (offre && offre.offre === 'campus' ? 'Mirandola <em class="fp-campus">Campus</em>' : 'Mirandola<span class="fp-plus">+</span>');
+const titre = () => (offre && offre.offre === 'campus' ? 'Mirandola <em class="fp-campus">Campus</em>'
+  : (offre && offre.niveau === 'infini') || (offre && offre.offre === 'gratuit' && infini()) ? 'Mirandola <em class="fp-infini">Infini</em>'
+    : 'Mirandola<span class="fp-plus">+</span>');
 
 export function plusEcran() {
   const p = ici(), onglet = ongletPlus() && !plus.etape;
@@ -232,17 +258,18 @@ function vers(action) {
   render();
   const p = ici();
   if (vente(p) === 'stripe') {
-    return versStripe(action, plus.formule, plus.accord, action === 'payer' ? promoGardee() : '')
+    return versStripe(action, commande(), plus.accord, action === 'payer' ? promoGardee() : '')
       .then(url => location.assign(url)).catch(echec);
   }
   /* l'achat intégré : la feuille d'Apple ou de Google s'ouvre par-dessus
      l'app, puis l'on revient ici — Mirandola+ s'active comme après Stripe */
-  const geste = action === 'restaurer' ? restaurerAchats(p.os) : versMagasin(p.os, plus.formule);
+  const geste = action === 'restaurer' ? restaurerAchats(p.os) : versMagasin(p.os, commande());
   geste.then(() => { plus.envoi = null; plus.etape = 'merci'; plus.attente = 0; render(); }).catch(echec);
 }
 
 const GESTES = {
   formule: b => { plus.formule = b.dataset.v === 'mensuel' ? 'mensuel' : 'annuel'; plus.err = ''; render(); },
+  niveau: b => { plus.niveau = b.dataset.v === 'infini' ? 'infini' : 'plus'; plus.err = ''; render(); },
   payer: () => { if (plus.accord) vers('payer'); },
   accord: b => { plus.accord = !!b.checked; render(); },
   gerer: () => vers('gerer'),

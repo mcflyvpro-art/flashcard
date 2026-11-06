@@ -39,7 +39,10 @@ test('au téléphone : le titre, les tarifs au mois ou à l’année, aucune err
   await expect(page.locator('#menu-mobile').getByRole('link', { name: 'Se connecter' })).toBeVisible();
 
   // « Passer à Mirandola+ » : l'écran Mirandola+ de l'app, la formule choisie déjà cochée (2026-10-27 : la vente est ouverte)
-  await expect(page.locator('[data-vente]')).toHaveAttribute('href', /^\/app\?plus=(annuel|mensuel)$/);
+  await expect(page.locator('.offre-plus [data-vente]')).toHaveAttribute('href', /^\/app\?plus=(annuel|mensuel)$/);
+  // Mirandola Infini (2026-11-06) : le bandeau sous les offres, aux prix de la période choisie, vers l'écran Infini
+  await expect(page.locator('.offre-infini .prix b')).toHaveText(/^9,99\s€$/);
+  await expect(page.locator('.offre-infini [data-vente]')).toHaveAttribute('href', '/app?plus=infini_mensuel');
   // plus de section « Sur tous tes écrans » : un téléphone a son magasin, un ordinateur son navigateur
   await expect(page.locator('#telecharger')).toHaveCount(0);
 

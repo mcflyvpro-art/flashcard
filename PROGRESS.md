@@ -19,7 +19,14 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      49 / 148
-DERNIER   2026-11-06 · L'examen blanc de Mirandola Infini : l'IA compose
+DERNIER   2026-11-06 · Mirandola Infini se montre : l'écran Mirandola+
+          choisit le niveau puis la période (e2e/mirandola-plus.e2e.js),
+          la licence et l'engagement disent son nom, « ∞ » et sa lumière
+          chez un abonné ; le site a son bandeau sous les offres et ses
+          deux offres en données structurées ; conditions de vente § 2 bis
+          (CGV 2026-11-06). docs/ENTREPRISE.md : la forme d'entreprise,
+          ses coûts, les démarches, sources datées. Avant :
+          2026-11-06 · L'examen blanc de Mirandola Infini : l'IA compose
           un sujet depuis un livre (les pages qui résistent d'abord), la
           copie se tape ou se photographie (8 pages), l'IA corrige — rien
           sur ce qui est juste, la correction et un conseil sur le reste —,

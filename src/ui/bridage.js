@@ -73,6 +73,7 @@ function marquer() {
   html.classList.toggle('offre-gratuit', gratuit);
   html.classList.toggle('livres-plein', gratuit && plein());
   html.classList.toggle('offre-plus', aFolioPlus());
+  html.classList.toggle('offre-infini', aInfini());
   for (const v of document.querySelectorAll('[data-volet]')) v.classList.toggle('plus-floute', gratuit && JOURNAL_PLUS.includes(v.dataset.volet));
 }
 export const remarquer = () => { if (!image) image = requestAnimationFrame(marquer); };

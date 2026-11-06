@@ -269,3 +269,31 @@ test('dans l’app des magasins : l’achat intégré, jamais Stripe', async ({ 
   await expect(page.locator('.fp-err')).toHaveText('Le paiement ouvre bientôt');
   expect(store.tables.abonnements || []).toHaveLength(0);
 });
+
+/* Mirandola Infini (2026-11-06) : le niveau au-dessus, choisi avant la
+   période ; ses prix, ce qu'il ajoute, puis l'abonnement Infini et son nom
+   partout (le titre, la licence). */
+test('Mirandola Infini : choisir le niveau, voir ce qu’il ajoute, s’abonner', async ({ page }) => {
+  const store = { ...gratuit(), sansEssai: true };
+  await brancher(page, store);
+  await inscrire(page);
+  await page.locator('.tabs [data-act="tab-plus"]').click();
+  await expect(ecran(page)).toBeVisible({ timeout: 10000 });
+  await page.getByRole('radio', { name: /^Infini/ }).click();
+  await expect(page.locator('.hero')).toContainText('Mirandola Infini');
+  await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('6,67');
+  await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('79,99');
+  await expect(page.locator('.fp-avantages')).toContainText('Ce que Mirandola Infini t’ouvre');
+  await expect(page.locator('.fp-avantages')).toContainText('L’examen blanc');
+  await expect(page.locator('.fp-avantages')).toContainText('Et tout Mirandola+');
+  await page.getByRole('radio', { name: /Mensuel/ }).click();
+  await expect(page.getByRole('radio', { name: /Mensuel/ })).toContainText('9,99');
+  await accepter(page);
+  await expect(page.locator('#fp-accord')).toContainText('Mirandola Infini commence tout de suite');
+  await page.locator('.fp-payer').click();
+  await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola Infini' })).toBeVisible({ timeout: 10000 });
+  const u = store.users.find(x => x.email === 'lea@exemple.fr');
+  expect(store.tables.abonnements.find(a => a.user_id === u.id)).toMatchObject({ statut: 'actif', formule: 'infini_mensuel' });
+  await expect(page.locator('.fp-avantages')).toContainText('Tes avantages');
+  await expect(page.locator('.fp-avantages')).toContainText('L’objectif examen');
+});
