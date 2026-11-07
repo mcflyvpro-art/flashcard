@@ -18,8 +18,12 @@ export default {
   ...base,
   testDir: racine + 'e2e',
   webServer: { ...base.webServer, cwd: racine },
+  /* l'iPhone seul, comme la suite habituelle tourne sur un téléphone : les
+     parcours d'ordinateur règlent eux-mêmes leur fenêtre (test.use,
+     setViewportSize) et passent donc aussi par WebKit. Un projet « Safari de
+     bureau » (1 280 px) rejouait à tort les parcours de téléphone : 30 des
+     44 échecs du premier passage, le 2026-11-07, n'étaient que ça. */
   projects: [
-    { name: 'iphone', use: { ...devices['iPhone 13'], ...sansSW } },
-    { name: 'safari', use: { ...devices['Desktop Safari'], ...sansSW } }
+    { name: 'iphone', use: { ...devices['iPhone 13'], ...sansSW } }
   ]
 };

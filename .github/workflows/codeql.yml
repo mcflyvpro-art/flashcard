@@ -1,0 +1,37 @@
+name: CodeQL
+
+# L'analyse de sécurité du code de GitHub (gratuite pour un dépôt public) :
+# injections, XSS, prototype pollution, redirections ouvertes, secrets en
+# dur… sur tout le JavaScript, avec les requêtes « security-extended ». Les
+# alertes arrivent dans l'onglet Security du dépôt.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '41 4 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: github/codeql-action/init@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+          config: |
+            paths-ignore:
+              - dist
+              - node_modules
+      - uses: github/codeql-action/analyze@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
+        with:
+          category: /language:javascript-typescript

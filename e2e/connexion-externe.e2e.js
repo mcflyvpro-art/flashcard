@@ -24,7 +24,8 @@ test('aucun fournisseur allumé : la connexion par e-mail, seule', async ({ page
   await expect(page.locator('#lext')).toBeHidden();
 });
 
-test('Google allumé : « Continuer avec Google » ouvre la session, et l’adresse ne garde aucun jeton', async ({ page }) => {
+test('Google allumé : « Continuer avec Google » ouvre la session, et l’adresse ne garde aucun jeton', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'WebKit refuse route.fulfill avec un statut de redirection (302)');
   const store = nouveauStore();
   store.fournisseurs = { google: true, apple: true };          // Apple écarté le 2026-10-29 : même allumé, pas de bouton
   store.oauth = { google: 'nina@gmail.com' };

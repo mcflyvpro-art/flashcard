@@ -72,7 +72,7 @@ function ecranActuel() {
   if (v.name === 'profclasse') return { name: v.name, id: prof.open, sous: prof.tab };
   if (v.name === 'ref') return { name: v.name, sous: ref.tab, id: ['classes', 'licence'].includes(ref.tab) ? ref.open : null };
   if (v.name === 'admin') {
-    if (adm.tab === 'entreprise') return { name: v.name, sous: 'entreprise' };
+    if (adm.tab === 'entreprise' || adm.tab === 'sante') return { name: v.name, sous: adm.tab };
     if (adm.fid) return { name: v.name, sous: 'facture', id: adm.fid };
     const id = adm.tab === 'comptes' ? adm.copen : adm.open !== 'nouveau' ? adm.open : null;
     return { name: v.name, sous: adm.tab, id };
@@ -122,7 +122,7 @@ const OUVRIR = {
   mod: () => { if (!mods.list) modPull(); go('mod'); },
   classes: () => allerClasses(),
   classe: id => { eleveClassesPull(); ouvrirClasseEleve(id); },
-  commu: () => { commuPull(); go('commu'); },
+  commu: () => { commuPull(true); go('commu'); },
   friends: () => { friendsPull(!!friends); go('friends'); },
   club: id => { commuPull(); cercle.onglet = 'defis'; clubPull(id); go('club', id); },
   profil: id => ouvrirProfil(id),

@@ -268,7 +268,7 @@ function quizTypedRowHtml(ask) {
       <input id="ans" class="ans ${quiz.state}" value="${esc(quiz.typed)}" placeholder="Réponse"
         autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false"
         enterkeyhint="go" ${ask ? '' : 'readonly'}>
-      ${ASRC && ask ? `<button class="ai mic ${asrOn ? 'busy' : ''}" data-act="asr">${svg(I.mic)}</button>` : ''}
+      ${ASRC && ask ? `<button class="ai mic ${asrOn ? 'busy' : ''}" data-act="asr" aria-label="Dicter la réponse" aria-pressed="${!!asrOn}">${svg(I.mic)}</button>` : ''}
     </div>`;
 }
 
@@ -298,7 +298,7 @@ export function quizView() {
       <h1>${esc(quiz.name)}</h1>
       ${n}
       ${quiz.streak >= 5 ? `<span class="strk">${svg(I.flame)}${quiz.streak}</span>` : ''}
-      <button class="ic ${quiz.rev ? 'solid' : ''}" data-act="swapq">${svg(I.swap)}</button>
+      <button class="ic ${quiz.rev ? 'solid' : ''}" data-act="swapq" aria-label="Inverser recto et verso" aria-pressed="${!!quiz.rev}">${svg(I.swap)}</button>
       <button class="ic" data-act="requiz" aria-label="Relancer">${svg(I.shuffle)}</button>
     </div>`;
   if (quiz.i >= quiz.pool.length) return quizFinishedScreen(bar(''));
@@ -311,7 +311,7 @@ export function quizView() {
       ${quiz.timer ? `<div class="tbar"><i id="tmr" style="width:${tempsRestant()}%"></i></div>` : ''}
       <div class="qz" data-k="q:${esc(quiz.id)}:${quiz.i}">
         <div class="ask ${quiz.state}">${rt(q.f)}
-          ${canSay ? `<button class="snd sm" data-qsay>${svg(I.sound)}</button>` : ''}</div>
+          ${canSay ? `<button class="snd sm" data-qsay aria-label="Écouter">${svg(I.sound)}</button>` : ''}</div>
         ${ask && quiz.hint ? `<div class="hmask">${esc(hintMask(q, quiz.hint))}</div>` : ''}
         ${quiz.state === 'bad' ? `<div class="sol" data-k="sol:${esc(quiz.id)}:${quiz.i}">${svg(I.check)}${q.a.map(rt).join('  ·  ')}</div>` : ''}
       </div>

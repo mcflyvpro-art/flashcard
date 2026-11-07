@@ -299,3 +299,25 @@ test('sans compte, un principal demande une démo ; l’éditeur la voit arriver
   await expect(page.locator('[data-adm="voir-demandes"] b')).toHaveText('1', { timeout: 10000 });
   await expect(page.locator('.ed-ligne', { hasText: 'Collège Jean Moulin' })).toContainText('demande');
 });
+
+test('Santé : une erreur remontée par un appareil, son texte et sa pile, sans rien d’un compte', async ({ page }) => {
+  const store = nouveauStore();
+  editeurEtProspect(store);
+  await brancher(page, store);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await entrer(page);
+  // un appareil quelconque a rencontré une erreur (src/core/rapport-erreurs.js)
+  await page.evaluate(() => setTimeout(() => { throw new Error('la page 12 est introuvable'); }));
+  await expect.poll(() => (store.erreursClient || []).length).toBe(1);
+  await page.locator('[data-r="adm:sante"]').first().click();
+  await expect(page).toHaveURL(/\/admin\/sante$/);
+  const e = page.locator('.ed-sante-e');
+  await expect(e).toHaveCount(1);
+  await expect(e.locator('summary b')).toContainText('la page 12 est introuvable');
+  await e.locator('summary').click();
+  await expect(e.locator('code')).toHaveText(/^e[0-9a-f]{8}$/);
+  await expect(page.locator('.ed-sante .ed-chiffres')).toContainText('erreurs 24 h');
+  // l'adresse se recharge sur l'onglet
+  await page.reload();
+  await expect(page.locator('.ed-sante')).toBeVisible({ timeout: 10000 });
+});

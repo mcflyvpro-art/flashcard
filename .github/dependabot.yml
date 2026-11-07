@@ -1,0 +1,29 @@
+# Les dépendances (toutes de développement : l'app n'en a aucune à
+# l'exécution) et les actions GitHub, relues chaque semaine. Une faille
+# connue ouvre sa pull request d'elle-même (alertes Dependabot) ; la CI dit
+# si la mise à jour casse quelque chose.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      outils:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      # Playwright reste à la version du Chromium préinstallé des sessions
+      # Claude dans le cloud (tools/pw-local.config.js) : on le monte à la main
+      - dependency-name: '@playwright/test'
+        update-types: ['version-update:semver-minor', 'version-update:semver-major']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ['*']

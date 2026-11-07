@@ -57,8 +57,12 @@ button.ac-carte{cursor:pointer}
   color:var(--encre);font:800 13px var(--sans)}
 .ac-ecrans{position:absolute;left:10px;bottom:9px;display:flex;gap:6px;color:rgba(255,255,255,.9)}
 .ac-ecrans .ic{width:17px;height:17px}
-.ac-bientot{position:absolute;right:10px;top:10px;padding:5px 10px;border-radius:99px;background:rgba(23,22,30,.38);color:#FFF;font:750 11.5px var(--sans);
-  letter-spacing:.04em;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+/* un fond plein, jamais de backdrop-filter : répété sur chaque carte (33 sur la
+   page), le flou faisait monter la mémoire de WebKit sans fin — plus de 2 Go
+   en quelques secondes, de quoi faire tomber Safari sur un iPhone
+   (mesuré le 2026-11-07, test/site.test.js) */
+.ac-bientot{position:absolute;right:10px;top:10px;padding:5px 10px;border-radius:99px;background:rgba(23,22,30,.58);color:#FFF;font:750 11.5px var(--sans);
+  letter-spacing:.04em}
 .ac-lire{position:absolute;inset:0;display:grid;place-items:center}
 .ac-lire .ic{width:52px;height:52px;padding:14px 12px 14px 16px;border-radius:50%;background:rgba(255,255,255,.95);color:var(--j);box-shadow:var(--ombre2)}
 .ac-duree{position:absolute;right:10px;bottom:9px;padding:3px 8px;border-radius:7px;background:rgba(23,22,30,.6);color:#FFF;font:700 12px var(--sans)}

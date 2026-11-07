@@ -16,9 +16,9 @@
 
 ## ÉTAT
 ```
-CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
+CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
-FAIT      50 / 148
+FAIT      54 / 148
 DERNIER   2026-11-07 · L'IA de la création n'est plus une méthode :
           une barre « Demande à l'IA » sous Écrire, Coller, Fichier et
           Photo. Des photos (8) ou un PDF y attendent avec une consigne
@@ -28,11 +28,31 @@ DERNIER   2026-11-07 · L'IA de la création n'est plus une méthode :
           ai : consigne et contexte à leur place, 8 photos en un appel
           (tools/ia/essai.js 8/8, pas encore déployée : l'app se replie
           sur hint et une photo par appel) ; e2e/prompt.e2e.js 8/8.
-          « Mes amis » relit amis, classement, clubs et défis à chaque
-          ouverture (un ami accepté app ouverte n'apparaissait pas :
-          e2e/profil.e2e.js échouait 2 fois sur 5, 20/20 depuis).
-          Avant :
-          2026-11-07 · Le vocabulaire redevient classique partout
+          « Mes amis » relit aussi clubs et défis à l'ouverture, et la
+          page Amis ses amis (e2e/cercle.e2e.js, rouge sans le
+          correctif ; suite e2e 152/152). Avant :
+          2026-11-07 · La fiabilité, demandé : « le max du debug
+          possible ». Un rapporteur d'erreurs à nous, anonyme (M05.T1),
+          la vigie et son alerte (M05.T6), l'onglet Santé de l'éditeur,
+          un écran de secours si l'app ne s'ouvre pas en 15 s. Sept
+          workflows : CI (plus gitleaks et npm audit), CodeQL, la base
+          rejouée de zéro avec toute la suite SQL, la nuit (Safari, le
+          singe, la mutation le dimanche), la sauvegarde chiffrée puis
+          restaurée, la vigie toutes les 3 h, la revue de sécurité des
+          pull requests ; actions épinglées, Dependabot. Tests par
+          propriétés (fast-check : un vrai défaut d'empreinte trouvé),
+          mutation 78,4 %. Accessibilité 0 violation grave (M09.T3).
+          Safari : le flou des 33 cartes de l'Academy faisait gonfler la
+          mémoire de WebKit sans fin — retiré. docs/FIABILITE.md.
+          Premier passage : la base neuve rejoue toutes les migrations,
+          trouve cinq tests SQL périmés (mis à jour, vérifiés sur la
+          production) et un vrai défaut — le nom corrigé par le référent
+          n'arrivait pas chez le professeur (20261107213201). Cliquet des
+          types stricts : 289, jamais plus. La sauvegarde de bout en
+          bout verte (575 cas SQL sur la base restaurée, après avoir
+          rendu les droits que le vidage perdait) ; un ami accepté app
+          ouverte paraît enfin dans « Mes amis » sans redémarrer.
+Avant :   2026-11-07 · Le vocabulaire redevient classique partout
           (app, site, démo, textes du cadre, e-mails, manifeste) : paquet,
           cartes, réviser, Mes amis, Statistiques, Messages ; nouvelles
           adresses (/eleve/paquets, /statistiques, /messages, /amis), les
@@ -295,12 +315,12 @@ Cible globale : **0 perte et 0 conflit visible sur 10 000 opérations concurrent
 
 ## M05 · Observabilité [P0] 2/6
 But : ne plus jamais deviner pourquoi ça plante.
-- [ ] M05.T1 · Sentry branché (erreurs + rejets de promesse) — cible: 100 % des erreurs remontées, 0 donnée perso — preuve: erreur test visible dans Sentry
+- [x] M05.T1 · Sentry branché (erreurs + rejets de promesse) — cible: 100 % des erreurs remontées, 0 donnée perso — preuve: erreur test visible dans Sentry — **fait le 2026-11-07, sans Sentry** (un tiers de plus à qui confier des données d'élèves mineurs, et un script de plus au démarrage) : un rapporteur à nous, `src/core/rapport-erreurs.js`, évalué avant tout autre module (exceptions, promesses rejetées, violations de CSP, ouverture bloquée, temps jusqu'au premier écran), anonyme et nettoyé deux fois (`src/erreurs.js`, puis `texte_propre` en base), rangé hors ligne ; table `erreurs_client` (migration `20261107143227`, `supabase/tests/erreurs_client.sql` 13/13 sur la production), onglet Santé de la console de l'éditeur. Preuves : `e2e/demarrage.e2e.js` (une erreur levée au chargement arrive, sans en-tête d'autorisation de compte), la chaîne réelle (un rapport posté à l'API de production avec la seule clé anon → 204, rangé nettoyé ; la table illisible sans droits → 401), `test/erreurs.test.js`, `test/proprietes.test.js` (aucune adresse, aucun identifiant, aucun long nombre ne passe, sur 1 000 tirages)
 - [x] M05.T2 · supprimer les `catch {}` muets — cible: 0 bloc vide sans commentaire (41 aujourd'hui) — preuve: `npx eslint .` → sortie 0, aucune ligne, avec `no-empty: ['error', { allowEmptyCatch: false }]` (le gros du travail fait par M06.T6 : les 41 justifiés un par un ou supprimés) ; balayage complémentaire de la forme que `no-empty` ne voit pas, `.catch(() => {})` sur une promesse : 7 trouvés le 2026-10-16, tous traités — 5 partages (`partager()`, menus-c.js : fermer la feuille de partage rejette la promesse, ce n'est pas une erreur, dit une fois), la lecture audio refusée (commentée), et l'échec d'enregistrement du service worker, qui privait l'app du hors-ligne sans un mot, désormais journalisé (`console.warn`, onboarding.js). Fonction Edge `ai` relue : chaque `catch` rend une réponse ou journalise. `npm run check` vert (212/212).
 - [x] M05.T3 · journal des erreurs serveur consultable — cible: requête MCP `query_logs` documentée dans CLAUDE.md — preuve: les deux requêtes de CLAUDE.md (« Déboguer un bug », étape 2) rendent des lignes le 2026-10-16 — erreurs HTTP par route : 1 ligne (`GET /rest/v1/decks` → 401, la session périmée d'un navigateur de test) ; erreurs Postgres par SQLSTATE : 4 lignes (les transactions de test volontairement annulées de M04.T3/T5, `P0001`, et deux fautes de frappe de requêtes manuelles, `42804`/`42P01`). Sources du journal relevées (`edge_logs`, `postgres_logs`, `postgrest_logs`, `auth_logs`, `auth_audit_logs`). Aucune donnée personnelle sélectionnée (ni IP, ni ville, ni navigateur, ni identifiant de compte), règle écrite à côté des requêtes.
 - [ ] M05.T4 · mesure du démarrage (temps jusqu'à l'écran utile) — cible: p75 < 2 s en 4G simulée — preuve: Lighthouse — **bloqué le 2026-10-16, deux choses à trancher** : (1) **décision produit** — l'écran d'ouverture tient au moins 3 s exprès (`BOOTMS = 3000`, `src/ui/import-cartes.js`) + 0,52 s de fondu : mesuré en 4G lente simulée (1,6 Mbit/s, 150 ms, CPU ×4, 5 passages, GitHub Pages), écran utile à **3 521–3 523 ms** à chaque fois, alors que l'app est prête derrière en ~60 ms ; la cible < 2 s est impossible tant que ce plancher existe (idem M08.T8 < 1,5 s). (2) **Lighthouse ne mesure rien** : `NO_FCP` sur Folio (5/5, local comme Pages) alors qu'il marche sur un site témoin ; Chrome n'émet jamais d'entrée `first-contentful-paint` pour cette page. Piste vue mais pas prouvée : retirer `<i class="statusmask">` de la tête du `<body>` fait apparaître le FCP sous Playwright via `page.route`, pas sur le build servi normalement — non livré. En chemin, corrigé et prouvé : la première visite chargeait l'app deux fois (rechargement sur `controllerchange` à l'installation du service worker), voir le commit du 2026-10-16.
 - [ ] M05.T5 · sonde externe + page d'état publique — cible: contrôle toutes les 5 min — preuve: URL publique
-- [ ] M05.T6 · alerte si le taux d'erreur dépasse 1 % sur 1 h — preuve: alerte déclenchée en test
+- [x] M05.T6 · alerte si le taux d'erreur dépasse 1 % sur 1 h — preuve: alerte déclenchée en test — **fait le 2026-11-07** : `vigie()` (base, sans aucun texte d'erreur : le dépôt est public) dit `alerte` et ses `raisons` — plus de 1 % d'erreurs sur l'heure dès 20 ouvertures, plus de 1 % sur 24 h dès 10 erreurs, deux ouvertures bloquées, une erreur nouvelle ; déclenchée dans `supabase/tests/erreurs_client.sql` (cas 9). Le ticket « vigie » de GitHub part de `.github/workflows/vigie.yml` toutes les 3 h (`tools/vigie/verifier.sh`) dès que le secret `SUPABASE_DB_URL` est posé (docs/FIABILITE.md)
 
 ## M06 · Qualité du code [P0] 8/8
 - [x] M06.T1 · build Vite + variables d'environnement — preuve: `npm run build`
@@ -383,7 +403,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 ## M09 · Accessibilité (socle) [P0] 0/4
 - [ ] M09.T1 · navigation clavier complète — cible: 100 % des actions atteignables — preuve: test Playwright clavier
 - [ ] M09.T2 · contrastes — cible: 100 % du texte ≥ 4,5:1 — preuve: axe-core 0 violation
-- [ ] M09.T3 · lecteur d'écran sur les 6 écrans principaux — cible: 0 élément sans nom accessible — preuve: axe-core
+- [x] M09.T3 · lecteur d'écran sur les 6 écrans principaux — cible: 0 élément sans nom accessible — preuve: axe-core — **fait le 2026-11-07** : `e2e/accessibilite.e2e.js`, axe-core (WCAG 2.2 AA) sur 13 écrans — cinq pages du site, la connexion, l'inscription, et la vraie app dans la démo : l'élève (sa classe, ses paquets, un paquet, ses amis), le professeur, le référent — 0 violation grave ou critique, sous Chromium et sous Safari (WebKit). Corrigé pour y arriver : `--soft` à 4,5:1 sur nos fonds (3,1 avant), des boutons à icône sans nom (aperçu, supprimer une page, micro, retourner une question, gérer), des noms qui disent la pastille (« Boîte de réception, 3 non lues »), les onglets de l'espace professeur en vrais onglets, les zones qui défilent rejointes au clavier, les formules du moteur nommées
 - [ ] M09.T4 · taille de cible tactile ≥ 44 px — cible: 0 bouton en dessous — preuve: test
 
 ## M10 · Sécurité [P0] 3/8
@@ -416,7 +436,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M13.T2 · Vercel Pro (le gratuit interdit l'usage commercial) + domaine — preuve: facture
 - [ ] M13.T3 · Supabase Pro, région Paris (`eu-west-3`) — preuve: `get_project`
 - [ ] M13.T4 · environnement de préproduction séparé — cible: 0 test sur la base de production — preuve: 2 projets distincts
-- [ ] M13.T5 · restauration réellement testée — cible: base restaurée en < 30 min, procédure écrite — preuve: journal de l'exercice
+- [x] M13.T5 · restauration réellement testée — cible: base restaurée en < 30 min, procédure écrite — preuve: journal de l'exercice — **fait le 2026-11-07** : `sauvegarde.yml` (source « essai », sans secret) vide une base faite de toutes nos migrations, la chiffre, la restaure dans une pile Supabase vierge (`tools/sauvegarde/restaurer.sh`), compare 97 tables (0 écart) et y passe toute la suite SQL : 575 cas, en 1 min 47 s (exécution GitHub 42417507626). Les deux premiers essais ont échoué et l'ont rendue vraie : le chargement en superutilisateur, puis `droits.sql` (sans lui, la base restaurée ouvrait à anon toutes les fonctions internes et perdait nos déclencheurs sur auth.users, nos politiques du stockage et les tâches pg_cron). Procédure à la main : docs/FIABILITE.md, « Restaurer la base ». La même chaîne sur la production chaque nuit dès que `SUPABASE_DB_URL` et `SAUVEGARDE_CLE` sont posés (M22.T5).
 - [ ] M13.T6 · migrations appliquées par la CI, jamais à la main — preuve: workflow
 
 ---

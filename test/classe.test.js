@@ -214,8 +214,12 @@ describe('aucun décalage de fuseau', () => {
   // [fuseau, décalage attendu le 24/10/2026 à midi, en minutes] : la preuve que le fuseau s'applique
   for (const [tz, decalage] of [['Pacific/Kiritimati', -840], ['America/Los_Angeles', 420],
                                 ['Europe/Paris', -120], ['Pacific/Noumea', -660]]) {
-    it(`échéances et calendrier justes en ${tz}`, () => {
+    it(`échéances et calendrier justes en ${tz}`, ctx => {
       process.env.TZ = tz;
+      /* sous Stryker (npm run mutation), les tests tournent dans des fils
+         d'exécution, où changer TZ ne change pas le fuseau : ce cas ne s'y
+         joue pas, et nulle part ailleurs il ne se saute */
+      if (process.env.STRYKER_MUTATOR_WORKER && new Date(2026, 9, 24, 12).getTimezoneOffset() !== decalage) ctx.skip();
       expect(new Date(2026, 9, 24, 12).getTimezoneOffset()).toBe(decalage);
       expect(joursEntre('2026-10-24', '2026-10-25')).toBe(1);
       expect(joursEntre('2026-03-28', '2026-03-30')).toBe(2);         // passage à l'heure d'été (Europe)

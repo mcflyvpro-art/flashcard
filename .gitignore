@@ -10,6 +10,12 @@ dist/
 # outils
 .vercel/
 supabase/.temp/
+# la pile locale de la CI (tools/sql/pile-locale.sh) : née à chaque essai, jamais versionnée
+supabase/config.toml
+supabase/.gitignore
+supabase/seed.sql
+# la vigie (tools/vigie/verifier.sh)
+vigie.json
 supabase/.branches/
 playwright-report/
 .playwright-mcp/
@@ -30,3 +36,7 @@ zz-*/
 .vscode/*
 !.vscode/extensions.json
 __pycache__/
+
+# les tests de mutation (npm run mutation)
+reports/
+.stryker-tmp/

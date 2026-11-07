@@ -36,6 +36,11 @@ html,body{margin:0;background:#F6F5F1;-webkit-text-size-adjust:100%}
 @keyframes bookin{from{opacity:0;transform:translateY(22px) scale(.84) rotate(-6deg)}}
 @keyframes bootname{from{opacity:0;transform:translateY(10px)}}
 @keyframes bootbar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+#boot p{margin:0;font:15px/1.45 system-ui,-apple-system,sans-serif;color:#5C564C;text-align:center;max-width:270px}
+#boot .sec{display:flex;gap:10px}
+#boot .sec button{font:600 15px system-ui,-apple-system,sans-serif;padding:11px 18px;border-radius:12px;
+  border:1px solid rgba(34,28,21,.18);background:#fff;color:#221C15;cursor:pointer}
+#boot .sec button:first-child{background:#221C15;border-color:#221C15;color:#fff}
 </style>
 <link rel="stylesheet" href="/src/app.css">
 </head>
@@ -46,6 +51,40 @@ html,body{margin:0;background:#F6F5F1;-webkit-text-size-adjust:100%}
      finissent d'arriver, puis elle s'efface. -->
 <div id="boot"><img src="/site/logo.svg" alt="" width="76" height="83"><b>Mirandola</b><i aria-hidden="true"></i></div>
 <main id="app"></main>
+<script>
+/* L'écran de secours (2026-11-07). Si rien n'est venu dans #app au bout de
+   15 s (un morceau du build qui ne se charge pas, un démarrage qui
+   bloque), l'ouverture le dit et propose de réessayer, ou de réparer :
+   retirer les copies hors ligne de l'app (service worker, caches), jamais
+   les livres, qui sont dans le stockage de l'appareil. Script en ligne et
+   seul, exprès : il doit marcher quand plus rien d'autre ne marche. Son
+   empreinte est dans la CSP de vercel.json (test/demarrage.test.js). */
+setTimeout(function () {
+  var app = document.getElementById('app');
+  if (!app || app.firstChild) return;
+  var b = document.getElementById('boot');
+  if (!b) { b = document.createElement('div'); b.id = 'boot'; document.body.appendChild(b); }
+  b.className = '';
+  b.innerHTML = '<b>Mirandola</b><p>Mirandola n\u2019arrive pas \u00e0 s\u2019ouvrir.</p>'
+    + '<div class="sec"><button type="button" data-s="r">R\u00e9essayer</button>'
+    + '<button type="button" data-s="p">R\u00e9parer</button></div>';
+  var recharger = function () { location.reload(); };
+  b.addEventListener('click', function (e) {
+    var s = e.target && e.target.getAttribute ? e.target.getAttribute('data-s') : '';
+    if (s === 'r') recharger();
+    if (s !== 'p') return;
+    var a = [];
+    if ('serviceWorker' in navigator) a.push(navigator.serviceWorker.getRegistrations()
+      .then(function (l) { return Promise.all(l.map(function (r) { return r.unregister(); })); }));
+    if (window.caches) a.push(caches.keys()
+      .then(function (k) { return Promise.all(k.map(function (n) { return caches.delete(n); })); }));
+    Promise.all(a).then(recharger, recharger);
+  });
+  /* l'app finit par venir (un réseau très lent) : le secours s'en va */
+  new MutationObserver(function (m, o) { if (app.firstChild) { o.disconnect(); b.remove(); } })
+    .observe(app, { childList: true });
+}, 15000);
+</script>
 <script type="module" src="/src/app.js"></script>
 </body>
 </html>

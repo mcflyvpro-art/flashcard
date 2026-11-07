@@ -26,6 +26,17 @@ export async function admEtatPull() {
 
 /* Tous les comptes et de quoi les trier (admin_comptes, 20261105122753) ;
    une base qui ne l'a pas encore rend l'ancienne liste (admin_accounts). */
+/* La santé de l'app (20261107143227) : la vigie des 24 dernières heures et
+   les erreurs des 7 derniers jours, remontées par les appareils
+   (src/core/rapport-erreurs.js) — l'onglet Santé, pour l'éditeur seul. */
+export async function admSantePull() {
+  try {
+    const [vigie, erreurs] = await Promise.all([rpc('admin_vigie'), rpc('admin_erreurs', { jours: 7 })]);
+    adm.sante = { vigie, erreurs: erreurs || [] };
+  } catch { adm.sante = { err: 1, erreurs: [] }; }
+  repeint();
+}
+
 export async function admComptesPull() {
   try { setAccounts(await rpc('admin_comptes') || []); } catch (e) {
     try { setAccounts(await rpc('admin_accounts') || []); } catch (e2) { setAccounts([]); adm.err = 1; }

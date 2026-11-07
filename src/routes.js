@@ -86,6 +86,7 @@ export const ROUTES = [
   R('admin', 'comptes', { sous: 'comptes', espaces: ADMIN }),
   R('admin', 'comptes/:id', { sous: 'comptes', espaces: ADMIN }),
   R('admin', 'entreprise', { sous: 'entreprise', espaces: ADMIN }),
+  R('admin', 'sante', { sous: 'sante', espaces: ADMIN }),
   R('admin', 'factures/:id', { sous: 'facture', espaces: ADMIN }),
   /* Les adresses d'avant le 2026-11-07 (le vocabulaire du livre : livres,
      lecture, journal, courrier, cercle, lecteurs) : elles se lisent encore —

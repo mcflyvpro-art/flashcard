@@ -1,0 +1,69 @@
+name: Vigie
+
+# Toutes les trois heures (M05.T6, docs/FIABILITE.md) : le site et l'app
+# répondent, vite, avec leurs en-têtes de sécurité (CSP appliquée, HSTS…),
+# l'ancien domaine redirige, Supabase répond ; et, si SUPABASE_DB_URL est
+# posé, ce que l'app a remonté (vigie() : taux d'erreur, ouvertures
+# bloquées, erreurs nouvelles). Au moindre problème, un ticket « vigie »
+# s'ouvre ou se complète — GitHub prévient par e-mail et dans l'app — et le
+# job échoue. Aucun texte d'erreur dans le ticket : le dépôt est public (le
+# détail se lit dans la console de l'éditeur, Santé).
+on:
+  schedule:
+    - cron: '23 */3 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: vigie
+  cancel-in-progress: false
+
+jobs:
+  vigie:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Vérifier
+        env:
+          SITE: https://mirandola.fr
+          SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash tools/vigie/verifier.sh | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Ouvrir ou compléter le ticket
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { problemes, base } = JSON.parse(fs.readFileSync('vigie.json', 'utf8'));
+            if (!problemes.length) return;
+            const neuves = (base && base.neuves) || [];
+            /* la même situation ne se répète pas : une signature par ticket */
+            const signature = [...problemes].sort().join('|') + '#' + neuves.map(n => n.empreinte).sort().join(',');
+            const marque = `<!-- vigie:${Buffer.from(signature).toString('base64')} -->`;
+            const cles = o => Object.entries(o || {}).map(([k, v]) => `${k} ${v}`).join(', ');
+            const corps = [
+              marque,
+              `**${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC** — ${problemes.length} problème(s)`,
+              '', ...problemes.map(p => `- ${p}`),
+              ...(base ? ['', `24 h : ${base.jour.demarrages} ouvertures, ${base.jour.erreurs} erreurs, ${base.jour.bloques} bloquées`] : []),
+              ...(neuves.length ? ['', '| empreinte | type | fois | écrans | navigateurs |', '|---|---|---|---|---|',
+                ...neuves.slice(0, 20).map(n => `| \`${n.empreinte}\` | ${n.type} | ${n.n} | ${cles(n.ecrans)} | ${cles(n.navigateurs)} |`)] : []),
+              '', '_Le détail (message, pile) : console de l’éditeur → Santé. Que faire : docs/FIABILITE.md._'
+            ].join('\n');
+            const { owner, repo } = context.repo;
+            await github.rest.issues.createLabel({ owner, repo, name: 'vigie', color: 'B60205' }).catch(() => {});
+            const { data: ouverts } = await github.rest.issues.listForRepo({ owner, repo, labels: 'vigie', state: 'open', per_page: 1 });
+            if (!ouverts.length) {
+              await github.rest.issues.create({ owner, repo, title: `Vigie : ${problemes[0]}`, body: corps, labels: ['vigie'] });
+            } else {
+              const t = ouverts[0];
+              const { data: coms } = await github.rest.issues.listComments({ owner, repo, issue_number: t.number, per_page: 100 });
+              const dernier = coms.length ? coms[coms.length - 1].body : t.body;
+              if (!dernier.includes(marque)) await github.rest.issues.createComment({ owner, repo, issue_number: t.number, body: corps });
+            }
+            core.setFailed(problemes.join(' ; '));

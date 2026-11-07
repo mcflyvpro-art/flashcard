@@ -128,7 +128,8 @@ test.describe('un iPhone en anglais, dans Chrome', () => {
 
 test.describe('dans Instagram', () => {
   test.use({ userAgent: UA.instagram });
-  test('rien ne s’y installe : sortir vers Safari, le lien copié', async ({ page, context }) => {
+  test('rien ne s’y installe : sortir vers Safari, le lien copié', async ({ page, context, browserName }) => {
+    test.skip(browserName === 'webkit', 'WebKit ne connaît pas la permission clipboard-write de Playwright');
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await brancher(page, nouveauStore(), { navigateur: true });
     await page.goto('./inscription');

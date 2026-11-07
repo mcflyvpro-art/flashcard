@@ -98,7 +98,8 @@ test('vérification en deux étapes : activée, demandée à la connexion suivan
   await page.keyboard.press('Escape');
   await page.locator('[data-act="logout"]').first().click();
   const lus = [];
-  page.on('request', r => { if (r.url().includes('/rest/v1/')) lus.push(r.url()); });
+  // le rapporteur d'erreurs (rpc/signaler) part sans compte et ne lit rien : il ne compte pas
+  page.on('request', r => { if (r.url().includes('/rest/v1/') && !r.url().includes('/rpc/signaler')) lus.push(r.url()); });
   await ouvrir(page);
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill('lea@exemple.fr');
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill('motdepasse-solide-42');

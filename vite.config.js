@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import { appendFileSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { execSync } from 'node:child_process';
 import { join, relative } from 'node:path';
 import { entrees, fichierDe, pagesDuSite } from './tools/site/gabarit.js';
 import { SOUS_PAGES } from './src/site/pages.js';
@@ -129,6 +130,12 @@ function cspStricte() {
   };
 }
 
+function identifiantDuBuild() {
+  const vercel = process.env.VERCEL_GIT_COMMIT_SHA;
+  if (vercel) return vercel.slice(0, 12);
+  try { return execSync('git rev-parse --short=12 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch { return 'dev'; }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   /* Sans ces deux valeurs, l'app se construirait quand même et
@@ -144,6 +151,11 @@ export default defineConfig(({ mode }) => {
   const base = '/';
   return {
     base,
+    /* L'identifiant du build, que le rapporteur d'erreurs joint à chaque
+       rapport (src/core/rapport-erreurs.js) : savoir qu'une erreur est
+       née avec telle mise en ligne. Le commit que Vercel construit, sinon
+       celui du dépôt local. */
+    define: { 'import.meta.env.VITE_BUILD': JSON.stringify(identifiantDuBuild()) },
     plugins: [pagesDuSite(), moteurDuSite(), serviceWorker(base), adressesDeLApp(), cspStricte()].filter(Boolean),
     /* Les pages du site (index.html, servie à `/`, et une par sujet :
        tarifs.html à `/tarifs`… src/site/pages.js, docs/SEO.md) et l'app

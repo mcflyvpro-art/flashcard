@@ -79,13 +79,13 @@ begin
   select a.id into o2 from public.admin_orgs() a where a.name = 'ZZ Collège Hugo';
 
   -- ══════════ la démo, en un geste ══════════
-  j := public.admin_lancer_demo(o, 4, 30, true);
+  j := public.admin_lancer_demo(o, 5, 30, true);
   cref := j->>'code_ref';
   perform public.zz_root();
   select k.eleve, k.prof into ce, cp from public.org_codes k where k.org_id = o;
-  insert into public.zz_res (nom, ok, vu) values ('démo lancée : code référent, codes élève et professeur, 30 jours, 4 places',
+  insert into public.zz_res (nom, ok, vu) values ('démo lancée : code référent, codes élève et professeur, 30 jours, 5 places',
     cref ~ '^[A-HJKMNP-Z2-9]{8}$' and ce is not null and cp is not null and ce <> cp
-    and (select offre = 'demo' and places = 4 and licence_fin = current_date + 30 and exemples from public.orgs where id = o)
+    and (select offre = 'demo' and places = 5 and licence_fin = current_date + 30 and exemples from public.orgs where id = o)
     and (select statut from public.org_suivi where org_id = o) = 'demo', j::text);
 
   -- ══════════ le référent ══════════
@@ -134,10 +134,10 @@ begin
   perform public.rejoindre(ce, 'Lucas', 'Martin', c1);
   perform public.zz_comme(ines);
   j := public.rejoindre(ce, 'Inès', 'Roux', c2);
-  insert into public.zz_res (nom, ok, vu) values ('quatre places, une par professeur et par élève : la troisième élève entre encore', j->>'statut' = 'ok', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('cinq places, une par élève, par professeur et par référent (20261029090000) : la troisième élève entre encore', j->>'statut' = 'ok', j::text);
   perform public.zz_comme(paul);
   j := public.code_apercu(ce);
-  insert into public.zz_res (nom, ok, vu) values ('la 5e personne voit « plein » (le référent ne compte pas)', j->>'statut' = 'plein', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('la 6e personne voit « plein » (le référent compte aussi)', j->>'statut' = 'plein', j::text);
 
   -- ══════════ le professeur choisit ses classes, forme un groupe ══════════
   perform public.zz_comme(prof);
@@ -243,6 +243,10 @@ begin
   insert into public.zz_res (nom, ok, vu) values ('un élève ne lit pas le code par cette porte', s like '%Réservé%', s);
 
   -- ══════════ un professeur particulier : son code ══════════
+  /* depuis 20261029090000, un professeur particulier a une licence, et ses
+     élèves passent par sa salle d'attente : il les accepte */
+  perform public.zz_root();
+  insert into public.prof_licences (prof, places, fin) values (tuteur, 10, current_date + 30);
   perform public.zz_comme(prof);
   s := public.zz_leve('select public.prof_mon_code()');
   insert into public.zz_res (nom, ok, vu) values ('un professeur d''établissement n''a pas de code personnel', s like '%hors établissement%', s);
@@ -255,14 +259,18 @@ begin
   insert into public.zz_res (nom, ok, vu) values ('aperçu : son nom, pas encore de classe', j->>'type' = 'prof' and j->>'statut' = 'ok'
     and j->>'nom' = 'zztuteur' and jsonb_array_length(j->'classes') = 0, j::text);
   j := public.rejoindre(ct, 'Zoé', 'Blanc');
-  insert into public.zz_res (nom, ok, vu) values ('sa première élève : une classe « Mes élèves » l''attend',
-    j->>'statut' = 'ok' and j->>'classe' = 'Mes élèves', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('sa première élève : une classe « Mes élèves », sa demande en attente',
+    j->>'statut' = 'attente' and j->>'classe' = 'Mes élèves', j::text);
   insert into public.zz_res (nom, ok, vu) values ('elle reste un compte personnel, son nom ne bouge pas',
     public.my_org() is null and (select name from public.profiles where id = zoe) = 'zzzoe', 'perso');
   perform public.zz_comme(emma);
   j := public.rejoindre(ct, 'Emma', 'Durand');
-  insert into public.zz_res (nom, ok, vu) values ('une élève d''un lycée suit aussi un professeur particulier', j->>'statut' = 'ok', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('une élève d''un lycée suit aussi un professeur particulier', j->>'statut' = 'attente', j::text);
+  perform public.zz_root();
+  select c.id into t2 from public.classes c where c.owner = tuteur and c.name = 'Mes élèves';
   perform public.zz_comme(tuteur);
+  n := public.prof_admettre(t2, array[zoe, emma]);
+  insert into public.zz_res (nom, ok, vu) values ('il les accepte depuis sa salle d''attente', n = 2, n::text);
   t2 := public.prof_creer_classe('Maths Tle', 'Tle', 'Maths');
   perform public.prof_ajouter_eleve(t2, zoe);
   insert into public.zz_res (nom, ok, vu) values ('un professeur particulier crée une vraie classe, ouverte au code',
@@ -277,7 +285,7 @@ begin
   j := public.rejoindre(ct, 'Paul', 'Petit');
   insert into public.zz_res (nom, ok, vu) values ('deux classes : il faut choisir', j->>'statut' = 'choisir', j::text);
   j := public.rejoindre(ct, 'Paul', 'Petit', t2);
-  insert into public.zz_res (nom, ok, vu) values ('il choisit, il entre', j->>'statut' = 'ok' and j->>'classe' = 'Maths Tle', j::text);
+  insert into public.zz_res (nom, ok, vu) values ('il choisit, sa demande attend dans cette classe', j->>'statut' = 'attente' and j->>'classe' = 'Maths Tle', j::text);
   perform public.zz_comme(tuteur);
   j := public.code_apercu(ct);
   insert into public.zz_res (nom, ok, vu) values ('le professeur ne prend pas son propre code', j->>'statut' = 'soi', j::text);

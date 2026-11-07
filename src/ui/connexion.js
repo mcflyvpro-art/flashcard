@@ -115,7 +115,7 @@ function rowActions(c) {
             title="Type, étiquettes, image, son">${svg(cardIcon(c))}</button>
           <button class="x sus ${c.x ? 'on' : ''}" data-sus="${c.id}"
             title="${c.x ? 'Réactiver' : 'Suspendre'}">${svg(c.x ? I.eyeoff : I.eye)}</button>
-          <button class="x" data-rm="${c.id}">${svg(I.x)}</button>`;
+          <button class="x" data-rm="${c.id}" aria-label="Supprimer la carte" title="Supprimer la carte">${svg(I.x)}</button>`;
 }
 
 function cardRow(c, i, nq) {
@@ -517,7 +517,7 @@ export function loginView() {
       <div class="lrow">${svg(I.lock)}
         <input id="pw" name="password" type="password" placeholder="Mot de passe" autocomplete="${up ? 'new-password' : 'current-password'}"
           ${up ? `minlength="${PWMIN}" passwordrules="minlength: ${PWMIN}; maxlength: 72;" ` : ''}autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go">
-        <button type="button" class="peek" id="pk">${svg(I.eye)}</button></div>
+        <button type="button" class="peek" id="pk" aria-label="Afficher le mot de passe" aria-pressed="false">${svg(I.eye)}</button></div>
       <div class="lerr" id="le"></div>
       ${up ? `<label class="lage"><input type="checkbox" id="age">
         <span>J’ai 15 ans ou plus, et j’accepte les conditions d’utilisation.</span></label>` : ''}
@@ -543,7 +543,11 @@ export function loginView() {
   document.getElementById('pk').onclick = () => {
     const on = pw.type === 'password';
     pw.type = on ? 'text' : 'password';
-    document.getElementById('pk').innerHTML = svg(on ? I.eyeoff : I.eye);
+    const pk = document.getElementById('pk');
+    pk.innerHTML = svg(on ? I.eyeoff : I.eye);
+    // un lecteur d'écran dit ce que fera le bouton, et s'il est enfoncé
+    pk.setAttribute('aria-label', on ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+    pk.setAttribute('aria-pressed', String(on));
     pw.focus();
   };
   // « Mot de passe oublié », « Recevoir un code » : l'écran des codes (ui/verif.js), l'adresse reprise

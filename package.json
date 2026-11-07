@@ -7,11 +7,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && node tools/types-cliquet.js",
     "check": "npm run lint && npm run test && npm run build && npm run budget",
     "test": "vitest run",
     "e2e": "playwright test",
-    "budget": "node tools/budget.js"
+    "budget": "node tools/budget.js",
+    "mutation": "stryker run"
   },
   "repository": {
     "type": "git",
@@ -23,10 +24,14 @@
   },
   "homepage": "https://github.com/mcflyvpro-art/flashcard#readme",
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.64",
+    "@stryker-mutator/core": "^10.1.1",
+    "@stryker-mutator/vitest-runner": "^10.1.1",
     "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^10.14.0",
+    "fast-check": "^4.10.2",
     "globals": "^17.14.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",

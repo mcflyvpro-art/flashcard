@@ -104,7 +104,7 @@ test('un élève de lycée : son pseudo à l’accueil, puis dans le cercle ; so
   await expect.poll(() => pseudoDe(store, 'tom@lycee.fr')).toBe('tom.petit');
   await passerTuto(page);                                                     // le tuto prend le relais de l'accueil
 
-  await page.getByRole('button', { name: /^Mes amis$/ }).first().click();
+  await page.getByRole('button', { name: /^Mes amis(,.*)?$/ }).first().click();
   await expect(page.locator('.cc-moi')).toContainText('Tom PETIT');
   await expect(page.locator('.cc-moi')).toContainText('@tom.petit');
   await page.locator('.cc-moi').click();

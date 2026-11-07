@@ -1,7 +1,13 @@
--- Tests de la migration 20261024125435_un_eleve_sappelle_prenom_nom : comptes à
--- carte, nom imposé et verrouillé, rejoindre avec son vrai nom. Même mode
--- que classes_securisees.sql : transaction ANNULÉE, comptes jetables, vrai
--- rôle `authenticated`.
+-- L'identité d'un élève : un vrai prénom et un vrai nom, mis en forme, et
+-- figés. Réécrit le 2026-11-07 : la première version (20261024125435)
+-- éprouvait surtout les comptes à carte, partis le 2026-10-28
+-- (20261029090000) ; la base neuve de la CI l'a vu, le fichier appelait des
+-- fonctions qui n'existent plus. Restent, éprouvées ici par les chemins
+-- d'aujourd'hui (rejoindre, class_join) : le nom donné à l'entrée, le
+-- verrou du nom (lock_identite_scolaire), qui le corrige (le référent dans
+-- son établissement — partout depuis 20261107213201 —, le professeur
+-- particulier dans sa classe), et la carte élève bien partie.
+-- Transaction ANNULÉE, comptes jetables, vrai rôle `authenticated`.
 
 begin;
 
@@ -19,191 +25,129 @@ grant execute on function public.zz_comme(uuid), public.zz_root() to authenticat
 
 do $$
 declare
-  oa uuid := gen_random_uuid(); pa uuid := gen_random_uuid(); pa2 uuid := gen_random_uuid();
-  pp uuid := gen_random_uuid(); perso uuid := gen_random_uuid();
-  cid uuid; cid2 uuid; cid3 uuid; code1 text; code3 text; s text; t text; n integer; b boolean;
-  alice uuid; bob uuid; ident text; secret text; secret2 text; hash1 text; hash2 text; u record;
+  oa uuid := gen_random_uuid(); pa uuid := gen_random_uuid(); ra uuid := gen_random_uuid();
+  pp uuid := gen_random_uuid(); alice uuid := gen_random_uuid(); bob uuid := gen_random_uuid();
+  perso uuid := gen_random_uuid();
+  cid uuid; cid2 uuid; aid uuid; ce text; kcol text; s text; t text; b boolean; j jsonb; u record;
 begin
-  insert into public.orgs (id, code, name) values (oa, 'ZZA', 'Lycée Zed');
-  for u in select * from (values (pa, 'prof', oa, 'Mme Zed'), (pa2, 'prof', oa, 'M. Autre'),
-      (pp, 'prof', null, 'Mme Libre'), (perso, 'eleve', null, 'Batman du 93')) x(id, role, org, nom) loop
+  insert into public.orgs (id, code, name, offre, places, licence_fin)
+  values (oa, 'ZZA', 'Lycée Zed', 'etablissement', 50, current_date + 30);
+  for u in select * from (values (pa, 'prof', true, 'Mme Zed'), (ra, 'ref', true, 'Réf Zed'),
+      (pp, 'prof', false, 'Mme Libre'), (alice, null, false, 'zzalice'), (bob, null, false, 'zzbob'),
+      (perso, null, false, 'Batman du 93')) x(id, role, org, nom) loop
     insert into auth.users (instance_id, id, aud, role, email)
     values ('00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated', 'zz-' || u.id || '@exemple.invalid');
     insert into public.profiles (id, email, name, handle)
     values (u.id, 'zz-' || u.id || '@exemple.invalid', u.nom, 'zz' || substr(u.id::text, 1, 8))
     on conflict (id) do update set name = excluded.name;
-    insert into public.user_roles (user_id, role) values (u.id, u.role)
-    on conflict (user_id) do update set role = excluded.role;
-    if u.org is not null then insert into public.org_members (user_id, org_id) values (u.id, u.org); end if;
+    if u.role is not null then
+      insert into public.user_roles (user_id, role) values (u.id, u.role)
+      on conflict (user_id) do update set role = excluded.role;
+    end if;
+    if u.org then insert into public.org_members (user_id, org_id) values (u.id, oa); end if;
   end loop;
-
-  -- ── créer les comptes d'une classe depuis une liste ──
+  insert into public.org_codes (org_id) values (oa) on conflict do nothing;
+  update public.org_codes set eleve = public.code_unique(), prof = public.code_unique() where org_id = oa;
+  select k.eleve into ce from public.org_codes k where k.org_id = oa;
+  -- une classe de l'établissement (un professeur y crée un groupe : on en fait une classe)
   perform public.zz_comme(pa);
   cid := public.prof_creer_classe('ZZ 2nde 4', 'Seconde', 'Anglais');
-  select count(*) filter (where e.statut = 'cree'), count(*) filter (where e.statut = 'invalide'),
-         count(*) filter (where e.statut = 'deja')
-    into n, t, s
-  from public.prof_creer_eleves(cid, '[{"prenom":"alice","nom":"martin"},
-    {"prenom":"jean-pierre","nom":"de la fontaine"},{"prenom":"Élodie","nom":"Ñúñez"},
-    {"prenom":"","nom":"Sans"},{"prenom":"x<script>","nom":"y"},{"prenom":"Alice","nom":"MARTIN"}]'::jsonb) e;
-  insert into public.zz_res (nom, ok, vu) values ('3 créés, 2 invalides, 1 doublon dans la liste',
-    n = 3 and t = '2' and s = '1', n || '/' || t || '/' || s);
   perform public.zz_root();
-  select string_agg(p.name || '=' || g.identifiant, ' | ' order by g.identifiant) into t
-  from public.comptes_geres g join public.profiles p on p.id = g.user_id
-  join public.class_members m on m.user_id = g.user_id and m.class_id = cid;
-  insert into public.zz_res (nom, ok, vu) values ('noms mis en forme, identifiants sans accents',
-    t = 'Alice MARTIN=alice.martin | Élodie ÑÚÑEZ=elodie.nunez | Jean-Pierre DE LA FONTAINE=jeanpierre.delafontaine', t);
-  select g.user_id into alice from public.comptes_geres g where g.identifiant = 'alice.martin';
-  insert into public.zz_res (nom, ok, vu) values ('le compte est élève, de l''établissement, inscrit, jamais connecté',
-    exists (select 1 from public.user_roles where user_id = alice and role = 'eleve')
-    and exists (select 1 from public.org_members where user_id = alice and org_id = oa)
-    and exists (select 1 from auth.users where id = alice and email = 'alice.martin@eleves.folio.invalid'
-                and last_sign_in_at is null and encrypted_password like '$2%'), '');
+  update public.classes set genre = 'classe' where id = cid;
 
-  -- l'identifiant suivant prend un numéro, le code n'est jamais stocké en clair
-  perform public.zz_comme(pp);
-  cid2 := public.prof_creer_classe('ZZ Soutien', '', 'Maths');
-  select e.identifiant, e.code into ident, secret from public.prof_creer_eleves(cid2, '[{"prenom":"Alice","nom":"Martin"}]'::jsonb) e;
-  insert into public.zz_res (nom, ok, vu) values ('un deuxième Alice Martin ailleurs : alice.martin2, code de 8',
-    ident = 'alice.martin2' and secret ~ '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$', ident || '/' || length(secret));
+  -- ── entrer avec son code : un vrai nom, mis en forme ──
+  perform public.zz_comme(bob);
+  j := public.rejoindre(ce, '', '', cid);
+  insert into public.zz_res (nom, ok, vu) values ('sans prénom ni nom : « nom », personne n''entre',
+    j->>'statut' = 'nom' and public.my_org() is null, j::text);
+  j := public.rejoindre(ce, 'Lucas', 'Batman<3', cid);
+  insert into public.zz_res (nom, ok, vu) values ('un faux nom (caractères interdits) : refusé', j->>'statut' = 'nom', j::text);
+  perform public.zz_comme(alice);
+  j := public.rejoindre(ce, '  alice ', ' martin ', cid);
   perform public.zz_root();
-  insert into public.zz_res (nom, ok, vu) values ('le code n''apparaît nulle part en clair',
-    not exists (select 1 from auth.users where encrypted_password like '%' || secret || '%')
-    and not exists (select 1 from public.comptes_geres g where g.identifiant like '%' || secret || '%'), '');
+  insert into public.zz_res (nom, ok, vu) values ('Alice entre sous « Alice MARTIN », partout',
+    j->>'statut' = 'ok' and (select name from public.profiles where id = alice) = 'Alice MARTIN'
+    and (select who from public.class_members where class_id = cid and user_id = alice) = 'Alice MARTIN', j::text);
 
-  -- homonyme dans le même établissement
-  perform public.zz_comme(pa);
-  cid3 := public.prof_creer_classe('ZZ Option latin', '', 'Latin');
-  select e.statut into s from public.prof_creer_eleves(cid3, '[{"prenom":"Alice","nom":"Martin"}]'::jsonb) e;
-  select e.statut into t from public.prof_creer_eleves(cid3, '[{"prenom":"Alice","nom":"Martin"}]'::jsonb, true) e;
-  insert into public.zz_res (nom, ok, vu) values ('homonyme dans le lycée : signalé, créé seulement si confirmé',
-    s = 'homonyme' and t = 'cree', s || '/' || t);
-
-  -- seul le gestionnaire crée des comptes
-  perform public.zz_comme(pa2);
-  begin perform public.prof_creer_eleves(cid, '[{"prenom":"Pirate","nom":"Intrus"}]'::jsonb); s := 'passé';
-  exception when others then s := 'refusé'; end;
-  insert into public.zz_res (nom, ok, vu) values ('un collègue hors de la classe ne crée pas de compte', s = 'refusé', s);
-
-  -- ── le nom ne se change pas ; le pseudo, seulement par sa porte (2026-10-27) ──
+  -- ── le nom ne se change pas ; le pseudo, seulement par sa porte ──
   perform public.zz_comme(alice);
   update public.profiles set name = 'DarkAlice' where id = alice;
   begin update public.profiles set handle = 'darkalice' where id = alice; s := 'passé';
   exception when others then s := sqlstate; end;
   perform public.zz_root();
-  select p.name || '/' || p.handle into t from public.profiles p where p.id = alice;
+  select p.name into t from public.profiles p where p.id = alice;
   insert into public.zz_res (nom, ok, vu) values ('l''élève ne change pas son nom, ni son pseudo par l''API brute',
-    t = 'Alice MARTIN/alice.martin' and s = '42501', t || ' ' || s);
+    t = 'Alice MARTIN' and s = '42501', t || ' ' || s);
   perform public.zz_comme(alice);
   insert into public.zz_res (nom, ok, vu) values ('son pseudo, par changer_pseudo (pseudos.sql)',
     public.changer_pseudo('zz.alice.lit')->>'statut' = 'ok', '');
   select g.gere, g.nom, g.identifiant into b, s, t from public.mon_compte() g;
+  insert into public.zz_res (nom, ok, vu) values ('mon_compte : son nom, plus de compte à carte',
+    not b and s = 'Alice MARTIN' and coalesce(t, '') = '', b || '/' || s || '/' || coalesce(t, '∅'));
+
+  -- ── qui corrige le nom ──
+  perform public.zz_comme(pa);
+  perform public.prof_give(array[cid], 'ZZ Vocabulaire', 'Anglais', '[["cat","chat"]]'::jsonb, current_date + 7);
+  perform public.zz_root();
+  select a.id into aid from public.assignments a where a.class_id = cid;
   perform public.zz_comme(alice);
-  select g.gere, g.nom, g.identifiant into b, s, t from public.mon_compte() g;
-  insert into public.zz_res (nom, ok, vu) values ('l''app sait que c''est un compte à carte',
-    b and s = 'Alice MARTIN' and t = 'alice.martin', b || '/' || s || '/' || t);
-
-  -- le gestionnaire corrige une faute de frappe, partout
+  perform public.eleve_ouvrir_devoir(aid);
   perform public.zz_comme(pa);
-  t := public.prof_nommer_eleve(cid, alice, 'alyce', 'martin');
-  perform public.zz_root();
-  insert into public.zz_res (nom, ok, vu) values ('le gestionnaire corrige le nom, partout',
-    t = 'Alyce MARTIN'
-    and (select name from public.profiles where id = alice) = 'Alyce MARTIN'
-    and (select who from public.class_members where class_id = cid and user_id = alice) = 'Alyce MARTIN', t);
-  perform public.zz_comme(pa2);
   begin perform public.prof_nommer_eleve(cid, alice, 'Hack', 'Er'); s := 'passé';
+  exception when others then s := sqlerrm; end;
+  insert into public.zz_res (nom, ok, vu) values ('un professeur d''établissement ne corrige pas le nom', s like '%référent%', s);
+  begin perform public.ref_update_account(alice, 'Hack ER'); s := 'passé';
   exception when others then s := 'refusé'; end;
-  insert into public.zz_res (nom, ok, vu) values ('… et personne d''autre', s = 'refusé', s);
-
-  -- ── une carte perdue ──
+  insert into public.zz_res (nom, ok, vu) values ('… ni par la porte du référent', s = 'refusé', s);
+  perform public.zz_comme(ra);
+  perform public.ref_update_account(alice, 'Alyce MARTIN');
   perform public.zz_root();
-  select encrypted_password into hash1 from auth.users where id = alice;
-  insert into auth.sessions (id, user_id, created_at, updated_at) values (gen_random_uuid(), alice, now(), now());
+  insert into public.zz_res (nom, ok, vu) values ('le référent corrige le nom : profil, liste de la classe, devoir',
+    (select name from public.profiles where id = alice) = 'Alyce MARTIN'
+    and (select who from public.class_members where class_id = cid and user_id = alice) = 'Alyce MARTIN'
+    and (select who from public.assignment_progress where assignment_id = aid and user_id = alice) = 'Alyce MARTIN', '');
   perform public.zz_comme(pa);
-  select c.code into secret2 from public.prof_nouvelles_cartes(cid, array[alice]) c;
+  select r.who into t from public.prof_roster(cid) r where r.user_id = alice;
+  insert into public.zz_res (nom, ok, vu) values ('le professeur voit le nom corrigé', t = 'Alyce MARTIN', coalesce(t, '∅'));
+
+  -- ── chez un professeur particulier : un compte personnel, son vrai nom ──
   perform public.zz_root();
-  select encrypted_password into hash2 from auth.users where id = alice;
-  insert into public.zz_res (nom, ok, vu) values ('nouvelle carte : nouveau code, appareils déconnectés',
-    hash1 <> hash2 and hash2 = extensions.crypt(secret2, hash2)
-    and not exists (select 1 from auth.sessions where user_id = alice), '');
-end $$;
-
--- Second bloc : retrouve le décor du premier (même transaction).
-do $$
-declare
-  pa uuid; pa2 uuid; pp uuid; perso uuid; alice uuid; cid uuid; cid2 uuid; code1 text; s text; t text; n integer;
-begin
-  select g.user_id into alice from public.comptes_geres g where g.identifiant = 'alice.martin';
-  select c.id into cid from public.classes c where c.name = 'ZZ 2nde 4';
-  select c.id into cid2 from public.classes c where c.name = 'ZZ Soutien';
-  select p.id into pa from public.profiles p where p.name = 'Mme Zed' and p.email like 'zz-%';
-  select p.id into pa2 from public.profiles p where p.name = 'M. Autre' and p.email like 'zz-%';
-  select p.id into pp from public.profiles p where p.name = 'Mme Libre' and p.email like 'zz-%';
-  select p.id into perso from public.profiles p where p.name = 'Batman du 93' and p.email like 'zz-%';
-  insert into public.zz_res (nom, ok, vu) values ('le premier bloc s''est déroulé jusqu''au bout',
-    alice is not null and cid is not null, coalesce(alice::text, '∅'));
-
-  perform public.zz_comme(pa2);
-  begin perform public.prof_nouvelles_cartes(cid, array[alice]); s := 'passé';
-  exception when others then s := 'refusé'; end;
-  insert into public.zz_res (nom, ok, vu) values ('personne d''autre ne remplace la carte', s = 'refusé', s);
-
-  -- ── un compte personnel rejoint avec son vrai nom ──
+  insert into public.prof_licences (prof, places, fin) values (pp, 5, current_date + 30);
+  perform public.zz_comme(pp);
+  cid2 := public.prof_creer_classe('ZZ Soutien', '', 'Maths');
   perform public.zz_root();
-  select c.code into code1 from public.classes c where c.id = cid2;
+  select c.code into kcol from public.classes c where c.id = cid2;
   perform public.zz_comme(perso);
-  select j.statut into s from public.class_join(code1) j;
+  select x.statut into s from public.class_join(kcol) x;
   insert into public.zz_res (nom, ok, vu) values ('compte personnel sans prénom ni nom : « nom », rien d''inscrit',
     s = 'nom' and not exists (select 1 from public.class_requests r where r.user_id = perso), s);
-  select j.statut into s from public.class_join(code1, 'Lucas', 'Batman<3') j;
+  select x.statut into s from public.class_join(kcol, 'Lucas', 'Batman<3') x;
   insert into public.zz_res (nom, ok, vu) values ('un faux nom (caractères interdits) est refusé', s = 'nom', s);
-  select j.statut into s from public.class_join(code1, '  lucas ', ' durand ') j;
+  select x.statut into s from public.class_join(kcol, '  lucas ', ' durand ') x;
   perform public.zz_comme(pp);
   select d.who into t from public.prof_demandes(cid2) d where d.user_id = perso;
   insert into public.zz_res (nom, ok, vu) values ('le professeur voit « Lucas DURAND », pas le pseudo',
     s = 'attente' and t = 'Lucas DURAND', s || '/' || coalesce(t, '∅'));
-
-  -- un compte à carte rejoint une autre classe avec son nom, sans le retaper
-  -- un groupe d'établissement se crée fermé (20261026030000) : on l'ouvre
-  -- pour éprouver l'ancien chemin du code de classe
+  perform public.prof_admettre(cid2, array[perso]);
+  t := public.prof_nommer_eleve(cid2, perso, 'luc', 'durand');
   perform public.zz_root();
-  update public.classes set join_open = true where name = 'ZZ Option latin';
-  select c.code into code1 from public.classes c where c.name = 'ZZ Option latin';
-  perform public.zz_comme(alice);
-  select j.statut into s from public.class_join(code1, 'Faux', 'Nom') j;
-  perform public.zz_comme(pa);
-  select d.who into t from public.prof_demandes((select id from public.classes where name = 'ZZ Option latin')) d
-  where d.user_id = alice;
-  insert into public.zz_res (nom, ok, vu) values ('un compte à carte garde son nom (le nom tapé est ignoré)',
-    s = 'attente' and t = 'Alyce MARTIN', s || '/' || coalesce(t, '∅'));
-
-  -- ── supprimer un compte à carte ──
-  perform public.zz_comme(pa);
-  n := public.prof_admettre((select id from public.classes where name = 'ZZ Option latin'), array[alice]);
-  begin perform public.prof_supprimer_eleve(cid, alice); s := 'passé';
+  insert into public.zz_res (nom, ok, vu) values ('le professeur particulier corrige le nom dans sa classe, pas le profil',
+    t = 'Luc DURAND' and (select who from public.class_members where class_id = cid2 and user_id = perso) = 'Luc DURAND'
+    and (select name from public.profiles where id = perso) = 'Batman du 93', t);
+  perform public.zz_comme(ra);
+  begin perform public.ref_update_account(perso, 'Pirate'); s := 'passé';
   exception when others then s := 'refusé'; end;
-  insert into public.zz_res (nom, ok, vu) values ('pas de suppression s''il est dans une autre classe', s = 'refusé', s);
-  perform public.prof_retirer((select id from public.classes where name = 'ZZ Option latin'), alice, false);
-  perform public.prof_supprimer_eleve(cid, alice);
+  insert into public.zz_res (nom, ok, vu) values ('un référent ne renomme pas qui n''est pas de son établissement', s = 'refusé', s);
+
+  -- ── les droits ──
   perform public.zz_root();
-  insert into public.zz_res (nom, ok, vu) values ('supprimé : plus de compte, plus de ligne',
-    not exists (select 1 from auth.users where id = alice)
-    and not exists (select 1 from public.comptes_geres where user_id = alice)
-    and not exists (select 1 from public.class_members where user_id = alice), '');
-  perform public.zz_comme(pp);
-  n := public.prof_admettre(cid2, array[perso]);
-  begin perform public.prof_supprimer_eleve(cid2, perso); s := 'passé';
-  exception when others then s := 'refusé'; end;
-  insert into public.zz_res (nom, ok, vu) values ('un compte personnel ne se supprime pas par le prof', s = 'refusé', s);
-
-  insert into public.zz_res (nom, ok, vu) values ('fonctions internes fermées',
-    not has_function_privilege('authenticated', 'public.creer_compte_eleve(text, text, uuid)', 'execute')
-    and not has_function_privilege('authenticated', 'public.code_secret()', 'execute')
-    and not has_function_privilege('anon', 'public.prof_creer_eleves(uuid, jsonb, boolean)', 'execute')
-    -- le verrou du nom est un déclencheur, pas une porte d'API (20261024213744)
-    and not has_function_privilege('authenticated', 'public.lock_identite_scolaire()', 'execute'), '');
+  insert into public.zz_res (nom, ok, vu) values ('la carte élève est partie, le verrou reste fermé à l''API',
+    to_regprocedure('public.prof_creer_eleves(uuid, jsonb, boolean)') is null
+    and to_regprocedure('public.prof_nouvelles_cartes(uuid, uuid[])') is null
+    and to_regprocedure('public.prof_supprimer_eleve(uuid, uuid)') is null
+    and not has_function_privilege('authenticated', 'public.lock_identite_scolaire()', 'execute')
+    and not has_function_privilege('anon', 'public.ref_update_account(uuid, text, text, text)', 'execute')
+    and not has_function_privilege('anon', 'public.prof_nommer_eleve(uuid, uuid, text, text)', 'execute'), '');
 end $$;
 
 select n, ok, nom, vu from public.zz_res order by n;

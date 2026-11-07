@@ -7,7 +7,7 @@ import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerAmis, semerClub, semerCompte, semerLectures, semerPseudo } from './faux-cercle.js';
 import { inscrire } from './aide.js';
 
-const versCercle = page => page.getByRole('button', { name: /^Mes amis$/ }).first().click();
+const versCercle = page => page.getByRole('button', { name: /^Mes amis(,.*)?$/ }).first().click();
 
 test('le profil d’un ami, d’une demande en attente, d’un membre de club', async ({ page }) => {
   const store = nouveauStore();
@@ -60,4 +60,22 @@ test('le profil d’un ami, d’une demande en attente, d’un membre de club', 
   await expect(page.getByRole('button', { name: 'Retirer du club' })).toBeVisible();     // Léa est la cheffe
   await page.getByRole('button', { name: 'Retour' }).first().click();
   await expect(page.getByRole('tab', { name: 'Membres' })).toBeVisible();      // revenu sur la page du club
+});
+
+// Un ami accepté pendant que l'app est ouverte (2026-11-07, trouvé par la
+// CI) : le préchargement de l'arrivée a déjà lu la liste, vide ; rouvrir
+// « Mes amis » doit la relire. Avant, Tom n'apparaissait qu'au redémarrage
+// — rouge sur l'ancien code, quelle que soit la vitesse de la machine.
+test('un ami accepté pendant que l’app est ouverte paraît dès qu’on ouvre « Mes amis »', async ({ page }) => {
+  const store = nouveauStore();
+  await brancher(page, store);
+  const prechargee = page.waitForRequest(r => r.url().includes('/rpc/my_friends'), { timeout: 15000 });
+  await inscrire(page);
+  await prechargee;
+  await page.waitForTimeout(300);
+  semerCompte(store, 'tom@exemple.fr'); semerPseudo(store, 'tom@exemple.fr', 'tom', 'Tom Bernard');
+  semerPseudo(store, 'lea@exemple.fr', 'lea', 'Léa Martin');
+  semerAmis(store, 'lea@exemple.fr', 'tom@exemple.fr');
+  await versCercle(page);
+  await expect(page.locator('.cc-ami', { hasText: 'Tom' })).toBeVisible({ timeout: 10000 });
 });

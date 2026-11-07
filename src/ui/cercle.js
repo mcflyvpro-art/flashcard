@@ -40,19 +40,19 @@ export const iconeClub = g => iconeEmbleme(g.embleme);
 export const infos = l => `<span class="cc-infos">${l.filter(x => x && x[1] !== '' && x[1] != null).map(([ic, v, t]) =>
   `<span${t ? ` title="${esc(t)}"` : ''}>${ic ? svg(I[ic]) : ''}${esc(String(v))}</span>`).join('')}</span>`;
 
-/* tout ce que l'écran a besoin de savoir, lancé en parallèle. Les amis et
-   le classement se relisent à chaque ouverture (2026-11-07) : lus une fois
-   au préchauffage, juste après la connexion, ils ne bougeaient plus — un
-   ami accepté pendant que l'app était ouverte n'apparaissait pas dans la
-   liste, alors que le classement le montrait. Ce qui est là s'affiche, la
-   relecture arrive par-dessus, sans repeindre si rien n'a bougé. Les
-   clubs et les défis de même : un club rejoint ailleurs manquait aussi. */
-export function commuPull() {
+/* tout ce que l'écran a besoin de savoir, lancé en parallèle */
+/* relire : on OUVRE l'onglet — les amis, le classement, les clubs et les
+   défis se relisent en fond, même déjà là ; chacun ne repeint que si sa
+   liste a bougé. Sans lui (le préchargement de l'arrivée), seulement ce
+   qui manque : avant le 2026-11-07, un ami accepté ou un club rejoint
+   pendant que l'app était ouverte n'apparaissait qu'au redémarrage (le
+   préchargement avait déjà lu la liste ; trouvé par e2e/profil.e2e.js). */
+export function commuPull(relire = false) {
   if (!me) mePull().then(() => { if (view.name === 'commu') { setAnimate(false); render(); } });
-  friendsPull(!!friends);
-  duelsPull(!!duels.list);
-  boardPull(!!board.rows);
-  if (!isPupil()) clubsPull(cercle.clubs !== null);
+  if (!friends || relire) friendsPull(relire);
+  if (!duels.list || relire) duelsPull(relire);
+  if (!board.rows || relire) boardPull(relire);
+  if (!isPupil() && (cercle.clubs === null || relire)) clubsPull(relire);
   sallesPull();
   if (school === null) schoolPull().then(() => { if (view.name === 'commu') { setAnimate(false); render(); } });
 }
@@ -210,7 +210,8 @@ function amisHtml(eleve) {
   const l = mates || [], a = (asks || []).length;
   return `<section class="cc-carte">
     <div class="cc-h"><h2>${eleve ? 'Camarades' : 'Amis'} <span>${l.length || ''}</span></h2>
-      <button class="cc-lnk" data-act="friends" aria-label="Gérer">${a ? `<b class="cc-badge">${a}</b>` : ''}${svg(I.arrow)}</button></div>
+      <button class="cc-lnk" data-act="friends" aria-label="${a ? `Gérer, ${a} ${a > 1 ? 'demandes' : 'demande'}` : 'Gérer'}">${
+        a ? `<b class="cc-badge">${a}</b>` : ''}${svg(I.arrow)}</button></div>
     <div class="cc-amis">${l.slice(0, 11).map(f => `<button class="cc-ami" data-mate="${esc(f.id)}">
         ${avatar(f.id, f.handle || f.name)}<span>${esc((shortWho(f.name || f.handle) || '').split(' ')[0])}</span></button>`).join('')}
       <button class="cc-ami plus" data-act="friends"><i class="jt vide">${svg(I.plus)}</i><span>Ajouter</span></button></div>

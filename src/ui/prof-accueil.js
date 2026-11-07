@@ -70,8 +70,8 @@ export function navProf(actif) {
       archives.length}</b></button>${prof.archives ? archives.map(c => ligneNav(c, actif)).join('') : ''}` : ''}
   </nav>
   <div class="pf-mnav" role="tablist" aria-label="Espace professeur">
-    <button class="${actif === 'accueil' ? 'on' : ''}" data-pf="accueil">${svg(I.grid)}<span>Tableau de bord</span></button>
-    <button class="${actif === 'agenda' ? 'on' : ''}" data-pf="agenda">${svg(I.cal)}<span>Agenda</span></button>
+    <button class="${actif === 'accueil' ? 'on' : ''}" data-pf="accueil" role="tab" aria-selected="${actif === 'accueil'}">${svg(I.grid)}<span>Tableau de bord</span></button>
+    <button class="${actif === 'agenda' ? 'on' : ''}" data-pf="agenda" role="tab" aria-selected="${actif === 'agenda'}">${svg(I.cal)}<span>Agenda</span></button>
   </div>`;
 }
 
@@ -171,7 +171,7 @@ function accueilVide() {
 function accueilCorps(l) {
   const s = syntheseAccueil(l);
   const { actives } = rangerClasses(l);
-  return `${codeBande()}<div class="pf-kpis">
+  return `${codeBande()}<div class="pf-kpis" tabindex="0" role="region" aria-label="Chiffres">
       ${kpi(I.users, s.eleves, 'Élèves')}
       ${s.attente ? kpi(I.user, s.attente, 'En attente', 'am', 'aller-attente') : ''}
       ${kpi(I.warn, s.retard, 'En retard', s.retard ? 'ko' : '')}

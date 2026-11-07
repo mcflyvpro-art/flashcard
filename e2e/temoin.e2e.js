@@ -52,7 +52,8 @@ test('/mentions/confidentialite ouvre la confidentialité, dans un navigateur', 
 
 // Sur iPhone, un QR de partie scanné ouvre Safari, pas l'app installée : le
 // code doit s'y lire en gros, prêt à copier, sur la porte d'installation.
-test('un QR de partie ouvert hors de l’app : le code en gros, prêt à copier', async ({ page, context }) => {
+test('un QR de partie ouvert hors de l’app : le code en gros, prêt à copier', async ({ page, context, browserName }) => {
+  test.skip(browserName === 'webkit', 'WebKit ne connaît pas la permission clipboard-write de Playwright');
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('./app?defi=482913');
   await expect(page.getByRole('heading', { name: 'Installe Mirandola' })).toBeVisible({ timeout: 10000 });

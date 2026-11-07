@@ -56,8 +56,15 @@ begin
   insert into public.zz_res (nom, ok, vu) values ('Zoé, sans facteur ni aal dans le jeton : mfa_ok()', public.mfa_ok(), null);
   perform set_config('role', 'postgres', true);
 
-  insert into public.zz_res (nom, ok, vu) values ('treize tables gardées par une politique restrictive',
-    (select count(*) from pg_policies where schemaname = 'public' and policyname = 'deux_etapes' and permissive = 'RESTRICTIVE') = 13, null);
+  -- les treize du 2026-11-05, et examens (20261106054530) : nommées, pas
+  -- comptées — une table de plus ne doit pas faire croire à une de moins
+  insert into public.zz_res (nom, ok, vu) values ('chaque table de ce qui est à soi gardée par une politique restrictive',
+    (select array_agg(tablename::text order by tablename) from pg_policies
+      where schemaname = 'public' and policyname = 'deux_etapes' and permissive = 'RESTRICTIVE')
+    @> array['blocks','cards','deck_versions','decks','examens','friends','library','mail','prefs','profiles',
+             'reviews','sessions','shares','subjects'],
+    (select string_agg(tablename::text, ',' order by tablename) from pg_policies
+      where schemaname = 'public' and policyname = 'deux_etapes'));
 
   -- ══════════ l'adresse suivie ══════════
   update auth.users set email = 'zz-nouvelle-' || tom || '@exemple.invalid' where id = tom;
