@@ -123,7 +123,7 @@ const OUVRIR = {
   classes: () => allerClasses(),
   classe: id => { eleveClassesPull(); ouvrirClasseEleve(id); },
   commu: () => { commuPull(); go('commu'); },
-  friends: () => { if (!friends) friendsPull(); go('friends'); },
+  friends: () => { friendsPull(!!friends); go('friends'); },
   club: id => { commuPull(); cercle.onglet = 'defis'; clubPull(id); go('club', id); },
   profil: id => ouvrirProfil(id),
   prof: () => allerAccueil(),

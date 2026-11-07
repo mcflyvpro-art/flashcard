@@ -75,13 +75,19 @@ export async function upsertProfile() {
 
 /* On n'envoie un paquet qu'à quelqu'un qu'on a ajouté, et l'annuaire
    complet n'est plus lisible : chacun ne voit que ses propres liens. */
-export async function friendsPull() {
+/* `bg` : une relecture de fond (la liste est déjà à l'écran) — on ne
+   repeint que si elle a changé, pour ne pas faire clignoter l'écran. */
+let sigAmis = '';
+export async function friendsPull(bg) {
   try {
     const rows = await api('/rest/v1/rpc/my_friends', 'POST', {});
     setFriends(rows || []);
     setMates(friends.filter(f => f.status === 'ok'));
     setAsks(friends.filter(f => f.status === 'pending' && f.sens === 'recue'));
   } catch (e) { setFriends(friends || []); setMates(mates || []); setAsks(asks || []); }
+  const sig = JSON.stringify(friends);
+  if (bg && sig === sigAmis) return;
+  sigAmis = sig;
   if (view.name === 'commu' || view.name === 'friends') { setAnimate(false); render(); }
   if (menu) paintMenu();
 }

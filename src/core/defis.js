@@ -16,7 +16,9 @@ import { closeMenu, openMenu } from '../ui/menus-a.js';
    ensuite. Un essai par personne, pour la même raison. */
 export const DUELQ = 10;
 
-export async function duelsPull() {
+// `bg` : relecture de fond, l'écran n'est repeint que si les défis ont changé
+let sigDefis = '';
+export async function duelsPull(bg) {
   try {
     const [ds, sc] = await Promise.all([
       api('/rest/v1/duels?select=id,owner,who,name,total,cards,group_id,created_at&order=created_at.desc&limit=40'),
@@ -24,6 +26,9 @@ export async function duelsPull() {
     ]);
     duels.list = ds || []; duels.scores = sc || []; duels.err = 0;
   } catch (e) { duels.err = 1; }
+  const sig = JSON.stringify([duels.list, duels.scores, duels.err]);
+  if (bg && sig === sigDefis) return;
+  sigDefis = sig;
   if (/^(commu|friends|club|classes)$/.test(view.name)) { setAnimate(false); render(); }
 }
 

@@ -28,9 +28,14 @@ function repeindre(re = ECRANS) {
 const horsLigne = quoi => { if (online) return false; toast(I.cloud, 'Hors ligne : ' + quoi + ' demande le réseau'); return true; };
 
 /* ---------- lire ---------- */
-export async function clubsPull() {
+// `bg` : relecture de fond, l'écran n'est repeint que si la liste a changé
+let sigClubs = '';
+export async function clubsPull(bg) {
   try { cercle.clubs = await rpc('mes_clubs') || []; cercle.err = 0; }
   catch (e) { cercle.clubs = cercle.clubs || []; cercle.err = 1; }
+  const sig = JSON.stringify(cercle.clubs) + cercle.err;
+  if (bg && sig === sigClubs) return;
+  sigClubs = sig;
   repeindre();
 }
 

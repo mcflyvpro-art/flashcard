@@ -5,7 +5,7 @@
 // (e2e/faux-cercle.js), la sécurité se prouve en base (supabase/tests/).
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
-import { semerAmis, semerCompte, semerLectures, semerPseudo } from './faux-cercle.js';
+import { semerAmis, semerClub, semerCompte, semerLectures, semerPseudo } from './faux-cercle.js';
 import { connecter, inscrire } from './aide.js';
 
 const CAPITALES = [['France', 'Paris'], ['Italie', 'Rome'], ['Espagne', 'Madrid'], ['Portugal', 'Lisbonne'],
@@ -155,4 +155,28 @@ test('mon jeton : un avatar et une couleur, le même visage chez un ami', async 
   const chezTom = tom.locator(`.cc-rank [data-jt="p:${store.users[0].id}"]`);
   await expect(chezTom.locator('svg.visage')).toBeVisible({ timeout: 10000 });
   await expect(chezTom).toHaveAttribute('style', /#A8483C/);
+});
+
+/* Le défaut du 2026-11-07 : la liste d'amis, lue une fois au préchauffage
+   juste après la connexion, ne se relisait plus — un ami accepté pendant
+   que l'app était ouverte n'apparaissait pas dans « Mes amis », alors que
+   le classement le montrait (e2e/profil.e2e.js échouait une fois sur
+   trois). Elle se relit à chaque ouverture ; les clubs et les défis aussi. */
+test('un ami et un club arrivés pendant que l’app est ouverte paraissent au retour sur « Mes amis »', async ({ page }) => {
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  semerPseudo(store, 'lea@exemple.fr', 'lea', 'Léa Martin');
+  await versCercle(page);
+  await expect(page.locator('.cc-moi')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.cc-ami', { hasText: 'Tom' })).toHaveCount(0);
+  await expect(page.locator('.cc-club', { hasText: 'Les Lecteurs' })).toHaveCount(0);
+
+  semerCompte(store, 'tom@exemple.fr'); semerPseudo(store, 'tom@exemple.fr', 'tom', 'Tom Bernard');
+  semerAmis(store, 'lea@exemple.fr', 'tom@exemple.fr');
+  semerClub(store, 'lea@exemple.fr', 'Les Lecteurs', ['tom@exemple.fr']);
+  await page.getByRole('button', { name: /^Paquets$/ }).first().click();
+  await versCercle(page);
+  await expect(page.locator('.cc-ami', { hasText: 'Tom' })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.cc-club', { hasText: 'Les Lecteurs' })).toBeVisible();
 });

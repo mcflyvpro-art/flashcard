@@ -28,6 +28,9 @@ DERNIER   2026-11-07 · L'IA de la création n'est plus une méthode :
           ai : consigne et contexte à leur place, 8 photos en un appel
           (tools/ia/essai.js 8/8, pas encore déployée : l'app se replie
           sur hint et une photo par appel) ; e2e/prompt.e2e.js 8/8.
+          « Mes amis » relit amis, classement, clubs et défis à chaque
+          ouverture (un ami accepté app ouverte n'apparaissait pas :
+          e2e/profil.e2e.js échouait 2 fois sur 5, 20/20 depuis).
           Avant :
           2026-11-07 · Le vocabulaire redevient classique partout
           (app, site, démo, textes du cadre, e-mails, manifeste) : paquet,

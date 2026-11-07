@@ -40,13 +40,19 @@ export const iconeClub = g => iconeEmbleme(g.embleme);
 export const infos = l => `<span class="cc-infos">${l.filter(x => x && x[1] !== '' && x[1] != null).map(([ic, v, t]) =>
   `<span${t ? ` title="${esc(t)}"` : ''}>${ic ? svg(I[ic]) : ''}${esc(String(v))}</span>`).join('')}</span>`;
 
-/* tout ce que l'écran a besoin de savoir, lancé en parallèle */
+/* tout ce que l'écran a besoin de savoir, lancé en parallèle. Les amis et
+   le classement se relisent à chaque ouverture (2026-11-07) : lus une fois
+   au préchauffage, juste après la connexion, ils ne bougeaient plus — un
+   ami accepté pendant que l'app était ouverte n'apparaissait pas dans la
+   liste, alors que le classement le montrait. Ce qui est là s'affiche, la
+   relecture arrive par-dessus, sans repeindre si rien n'a bougé. Les
+   clubs et les défis de même : un club rejoint ailleurs manquait aussi. */
 export function commuPull() {
   if (!me) mePull().then(() => { if (view.name === 'commu') { setAnimate(false); render(); } });
-  if (!friends) friendsPull();
-  if (!duels.list) duelsPull();
-  if (!board.rows) boardPull();
-  if (!isPupil() && cercle.clubs === null) clubsPull();
+  friendsPull(!!friends);
+  duelsPull(!!duels.list);
+  boardPull(!!board.rows);
+  if (!isPupil()) clubsPull(cercle.clubs !== null);
   sallesPull();
   if (school === null) schoolPull().then(() => { if (view.name === 'commu') { setAnimate(false); render(); } });
 }
