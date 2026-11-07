@@ -3,7 +3,7 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { offre, plus, view } from '../data/etat.js';
-import { ESSAI_JOURS, FORMULES, RAISONS, erreurDe, euros, formuleDe, gestion, resume } from '../abonnement.js';
+import { ESSAI_JOURS, FORMULES, PROMO, RAISONS, erreurDe, euros, formuleDe, gestion, lignePromo, resume } from '../abonnement.js';
 import { AVANTAGES_DETAIL, AVANTAGES_INFINI, iaDuMois, licence } from '../licence.js';
 import { iaParMois } from '../offres.js';
 import { NOMS, mobile, plateforme, vente } from '../plateformes.js';
@@ -181,6 +181,20 @@ export function promoGardee() {
   } catch (e) { return ''; }                                   // stockage illisible : pas de code, le champ de Stripe reste
 }
 
+/* Le code qui part avec la commande : celui d'un lien, sinon, pendant le
+   lancement (PROMO.enCours, 2026-11-07), LANCEMENT d'office sur un premier
+   abonnement Stripe — jamais pour une montée par le portail, où il ne
+   s'applique pas. Un code que Stripe dit fini ne revient plus. */
+const lancementFini = () => { try { return !!localStorage.getItem('folio.promo.fini'); } catch (e) { return false; } };
+function promoActive(monte) {
+  if (monte && offre.abonnement && offre.abonnement.source === 'stripe') return '';
+  return promoGardee() || (PROMO.enCours && essaiPossible() && !lancementFini() ? PROMO.code : '');
+}
+const promoHtml = code => (code === PROMO.code
+  ? `<p class="fp-promo fp-lancement">${svg(I.tag)}<span><b class="fp-remise">−${PROMO.remise}&nbsp;%</b>Lancement : ${
+    esc(lignePromo(commande()))} avec le code <b>${PROMO.code}</b>, posé au paiement</span></p>`
+  : `<p class="fp-promo">${svg(I.tag)}<span>Code <b>${esc(code)}</b> : posé sur la page de paiement</span></p>`);
+
 // le bouton d'achat et ce qu'il engage, dit dessous
 function payer(p, monte) {
   const libelle = plus.envoi === 'payer' ? 'Ouverture du paiement…' : essaiPossible() ? `Essayer ${ESSAI_JOURS} jours gratuits`
@@ -193,12 +207,12 @@ function payer(p, monte) {
 }
 
 function offreHtml(p) {
-  const r = resume(offre), promo = promoGardee(), monte = plus.monter;
+  const r = resume(offre), monte = plus.monter, promo = promoActive(monte);
   return `${r.ligne !== 'Gratuit' && !monte ? `<p class="fp-alerte">${svg(I.warn)}${esc(r.ligne)}</p>` : ''}
     <section class="fp-offre${infini() ? ' fp-offre-infini' : ''}">
       ${monte ? `<button class="lnk fp-arriere" data-fp="licence">${svg(I.back)}Ma licence</button>` : niveaux()}
+      ${promo ? promoHtml(promo) : ''}
       <div class="fp-formules" role="radiogroup" aria-label="Formule">${formule('annuel')}${formule('mensuel')}</div>
-      ${promo ? `<p class="fp-promo">${svg(I.tag)}<span>Code <b>${esc(promo)}</b> : posé sur la page de paiement</span></p>` : ''}
       ${accord()}
       ${payer(p, monte)}
       ${p.natif ? `<button class="lnk fp-restaurer" data-fp="restaurer" ${plus.envoi ? 'disabled' : ''}>${
@@ -277,7 +291,10 @@ function echec(e) {
   plus.envoi = null; plus.err = erreurDe(e.message);
   // un code qui n'est plus valable s'oublie : le prochain appui passe sans lui
   if (e.message === 'promo') {
-    try { localStorage.removeItem('folio.promo'); } catch (x) { /* rien à oublier */ }
+    try {
+      localStorage.removeItem('folio.promo');
+      if (plus.code === PROMO.code) localStorage.setItem('folio.promo.fini', '1');   // le lancement est fini chez Stripe
+    } catch (x) { /* rien à oublier */ }
     plus.err = 'Ce code n’est plus valable : il est retiré, réessaie.';
   }
   if (e.message === 'deja' || e.message === 'campus') offrePull().then(() => { if (view.name === 'plus') render(); });
@@ -290,7 +307,8 @@ function vers(action) {
   render();
   const p = ici();
   if (vente(p) === 'stripe') {
-    return versStripe(action, commande(), plus.accord, action === 'payer' ? promoGardee() : '')
+    plus.code = action === 'payer' ? promoActive(plus.monter) : '';
+    return versStripe(action, commande(), plus.accord, plus.code)
       .then(url => location.assign(url)).catch(echec);
   }
   /* l'achat intégré : la feuille d'Apple ou de Google s'ouvre par-dessus

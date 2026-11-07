@@ -46,7 +46,16 @@ export const niveauDe = f => (FORMULES[f] && FORMULES[f].niveau) || 'plus';
 export const formuleDe = (niveau, periode) => (niveau === 'infini' ? 'infini_' : '') + (periode === 'mensuel' ? 'mensuel' : 'annuel');
 // l'essai gratuit d'un premier abonnement Stripe (2026-11-05), et le code de lancement
 export const ESSAI_JOURS = 7;
-export const PROMO = { code: 'LANCEMENT', remise: 20, mois: 3 };
+export const PROMO = { code: 'LANCEMENT', remise: 20, mois: 3, enCours: true };
+/* Le code de lancement mis en avant (2026-11-07, demandé : « je veux qu'il
+   soit visible au début ») : tant que `enCours`, l'écran Mirandola+ le pose
+   d'office sur un premier abonnement et dit ce qu'il donne ; le site le
+   montre en haut de chaque page (data-promo, test/site.test.js). Le prix
+   sous le code, arrondi au centime comme Stripe arrondit une remise. */
+export const prixPromo = f => Math.round(FORMULES[f].prix * (100 - PROMO.remise) / 100);
+export const lignePromo = f => (FORMULES[f].par === 'an'
+  ? `${euros(prixPromo(f))} la première année`
+  : `${euros(prixPromo(f))} par mois les ${PROMO.mois} premiers mois`);
 
 /* Ce que Mirandola+ ouvre, dit comme sur la page d'accueil (tarifs) : les
    règles elles-mêmes sont dans src/offres.js. */

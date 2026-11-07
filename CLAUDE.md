@@ -221,7 +221,14 @@ l'air de marcher ».
     1 180 px, « Se connecter » sous 1 040, le menu du téléphone sous 900 :
     les mêmes groupes en tuiles à icônes, la page en cours entourée, puis
     « Créer un compte », « Se connecter », « Essayer sans compte » et
-    « J'ai un code ». Le pied a quatre colonnes. **Le service
+    « J'ai un code ». Le pied a quatre colonnes. **Au téléphone, un tableau
+    `.p-table` se lit en cartes** (2026-11-07 : défilé de côté, il passait
+    sous sa colonne collante, et sa ligne teintée laissait voir le texte) :
+    `etiqueter` du gabarit pose sur chaque case le nom de sa colonne
+    (`data-l`), `pages.css` fait une carte de chaque ligne ; le comparatif des
+    tarifs tient ses quatre colonnes dans la largeur (Infini en vue), et les
+    rubans des offres sont à cheval sur le bord du haut (en haut à droite,
+    « L'IA sans compter » passait sur « Mirandola Infini »). **Le service
     worker ne sert ni ne range ces pages** (`PAGES` de `src/sw.js`, rempli au
     build) : rangées sous « app », elles en prenaient la place hors ligne.
     Le favicon est aussi à la racine (`favicon.ico`, `favicon-48.png`,
@@ -990,7 +997,19 @@ l'air de marcher ».
     `src/site/commun.js`), l'app le garde 14 jours (`folio.promo`,
     `consumePlus`), le montre (`.fp-promo`) et le pose sur la page de
     paiement (`discounts` au lieu du champ de Stripe) ; un code fini s'oublie
-    (`promo`, 404). **Mirandola Campus est sur devis** : plus aucun prix
+    (`promo`, 404). **Il est mis en avant depuis le 2026-11-07** (demandé : « je
+    veux qu'il soit visible au début », `PROMO.enCours`) : un bandeau en tête
+    de chaque page du site (`.lancement` de `partiels/tete.html`,
+    `data-promo`, « Copier » par `copierCode` de `commun.js`) et une ligne
+    au-dessus des offres (`.promo-tarifs`) ; les boutons d'achat l'emportent
+    d'office ; l'écran Mirandola+ le pose d'office sur un premier abonnement
+    Stripe (`promoActive` de `ui/plus.js`) et dit ce qu'il donne pour la
+    formule choisie (`lignePromo`, `prixPromo` de `src/abonnement.js` :
+    4,79 € par mois les 3 premiers mois, 35,99 € la première année…),
+    jamais pour une montée par le portail ; refusé par Stripe, il ne revient
+    plus (`folio.promo.fini`). Finir le lancement : `PROMO.enCours = false`
+    et retirer le bandeau (`test/site.test.js` garde les deux d'accord).
+    **Mirandola Campus est sur devis** : plus aucun prix
     d'établissement sur le site (`test/site.test.js`, `test/seo.test.js`),
     le calculateur est parti ; la grille ci-dessous ne sert plus qu'aux
     devis de la console de l'éditeur ; l'IA **30 cours

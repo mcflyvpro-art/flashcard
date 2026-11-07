@@ -19,7 +19,12 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-07 · Les fonctions déployées : ai v17, paiement v9,
+DERNIER   2026-11-07 · Le site au téléphone : les tableaux en cartes,
+          le comparatif dans la largeur, les rubans sur le bord des
+          offres. Le code LANCEMENT en tête de chaque page, au-dessus
+          des offres, et d'office dans l'écran Mirandola+ avec le prix
+          qu'il donne. Avant :
+          2026-11-07 · Les fonctions déployées : ai v17, paiement v9,
           stripe-webhook v9, magasins v8 (Infini, l'examen blanc, la
           barre de l'IA en entier). « Brancher Stripe » s'arrêtait sur
           « Stripe a refusé » : le compte Stripe, récent, refuse

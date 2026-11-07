@@ -241,3 +241,18 @@ describe('l’appareil', () => {
     expect(Object.values(MAGASINS).every(v => v === '')).toBe(true);
   });
 });
+
+/* Le code de lancement (2026-11-07) : le prix qu'il donne, arrondi comme
+   Stripe arrondit une remise (20 % de 5,99 € = 1,198 € → 1,20 €). */
+describe('le prix sous le code de lancement', async () => {
+  const { PROMO, prixPromo, lignePromo } = await import('../src/abonnement.js');
+  it('les quatre formules', () => {
+    expect(PROMO.remise).toBe(20);
+    expect([prixPromo('mensuel'), prixPromo('annuel'), prixPromo('infini_mensuel'), prixPromo('infini_annuel')])
+      .toEqual([479, 3599, 799, 6399]);
+  });
+  it('dit en une ligne, selon la période', () => {
+    expect(lignePromo('mensuel').replace(/\s/g, ' ')).toBe('4,79 € par mois les 3 premiers mois');
+    expect(lignePromo('infini_annuel').replace(/\s/g, ' ')).toBe('63,99 € la première année');
+  });
+});

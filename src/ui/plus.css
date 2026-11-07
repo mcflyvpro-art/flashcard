@@ -132,6 +132,10 @@
 .fp-promo{display:flex;align-items:center;gap:8px;margin:0;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:600;
   color:var(--ink2);background:color-mix(in srgb,var(--az3) 18%,var(--card))}
 .fp-promo svg{flex:none;width:16px;height:16px;color:var(--az5)}
+/* le code de lancement, en tête des formules (2026-11-07) : ce qu'il donne pour la formule choisie */
+.fp-lancement{padding:11px 13px;font-size:13.5px;line-height:1.4;color:var(--ink);background:color-mix(in srgb,var(--az3) 24%,var(--card));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--az4) 40%,transparent)}
+.fp-remise{display:inline-block;margin-right:7px;padding:1px 7px;border-radius:99px;font-size:12px;color:#fff;background:var(--plus)}
 
 /* Mirandola Infini (2026-11-06, refait le 2026-11-07 : « vraiment
    différencier visuellement Infini et + ») : l'or sur la nuit. Mirandola+

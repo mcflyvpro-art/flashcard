@@ -176,3 +176,17 @@ describe('ce que le site donne aux robots', () => {
     expect(sw).toMatch(/PAGES\.includes\(/);
   });
 });
+
+/* Au téléphone, une ligne d'un tableau .p-table se lit comme une carte
+   (2026-11-07) : chaque case porte le nom de sa colonne, posé au build. */
+describe('les tableaux du site au téléphone', () => {
+  for (const f of ['anki-quizlet.html', 'repetition-espacee.html']) {
+    it(`${f} : chaque case dit sa colonne`, () => {
+      const h = rendreFichier(f);
+      const bloc = h.match(/<div class="p-table[^"]*">[\s\S]*?<\/table>/)[0];
+      const cases = [...bloc.matchAll(/<td\b([^>]*)>/g)].map(m => m[1]);
+      expect(cases.length).toBeGreaterThan(4);
+      for (const a of cases) expect(a).toMatch(/data-l="[^"]+"/);
+    });
+  }
+});

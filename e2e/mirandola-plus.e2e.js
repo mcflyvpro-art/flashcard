@@ -151,7 +151,7 @@ test('un code des réseaux : gardé depuis l’adresse, montré, posé sur la co
   expect(store.commandes.at(-1)).toEqual({ formule: 'annuel', promo: 'LANCEMENT' });
 });
 
-test('un code qui n’est plus valable : dit, oublié, le prochain appui passe sans lui', async ({ page }) => {
+test('un code qui n’est plus valable : dit, oublié, le code de lancement reprend sa place', async ({ page }) => {
   const store = gratuit();
   await brancher(page, store);
   await inscrire(page);
@@ -159,10 +159,31 @@ test('un code qui n’est plus valable : dit, oublié, le prochain appui passe s
   await accepter(page);
   await page.locator('.fp-payer').click();
   await expect(page.locator('.fp-err')).toContainText('n’est plus valable');
-  await expect(page.locator('.fp-promo')).toHaveCount(0);
+  await expect(page.locator('.fp-promo')).toContainText('LANCEMENT');
   await page.locator('.fp-payer').click();
   await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola+' })).toBeVisible({ timeout: 10000 });
-  expect(store.commandes.at(-1).promo).toBeNull();
+  expect(store.commandes.at(-1).promo).toBe('LANCEMENT');
+});
+
+/* Le code de lancement mis en avant (2026-11-07) : sans aucun lien, l'écran
+   le pose d'office sur un premier abonnement et dit ce qu'il donne pour la
+   formule choisie ; fini chez Stripe, il ne revient plus. */
+test('le code de lancement d’office : ce qu’il donne, posé sur la commande ; fini, il ne revient plus', async ({ page }) => {
+  const store = gratuit();
+  await brancher(page, store);
+  await inscrire(page);
+  await page.goto('./eleve/mirandola-plus');
+  const ligne = page.locator('.fp-lancement');
+  await expect(ligne).toContainText('−20', { timeout: 10000 });
+  await expect(ligne).toContainText('35,99 € la première année');
+  await page.getByRole('radio', { name: /Mensuel/ }).click();
+  await expect(ligne).toContainText('4,79 € par mois les 3 premiers mois');
+  await page.locator('[data-fp="niveau"][data-v="infini"]').click();
+  await expect(ligne).toContainText('7,99 € par mois les 3 premiers mois');
+  await page.evaluate(() => localStorage.setItem('folio.promo.fini', '1'));
+  await page.goto('./eleve/mirandola-plus');
+  await expect(page.locator('.fp-offre')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.fp-promo')).toHaveCount(0);
 });
 
 test('Stripe ramène avant que l’abonnement soit écrit : l’écran attend, puis l’ouvre', async ({ page }) => {

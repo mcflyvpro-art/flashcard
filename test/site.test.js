@@ -187,6 +187,19 @@ describe('Mirandola+ et les appareils', async () => {
     expect(html).not.toContain('href="#telecharger"');
     expect(html).not.toMatch(/data-os=/);
   });
+  /* le code de lancement en tête de chaque page (2026-11-07) : celui de
+     l'app et de Stripe, et seulement pendant le lancement */
+  it('le code de lancement : celui de l’app, en tête de la page, à copier', async () => {
+    const { PROMO } = await import('../src/abonnement.js');
+    const m = html.match(/<div class="lancement" data-promo="([A-Z0-9]+)">/);
+    expect(!!m).toBe(PROMO.enCours);
+    if (m) {
+      expect(m[1]).toBe(PROMO.code);
+      expect(html.indexOf('class="lancement"')).toBeLessThan(html.indexOf('<header class="tete"'));
+      expect(html).toContain(`data-copier="${PROMO.code}"`);
+      expect(page).toContain(`−${PROMO.remise} %`);
+    }
+  });
   it('« Passer à Mirandola+ » ne mène au paiement que la vente ouverte', () => {
     const bouton = html.match(/<a [^>]*data-vente[^>]*>/)[0];
     expect(/data-vente-an="\/app\?plus=annuel"/.test(bouton) && /data-vente-mois="\/app\?plus=mensuel"/.test(bouton)).toBe(VENTE_OUVERTE);

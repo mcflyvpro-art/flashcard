@@ -25,6 +25,7 @@ export function apparitions() {
 
 /* ---------- l'en-tête et le menu du téléphone ---------- */
 export function entete() {
+  copierCode();
   const t = document.getElementById('tete');
   if (!t) return;
   const b = t.querySelector('.burger'), m = document.getElementById('menu-mobile');
@@ -109,6 +110,19 @@ export function tarifs() {
   t.querySelectorAll('.comparatif tbody tr').forEach((r, i) => r.style.setProperty('--i', String(i)));
 }
 
+/* Le code de lancement, copié d'un appui (le bandeau de chaque page, la
+   ligne des tarifs) ; sans presse-papiers, il reste écrit sur le bouton. */
+function copierCode() {
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-copier]');
+    if (!b || !navigator.clipboard) return;
+    navigator.clipboard.writeText(b.dataset.copier).then(() => {
+      b.classList.add('copie');
+      setTimeout(() => b.classList.remove('copie'), 1600);
+    }, () => { /* refusé par le navigateur : le code reste lisible sur le bouton */ });
+  });
+}
+
 /* La vente ouverte (VENTE_OUVERTE de src/abonnement.js, et dans
    index.html les adresses data-vente-an et data-vente-mois du bouton),
    « Passer à Mirandola+ » mène à l'écran Mirandola+ de l'app, la formule choisie
@@ -119,8 +133,10 @@ export function tarifs() {
    commun bien plus gros (test/site.test.js garde les deux d'accord). */
 function relierVente(t) {
   const mois = t.dataset.periode === 'mois';
-  // un code des réseaux (mirandola.fr/?promo=LANCEMENT) suit jusqu'à la page de paiement
-  const promo = (/[?&]promo=([A-Za-z0-9]{1,30})/.exec(location.search) || [])[1];
+  /* un code des réseaux (mirandola.fr/?promo=…) suit jusqu'à la page de
+     paiement ; sinon, pendant le lancement, celui du bandeau (data-promo) */
+  const lancement = document.querySelector('[data-promo]');
+  const promo = (/[?&]promo=([A-Za-z0-9]{1,30})/.exec(location.search) || [])[1] || (lancement && lancement.dataset.promo);
   t.querySelectorAll('[data-vente-an][data-vente-mois]').forEach(a => {
     a.href = (mois ? a.dataset.venteMois : a.dataset.venteAn) + (promo ? '&promo=' + promo : '');
   });

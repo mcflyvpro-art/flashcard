@@ -732,7 +732,27 @@ button{font:inherit;color:inherit}
 .offre-plus .inclus li:not(:has(b))::before{background-color:rgba(243,141,178,.18);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F6A8C5' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
 .offre-plus .bt-encre{background:var(--creme);color:var(--encre)}
 .offre-plus .bt-encre::after{background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.7) 50%,transparent 65%)}
-.ruban{position:absolute;top:24px;right:24px;padding:6px 11px;border-radius:99px;background:var(--degrade-clair);color:var(--encre);font-weight:800;font-size:12.5px;letter-spacing:.02em}
+/* le lancement (2026-11-07) : le code en tête de chaque page, au-dessus de
+   l'en-tête ; il part avec le défilement, l'en-tête reste */
+.lancement{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;padding:8px 16px;
+  background:var(--nuit);color:var(--creme);font-size:14px;line-height:1.3;text-align:center}
+.lancement p{margin:0}
+.lancement b{font-weight:750}
+.lancement-remise{display:inline-block;margin:0 2px;padding:1px 8px;border-radius:99px;background:var(--degrade);color:#fff;font-weight:800;font-size:12.5px}
+.lancement-code{position:relative;display:inline-flex;align-items:center;padding:5px 11px;border-radius:9px;border:1.5px dashed rgba(243,238,227,.6);
+  background:none;color:inherit;font:800 13.5px/1 var(--sans);letter-spacing:.08em;cursor:pointer}
+.lancement-ok{position:absolute;inset:-1.5px;display:grid;place-items:center;border-radius:inherit;background:var(--creme);color:var(--nuit);
+  letter-spacing:0;opacity:0;transition:opacity .2s;pointer-events:none}
+.copie .lancement-ok{opacity:1}
+.promo-tarifs{margin:20px auto 0;max-width:36em;text-align:center;font-size:15px;line-height:1.6;color:var(--encre2)}
+.promo-tarifs .lancement-code{margin:0 3px;border-color:var(--az4);color:var(--encre)}
+.promo-tarifs .lancement-ok{background:var(--encre);color:#fff}
+@media (max-width:600px){ .lancement{font-size:13px;padding:7px 12px} .lancement-sur{display:none} }
+
+/* à cheval sur le bord du haut, centré (2026-11-07) : en haut à droite, il
+   passait sur « Mirandola Infini » au téléphone */
+.ruban{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);margin:0;padding:6px 13px;border-radius:99px;white-space:nowrap;
+  background:var(--degrade-clair);color:var(--encre);font-weight:800;font-size:12.5px;letter-spacing:.02em;box-shadow:0 6px 16px -10px rgba(29,28,25,.5)}
 .roule{animation:roule .5s var(--e)}
 @keyframes roule{from{opacity:0;transform:translateY(40%);filter:blur(4px)}}
 .offres .rv:nth-child(2){transition-delay:.1s}.offres .rv:nth-child(3){transition-delay:.2s}
@@ -960,13 +980,17 @@ button{font:inherit;color:inherit}
   .roles button{padding:11px 14px 11px 11px}
   .role-av{width:46px;height:46px}
   .pied-liens{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* quatre offres dans la largeur, sans défiler de côté (2026-11-07 : un
+     débord de quelques pixels faisait glisser le tableau et coupait ses
+     libellés, et Infini sortait de l'écran) */
+  .comparatif{overflow-x:hidden}
   .comparatif table{min-width:0;table-layout:fixed}
-  .comparatif thead th:first-child{width:36%}
-  .comparatif th,.comparatif td{padding:12px 4px;font-size:13px;line-height:1.3}
-  .comparatif tbody th{padding-left:14px;position:static}
-  .comparatif thead th{padding:20px 4px 14px;vertical-align:bottom}
-  .comparatif .o-m{display:block;margin-bottom:3px;font:650 10.5px/1.2 var(--sans);letter-spacing:.02em;color:var(--doux)}
-  .comparatif .o-n{display:block;font:700 17px/1.1 var(--serif);letter-spacing:-.01em}
+  .comparatif thead th:first-child{width:30%}
+  .comparatif th,.comparatif td{padding:12px 3px;font-size:13px;line-height:1.3;overflow-wrap:anywhere}
+  .comparatif tbody th{padding-left:12px;position:static;overflow-wrap:normal}
+  .comparatif thead th{padding:20px 2px 14px;vertical-align:bottom}
+  .comparatif .o-m{display:block;margin-bottom:3px;font:650 9px/1.2 var(--sans);letter-spacing:0;color:var(--doux)}
+  .comparatif .o-n{display:block;font:700 15px/1.1 var(--serif);letter-spacing:-.01em;white-space:normal}
   .comparatif .o-n.plus{font:800 22px/17px var(--sans)}
   .comparatif td{font-size:12.5px}
   /* la marque Campus, en colonne : le carré du logo au-dessus, le nom sur
@@ -1013,8 +1037,8 @@ button{font:inherit;color:inherit}
 }
 @media (max-width:379px){
   .tete .marque span{display:none}
-  .comparatif .o-m{font-size:9.5px;letter-spacing:0}
-  .comparatif .o-n{font-size:15px}
+  .comparatif .o-m{font-size:8.5px}
+  .comparatif .o-n{font-size:13.5px}
   .comparatif tbody th{padding-left:10px}
   /* aucun bouton plus large que l'écran : il se centre et prend la largeur */
   .particulier .bt{justify-self:stretch;padding:0 12px;font-size:14.5px;gap:7px}

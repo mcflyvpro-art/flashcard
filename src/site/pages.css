@@ -195,8 +195,20 @@
 @media (max-width:640px){
   .p-heros .actions{width:100%;flex-direction:column;align-items:center}
   .p-carte{padding:22px 20px 24px}
-  .p-table table{min-width:560px}
-  .p-table th,.p-table td{padding:12px 12px;font-size:14px}
+  /* une ligne, une carte (2026-11-07) : défilé de côté, le tableau passait
+     sous sa colonne collante ; chaque case dit sa colonne (data-l, posé par
+     le gabarit), l'en-tête reste pour les lecteurs d'écran */
+  .p-table{overflow:visible}
+  .p-table table{min-width:0}
+  .p-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .p-table :is(tbody,tr,th,td){display:block}
+  .p-table tbody tr{padding:16px 18px;border-bottom:1px solid var(--filet)}
+  .p-table tbody tr:last-child{border-bottom:0}
+  .p-table tbody th{position:static;width:auto;padding:0 0 8px;border:0;background:none;font:700 18px/1.25 var(--serif)}
+  .p-table td{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr);gap:12px;padding:7px 0;border:0;font-size:14.5px}
+  .p-table td::before{content:attr(data-l);padding-top:2px;font-size:11.5px;font-weight:750;line-height:1.35;letter-spacing:.05em;text-transform:uppercase;color:var(--doux)}
+  .p-table td.nous{margin:3px -10px;padding:8px 10px;border-radius:12px;background:rgba(154,120,207,.1);color:var(--encre)}
+  .p-table th.nous{background:none;color:var(--az5)}
   .p-nuit{margin-inline:10px}
   .p-garanties,.p-frise{grid-template-columns:minmax(0,1fr)}
   .p-garanties li{display:grid;grid-template-columns:54px minmax(0,1fr);gap:4px 16px;padding:18px}

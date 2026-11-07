@@ -1,3 +1,11 @@
+<!-- Le lancement (2026-11-07, demandé : « le code promo, je veux qu'il soit
+     visible au début ») : le code en tête de chaque page, à copier ; les
+     boutons d'achat l'emportent d'office (data-promo, commun.js). Le même que
+     PROMO de src/abonnement.js (test/site.test.js). -->
+<div class="lancement" data-promo="LANCEMENT">
+  <p><b>Lancement</b>&#8239;: <span class="lancement-remise">−20&nbsp;%</span><span class="lancement-sur"> sur Mirandola<span class="plus">+</span> et Infini</span> avec le code</p>
+  <button type="button" class="lancement-code" data-copier="LANCEMENT" aria-label="Copier le code LANCEMENT">LANCEMENT<span class="lancement-ok" aria-hidden="true">Copié</span></button>
+</div>
 <header class="tete" id="tete">
   <nav class="tete-in enveloppe" aria-label="Navigation principale">
     <a class="marque" href="/" aria-label="{{marque}}">

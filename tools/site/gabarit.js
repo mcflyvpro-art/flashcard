@@ -196,6 +196,26 @@ ${reperes}<path class="co-sans" d="${sans}"/><path class="co-avec" d="${avec}"/>
 /** La page d'un fichier (index.html, tarifs.html…), ou undefined. */
 export const pageDe = fichier => PAGES.find(p => p.fichier === basename(fichier));
 
+/* Au téléphone, une ligne d'un tableau `.p-table` se lit comme une carte
+   (pages.css) : chaque case y porte le nom de sa colonne, lu dans l'en-tête
+   et posé ici en `data-l` (2026-11-07 : défilé de côté, le tableau passait
+   sous sa colonne collante, et sa ligne teintée laissait voir le texte). */
+const attribut = t => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+export function etiqueter(html) {
+  return html.replace(/<div class="p-table[^"]*">[\s\S]*?<\/table>/g, bloc => {
+    const tete = bloc.match(/<thead>([\s\S]*?)<\/thead>/);
+    if (!tete) return bloc;
+    const noms = [...tete[1].matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/g)].map(m => texte(m[1]).trim());
+    return bloc.replace(/<tr>([\s\S]*?)<\/tr>/g, (_, corps) => {
+      let i = 0;
+      return '<tr>' + corps.replace(/<(th|td)\b([^>]*)>/g, (m, balise, attrs) => {
+        const nom = noms[i++] || '';
+        return balise === 'td' && nom && !/data-l=/.test(attrs) ? `<td${attrs} data-l="${attribut(nom)}">` : m;
+      }) + '</tr>';
+    });
+  });
+}
+
 /** Le HTML d'une page, ses marqueurs remplacés. */
 export function rendre(html, p) {
   const accueil = p.chemin === '/';
@@ -231,7 +251,7 @@ export function rendre(html, p) {
     });
     return ici(marqueurs(corps, prof + 1), p);
   });
-  let h = marqueurs(html);
+  let h = etiqueter(marqueurs(html));
   const qs = questions(h);
   if (qs.length) h = h.replace('</head>', () => `<script type="application/ld+json">\n${json(faq(qs))}\n</script>\n</head>`);
   return h;
