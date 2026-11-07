@@ -4,7 +4,8 @@ import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerPaquetDu } from './faux-supabase.js';
 import { inscrire, noter } from './aide.js';
 
-test('50 révisions hors ligne, app rouverte hors ligne, 50 retrouvées au retour du réseau', async ({ page, context }) => {
+test('50 révisions hors ligne, app rouverte hors ligne, 50 retrouvées au retour du réseau', async ({ page, context, browserName }) => {
+  test.skip(browserName === 'webkit', 'le service worker est bloqué sous WebKit (tools/pw-webkit.config.js) : le faux Supabase ne verrait plus rien');
   test.setTimeout(240000);
   const store = nouveauStore();
   await brancher(context, store);

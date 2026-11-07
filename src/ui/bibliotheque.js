@@ -204,15 +204,22 @@ function railClasseNom() {
   return 'Mes classes';
 }
 
-const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' : ''}" data-r="${k}">${
-  svg(ic)}<span>${nom}</span>${badge ? `<i class="icb">${badge}</i>` : ''}</button>`;
+/* le nom de l'entrée aussi pour un lecteur d'écran (aria-label) : sa
+   légende se masque quand la barre se resserre, et un bouton sans nom ne
+   s'annonce que « bouton » (axe-core, e2e/accessibilite.e2e.js) */
+const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' : ''}" data-r="${k}" aria-label="${
+  badge ? `${nom}, ${badge}` : nom}"${on === k ? ' aria-current="page"' : ''}>${
+  svg(ic)}<span>${nom}</span>${badge ? `<i class="icb" aria-hidden="true">${badge}</i>` : ''}</button>`;
 
 /* Mirandola+ (entreePlus, ui/plus-porte.js) : une entrée à part, dans la
    lumière de la marque, en bas au-dessus des Réglages — ce qu'on peut
    prendre, ou sa licence une fois prise (2026-10-28 : elle ne s'en va
    plus). Pour un compte d'établissement, « Campus ». */
-const railPlus = on => entreePlus() ? `<button class="r-plus${on === 'plus' ? ' on' : ''}" data-r="plus">${
-  svg(I.spark)}<span>${offre && offre.offre === 'campus' ? 'Campus' : 'Mirandola+'}</span></button>` : '';
+const railPlus = on => {
+  if (!entreePlus()) return '';
+  const nom = offre && offre.offre === 'campus' ? 'Campus' : 'Mirandola+';
+  return `<button class="r-plus${on === 'plus' ? ' on' : ''}" data-r="plus" aria-label="${nom}">${svg(I.spark)}<span>${nom}</span></button>`;
+};
 
 /* Le logo en tête de la barre : un appui ramène à la première page du
    compte, comme partout ailleurs sur le web. */
@@ -224,7 +231,8 @@ const railMailBadge = () => mailbox.n ? (mailbox.n > 9 ? '9+' : mailbox.n) : 0;
    ordinateur (la console du référent, au téléphone, n'a que ses codes). */
 const PAGES_REF = [['accueil', I.grid, 'Accueil'], ['classes', I.school, 'Classes', 1], ['eleves', I.users, 'Élèves', 1],
   ['profs', I.user, 'Professeurs', 1], ['licence', I.money, 'Licence', 1], ['journal', I.clock, 'Historique', 1]];
-const PAGES_ADM = [['suivi', I.build, 'Établissements'], ['comptes', I.users, 'Comptes'], ['entreprise', I.money, 'Entreprise']];
+const PAGES_ADM = [['suivi', I.build, 'Établissements'], ['comptes', I.users, 'Comptes'], ['entreprise', I.money, 'Entreprise'],
+  ['sante', I.heart, 'Santé']];
 
 const railCompte = () => String(iAmMod && mods.list ? mods.list.length : '');
 
@@ -376,7 +384,9 @@ export const tabs = on => {
   const i = Math.max(0, l.findIndex(t => t[0] === on)), n = (asks || []).length;
   return `<nav class="tabs" data-k="tabs" aria-label="Navigation principale">
   <div class="sl" style="transform:translateX(${i * 74}px)"></div>
-  ${l.map(([k, ic, nom]) => `<button class="${on === k ? 'on' : ''}${k === 'plus' ? ' t-plus' : ''}" data-act="tab-${k}" aria-label="${nom}"
+  ${l.map(([k, ic, nom]) => `<button class="${on === k ? 'on' : ''}${k === 'plus' ? ' t-plus' : ''}" data-act="tab-${k}" aria-label="${
+    /* la pastille se lit aussi : son nombre est dans le nom (on dit ce qu'on voit) */
+    k === 'commu' && n ? `${nom}, ${n} ${n > 1 ? 'demandes' : 'demande'}` : nom}"
     aria-current="${on === k ? 'page' : 'false'}">${svg(ic)}${
       k === 'commu' && n ? `<i class="icb">${n}</i>` : ''}</button>`).join('')}
 </nav>`;
@@ -475,9 +485,13 @@ export function queueChip() {
     ${svg(online ? I.cloud : I.warn)}${n ? `<b>${n}</b>` : 'hors ligne'}</button>`;
 }
 
+const nonLus = () => (mailbox.n > 9 ? '9+' : String(mailbox.n));
 function mailBadge() {
-  return mailbox.n ? `<i class="icb">${mailbox.n > 9 ? '9+' : mailbox.n}</i>` : '';
+  return mailbox.n ? `<i class="icb">${nonLus()}</i>` : '';
 }
+/* le nom du bouton dit aussi ce que dit sa pastille (axe-core :
+   label-content-name-mismatch — on prononce ce qu'on voit) */
+const nomCourrier = () => 'Boîte de réception' + (mailbox.n ? `, ${nonLus()} non ${mailbox.n > 1 ? 'lues' : 'lue'}` : '');
 
 function peekButton(hidden) {
   if (!hidden) return '';
@@ -528,7 +542,7 @@ function home() {
         ${goalRing()}
         <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
         ${reorder ? '' : `<button class="pbtn pri newbtn" data-act="new">${svg(I.plus)}Nouveau livre</button>`}
-        <button class="ic icmail" data-act="mail" aria-label="Boîte de réception">${svg(I.mail)}${mailBadge()}</button>
+        <button class="ic icmail" data-act="mail" aria-label="${nomCourrier()}">${svg(I.mail)}${mailBadge()}</button>
         <button class="ic" data-act="settings" aria-label="Réglages">${svg(I.gear)}</button>
         ${peekButton(hidden)}
       </div>

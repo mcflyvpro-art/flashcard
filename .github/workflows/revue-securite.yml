@@ -1,0 +1,39 @@
+name: Revue de sécurité
+
+# M10.T8 : chaque pull request relue par Claude pour la sécurité (l'action
+# officielle d'Anthropic, épinglée), avec ce que ce projet a de particulier
+# (.github/revue-securite.md : des élèves mineurs, la RLS, la clé anon
+# publique…). Ses remarques arrivent en commentaires sur la pull request.
+# Il faut le secret ANTHROPIC_API_KEY (docs/FIABILITE.md) ; sans lui, rien.
+# Jamais sur la pull request d'un fork : le secret n'y irait pas.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  revue:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLE: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Sans clé, pas de revue
+        if: env.CLE != 'true'
+        run: |
+          echo "::notice::Secret ANTHROPIC_API_KEY absent, pas de revue de sécurité par Claude (docs/FIABILITE.md)"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        if: env.CLE == 'true'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+      - uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda # main, 2026-11-07
+        if: env.CLE == 'true'
+        with:
+          claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          comment-pr: true
+          exclude-directories: dist,node_modules,marque,public
+          custom-security-scan-instructions: .github/revue-securite.md

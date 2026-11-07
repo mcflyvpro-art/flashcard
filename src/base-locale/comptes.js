@@ -41,7 +41,7 @@ function effacer(store, m, et, id) {
   delete m.roles[id]; delete m.noms[id]; delete et.membres[id];
 }
 
-const NOMS = ['admin_comptes', 'admin_supprimer_compte', 'admin_suspendre', 'admin_confirmer'];
+const NOMS = ['admin_comptes', 'admin_supprimer_compte', 'admin_suspendre', 'admin_confirmer', 'admin_vigie', 'admin_erreurs'];
 
 export function repondreComptes(store, { url, headers, body }) {
   const nom = url.pathname.replace('/rest/v1/rpc/', '');
@@ -53,6 +53,24 @@ export function repondreComptes(store, { url, headers, body }) {
 function rpcComptes(store, nom, user, b) {
   const m = modele(store), et = etab(store);
   if (m.roles[user.id] !== 'admin') return refus('Réservé à l’éditeur', '42501');
+  /* la santé (20261107143227) : ce que les pages ont remonté par signaler
+     (serveur.js), regroupé par empreinte comme la vraie base */
+  if (nom === 'admin_vigie' || nom === 'admin_erreurs') {
+    const par = {};
+    for (const e of store.erreursClient || []) {
+      const x = par[e.empreinte] ||= { empreinte: e.empreinte, type: e.type, message: e.message, pile: e.pile, n: 0, jours_vus: 1,
+        premiere: new Date().toISOString(), derniere: new Date().toISOString(), ecrans: {}, navigateurs: {}, builds: {} };
+      x.n++;
+      for (const [k, v] of [['ecrans', e.ecran], ['navigateurs', e.navigateur], ['builds', e.build]]) if (v) x[k][v] = (x[k][v] || 0) + 1;
+    }
+    const erreurs = Object.values(par).sort((a, b) => b.n - a.n);
+    if (nom === 'admin_erreurs') return [200, erreurs];
+    const ouv = (store.ouvertures || []).length, nb = (store.erreursClient || []).length;
+    const bloques = (store.erreursClient || []).filter(e => e.type === 'bloque').length;
+    return [200, { jour: { demarrages: ouv, erreurs: nb - bloques, bloques, installees: 0, cases: [ouv, 0, 0, 0, 0, 0] },
+      neuves: erreurs.map(({ empreinte, type, n }) => ({ empreinte, type, n })),
+      raisons: erreurs.length ? ['erreur nouvelle'] : [], alerte: erreurs.length > 0 }];
+  }
   if (nom === 'admin_comptes') {
     return [200, store.users.map(u => ligne(store, m, et, u)).sort((x, y) => y.cree.localeCompare(x.cree))];
   }

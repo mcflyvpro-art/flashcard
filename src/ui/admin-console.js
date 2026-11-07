@@ -1,5 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { ACTIONS_STRIPE } from './admin-stripe.js';
+import { ACTIONS_SANTE, vueSante } from './admin-sante.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
@@ -295,7 +296,7 @@ function ficheCompte() {
 
 /* Depuis une adresse (ui/routeur.js, par la porte ui/classement.js). */
 export function allerA(k, id) {
-  adm.tab = ['comptes', 'entreprise'].includes(k) ? k : 'suivi';
+  adm.tab = ['comptes', 'entreprise', 'sante'].includes(k) ? k : 'suivi';
   adm.fid = null;
   if (k === 'facture' && id) {
     // une pièce ouverte depuis son adresse : sa fiche derrière elle
@@ -319,7 +320,7 @@ export function consoleAdmin() {
   if (!adm.charge) { adm.charge = true; admCharger(); }
   const suivi = adm.tab === 'suivi', ouvert = suivi ? adm.open : adm.copen;
   const liste = suivi ? listeSuivi() : listeComptes(), fiche = suivi ? ficheOrg() : ficheCompte();
-  const corps = adm.tab === 'entreprise' ? vueEntreprise() : adm.fid ? vuePiece()
+  const corps = adm.tab === 'entreprise' ? vueEntreprise() : adm.tab === 'sante' ? vueSante() : adm.fid ? vuePiece()
     : PC() ? `<div class="ed-maitre"><div class="ed-liste">${liste}</div><div class="ed-detail">${fiche}</div></div>`
       : `<div class="ed-liste">${ouvert ? fiche : liste}</div>`;
   $.innerHTML = `<div class="page ed" id="page">
@@ -362,6 +363,7 @@ async function copierCourriel() {
 const ACTIONS = {
   ...ACTIONS_FACTURATION,
   ...ACTIONS_STRIPE,
+  ...ACTIONS_SANTE,
   ...ACTIONS_COMPTES,
   'voir-places': () => { const p = Object.values(adm.profs || {}).find(x => x.demande_places);
     Object.assign(adm, { tab: 'comptes', crole: 'prof', copen: p ? p.id : null }); repeint(); },

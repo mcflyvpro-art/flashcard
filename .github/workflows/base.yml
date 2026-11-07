@@ -1,0 +1,42 @@
+name: Base neuve
+
+# Une base vierge, puis TOUTES les migrations de supabase/migrations depuis
+# la première, puis TOUTE la suite de tests SQL (supabase/tests/*.sql) — ce
+# qui manquait faute de préproduction (M13.T4, docs/FIABILITE.md) : une
+# migration qui ne se rejoue plus, une politique qui change sans qu'un test
+# le voie, une fonction cassée par une autre. La pile locale de Supabase
+# (CLI, Docker) : les mêmes rôles (anon, authenticated, service_role), la
+# même RLS, le même auth.uid() qu'en production. Aucun secret, aucune
+# donnée réelle.
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/base.yml', 'tools/sql/**']
+  pull_request:
+    paths: ['supabase/**', '.github/workflows/base.yml', 'tools/sql/**']
+  schedule:
+    - cron: '7 2 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: base-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  base:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: latest
+      - name: Une pile Supabase locale (Postgres 17), et toutes nos migrations depuis la première
+        run: bash tools/sql/pile-locale.sh
+      - name: Toute la suite de tests SQL
+        env:
+          PGURL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: bash tools/sql/tests.sh

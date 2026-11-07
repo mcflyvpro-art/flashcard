@@ -1,52 +1,82 @@
 name: CI
 
-# Chaque push et chaque pull request : lint puis build. Vercel déploie de son
-# côté ; ce contrôle-ci dit si ce qui part est sain.
+# Chaque push sur main et chaque pull request (docs/FIABILITE.md) : lint,
+# types, tests du noyau, build, budget de poids, dépendances, secrets, et
+# les parcours de bout en bout sous Chromium. Safari (WebKit), le singe et
+# les tests de mutation passent la nuit (nuit.yml) ; la base, à chaque
+# changement de supabase/ (base.yml). Vercel déploie de son côté ; ce
+# contrôle-ci dit si ce qui part est sain.
 on:
   push:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       # valeurs publiques (clé anon), nécessaires pour que le build aboutisse
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm run test
       - run: npm run build
       - run: npm run budget
+      # une faille « élevée » ou pire dans une dépendance arrête tout
+      - run: npm audit --audit-level=high
 
-  # M07.T7 : les parcours de bout en bout (Playwright), à côté du contrôle
-  # ci-dessus pour ne pas l'allonger. Ils parlent à un faux Supabase en
-  # mémoire (e2e/faux-supabase.js) : aucun secret, aucune écriture en base.
-  # Les captures d'écran ne se comparent pas ici (polices Linux ≠ Mac) ; le
-  # contrôle de débordement, si.
-  e2e:
+  # Les secrets qui n'ont rien à faire dans un dépôt public : clés d'API,
+  # jetons, mots de passe — dans les fichiers ET dans tout l'historique.
+  secrets:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (binaire officiel, empreinte vérifiée)
+        run: |
+          curl -sSL -o gl.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.24.2/gitleaks_8.24.2_linux_x64.tar.gz
+          echo "fa0500f6b7e41d28791ebc680f5dd9899cd42b58629218a5f041efa899151a8e  gl.tgz" | sha256sum -c -
+          tar xzf gl.tgz gitleaks && rm gl.tgz
+          ./gitleaks git . --log-opts="--all" --config .gitleaks.toml --redact --no-banner --exit-code 1
+
+  # M07.T7 : les parcours de bout en bout (Playwright). Ils parlent à un
+  # faux Supabase en mémoire (e2e/faux-supabase.js) : aucun secret, aucune
+  # écriture en base. Les captures d'écran ne se comparent pas ici (polices
+  # Linux ≠ Mac) ; le contrôle de débordement, si.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
     env:
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: rapport-playwright

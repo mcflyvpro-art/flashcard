@@ -204,7 +204,8 @@ function amisHtml(eleve) {
   const l = mates || [], a = (asks || []).length;
   return `<section class="cc-carte">
     <div class="cc-h"><h2>${eleve ? 'Camarades' : 'Amis'} <span>${l.length || ''}</span></h2>
-      <button class="cc-lnk" data-act="friends" aria-label="Gérer">${a ? `<b class="cc-badge">${a}</b>` : ''}${svg(I.arrow)}</button></div>
+      <button class="cc-lnk" data-act="friends" aria-label="${a ? `Gérer, ${a} ${a > 1 ? 'demandes' : 'demande'}` : 'Gérer'}">${
+        a ? `<b class="cc-badge">${a}</b>` : ''}${svg(I.arrow)}</button></div>
     <div class="cc-amis">${l.slice(0, 11).map(f => `<button class="cc-ami" data-mate="${esc(f.id)}">
         ${avatar(f.id, f.handle || f.name)}<span>${esc((shortWho(f.name || f.handle) || '').split(' ')[0])}</span></button>`).join('')}
       <button class="cc-ami plus" data-act="friends"><i class="jt vide">${svg(I.plus)}</i><span>Ajouter</span></button></div>

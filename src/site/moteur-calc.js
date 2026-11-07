@@ -80,13 +80,22 @@ const f1 = v => (Math.round(v * 10) / 10).toString();
 const nb = (v, d = 1) => v.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
 
 /* Un cadre de graphique : 1000 × h, marges, repères de y en %. */
+/* ce que dit chaque graphique, pour un lecteur d'écran (role="img" sans nom :
+   axe-core, e2e/accessibilite.e2e.js) */
+const LEGENDES = {
+  'm-oubli': 'La courbe de l’oubli de FSRS-6 face à une exponentielle',
+  'm-famille': 'Les courbes de l’oubli de FSRS-6 pour plusieurs stabilités, sur un an',
+  'm-gainsvg': 'Le gain de stabilité après une réussite, selon le rappel et la difficulté',
+  'm-simsvg': 'Le rappel d’une page sur un an, révision après révision'
+};
+
 function cadre(h, ys, xs, contenu, classe) {
   const X0 = 70, X1 = 975, Y0 = 24, Y1 = h - 46;
   const y = r => Y1 - (Y1 - Y0) * r, x = u => X0 + (X1 - X0) * u;
   const grilles = ys.map(([r, t]) => `<line class="m-grille" x1="${X0}" x2="${X1}" y1="${f1(y(r))}" y2="${f1(y(r))}"/>`
     + `<text class="m-ty" x="${X0 - 12}" y="${f1(y(r) + 5)}">${t}</text>`).join('');
   const abs = xs.map(([u, t]) => `<text class="m-tx" x="${f1(x(u))}" y="${h - 16}">${t}</text>`).join('');
-  return `<svg class="m-svg ${classe || ''}" viewBox="0 0 1000 ${h}" role="img">${grilles}${abs}${contenu(x, y)}</svg>`;
+  return `<svg class="m-svg ${classe || ''}" viewBox="0 0 1000 ${h}" role="img" aria-label="${LEGENDES[classe] || 'Graphique'}">${grilles}${abs}${contenu(x, y)}</svg>`;
 }
 /* Des coordonnées entières : sur 1 000 unités, le dixième ne se voit pas, et
    la page pèse 40 % de moins (budget des pages du site, tools/budget.js). */

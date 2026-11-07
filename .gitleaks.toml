@@ -1,0 +1,17 @@
+# gitleaks (ci.yml, job « secrets ») : les règles par défaut, plus une seule
+# exception — la clé publique « anon » de Supabase, publique par nature (elle
+# est servie à chaque navigateur ; ce sont les règles RLS de la base qui
+# cloisonnent les comptes). On reconnaît son en-tête et le début de sa charge,
+# où est écrit son rôle : une clé « service_role » du même projet, elle,
+# serait toujours détectée. Vérifié sur tout l'historique le 2026-11-07 :
+# aucune autre détection.
+title = "gitleaks de Mirandola"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "la clé anon de Supabase (publique)"
+regexes = [
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxYnplZnBkZWlubHluanRhcnFyIiwicm9sZSI6ImFub24i[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+''',
+]

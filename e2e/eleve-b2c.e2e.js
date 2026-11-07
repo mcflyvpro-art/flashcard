@@ -160,7 +160,8 @@ test('chercher dans un livre : une ligne, le même champ, seule la liste bouge',
    pages, pas la page entière — le livre, « Lire » et la recherche restent
    sous les yeux. Repeindre (suspendre une page) ne renvoie pas la liste en
    haut. */
-test('sur ordinateur, seules les pages d’un gros livre défilent', async ({ page }) => {
+test('sur ordinateur, seules les pages d’un gros livre défilent', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'la molette n’existe pas dans WebKit mobile (mouse.wheel)');
   await page.setViewportSize({ width: 1440, height: 800 });
   const store = nouveauStore();
   await brancher(page, store);

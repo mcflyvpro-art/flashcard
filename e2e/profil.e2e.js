@@ -7,7 +7,7 @@ import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerAmis, semerClub, semerCompte, semerLectures, semerPseudo } from './faux-cercle.js';
 import { inscrire } from './aide.js';
 
-const versCercle = page => page.getByRole('button', { name: /^(Le )?[Cc]ercle( des lecteurs)?$/ }).first().click();
+const versCercle = page => page.getByRole('button', { name: /^(Le )?[Cc]ercle( des lecteurs)?(,.*)?$/ }).first().click();
 
 test('le profil d’un ami, d’une demande en attente, d’un membre de club', async ({ page }) => {
   const store = nouveauStore();

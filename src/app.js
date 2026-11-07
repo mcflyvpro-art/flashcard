@@ -6,6 +6,9 @@
    rien : seul `onboarding.js`, qui porte l'amorçage (section « démarrage »),
    doit s'évaluer après que tous les autres aient défini leurs fonctions —
    déjà garanti par le graphe d'imports ES, pas par cet ordre-ci. */
+/* le rapporteur d'erreurs d'abord : évalué avant tous les autres, il
+   écoute déjà quand l'un d'eux lève en se chargeant */
+import './core/rapport-erreurs.js';
 import './core/coeur-sync.js';
 import './ui/carte-media.js';
 import './ui/import-cartes.js';

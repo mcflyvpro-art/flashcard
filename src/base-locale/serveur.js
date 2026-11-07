@@ -261,6 +261,15 @@ function rest(store, req, url, path, body) {
   const name = path.replace('/rest/v1/', '');
   if (name === 'rpc/demander_demo') return [200, demanderDemoFaux(store, body || {})];   // ouverte à anon, comme la vraie
   if (name === 'rpc/shared_deck') return [200, sharedDeckFaux(store, body || {})];       // elle aussi
+  /* le rapporteur d'erreurs (src/core/rapport-erreurs.js), ouvert à anon
+     comme la vraie fonction : les parcours y lisent ce qui est remonté —
+     une erreur dans `store.erreursClient`, une ouverture dans
+     `store.ouvertures` */
+  if (name === 'rpc/signaler') {
+    const p = (body && body.p) || {};
+    if (p.type === 'demarrage') (store.ouvertures ||= []).push(p); else (store.erreursClient ||= []).push(p);
+    return [204, null];
+  }
   if (!user) return [401, { message: 'JWT expired' }];
   const prefer = req.headers.prefer || '';
   if (name === 'rpc/sync_deck_cards') return syncDeckCards(store, body, user);

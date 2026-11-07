@@ -209,3 +209,23 @@ button.ed-ligne:hover{background:var(--surf)}
 .ed-suspendre > span{display:inline-flex;align-items:center;gap:6px;padding:0 8px 0 6px;font-size:13px;font-weight:650;color:var(--soft)}
 .ed-suspendre > span svg{width:15px;height:15px}
 .ed-acces{display:flex;flex-direction:column;align-items:flex-start;gap:10px}.ed-acces .ed-message{align-self:stretch}.ed-acces .ed-b.discret{margin-top:12px}
+
+/* l'onglet Santé (admin-sante.js) : les erreurs remontées par les appareils */
+.ed-sante{display:flex;flex-direction:column;gap:14px}
+.ed-sante-alerte{margin:0;display:flex;gap:8px;align-items:center;color:var(--ko);font-weight:600}
+.ed-sante-alerte svg{width:18px;height:18px;flex:none}
+.ed-sante-liste{display:flex;flex-direction:column;gap:8px}
+.ed-sante-e{background:var(--card);border-radius:12px;box-shadow:var(--edge)}
+.ed-sante-e summary{display:flex;gap:10px;align-items:center;padding:11px 14px;cursor:pointer;list-style:none}
+.ed-sante-e summary::-webkit-details-marker{display:none}
+.ed-sante-e summary b{flex:1;min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ed-sante-t{flex:none;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--bg2);color:var(--ink2)}
+.ed-sante-t.bloque,.ed-sante-t.csp{background:color-mix(in srgb,var(--ko) 13%,transparent);color:var(--ko)}
+.ed-sante-n{flex:none;font-variant-numeric:tabular-nums;font-weight:600}
+.ed-sante-d{flex:none;color:var(--soft);font-size:13px}
+.ed-sante-c{padding:0 14px 12px;display:flex;flex-direction:column;gap:6px}
+.ed-sante-c p{margin:0;display:flex;flex-wrap:wrap;gap:6px;color:var(--ink2);font-size:13px}
+.ed-sante-k{background:var(--bg2);border-radius:6px;padding:1px 7px}
+.ed-sante-k i{font-style:normal;color:var(--soft)}
+.ed-sante-c pre{margin:4px 0 0;padding:10px;background:var(--bg2);border-radius:8px;font-size:12px;white-space:pre-wrap;word-break:break-all}
+.ed-sante>.ed-b{align-self:flex-start}

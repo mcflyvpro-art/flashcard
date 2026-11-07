@@ -118,7 +118,8 @@ for (const largeur of [390, 1440]) {
     await voir(page, '12-bilan', largeur);
     await page.getByRole('tab', { name: 'Réglages' }).click();
     await voir(page, '13-reglages', largeur);
-    await page.getByRole('button', { name: 'Tableau de bord' }).first().click();
+    // au téléphone, un onglet de la barre de l'espace (role="tab") ; sur ordinateur, une entrée de la barre latérale
+    await page.getByRole('tab', { name: 'Tableau de bord' }).or(page.getByRole('button', { name: 'Tableau de bord' })).first().click();
     await expect(page.locator('.pf-kc').first()).toContainText('2nde 4');
     await voir(page, '14-accueil', largeur);
 

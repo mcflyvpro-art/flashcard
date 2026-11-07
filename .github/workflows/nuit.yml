@@ -1,0 +1,113 @@
+name: Nuit
+
+# Ce qui est trop long pour chaque push, chaque nuit (docs/FIABILITE.md) :
+# - Safari : toute la suite de parcours sous WebKit, iPhone 13 et Safari de
+#   bureau (la plupart des élèves sont sur iPhone) ;
+# - le singe : des centaines de gestes au hasard dans la démo, trois rôles,
+#   téléphone et ordinateur, une graine nouvelle chaque nuit ; la moindre
+#   erreur JavaScript fait échouer ;
+# - les dépendances : une faille publiée cette nuit se voit demain matin ;
+# - le dimanche, les tests de mutation (Stryker) : le noyau est-il vraiment
+#   gardé par ses tests ?
+on:
+  schedule:
+    - cron: '33 0 * * *'
+  workflow_dispatch:
+    inputs:
+      mutation:
+        description: 'lancer aussi les tests de mutation'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nuit
+  cancel-in-progress: true
+
+env:
+  VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+
+jobs:
+  safari:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: npx playwright test -c tools/pw-webkit.config.js
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rapport-safari
+          path: playwright-report/
+          retention-days: 7
+
+  singe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Le singe, graine ${{ github.run_number }}
+        env:
+          SINGE: '150'
+          GRAINE: ${{ github.run_number }}
+          SHOTS: singe
+        run: npx playwright test e2e/singe.e2e.js --retries=0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: singe
+          path: singe/
+          retention-days: 14
+
+  dependances:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - run: npm audit --audit-level=high
+
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      DEMANDE: ${{ github.event_name == 'workflow_dispatch' && inputs.mutation }}
+    steps:
+      - id: jour
+        name: Le dimanche, ou à la demande
+        run: |
+          if [ "$DEMANDE" = true ] || [ "$(date -u +%u)" = 7 ]; then echo "lancer=1" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        if: steps.jour.outputs.lancer == '1'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: steps.jour.outputs.lancer == '1'
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.jour.outputs.lancer == '1'
+        run: npm ci
+      - if: steps.jour.outputs.lancer == '1'
+        run: npm run mutation
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always() && steps.jour.outputs.lancer == '1'
+        with:
+          name: mutation
+          path: reports/mutation/
+          retention-days: 30

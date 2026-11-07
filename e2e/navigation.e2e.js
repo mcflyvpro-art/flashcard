@@ -30,7 +30,9 @@ async function telephone(browser, store) {
   const page = await ctx.newPage();
   await brancher(page, store);
   await connecter(page);
-  const cdp = await ctx.newCDPSession(page);
+  /* les touchers natifs passent par CDP, que seul Chromium a : sous WebKit
+     (tools/pw-webkit.config.js), les parcours qui ne glissent pas tournent quand même */
+  const cdp = browser.browserType().name() === 'chromium' ? await ctx.newCDPSession(page) : null;
   const touche = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
   /* `pas` mouvements de 16 ms : peu de pas, un geste vif ; beaucoup, un geste lent. À la hauteur
      d'un titre de section, jamais d'un champ : un doigt posé sur un champ y déplace le curseur */
@@ -61,7 +63,8 @@ test('un devoir ouvert depuis « Ma classe » y revient par « Retour »', async
   await expect(ecran(page)).toHaveAttribute('data-view', 'home');
 });
 
-test('balayer : Livres → Classe → Cercle des lecteurs, la voisine visible sous le doigt', async ({ browser }) => {
+test('balayer : Livres → Classe → Cercle des lecteurs, la voisine visible sous le doigt', async ({ browser, browserName }) => {
+  test.skip(browserName === 'webkit', 'un doigt qui glisse passe par CDP, que seul Chromium a');
   const page = await telephone(browser, eleveEnClasse());
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));

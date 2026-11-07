@@ -1,0 +1,101 @@
+name: Sauvegarde
+
+# Chaque nuit, la base de production vidée, chiffrée, gardée 30 jours, puis
+# RESTAURÉE dans une base vierge et vérifiée (M22.T5, M13.T5, M22.T3 :
+# docs/FIABILITE.md). Supabase gratuit ne sauvegarde rien ; une sauvegarde
+# qu'on n'a jamais restaurée n'en est pas une.
+#
+# Le dépôt est PUBLIC : n'importe quel compte GitHub peut télécharger les
+# fichiers d'un workflow. La sauvegarde n'en sort donc que chiffrée (AES-256,
+# la clé SAUVEGARDE_CLE, qu'il faut AUSSI garder ailleurs : sans elle, rien
+# ne se relit), et rien de ce qu'elle contient ne s'affiche ici.
+#
+# Secrets (Settings → Secrets and variables → Actions → Secrets) :
+#   SUPABASE_DB_URL            la chaîne de connexion du « Session pooler »
+#                              (Supabase → Connect), mot de passe compris
+#   SAUVEGARDE_CLE             64 caractères au hasard (openssl rand -hex 32)
+#   SUPABASE_SERVICE_ROLE_KEY  facultatif : les fichiers du seau « media » aussi
+#
+# « essai » (lancé à la main) éprouve toute la chaîne sur une base neuve
+# faite de nos migrations, sans aucun secret ni rien garder.
+on:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'production, ou essai (une base neuve, sans secret, rien gardé)'
+        type: choice
+        options: [production, essai]
+        default: production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sauvegarde
+  cancel-in-progress: false
+
+jobs:
+  sauvegarde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SOURCE: ${{ inputs.source || 'production' }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SAUVEGARDE_CLE: ${{ secrets.SAUVEGARDE_CLE }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: latest
+
+      - name: Les secrets sont posés
+        if: env.SOURCE == 'production'
+        run: |
+          manque=0
+          [ -n "$SUPABASE_DB_URL" ] || { echo "::error::Secret SUPABASE_DB_URL manquant (docs/FIABILITE.md, Sauvegardes)"; manque=1; }
+          [ -n "$SAUVEGARDE_CLE" ] || { echo "::error::Secret SAUVEGARDE_CLE manquant (docs/FIABILITE.md, Sauvegardes)"; manque=1; }
+          exit $manque
+
+      - name: Une base neuve à sauvegarder (essai)
+        if: env.SOURCE == 'essai'
+        run: |
+          bash tools/sql/pile-locale.sh
+          cle=$(openssl rand -hex 32)
+          echo "::add-mask::$cle"
+          { echo "SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres"; echo "SAUVEGARDE_CLE=$cle"
+            echo "SUPABASE_SERVICE_ROLE_KEY="; } >> "$GITHUB_ENV"
+
+      - name: Vider la base
+        run: bash tools/sauvegarde/vider.sh "$RUNNER_TEMP/sauvegarde"
+
+      - name: Chiffrer
+        run: |
+          nom="mirandola-$(date -u +%Y-%m-%d)-${SOURCE}.tar.gz.gpg"
+          tar czf - -C "$RUNNER_TEMP/sauvegarde" . |
+            gpg --batch --quiet --yes --pinentry-mode loopback --passphrase-fd 3 \
+                --symmetric --cipher-algo AES256 --s2k-digest-algo SHA512 --s2k-count 65011712 \
+                -o "$RUNNER_TEMP/$nom" 3<<<"$SAUVEGARDE_CLE"
+          rm -rf "$RUNNER_TEMP/sauvegarde"
+          echo "FICHIER=$RUNNER_TEMP/$nom" >> "$GITHUB_ENV"
+          echo "chiffrée : $(du -h "$RUNNER_TEMP/$nom" | cut -f1)"
+
+      - name: Garder 30 jours
+        if: env.SOURCE == 'production'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sauvegarde-${{ github.run_id }}
+          path: ${{ env.FICHIER }}
+          retention-days: 30
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Libérer les ports de la base d'essai
+        if: env.SOURCE == 'essai'
+        run: supabase stop --no-backup
+
+      - name: Restaurer dans une base vierge, puis vérifier
+        run: bash tools/sauvegarde/restaurer.sh "$FICHIER"
