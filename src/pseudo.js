@@ -73,7 +73,7 @@ export const MESSAGES = {
   court: `Au moins ${MIN} caractères`,
   long: `${MAX} caractères au plus`,
   caracteres: 'Lettres, chiffres, point ou tiret bas',
-  debut: 'Commence par une lettre',
+  debut: 'Commence par un message',
   fin: 'Finis par une lettre ou un chiffre',
   double: 'Pas deux signes à la suite',
   reserve: 'Ce pseudo est réservé',

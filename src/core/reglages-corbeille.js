@@ -103,7 +103,7 @@ export async function answerFriend(id, yes) {
       { status: 'ok' }, { Prefer: 'return=minimal' });
     else await api(`/rest/v1/friends?user_id=eq.${id}&friend_id=eq.${auth.uid}`, 'DELETE',
       null, { Prefer: 'return=minimal' });
-    toast(yes ? I.check : I.x, yes ? 'Lecteur ajouté' : 'Demande refusée');
+    toast(yes ? I.check : I.x, yes ? 'Ami ajouté' : 'Demande refusée');
   } catch (e) { toast(I.x, 'Impossible pour l’instant'); }
   friendsPull();
 }

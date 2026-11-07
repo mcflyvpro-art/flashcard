@@ -29,7 +29,7 @@ function tete(id, p) {
       ${avatar(id, ident(p.pseudo, p.nom), 'xl')}
       <h1>${esc(p.nom)}</h1>
       <div class="lp-sous">${p.pseudo ? `<span>@${esc(p.pseudo)}</span>` : ''}
-        ${p.depuis ? `<span title="Lit sur Mirandola depuis">${svg(I.cal)}${depuis(p.depuis)}</span>` : ''}
+        ${p.depuis ? `<span title="Révise sur Mirandola depuis">${svg(I.cal)}${depuis(p.depuis)}</span>` : ''}
         ${ami && !p.moi ? `<span class="lp-ami">${svg(I.check)}Ami</span>` : ''}</div>
       ${(p.clubs || []).length ? `<div class="lp-clubs">${p.clubs.map(g =>
         `<span class="lp-club">${blasonClub(g, 'xs')}${esc(g.nom)}</span>`).join('')}</div>` : ''}
@@ -47,9 +47,9 @@ function calendrier(jours) {
   const debut = new Date(); debut.setDate(debut.getDate() - (l.length - 1));
   const vides = (debut.getDay() + 6) % 7;
   const cases = [...Array(vides).fill(null), ...l];
-  return `<div class="lp-cal" role="img" aria-label="Pages lues ces cinq dernières semaines">${'LMMJVSD'.split('').map(j => `<b>${j}</b>`).join('')}${cases.map(n => n == null
+  return `<div class="lp-cal" role="img" aria-label="Cartes révisées ces cinq dernières semaines">${'LMMJVSD'.split('').map(j => `<b>${j}</b>`).join('')}${cases.map(n => n == null
     ? '<i class="vide"></i>'
-    : `<i class="n${n ? Math.min(4, Math.ceil(n / max * 4)) : 0}" title="${plur(n, 'page')}"></i>`).join('')}</div>`;
+    : `<i class="n${n ? Math.min(4, Math.ceil(n / max * 4)) : 0}" title="${plur(n, 'carte')}"></i>`).join('')}</div>`;
 }
 
 function matieres(l) {
@@ -61,9 +61,9 @@ function matieres(l) {
 
 function chiffres(p) {
   const faits = [
-    p.heure != null ? [I.clock, `vers ${p.heure} h`, 'Heure de lecture préférée'] : null,
-    p.livres ? [I.book, plur(p.livres, 'livre'), 'Livres lus ces 30 jours'] : null,
-    [I.layers, nb(p.toujours) + ' pages', 'Depuis toujours']
+    p.heure != null ? [I.clock, `vers ${p.heure} h`, 'Heure de révision préférée'] : null,
+    p.livres ? [I.book, plur(p.livres, 'paquet'), 'Paquets révisés ces 30 jours'] : null,
+    [I.layers, nb(p.toujours) + ' cartes', 'Depuis toujours']
   ].filter(Boolean);
   return `<section class="lp-chiffres">
       <div class="lp-tuiles">
@@ -82,7 +82,7 @@ function chiffres(p) {
 
 function prive(id, p) {
   const peutAjouter = p.pseudo && !isPupil();
-  return `<section class="lp-prive">${svg(I.lock)}<b>Journal réservé à ses amis</b>
+  return `<section class="lp-prive">${svg(I.lock)}<b>Statistiques réservées à ses amis</b>
       ${peutAjouter ? `<button class="cta" data-lp="ami">${svg(I.plus)}Ajouter en ami</button>` : ''}</section>`;
 }
 
@@ -93,7 +93,7 @@ function gestes(id, p) {
   /* le filet ne sépare que s'il y a quelque chose au-dessus : seul, il
      traînait en tête de la carte (2026-10-26) */
   const haut = (ami ? `<button class="mi" data-mact="matedefi">${svg(I.bolt)}Défier</button>
-        <button class="mi" data-mact="matesend">${svg(I.share)}Lui prêter un livre</button>` : '')
+        <button class="mi" data-mact="matesend">${svg(I.share)}Lui envoyer un paquet</button>` : '')
     + (!ami && p.statut === 'ok' && p.pseudo && !isPupil() ? `<button class="mi" data-lp="ami">${svg(I.plus)}Ajouter en ami</button>` : '')
     + (club && club.chef ? `<button class="mi warn" data-lp="retirer">${svg(I.x)}<span>Retirer du club</span></button>` : '')
     + (ami ? `<button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes amis</span></button>` : '');

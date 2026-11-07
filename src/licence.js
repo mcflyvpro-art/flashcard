@@ -7,21 +7,21 @@ import { FORMULES, dateLisible, euros, niveauDe } from './abonnement.js';
 /* Les avantages (AVANTAGES de src/abonnement.js), en détail : une icône (src/icones.js),
    un titre, une ligne. `prof` : ce qui change pour un professeur. */
 export const AVANTAGES_DETAIL = [
-  { ic: 'bolt', t: 'Memory Engine Ultra', s: 'Réglé sur ta mémoire : chaque page revient au moment où tu allais l’oublier.' },
-  { ic: 'spark', t: 'L’IA', s: 'Ton cours, une photo de ton cahier ou un PDF devient un livre de flashcards.',
-    prof: 'Tes cours deviennent des livres pour tes classes, sans compter.' },
-  { ic: 'layers', t: 'Des livres sans limite', s: 'Toutes tes matières, tous tes chapitres.' },
+  { ic: 'bolt', t: 'Memory Engine Ultra', s: 'Réglé sur ta mémoire : chaque carte revient au moment où tu allais l’oublier.' },
+  { ic: 'spark', t: 'L’IA', s: 'Ton cours, une photo de ton cahier ou un PDF devient un paquet de flashcards.',
+    prof: 'Tes cours deviennent des paquets pour tes classes, sans compter.' },
+  { ic: 'layers', t: 'Des paquets sans limite', s: 'Toutes tes matières, tous tes chapitres.' },
   { ic: 'target', t: 'QCM et associations', s: 'Pour t’entraîner avant le contrôle.' },
   { ic: 'image', t: 'Images et sons', s: 'Un schéma, une carte, la prononciation d’un mot.' },
-  { ic: 'chart', t: 'Ton journal complet', s: 'Ce que tu sais vraiment, tes heures, tes matières, les pages qui résistent.' }
+  { ic: 'chart', t: 'Toutes tes statistiques', s: 'Ce que tu sais vraiment, tes heures, tes matières, les cartes qui résistent.' }
 ];
 
 /* Ce que Mirandola Infini ajoute (2026-11-06) : tout Mirandola+, et ceci.
    Rien n'y est retiré à Mirandola+ : Infini est au-dessus, pas à côté. */
 export const AVANTAGES_INFINI = [
-  { ic: 'spark', t: 'L’IA sans compter', s: '150 générations du meilleur modèle chaque mois, puis sans limite. Des PDF de 20 Mo, 300 pages d’un coup.' },
+  { ic: 'spark', t: 'L’IA sans compter', s: '150 générations du meilleur modèle chaque mois, puis sans limite. Des PDF de 20 Mo, 300 cartes d’un coup.' },
   { ic: 'pen', t: 'L’examen blanc', s: 'L’IA compose ton sujet et corrige ta copie, même écrite à la main : un conseil là où tu te trompes.' },
-  { ic: 'target', t: 'L’objectif examen', s: 'Une date sur un livre : le moteur vise 95 % de souvenir le jour J.' }
+  { ic: 'target', t: 'L’objectif examen', s: 'Une date sur un paquet : le moteur vise 95 % de souvenir le jour J.' }
 ];
 
 /* ---------- la licence, ligne par ligne (2026-10-28) ----------

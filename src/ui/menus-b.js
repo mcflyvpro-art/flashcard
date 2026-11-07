@@ -65,7 +65,7 @@ export function paintMenuDeckset(w) {
     const m = metaOf(d);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mi" style="font-weight:750">${svg(I.gear)}Réglages du livre</div>
+        <div class="mi" style="font-weight:750">${svg(I.gear)}Réglages du paquet</div>
         <div class="mrow col"><span class="ml">${svg(I.target)}Tolérance du quiz</span>
           <div class="seg mseg">
             ${[['strict', 'Stricte'], ['normal', 'Normale'], ['soft', 'Souple']].map(([v, l]) =>
@@ -157,7 +157,7 @@ export function paintMenuLeave(w) {
 export function paintMenuSortpick(w) {
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <div class="mi" style="font-weight:750">${svg(I.sort)}Trier les livres</div>
+        <div class="mi" style="font-weight:750">${svg(I.sort)}Trier les paquets</div>
         ${Object.entries(SORTS).map(([k, l]) => `<button class="mi ${prefs.sort === k ? 'on' : ''}"
           data-sortby="${k}">${l}${prefs.sort === k ? svg(I.check) : ''}</button>`).join('')}
         <div class="msep"></div>
@@ -174,7 +174,7 @@ export function paintMenuPreview(w) {
       <div class="menu">
         <div class="mhd">${svg(I.card)}
           <span class="mhx"><b>${esc(d.name)}</b>
-            <i>${esc(subj(d.subject).name)} · ${plur(d.cards.length, 'page')}${due ? ' · ' + due + ' à revoir' : ''}</i>
+            <i>${esc(subj(d.subject).name)} · ${plur(d.cards.length, 'carte')}${due ? ' · ' + due + ' à revoir' : ''}</i>
           </span>
         </div>
         <div class="mpick">
@@ -187,7 +187,7 @@ export function paintMenuPreview(w) {
           <button class="mg warn" data-mact="pkdel">${svg(I.trash)}<span>Supprimer</span></button>
         </div>
         <button class="mi" data-mact="openpeek" style="justify-content:center;font-weight:700">
-          ${svg(I.play)}Ouvrir le livre</button>
+          ${svg(I.play)}Ouvrir le paquet</button>
       </div>`;
     mountMenu(w);
     return;
@@ -200,10 +200,10 @@ export function paintMenuMate(w) {
       <div class="menu">
         <div class="mhd">${avatar(f.id, f.name || f.handle)}
           <span class="mhx"><b>${esc(f.name || '')}</b><i>@${esc(f.handle || '')}</i></span></div>
-        <button class="mi" data-mact="mateprof">${svg(I.chart)}Son journal de lecture</button>
+        <button class="mi" data-mact="mateprof">${svg(I.chart)}Ses statistiques</button>
         <button class="mi" data-mact="matedefi">${svg(I.bolt)}Défier mes amis</button>
-        <button class="mi" data-mact="matesend">${svg(I.share)}Lui prêter un livre</button>
-        <button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes lecteurs</span></button>
+        <button class="mi" data-mact="matesend">${svg(I.share)}Lui envoyer un paquet</button>
+        <button class="mi warn" data-mact="matedrop">${svg(I.x)}<span>Retirer de mes amis</span></button>
         <div class="msep"></div>
         <button class="mi" data-mact="matereport">${svg(I.warn)}<span>Signaler ce compte</span></button>
         <button class="mi warn" data-mact="mateblock">${svg(I.lock)}<span>Bloquer</span></button>
@@ -237,7 +237,7 @@ export function paintMenuVers(w) {
               remplacement, fusion, découpe ou réimport.</div>`
           : `<div class="mscroll">${l.map(v => `<button class="mi" data-vers="${v.id}">
               ${svg(I.redo)}<span class="ml2"><span class="n">${esc(v.why || 'version')}</span>
-                <span class="sub">${plur((v.cards || []).length, 'page')} · ${timeAgo(v.created_at)}</span></span>
+                <span class="sub">${plur((v.cards || []).length, 'carte')} · ${timeAgo(v.created_at)}</span></span>
               </button>`).join('')}</div>`}
       </div>`;
     mountMenu(w);
@@ -248,7 +248,7 @@ export function paintMenuConflict(w) {
   const c = conflicts[0];
     if (!c) { setMenu(null); return; }
     const side = (v, lab, when) => `<div class="cside">
-      <b>${lab}</b><i>${plur(v.cards.length, 'page')}${when ? ' · ' + when : ''}</i>
+      <b>${lab}</b><i>${plur(v.cards.length, 'carte')}${when ? ' · ' + when : ''}</i>
       <span>${esc(v.name)}</span></div>`;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -305,7 +305,7 @@ export function paintMenuSendfriend(w) {
         <div class="mi" style="font-weight:750">${svg(I.mail)}Envoyer « ${esc(d.name)} » à</div>
         <div class="mscroll">${friends === null
           ? `<div class="mi" style="color:var(--soft)">Chargement…</div>`
-          : !list.length ? `<div class="mi" style="color:var(--soft)">Aucun lecteur dans ton cercle pour l’instant.</div>`
+          : !list.length ? `<div class="mi" style="color:var(--soft)">Aucun ami pour l’instant.</div>`
           : list.map(p => `<button class="mi ${sendTo === p.id ? 'on' : ''}" data-friend="${p.id}">
               <i class="tri" style="--c:var(--soft)"></i>${esc(p.name || p.email)}
               ${sendTo === p.id ? svg(I.check) : ''}</button>`).join('')}</div>
@@ -328,13 +328,13 @@ export function paintMenuLend(w) {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${avatar(f.id, f.name || f.handle)}
-          <span class="mhx"><b>Prêter à ${esc(shortWho(f.name || f.handle))}</b>
-            <i>choisis un livre</i></span></div>
+          <span class="mhx"><b>Envoyer à ${esc(shortWho(f.name || f.handle))}</b>
+            <i>choisis un paquet</i></span></div>
         <div class="mscroll">${mine.length
           ? mine.map(x => `<button class="mi" data-lend="${esc(x.id)}">
               <i class="tri" style="--c:${subj(x.subject).d}"></i>${esc(x.name)}
-              <span class="tail">${plur(x.cards.length, 'page')}</span></button>`).join('')
-          : `<div class="mi" style="color:var(--soft)">Ta bibliothèque est vide.</div>`}</div>
+              <span class="tail">${plur(x.cards.length, 'carte')}</span></button>`).join('')
+          : `<div class="mi" style="color:var(--soft)">Aucun paquet pour l’instant.</div>`}</div>
       </div>`;
     mountMenu(w);
     return;
@@ -355,9 +355,9 @@ export function paintMenuMateprof(w) {
         </div>
         ${mateProf.load && !r ? `` : `
           <div class="tiles st3" style="margin:0 12px 12px">
-            <div class="st"><b>${r ? +r.n : 0}</b><span>pages lues</span></div>
+            <div class="st"><b>${r ? +r.n : 0}</b><span>cartes révisées</span></div>
             <div class="st"><b>${pctok}%</b><span>de réussite</span></div>
-            <div class="st"><b>${r ? +r.jours : 0}</b><span>jours de lecture</span></div>
+            <div class="st"><b>${r ? +r.jours : 0}</b><span>jours de révision</span></div>
           </div>`}
       </div>`;
     mountMenu(w);
@@ -387,11 +387,11 @@ export function paintMenuSplit(w) {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.split)}Scinder « ${esc(d.name)} »</div>
-        <div class="mrow col"><span class="ml">${svg(I.card)}Pages par livre
+        <div class="mrow col"><span class="ml">${svg(I.card)}Cartes par paquet
           <b class="tail">${size}</b></span>
           <input class="rng" id="spSize" type="range" min="2" max="${n - 1}" step="1" value="${size}">
         </div>
-        <div class="note">${n} pages → <b>${parts} livres</b> de ${size}${
+        <div class="note">${n} cartes → <b>${parts} paquets</b> de ${size}${
           last !== size ? `, le dernier de ${last}` : ''}. Elles gardent leur ordre
           et leur progression. L’original part à la corbeille, récupérable.</div>
         <button class="mi" data-mact="dosplit" style="justify-content:center;font-weight:700">
@@ -408,7 +408,7 @@ export function paintMenuSplit(w) {
       setSplitSize(+r.value);
       const p = Math.ceil(n / splitSize), lastN = n - splitSize * (p - 1);
       lab.textContent = splitSize;
-      note.innerHTML = `${n} pages → <b>${p} livres</b> de ${splitSize}${
+      note.innerHTML = `${n} cartes → <b>${p} paquets</b> de ${splitSize}${
         lastN !== splitSize ? `, le dernier de ${lastN}` : ''}. Elles gardent leur ordre
         et leur progression. L’original part à la corbeille, récupérable.`;
       btn.lastChild.textContent = 'Scinder en ' + p;

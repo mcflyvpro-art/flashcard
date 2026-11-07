@@ -72,17 +72,17 @@ function livresHtml() {
   const tous = db.decks.filter(d => !d.hidden && d.cards.length);
   const q = defi.q.trim().toLowerCase();
   const l = q ? tous.filter(d => d.name.toLowerCase().includes(q)) : tous;
-  return `<section class="dn-step"><h2><i>2</i>Quel livre ?</h2>
-    ${tous.length > 6 ? `<div class="dn-cherche">${svg(I.search)}<input id="dnq" type="search" placeholder="Chercher un livre"
-      value="${esc(defi.q)}" autocomplete="off" spellcheck="false" aria-label="Chercher un livre"></div>` : ''}
-    ${!tous.length ? `<p class="cc-vide">${svg(I.book)}Aucun livre</p>`
+  return `<section class="dn-step"><h2><i>2</i>Quel paquet ?</h2>
+    ${tous.length > 6 ? `<div class="dn-cherche">${svg(I.search)}<input id="dnq" type="search" placeholder="Chercher un paquet"
+      value="${esc(defi.q)}" autocomplete="off" spellcheck="false" aria-label="Chercher un paquet"></div>` : ''}
+    ${!tous.length ? `<p class="cc-vide">${svg(I.book)}Aucun paquet</p>`
       : `<div class="dn-livres" id="dnl">${l.map(d => {
         const ok = livrePossible(d);
         return `<button class="dn-livre ${defi.livre === d.id ? 'on' : ''}" data-cc="dn-livre" data-id="${esc(d.id)}" ${ok ? '' : 'disabled'}>
           <i class="dn-dot" style="--d:${subj(d.subject).d}"></i>
-          <span><b>${esc(d.name)}</b>${ok ? infos([['card', d.cards.length, 'Pages']]) : '<i>Trop court</i>'}</span>
+          <span><b>${esc(d.name)}</b>${ok ? infos([['card', d.cards.length, 'Cartes']]) : '<i>Trop court</i>'}</span>
           ${defi.livre === d.id ? svg(I.check) : ''}</button>`;
-      }).join('') || `<p class="cc-vide">Aucun livre ne s’appelle ainsi.</p>`}</div>`}
+      }).join('') || `<p class="cc-vide">Aucun paquet ne s’appelle ainsi.</p>`}</div>`}
   </section>`;
 }
 
@@ -155,7 +155,7 @@ async function lancer() {
     return repeint();
   }
   const questions = fabriquerQuestions(cartesDe(d), defi.jeu, defi.n);
-  if (!questions.length) { defi.envoi = false; repeint(); return toast(I.x, 'Ce livre n’a pas de quoi poser ces questions'); }
+  if (!questions.length) { defi.envoi = false; repeint(); return toast(I.x, 'Ce paquet n’a pas de quoi poser ces questions'); }
   const r = await ouvrirSalle({ titre: d.name.slice(0, 80), jeu: defi.jeu, duree: defi.duree, questions, club, classe });
   defi.envoi = false;
   if (!r) return repeint();

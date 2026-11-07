@@ -48,7 +48,7 @@ export function selBar(d) {
     <span class="sbn">${n ? n + ' carte' + (n > 1 ? 's' : '') : 'Aucune carte'}</span>
     <div class="sba">
       <button class="x" data-act="selmove" ${n && db.decks.length > 1 ? '' : 'disabled'}
-        title="Déplacer vers un autre livre">${svg(I.out)}</button>
+        title="Déplacer vers un autre paquet">${svg(I.out)}</button>
       <button class="x" data-act="selsus" ${n ? '' : 'disabled'}
         title="${anyOn ? 'Suspendre' : 'Réactiver'}">${svg(anyOn ? I.eyeoff : I.eye)}</button>
       <button class="x warn" data-act="seldel" ${n ? '' : 'disabled'}
@@ -65,9 +65,9 @@ function ctaButton(d) {
   const due = !simpleMode() && dueCount(d);
   /* rien de dû, mais des pages neuves au-delà du quota du jour : « +20 » */
   if (!due && !simpleMode() && d.cards.some(c => !c.x && estNeuve(c))) {
-    return `<button class="cta read" data-act="studyplus">${svg(I.play)}Lire <b>+20</b></button>`;
+    return `<button class="cta read" data-act="studyplus">${svg(I.play)}Réviser <b>+20</b></button>`;
   }
-  return `<button class="cta read" data-act="study">${svg(I.play)}Lire${due ? ` <b>${due}</b>` : ''}</button>`;
+  return `<button class="cta read" data-act="study">${svg(I.play)}Réviser${due ? ` <b>${due}</b>` : ''}</button>`;
 }
 
 function deckHeadMeta(d) {
@@ -80,7 +80,7 @@ function deckHeadMeta(d) {
 function findButton(d) {
   if (d.cards.length <= 5) return '';
   return `<button class="pick ico ${deckQ ? 'on' : ''}" data-act="deckfind"
-        aria-label="Chercher dans ce livre">${svg(I.search)}</button>`;
+        aria-label="Chercher dans ce paquet">${svg(I.search)}</button>`;
 }
 
 function selectButton(d) {
@@ -94,8 +94,8 @@ const countLabel = (shown, d) => shown.length === d.cards.length ? d.cards.lengt
 function searchField() {
   if (!deckOpen) return '';
   return `<div class="fld deckfld"><input id="dq" type="search"
-      placeholder="Chercher dans ce livre" autocomplete="off" autocapitalize="none"
-      spellcheck="false" value="${esc(deckQ)}" aria-label="Chercher dans ce livre"></div>`;
+      placeholder="Chercher dans ce paquet" autocomplete="off" autocapitalize="none"
+      spellcheck="false" value="${esc(deckQ)}" aria-label="Chercher dans ce paquet"></div>`;
 }
 
 function rowStateIcon(c) {
@@ -215,9 +215,9 @@ function rowsHtml(shown, nq, s) {
   return `<div class="rows ${sel ? 'picking' : ''}" style="--d:${s.d}">
       ${!shown.length ? `<div class="note" style="padding:14px 4px">Aucune carte ne contient « ${esc(deckQ)} ».</div>` : ''}
       ${part.map((c, i) => cardRow(c, i, nq)).join('')}
-      ${rest ? `<div class="more" id="more">${plur(rest, 'page')} de plus…</div>` : ''}
+      ${rest ? `<div class="more" id="more">${plur(rest, 'carte')} de plus…</div>` : ''}
       ${sel ? '' : `<div class="duo ghost">
-        <button data-act="add">${svg(I.plus)}Page</button>
+        <button data-act="add">${svg(I.plus)}Carte</button>
         <button data-act="paste">${svg(I.down)}Coller</button>
       </div>`}
     </div>`;
@@ -272,7 +272,7 @@ export function deckView() {
     <div class="bar">
       <button class="ic" data-act="deckback" aria-label="Retour">${svg(I.back)}</button>
       <div style="flex:1"></div>
-      <button class="ic" data-act="menu" aria-label="Menu du livre">${svg(I.more)}</button>
+      <button class="ic" data-act="menu" aria-label="Menu du paquet">${svg(I.more)}</button>
     </div>
     <div class="head" style="${sty(s)}">
       <div class="t" id="dn" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done">${esc(d.name)}</div>
@@ -289,7 +289,7 @@ export function deckView() {
       <button data-act="sharepick">${svg(I.share)}Partager</button>
     </div>
     ${simpleMode() ? '' : mixBar(d)}
-    <div class="lbl"><span>Pages</span>
+    <div class="lbl"><span>Cartes</span>
       ${findButton(d)}
       ${selectButton(d)}
       <span id="dcount">${countLabel(shown, d)}</span></div>
@@ -569,19 +569,19 @@ export function loginView() {
    Tout ce qui se devine au premier coup d'œil n'a pas de pastille. */
 export const HELP = {
   classement: ['Classement',
-    'Les pages lues par toi et tes amis : ces sept derniers jours, ces trente derniers jours ou depuis toujours.'],
-  classementClub: ['Classement du club', 'Les pages lues par chaque membre ces sept derniers jours.'],
+    'Les cartes révisées par toi et tes amis : ces sept derniers jours, ces trente derniers jours ou depuis toujours.'],
+  classementClub: ['Classement du club', 'Les cartes révisées par chaque membre ces sept derniers jours.'],
   modes: ['En direct ou à son rythme',
     'En direct : tout le monde joue en même temps avec un code à six chiffres, et voit le classement après chaque question.' +
     '\n\nÀ son rythme : un QCM de dix questions, les mêmes pour tous. Chacun le joue quand il veut, une seule fois.'],
   jMatieres: ['Temps par matière',
-    'Chaque minute reste dans la matière où tu l’as passée. Changer la matière d’un livre, le fusionner ou le ' +
-    'supprimer ne réécrit pas le passé : seules les lectures suivantes vont ailleurs.'],
+    'Chaque minute reste dans la matière où tu l’as passée. Changer la matière d’un paquet, le fusionner ou le ' +
+    'supprimer ne réécrit pas le passé : seules les révisions suivantes vont ailleurs.'],
   jRappel: ['Rappel estimé',
-    'La chance, d’après le moteur, que tu te souviennes en ce moment d’une page déjà lue. Elle baisse chaque jour ' +
-    'sans lecture et remonte à chaque révision.'],
+    'La chance, d’après le moteur, que tu te souviennes en ce moment d’une carte déjà révisée. Elle baisse chaque jour ' +
+    'sans révision et remonte à chaque révision.'],
   jFidele: ['Après une pause',
-    'Tes réponses justes quand tu reviens sur une page après quelques jours, quelques semaines ou quelques mois : ' +
+    'Tes réponses justes quand tu reviens sur une carte après quelques jours, quelques semaines ou quelques mois : ' +
     'c’est là qu’on voit ce qui tient vraiment.'],
   fast: ['Mode rapide',
     'Une bonne réponse enchaîne toute seule sur la suivante, au quiz comme en QCM et en vrai/faux. ' +

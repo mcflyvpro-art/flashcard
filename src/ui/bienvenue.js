@@ -305,7 +305,7 @@ function ajouter() {
 }
 
 function objectif() {
-  return `<h1 class="bv-t">Combien de pages par jour&nbsp;?</h1>
+  return `<h1 class="bv-t">Combien de cartes par jour&nbsp;?</h1>
     <div class="bv-objectifs">${OBJECTIFS.map(o => `<button class="bv-obj${e.objectif === o.n ? ' on' : ''}" data-bv="objectif"
       data-v="${o.n}"><b>${o.n}</b><span>${o.t}</span></button>`).join('')}</div>`;
 }

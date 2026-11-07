@@ -125,7 +125,7 @@ test.describe('sur ordinateur', () => {
     await expect(page).toHaveURL(/\/admin\/entreprise$/);
     await page.locator('#ev-raison_sociale').fill('Mirandola');
     await page.locator('#ev-forme').fill('EI');
-    await page.locator('#ev-adresse').fill('1 rue des Livres');
+    await page.locator('#ev-adresse').fill('1 rue des Paquets');
     await page.locator('#ev-code_postal').fill('30000');
     await page.locator('#ev-ville').fill('Nîmes');
     await page.locator('#ev-siret').fill('912 345 678 00011');
@@ -182,7 +182,7 @@ test.describe('sur ordinateur', () => {
     const lea = semerCompte(store, 'lea@exemple.fr'), tom = semerCompte(store, 'tom@exemple.fr'),
       zoe = semerCompte(store, 'zoe@exemple.fr');
     m.noms[lea] = 'Léa Petit'; m.noms[tom] = 'Tom Roux'; m.noms[zoe] = 'Zoé Blanc';
-    store.tables.decks = [lea, lea, zoe].map((u, i) => ({ id: 'dk' + i, user_id: u, name: 'Livre ' + i, deleted_at: null }));
+    store.tables.decks = [lea, lea, zoe].map((u, i) => ({ id: 'dk' + i, user_id: u, name: 'Paquet ' + i, deleted_at: null }));
     store.tables.abonnements = [{ user_id: zoe, source: 'stripe', statut: 'actif', formule: 'annuel', fin_prevue: false,
       fin_periode: new Date(Date.now() + 200 * 864e5).toISOString() }];
     await brancher(page, store);
@@ -192,7 +192,7 @@ test.describe('sur ordinateur', () => {
     // trier par livres : Léa (2), puis Zoé (1)
     await page.locator('#edctri').selectOption('livres');
     await expect(page.locator('.ed-ligne').first()).toContainText('lea@exemple.fr');
-    await expect(page.locator('.ed-ligne').first()).toContainText('2 livres');
+    await expect(page.locator('.ed-ligne').first()).toContainText('2 paquets');
     await page.locator('#edcfiltre').selectOption('plus');
     await expect(page.locator('.ed-ligne')).toHaveCount(1);
     await expect(page.locator('.ed-ligne')).toContainText('zoe@exemple.fr');

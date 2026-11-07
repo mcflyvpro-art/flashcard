@@ -34,7 +34,7 @@ function branche(s) {
 }
 
 function corpsStripe(s) {
-  if (!s) return '<p class="ed-doux">Lecture de l’état…</p>';
+  if (!s) return '<p class="ed-doux">Révision de l’état…</p>';
   if (s.erreur === 'absente') return '<p class="ed-doux">La fonction <b>paiement</b> ne répond pas : elle n’est pas déployée.</p>';
   if (!s.cle || s.erreur === 'nokey') return 'cle' in s || s.erreur === 'nokey' ? SANS_CLE
     : '<p class="ed-doux">Stripe n’a pas répondu. Réessaie dans un instant.</p>';

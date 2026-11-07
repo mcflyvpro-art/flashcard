@@ -70,7 +70,7 @@ test('édition croisée hors ligne sur deux appareils : 0 perte, 0 boîte de cho
   // et chaque appareil, rouvert (sur le livre : l'adresse le garde), voit les deux corrections
   for (const p of [A, B]) {
     await p.reload();
-    await expect(p.getByRole('button', { name: 'Menu du livre' })).toBeVisible({ timeout: 10000 });
+    await expect(p.getByRole('button', { name: 'Menu du paquet' })).toBeVisible({ timeout: 10000 });
     await expect(p.getByRole('textbox', { name: 'Recto' }).nth(0)).toHaveValue('Pays 1 — corrigé sur A');
     await expect(p.getByRole('textbox', { name: 'Verso' }).nth(2)).toHaveValue('Capitale 3 — corrigée sur B');
   }
@@ -107,7 +107,7 @@ test('modifié hors ligne, app fermée, l’autre appareil passe, réouverture :
    Avant, B ne voyait le livre créé sur A qu'après un rechargement — et
    restait sur l'ancienne version d'un livre que A venait de corriger. Le
    retour sur l'app (focus) suffit désormais (ui/synchro-ecran.js). */
-test('un livre créé et une page corrigée sur A apparaissent sur B au retour, sans recharger', async ({ browser }) => {
+test('un paquet créé et une carte corrigée sur A apparaissent sur B au retour, sans recharger', async ({ browser }) => {
   test.setTimeout(120000);
   const store = nouveauStore();
   const { ctxA, ctxB, A, B } = await deuxAppareils(browser, store);

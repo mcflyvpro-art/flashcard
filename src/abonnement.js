@@ -27,7 +27,7 @@ export const REVENUECAT = { ios: '', android: '' };
    l'abonnement — la preuve de l'accord et de la demande de démarrage
    immédiat (article L221-25 du code de la consommation). Elle change avec
    le texte « cgv » de ui/legal-textes.js. */
-export const CGV_VERSION = '2026-11-06';
+export const CGV_VERSION = '2026-11-07';
 
 /* Les prix du 2026-11-05 (décidés : « plus psychologiques, un peu à la
    baisse, rentables avec l'IA ») : Mirandola+ sous Quizlet Plus, l'annuel
@@ -53,22 +53,22 @@ export const PROMO = { code: 'LANCEMENT', remise: 20, mois: 3 };
 export const AVANTAGES = [
   'Le Memory Engine Ultra, réglé sur ta mémoire',
   'L’IA : ton cours, une photo ou un PDF en flashcards, 30 par mois',
-  'Des livres sans limite',
+  'Des paquets sans limite',
   'QCM et associations pour t’entraîner',
-  'Images et sons sur tes pages',
-  'Toutes tes stats : mémoire, matières, pages qui résistent'
+  'Images et sons sur tes cartes',
+  'Toutes tes stats : mémoire, matières, cartes qui résistent'
 ];
 
 /* Ce que l'élève vient de toucher, quand l'écran Mirandola+ s'ouvre sur un
    geste bridé (ui/bridage.js) : dit en tête, au-dessus des formules. */
 export const RAISONS = {
-  ia: 'L’IA écrit tes livres pour toi',
-  photo: 'Ton cahier en photo, et c’est un livre',
-  fichier: 'Ton PDF devient un livre',
+  ia: 'L’IA écrit tes paquets pour toi',
+  photo: 'Ton cahier en photo, et c’est un paquet',
+  fichier: 'Ton PDF devient un paquet',
   exercices: 'QCM et associations',
-  media: 'Des images et des sons sur tes pages',
-  livres: 'Ta bibliothèque est pleine : 5 livres avec Mirandola gratuit',
-  journal: 'Ton journal complet',
+  media: 'Des images et des sons sur tes cartes',
+  livres: 'Tes 5 paquets de Mirandola gratuit sont pris',
+  journal: 'Toutes tes statistiques',
   // Mirandola Infini (2026-11-07) : un geste du menu d'un livre
   examen: 'L’objectif examen et l’examen blanc sont dans Mirandola Infini'
 };

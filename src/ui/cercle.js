@@ -58,7 +58,7 @@ function maLigne() {
 
 function moiInfos() {
   const r = maLigne(), n = (board.rows || []).length;
-  return infos([['book', r ? +r.n : 0, 'Pages lues cette semaine'],
+  return infos([['book', r ? +r.n : 0, 'Cartes révisées cette semaine'],
     r && +r.n && n > 1 ? ['trophy', placeTexte(r.place) + ' / ' + n, 'Ta place face à tes amis'] : null]);
 }
 
@@ -134,7 +134,7 @@ export function clubCarte(g) {
   const rang = g.membres > 1 && g.mes_pages ? placeTexte(g.mon_rang) : '';
   return `<button class="cc-club" data-cc="club" data-id="${esc(g.id)}">
     ${blasonClub(g)}
-    <span class="cc-club-t"><b>${esc(g.nom)}</b>${infos([['users', g.membres, 'Membres'], ['book', g.pages, 'Pages lues cette semaine']])}</span>
+    <span class="cc-club-t"><b>${esc(g.nom)}</b>${infos([['users', g.membres, 'Membres'], ['book', g.pages, 'Cartes révisées cette semaine']])}</span>
     ${g.en_direct ? '<em class="cc-tag live">En direct</em>' : rang ? `<em class="cc-tag">${rang}</em>` : ''}</button>`;
 }
 
@@ -197,7 +197,7 @@ function classementCourt() {
   if (l.length < 2) return `<p class="cc-vide">${svg(I.trophy)}Ajoute des amis</p>`;
   const top = l.slice(0, 5), moi = l.find(r => r.moi);
   if (moi && !top.includes(moi)) top.push(moi);
-  return `<div class="cc-rank">${top.map(r => rangLigne(r, shortWho(r.who) || 'Lecteur')).join('')}</div>`;
+  return `<div class="cc-rank">${top.map(r => rangLigne(r, shortWho(r.who) || 'Membre')).join('')}</div>`;
 }
 
 function amisHtml(eleve) {
@@ -215,7 +215,7 @@ export function commuView() {
   const eleve = isPupil();
   $.innerHTML = `
     <div class="page cc" id="page">
-      <div class="top"><div class="hero">Cercle des lecteurs</div></div>
+      <div class="top"><div class="hero">Mes amis</div></div>
       <div class="cc-grille">
         <div class="cc-main">
           ${moiHtml(eleve)}
@@ -257,7 +257,7 @@ function mesAmisHtml(eleve) {
   if (!l.length) return `<p class="cc-vide">${svg(I.users)}Personne pour l’instant</p>`;
   return `<div class="cc-list">${l.map(f => `<button class="cc-ligne" data-mate="${esc(f.id)}">${avatar(f.id, f.handle || f.name)}
     <span class="cc-ligne-t"><b>${esc(f.name || '')}</b><i>${f.handle ? '@' + esc(f.handle) : ''}</i></span>
-    ${infos([['book', pages.get(f.id) || 0, 'Pages lues']])}${svg(I.arrow)}</button>`).join('')}</div>`;
+    ${infos([['book', pages.get(f.id) || 0, 'Cartes révisées']])}${svg(I.arrow)}</button>`).join('')}</div>`;
 }
 
 function classementLong() {
@@ -265,9 +265,9 @@ function classementLong() {
     `<button class="${board.range === +k ? 'on' : ''}" data-brange="${k}">${n}</button>`).join('')}</div>`;
   if (!board.rows) return seg + `<div class="cc-load"></div>`;
   const l = classement(board.rows, 'n', auth.uid);
-  if (!l.length) return seg + `<p class="cc-vide">${svg(I.trophy)}Aucune lecture</p>`;
-  return seg + `<div class="cc-rank">${l.map(r => rangLigne(r, shortWho(r.who) || 'Lecteur',
-    [['check', Math.round(r.ok / (r.n || 1) * 100) + ' %', 'Réponses justes'], ['cal', +r.jours, 'Jours de lecture']])).join('')}</div>`;
+  if (!l.length) return seg + `<p class="cc-vide">${svg(I.trophy)}Aucune révision</p>`;
+  return seg + `<div class="cc-rank">${l.map(r => rangLigne(r, shortWho(r.who) || 'Membre',
+    [['check', Math.round(r.ok / (r.n || 1) * 100) + ' %', 'Réponses justes'], ['cal', +r.jours, 'Jours de révision']])).join('')}</div>`;
 }
 
 export function friendsView() {

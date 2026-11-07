@@ -19,7 +19,19 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      49 / 148
-DERNIER   2026-11-06 · Mirandola Infini se montre : l'écran Mirandola+
+DERNIER   2026-11-07 · Le vocabulaire redevient classique partout
+          (app, site, démo, textes du cadre, e-mails, manifeste) : paquet,
+          cartes, réviser, Mes amis, Statistiques, Messages ; nouvelles
+          adresses (/eleve/paquets, /statistiques, /messages, /amis), les
+          anciennes se lisent encore (test/routes.test.js) ; noms internes
+          inchangés. L'offre et l'IA se relisent sans redémarrer (un
+          Mirandola+ offert laissait les onglets d'IA fermés « Ton
+          établissement… » : e2e/mirandola-plus.e2e.js « sans redémarrer »,
+          rouge sur l'ancien code). Infini a son identité, l'or sur la
+          nuit, et la montée depuis Mirandola+ (e2e/examen.e2e.js) ; le
+          site met Mirandola+ au milieu, plus haut, Infini à droite,
+          Campus en bandeau dessous. Avant :
+          2026-11-06 · Mirandola Infini se montre : l'écran Mirandola+
           choisit le niveau puis la période (e2e/mirandola-plus.e2e.js),
           la licence et l'engagement disent son nom, « ∞ » et sa lumière
           chez un abonné ; le site a son bandeau sous les offres et ses

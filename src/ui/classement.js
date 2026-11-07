@@ -73,7 +73,7 @@ export function blockedSheet(w) {
 
 const RNAME = Object.fromEntries(RAISONS);
 
-const KNAME = { mail: 'Courrier', library: 'Étagère', duel: 'Défi', profile: 'Compte' };
+const KNAME = { mail: 'Messages', library: 'Paquets publics', duel: 'Défi', profile: 'Compte' };
 
 /* La copie jointe s'affiche telle qu'elle a été prise : c'est la pièce du
    dossier, pas un aperçu à rafraîchir. */

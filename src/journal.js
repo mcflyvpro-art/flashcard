@@ -187,7 +187,7 @@ export function nommerMatieres(parCle, subjects, nomsDuJournal) {
 export function nommerLivres(parLivre, decks, nomsDuJournal) {
   return [...parLivre.entries()].map(([id, v]) => {
     const d = (decks || []).find(x => x.id === id);
-    return { id, nom: d ? d.name : ((nomsDuJournal || {})[id] || 'Livre supprimé'), existe: !!d,
+    return { id, nom: d ? d.name : ((nomsDuJournal || {})[id] || 'Paquet supprimé'), existe: !!d,
              n: v.n, ok: v.ok, ms: v.ms };
   }).sort((a, b) => b.ms - a.ms || b.n - a.n);
 }

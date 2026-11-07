@@ -23,7 +23,7 @@ const ATTENTES = [
   ['folio.defi', I.bolt, pinLisible, 'Dans l’app : Entrer un code'],
   ['folio.club', I.users, codeClubLisible, 'Dans l’app : J’ai un code'],
   ['folio.rejoindre', I.school, formatCode, 'Dans l’app : J’ai un code'],
-  ['folio.livre', I.book, codeLivre, 'Dans l’app : Nouveau livre → J’ai un code']
+  ['folio.livre', I.book, codeLivre, 'Dans l’app : Nouveau paquet → J’ai un code']
 ];
 
 const dansLApp = () => {

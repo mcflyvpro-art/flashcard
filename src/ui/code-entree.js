@@ -130,7 +130,7 @@ function livre(tok) {
   if (!online) return toast(I.cloud, 'Hors ligne : un code demande le réseau');
   Object.assign(e, { code: '', entre: null });
   closeMenu();
-  if (f) { garder('folio.livre', tok); return toast(I.card, 'Ton livre t’attend : il s’ouvre après tes premiers pas'); }
+  if (f) { garder('folio.livre', tok); return toast(I.card, 'Ton paquet t’attend : il s’ouvre après tes premiers pas'); }
   openShared(tok);
 }
 

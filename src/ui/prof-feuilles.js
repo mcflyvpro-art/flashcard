@@ -93,7 +93,7 @@ function chiffresEleve(m) {
       <span><b>${m.rendus}<small>/${m.donnes}</small></b><i>rendus</i></span>
       <span><b>${m.pct || '—'}${m.pct ? '<small>%</small>' : ''}</b><i>réussite</i></span>
       <span class="${m.retard ? 'ko' : ''}"><b>${m.retard}</b><i>en retard</i></span>
-      <span><b>${m.pages7}</b><i>pages · 7 j</i></span></div>
+      <span><b>${m.pages7}</b><i>cartes · 7 j</i></span></div>
     ${m.jamais ? `<p class="pf-alerte">${svg(I.lock)}Ce compte ne s’est jamais connecté.</p>` : ''}`;
 }
 
@@ -137,7 +137,7 @@ function message(w) {
   feuille(w, '', `<b>${qui ? (n > 1 ? `Écrire à ${n} élèves` : 'Écrire à ' + esc(((prof.roster || []).find(m => m.user_id === qui[0]) || {}).who || ''))
     : 'Écrire à la classe'}</b>`, esc(c.name), `<label class="pf-fl">Message
       <textarea id="pfmsg" data-pfin="f.msg" rows="6" maxlength="1000" placeholder="On reprend la série 2 jeudi : révisez les cartes 10 à 20.">${esc(prof.f.msg || '')}</textarea></label>
-    <p class="pf-note">${svg(I.mail)}Arrive dans leur courrier Mirandola.</p>`,
+    <p class="pf-note">${svg(I.mail)}Arrive dans leurs messages Mirandola.</p>`,
     btn('message-go', I.mail2, `Envoyer${n > 1 ? ` à ${n} élèves` : ''}`, 'pri lg'));
   focus('pfmsg');
 }
@@ -196,14 +196,14 @@ export function listeLivres() {
   const l = live().filter(d => !q || d.name.toLowerCase().includes(q));
   return l.map(d => `<button class="pf-li" data-pf="livre" data-id="${esc(d.id)}">${svg(I.book)}
       <span class="pf-lit"><b>${esc(d.name)}</b><i>${plur(d.cards.length, 'carte')}</i></span>${svg(I.arrow)}</button>`).join('')
-    || `<p class="pf-note">${q ? 'Aucun livre ne correspond.' : 'Votre bibliothèque est vide.'}</p>`;
+    || `<p class="pf-note">${q ? 'Aucun paquet ne correspond.' : 'Aucun paquet pour l’instant.'}</p>`;
 }
 
 function choixLivre(w) {
-  feuille(w, 'large', '<b>Donner un devoir</b>', 'Quel livre ?', `
-    <button class="pf-choix ligne" data-pf="livre-neuf">${svg(I.plus)}<b>Créer un nouveau livre</b>
+  feuille(w, 'large', '<b>Donner un devoir</b>', 'Quel paquet ?', `
+    <button class="pf-choix ligne" data-pf="livre-neuf">${svg(I.plus)}<b>Créer un nouveau paquet</b>
       <span>Collez un cours, une liste, une photo de page…</span></button>
-    <label class="pf-search">${svg(I.search)}<input data-pfin="f.cherche" value="${esc(prof.f.cherche || '')}" placeholder="Chercher un livre" aria-label="Chercher un livre"></label>
+    <label class="pf-search">${svg(I.search)}<input data-pfin="f.cherche" value="${esc(prof.f.cherche || '')}" placeholder="Chercher un paquet" aria-label="Chercher un paquet"></label>
     <div class="pf-list" id="pflivres">${listeLivres()}</div>`, '');
 }
 

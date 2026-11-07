@@ -191,7 +191,7 @@ function compNeuf(x) {
    livre vient d'être écrit pour ce devoir (quiz.js). */
 export function donnerLivre(d) {
   const cartes = d.cards.map(carteNue).filter(c => c.f || c.fi || c.fa);
-  if (!cartes.length) return toast(I.x, 'Ce livre n’a aucune carte');
+  if (!cartes.length) return toast(I.x, 'Ce paquet n’a aucune carte');
   prof.comp = compNeuf({ ...(prof.comp || {}), livre: d.id, nom: d.name, cartes,
     riches: cartes.filter(c => c.fi || c.bi || c.fa || c.ba).length });
   ouvrir('donner');

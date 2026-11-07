@@ -38,16 +38,16 @@ const TEXTE_DE = Object.fromEntries(Object.entries(TEXTES).map(([k, v]) => [v, k
 const R = (name, motif, o = {}) => ({ name, motif, ...o });
 const PROF = ['prof'], REF = ['ref'], ADMIN = ['admin'];
 export const ROUTES = [
-  R('home', 'livres'),
-  R('import', 'livres/nouveau'),
-  R('deck', 'livres/:id'),
-  R('study', 'livres/:id/lecture', { repli: 'deck' }),
-  R('examen', 'livres/:id/examen-blanc', { repli: 'deck' }),
-  R('import', 'livres/:id/ajouter'),
+  R('home', 'paquets'),
+  R('import', 'paquets/nouveau'),
+  R('deck', 'paquets/:id'),
+  R('study', 'paquets/:id/revision', { repli: 'deck' }),
+  R('examen', 'paquets/:id/examen-blanc', { repli: 'deck' }),
+  R('import', 'paquets/:id/ajouter'),
   R('run', 'quiz', { repli: 'home' }),
-  R('stats', 'journal'),
-  R('mail', 'courrier'),
-  R('lettre', 'courrier/:id'),
+  R('stats', 'statistiques'),
+  R('mail', 'messages'),
+  R('lettre', 'messages/:id'),
   R('find', 'recherche'),
   R('settings', 'reglages'),
   R('trash', 'reglages/corbeille'),
@@ -58,13 +58,13 @@ export const ROUTES = [
   R('bienvenue', 'bienvenue', { repli: 'home' }),
   R('classes', 'classe', { espaces: ['eleve'] }),
   R('classe', 'classe/:id', { espaces: ['eleve'] }),
-  R('commu', 'cercle'),
-  R('friends', 'cercle/amis'),
-  R('defi', 'cercle/nouveau-defi', { repli: 'commu' }),
-  R('direct', 'cercle/direct', { repli: 'commu' }),
-  R('duel', 'cercle/a-son-rythme', { repli: 'commu' }),
-  R('club', 'cercle/clubs/:id'),
-  R('profil', 'lecteurs/:id'),
+  R('commu', 'amis'),
+  R('friends', 'amis/liste'),
+  R('defi', 'amis/nouveau-defi', { repli: 'commu' }),
+  R('direct', 'amis/direct', { repli: 'commu' }),
+  R('duel', 'amis/a-son-rythme', { repli: 'commu' }),
+  R('club', 'amis/clubs/:id'),
+  R('profil', 'profils/:id'),
   R('prof', '', { espaces: PROF }),
   R('profagenda', 'agenda', { espaces: PROF }),
   R('profclasse', 'classes/:id', { sous: 'eleves', espaces: PROF }),
@@ -86,7 +86,18 @@ export const ROUTES = [
   R('admin', 'comptes', { sous: 'comptes', espaces: ADMIN }),
   R('admin', 'comptes/:id', { sous: 'comptes', espaces: ADMIN }),
   R('admin', 'entreprise', { sous: 'entreprise', espaces: ADMIN }),
-  R('admin', 'factures/:id', { sous: 'facture', espaces: ADMIN })
+  R('admin', 'factures/:id', { sous: 'facture', espaces: ADMIN }),
+  /* Les adresses d'avant le 2026-11-07 (le vocabulaire du livre : livres,
+     lecture, journal, courrier, cercle, lecteurs) : elles se lisent encore —
+     un favori, un lien partagé, l'historique d'un téléphone —, mais ne
+     s'écrivent plus. Toujours APRÈS les nouvelles : l'adresse écrite est la
+     première qui convient (trouver). */
+  R('home', 'livres'), R('import', 'livres/nouveau'), R('deck', 'livres/:id'),
+  R('study', 'livres/:id/lecture', { repli: 'deck' }), R('examen', 'livres/:id/examen-blanc', { repli: 'deck' }),
+  R('import', 'livres/:id/ajouter'), R('stats', 'journal'), R('mail', 'courrier'), R('lettre', 'courrier/:id'),
+  R('commu', 'cercle'), R('friends', 'cercle/amis'), R('defi', 'cercle/nouveau-defi', { repli: 'commu' }),
+  R('direct', 'cercle/direct', { repli: 'commu' }), R('duel', 'cercle/a-son-rythme', { repli: 'commu' }),
+  R('club', 'cercle/clubs/:id'), R('profil', 'lecteurs/:id')
 ];
 
 /* L'écran d'arrivée d'un espace, quand l'adresse n'en dit pas plus. */

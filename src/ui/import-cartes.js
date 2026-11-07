@@ -273,7 +273,7 @@ function fnrSwap(txt, q, r) {
 }
 
 export const fnrNote = s => !fnr.q ? 'Tape ce que tu cherches. La recherche est littérale : aucun caractère n’a de sens particulier.'
-  : !s.hits ? 'Aucune occurrence dans ce livre.'
+  : !s.hits ? 'Aucune occurrence dans ce paquet.'
   : `<b>${s.hits} occurrence${s.hits > 1 ? 's' : ''}</b> dans ${s.cards} carte${s.cards > 1 ? 's' : ''}`
     + (fnr.r ? ` → « ${esc(fnr.r)} »` : ', qui seront simplement retirées');
 

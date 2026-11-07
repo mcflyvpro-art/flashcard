@@ -251,8 +251,8 @@ function railNavBoulot(on, classeNom) {
     ${marqueRail('classes')}
     <nav>
       ${ent('classes', I.school, classeNom)}
-      ${ent('home', I.layers, 'Livres')}
-      ${ent('mail', I.mail, 'Courrier', railMailBadge())}
+      ${ent('home', I.layers, 'Paquets')}
+      ${ent('mail', I.mail, 'Messages', railMailBadge())}
       ${railPlus(on)}
       ${ent('settings', I.gear, 'Réglages')}
     </nav>
@@ -281,11 +281,11 @@ function railNavHome(on, classeNom) {
   return `
     ${marqueRail('home')}
     <nav>
-      ${ent('home', I.layers, 'Livres')}
-      ${ent('stats', I.chart, 'Journal')}
+      ${ent('home', I.layers, 'Paquets')}
+      ${ent('stats', I.chart, 'Statistiques')}
       ${railHasClasses() ? ent('classes', I.school, classeNom) : ''}
-      ${ent('commu', I.users, 'Cercle des lecteurs', (asks || []).length)}
-      ${ent('mail', I.mail, 'Courrier', railMailBadge())}
+      ${ent('commu', I.users, 'Mes amis', (asks || []).length)}
+      ${ent('mail', I.mail, 'Messages', railMailBadge())}
     </nav>
     <div class="sp"></div>
     <nav>${railPlus(on)}${ent('settings', I.gear, 'Réglages')}</nav>
@@ -355,7 +355,7 @@ function paintRail() {
 /* Les écrans de premier niveau, en onglets nommés : Livres, Classe (pour
    qui en a une), Cercle. C'est la seule navigation horizontale de l'app :
    partout ailleurs on entre et on ressort par la flèche. */
-const ONGLETS = { home: [I.layers, 'Livres'], classes: [I.school, 'Classe'], commu: [I.users, 'Cercle des lecteurs'],
+const ONGLETS = { home: [I.layers, 'Paquets'], classes: [I.school, 'Classe'], commu: [I.users, 'Mes amis'],
   plus: [I.spark, 'Mirandola+'] };
 export const ordreOnglets = () => ['home', ...(aUneClasse() && !isProf() ? ['classes'] : []), 'commu'];
 export const vueOnglet = k => ({ home, classes: mesClassesView, commu: commuView })[k];
@@ -405,11 +405,11 @@ const tile = (d, i) => {
   data-id="${d.id}" data-pin="${d.pinned ? 1 : 0}"
   style="${sty(s)};--i:${i}">
   <i class="spine" aria-hidden="true"></i>
-  ${due ? `<i class="due" title="À lire aujourd’hui">${due}</i>` : ''}
+  ${due ? `<i class="due" title="À réviser aujourd’hui">${due}</i>` : ''}
   ${d.pinned ? `<i class="pind">${svg(I.pin)}</i>` : ''}
   ${s.id ? `<span class="mt">${esc(s.name)}</span>` : ''}
   <span class="n">${esc(d.name)}</span>
-  <span class="m" title="${plur(d.cards.length, 'page')}">${svg(d.hidden ? I.eyeoff : I.card)}${d.cards.length}</span>
+  <span class="m" title="${plur(d.cards.length, 'carte')}">${svg(d.hidden ? I.eyeoff : I.card)}${d.cards.length}</span>
   ${p ? `<i class="tbar"><b style="width:${p}%"></b></i>` : ''}
 </button>`;
 };
@@ -425,10 +425,10 @@ const listRow = (d, i, mixte) => {
     <i class="ldot" aria-hidden="true"></i>${reorder ? `<i class="grip">${svg(I.grip)}</i>` : ''}
     <button class="lmain" data-go="${d.id}" data-peek="${d.id}">
       <span class="n">${esc(d.name)}${d.pinned ? svg(I.pin) : ''}</span>
-      <span class="s" title="${plur(d.cards.length, 'page')}">${mixte && s.id ? `<b class="mt">${esc(s.name)}</b>` : ''}${
+      <span class="s" title="${plur(d.cards.length, 'carte')}">${mixte && s.id ? `<b class="mt">${esc(s.name)}</b>` : ''}${
         svg(I.card)}${d.cards.length}${p ? ` · ${p} %` : ''}</span>
     </button>
-    ${due ? `<i class="ldue" title="À lire aujourd’hui">${due}</i>` : ''}
+    ${due ? `<i class="ldue" title="À réviser aujourd’hui">${due}</i>` : ''}
   </div>`;
 };
 
@@ -495,7 +495,7 @@ function sortRow(list) {
 
 function deckList(list) {
   if (!list.length) {
-    return `<div class="empty">${svg(I.layers)}<p><b>Ta bibliothèque est vide</b></p></div>`;
+    return `<div class="empty">${svg(I.layers)}<p><b>Aucun paquet pour l’instant</b></p></div>`;
   }
   const sorted = sortDecks(list);
   const mixte = new Set(list.map(d => d.subject || '')).size > 1 ? 'mixte' : '';
@@ -507,13 +507,13 @@ function deckList(list) {
 function marathonBanner() {
   if (simpleMode() || !allDue()) return '';
   return `<button class="marathon" data-act="marathon">${svg(I.shuffle)}
-    <span>Lecture du jour</span><i class="mdue" title="Pages à lire, toutes matières">${allDue()}</i></button>`;
+    <span>Révision du jour</span><i class="mdue" title="Cartes à réviser, toutes matières">${allDue()}</i></button>`;
 }
 
 function homeFab() {
   return reorder
     ? `<button class="fab fabok" data-k="fab-ok" data-act="reorder" aria-label="Valider l’ordre">${svg(I.check)}</button>`
-    : `<button class="fab" data-k="fab" data-act="new" aria-label="Nouveau livre">${svg(I.plus)}<span>Nouveau livre</span></button>`;
+    : `<button class="fab" data-k="fab" data-act="new" aria-label="Nouveau paquet">${svg(I.plus)}<span>Nouveau paquet</span></button>`;
 }
 
 function home() {
@@ -523,11 +523,11 @@ function home() {
   $.innerHTML = `
     <div class="page ${reorder ? 'frozen' : ''}" id="page">
       <div class="top">
-        <div class="hero">Mes livres</div>
+        <div class="hero">Mes paquets</div>
         ${queueChip()}
         ${goalRing()}
         <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
-        ${reorder ? '' : `<button class="pbtn pri newbtn" data-act="new">${svg(I.plus)}Nouveau livre</button>`}
+        ${reorder ? '' : `<button class="pbtn pri newbtn" data-act="new">${svg(I.plus)}Nouveau paquet</button>`}
         <button class="ic icmail" data-act="mail" aria-label="Boîte de réception">${svg(I.mail)}${mailBadge()}</button>
         <button class="ic" data-act="settings" aria-label="Réglages">${svg(I.gear)}</button>
         ${peekButton(hidden)}
@@ -683,7 +683,7 @@ function bindDeckOrder() {
     el.classList.remove('drag'); wrap.classList.remove('dragging');
     const ids = items().map(n => n.dataset.id);
     if (ids.some(x => !x)) return;
-    pushUndo('Ordre des livres', ids);
+    pushUndo('Ordre des paquets', ids);
     ids.forEach((id, i) => { const d = deck(id); if (d) { d.pos = i; dirty[id] = 1; } });
     if (prefs.sort !== 'manual') { prefs.sort = 'manual'; savePrefs(); }
     save(); flush(); setAnimate(false); render();

@@ -18,7 +18,7 @@ import './prompt-ia.css';
    L'état vit dans `comp.prompt` : il survit à un rendu de l'écran (une
    relecture de fond), et part avec le livre créé (`resetComp`). */
 
-const DEPART = ['La définition au recto, le mot au verso', 'Des questions sur ce cours', '10 pages sur '];
+const DEPART = ['La définition au recto, le mot au verso', 'Des questions sur ce cours', '10 cartes sur '];
 const RETOUCHES = ['Inverse recto et verso', 'Plus courtes', 'Ajoute un exemple au verso', 'Enlève les doublons'];
 const HIST = 12;                      // les messages d'avant rappelés à l'IA
 
@@ -33,12 +33,12 @@ function bulle(m) {
 
 function brouillon(p) {
   return `<div class="pi-br">
-      <div class="pi-br-t"><b>${plur(p.cartes.length, 'page')}</b>
+      <div class="pi-br-t"><b>${plur(p.cartes.length, 'carte')}</b>
         <button type="button" class="lnk" data-pi="vider">${svg(I.x)}Effacer</button></div>
       <div class="pi-pages">${p.cartes.map((c, i) => `<div class="pi-p">
         <span class="a">${esc(c.f)}</span>${svg(I.arrow)}<span class="b">${esc(c.b)}</span>
-        <button type="button" class="x" data-pi="moins" data-i="${i}" aria-label="Retirer la page">${svg(I.x)}</button></div>`).join('')}</div>
-      <button type="button" class="pbtn pi-aj" data-pi="ajouter">${svg(I.plus)}<span>Ajouter ${plur(p.cartes.length, 'page')}</span></button>
+        <button type="button" class="x" data-pi="moins" data-i="${i}" aria-label="Retirer la carte">${svg(I.x)}</button></div>`).join('')}</div>
+      <button type="button" class="pbtn pi-aj" data-pi="ajouter">${svg(I.plus)}<span>Ajouter ${plur(p.cartes.length, 'carte')}</span></button>
     </div>`;
 }
 
@@ -73,7 +73,7 @@ async function envoyer(n, ctx, message) {
   try {
     const r = await aiCall({ op: 'prompt', message: msg, cards: p.cartes, historique: hist, hint: ctx.livre() }, true);
     p.cartes = r.cards;
-    p.fil.push({ qui: 'ia', t: r.note || plur(r.cards.length, 'page') });
+    p.fil.push({ qui: 'ia', t: r.note || plur(r.cards.length, 'carte') });
   } catch (x) {
     // rien de perdu : le message revient dans la zone, prêt à repartir
     const code = String(x.message);
@@ -102,7 +102,7 @@ function agir(n, ctx, b) {
   if (k === 'ajouter') {
     const r = ctx.ajouter(p.cartes);
     p.cartes = [];
-    toast(I.check, plur(r.n, 'page') + (r.ecartes ? ` · ${r.ecartes} déjà là` : ''));
+    toast(I.check, plur(r.n, 'carte') + (r.ecartes ? ` · ${r.ecartes} déjà là` : ''));
     dessiner(n); ctx.attendre(null);
   }
 }

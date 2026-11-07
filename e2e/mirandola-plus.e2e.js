@@ -61,7 +61,7 @@ test('un compte gratuit : l’onglet Mirandola+, le paiement, le retour ; l’on
   await page.getByRole('button', { name: 'Retour' }).click();
   await expect(page.locator('.tabs button')).toHaveCount(2, { timeout: 10000 });   // Livres, Cercle
   await expect(page.locator('.tabs [data-act="tab-plus"]')).toHaveCount(0);
-  await page.goto('./eleve/cercle');
+  await page.goto('./eleve/amis');
   await expect(page.locator(`.jt.jt-plus[data-jt="p:${u.id}"]`).first()).toBeVisible({ timeout: 10000 });
 
   // les Réglages mènent à sa licence : formule, prix payé, échéance, engagement, l'IA du mois
@@ -215,24 +215,24 @@ test('Mirandola gratuit grise ce qui est dans Mirandola+ ; le toucher ouvre Mira
   const store = gratuit();
   await brancher(page, store);
   await inscrire(page);
-  for (let i = 1; i <= 5; i++) semerLivre(store, 'lea@exemple.fr', 'Livre ' + i, pages(i));
+  for (let i = 1; i <= 5; i++) semerLivre(store, 'lea@exemple.fr', 'Paquet ' + i, pages(i));
   await page.reload();
   await expect(page.locator('html')).toHaveClass(/livres-plein/, { timeout: 10000 });
 
   // la bibliothèque est pleine : « Nouveau livre » ouvre Mirandola+ et dit pourquoi
   await page.locator('[data-act="new"]:visible').first().click();
   await expect(ecran(page)).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('.fp-raison')).toContainText('Ta bibliothèque est pleine');
+  await expect(page.locator('.fp-raison')).toContainText('Tes 5 paquets de Mirandola gratuit sont pris');
 
   // un QCM : dans Mirandola+
-  await page.goto('./eleve/livres');
-  await page.getByText('Livre 1', { exact: true }).first().click();
+  await page.goto('./eleve/paquets');
+  await page.getByText('Paquet 1', { exact: true }).first().click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'deck', { timeout: 10000 });
   await page.locator('[data-act="mcq"]').first().click();
   await expect(page.locator('.fp-raison')).toContainText('QCM et associations', { timeout: 10000 });
 
   // le journal : la série reste, la mémoire se floute
-  await page.goto('./eleve/journal');
+  await page.goto('./eleve/statistiques');
   await expect(page.locator('[data-volet="memoire"]')).toHaveClass(/plus-floute/, { timeout: 10000 });
 });
 
@@ -240,7 +240,7 @@ test('un compte d’avant le 2026-10-27 : Mirandola+ offert, rien de grisé, pas
   const store = nouveauStore();                       // parDefaut « plus » : le compte a reçu Mirandola+ offert
   await brancher(page, store);
   await inscrire(page);
-  for (let i = 1; i <= 6; i++) semerLivre(store, 'lea@exemple.fr', 'Livre ' + i, pages(i));
+  for (let i = 1; i <= 6; i++) semerLivre(store, 'lea@exemple.fr', 'Paquet ' + i, pages(i));
   await page.reload();
   await expect(page.locator('html')).toHaveClass(/offre-plus/, { timeout: 10000 });
   await expect(page.locator('html')).not.toHaveClass(/offre-gratuit|livres-plein/);
@@ -307,7 +307,7 @@ test('Mirandola+ offert pendant que l’app est ouverte : l’IA s’ouvre sans 
   const store = gratuit();
   await brancher(page, store);
   await inscrire(page);
-  await page.getByRole('button', { name: 'Nouveau livre' }).click();
+  await page.getByRole('button', { name: 'Nouveau paquet' }).click();
   await expect(page.locator('[data-cmode="ia"]')).toHaveClass(/payant/, { timeout: 10000 });
   await page.getByRole('button', { name: 'Retour' }).first().click();
 
@@ -316,7 +316,7 @@ test('Mirandola+ offert pendant que l’app est ouverte : l’IA s’ouvre sans 
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await expect(page.locator('html')).toHaveClass(/offre-plus/, { timeout: 10000 });
 
-  await page.getByRole('button', { name: 'Nouveau livre' }).click();
+  await page.getByRole('button', { name: 'Nouveau paquet' }).click();
   const prompt = page.locator('[data-cmode="ia"]');
   await expect(prompt).not.toHaveClass(/payant|ferme/);
   await expect(prompt.locator('.cr-reste')).toHaveText('30', { timeout: 10000 });

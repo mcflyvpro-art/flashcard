@@ -52,7 +52,7 @@ for (const ecran of LARGEURS) {
     await expect(page.getByRole('button', { name: /Capitales/ })).toBeVisible();
     await verifier('bibliotheque');
 
-    await page.getByRole('button', { name: 'Nouveau livre' }).click();
+    await page.getByRole('button', { name: 'Nouveau paquet' }).click();
     await page.locator('#nm').fill('Vocabulaire');
     await verifier('nouveau-livre');
     await page.getByRole('button', { name: 'Retour' }).first().click();
@@ -60,7 +60,7 @@ for (const ecran of LARGEURS) {
     await page.getByRole('button', { name: /Capitales/ }).click();
     await verifier('livre');
 
-    await page.getByRole('button', { name: /^Lire/ }).click();
+    await page.getByRole('button', { name: /^Réviser/ }).click();
     await verifier('revision-recto');
     await page.locator('main').click({ position: { x: Math.round(ecran.width / 2), y: 400 } });
     await expect(page.getByRole('button', { name: /^Facile/ })).toBeVisible();
@@ -83,7 +83,7 @@ for (const ecran of LARGEURS) {
     if (ecran.width < 900) await page.getByRole('button', { name: 'Retour' }).first().click();
 
     // onglets en bas sur téléphone, barre latérale sur ordinateur
-    await page.getByRole('button', { name: /^(Le )?[Cc]ercle( des lecteurs)?$/ }).first().click();
+    await page.getByRole('button', { name: /^Mes amis$/ }).first().click();
     await verifier('cercle-des-lecteurs');
 
     expect(vus).toHaveLength(12);

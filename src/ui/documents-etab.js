@@ -33,7 +33,7 @@ function cgv(l) {
   const prix = l.prix ? `${euros(l.prix * 100)} hors taxes par année scolaire` : 'le prix convenu au devis ou au bon de commande';
   return `<h2>Conditions générales de vente — licence établissement</h2>${parties(l)}
     ${art('1. Objet', 'Mirandola met à la disposition des élèves et des professeurs de l’établissement son application de révision '
-      + '(livres de pages à apprendre, révision espacée, devoirs, suivi de classe, défis), pour la durée de la licence.')}
+      + '(paquets de cartes à apprendre, révision espacée, devoirs, suivi de classe, défis), pour la durée de la licence.')}
     ${art('2. Commande', 'La licence est commandée par devis accepté ou bon de commande. Le nombre de places, la période et le prix '
       + 'figurent sur la facture. Pour un acheteur public, la commande vaut marché public de faible montant.')}
     ${art('3. Places', `Une place est prise par chaque élève, chaque professeur et chaque référent qui a un compte dans `
@@ -52,9 +52,9 @@ function cgv(l) {
       + 'Mirandola agit comme sous-traitant, dans les conditions du contrat de sous-traitance joint (art. 28 du RGPD).')}
     ${art('8. Service', 'Mirandola est hébergé et entretenu par l’éditeur, qui s’engage à mettre en œuvre les moyens raisonnables pour en '
       + 'assurer la disponibilité et la sécurité (obligation de moyens). Les interruptions pour maintenance sont aussi brèves que possible.')}
-    ${art('8 bis. Intelligence artificielle', 'La création de pages par l’IA n’est ouverte qu’aux comptes et dans les limites mensuelles '
+    ${art('8 bis. Intelligence artificielle', 'La création de cartes par l’IA n’est ouverte qu’aux comptes et dans les limites mensuelles '
       + 'que fixe la licence ; l’établissement peut demander qu’elle soit fermée. Le texte, la photo ou le document envoyés sont traités '
-      + 'par Anthropic le temps de la génération et ne servent pas à entraîner de modèle ; les pages produites peuvent contenir des '
+      + 'par Anthropic le temps de la génération et ne servent pas à entraîner de modèle ; les cartes produites peuvent contenir des '
       + 'erreurs et se relisent avant d’être données à apprendre.')}
     ${art('9. Sécurité des accès', 'Les codes élèves et professeurs se renouvellent seuls, chaque semaine par défaut ; le référent peut '
       + 'les changer à tout moment. Chaque geste du référent est inscrit à l’historique de sa console.')}
@@ -66,7 +66,7 @@ function cgv(l) {
 const SOUS_TRAITANTS = [
   ['Supabase Inc.', 'Base de données, authentification, stockage des fichiers', 'Union européenne (Irlande, région eu-west-1)'],
   ['Vercel Inc.', 'Diffusion de l’application (fichiers du site, journaux techniques)', 'Réseau mondial ; États-Unis — clauses contractuelles types'],
-  ['Anthropic PBC', 'Génération de pages par l’IA, seulement quand un utilisateur s’en sert et que la licence l’ouvre', 'États-Unis — clauses contractuelles types'],
+  ['Anthropic PBC', 'Génération de cartes par l’IA, seulement quand un utilisateur s’en sert et que la licence l’ouvre', 'États-Unis — clauses contractuelles types'],
   ['Brevo (Sendinblue SAS)', 'Envoi des e-mails du service : codes de connexion, alertes de sécurité', 'France, Union européenne']
 ];
 
@@ -108,7 +108,7 @@ function registre(l) {
     ['Données', 'Prénom, nom, classe, adresse e-mail, pseudo, contenus, réponses et dates de révision, devoirs'],
     ['Destinataires', 'Les professeurs de la classe, le référent de l’établissement, Mirandola et ses sous-traitants (contrat de sous-traitance)'],
     ['Transferts', 'Base de données et e-mails dans l’Union européenne ; diffusion et IA : États-Unis, clauses contractuelles types'],
-    ['Conservation', 'Tant que le compte est dans l’établissement ; un livre supprimé est effacé au bout de 30 jours, une partie '
+    ['Conservation', 'Tant que le compte est dans l’établissement ; un paquet supprimé est effacé au bout de 30 jours, une partie '
       + 'en direct le lendemain ; les factures dix ans'],
     ['Sécurité', 'Chiffrement en transit, cloisonnement par compte et par établissement, droits par rôle, historique du référent, '
       + 'codes renouvelés chaque semaine']

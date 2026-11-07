@@ -27,7 +27,7 @@ export function paintMenuPdf(w) {
       ${enCours === k ? '<span class="tail"><i class="spin"></i></span>' : ''}</button>`;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
-      <div class="mhd">${svg(I.file)}<span class="mhx"><b>${esc(d.name)}</b><i>${n} page${n > 1 ? 's' : ''}</i></span></div>
+      <div class="mhd">${svg(I.file)}<span class="mhx"><b>${esc(d.name)}</b><i>${n} carte${n > 1 ? 's' : ''}</i></span></div>
       ${pret ? `<button class="mi" data-mact="pdf-ouvrir">${svg(I.share)}Ouvrir le PDF</button>`
         : ligne('tout', I.rows, 'Recto et verso') + ligne('vide', I.pen, 'Verso à compléter')}
     </div>`;

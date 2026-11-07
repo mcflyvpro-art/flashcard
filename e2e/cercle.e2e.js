@@ -18,7 +18,7 @@ async function telephone(browser, store) {
   return page;
 }
 
-const versCercle = page => page.getByRole('button', { name: /^(Le )?[Cc]ercle( des lecteurs)?$/ }).first().click();
+const versCercle = page => page.getByRole('button', { name: /^Mes amis$/ }).first().click();
 
 test('un club : on le crée, on le personnalise, un ami entre avec son code', async ({ page, browser }) => {
   const store = nouveauStore();
@@ -45,9 +45,9 @@ test('un club : on le crée, on le personnalise, un ami entre avec son code', as
 
   // personnaliser : le chef change la devise
   await page.getByRole('button', { name: 'Personnaliser' }).click();
-  await page.getByRole('textbox', { name: 'Devise' }).fill('Une page par jour');
+  await page.getByRole('textbox', { name: 'Devise' }).fill('Une carte par jour');
   await page.getByRole('button', { name: 'Enregistrer' }).click();
-  await expect(page.locator('.cl-ban')).toContainText('Une page par jour');
+  await expect(page.locator('.cl-ban')).toContainText('Une carte par jour');
 
   // un ami entre avec le code, tapé en minuscules et sans tiret
   const tom = await telephone(browser, store);

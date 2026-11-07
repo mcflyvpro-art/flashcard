@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
 import { creerLivre, inscrire, noter } from './aide.js';
 
-test('inscription, un livre de 10 pages, une séance, des chiffres justes', async ({ page }) => {
+test('inscription, un paquet de 10 cartes, une séance, des chiffres justes', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);
   const erreurs = [];
@@ -16,10 +16,10 @@ test('inscription, un livre de 10 pages, une séance, des chiffres justes', asyn
   expect(store.users).toHaveLength(1);
 
   await creerLivre(page, 'Capitales', 10);
-  await expect(page.getByRole('button', { name: 'Lire 10' })).toBeVisible();   // les 10 pages sont à lire
+  await expect(page.getByRole('button', { name: 'Réviser 10' })).toBeVisible();   // les 10 pages sont à lire
 
   // 10 pages vues : 7 sues du premier coup, 3 ratées (« Encore »)...
-  await page.getByRole('button', { name: 'Lire 10' }).click();
+  await page.getByRole('button', { name: 'Réviser 10' }).click();
   await expect(page.getByText('1/10')).toBeVisible();
   for (let k = 0; k < 10; k++) await noter(page, k < 7 ? 'Facile' : 'Encore');
   // ...que la séance représente aussitôt, et qui passent cette fois
@@ -34,7 +34,7 @@ test('inscription, un livre de 10 pages, une séance, des chiffres justes', asyn
   await expect(fin).toContainText(/À revoir\s*3/i);
 
   await page.getByRole('button', { name: 'Fin' }).click();
-  await expect(page.getByText('Relue 10')).toBeVisible();
+  await expect(page.getByText('Récente 10')).toBeVisible();
   await page.getByRole('button', { name: 'Retour' }).click();
 
   // le compteur du jour, puis le journal de lecture
@@ -71,7 +71,7 @@ test('écran unique : écrire, coller, et « Créer » prend aussi la liste en a
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
-  await page.getByRole('button', { name: 'Nouveau livre' }).click();
+  await page.getByRole('button', { name: 'Nouveau paquet' }).click();
   await page.locator('#nm').fill('Italien');
   await page.locator('#cf').fill('bonjour');
   await page.locator('#cb').fill('buongiorno');
@@ -84,7 +84,7 @@ test('écran unique : écrire, coller, et « Créer » prend aussi la liste en a
   await expect(page.locator('#aipdf')).toHaveCount(0);
   // « bonjour » est déjà dans la liste, écrit à la main : écarté comme doublon
   await page.locator('#tx').fill('chat = gatto\nchien = cane\nbonjour = buongiorno');
-  await expect(page.getByRole('button', { name: 'Ajouter 2 pages' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ajouter 2 cartes' })).toBeVisible();
 
   // le titre et la page déjà écrite survivent au changement d'onglet
   await page.getByRole('tab', { name: 'Fichier' }).click();
@@ -93,8 +93,8 @@ test('écran unique : écrire, coller, et « Créer » prend aussi la liste en a
   await expect(page.locator('#tx')).toHaveValue(/chien = cane/);
   await expect(page.locator('#nm')).toHaveValue('Italien');
 
-  await page.getByRole('button', { name: 'Créer le livre' }).click();
-  await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
+  await page.getByRole('button', { name: 'Créer le paquet' }).click();
+  await expect(page.getByRole('button', { name: 'Menu du paquet' })).toBeVisible();
   await expect(page.locator('main .lbl').first()).toContainText('3');
 });
 
@@ -102,25 +102,25 @@ test('écran unique : écrire, coller, et « Créer » prend aussi la liste en a
    ne faisait rien, et un livre ouvert depuis le bas de la bibliothèque
    s'affichait au milieu de sa page (2026-10-24, sur PC comme sur téléphone). */
 for (const [w, h] of [[390, 700], [1440, 700]]) {
-  test(`ouvrir un livre depuis le bas de la bibliothèque arrive en haut (${w} px)`, async ({ page }) => {
+  test(`ouvrir un paquet depuis le bas de la bibliothèque arrive en haut (${w} px)`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });
     const store = nouveauStore();
     await brancher(page, store);
     await inscrire(page);
-    for (let k = 0; k < 14; k++) semerLivre(store, 'lea@exemple.fr', 'Livre ' + k, Array.from({ length: 40 }, (_, j) => ['Q' + j, 'R' + j]));
+    for (let k = 0; k < 14; k++) semerLivre(store, 'lea@exemple.fr', 'Paquet ' + k, Array.from({ length: 40 }, (_, j) => ['Q' + j, 'R' + j]));
     await page.reload();
-    await expect(page.getByRole('button', { name: /Livre 13/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Paquet 13/ })).toBeVisible();
     await page.waitForTimeout(800);                          // la bibliothèque se repeint après sa synchro
-    const livre = page.getByRole('button', { name: /Livre 12/ });
+    const livre = page.getByRole('button', { name: /Paquet 12/ });
     await livre.scrollIntoViewIfNeeded();
     const avant = await page.evaluate(() => document.body.scrollTop);
     expect(avant).toBeGreaterThan(100);
     await livre.click();
-    await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Menu du paquet' })).toBeVisible();
     expect(await page.evaluate(() => document.body.scrollTop)).toBe(0);
     // le retour retrouve la bibliothèque là où on l'avait laissée
     await page.getByRole('button', { name: 'Retour' }).first().click();
-    await expect(page.getByRole('button', { name: /Livre 12/ })).toBeInViewport();
+    await expect(page.getByRole('button', { name: /Paquet 12/ })).toBeInViewport();
   });
 }
 
@@ -129,7 +129,7 @@ for (const [w, h] of [[390, 700], [1440, 700]]) {
    lettre reconstruisait la page entière — le clavier sautait. Le champ doit
    garder sa hauteur d'une ligne et rester le même élément : seule la liste
    change. */
-test('chercher dans un livre : une ligne, le même champ, seule la liste bouge', async ({ page }) => {
+test('chercher dans un paquet : une ligne, le même champ, seule la liste bouge', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
@@ -137,8 +137,8 @@ test('chercher dans un livre : une ligne, le même champ, seule la liste bouge',
     [...Array.from({ length: 30 }, (_, j) => ['mot ' + j, 'sens ' + j]), ['le calme', 'la calma']]);
   await page.reload();
   await page.getByRole('button', { name: /Vocabulaire/ }).click();
-  await page.getByRole('button', { name: 'Chercher dans ce livre' }).click();
-  const champ = page.getByRole('searchbox', { name: 'Chercher dans ce livre' });
+  await page.getByRole('button', { name: 'Chercher dans ce paquet' }).click();
+  const champ = page.getByRole('searchbox', { name: 'Chercher dans ce paquet' });
   await expect(champ).toBeFocused();
   await page.evaluate(() => { document.getElementById('dq').dataset.temoin = 'là'; });
   const h0 = (await champ.boundingBox()).height;
@@ -160,7 +160,7 @@ test('chercher dans un livre : une ligne, le même champ, seule la liste bouge',
    pages, pas la page entière — le livre, « Lire » et la recherche restent
    sous les yeux. Repeindre (suspendre une page) ne renvoie pas la liste en
    haut. */
-test('sur ordinateur, seules les pages d’un gros livre défilent', async ({ page }) => {
+test('sur ordinateur, seules les cartes d’un gros paquet défilent', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 800 });
   const store = nouveauStore();
   await brancher(page, store);
@@ -175,7 +175,7 @@ test('sur ordinateur, seules les pages d’un gros livre défilent', async ({ pa
   await expect.poll(() => rows.evaluate(r => r.scrollTop)).toBeGreaterThan(1500);
   expect(await page.evaluate(() => document.body.scrollTop)).toBe(0);
   await expect(page.locator('.cta.read')).toBeInViewport();
-  await expect(page.getByRole('button', { name: 'Chercher dans ce livre' })).toBeInViewport();
+  await expect(page.getByRole('button', { name: 'Chercher dans ce paquet' })).toBeInViewport();
   const ligne = rows.locator('.row').filter({ has: page.locator('input[value="parola 40"]') });
   await ligne.hover();
   const avant = await rows.evaluate(r => r.scrollTop);
@@ -188,18 +188,18 @@ test('sur ordinateur, seules les pages d’un gros livre défilent', async ({ pa
 /* Réglé comme Anki (2026-10-25) : 20 pages neuves par jour et par livre,
    « +20 » pour aller plus loin, et plus aucun réglage du moteur à
    comprendre dans les Réglages. */
-test('un livre de 30 pages neuves : 20 aujourd’hui, « +20 » pour la suite, des réglages sans moteur', async ({ page }) => {
+test('un paquet de 30 cartes neuves : 20 aujourd’hui, « +20 » pour la suite, des réglages sans moteur', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
   semerLivre(store, 'lea@exemple.fr', 'Verbes', Array.from({ length: 30 }, (_, j) => ['verbe ' + j, 'sens ' + j]));
   await page.reload();
   await page.getByRole('button', { name: /Verbes/ }).click();
-  await page.getByRole('button', { name: 'Lire 20' }).click();
+  await page.getByRole('button', { name: 'Réviser 20' }).click();
   await expect(page.getByText('1/20')).toBeVisible();
   for (let k = 0; k < 20; k++) await noter(page, 'Facile');
   await page.getByRole('button', { name: 'Fin' }).click();
-  await page.getByRole('button', { name: 'Lire +20' }).click();
+  await page.getByRole('button', { name: 'Réviser +20' }).click();
   await expect(page.getByText('1/10')).toBeVisible();          // les 10 qui restaient
   await noter(page, 'Facile');
   await page.getByRole('button', { name: 'Retour' }).first().click();     // quitter la séance
@@ -207,7 +207,7 @@ test('un livre de 30 pages neuves : 20 aujourd’hui, « +20 » pour la suite, d
   await page.getByRole('button', { name: 'Réglages' }).click();
   const reglages = page.locator('main');
   await expect(reglages).toContainText('Objectif du jour');
-  for (const parti of ['Rétention', 'Nouvelles pages par séance', 'Régler le moteur', 'Vérifier ma bibliothèque', 'Mode simple', 'Ordre des pages']) {
+  for (const parti of ['Rétention', 'Nouvelles cartes par séance', 'Régler le moteur', 'Vérifier mes paquets', 'Mode simple', 'Ordre des cartes']) {
     await expect(reglages).not.toContainText(parti);
   }
 });

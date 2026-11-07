@@ -76,10 +76,10 @@ test('Léa lit son devoir, Marc le voit ; Marc écrit à la classe, Léa le reç
   // Léa le trouve dans son courrier, comme un mot et non comme un livre
   await changer(page, 'eleve');
   await expect(page).toHaveURL(/\/demo\/eleve\/classe$/, { timeout: 10000 });
-  await aller(page, '/demo/eleve/courrier');
+  await aller(page, '/demo/eleve/messages');
   const mot = page.locator('.co-ligne', { hasText: 'Contrôle vendredi' });
   await expect(mot).toBeVisible({ timeout: 10000 });
-  await expect(mot).not.toContainText('page');
+  await expect(mot).not.toContainText(/\bcartes?\b/);
 
   // et le devoir lu n'est plus à faire, même après un rechargement de la page
   await aller(page, '/demo/eleve/classe');
@@ -91,7 +91,7 @@ test('Léa lit son devoir, Marc le voit ; Marc écrit à la classe, Léa le reç
 test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', async ({ page }) => {
   const parties = await ouvrirDemo(page, 'eleve');
   await expect(page).toHaveURL(/\/demo\/eleve\/classe$/, { timeout: 10000 });
-  await aller(page, '/demo/eleve/livres/nouveau');
+  await aller(page, '/demo/eleve/paquets/nouveau');
   const cours = page.getByRole('tab', { name: 'Prompt' });
   await expect(cours).toHaveClass(/payant/, { timeout: 10000 });
   await expect(cours).toHaveAttribute('data-astuce', 'Avec Mirandola+');               // toute l'IA est dans Mirandola+ (2026-10-27)
@@ -104,7 +104,7 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await cours.click({ force: true });                     // aria-disabled : on touche quand même, comme un visiteur
   const fenetre = page.locator('#dmenvie');
   await expect(fenetre).toBeVisible();
-  await expect(fenetre.getByRole('heading')).toHaveText('L’IA écrit le livre pour toi');
+  await expect(fenetre.getByRole('heading')).toHaveText('L’IA écrit le paquet pour toi');
   await expect(fenetre.getByRole('link', { name: 'Créer mon compte' })).toHaveAttribute('href', '/inscription');
   await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
   await expect(fenetre).toBeHidden();
@@ -112,7 +112,7 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   expect(parties).toEqual([]);
 
   // un élève essaie Mirandola gratuit : le QCM d'un livre est dans Mirandola+, il ouvre la même fenêtre
-  await aller(page, '/demo/eleve/livres');
+  await aller(page, '/demo/eleve/paquets');
   await page.getByText('La cellule', { exact: true }).first().click();
   await page.locator('[data-act="mcq"]').first().click();
   await expect(fenetre.getByRole('heading')).toHaveText('QCM et associations');
@@ -120,10 +120,10 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
 
   // Mirandola gratuit garde 5 livres : Léa en a 4, elle en crée un, puis « Nouveau livre » se grise et ouvre la fenêtre
-  await aller(page, '/demo/eleve/livres');
+  await aller(page, '/demo/eleve/paquets');
   await expect(page.locator('html')).not.toHaveClass(/livres-plein/);
   await page.locator('[data-act="new"]:visible').first().click();
-  await page.locator('#nm').fill('Mon livre');
+  await page.locator('#nm').fill('Mon paquet');
   await page.locator('[data-cmode="coller"]').click();
   await page.locator('textarea:visible').first().fill('Bonjour\tHello\nMerci\tThank you');
   await page.locator('#bulkadd').evaluate(e => e.click());
@@ -131,16 +131,16 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await expect(page.locator('html')).toHaveClass(/livres-plein/, { timeout: 10000 });   // le livre créé s'ouvre
   await page.getByRole('button', { name: 'Retour' }).first().click();
   await page.locator('[data-act="new"]:visible').first().click();
-  await expect(fenetre.getByRole('heading')).toHaveText('Ta bibliothèque est pleine');
+  await expect(fenetre.getByRole('heading')).toHaveText('Tes 5 paquets sont pris');
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'home');
   await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
 
   // le journal de Mirandola gratuit : la série et la régularité restent, la mémoire se floute sous « Avec Mirandola+ »
-  await aller(page, '/demo/eleve/journal');
+  await aller(page, '/demo/eleve/statistiques');
   await expect(page.locator('[data-volet="memoire"]')).toHaveClass(/plus-floute/, { timeout: 10000 });
   await expect(page.locator('.plus-floute')).toHaveCount(6);
   await page.locator('[data-volet="memoire"]').click();
-  await expect(fenetre.getByRole('heading')).toHaveText('Ton journal complet');
+  await expect(fenetre.getByRole('heading')).toHaveText('Toutes tes statistiques');
   await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
 
   // le bandeau propose le geste d'après : pour un élève, son compte ; la démo ne laisse rien

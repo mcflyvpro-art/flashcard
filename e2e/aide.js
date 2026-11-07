@@ -19,7 +19,7 @@ export async function inscrire(page, email = 'lea@exemple.fr', mdp = 'motdepasse
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill(mdp);
   await page.getByRole('checkbox').check();
   await page.getByRole('button', { name: 'Créer le compte' }).click();
-  await expect(page.getByText('Ta bibliothèque est vide')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText('Aucun paquet pour l’instant')).toBeVisible({ timeout: 10000 });
 }
 
 export async function connecter(page, email = 'lea@exemple.fr', mdp = 'motdepasse-solide-42') {
@@ -28,12 +28,12 @@ export async function connecter(page, email = 'lea@exemple.fr', mdp = 'motdepass
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill(mdp);
   await page.getByRole('button', { name: 'Se connecter' }).click();
-  await expect(page.getByRole('button', { name: 'Nouveau livre' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Nouveau paquet' })).toBeVisible({ timeout: 10000 });
 }
 
 /* Écrit un livre de `n` pages « Pays k » → « Capitale k », et l'ouvre. */
 export async function creerLivre(page, titre = 'Capitales', n = 10) {
-  await page.getByRole('button', { name: 'Nouveau livre' }).click();
+  await page.getByRole('button', { name: 'Nouveau paquet' }).click();
   await page.locator('#nm').fill(titre);
   for (let k = 1; k <= n; k++) {
     await page.locator('#cf').fill('Pays ' + k);
@@ -43,7 +43,7 @@ export async function creerLivre(page, titre = 'Capitales', n = 10) {
   }
   await expect(page.getByText('Pays ' + n, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Créer' }).click();
-  await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Menu du paquet' })).toBeVisible();
   await expect(page.locator('main .lbl').first()).toContainText(String(n));   // le compte de pages, en tête de la liste
 }
 

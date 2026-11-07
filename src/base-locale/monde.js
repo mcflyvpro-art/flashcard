@@ -120,7 +120,7 @@ const MATIERES = [['maths', 'Mathématiques', 'blue'], ['anglais', 'Anglais', 'r
   ['svt', 'SVT', 'green'], ['espagnol', 'Espagnol', 'coral']];
 const LIVRES = [
   { n: 301, nom: 'Vocabulaire espagnol', matiere: 'espagnol', cartes: [['la casa', 'la maison'], ['el perro', 'le chien'],
-    ['la ciudad', 'la ville'], ['el libro', 'le livre'], ['la playa', 'la plage'], ['el tiempo', 'le temps'], ['la semana', 'la semaine'],
+    ['la ciudad', 'la ville'], ['el libro', 'le paquet'], ['la playa', 'la plage'], ['el tiempo', 'le temps'], ['la semana', 'la semaine'],
     ['el trabajo', 'le travail'], ['la calle', 'la rue'], ['el agua', 'l’eau'], ['la noche', 'la nuit'], ['el viaje', 'le voyage']] },
   { n: 302, nom: 'Dates d’histoire', matiere: 'histoire', cartes: [['Chute de Rome', '476'], ['Sacre de Charlemagne', '800'],
     ['Découverte de l’Amérique', '1492'], ['Révolution française', '1789'], ['Fin de la Première Guerre mondiale', '1918'],
@@ -273,7 +273,7 @@ export function semerMonde(store, graine = 2026) {
     for (const u of [chef, ...membres]) tab(store, 'group_members').push({ id: uuid(), group_id: ID(n), user_id: ID(u), joined_at: iso(now - 14 * JOUR) });
   };
   // les clubs sont fermés aux élèves de classe (un élève de classe n'en crée ni n'en rejoint) : ceux du lycée vivent entre anciens
-  club(401, 'Les matheux', 23, [24], 'sigma', 1, 'Une page par jour, pas une de moins');
+  club(401, 'Les matheux', 23, [24], 'sigma', 1, 'Une carte par jour, pas une de moins');
 
   /* deux défis entre amis : celui de Tom, que Léa n'a pas encore joué ;
      celui d'Inès, joué par les trois (Léa deuxième) */

@@ -7,7 +7,7 @@
 import { test, expect } from '@playwright/test';
 import { SOUS_PAGES } from '../src/site/pages.js';
 
-test('chaque page s’ouvre à son adresse : son titre, un seul h1, aucune erreur, aucun débordement', async ({ page }) => {
+test('chaque carte s’ouvre à son adresse : son titre, un seul h1, aucune erreur, aucun débordement', async ({ page }) => {
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));
   page.on('console', m => { if (m.type() === 'error') erreurs.push(m.text()); });
@@ -23,7 +23,7 @@ test('chaque page s’ouvre à son adresse : son titre, un seul h1, aucune erreu
   expect(erreurs).toEqual([]);
 });
 
-test('de l’accueil aux pages et retour, par le menu du téléphone et le pied de page', async ({ page }) => {
+test('de l’accueil aux cartes et retour, par le menu du téléphone et le pied de page', async ({ page }) => {
   await page.goto('./?site');
   await page.getByRole('button', { name: 'Ouvrir le menu' }).click();
   await page.locator('#menu-mobile').getByRole('link', { name: 'Mirandola Campus' }).click();
@@ -73,7 +73,7 @@ test('les laboratoires du moteur répondent : la courbe, la rétention, une ann�
   await expect(page.locator('#labo-r-f')).toHaveText('×3,32');
   await expect(page.locator('#labo-r .m-table-r tr.ici td').first()).toHaveText(/^80\s%$/);
   await page.getByRole('radio', { name: 'Un oubli au 3ᵉ passage' }).click();
-  await expect(page.locator('#sim-bilan')).toContainText('9 lectures');
+  await expect(page.locator('#sim-bilan')).toContainText('9 révisions');
   await expect(page.locator('#sim-lignes tr.m-rechute')).toHaveCount(1);
   await page.getByRole('radio', { name: 'Log loss' }).click();
   await expect(page.locator('#banc-logloss')).toBeVisible();

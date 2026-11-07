@@ -101,7 +101,7 @@ function hoteAttente(e) {
   return `${tete(e)}
     <div class="dx-lobby">
       <section class="dx-entrer">
-        <p class="dx-k">${svg(I.hash)}<b>Cercle → Entrer un code</b></p>
+        <p class="dx-k">${svg(I.hash)}<b>Mes amis → Entrer un code</b></p>
         <div class="dx-pin">${esc(pinLisible(e.pin))}</div>
         <div class="dx-qr">${qrSvg(lien, 'Rejoindre la partie')}</div>
       </section>
@@ -225,7 +225,7 @@ function joueurFini(e) {
 function absent(e) {
   return `${tete(null)}<div class="dx-j"><div class="dx-v-ic">${svg(I.x)}</div>
     <h2>${e.etat === 'exclu' ? 'L’hôte t’a retiré de la partie' : 'Cette partie n’existe plus'}</h2>
-    <button class="cta" data-dx="terminer">Retour au cercle</button></div>`;
+    <button class="cta" data-dx="terminer">Retour à Mes amis</button></div>`;
 }
 
 /* ══════════ l'écran ══════════ */

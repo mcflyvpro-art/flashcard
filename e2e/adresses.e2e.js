@@ -39,20 +39,20 @@ test('un élève : chaque écran a son adresse, rafraîchir le garde, retour rev
   await expect(page).toHaveURL(/\/inscription$/);
 
   await inscrire(page);
-  await expect(page).toHaveURL(/\/eleve\/livres$/);
+  await expect(page).toHaveURL(/\/eleve\/paquets$/);
   await creerLivre(page, 'Capitales', 3);
-  await expect(page).toHaveURL(/\/eleve\/livres\/[^/]+$/);
+  await expect(page).toHaveURL(/\/eleve\/paquets\/[^/]+$/);
   const livre = chemin(page);
 
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Menu du paquet' })).toBeVisible({ timeout: 10000 });
   expect(chemin(page)).toBe(livre);
 
   await page.goBack();
-  await expect(page).toHaveURL(/\/eleve\/livres$/);
-  await expect(page.getByRole('button', { name: 'Nouveau livre' })).toBeVisible();
+  await expect(page).toHaveURL(/\/eleve\/paquets$/);
+  await expect(page.getByRole('button', { name: 'Nouveau paquet' })).toBeVisible();
   await page.goForward();
-  await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Menu du paquet' })).toBeVisible();
   expect(chemin(page)).toBe(livre);
 });
 

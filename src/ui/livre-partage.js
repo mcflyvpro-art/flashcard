@@ -27,7 +27,7 @@ export function peindre(w) {
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
       <div class="mi" style="font-weight:750">${svg(I.share)}Partager « ${esc(d.name)} »</div>
-      <button class="mi" data-mact="sendfriend">${svg(I.mail)}Prêter à un lecteur<span class="tail">${mates ? mates.length : ''}</span></button>
+      <button class="mi" data-mact="sendfriend">${svg(I.mail)}Partager avec un ami<span class="tail">${mates ? mates.length : ''}</span></button>
       ${m.tok ? `<div class="cf-invit lc"><div class="cf-qr" id="lcqr">${qrSvg(lienLivre(SITE, m.tok), d.name)}</div>
           <div class="cf-code"><b id="lccode">${codeLivre(m.tok)}</b><i>Dans l’app : J’ai un code</i></div></div>
         <button class="mi" data-mact="lccopy">${svg(I.copy)}Copier le code</button>
@@ -35,7 +35,7 @@ export function peindre(w) {
         <button class="mi warn" data-mact="roff">${svg(I.eyeoff)}Révoquer le code</button>`
       : `<button class="mi" data-mact="rolink">${svg(I.key)}Créer un code de partage</button>`}
       <div class="msep"></div>
-      <button class="mi" data-mact="duelnew2">${svg(I.bolt)}Lancer un défi sur ce livre<span class="tail">en direct ou à son rythme</span></button>
+      <button class="mi" data-mact="duelnew2">${svg(I.bolt)}Lancer un défi sur ce paquet<span class="tail">en direct ou à son rythme</span></button>
     </div>`;
   mountMenu(w);
 }

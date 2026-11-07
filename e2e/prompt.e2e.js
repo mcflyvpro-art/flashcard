@@ -28,17 +28,17 @@ async function connexion(page, email) {
   await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email);
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill(MDP);
   await page.getByRole('button', { name: 'Se connecter' }).click();
-  await expect(page.getByRole('button', { name: 'Nouveau livre' }).first()).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Nouveau paquet' }).first()).toBeVisible({ timeout: 10000 });
 }
 
 const reste = (page, onglet) => page.getByRole('tab', { name: onglet }).locator('.cr-reste');
 
-test('un cours collé devient des pages, qu’on retouche en parlant ; chaque message compte', async ({ page }) => {
+test('un cours collé devient des cartes, qu’on retouche en parlant ; chaque message compte', async ({ page }) => {
   const store = nouveauStore();                               // Mirandola+ (les comptes des parcours sont « d'avant »)
   const lea = eleve(store, 'lea@exemple.fr');
   await brancher(page, store);
   await connexion(page, 'lea@exemple.fr');
-  await page.getByRole('button', { name: 'Nouveau livre' }).first().click();
+  await page.getByRole('button', { name: 'Nouveau paquet' }).first().click();
   await page.locator('#nm').fill('Italien');
 
   // ce qui reste ce mois-ci, sur les trois façons de créer qui passent par l'IA
@@ -56,7 +56,7 @@ test('un cours collé devient des pages, qu’on retouche en parlant ; chaque me
   await page.getByRole('button', { name: 'Envoyer' }).click();
   await expect(page.locator('.pi-p')).toHaveCount(2, { timeout: 10000 });
   await expect(page.locator('.pi-b.moi')).toContainText('chat = gatto');
-  await expect(page.locator('.pi-b.ia').last()).toContainText('2 pages');
+  await expect(page.locator('.pi-b.ia').last()).toContainText('2 cartes');
   await expect(reste(page, 'Prompt')).toHaveText('29');
   await expect(reste(page, 'Photo')).toHaveText('29');                     // un seul compte pour toute l'IA
   await expect(msg).toHaveValue('');
@@ -73,13 +73,13 @@ test('un cours collé devient des pages, qu’on retouche en parlant ; chaque me
   await expect(page.locator('.pi-p')).toHaveCount(3, { timeout: 10000 });
   await expect(reste(page, 'Prompt')).toHaveText('27');
   // une page qu'on ne veut pas : on la retire sans rien dépenser
-  await page.locator('.pi-p', { hasText: 'orso' }).getByRole('button', { name: 'Retirer la page' }).click();
+  await page.locator('.pi-p', { hasText: 'orso' }).getByRole('button', { name: 'Retirer la carte' }).click();
   await expect(page.locator('.pi-p')).toHaveCount(2);
   await expect(reste(page, 'Prompt')).toHaveText('27');
 
   // « Créer » prend les pages qui attendent
-  await page.getByRole('button', { name: 'Créer le livre' }).click();
-  await expect(page.getByRole('button', { name: 'Menu du livre' })).toBeVisible({ timeout: 10000 });
+  await page.getByRole('button', { name: 'Créer le paquet' }).click();
+  await expect(page.getByRole('button', { name: 'Menu du paquet' })).toBeVisible({ timeout: 10000 });
   const rectos = page.getByRole('textbox', { name: 'Recto' });
   await expect(rectos).toHaveCount(2);
   await expect(rectos.nth(0)).toHaveValue('gatto');
@@ -87,7 +87,7 @@ test('un cours collé devient des pages, qu’on retouche en parlant ; chaque me
   expect(store.tables.ai_usage.filter(a => a.user_id === lea && a.op === 'prompt')).toHaveLength(3);
 });
 
-test('« Ajouter » verse les pages dans la liste, sans doublon ; l’IA épuisée le dit et rend le message', async ({ page }) => {
+test('« Ajouter » verse les cartes dans la liste, sans doublon ; l’IA épuisée le dit et rend le message', async ({ page }) => {
   const store = nouveauStore();
   const lea = eleve(store, 'lea@exemple.fr');
   // 29 générations déjà prises ce mois-ci
@@ -95,7 +95,7 @@ test('« Ajouter » verse les pages dans la liste, sans doublon ; l’IA épuis�
   store.tables.ai_usage = Array.from({ length: 29 }, () => ({ user_id: lea, day: jour, op: 'cards', cents: 0.4 }));
   await brancher(page, store);
   await connexion(page, 'lea@exemple.fr');
-  await page.getByRole('button', { name: 'Nouveau livre' }).first().click();
+  await page.getByRole('button', { name: 'Nouveau paquet' }).first().click();
   await page.locator('#cf').fill('chat');
   await page.locator('#cb').fill('gatto');
   await page.locator('#cb').press('Enter');
@@ -107,8 +107,8 @@ test('« Ajouter » verse les pages dans la liste, sans doublon ; l’IA épuis�
   await expect(reste(page, 'Prompt')).toHaveText('0');
   await expect(reste(page, 'Prompt')).toHaveClass(/vide/);
 
-  await page.getByRole('button', { name: 'Ajouter 2 pages' }).click();
-  await expect(page.locator('.toast:not(.sort)')).toContainText('1 page · 1 déjà là');
+  await page.getByRole('button', { name: 'Ajouter 2 cartes' }).click();
+  await expect(page.locator('.toast:not(.sort)')).toContainText('1 carte · 1 déjà là');
   await expect(page.locator('.pi-p')).toHaveCount(0);
 
   // plus rien ce mois-ci : la base refuse, le message revient dans la zone
@@ -131,7 +131,7 @@ test('un élève Campus sans IA : les trois onglets grisés, et pourquoi', async
   m.noms[tom] = 'Tom DURAND';
   await brancher(page, store);
   await connexion(page, 'tom@exemple.fr');
-  await page.getByRole('button', { name: 'Nouveau livre' }).first().click();
+  await page.getByRole('button', { name: 'Nouveau paquet' }).first().click();
 
   const prompt = page.getByRole('tab', { name: 'Prompt' });
   for (const o of ['Fichier', 'Photo', 'Prompt']) {
@@ -158,7 +158,7 @@ test('une professeure, et l’IA en panne : le message dit pourquoi, rien n’es
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill(MDP);
   await page.getByRole('button', { name: 'Se connecter' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'prof', { timeout: 10000 });
-  await page.goto('./prof/livres/nouveau');
+  await page.goto('./prof/paquets/nouveau');
   await page.getByRole('tab', { name: 'Prompt' }).click({ timeout: 10000 });
   await expect(reste(page, 'Prompt')).toHaveText('400', { timeout: 10000 });       // un professeur : 400 par mois
 

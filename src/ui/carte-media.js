@@ -451,8 +451,8 @@ export const cstate = c => {
 
 /* Les quatre âges d'une fiche, dans le vocabulaire du livre : on l'ouvre,
    on la travaille, on la relit, puis on la sait. */
-export const STATE = { new: 'À lire', learn: 'En cours', young: 'Relue',
-                mature: 'Sue', susp: 'De côté' };
+export const STATE = { new: 'Nouvelle', learn: 'En cours', young: 'Récente',
+                mature: 'Acquise', susp: 'Suspendue' };
 
 export function grade(c, rating, d) {
   const now = Date.now();

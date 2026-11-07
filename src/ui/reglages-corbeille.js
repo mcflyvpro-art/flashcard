@@ -52,7 +52,7 @@ function settingsRevisionHtml() {
       <div class="slist">
         <div class="sr flat col">
           <div class="srh">${svg(I.target)}<span class="n">Objectif du jour</span>
-            <span class="c">${prefs.goal} pages</span></div>
+            <span class="c">${prefs.goal} cartes</span></div>
           <input class="rng" id="pGoal" type="range" min="5" max="200" step="5" value="${prefs.goal}"
             aria-label="Objectif du jour"></div>
         <button class="sr flat" data-act="tglboth">${svg(I.swap)}
@@ -123,10 +123,10 @@ function settingsCompteHtml() {
           <span class="n">${esc(prefs.name || auth.email)}</span>${svg(I.arrow)}</button>
         <button class="sr flat" data-act="handle">${svg(I.hash)}<span class="n">Pseudo</span>
           <span class="c">${me && me.handle ? '@' + esc(me.handle) : ''}</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Journal de lecture</span>${svg(I.arrow)}</button>
-        <button class="sr flat" data-act="commu">${svg(I.users)}<span class="n">Le cercle des lecteurs</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="stats">${svg(I.chart)}<span class="n">Statistiques</span>${svg(I.arrow)}</button>
+        <button class="sr flat" data-act="commu">${svg(I.users)}<span class="n">Mes amis</span>${svg(I.arrow)}</button>
         ${myRole === 'eleve' || myRole === 'prof' ? `<button class="sr flat" data-ce="ouvrir">${svg(I.key)}
-          <span class="n">J’ai un code</span><span class="c">${atSchool() ? 'livre' : 'établissement, livre'}</span>${svg(I.arrow)}</button>` : ''}
+          <span class="n">J’ai un code</span><span class="c">${atSchool() ? 'paquet' : 'établissement, paquet'}</span>${svg(I.arrow)}</button>` : ''}
         ${ligneSecu()}
       </div>`;
 }
@@ -215,7 +215,7 @@ export function settingsView() {
   const g = document.getElementById('pGoal');
   if (g) g.addEventListener('input', () => {
     prefs.goal = +g.value; savePrefs();
-    g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' pages';
+    g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' cartes';
   });
   const fo = document.getElementById('pFont');
   if (fo) fo.addEventListener('input', () => {
@@ -232,7 +232,7 @@ export function trashView() {
     <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Corbeille</div></div>
-      <div class="note">Gardés ${KEEP} jours, pages et progression comprises.</div>
+      <div class="note">Gardés ${KEEP} jours, cartes et progression comprises.</div>
       ${!l ? `<div class="empty">${svg(I.clock)}<p>${trash.err ? 'Corbeille indisponible' : 'Chargement…'}</p></div>`
         : !l.length ? `<div class="empty">${svg(I.trash)}<p><b>Corbeille vide</b></p></div>`
         : `<div class="slist">${l.map(t => {
@@ -276,11 +276,11 @@ export function prechargerCourrier() {
 }
 
 function attendreCourrier() {
-  $.innerHTML = `<div class="page"><div class="top"><div class="hero">Courrier</div></div>
+  $.innerHTML = `<div class="page"><div class="top"><div class="hero">Messages</div></div>
     <div class="empty">${svg(I.mail)}<p>Chargement…</p></div></div>`;
   prechargerCourrier().then(() => {
     if (view.name === 'mail' || view.name === 'lettre') render();
-  }).catch(() => toast(I.x, 'Le courrier n’a pas pu s’ouvrir : vérifie ta connexion'));
+  }).catch(() => toast(I.x, 'Les messages n’ont pas pu s’ouvrir : vérifie ta connexion'));
 }
 export const mailView = () => (courrier ? courrier.boiteView() : attendreCourrier());
 export const lettreView = () => (courrier ? courrier.lettreView() : attendreCourrier());
@@ -307,20 +307,20 @@ export function versRestore(vid) {
     return old ? { ...old, f, b } : { id: id || uid(), f, b };
   });
   saveDeck(d); closeMenu(); render();
-  toast(I.redo, plur(d.cards.length, 'page') + ' restaurée' + (d.cards.length > 1 ? 's' : ''), true);
+  toast(I.redo, plur(d.cards.length, 'carte') + ' restaurée' + (d.cards.length > 1 ? 's' : ''), true);
 }
 
 export function sharedView() {
   const s = shared || {}, d = s.d, cards = d ? (d.cards || []) : [];
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
-      <h1>Livre partagé</h1></div>
+      <h1>Paquet partagé</h1></div>
     <div class="page">
-      ${s.st === 'load' ? `<div class="empty">${svg(I.book)}<p>Ouverture du livre…</p></div>`
-      : s.st !== 'ok' ? `<div class="empty">${svg(I.warn)}<p><b>${s.st === 'gone' ? 'Aucun livre à ce code' : 'Livre injoignable'}</b>${
-          s.st === 'gone' ? 'Code mal recopié, ou livre plus prêté.' : 'Réessaie une fois en ligne.'}</p></div>`
+      ${s.st === 'load' ? `<div class="empty">${svg(I.book)}<p>Ouverture du paquet…</p></div>`
+      : s.st !== 'ok' ? `<div class="empty">${svg(I.warn)}<p><b>${s.st === 'gone' ? 'Aucun paquet à ce code' : 'Paquet injoignable'}</b>${
+          s.st === 'gone' ? 'Code mal recopié, ou paquet plus partagé.' : 'Réessaie une fois en ligne.'}</p></div>`
       : `<div class="top"><div class="hero">${esc(d.name)}</div></div>
-        <button class="cta" data-act="addshared">${svg(I.plus)}Ajouter à ma bibliothèque</button>
+        <button class="cta" data-act="addshared">${svg(I.plus)}Ajouter à mes paquets</button>
         <div class="rows">${cards.slice(0, 300).map(c => `<div class="pr">
           <span class="a">${esc(plain(cf(c)))}</span>${svg(I.arrow)}<span class="b">${esc(plain(cb(c)))}</span>
           </div>`).join('')}</div>`}

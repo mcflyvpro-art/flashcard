@@ -54,7 +54,7 @@ function historique(d) {
 
 function choix(d) {
   const opts = questionsPossibles(d.cards);
-  if (!opts.length) return `<div class="empty">${svg(I.book)}<p>Il faut au moins 5 pages</p></div>`;
+  if (!opts.length) return `<div class="empty">${svg(I.book)}<p>Il faut au moins 5 cartes</p></div>`;
   if (!opts.includes(e.n)) e.n = opts[0];
   const seg = (k, v, l, ic) => `<button role="radio" aria-checked="${e[k] === v}" class="${e[k] === v ? 'on' : ''}" data-eb="${k}" data-v="${v}">${ic ? svg(ic) : ''}${l}</button>`;
   return `${historique(d)}
@@ -77,8 +77,8 @@ function copiePapier() {
   const plein = e.photos.length >= MAX_PHOTOS;
   return `<ol class="eb-qs eb-papier">${e.sujet.map(q => `<li class="eb-q"><p>${esc(q.q)}</p></li>`).join('')}</ol>
     <div class="eb-photos">
-      ${e.apercus.map((u, i) => `<figure><img src="${u}" alt="Page ${i + 1} de ta copie">
-        <button class="ic" data-eb="sans" data-v="${i}" aria-label="Retirer la page ${i + 1}">${svg(I.x)}</button></figure>`).join('')}
+      ${e.apercus.map((u, i) => `<figure><img src="${u}" alt="Carte ${i + 1} de ta copie">
+        <button class="ic" data-eb="sans" data-v="${i}" aria-label="Retirer la carte ${i + 1}">${svg(I.x)}</button></figure>`).join('')}
       ${plein ? '' : `<label class="eb-ajout">${svg(I.image)}<span>${e.photos.length ? 'Une page de plus' : 'Photographier ma copie'}</span>
         <input type="file" accept="image/*" capture="environment" multiple data-eb-photo hidden></label>`}
     </div>`;
@@ -112,7 +112,7 @@ function resultat() {
     ${r.bilan ? `<blockquote class="eb-bilan">${esc(r.bilan)}</blockquote>` : ''}
     <ol class="eb-rs">${r.questions.map(ligne).join('')}</ol>
     <div class="eb-fin">
-      ${r.revoir.length ? `<button class="cta" data-eb="revoir">${svg(I.play)}Revoir ${r.revoir.length} page${r.revoir.length > 1 ? 's' : ''}</button>` : ''}
+      ${r.revoir.length ? `<button class="cta" data-eb="revoir">${svg(I.play)}Revoir ${r.revoir.length} carte${r.revoir.length > 1 ? 's' : ''}</button>` : ''}
       <button class="eb-terminer" data-eb="retour">Terminer</button>
     </div>`;
 }

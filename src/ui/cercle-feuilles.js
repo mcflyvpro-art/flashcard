@@ -148,8 +148,8 @@ function feuilleMembre() {
   const pct = m.pages ? Math.round(m.justes / m.pages * 100) : 0;
   return coque(`${tete(avatar(m.user_id, m.pseudo || m.nom, 'lg'), esc(m.nom) + (m.chef ? ' ' + svg(I.crown) : ''),
       m.pseudo ? `<i>@${esc(m.pseudo)}</i>` : '')}
-    <div class="cf-stats"><span title="Pages lues cette semaine">${svg(I.book)}<b>${m.pages}</b></span>
-      <span title="Réponses justes">${svg(I.check)}<b>${pct} %</b></span><span title="Jours de lecture">${svg(I.cal)}<b>${m.jours}</b></span></div>
+    <div class="cf-stats"><span title="Cartes révisées cette semaine">${svg(I.book)}<b>${m.pages}</b></span>
+      <span title="Réponses justes">${svg(I.check)}<b>${pct} %</b></span><span title="Jours de révision">${svg(I.cal)}<b>${m.jours}</b></span></div>
     ${gestesMembre(g, m)}`);
 }
 
