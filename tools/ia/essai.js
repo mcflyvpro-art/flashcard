@@ -6,7 +6,10 @@
    de son vrai coût ; une panne d'Anthropic qui rend sa réservation (rien
    n'est compté) ; un quota atteint qui n'appelle même pas Anthropic ; et
    vingt appels lancés ensemble par un compte au quota de cinq : cinq
-   passent, quinze sont refusés — avant, les vingt passaient.
+   passent, quinze sont refusés — avant, les vingt passaient. Et (2026-11-07)
+   plusieurs photos d'un cours lues en un seul appel, avec la consigne de
+   l'élève à sa place ; l'envoi d'une app d'avant (une photo, `hint`) marche
+   toujours.
 
      node tools/ia/essai.js
    Deno : la variable DENO (chemin du binaire) ou `npx --yes deno@2`. Le port
@@ -48,7 +51,7 @@ const serveur = createServer(async (req, res) => {
   const a = corps ? JSON.parse(corps) : {};
   const p = url.pathname;
   if (p === '/anthropic') {
-    anthropic.appels++;
+    anthropic.appels++; anthropic.dernier = a;
     await new Promise(r => setTimeout(r, 60));    // l'appel prend du temps : les appels lancés ensemble se chevauchent
     if (anthropic.panne) return envoie(res, 529, { error: { type: 'overloaded_error' } });
     return envoie(res, 200, { content: [{ type: 'text', text: JSON.stringify({ cards: [{ f: 'Paris', b: 'France' }] }) }],
@@ -135,6 +138,31 @@ async function essais() {
   r = await appel('lea');
   verifie('quota du jour atteint : 429, et Anthropic n’est même pas appelé',
     r.statut === 429 && r.j.error === 'quota' && anthropic.appels === appelsAvant, r);
+
+  // trois photos d'un cours et une consigne : un seul appel, trois images, la consigne à sa place
+  const img = { mime: 'image/png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB' };
+  let appels = anthropic.appels;
+  r = await appel('max', { op: 'ocr', images: [img, img, img], consigne: 'seulement les dates', contexte: 'Histoire · classe : 1re' });
+  let vu = anthropic.dernier && anthropic.dernier.messages[0].content;
+  let texte = vu ? vu.filter(b => b.type === 'text').map(b => b.text).join('') : '';
+  verifie('trois photos et une consigne : un seul appel, trois images, « lues : 3 », la consigne et le contexte à leur place',
+    r.statut === 200 && r.j.lues === 3 && anthropic.appels === appels + 1 && vu.filter(b => b.type === 'image').length === 3
+      && texte.includes('Consigne de l\'élève : seulement les dates') && texte.includes('Contexte : Histoire · classe : 1re'),
+    { r, texte });
+
+  // une app d'avant : une photo par appel, le titre du paquet en `hint`
+  appels = anthropic.appels;
+  r = await appel('ana', { op: 'ocr', mime: img.mime, data: img.data, hint: 'Histoire' });
+  vu = anthropic.dernier && anthropic.dernier.messages[0].content;
+  texte = vu ? vu.filter(b => b.type === 'text').map(b => b.text).join('') : '';
+  verifie('l’envoi d’avant (une photo, hint) : une image, « lues : 1 », le hint lu comme avant',
+    r.statut === 200 && r.j.lues === 1 && anthropic.appels === appels + 1 && vu.filter(b => b.type === 'image').length === 1
+      && texte.startsWith('Consigne : Histoire'), { r, texte });
+
+  // une photo de trop lourde, ou d'un format inconnu : refusée avant de rien dépenser
+  appels = anthropic.appels;
+  r = await appel('ana', { op: 'ocr', images: [img, { mime: 'application/pdf', data: 'JVBERi0x' }] });
+  verifie('une pièce qui n’est pas une image : 415, Anthropic jamais appelé', r.statut === 415 && anthropic.appels === appels, r);
 
   const salve = await Promise.all(Array.from({ length: 20 }, () => appel('zoe')));
   const passes = salve.filter(x => x.statut === 200).length, refus = salve.filter(x => x.statut === 429).length;

@@ -92,7 +92,7 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   const parties = await ouvrirDemo(page, 'eleve');
   await expect(page).toHaveURL(/\/demo\/eleve\/classe$/, { timeout: 10000 });
   await aller(page, '/demo/eleve/paquets/nouveau');
-  const cours = page.getByRole('tab', { name: 'Prompt' });
+  const cours = page.locator('.pi');                      // la barre de l'IA, sous chaque façon de créer (2026-11-07)
   await expect(cours).toHaveClass(/payant/, { timeout: 10000 });
   await expect(cours).toHaveAttribute('data-astuce', 'Avec Mirandola+');               // toute l'IA est dans Mirandola+ (2026-10-27)
   await expect(page.getByRole('tab', { name: 'Photo' })).toHaveClass(/payant/);
@@ -101,10 +101,10 @@ test('ce qui coûte est grisé, dit comment l’avoir, et mène au compte', asyn
   await expect(page.getByRole('tab', { name: 'Coller' })).not.toHaveClass(/payant/);
 
   // le toucher ouvre ce qu'il ferait, et comment l'avoir ; on ferme d'un appui (2026-10-27)
-  await cours.click({ force: true });                     // aria-disabled : on touche quand même, comme un visiteur
+  await cours.click();                                    // grisée : on touche quand même, comme un visiteur
   const fenetre = page.locator('#dmenvie');
   await expect(fenetre).toBeVisible();
-  await expect(fenetre.getByRole('heading')).toHaveText('L’IA écrit le paquet pour toi');
+  await expect(fenetre.getByRole('heading')).toHaveText('L’IA t’aide pour tout');
   await expect(fenetre.getByRole('link', { name: 'Créer mon compte' })).toHaveAttribute('href', '/inscription');
   await fenetre.getByRole('button', { name: 'Continuer la démo' }).click();
   await expect(fenetre).toBeHidden();

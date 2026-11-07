@@ -34,7 +34,7 @@ export const TUTOS = [
   { id: 'compte', role: 'eleve', ecrans: ['tel', 'pc'], icone: 'i-groupe', titre: 'Ton compte et ton visage', ligne: 'Ton pseudo, ton visage, ton année, tes matières.' },
   { id: 'code', role: 'eleve', ecrans: ['tel', 'pc'], icone: 'i-cle', titre: 'Entrer avec un code', ligne: 'Le code de ton lycée ou de ton professeur, et tu es dans ta classe.' },
   { id: 'livre', role: 'eleve', ecrans: ['tel', 'pc'], icone: 'i-livre', titre: 'Créer ton premier paquet', ligne: 'Écrire tes cartes, ou coller une liste.' },
-  { id: 'ia', role: 'eleve', ecrans: ['tel', 'pc'], icone: 'i-etincelle', titre: 'Ton cours en flashcards avec l’IA', ligne: 'Un texte, une photo, un PDF, ou le Prompt.' },
+  { id: 'ia', role: 'eleve', ecrans: ['tel', 'pc'], icone: 'i-etincelle', titre: 'Ton cours en flashcards avec l’IA', ligne: 'Une photo, un PDF, un texte, ou rien : dis-lui ce que tu veux.' },
   { id: 'reviser', role: 'eleve', ecrans: ['tel', 'pc'], icone: 'i-lecture', titre: 'Réviser chaque jour', ligne: 'Réviser, retourner, te noter. Le moteur fait le reste.' },
   { id: 'devoirs', role: 'eleve', ecrans: ['tel', 'pc'], icone: 'i-devoir', titre: 'Faire tes devoirs', ligne: 'Ce que ton professeur t’a donné, et pour quand.' },
   { id: 'journal', role: 'eleve', ecrans: ['tel', 'pc'], icone: 'i-flamme', titre: 'Voir tes statistiques', ligne: 'Ta série, ta régularité, ce que tu sais vraiment.' },

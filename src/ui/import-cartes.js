@@ -60,7 +60,7 @@ export async function aiCall(payload, tout) {
     f: String(c.f || '').replace(/[\t\r\n]+/g, ' ').trim(),
     b: String(c.b || '').replace(/[\t\r\n]+/g, ' ').trim()
   })).filter(c => c.f && c.b);
-  return tout ? { cards, note: String(j.note || '') } : cards;
+  return tout ? { cards, note: String(j.note || ''), lues: j.lues } : cards;
 }
 
 
@@ -96,10 +96,34 @@ const asB64 = file => new Promise((res, rej) => {
   r.readAsDataURL(file);
 });
 
-export async function aiFromFile(file, hint, pages) {
-  const pdf = file.type === 'application/pdf';
-  const { mime, data } = pdf ? await asB64(file) : await shrink(file);
-  return aiCall({ op: pdf ? 'pdf' : 'ocr', mime, data, hint: hint || '', pages: pages || '' });
+/* La consigne de l'élève et le contexte du paquet partent chacun à sa place
+   (2026-11-07) ; `hint` les reprend, en 200 signes, pour une fonction d'avant
+   qui ne lit que lui (comme une consigne). */
+const consignes = ({ consigne = '', contexte = '' }) =>
+  ({ consigne, contexte, hint: [consigne, contexte].filter(Boolean).join(' · ').slice(0, 200) });
+
+/* Les photos d'un cours : toutes en un seul appel, une génération pour le
+   tout. Une fonction d'avant n'en lit que la première (elle le dit par
+   `lues`) : les suivantes partent alors une à une, avec la même consigne. */
+export async function aiPhotos(files, opts) {
+  const images = [];
+  for (const f of files) images.push(await shrink(f));
+  const base = { op: 'ocr', ...consignes(opts) };
+  const r = await aiCall({ ...base, images, mime: images[0].mime, data: images[0].data }, true);
+  let cards = r.cards, echec = 0;
+  if (!(r.lues >= images.length)) {
+    for (const im of images.slice(1)) {
+      try { cards = cards.concat(await aiCall({ ...base, mime: im.mime, data: im.data })); }
+      catch (x) { echec++; }                 // dit à l'élève : « 1 photo en échec »
+    }
+  }
+  return { cards, note: r.note, echec };
+}
+
+// le PDF entier : la consigne dit ce qu'il faut en prendre (« le chapitre 2 »)
+export async function aiPdf(file, opts) {
+  const { mime, data } = await asB64(file);
+  return aiCall({ op: 'pdf', mime, data, ...consignes(opts) }, true);
 }
 
 /* Ce qu'annonce le bouton « Lire » : les pages dues déjà commencées, plus les

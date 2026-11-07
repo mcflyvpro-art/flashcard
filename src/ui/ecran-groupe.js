@@ -6,7 +6,6 @@ import { render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
 import { esc, live, sty, subj } from '../core/coeur-sync.js';
 import { toast } from './import-cartes.js';
-import { mountMenu, retirerFeuilles, sortirFeuilles } from './menus-a.js';
 import { norm } from './quiz.js';
 
 /* ══════════ le journal de lecture : la porte ══════════
@@ -119,32 +118,4 @@ export function lostOnLeave() {
   if (quiz && quiz.pool && quiz.i > 0 && quiz.i < quiz.pool.length) return true;
   if (study && study.mode && study.i > 0 && study.i < study.queue.length) return true;
   return false;
-}
-
-/* ---------- pages d'un PDF ----------
-   Une feuille légère, hors du système de menus : elle se referme d'
-   elle-même et rend la main au code qui l'a ouverte. Laisser le champ
-   vide prend tout le document. */
-export function askPages(done) {
-  retirerFeuilles();
-  const w = document.createElement('div');
-  w.innerHTML = `<div class="scrim" id="pgx"></div>
-    <div class="menu">
-      <div class="mi" style="font-weight:750">${svg(I.file)}Quelles cartes ?</div>
-      <input class="tok" id="pgin" placeholder="Toutes les cartes" spellcheck="false"
-        autocapitalize="none" inputmode="numeric" enterkeyhint="done">
-      <div class="note">Par exemple <b>3-7</b> pour une suite, <b>2, 5, 9</b> pour un choix,
-        ou rien du tout pour prendre le document entier.</div>
-      <button class="mi" id="pgok" style="justify-content:center;font-weight:700">
-        ${svg(I.check)}Importer le PDF</button>
-    </div>`;
-  mountMenu(w);
-  const inp = document.getElementById('pgin');
-  // sortirFeuilles rend aussi le défilement à la page (html.sheet-open, oublié ici avant)
-  const close = () => sortirFeuilles();
-  const go2 = () => { const v = inp.value.trim(); close(); done(v); };
-  document.getElementById('pgok').onclick = go2;
-  document.getElementById('pgx').onclick = close;
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go2(); } });
-  setTimeout(() => inp.focus(), 60);
 }

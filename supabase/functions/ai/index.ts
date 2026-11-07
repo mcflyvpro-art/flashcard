@@ -88,6 +88,13 @@ const ESSAI = 10;
 /* en octets une fois décodé — l'API accepte 5 Mo par image, 32 Mo par PDF,
    mais on reste bien en dessous : au-delà, c'est la facture qui parle */
 const MAX_IMG = 4 * 1024 * 1024;
+/* Plusieurs photos d'un même cours en un seul appel (2026-11-07) : une
+   génération pour le tout, et la consigne de l'élève s'applique à l'ensemble
+   (« 10 questions sur ces trois pages »). Une app d'avant envoie une photo par
+   appel ; la réponse dit combien ont été lues (`lues`), et l'app envoie
+   elle-même les suivantes à une fonction qui n'en lit qu'une. */
+const MAX_IMAGES = 8;
+const MAX_CONSIGNE = 2000;
 const MAX_PDF = 12 * 1024 * 1024;
 const IMG_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -184,7 +191,14 @@ Règles :
 - Reprends la formulation du texte plutôt que de la reformuler.
 - Pas de numérotation, pas de puces, pas de guillemets décoratifs.
 - Ignore les en-têtes, numéros de page, tables des matières et notes de bas de page.
-- Rends au plus ${MAX_CARDS} cartes, dans l'ordre du texte.`;
+- Rends au plus ${MAX_CARDS} cartes, dans l'ordre du texte.
+
+La consigne de l'élève, quand il en donne une, passe avant ces règles de forme :
+ce qu'il faut garder ou laisser, la forme du recto et du verso, la langue, le
+nombre de cartes (« seulement les dates », « une question au recto », « en
+anglais », « 10 cartes »). Le contenu vient toujours du texte ; s'il demande
+d'ajouter quelque chose (un exemple, une traduction, une explication), n'ajoute
+que ce qui est établi avec certitude.`;
 
 /* Photo d'une page de cours, ou PDF : mêmes règles, plus ce qu'il faut
    savoir quand le texte est lu depuis une image plutôt que tapé. */
@@ -196,7 +210,9 @@ Le texte t'arrive en image. Lis-le d'abord entièrement, puis fabrique les carte
 - Ignore ce qui n'est pas le cours : marges, numéros de page, en-têtes,
   annotations manuscrites en marge, surlignages.
 - Un tableau à deux colonnes est une liste de cartes : colonne de gauche au
-  recto, colonne de droite au verso, ligne par ligne.`;
+  recto, colonne de droite au verso, ligne par ligne.
+- Plusieurs photos se suivent : ce sont les pages d'un même cours, dans
+  l'ordre. Lis-les toutes, puis fabrique les cartes de l'ensemble.`;
 
 const SCHEMA = {
   type: "object",
@@ -352,7 +368,7 @@ Deno.serve(async (req) => {
 
   let body: { op?: string; text?: string; hint?: string; data?: string; mime?: string; pages?: string;
     message?: string; cards?: unknown; historique?: unknown; n?: unknown; sujet?: unknown; reponses?: unknown;
-    photos?: unknown };
+    photos?: unknown; images?: unknown; consigne?: unknown; contexte?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -428,19 +444,26 @@ Deno.serve(async (req) => {
 
   let text = "";
   let b64 = "", mime = "";
-  if (isFile) {
+  let images: { mime: string; data: string }[] = [];
+  /* le base64 pèse 4/3 de l'original : on remonte à la taille réelle */
+  const octets = (d: string) => Math.floor(d.length * 3 / 4);
+  if (op === "ocr") {
+    images = (Array.isArray(body.images) && body.images.length ? body.images : [{ mime: body.mime, data: body.data }])
+      .slice(0, MAX_IMAGES).map((p) => {
+        const x = (p ?? {}) as { mime?: unknown; data?: unknown };
+        return { mime: String(x.mime ?? ""), data: String(x.data ?? "") };
+      });
+    for (const im of images) {
+      if (!im.data) return json({ error: "body" }, 400);
+      if (!IMG_TYPES.includes(im.mime)) return json({ error: "mime" }, 415);
+      if (octets(im.data) > MAX_IMG) return json({ error: "big", max: MAX_IMG }, 413);
+    }
+  } else if (isFile) {
     b64 = String(body.data ?? "");
     mime = String(body.mime ?? "");
     if (!b64) return json({ error: "body" }, 400);
-    /* le base64 pèse 4/3 de l'original : on remonte à la taille réelle */
-    const bytes = Math.floor(b64.length * 3 / 4);
-    if (op === "ocr") {
-      if (!IMG_TYPES.includes(mime)) return json({ error: "mime" }, 415);
-      if (bytes > MAX_IMG) return json({ error: "big", max: MAX_IMG }, 413);
-    } else {
-      if (mime !== "application/pdf") return json({ error: "mime" }, 415);
-      if (bytes > maxPdf) return json({ error: "big", max: maxPdf }, 413);
-    }
+    if (mime !== "application/pdf") return json({ error: "mime" }, 415);
+    if (octets(b64) > maxPdf) return json({ error: "big", max: maxPdf }, 413);
   } else if (op === "cards") {
     text = String(body.text ?? "").trim();
     if (text.length < 40) return json({ error: "short" }, 400);
@@ -486,6 +509,14 @@ Deno.serve(async (req) => {
 
   const hint = String(body.hint ?? "").slice(0, 200).trim();
   const pages = String(body.pages ?? "").slice(0, 60).trim();
+  /* La consigne de l'élève et le contexte du paquet, chacun à sa place
+     (2026-11-07) : une app d'avant n'envoyait que `hint` (le titre du
+     paquet, 200 signes), lu comme une consigne. */
+  const consigne = String(body.consigne ?? "").trim().slice(0, MAX_CONSIGNE);
+  const contexte = String(body.contexte ?? "").replace(/\s+/g, " ").trim().slice(0, 300);
+  const enTete = consigne || contexte
+    ? (contexte ? `Contexte : ${contexte}\n` : "") + (consigne ? `Consigne de l'élève : ${consigne}\n` : "")
+    : hint ? `Consigne : ${hint}\n` : "";
 
   /* Ce que voit le modèle : du texte, une image, ou un PDF entier auquel
      on adjoint la consigne de pages. Choisir les pages côté navigateur
@@ -505,20 +536,21 @@ Deno.serve(async (req) => {
     ]
     : isFile
     ? [
-      op === "ocr"
-        ? { type: "image", source: { type: "base64", media_type: mime, data: b64 } }
-        : { type: "document", source: { type: "base64", media_type: mime, data: b64 } },
+      ...(op === "ocr"
+        ? images.map((im) => ({ type: "image", source: { type: "base64", media_type: im.mime, data: im.data } }))
+        : [{ type: "document", source: { type: "base64", media_type: mime, data: b64 } }]),
       {
         type: "text",
-        text: (hint ? `Consigne : ${hint}\n` : "")
+        text: enTete
           + (pages ? `N'utilise que ces pages : ${pages}. Ignore toutes les autres.\n` : "")
+          + (images.length > 1 ? `Ces ${images.length} photos sont les pages d'un même cours, dans l'ordre.\n` : "")
           + "Fabrique les cartes à partir de ce document."
           + (infini ? ` Ce compte peut recevoir jusqu'à ${INFINI.cartes} cartes.` : ""),
       },
     ]
     : op === "prompt"
     ? [{ type: "text", text: messagePrompt(message, actuelles, hist, hint) }]
-    : [{ type: "text", text: (hint ? `Consigne : ${hint}\n\n` : "")
+    : [{ type: "text", text: (enTete ? enTete + "\n" : "")
       + (infini ? `Ce compte peut recevoir jusqu'à ${INFINI.cartes} cartes.\n\n` : "") + "Texte :\n\n" + text }];
 
   // au-delà des 150 du mois, Infini continue sur Haiku seul : le meilleur reste pour le gros de l'usage
@@ -589,6 +621,8 @@ Deno.serve(async (req) => {
     note,
     mois,
     usage: { in: inTok, out: outTok, cents: +cents.toFixed(4) },
+    // les photos lues dans cet appel : moins que celles envoyées, c'est une fonction d'avant
+    lues: op === "ocr" ? images.length : undefined,
     left: Math.max(0, parJour - mine - 1),
     filesLeft: isFile ? Math.max(0, fichiersJour - myFiles - 1) : undefined,
   });

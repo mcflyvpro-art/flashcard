@@ -101,8 +101,8 @@ const lecture = [
 const fabrique = [
   { id: 'creer-livre', si: ['livres'], tant: 'creable', ecran: 'home', cible: NOUVEAU, geste: 1, attend: { vue: 'import' },
     titre: 'Crée tes paquets', texte: 'Tes cours deviennent des flashcards.', aide: 'Touche « Nouveau paquet »' },
-  { id: 'methodes', si: ['livres'], tant: 'creable', ecran: 'import', reprise: 'creer-livre', cible: ['.cr-tabs'],
-    titre: 'Cinq façons', texte: 'Écris, colle, un PDF, une photo, ton cours : l’IA fait les cartes.' },
+  { id: 'methodes', si: ['livres'], tant: 'creable', ecran: 'import', reprise: 'creer-livre', cible: ['.cr-tabs'], trou: ['.cr-tabs', '#pi'],
+    titre: 'Quatre façons, et l’IA', texte: 'Écris, colle, un PDF, une photo : l’IA t’aide pour tout.' },
   { id: 'plein', si: ['livres'], tant: '!creable', ecran: 'home', cible: NOUVEAU,
     titre: 'Crée tes paquets', texte: 'Écris, colle, une photo, un PDF : l’IA en fait des cartes.' }
 ];

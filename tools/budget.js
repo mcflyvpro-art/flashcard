@@ -150,12 +150,15 @@
 // Le plafond « à la demande » passe de 68 à 70 Ko : il était plein, et les
 // textes du cadre (ui/legal-textes.js) disent désormais l'examen blanc —
 // ce que l'IA y lit, ce qui est gardé, ce qui ne l'est pas.
+// Puis à 71 Ko (2026-11-07) : la barre de l'IA sous chaque façon de créer
+// (ui/prompt-ia.js) porte les photos, le PDF, l'annulation ; le démarrage,
+// lui, a perdu la feuille des pages d'un PDF (124,7 → 124,5).
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { SOUS_PAGES } from '../src/site/pages.js';
 
 // octets gzip, tous fichiers de la part cumulés
-const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 70 * 1024, cssDemande: 27 * 1024, jsDemo: 33 * 1024, cssDemo: 3 * 1024,
+const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 71 * 1024, cssDemande: 27 * 1024, jsDemo: 33 * 1024, cssDemo: 3 * 1024,
   jsGestion: 33 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
   jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, site: 51 * 1024, pages: 41 * 1024, moteur: 56 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',

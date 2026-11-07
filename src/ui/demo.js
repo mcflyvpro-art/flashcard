@@ -136,8 +136,8 @@ function bandeau(role) {
    prix ne se coupe jamais : espaces insécables). */
 const PRIX = 'dès 4,17\u00a0€\u00a0par\u00a0mois';
 const ENVIES = {
-  ia: { t: 'L’IA écrit le paquet pour toi',
-    s: `Colle ton cours\u202f: elle en tire les questions et les réponses, une par carte. Avec Mirandola+, 30\u00a0cours par mois, ${PRIX}.` },
+  ia: { t: 'L’IA t’aide pour tout',
+    s: `Une photo, un PDF, un texte, ou rien du tout\u202f: dis-lui ce que tu veux, elle écrit tes cartes et les retouche. Avec Mirandola+, 30\u00a0demandes par mois, ${PRIX}.` },
   photo: { t: 'Ton cahier en photo, et c’est un paquet',
     s: `Prends ton cours en photo\u202f: l’IA le lit et en fait des flashcards. Avec Mirandola+, ${PRIX}.` },
   fichier: { t: 'Ton PDF devient un paquet',

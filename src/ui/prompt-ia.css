@@ -1,17 +1,35 @@
-/* ══════════ le Prompt (préfixe pi-, chargé avec ui/prompt-ia.js) ══════════
-   Une conversation : ses messages à droite, à l'encre ; ceux de l'IA à
-   gauche, sur une carte ; les pages proposées dessous, puis la zone où l'on
-   écrit. Seize pixels dans la zone : en dessous, l'iPhone zoome sur le champ. */
-.pi{display:flex;flex-direction:column;gap:10px}
-.pi-fil{display:flex;flex-direction:column;gap:8px;max-height:min(42vh,420px);overflow-y:auto;overscroll-behavior:contain}
+/* ══════════ la barre de l'IA (préfixe pi-, chargée avec ui/prompt-ia.js) ══════════
+   Sous chaque façon de créer : un liseré dans la lumière de la marque (ce qui
+   vient de l'IA), sa pastille du mois, la conversation — ses messages à
+   droite, à l'encre ; ceux de l'IA à gauche, avec « Annuler » —, des puces,
+   puis la zone où l'on écrit, avec les photos ou le PDF qui attendent.
+   Seize pixels dans la zone : en dessous, l'iPhone zoome sur le champ. */
+.pi{position:relative;display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:20px;
+  border:1.5px solid transparent;background:linear-gradient(var(--card),var(--card)) padding-box,var(--plus) border-box;
+  box-shadow:0 10px 26px -20px rgba(90,118,208,.55)}
+.pi.payant{background:var(--card);border-color:var(--hair);box-shadow:var(--edge);cursor:pointer}
+.pi.payant[data-offre="plus"]::before{position:absolute;top:12px;right:12px;opacity:1}
+.pi.payant[data-astuce]:hover::after{white-space:normal;width:max-content;max-width:240px;text-align:center;line-height:1.35}
+@media (hover:none){.pi.payant::after{display:none}}
+
+.pi-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px;padding:0 2px}
+.pi-tete b{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:750;letter-spacing:-.1px}
+.pi-tete b svg{width:16px;height:16px;color:#7E77D0}
+.pi-tete .cr-reste{height:20px;font-size:11.5px}
+
+.pi-fil{display:flex;flex-direction:column;gap:8px;max-height:min(36vh,360px);overflow-y:auto;overscroll-behavior:contain}
 .pi-fil:empty{display:none}
-.pi-b{max-width:88%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
-.pi-b.moi{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:5px}
+.pi-b{max-width:90%;padding:9px 12px;border-radius:16px;font-size:14px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
+.pi-b.moi{align-self:flex-end;display:flex;flex-direction:column;gap:3px;background:var(--ink);color:#fff;border-bottom-right-radius:5px}
+.pi-b.moi small{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:650;opacity:.75}
+.pi-b.moi small svg{width:13px;height:13px}
 .pi-b.ia,.pi-b.err{align-self:flex-start;display:flex;gap:8px;align-items:flex-start;border-bottom-left-radius:5px}
-.pi-b.ia{background:var(--card);box-shadow:var(--edge)}
+.pi-b.ia{background:var(--bg2);box-shadow:var(--edge)}
 .pi-b.err{background:color-mix(in srgb,var(--ko) 13%,transparent);color:var(--ko);font-weight:650}
 .pi-b svg{width:16px;height:16px;flex:none;margin-top:1px}
-.pi-b.ia svg{color:var(--az5)}
+.pi-b.ia svg{color:#7E77D0}
+.pi-annuler{flex:none;margin:-3px -4px -3px 4px;padding:3px 9px;border-radius:99px;font-size:12.5px;font-weight:700;
+  color:var(--ink2);background:var(--card);box-shadow:var(--edge)}
 .pi-attente{align-items:center;gap:4px;padding:13px 14px}
 .pi-attente i{width:7px;height:7px;border-radius:50%;background:var(--soft);animation:pi-pt 1s infinite ease-in-out}
 .pi-attente i:nth-child(2){animation-delay:.15s}
@@ -19,26 +37,34 @@
 @keyframes pi-pt{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
 @media (prefers-reduced-motion:reduce){.pi-attente i{animation:none;opacity:.6}}
 
-.pi-br{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:16px;background:var(--card);box-shadow:var(--edge)}
-.pi-br-t{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;padding-left:4px}
-.pi-br-t .lnk{margin:0;padding:5px 9px}
-.pi-pages{display:flex;flex-direction:column;gap:4px;max-height:min(38vh,360px);overflow-y:auto;overscroll-behavior:contain}
-.pi-p{display:grid;grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr) 30px;align-items:center;gap:6px;
-  padding:6px 4px 6px 10px;border-radius:10px;background:var(--bg2);font-size:13.5px;line-height:1.3}
-.pi-p > svg{width:14px;height:14px;color:var(--soft)}
-.pi-p .a{font-weight:650;overflow-wrap:anywhere}
-.pi-p .b{color:var(--ink2);overflow-wrap:anywhere}
-.pi-p .x{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;color:var(--soft)}
-.pi-p .x svg{width:14px;height:14px}
-.pi-aj{align-self:stretch;margin:0}
-
-.pi-puces{display:flex;flex-wrap:wrap;gap:6px}
-.pi-puce{padding:7px 11px;border-radius:99px;background:var(--bg2);box-shadow:var(--edge);font-size:12.5px;font-weight:650;color:var(--ink2)}
+.pi-puces{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px}
+.pi-puces::-webkit-scrollbar{display:none}
+.pi-puce{flex:none;padding:7px 11px;border-radius:99px;background:var(--bg2);box-shadow:var(--edge);font-size:12.5px;font-weight:650;color:var(--ink2);white-space:nowrap}
 .pi-puce:disabled{opacity:.45}
-.pi-saisie{display:flex;align-items:flex-end;gap:8px;padding:6px 6px 6px 14px;border-radius:20px;background:var(--card);box-shadow:var(--edge)}
-.pi-saisie:focus-within{box-shadow:var(--edge),var(--ring)}
-.pi-saisie textarea{flex:1;min-height:44px;resize:none;border:0;background:none;padding:10px 0;font:inherit;font-size:16px;line-height:1.4;outline:none;color:var(--ink)}
+
+.pi-saisie{display:flex;flex-direction:column;gap:8px;padding:6px 6px 6px 14px;border-radius:16px;background:var(--bg2);box-shadow:var(--edge)}
+.pi-saisie:focus-within{background:var(--card);box-shadow:var(--edge),var(--ring)}
+.pi-ligne{display:flex;align-items:flex-end;gap:8px}
+.pi-saisie textarea{flex:1;min-width:0;min-height:44px;resize:none;border:0;background:none;padding:10px 0;font:inherit;font-size:16px;line-height:1.4;outline:none;color:var(--ink)}
+.pi-saisie textarea::placeholder{color:var(--soft);opacity:.85}
 .pi-env{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff}
 .pi-env:disabled{opacity:.35}
 .pi-env svg{width:18px;height:18px}
+.pi-env.large{width:auto;display:inline-flex;align-items:center;gap:7px;padding:0 16px 0 13px;border-radius:99px;
+  font-size:14.5px;font-weight:700;background:var(--plus);box-shadow:0 8px 18px -10px rgba(90,118,208,.8)}
+
+/* ce qui attend l'IA : des photos (vignettes) ou un PDF (une étiquette) */
+.pi-pieces{display:flex;flex-wrap:wrap;gap:8px;padding:6px 6px 0 0}
+.pi-ph{position:relative;margin:0;width:64px;height:64px;border-radius:12px;overflow:hidden;box-shadow:var(--edge);background:var(--card)}
+.pi-ph img{width:100%;height:100%;object-fit:cover;display:block}
+.pi-pieces .x{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(29,28,25,.62);color:#fff}
+.pi-pieces .x svg{width:13px;height:13px}
+.pi-pdf{position:relative;display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:9px 40px 9px 12px;border-radius:12px;
+  background:var(--card);box-shadow:var(--edge);font-size:13.5px}
+.pi-pdf > svg{width:18px;height:18px;flex:none;color:var(--ko)}
+.pi-pdf b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
+.pi-pdf i{flex:none;font-style:normal;color:var(--soft);font-size:12.5px}
+.pi-pdf .x{top:50%;right:6px;transform:translateY(-50%)}
+
 @media (hover:hover){.pi-puce:not(:disabled):hover{color:var(--ink);background:var(--card)}}

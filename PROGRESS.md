@@ -19,7 +19,17 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
 FAIT      50 / 148
-DERNIER   2026-11-07 · Le vocabulaire redevient classique partout
+DERNIER   2026-11-07 · L'IA de la création n'est plus une méthode :
+          une barre « Demande à l'IA » sous Écrire, Coller, Fichier et
+          Photo. Des photos (8) ou un PDF y attendent avec une consigne
+          facultative, un texte collé aussi ; sans rien, elle crée ou
+          retouche la liste, cartes écrites à la main comprises. Ce
+          qu'elle rend va dans la liste, « Annuler » la remet. Fonction
+          ai : consigne et contexte à leur place, 8 photos en un appel
+          (tools/ia/essai.js 8/8, pas encore déployée : l'app se replie
+          sur hint et une photo par appel) ; e2e/prompt.e2e.js 8/8.
+          Avant :
+          2026-11-07 · Le vocabulaire redevient classique partout
           (app, site, démo, textes du cadre, e-mails, manifeste) : paquet,
           cartes, réviser, Mes amis, Statistiques, Messages ; nouvelles
           adresses (/eleve/paquets, /statistiques, /messages, /amis), les

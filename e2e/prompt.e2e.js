@@ -1,9 +1,12 @@
-// Le Prompt de la création (2026-10-29) : on colle, on demande, l'IA écrit les
-// pages ; on les retouche en lui parlant ; chaque message est une génération
-// du mois, que la pastille de chaque onglet d'IA décompte. Un élève Campus à
-// qui sa licence n'accorde aucune génération voit ces onglets grisés, et
-// pourquoi. La fausse fonction ai (src/base-locale/ia.js) répond de façon
-// prévisible : « a = b » fait une page, « inverse… » échange recto et verso.
+// L'IA de la création (2026-11-07) : plus un onglet, une barre sous chaque
+// façon de créer. Sans rien, elle crée ou retouche la liste ; avec des photos,
+// un PDF ou un texte collé, elle en fait des cartes comme on le lui demande.
+// Ce qu'elle rend va droit dans la liste, et « Annuler » remet celle d'avant.
+// Chaque envoi est une génération du mois, que la pastille décompte. Un élève
+// Campus à qui sa licence n'accorde rien voit la barre grisée, et pourquoi.
+// La fausse fonction ai (src/base-locale/ia.js) répond de façon prévisible :
+// « a = b » fait une carte, « inverse… » échange recto et verso, une photo
+// fait « Carte de la photo n » avec la consigne au verso.
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerCompte } from './faux-cercle.js';
@@ -12,6 +15,8 @@ import { semerLicenceProf } from '../src/base-locale/licences.js';
 import { sansTuto } from './aide.js';
 
 const MDP = 'motdepasse-solide-42';
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+const photo = n => ({ name: `page-${n}.png`, mimeType: 'image/png', buffer: PNG });
 
 function eleve(store, email) {
   const id = semerCompte(store, email);
@@ -31,95 +36,169 @@ async function connexion(page, email) {
   await expect(page.getByRole('button', { name: 'Nouveau paquet' }).first()).toBeVisible({ timeout: 10000 });
 }
 
-const reste = (page, onglet) => page.getByRole('tab', { name: onglet }).locator('.cr-reste');
+async function nouveau(page, titre) {
+  await page.getByRole('button', { name: 'Nouveau paquet' }).first().click();
+  await page.locator('#nm').fill(titre);
+  await expect(page.locator('.pi-tete')).toBeVisible({ timeout: 10000 });
+}
 
-test('un cours collé devient des cartes, qu’on retouche en parlant ; chaque message compte', async ({ page }) => {
+const reste = page => page.locator('.pi .cr-reste');
+const cartes = page => page.locator('#dlist .dc');
+const ia = page => page.getByRole('textbox', { name: 'Demande à l’IA' });
+
+test('sans rien sous la main : l’IA crée la liste, la retouche, et « Annuler » la remet ; chaque envoi compte', async ({ page }) => {
   const store = nouveauStore();                               // Mirandola+ (les comptes des parcours sont « d'avant »)
   const lea = eleve(store, 'lea@exemple.fr');
   await brancher(page, store);
   await connexion(page, 'lea@exemple.fr');
-  await page.getByRole('button', { name: 'Nouveau paquet' }).first().click();
-  await page.locator('#nm').fill('Italien');
+  await nouveau(page, 'Italien');
 
-  // ce qui reste ce mois-ci, sur les trois façons de créer qui passent par l'IA
-  for (const o of ['Fichier', 'Photo', 'Prompt']) await expect(reste(page, o)).toHaveText('30', { timeout: 10000 });
-  await expect(page.getByRole('tab', { name: 'Coller' }).locator('.cr-reste')).toHaveCount(0);
-  await expect(reste(page, 'Prompt')).toHaveAttribute('title', '30 générations d’IA restent ce mois-ci, sur 30');
+  // plus d'onglet « Prompt » : quatre façons de créer, et l'IA sous chacune
+  await expect(page.getByRole('tab')).toHaveCount(4);
+  await expect(page.getByRole('tab', { name: 'Prompt' })).toHaveCount(0);
+  await expect(reste(page)).toHaveText('30', { timeout: 10000 });
+  await expect(reste(page)).toHaveAttribute('title', '30 générations d’IA restent ce mois-ci, sur 30');
 
-  await page.getByRole('tab', { name: 'Prompt' }).click();
-  const msg = page.locator('#pimsg');
-  await expect(msg).toBeVisible({ timeout: 10000 });
   // un début de consigne se pose dans la zone, il ne part pas seul
-  await page.locator('.pi-puce', { hasText: 'La définition au recto' }).click();
-  await expect(msg).toHaveValue('La définition au recto, le mot au verso');
-  await msg.fill('chat = gatto\nchien = cane');
+  await page.locator('.pi-puce', { hasText: '10 cartes sur' }).click();
+  await expect(ia(page)).toHaveValue('10 cartes sur ');                   // l'espace attend le sujet
+  await ia(page).fill('chat = gatto\nchien = cane');
   await page.getByRole('button', { name: 'Envoyer' }).click();
-  await expect(page.locator('.pi-p')).toHaveCount(2, { timeout: 10000 });
+  await expect(cartes(page)).toHaveCount(2, { timeout: 10000 });          // droit dans la liste
   await expect(page.locator('.pi-b.moi')).toContainText('chat = gatto');
   await expect(page.locator('.pi-b.ia').last()).toContainText('2 cartes');
-  await expect(reste(page, 'Prompt')).toHaveText('29');
-  await expect(reste(page, 'Photo')).toHaveText('29');                     // un seul compte pour toute l'IA
-  await expect(msg).toHaveValue('');
+  await expect(reste(page)).toHaveText('29');
+  await expect(ia(page)).toHaveValue('');
 
   // une retouche, en un appui : toute la liste revient, retournée
   await page.locator('.pi-puce', { hasText: 'Inverse recto et verso' }).click();
-  await expect(page.locator('.pi-p .a').first()).toHaveText('gatto', { timeout: 10000 });
-  await expect(page.locator('.pi-p .b').first()).toHaveText('chat');
-  await expect(reste(page, 'Prompt')).toHaveText('28');
+  await expect(cartes(page).last().locator('b')).toHaveText('gatto', { timeout: 10000 });
+  await expect(reste(page)).toHaveText('28');
+  // « Annuler » remet la liste d'avant, sans rien dépenser
+  await page.getByRole('button', { name: 'Annuler' }).click();
+  await expect(cartes(page).last().locator('b')).toHaveText('chat');
+  await expect(page.getByRole('button', { name: 'Annuler' })).toHaveCount(0);
+  await expect(reste(page)).toHaveText('28');
 
   // une autre, écrite (Ctrl+Entrée envoie)
-  await msg.fill('ours = orso');
-  await msg.press('Control+Enter');
-  await expect(page.locator('.pi-p')).toHaveCount(3, { timeout: 10000 });
-  await expect(reste(page, 'Prompt')).toHaveText('27');
-  // une page qu'on ne veut pas : on la retire sans rien dépenser
-  await page.locator('.pi-p', { hasText: 'orso' }).getByRole('button', { name: 'Retirer la carte' }).click();
-  await expect(page.locator('.pi-p')).toHaveCount(2);
-  await expect(reste(page, 'Prompt')).toHaveText('27');
+  await ia(page).fill('ours = orso');
+  await ia(page).press('Control+Enter');
+  await expect(cartes(page)).toHaveCount(3, { timeout: 10000 });
+  await expect(reste(page)).toHaveText('27');
 
-  // « Créer » prend les pages qui attendent
   await page.getByRole('button', { name: 'Créer le paquet' }).click();
   await expect(page.getByRole('button', { name: 'Menu du paquet' })).toBeVisible({ timeout: 10000 });
-  const rectos = page.getByRole('textbox', { name: 'Recto' });
-  await expect(rectos).toHaveCount(2);
-  await expect(rectos.nth(0)).toHaveValue('gatto');
-  await expect(rectos.nth(1)).toHaveValue('cane');
+  await expect(page.getByRole('textbox', { name: 'Recto' })).toHaveCount(3);
   expect(store.tables.ai_usage.filter(a => a.user_id === lea && a.op === 'prompt')).toHaveLength(3);
 });
 
-test('« Ajouter » verse les cartes dans la liste, sans doublon ; l’IA épuisée le dit et rend le message', async ({ page }) => {
+test('des cartes écrites à la main, puis l’IA les retouche', async ({ page }) => {
   const store = nouveauStore();
-  const lea = eleve(store, 'lea@exemple.fr');
-  // 29 générations déjà prises ce mois-ci
-  const jour = new Date().toISOString().slice(0, 10);
-  store.tables.ai_usage = Array.from({ length: 29 }, () => ({ user_id: lea, day: jour, op: 'cards', cents: 0.4 }));
+  eleve(store, 'lea@exemple.fr');
   await brancher(page, store);
   await connexion(page, 'lea@exemple.fr');
-  await page.getByRole('button', { name: 'Nouveau paquet' }).first().click();
-  await page.locator('#cf').fill('chat');
-  await page.locator('#cb').fill('gatto');
+  await nouveau(page, 'Anglais');
+  await page.locator('#cf').fill('to go');
+  await page.locator('#cb').fill('aller');
   await page.locator('#cb').press('Enter');
-  await page.getByRole('tab', { name: 'Prompt' }).click();
-  await expect(reste(page, 'Prompt')).toHaveText('1', { timeout: 10000 });
-  await page.locator('#pimsg').fill('chat = gatto\nloup = lupo');
+  await expect(cartes(page)).toHaveCount(1);
+  await ia(page).fill('Inverse recto et verso');
   await page.getByRole('button', { name: 'Envoyer' }).click();
-  await expect(page.locator('.pi-p')).toHaveCount(2, { timeout: 10000 });
-  await expect(reste(page, 'Prompt')).toHaveText('0');
-  await expect(reste(page, 'Prompt')).toHaveClass(/vide/);
-
-  await page.getByRole('button', { name: 'Ajouter 2 cartes' }).click();
-  await expect(page.locator('.toast:not(.sort)')).toContainText('1 carte · 1 déjà là');
-  await expect(page.locator('.pi-p')).toHaveCount(0);
-
-  // plus rien ce mois-ci : la base refuse, le message revient dans la zone
-  await page.locator('#pimsg').fill('ours = orso');
-  await page.getByRole('button', { name: 'Envoyer' }).click();
-  await expect(page.locator('.pi-b.err')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('#pimsg')).toHaveValue('ours = orso');
-  await expect(page.locator('.pi-b.moi')).toHaveCount(1);
+  await expect(cartes(page).first().locator('b')).toHaveText('aller', { timeout: 10000 });
+  await expect(cartes(page).first().locator('span')).toHaveText('to go');
 });
 
-test('un élève Campus sans IA : les trois onglets grisés, et pourquoi', async ({ page }) => {
+test('des photos et une consigne : un seul envoi, les cartes dans la liste ; une photo se retire avant', async ({ page }) => {
+  const store = nouveauStore();
+  const lea = eleve(store, 'lea@exemple.fr');
+  await brancher(page, store);
+  await connexion(page, 'lea@exemple.fr');
+  await nouveau(page, 'Histoire');
+  await page.getByRole('tab', { name: 'Photo' }).click();
+  await page.locator('#fshot').setInputFiles([photo(1), photo(2), photo(3)]);
+  await expect(page.locator('.pi-ph')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Retirer la photo 3' }).click();
+  await expect(page.locator('.pi-ph')).toHaveCount(2);
+  await expect(ia(page)).toHaveAttribute('placeholder', /consigne/);
+
+  await ia(page).fill('seulement les dates');
+  await page.getByRole('button', { name: 'Créer les cartes' }).click();
+  await expect(cartes(page)).toHaveCount(2, { timeout: 10000 });
+  await expect(cartes(page).first().locator('span')).toHaveText('seulement les dates');
+  await expect(page.locator('.pi-b.moi').last()).toContainText('2 photos');
+  await expect(page.locator('.pi-b.ia').last()).toContainText('2 cartes ajoutées');
+  await expect(page.locator('.pi-ph')).toHaveCount(0);                    // parties avec l'envoi
+  // une génération pour les deux photos ; la consigne et le contexte à leur place
+  expect(store.tables.ai_usage.filter(a => a.user_id === lea && a.op === 'ocr')).toHaveLength(1);
+  expect(store.iaDemande).toMatchObject({ op: 'ocr', consigne: 'seulement les dates', images: 2 });
+  expect(store.iaDemande.contexte).toContain('Histoire');
+  await expect(reste(page)).toHaveText('29');
+});
+
+test('la fonction d’avant (une photo par appel) : les suivantes partent seules, avec la même consigne', async ({ page }) => {
+  const store = { ...nouveauStore(), iaAncienne: true };
+  const lea = eleve(store, 'lea@exemple.fr');
+  await brancher(page, store);
+  await connexion(page, 'lea@exemple.fr');
+  await nouveau(page, 'Histoire');
+  await page.getByRole('tab', { name: 'Photo' }).click();
+  await page.locator('#fshot').setInputFiles([photo(1), photo(2)]);
+  await ia(page).fill('une question au recto');
+  await page.getByRole('button', { name: 'Créer les cartes' }).click();
+  await expect(cartes(page)).toHaveCount(2, { timeout: 10000 });
+  expect(store.tables.ai_usage.filter(a => a.user_id === lea && a.op === 'ocr')).toHaveLength(2);
+  await expect(cartes(page).last().locator('span')).toHaveText('une question au recto');
+});
+
+test('un PDF et une consigne ; un texte collé et une consigne, sans doublon de la liste', async ({ page }) => {
+  const store = nouveauStore();
+  eleve(store, 'lea@exemple.fr');
+  await brancher(page, store);
+  await connexion(page, 'lea@exemple.fr');
+  await nouveau(page, 'Histoire');
+
+  await page.getByRole('tab', { name: 'Fichier' }).click();
+  await page.locator('#fpdf').setInputFiles({ name: 'Chapitre 2.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 x') });
+  await expect(page.locator('.pi-pdf')).toContainText('Chapitre 2.pdf');
+  await ia(page).fill('le chapitre 2, en questions');
+  await page.getByRole('button', { name: 'Créer les cartes' }).click();
+  await expect(cartes(page)).toHaveCount(1, { timeout: 10000 });
+  await expect(cartes(page).first().locator('span')).toHaveText('le chapitre 2, en questions');
+  expect(store.iaDemande).toMatchObject({ op: 'pdf', consigne: 'le chapitre 2, en questions' });
+
+  // un texte collé : l'IA le lit avec la consigne ; ce qui est déjà dans la liste n'y entre pas deux fois
+  await page.getByRole('tab', { name: 'Coller' }).click();
+  await page.locator('#tx').fill('Carte du PDF = le chapitre 2, en questions\nprise = Bastille');
+  await ia(page).fill('garde tout');
+  await page.getByRole('button', { name: 'Créer les cartes' }).click();
+  await expect(cartes(page)).toHaveCount(2, { timeout: 10000 });
+  await expect(page.locator('.pi-b.ia').last()).toContainText('1 carte ajoutée · 1 déjà là');
+  await expect(page.locator('#tx')).toHaveValue('');                       // le texte est devenu des cartes
+  expect(store.iaDemande.message).toContain('garde tout');
+  expect(store.iaDemande.message).toContain('prise = Bastille');
+});
+
+test('l’IA épuisée le dit, la consigne revient et les photos attendent encore', async ({ page }) => {
+  const store = nouveauStore();
+  const lea = eleve(store, 'lea@exemple.fr');
+  const jour = new Date().toISOString().slice(0, 10);
+  store.tables.ai_usage = Array.from({ length: 30 }, () => ({ user_id: lea, day: jour, op: 'cards', cents: 0.4 }));
+  await brancher(page, store);
+  await connexion(page, 'lea@exemple.fr');
+  await nouveau(page, 'Histoire');
+  await expect(reste(page)).toHaveText('0', { timeout: 10000 });
+  await expect(reste(page)).toHaveClass(/vide/);
+  await page.getByRole('tab', { name: 'Photo' }).click();
+  await page.locator('#fshot').setInputFiles([photo(1)]);
+  await ia(page).fill('seulement les dates');
+  await page.getByRole('button', { name: 'Créer les cartes' }).click();
+  await expect(page.locator('.pi-b.err')).toContainText('Ton IA du mois est épuisée', { timeout: 10000 });
+  await expect(ia(page)).toHaveValue('seulement les dates');
+  await expect(page.locator('.pi-ph')).toHaveCount(1);
+  await expect(cartes(page)).toHaveCount(0);
+});
+
+test('un élève Campus sans IA : la barre, Photo et Fichier grisés, et pourquoi', async ({ page }) => {
   const store = nouveauStore(), m = modele(store);
   const lucie = semerCompte(store, 'lucie@exemple.fr');
   faireProfesseur(store, 'lucie@exemple.fr', 'Lucie MIRA');
@@ -133,17 +212,15 @@ test('un élève Campus sans IA : les trois onglets grisés, et pourquoi', async
   await connexion(page, 'tom@exemple.fr');
   await page.getByRole('button', { name: 'Nouveau paquet' }).first().click();
 
-  const prompt = page.getByRole('tab', { name: 'Prompt' });
-  for (const o of ['Fichier', 'Photo', 'Prompt']) {
-    await expect(page.getByRole('tab', { name: o })).toHaveClass(/ferme/, { timeout: 10000 });
-    await expect(page.getByRole('tab', { name: o })).toHaveAttribute('data-astuce', 'Ton professeur n’a pas ouvert l’IA à ton compte');
-  }
-  await expect(prompt).not.toHaveAttribute('data-offre', 'plus');           // rien à acheter : c'est la licence
+  const barre = page.locator('.pi');
+  await expect(barre).toHaveClass(/ferme/, { timeout: 10000 });
+  await expect(barre).toHaveAttribute('data-astuce', 'Ton professeur n’a pas ouvert l’IA à ton compte');
+  await expect(barre).not.toHaveAttribute('data-offre', 'plus');          // rien à acheter : c'est la licence
+  for (const o of ['Fichier', 'Photo']) await expect(page.getByRole('tab', { name: o })).toHaveClass(/ferme/);
   await expect(page.locator('.cr-reste')).toHaveCount(0);
-  await prompt.click({ force: true });
+  await barre.click();
   await expect(page.locator('.toast:not(.sort)')).toContainText('Ton professeur n’a pas ouvert l’IA à ton compte');
   await expect(page.getByRole('tab', { name: 'Écrire' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('#pimsg')).toHaveCount(0);
 });
 
 test('une professeure, et l’IA en panne : le message dit pourquoi, rien n’est compté, le message attend ; revenue, ça marche', async ({ page }) => {
@@ -159,15 +236,14 @@ test('une professeure, et l’IA en panne : le message dit pourquoi, rien n’es
   await page.getByRole('button', { name: 'Se connecter' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'prof', { timeout: 10000 });
   await page.goto('./prof/paquets/nouveau');
-  await page.getByRole('tab', { name: 'Prompt' }).click({ timeout: 10000 });
-  await expect(reste(page, 'Prompt')).toHaveText('400', { timeout: 10000 });       // un professeur : 400 par mois
+  await expect(reste(page)).toHaveText('400', { timeout: 10000 });         // un professeur : 400 par mois
 
   store.iaPanne = 'surcharge';
-  await page.locator('#pimsg').fill('to go = aller');
+  await ia(page).fill('to go = aller');
   await page.getByRole('button', { name: 'Envoyer' }).click();
   await expect(page.locator('.pi-b.err')).toContainText('L’IA est très demandée', { timeout: 10000 });
-  await expect(page.locator('#pimsg')).toHaveValue('to go = aller');
-  await expect(reste(page, 'Prompt')).toHaveText('400');
+  await expect(ia(page)).toHaveValue('to go = aller');
+  await expect(reste(page)).toHaveText('400');
 
   store.iaPanne = 'credit';
   await page.getByRole('button', { name: 'Envoyer' }).click();
@@ -175,7 +251,7 @@ test('une professeure, et l’IA en panne : le message dit pourquoi, rien n’es
 
   store.iaPanne = null;
   await page.getByRole('button', { name: 'Envoyer' }).click();
-  await expect(page.locator('.pi-p')).toHaveCount(1, { timeout: 10000 });
+  await expect(cartes(page)).toHaveCount(1, { timeout: 10000 });
   await expect(page.locator('.pi-b.err')).toHaveCount(0);
-  await expect(reste(page, 'Prompt')).toHaveText('399');
+  await expect(reste(page)).toHaveText('399');
 });

@@ -7,7 +7,12 @@
    - une ligne « mot = réponse » (ou « : », tabulation) fait une page ;
    - « inverse… » échange recto et verso de toutes les pages ;
    - « enlève X » retire les pages qui parlent de X ;
-   - sinon les pages du message s'ajoutent à celles qui sont là.
+   - sinon les pages du message s'ajoutent à celles qui sont là ;
+   - des photos (2026-11-07) : une carte par photo, « Carte de la photo n »,
+     la consigne au verso, toutes lues en un appel (`lues`) — sauf
+     `store.iaAncienne`, qui joue la fonction d'avant : la première seule ;
+   - un PDF : une carte, la consigne au verso.
+   Ce que la dernière demande a reçu est dans `store.iaDemande`.
    `store.iaPanne` joue une panne de la vraie (« credit », « surcharge »).
    La démo sans compte ne l'appelle jamais (l'IA y est fermée). */
 import { modele } from './classes.js';
@@ -103,11 +108,16 @@ export function aiFaux(store, b, user) {
     return [200, { ...examenFaux(store, b), mois }];
   }
   let r;
-  if (op === 'prompt') r = retoucher((b.cards || []).map(c => ({ f: String(c.f || ''), b: String(c.b || '') })), String(b.message || ''));
+  store.iaDemande = { op, consigne: b.consigne, contexte: b.contexte, hint: b.hint, message: b.message, images: (b.images || []).length };
+  if (op === 'ocr') {
+    const lues = Array.isArray(b.images) && b.images.length && !store.iaAncienne ? b.images.length : 1;
+    r = { cards: Array.from({ length: lues }, () => ({ f: `Carte de la photo ${(store.iaPhotos = (store.iaPhotos || 0) + 1)}`,
+      b: b.consigne || b.hint || 'Sur la photo' })), note: '', lues: store.iaAncienne ? undefined : lues };
+  } else if (op === 'pdf') r = { cards: [{ f: 'Carte du PDF', b: b.consigne || b.hint || 'Dans le document' }], note: '' };
+  else if (op === 'prompt') r = retoucher((b.cards || []).map(c => ({ f: String(c.f || ''), b: String(c.b || '') })), String(b.message || ''));
   else if (op === 'cards') r = { cards: lignes(b.text), note: '' };
-  else r = { cards: [{ f: 'Carte révisée', b: 'Sur la photo' }], note: '' };
   usage(store).push({ user_id: user.id, day: auj(), op, cents: 0.4 });
   mois.fait += 1;
   if (!r.cards.length && op !== 'prompt') return [422, { error: 'empty', mois }];
-  return [200, { cards: r.cards, note: r.note, mois }];
+  return [200, { cards: r.cards, note: r.note, lues: r.lues, mois }];
 }

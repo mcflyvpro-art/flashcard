@@ -1,12 +1,12 @@
 /* ══════════ l'IA du mois, sur les onglets de la création (2026-10-29) ══════════
-   Sans dépendance. Ce que montrent les trois façons de créer qui passent par
-   l'IA — Fichier, Prompt, Photo — selon le compte :
+   Sans dépendance. Ce que montre la barre de l'IA de la création (et les
+   onglets Photo et Fichier qui vont avec elle, 2026-11-07) selon le compte :
    - `plus`    : Mirandola gratuit, l'IA est dans Mirandola+ (ui/bridage.js) ;
    - `ferme`   : un compte Campus à qui sa licence n'accorde aucune
                  génération (quota 0) — grisé, et pourquoi au survol et au
                  toucher ;
    - `epuise`  : tout le mois est pris — la suite le 1er ;
-   - `ouvert`  : le reste du mois, posé en pastille sur chaque onglet ;
+   - `ouvert`  : le reste du mois, posé en pastille en tête de la barre ;
    - `inconnu` : la base n'a pas encore répondu (hors ligne, premier
                  affichage) — rien de posé, rien de fermé : la fonction ai
                  tranchera, comme partout ailleurs (« une offre inconnue ne

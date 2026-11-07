@@ -2,13 +2,12 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { parseText } from '../parseur.js';
-import { aiBusy, comp, db, demoEtab, ia, offre, prefs, setAiBusy, setComp, tuto, view } from '../data/etat.js';
+import { comp, db, demoEtab, ia, offre, prefs, setComp, tuto, view } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { donnerLivre } from './prof-porte.js';
 import { MAXB, MAXF, markDups, markOver } from './carte-media.js';
 import { deck, esc, plur, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
-import { askPages } from './ecran-groupe.js';
-import { AIERR, addDeck, aiFromFile, toast } from './import-cartes.js';
+import { addDeck, toast } from './import-cartes.js';
 import { bride, envie } from './bridage.js';
 import { etatIA } from '../ia-mois.js';
 import { iaPull } from '../core/abonnement.js';
@@ -20,18 +19,22 @@ import { iaPull } from '../core/abonnement.js';
    personne ne trouvait la seconde. Les méthodes sont maintenant des onglets
    côte à côte : on en choisit une, seule celle-là s'affiche, et les pages
    s'accumulent dans la même liste quelle que soit la méthode (on peut coller
-   une liste, puis compléter à la main). Photo, fichier et IA rendent du texte
-   tabulé dans la zone de vérification : aperçu, doublons et correction à la
-   main y fonctionnent à l'identique, avant que rien n'entre dans le livre. */
+   une liste, puis compléter à la main). Un collage ou un fichier texte passe
+   par la zone de vérification : aperçu, doublons et correction à la main,
+   avant que rien n'entre dans le paquet.
+   L'IA n'est plus une méthode parmi d'autres (2026-11-07, demandé : « elle
+   aide le user en toute circonstance, pour n'importe quoi ») : une barre
+   sous chaque façon de créer (ui/prompt-ia.js). Les photos et le PDF y
+   attendent avec la consigne qu'on veut ; sans rien, elle crée ou retouche
+   la liste. */
 export const resetComp = extra => { setComp({ subject: '', cards: [], edit: -1, mode: 'ecrire',
   text: '', dups: false, ...(extra || {}) }); };
 
 const MODES = [
   { id: 'ecrire', icon: 'pen', nom: 'Écrire', aide: 'Carte par carte, au clavier. Entrée passe au verso, puis ajoute la carte.' },
   { id: 'coller', icon: 'rows', nom: 'Coller', aide: 'Une carte par ligne : le mot, puis une tabulation, un tiret ou « = », puis la réponse.' },
-  { id: 'fichier', icon: 'file', nom: 'Fichier', aide: 'Un PDF de cours, ou un tableau : CSV, texte, export Anki ou Quizlet.' },
-  { id: 'photo', icon: 'image', nom: 'Photo', aide: 'Une ou plusieurs pages de cours, prises sur le moment ou choisies dans la galerie.' },
-  { id: 'ia', icon: 'spark', nom: 'Prompt', aide: 'Colle ton cours ou dis ce que tu veux : l’IA écrit les cartes, puis les retouche à ta demande.' }
+  { id: 'fichier', icon: 'file', nom: 'Fichier', aide: 'Un PDF de cours pour l’IA, ou un tableau : CSV, texte, export Anki ou Quizlet.' },
+  { id: 'photo', icon: 'image', nom: 'Photo', aide: 'Une ou plusieurs pages de cours, prises sur le moment ou choisies dans la galerie.' }
 ];
 
 /* Les pages en attente dans la zone de vérification : « Créer » les prend
@@ -55,43 +58,47 @@ function identiteHtml() {
     </section>`;
 }
 
-/* Toute l'IA (cours, photo, PDF) est dans Mirandola+ (décidé le 2026-10-27) :
-   avec Mirandola gratuit, et dans la démo sans compte, ces onglets sont grisés,
-   le disent au survol (`data-astuce`, app.css) et d'un « + » (`data-offre`) ;
-   les toucher dit ce qu'ils feraient et comment les avoir — l'écran Mirandola+,
-   ou la fenêtre de la démo (`envie`, ui/bridage.js). */
-const PAYANTS = new Set(['fichier', 'photo', 'ia']);
-const payant = id => PAYANTS.has(id) && (!!demoEtab || bride(id));
+/* Toute l'IA est dans Mirandola+ (décidé le 2026-10-27) : avec Mirandola
+   gratuit, et dans la démo sans compte, la barre de l'IA et les onglets qui
+   ne vont qu'avec elle (Photo, Fichier) sont grisés, le disent au survol
+   (`data-astuce`, app.css) et d'un « + » (`data-offre`) ; les toucher dit ce
+   qu'ils feraient et comment les avoir — l'écran Mirandola+, ou la fenêtre
+   de la démo (`envie`, ui/bridage.js). */
+const PAYANTS = new Set(['fichier', 'photo']);
+const iaPayante = () => !!demoEtab || bride('ia');
+const payant = id => PAYANTS.has(id) && iaPayante();
 export const ASTUCE_PAYANT = 'Avec Mirandola+';
 
-/* L'IA du mois (2026-10-29, src/ia-mois.js) : sur chaque façon de créer qui
-   passe par l'IA, ce qui reste ce mois-ci, en pastille ; un compte Campus à
-   qui sa licence n'accorde rien voit ces onglets grisés, et pourquoi. */
-const etatOnglet = id => (PAYANTS.has(id) && !payant(id) ? etatIA(ia, offre) : null);
-const ferme = id => { const e = etatOnglet(id); return e && e.cle === 'ferme' ? e.texte : ''; };
+/* L'IA du mois (2026-10-29, src/ia-mois.js) : ce qui reste, en pastille sur
+   la barre de l'IA ; un compte Campus à qui sa licence n'accorde rien voit
+   la barre et ces onglets grisés, et pourquoi. */
+const etatDuMois = () => (iaPayante() ? null : etatIA(ia, offre));
+const fermeIA = () => { const e = etatDuMois(); return e && e.cle === 'ferme' ? e.texte : ''; };
+const ferme = id => (PAYANTS.has(id) ? fermeIA() : '');
 
 function ongletHtml(m, mode) {
-  const e = etatOnglet(m.id), f = e && e.cle === 'ferme';
+  const f = !payant(m.id) && ferme(m.id);
   const attrs = payant(m.id) ? `aria-disabled="true" data-astuce="${ASTUCE_PAYANT}" data-offre="plus"`
-    : f ? `aria-disabled="true" data-astuce="${esc(e.texte)}"` : `title="${m.aide}"`;
-  const pin = e && e.cle === 'infini' ? `<i class="cr-reste infini" title="${esc(e.titre)}">∞</i>`
-    : e && e.reste != null ? `<i class="cr-reste${e.reste ? '' : ' vide'}" style="--p:${e.pc}" title="${esc(e.titre)}">${e.reste}</i>` : '';
+    : f ? `aria-disabled="true" data-astuce="${esc(f)}"` : `title="${m.aide}"`;
   return `<button role="tab" class="${m.id === mode ? 'on' : ''}${payant(m.id) ? ' payant' : ''}${f ? ' payant ferme' : ''}"
-      data-cmode="${m.id}" aria-selected="${m.id === mode}" ${attrs}>${svg(I[m.icon])}<span>${m.nom}</span>${pin}</button>`;
+      data-cmode="${m.id}" aria-selected="${m.id === mode}" ${attrs}>${svg(I[m.icon])}<span>${m.nom}</span></button>`;
 }
 
 const ongletsHtml = mode => `<div class="cr-tabs" role="tablist" aria-label="Façon de créer les cartes">
     ${MODES.map(m => ongletHtml(m, mode)).join('')}
   </div>`;
 
-/* Les onglets se repeignent seuls, sur place : quand mon_ia répond, après
-   chaque génération. Jamais tout l'écran (on tape peut-être). */
+/* Les onglets et la barre de l'IA se repeignent seuls, sur place, quand
+   mon_ia répond. Jamais tout l'écran (on tape peut-être). */
 function peindreOnglets() {
   const v = document.querySelector('.cr-tabs');
   if (!v || view.name !== 'import') return;
-  v.outerHTML = ongletsHtml(comp.mode || 'ecrire');
+  v.outerHTML = ongletsHtml(modeDe());
   lierOnglets();
+  majIA(true);
 }
+// un mode d'avant (l'onglet « Prompt », parti le 2026-11-07) retombe sur « Écrire »
+const modeDe = () => (MODES.some(m => m.id === comp.mode) ? comp.mode : 'ecrire');
 
 function lierOnglets() {
   $.querySelectorAll('[data-cmode]').forEach(b => b.onclick = () => {
@@ -119,30 +126,33 @@ const depotHtml = (id, icon, nom, sous) => `<button class="cr-drop" id="${id}">
     <i>${svg(icon)}</i><b>${nom}</b><span>${sous}</span></button>`;
 
 const PLACE = {
-  coller: 'chat = gatto&#10;chien = cane&#10;maison = casa',
-  fichier: '', photo: ''
+  coller: 'chat = gatto&#10;chien = cane&#10;maison = casa&#10;&#10;ou ton cours, pour l’IA',
+  fichier: ''
 };
 
+/* Photo : la zone de dépôt seule — les photos vont attendre dans la barre de
+   l'IA. Fichier : un PDF y va aussi ; un fichier texte (CSV, Anki,
+   Quizlet) se lit ici et passe par la zone de vérification. */
 function lotHtml(mode) {
-  const vide = !comp.text.trim() && (mode === 'fichier' || mode === 'photo');
+  if (mode === 'photo') return `${depotHtml('aishot', I.image, 'Prendre ou choisir des photos', '8 au plus')}
+    <!-- Sans « capture », le sélecteur propose l'appareil photo ET la
+         galerie (Photos sur iPhone, Galerie/Fichiers sur Android),
+         et « multiple » permet d'en choisir plusieurs d'un coup. Avec
+         « capture », les deux systèmes sautaient tout droit à
+         l'appareil photo, sans jamais montrer la pellicule. -->
+    <input type="file" id="fshot" accept="image/*" multiple hidden>`;
+  const vide = !comp.text.trim() && mode === 'fichier';
   return `
     ${mode === 'fichier' ? depotHtml('aipdf', I.file, 'Choisir un fichier', 'PDF · CSV · Anki · Quizlet') : ''}
-    ${mode === 'photo' ? depotHtml('aishot', I.image, 'Prendre ou choisir des photos', '') : ''}
     <div class="cr-lot" id="lot" ${vide ? 'hidden' : ''}>
-      ${mode === 'fichier' || mode === 'photo' ? '<div class="cr-sous">À vérifier avant d’ajouter</div>' : ''}
+      ${mode === 'fichier' ? '<div class="cr-sous">À vérifier avant d’ajouter</div>' : ''}
       <div class="cr-ta"><textarea id="tx" placeholder="${PLACE[mode]}" aria-label="Cartes à ajouter"
         autocapitalize="off" autocorrect="off" spellcheck="false">${esc(comp.text)}</textarea></div>
 
       <div class="prev" id="prev"></div>
       <button class="pbtn cr-bulk" id="bulkadd" disabled>${svg(I.plus)}<span>Ajouter</span></button>
     </div>
-    <!-- Sans « capture », le sélecteur propose l'appareil photo ET la
-         galerie (Photos sur iPhone, Galerie/Fichiers sur Android),
-         et « multiple » permet d'en choisir plusieurs d'un coup. Avec
-         « capture », les deux systèmes sautaient tout droit à
-         l'appareil photo, sans jamais montrer la pellicule. -->
-    <input type="file" id="fshot" accept="image/*" multiple hidden>
-    <input type="file" id="fpdf" accept=".pdf,.txt,.csv,.tsv,.apkg,application/pdf,text/plain,text/csv" hidden>`;
+    ${mode === 'fichier' ? '<input type="file" id="fpdf" accept=".pdf,.txt,.csv,.tsv,.apkg,application/pdf,text/plain,text/csv" hidden>' : ''}`;
 }
 
 function okLabel(t) {
@@ -158,7 +168,7 @@ export function importView() {
   const t = view.id ? deck(view.id) : null;
   const s = subj(t ? t.subject : comp.subject);
   if (comp.edit >= 0) comp.mode = 'ecrire';
-  const mode = comp.mode || 'ecrire';
+  const mode = comp.mode = modeDe();
   enAttente = null;
   $.innerHTML = `
     <div class="bar">
@@ -172,8 +182,9 @@ export function importView() {
         ${t ? '' : identiteHtml()}
         ${ongletsHtml(mode)}
         <section class="cr-panel" role="tabpanel" data-k="cr:${mode}">
-          ${mode === 'ecrire' ? ecrireHtml(s) : mode === 'ia' ? '<div class="pi" id="pi"></div>' : lotHtml(mode)}
+          ${mode === 'ecrire' ? ecrireHtml(s) : lotHtml(mode)}
         </section>
+        <section class="pi" id="pi" aria-label="Demande à l’IA"></section>
       </div>
       <aside class="cr-pages">
         <div class="lbl"><span>Cartes</span><span id="cn">${comp.cards.length}</span></div>
@@ -186,8 +197,9 @@ export function importView() {
   if (nm) { nm.addEventListener('input', () => comp.name = nm.value); nm.addEventListener('focus', () => { comp.champ = 'nm'; }); }
   lierOnglets();
   if (mode === 'ecrire') bindEcrire(nm);
-  else if (mode === 'ia') monterPrompt(t);
+  else if (mode === 'photo') bindDepots();
   else bindLot(t, mode);
+  monterPrompt(t);
   paintDraft();
   bindOk(t);
   /* l'IA du mois, relue à chaque arrivée sur l'écran (au plus une fois par
@@ -212,27 +224,51 @@ function contexte(t) {
     .filter(Boolean).join(' · ');
 }
 
-/* Le Prompt (2026-10-29) : une conversation avec l'IA, chargée à la demande
-   (ui/prompt-ia.js). Ses pages en attente comptent pour « Créer », et
-   « Ajouter » les verse ici, sans doublon du livre ni de la liste. */
+/* La barre de l'IA (2026-11-07), chargée à la demande (ui/prompt-ia.js),
+   sous chaque façon de créer. Ce qu'elle rend va droit dans la liste : sans
+   doublon du paquet ni de la liste, sans carte trop longue. */
+let ia$ = null;                        // le module, une fois chargé
+const majIA = tout => { if (ia$) ia$.repeindre(tout); };
+const joindreIA = fichiers => (ia$ ? ia$.joindre(fichiers) : import('./prompt-ia.js').then(m => m.joindre(fichiers)));
+
+function trierIA(cartes, avec) {
+  const tri = cartes.map(c => ({ f: c.f, b: c.b }));
+  markDups(tri, { cards: avec }); markOver(tri);
+  return { keep: tri.filter(c => !c.dup && !c.big).map(c => ({ f: c.f, b: c.b })),
+    dup: tri.filter(c => c.dup && !c.big).length, big: tri.filter(c => c.big).length };
+}
+
 function monterPrompt(t) {
   const n = document.getElementById('pi');
   import('./prompt-ia.js').then(m => {
+    ia$ = m;
     if (!n.isConnected) return;
     m.monter(n, {
-      livre: () => contexte(t),
-      ferme: () => ferme('ia'),
-      attendre: f => { enAttente = f; paintDraft(); },
-      onglets: peindreOnglets,
+      contexte: () => contexte(t),
+      etat: etatDuMois,
+      bloque: () => (iaPayante() ? { cle: 'plus' } : fermeIA() ? { cle: 'ferme', texte: fermeIA() } : null),
+      debloquer: () => (iaPayante() ? envie('ia') : toast(I.x, fermeIA())),
+      texte: () => (comp.mode === 'coller' || comp.mode === 'fichier' ? (comp.text || '').trim() : ''),
+      viderTexte: () => {
+        comp.text = '';
+        const tx = document.getElementById('tx');
+        if (tx) { tx.value = ''; tx.dispatchEvent(new Event('input')); }
+      },
+      liste: () => comp.cards,
       ajouter: cartes => {
-        const tri = cartes.map(c => ({ f: c.f, b: c.b }));
-        markDups(tri, { cards: (t ? t.cards : []).concat(comp.cards) }); markOver(tri);
-        const keep = tri.filter(c => !c.dup && !c.big).map(c => ({ f: c.f, b: c.b }));
-        comp.cards.push(...keep); paintDraft();
-        return { n: keep.length, ecartes: tri.length - keep.length };
+        const r = trierIA(cartes, (t ? t.cards : []).concat(comp.cards));
+        comp.cards.push(...r.keep); paintDraft();
+        return { n: r.keep.length, dup: r.dup, big: r.big };
+      },
+      // la liste entière, telle que l'IA la rend : seules les cartes trop longues restent dehors
+      remplacer: cartes => {
+        const tri = cartes.map(c => ({ f: c.f, b: c.b })); markOver(tri);
+        comp.cards = tri.filter(c => !c.big).map(c => ({ f: c.f, b: c.b })); comp.edit = -1;
+        paintDraft();
+        return tri.filter(c => c.big).length;
       }
     });
-  }).catch(() => { n.innerHTML = `<p class="cr-vide">${svg(I.cloud)}Le Prompt revient avec le réseau.</p>`; });
+  }).catch(() => { n.innerHTML = `<p class="cr-vide">${svg(I.cloud)}L’IA revient avec le réseau.</p>`; });
 }
 
 /* L'écran peut se redessiner pendant qu'on tape (une relecture de fond qui
@@ -250,10 +286,11 @@ function bindEcrire(nm) {
   const cf = document.getElementById('cf'), cb = document.getElementById('cb');
   if (comp.edit >= 0) { cf.value = comp.cards[comp.edit].f; cb.value = comp.cards[comp.edit].b; }
   else { cf.value = comp.f || ''; cb.value = comp.b || ''; }
-  const ou = comp.champ && document.getElementById(comp.champ);
   setTimeout(() => {
     // pendant le tuto, pas de clavier qui s'ouvre de lui-même : il cachait ce que le tuto montre
     if (enSaisie() || tuto) return;
+    // cherché maintenant : la barre de l'IA (#pimsg) se pose après l'écran
+    const ou = comp.champ && document.getElementById(comp.champ);
     (ou || (comp.cards.length || comp.edit >= 0 || (nm && nm.value) ? cf : (nm || cf))).focus();
   }, 60);
   for (const c of [cf, cb]) {
@@ -309,7 +346,6 @@ function apercuHtml({ cards, dup, big }) {
 function bindLot(t, mode) {
   const tx = document.getElementById('tx'), prev = document.getElementById('prev'),
         add = document.getElementById('bulkadd'), lot = document.getElementById('lot');
-  const nomLivre = () => t ? t.name : comp.name;
   const up = () => {
     comp.text = tx.value;
     const tri = trier(tx.value, t);
@@ -330,9 +366,9 @@ function bindLot(t, mode) {
     tx.value = (had ? had + '\n' : '') + cards.map(c => c.f + '\t' + c.b).join('\n');
     lot.hidden = false; fit(); up();
   };
-  tx.addEventListener('input', () => { fit(); up(); });
+  tx.addEventListener('input', () => { fit(); up(); majIA(); });
   if (!lot.hidden) { fit(); up(); }
-  if (mode === 'coller') setTimeout(() => { if (!enSaisie() && !tuto) tx.focus(); }, 60);
+  if (mode === 'coller') setTimeout(() => { if (!enSaisie() && !tuto) (comp.champ === 'pimsg' && document.getElementById('pimsg') || tx).focus(); }, 60);
 
   add.onclick = () => {
     const { keep, dup, big } = trier(tx.value, t);
@@ -343,63 +379,35 @@ function bindLot(t, mode) {
       + (!comp.dups && dup.total ? ` · ${dup.total} doublon${dup.total > 1 ? 's' : ''} écarté${dup.total > 1 ? 's' : ''}` : '')
       + (big ? ` · ${big} trop longue${big > 1 ? 's' : ''}` : ''));
   };
-  bindDepots(t, nomLivre, verser);
+  if (mode === 'fichier') bindDepots(verser);
 }
 
-/* Photo et PDF passent par la même passerelle. La galerie peut rendre
-   plusieurs photos d'un coup : chacune y passe l'une après l'autre. */
-function bindDepots(t, nomLivre, verser) {
+/* Photos et PDF vont attendre dans la barre de l'IA, avec la consigne
+   qu'on voudra lui donner. La galerie peut rendre plusieurs photos d'un
+   coup ; sur ordinateur, on les glisse aussi depuis le bureau. */
+function bindDepots(verser) {
   const shot = document.getElementById('aishot'), pdf = document.getElementById('aipdf');
   const fshot = document.getElementById('fshot'), fpdf = document.getElementById('fpdf');
-  const occupe = (btn, oui) => { setAiBusy(oui); if (btn) { btn.classList.toggle('busy', oui); btn.disabled = oui; } };
-  const photos = async files => {
-    if (aiBusy || !files.length) return;
-    occupe(shot, true);
-    let total = 0, fail = 0, lastMsg = '';
-    for (const file of files) {
-      try {
-        const cards = await aiFromFile(file, nomLivre());
-        if (!cards.length) throw new Error('empty');
-        verser(cards); total += cards.length;
-      } catch (x) {
-        fail++; lastMsg = AIERR[String(x.message)] || 'IA indisponible';
-      }
-    }
-    occupe(shot, false); peindreOnglets();
-    if (total) toast(I.spark, plur(total, 'carte') + (fail ? ` · ${fail} photo${fail > 1 ? 's' : ''} en échec` : ''));
-    else toast(I.x, lastMsg);
-  };
-  const viaPdf = async (f, pages) => {
-    if (aiBusy) return;
-    occupe(pdf, true);
-    try {
-      const cards = await aiFromFile(f, nomLivre(), pages);
-      if (!cards.length) throw new Error('empty');
-      verser(cards); toast(I.spark, plur(cards.length, 'carte'));
-    } catch (x) {
-      toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
-    }
-    occupe(pdf, false); peindreOnglets();
-  };
   /* Un fichier texte (export « notes en texte brut » d'Anki, export
      Quizlet, CSV d'un tableur) se lit ici même : pas de réseau, pas
      d'IA, pas d'attente — l'analyseur reconnaît le séparateur seul.
-     Seul le PDF a besoin de la passerelle. */
+     Seul le PDF a besoin de l'IA. */
   const fichier = async f => {
     if (!f) return;
     const nm = f.name.toLowerCase();
     if (nm.endsWith('.apkg')) return toast(I.x, 'Exporte en texte depuis Anki');
-    if (f.type === 'application/pdf' || nm.endsWith('.pdf')) return askPages(p => viaPdf(f, p));
+    if (f.type === 'application/pdf' || nm.endsWith('.pdf')) return joindreIA([f]);
     let txt;
     try { txt = await f.text(); } catch (x) { return toast(I.x, 'Fichier illisible'); }
     const found = parseText(txt);
-    if (!found.length) return toast(I.x, 'Aucune carte reconnue');
+    if (!found.length) return toast(I.x, 'Aucune carte reconnue : demande à l’IA');
     verser(found); toast(I.check, plur(found.length, 'carte'));
   };
-  if (shot) { shot.onclick = () => { if (!aiBusy) fshot.click(); }; deposer(shot, fs => photos(fs.filter(f => f.type.startsWith('image/')))); }
-  if (pdf) { pdf.onclick = () => { if (!aiBusy) fpdf.click(); }; deposer(pdf, fs => fichier(fs[0])); }
-  fshot.onchange = () => { const files = [...fshot.files]; fshot.value = ''; photos(files); };
-  fpdf.onchange = () => { const f = fpdf.files[0]; fpdf.value = ''; fichier(f); };
+  const photos = fs => { const im = fs.filter(f => f.type.startsWith('image/')); if (im.length) joindreIA(im); };
+  if (shot) { shot.onclick = () => fshot.click(); deposer(shot, photos); }
+  if (pdf) { pdf.onclick = () => fpdf.click(); deposer(pdf, fs => fichier(fs[0])); }
+  if (fshot) fshot.onchange = () => { const files = [...fshot.files]; fshot.value = ''; photos(files); };
+  if (fpdf) fpdf.onchange = () => { const f = fpdf.files[0]; fpdf.value = ''; fichier(f); };
 }
 
 function deposer(zone, prendre) {
@@ -408,7 +416,7 @@ function deposer(zone, prendre) {
   zone.addEventListener('drop', e => {
     e.preventDefault(); zone.classList.remove('over');
     const fs = [...(e.dataTransfer ? e.dataTransfer.files : [])];
-    if (fs.length && !aiBusy) prendre(fs);
+    if (fs.length) prendre(fs);
   });
 }
 
@@ -461,4 +469,5 @@ function paintDraft() {
   const n = document.getElementById('cn'); if (n) n.textContent = comp.cards.length;
   const ok = document.getElementById('ok');
   if (ok) ok.disabled = !comp.cards.length && !(enAttente && enAttente().length);
+  majIA();
 }

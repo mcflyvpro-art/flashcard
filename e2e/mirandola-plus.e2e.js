@@ -308,7 +308,7 @@ test('Mirandola+ offert pendant que l’app est ouverte : l’IA s’ouvre sans 
   await brancher(page, store);
   await inscrire(page);
   await page.getByRole('button', { name: 'Nouveau paquet' }).click();
-  await expect(page.locator('[data-cmode="ia"]')).toHaveClass(/payant/, { timeout: 10000 });
+  await expect(page.locator('.pi')).toHaveClass(/payant/, { timeout: 10000 });
   await page.getByRole('button', { name: 'Retour' }).first().click();
 
   const u = store.users.find(x => x.email === 'lea@exemple.fr');
@@ -317,7 +317,7 @@ test('Mirandola+ offert pendant que l’app est ouverte : l’IA s’ouvre sans 
   await expect(page.locator('html')).toHaveClass(/offre-plus/, { timeout: 10000 });
 
   await page.getByRole('button', { name: 'Nouveau paquet' }).click();
-  const prompt = page.locator('[data-cmode="ia"]');
-  await expect(prompt).not.toHaveClass(/payant|ferme/);
-  await expect(prompt.locator('.cr-reste')).toHaveText('30', { timeout: 10000 });
+  const barre = page.locator('.pi');
+  await expect(barre).not.toHaveClass(/payant|ferme/);
+  await expect(barre.locator('.cr-reste')).toHaveText('30', { timeout: 10000 });
 });
