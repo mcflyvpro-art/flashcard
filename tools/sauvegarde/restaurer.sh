@@ -15,7 +15,12 @@ gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 --decrypt "$fichi
 
 bash "$racine/tools/sql/pile-locale.sh" "$(mktemp -d)"
 R=postgresql://postgres:postgres@127.0.0.1:54322/postgres
-psql "$R" -X -q --single-transaction -v ON_ERROR_STOP=1 \
+# le chargement passe par supabase_admin, le superutilisateur de la pile
+# locale : les tables du stockage (storage.buckets_vectors…) appartiennent à
+# supabase_storage_admin, et postgres n'y écrit pas (« permission denied »,
+# le premier essai du 2026-11-07). La vérification, elle, reste en postgres.
+A=postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
+psql "$A" -X -q --single-transaction -v ON_ERROR_STOP=1 \
   -f "$d/roles.sql" -f "$d/schema.sql" \
   -c 'set session_replication_role = replica' -f "$d/data.sql"
 echo "restaurée"
