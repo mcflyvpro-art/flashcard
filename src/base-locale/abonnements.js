@@ -103,8 +103,19 @@ function payer(store, b, uid) {
   (store.commandes = store.commandes || []).push({ formule: b.formule, promo: b.promo || null });
   if (b.promo && !['LANCEMENT'].includes(String(b.promo).toUpperCase())) return [404, { error: 'promo' }];
   const offre = offreDe(store, uid);
-  if (offre === 'plus') return [409, { error: 'deja' }];
   if (offre === 'campus') return [409, { error: 'campus' }];
+  /* comme la vraie : Mirandola+ par Stripe qui passe à Infini → le portail,
+     au prorata (ici : la ligne prend la formule, comme le webhook l'écrirait) ;
+     un Mirandola+ offert achète Infini par-dessus ; le reste, « deja » */
+  if (offre === 'plus') {
+    const infini = /^infini_/.test(b.formule);
+    const s = table(store).find(x => x.user_id === uid && x.source === 'stripe' && ['actif', 'essai', 'impaye'].includes(x.statut));
+    if (infini && s && !/^infini_/.test(s.formule || '')) {
+      Object.assign(s, { formule: b.formule, montant: FORMULES[b.formule].prix });
+      return [200, { url: '/app?plus=retour' }];
+    }
+    if (!(infini && !s && table(store).some(x => x.user_id === uid && x.source === 'offert'))) return [409, { error: 'deja' }];
+  }
   /* comme la vraie : 7 jours d'essai pour un premier abonnement Stripe
      (`store.sansEssai` : un parcours qui veut un abonnement payé d'emblée) */
   const essai = !store.sansEssai && !table(store).some(x => x.user_id === uid && x.source === 'stripe');

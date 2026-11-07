@@ -14,12 +14,17 @@
    `ia` : la réponse de mon_ia() ({ fait, quota }), mise à jour par chaque
    appel à la fonction ai (`mois`). `offre` : celle de mon_offre(). */
 
+/* Rien de sûr à dire : rien de lu, ou une IA lue pour une autre offre
+   (avant un paiement, un Mirandola+ offert) — on attend la relecture. */
+const incertain = (ia, o) => !ia || ia.quota == null || ia.fait == null || (!!ia.offre && !!o && ia.offre !== o);
+
 export function etatIA(ia, offre) {
   const o = offre && offre.offre;
   if (o === 'gratuit') return { cle: 'plus' };
-  if (!ia || ia.quota == null || ia.fait == null) return { cle: 'inconnu' };
+  if (incertain(ia, o)) return { cle: 'inconnu' };
   const quota = Math.max(0, +ia.quota || 0), fait = Math.max(0, +ia.fait || 0);
-  if (!quota) return { cle: 'ferme', texte: messageFerme(offre) };
+  // fermée : seul un compte Campus l'est par sa licence — ailleurs, un quota nul n'est qu'une lecture en retard
+  if (!quota) return o === 'campus' ? { cle: 'ferme', texte: messageFerme(offre) } : { cle: 'inconnu' };
   // Mirandola Infini (2026-11-05) : sans compter — un signe ∞, jamais un reste qui s'épuise
   if (ia.sans_compter) return { cle: 'infini', titre: 'L’IA sans compter, avec Mirandola Infini' };
   const reste = Math.max(0, quota - fait);

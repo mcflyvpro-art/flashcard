@@ -188,7 +188,7 @@ export function lignesSimulation(sim) {
 }
 
 /* Le bilan d'une année, en une phrase. */
-export const bilanSimulation = sim => `${sim.lectures.length} lectures dans l’année, la première comprise. La suivante : jour ${sim.prochaine}.`;
+export const bilanSimulation = sim => `${sim.lectures.length} révisions dans l’année, la première comprise. La suivante : jour ${sim.prochaine}.`;
 
 /* La table des 21 paramètres, écrite depuis W6 : elle ne peut pas mentir. */
 export function tableParametres() {

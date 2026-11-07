@@ -22,6 +22,7 @@ import {
 import { trouverParNom } from '../matieres.js';
 import { clickPdf } from './pdf-porte.js';
 import { ouvrirExamen } from './examen-porte.js';
+import { ouvrirPlus } from './plus-porte.js';
 import {
   deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
   setMeta, slugify, solveConflict, subj
@@ -70,7 +71,7 @@ export function paintMenuRename(w) {
         ${conf[2] ? `<input class="tok" id="fld" type="${conf[2]}" placeholder="${esc(conf[3])}"
             value="${esc(conf[4])}" autocapitalize="none" autocorrect="off" spellcheck="false">`
           : `<div class="mi" style="font-size:13.5px;color:var(--soft);height:auto;padding:0 16px 12px;
-               line-height:1.45">Tes livres, tes matières et ton journal seront effacés définitivement.${magasinCourt()
+               line-height:1.45">Tes paquets, tes matières et tes statistiques seront effacés définitivement.${magasinCourt()
                 ? `<br><b>Ton abonnement Mirandola+ continue dans ${magasinCourt()} : résilie-le là-bas d’abord.</b>` : ''}</div>`}
         <div class="mrr" id="mrr"></div>
         <button class="mi ${menu === 'delacc' ? 'warn' : ''}" data-mact="do-${menu}"
@@ -304,7 +305,7 @@ async function clickBackupFile() {
   a.download = 'mirandola-bibliotheque-' + new Date().toISOString().slice(0, 10) + '.json';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  toast(I.check, 'Bibliothèque exportée');
+  toast(I.check, 'Paquets exportés');
 }
 
 function clickBackupRestore() {
@@ -348,7 +349,7 @@ function clickDosplit(a, b, d) {
   closeMenu();
   if (!made) return toast(I.split, 'Rien à scinder');
   go('home');
-  return toast(I.split, made.length + ' livres créés', true);
+  return toast(I.split, made.length + ' paquets créés', true);
 }
 
 const clickLeavestay = () => { setLeaving(null); return closeMenu(); };
@@ -384,7 +385,7 @@ function clickPkDel(t) {
   db.decks = db.decks.filter(x => x.id !== t.id);
   delete dirty[t.id]; gone.push(t.id); save(); flush();
   setAnimate(false); render();
-  return toast(I.trash, 'Livre dans la corbeille', true);
+  return toast(I.trash, 'Paquet dans la corbeille', true);
 }
 
 const clickPkShare = () => ouvrirPartage();
@@ -452,7 +453,7 @@ function clickDel(a, b, d) {
     delete dirty[d.id]; gone.push(d.id); save(); flush();
     closeMenu();
     go('home');
-    return toast(I.trash, 'Livre dans la corbeille', true);
+    return toast(I.trash, 'Paquet dans la corbeille', true);
   }
   b.dataset.arm = 1; b.style.background = 'rgba(196,86,107,.12)'; lab.textContent = 'Confirmer la suppression';
   setTimeout(() => { if (b.isConnected) { delete b.dataset.arm; b.style.background = ''; lab.textContent = 'Supprimer'; } }, 3000);
@@ -522,6 +523,7 @@ const CLICK_RULES = [
   [a => a === 'sharepick', clickPkShare],
   [a => a === 'pdfopen' || (!!a && a.startsWith('pdf-')), clickPdf],
   [a => a === 'examen', () => ouvrirExamen()],
+  [a => a === 'examen-infini', () => { closeMenu(); ouvrirPlus({ niveau: 'infini', raison: 'examen' }); }],
   [a => ['rolink', 'roff', 'lccopy', 'lcshare'].includes(a), clickPartage],
   [a => a === 'duelnew2', clickDuelnew2],
   [a => a === 'versopen', clickVersopen],

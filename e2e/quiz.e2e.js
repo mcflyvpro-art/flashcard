@@ -57,7 +57,7 @@ test('QCM : une seule mauvaise case → 83 %', async ({ page }) => {
   await scoreFinal(page, 83, 5, 6, 1);
 });
 
-test('association : une paire ratée coûte les deux pages → 67 %', async ({ page }) => {
+test('association : une paire ratée coûte les deux cartes → 67 %', async ({ page }) => {
   await ouvrirLivre(page, 'Capitales', CAPITALES);
   await page.getByRole('button', { name: 'Association', exact: true }).click();
   await page.getByRole('button', { name: 'Pays 1', exact: true }).click();
@@ -76,7 +76,7 @@ test('vrai/faux : une affirmation mal jugée → 75 %', async ({ page }) => {
   await ouvrirLivre(page, 'Vrai ou faux', [
     ['La Terre est ronde', 'Vrai', { t: 'tf' }], ['Paris est en Italie', 'Faux', { t: 'tf' }],
     ['L’eau bout à 100 °C au niveau de la mer', 'Vrai', { t: 'tf' }], ['2 + 2 = 5', 'Faux', { t: 'tf' }]]);
-  await page.getByRole('button', { name: /^Lire/ }).click();
+  await page.getByRole('button', { name: /^Réviser/ }).click();
   let premiereFois = true;
   for (let n = 0; !(await finVisible(page)) && n < 20; n++) {
     await expect(page.locator('[data-tf="1"]')).toBeVisible();

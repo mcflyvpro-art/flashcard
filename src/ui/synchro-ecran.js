@@ -1,5 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
-import { auth, cardEdit, demoEtab, mailbox, menu, quiz, sel, setAnimate, study, tuto, view } from '../data/etat.js';
+import { auth, cardEdit, demoEtab, mailbox, menu, offre, quiz, sel, setAnimate, study, tuto, view } from '../data/etat.js';
+import { offrePull, signatureOffre } from '../core/abonnement.js';
 import { mailPull } from '../core/reglages-corbeille.js';
 import { statsPull } from '../core/ecran-groupe.js';
 import { eleveClassesPull } from '../core/eleve-classes.js';
@@ -58,7 +59,23 @@ function peutRepeindre() {
 let dernier = 0, actif = Date.now();
 for (const t of ['pointerdown', 'keydown']) addEventListener(t, () => { actif = Date.now(); }, { capture: true, passive: true });
 
+/* L'offre aussi, au retour sur l'app : un paiement fini dans un autre
+   onglet, un Mirandola+ offert depuis la console s'ouvrent sans redémarrer
+   — l'IA du mois avec (offrePull la relit quand l'offre change). Sur tous
+   les écrans calmes et sur celui de création, jamais sous les doigts. */
+let offreVue = 0;
+async function relireOffre() {
+  if (!pret || !auth || demoEtab || document.hidden || study || quiz || tuto || Date.now() - offreVue < 20000) return;
+  offreVue = Date.now();
+  const avant = signatureOffre(offre);
+  await offrePull();
+  if (signatureOffre(offre) === avant) return;
+  const a = document.activeElement, tape = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+  if (peutRepeindre() || (view.name === 'import' && !menu && !tape)) { setAnimate(false); render(); }
+}
+
 async function regarder(retour) {
+  if (retour) relireOffre();
   if (!pret || !auth || demoEtab || document.hidden || !tranquille()) return;
   const depuis = Date.now() - dernier;
   // au retour : pas deux fois en cinq secondes ; sinon une fois par minute, et seulement si l'on s'en sert

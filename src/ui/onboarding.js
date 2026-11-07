@@ -47,7 +47,7 @@ export function consumeHash() {
   try {
     const d = importPayload(dec(location.hash.slice(3)));
     history.replaceState(null, '', location.pathname);
-    if (d) { go('deck', d.id); toast(I.check, plur(d.cards.length, 'page')); return true; }
+    if (d) { go('deck', d.id); toast(I.check, plur(d.cards.length, 'carte')); return true; }
   } catch (e) { history.replaceState(null, '', location.pathname); }
   return false;
 }

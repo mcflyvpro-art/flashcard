@@ -62,7 +62,7 @@ async function toucherLaCible(page, lue) {
 /* Les gestes qui ne sont pas un simple appui au centre de la cible. */
 const GESTES = {
   'Dis si tu savais': page => page.locator('.grades button').nth(2).click({ timeout: 3000 }),
-  'Le livre': page => page.locator('#pflivres [data-pf="livre"]').first().click({ timeout: 3000 })
+  'Le paquet': page => page.locator('#pflivres [data-pf="livre"]').first().click({ timeout: 3000 })
 };
 
 /* L'étape du moment, lue d'un coup (le titre et le mode ensemble : entre
@@ -101,7 +101,7 @@ async function jusqua(page, but) {
   throw new Error(`le tuto n’arrive pas à « ${but} » : ${vus.join(' → ')}`);
 }
 
-test('un particulier : son premier livre, une page lue et notée, son journal, ses amis, son courrier, Mirandola+', async ({ page }) => {
+test('un particulier : son premier paquet, une carte révisée et notée, ses statistiques, ses amis, ses messages, Mirandola+', async ({ page }) => {
   test.setTimeout(120000);
   const store = { ...nouveauStore(), parDefaut: 'gratuit' };             // un compte neuf : Mirandola gratuit
   const lea = semerCompte(store, 'lea@exemple.fr');
@@ -125,7 +125,7 @@ test('un particulier : son premier livre, une page lue et notée, son journal, s
   await expect.poll(() => prefsDe(store, lea).tuto).toBe(1);          // vu dès qu'il commence
   await page.locator('#tu .tu-go').click();
 
-  await etape(page, 'Ton premier livre');
+  await etape(page, 'Ton premier paquet');
   // un appui à côté ne fait rien : l'anneau s'éclaire, la bulle ne bouge pas, l'écran non plus
   await page.waitForTimeout(450);                                             // la bulle a fini d'arriver
   const ici = await bulle(page).boundingBox();
@@ -137,7 +137,7 @@ test('un particulier : son premier livre, une page lue et notée, son journal, s
   await toucherLaCible(page);
 
   // sa première page, le tuto l'écrit sous ses yeux : rien à taper, aucun clavier ne s'ouvre
-  await etape(page, 'Ta première page');
+  await etape(page, 'Ta première carte');
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'import');
   await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'auto');
   const coller = await page.locator('[data-cmode="coller"]').boundingBox();   // une autre façon de créer attendra : le tuto la retient
@@ -150,12 +150,12 @@ test('un particulier : son premier livre, une page lue et notée, son journal, s
   expect(await page.evaluate(() => document.activeElement && document.activeElement.tagName)).not.toBe('INPUT');
   await etape(page, 'Crée-le');
 
-  expect(await jusqua(page, 'Mirandola s’en souvient')).toEqual(['Crée-le', 'Lis-le', 'Retourne la page', 'Dis si tu savais']);
+  expect(await jusqua(page, 'Mirandola s’en souvient')).toEqual(['Crée-le', 'Révise-le', 'Retourne la carte', 'Dis si tu savais']);
   await expect(page.locator('.sbj').first()).toContainText(/histoire/i);      // le livre est rangé dans sa matière
   await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'centre');
   await suivant(page);
 
-  expect(await jusqua(page, '')).toEqual(['Ton journal', 'Tes progrès', 'Le cercle', 'Tes amis', 'Ton courrier', 'Ta boîte']);
+  expect(await jusqua(page, '')).toEqual(['Tes statistiques', 'Tes progrès', 'Mes amis', 'Tes amis', 'Tes messages', 'Ta boîte']);
   // la fin se lit sur « Mes livres », pas sur le courrier où l'on était
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'home', { timeout: 10000 });
 
@@ -217,7 +217,7 @@ test('« J’ai un code » dès l’accueil : l’accueil de sa classe, son tuto
   await page.getByRole('button', { name: 'Revoir le tuto' }).click({ timeout: 10000 });
   await expect(page.locator('#tu .tu-debut h2')).toHaveText('Bienvenue, Zoé', { timeout: 10000 });
   await page.locator('#tu .tu-go').click();
-  await etape(page, 'Ton premier livre');                            // pas encore de livre : le premier se crée
+  await etape(page, 'Ton premier paquet');                            // pas encore de livre : le premier se crée
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'home');
   // la croix le quitte, et dit où le retrouver
   await bulle(page).getByRole('button', { name: 'Quitter le tuto' }).click();
@@ -251,7 +251,7 @@ test('un professeur particulier : sa classe créée pour de vrai, puis le tour d
   await expect(feuille).toContainText('2nde 4');
 
   expect(await jusqua(page, '')).toEqual(['Ajoutez vos élèves', 'Votre tableau de bord', 'À traiter', 'Une classe', 'Son suivi',
-    'Ses devoirs', 'Donner un devoir', 'Le bilan', 'Défi en direct', 'L’agenda', 'Vos livres', 'Le courrier']);
+    'Ses devoirs', 'Donner un devoir', 'Le bilan', 'Défi en direct', 'L’agenda', 'Vos paquets', 'Les messages']);
   await expect(page.locator('#tu .tu-fin.pret h2')).toHaveText('Tout est prêt', { timeout: 10000 });
   await page.locator('#tu .tu-fin').getByRole('button', { name: 'Commencer' }).click();
   await expect(page.locator('#tu')).toHaveCount(0);
@@ -353,16 +353,16 @@ test('la démo : un tuto par rôle la première fois, et rien ne le contourne', 
   await page.locator('#tu .tu-go').click();
 
   // une lecture : le retour du navigateur ne fait pas sauter d'étape, il ramène à « Lis-le »
-  expect(await jusqua(page, 'Retourne la page')).toEqual(['Tes livres', 'Lis-le']);
+  expect(await jusqua(page, 'Retourne la carte')).toEqual(['Tes paquets', 'Révise-le']);
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'study');
   await page.goBack();
-  await etape(page, 'Lis-le');
+  await etape(page, 'Révise-le');
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'deck');
   await toucherLaCible(page);
-  await etape(page, 'Retourne la page');
+  await etape(page, 'Retourne la carte');
   // un raccourci de la lecture marche aussi ; « annuler », non
   await page.keyboard.press('Control+z');
-  await etape(page, 'Retourne la page');
+  await etape(page, 'Retourne la carte');
   await page.keyboard.press(' ');
   await etape(page, 'Dis si tu savais');
   await bulle(page).getByRole('button', { name: 'Quitter le tuto' }).click();
@@ -375,7 +375,7 @@ test('la démo : un tuto par rôle la première fois, et rien ne le contourne', 
   await page.locator('.dm-bandeau select').selectOption('prof');
   await expect(page.locator('#tu .tu-debut h2')).toHaveText('Vous êtes Marc, professeur', { timeout: 10000 });
   await page.locator('#tu .tu-go').click();
-  expect(await jusqua(page, 'Le livre')).toEqual(['Le code élèves', 'Votre tableau de bord', 'À traiter', 'Une classe', 'Son suivi',
+  expect(await jusqua(page, 'Le paquet')).toEqual(['Le code élèves', 'Votre tableau de bord', 'À traiter', 'Une classe', 'Son suivi',
     'Ses élèves', 'Sa fiche', 'Ses devoirs', 'Donner un devoir']);
 
   // choisir le livre d'un devoir : « Créer un nouveau livre », la croix de la feuille, un appui à côté ne font rien
@@ -385,9 +385,9 @@ test('la démo : un tuto par rôle la première fois, et rien ne le contourne', 
   await feuille.locator('.mx').click();
   await page.mouse.click(8, 8);
   await page.waitForTimeout(500);
-  await etape(page, 'Le livre');
+  await etape(page, 'Le paquet');
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'profclasse');
-  await expect(feuille).toContainText('Quel livre');
+  await expect(feuille).toContainText('Quel paquet');
   await feuille.locator('#pflivres [data-pf="livre"]', { hasText: 'Fonctions : le cours' }).click();
 
   // dans la démo, le devoir se donne pour de vrai (rien ne part : c'est le lycée de la démo)
@@ -429,7 +429,7 @@ test.describe('la démo sur ordinateur', () => {
     await expect(page.locator('#tu .tu-debut h2')).toHaveText('Vous êtes Marc, professeur', { timeout: 10000 });
     await page.locator('#tu .tu-go').click();
     const vus = await jusqua(page, '');
-    expect(vus.slice(-4)).toEqual(['Défi en direct', 'L’agenda', 'Vos livres', 'Le courrier']);
+    expect(vus.slice(-4)).toEqual(['Défi en direct', 'L’agenda', 'Vos paquets', 'Les messages']);
     const fin = page.locator('#tu .tu-fin.campus');
     await expect(fin.locator('h2')).toHaveText(/Mirandola\s+Campus/);
     await expect(fin.locator('.tu-campus-ic img')).toHaveAttribute('src', '/site/logo.svg');

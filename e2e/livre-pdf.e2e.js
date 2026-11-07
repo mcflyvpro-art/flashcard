@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore } from './faux-supabase.js';
 import { creerLivre, inscrire, noter } from './aide.js';
 
-test('PDF du livre, puis un livre supprimé quitte « Reprendre »', async ({ page }) => {
+test('PDF du paquet, puis un paquet supprimé quitte « Reprendre »', async ({ page }) => {
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));
   // le partage du téléphone : on garde le fichier qu'on lui remet
@@ -20,7 +20,7 @@ test('PDF du livre, puis un livre supprimé quitte « Reprendre »', async ({ pa
   await creerLivre(page, 'Capitales', 3);
 
   // une lecture commencée puis quittée : « Reprendre » la propose
-  await page.getByRole('button', { name: 'Lire 3' }).click();
+  await page.getByRole('button', { name: 'Réviser 3' }).click();
   await noter(page, 'Facile');
   await page.getByRole('button', { name: 'Retour' }).first().click();
   await page.getByRole('button', { name: 'Retour' }).first().click();
@@ -29,7 +29,7 @@ test('PDF du livre, puis un livre supprimé quitte « Reprendre »', async ({ pa
 
   // le PDF : recto et verso, remis au partage
   await page.locator('.tile, .brow', { hasText: 'Capitales' }).first().click();
-  await page.getByRole('button', { name: 'Menu du livre' }).click();
+  await page.getByRole('button', { name: 'Menu du paquet' }).click();
   await page.locator('[data-mact="pdfopen"]').click();
   await page.locator('[data-mact="pdf-tout"]').click();
   await expect.poll(() => page.evaluate(() => !!window.__partage), { timeout: 10000 }).toBe(true);
@@ -50,7 +50,7 @@ test('PDF du livre, puis un livre supprimé quitte « Reprendre »', async ({ pa
   await expect(page.locator('.menu')).toHaveCount(0);
 
   // supprimer le livre (deux appuis) : « Reprendre » s'en va
-  await page.getByRole('button', { name: 'Menu du livre' }).click();
+  await page.getByRole('button', { name: 'Menu du paquet' }).click();
   await page.locator('[data-mact="del"]').click();
   await page.locator('[data-mact="del"]').click();
   await expect(page.locator('.resume')).toHaveCount(0);

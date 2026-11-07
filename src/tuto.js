@@ -73,47 +73,47 @@ const creation = [
   /* sans livre, le premier se crée pour de bon : il faut bien quelque chose à lire ; ses pages,
      le tuto les écrit sous les yeux (le clavier du téléphone cachait tout, demandé le 2026-10-29) */
   { id: 'nouveau', si: ['!livres'], ecran: 'home', cible: NOUVEAU, geste: 1, attend: { vue: 'import' },
-    titre: 'Ton premier livre', texte: 'Un livre, ce sont des pages : la question, puis la réponse.', aide: 'Touche « Nouveau livre »' },
+    titre: 'Ton premier paquet', texte: 'Un paquet, ce sont des cartes : la question, puis la réponse.', aide: 'Touche « Nouveau paquet »' },
   { id: 'page', si: ['!livres'], ecran: 'import', reprise: 'nouveau', cible: ['#comp'], trou: ['.cr-main', '#dlist'],
     ecrit: 1, attend: { ecrite: 1 },
-    titre: 'Ta première page', texte: 'La question au recto, la réponse au verso.' },
+    titre: 'Ta première carte', texte: 'La question au recto, la réponse au verso.' },
   { id: 'creer', si: ['!livres'], ecran: 'import', reprise: 'nouveau', cible: ['#ok'], geste: 1, attend: { vue: 'deck' },
-    titre: 'Crée-le', texte: 'Tu ajouteras des pages quand tu voudras.', aide: 'Touche « Créer le livre »' }
+    titre: 'Crée-le', texte: 'Tu ajouteras des cartes quand tu voudras.', aide: 'Touche « Créer le paquet »' }
 ];
 
 const ouvrir = texte => ({ id: 'ouvrir', si: ['livres'], ecran: 'home', cible: LIVRE, geste: 1, attend: { vue: 'deck' },
-  titre: 'Tes livres', texte, aide: 'Touche le livre qui s’allume' });
+  titre: 'Tes paquets', texte, aide: 'Touche le paquet qui s’allume' });
 
 const lecture = [
   { id: 'lire', tant: 'aLire', ecran: 'deck', cible: ['.cta.read'], geste: 1, attend: { vue: 'study' },
-    titre: 'Lis-le', texte: 'Chaque page est une flashcard. Celles du jour arrivent une à une.', aide: 'Touche « Lire »' },
+    titre: 'Révise-le', texte: 'Chaque carte est une flashcard. Celles du jour arrivent une à une.', aide: 'Touche « Réviser »' },
   { id: 'retourner', ecran: 'study', reprise: 'lire', cible: ['#top'], glisse: ['#top'], clavier: [' ', 'ArrowLeft', 'ArrowRight'],
     geste: 1, attend: { retournee: 1 },
-    titre: 'Retourne la page', texte: 'Cherche la réponse dans ta tête, puis retourne-la.', aide: 'Touche la page' },
+    titre: 'Retourne la carte', texte: 'Cherche la réponse dans ta tête, puis retourne-la.', aide: 'Touche la carte' },
   { id: 'noter', ecran: 'study', reprise: 'lire', cible: ['.grades'], permis: ['.grades', '#top'], glisse: ['#top'],
     clavier: ['1', '2', '3', '4', ' ', 'ArrowLeft', 'ArrowRight'], geste: 1, voile: 'leger', attend: { notee: 1 },
     titre: 'Dis si tu savais', texte: 'Facile : elle reviendra tard. Dur : bientôt.', aide: 'Choisis une réponse' },
   { id: 'retenue', ecran: 'study', centre: 1,
-    titre: 'Mirandola s’en souvient', texte: 'Il te rendra chaque page juste avant que tu l’oublies.' }
+    titre: 'Mirandola s’en souvient', texte: 'Il te rendra chaque carte juste avant que tu l’oublies.' }
 ];
 
 /* avec des livres : comment on en crée (dans la démo d'un élève, une bibliothèque pleine se dit seulement) */
 const fabrique = [
   { id: 'creer-livre', si: ['livres'], tant: 'creable', ecran: 'home', cible: NOUVEAU, geste: 1, attend: { vue: 'import' },
-    titre: 'Crée tes livres', texte: 'Tes cours deviennent des flashcards.', aide: 'Touche « Nouveau livre »' },
+    titre: 'Crée tes paquets', texte: 'Tes cours deviennent des flashcards.', aide: 'Touche « Nouveau paquet »' },
   { id: 'methodes', si: ['livres'], tant: 'creable', ecran: 'import', reprise: 'creer-livre', cible: ['.cr-tabs'],
-    titre: 'Cinq façons', texte: 'Écris, colle, un PDF, une photo, ton cours : l’IA fait les pages.' },
+    titre: 'Cinq façons', texte: 'Écris, colle, un PDF, une photo, ton cours : l’IA fait les cartes.' },
   { id: 'plein', si: ['livres'], tant: '!creable', ecran: 'home', cible: NOUVEAU,
-    titre: 'Crée tes livres', texte: 'Écris, colle, une photo, un PDF : l’IA en fait des pages.' }
+    titre: 'Crée tes paquets', texte: 'Écris, colle, une photo, un PDF : l’IA en fait des cartes.' }
 ];
 
 const journal = [
   /* depuis la bibliothèque : la lecture d'avant se referme (sur ordinateur aussi, où la barre latérale y mènerait de partout) */
   { id: 'journal', ecran: 'home', cible: JOURNAL, geste: 1, attend: { vue: 'stats' },
-    titre: 'Ton journal', texte: 'Ce que tu as lu, et ce que tu sais vraiment.',
-    aide: { pc: 'Touche « Journal »', tel: 'Touche l’anneau du jour' } },
+    titre: 'Tes statistiques', texte: 'Ce que tu as révisé, et ce que tu sais vraiment.',
+    aide: { pc: 'Touche « Statistiques »', tel: 'Touche l’anneau du jour' } },
   { id: 'journal-vu', ecran: 'stats', reprise: 'journal', cible: ['.jr-kpi'],
-    titre: 'Tes progrès', texte: 'Tes pages, ton temps, tes réussites, ta série.' }
+    titre: 'Tes progrès', texte: 'Tes cartes, ton temps, tes réussites, ta série.' }
 ];
 
 const classe = si => [
@@ -125,13 +125,13 @@ const classe = si => [
 
 const cercle = (titre, amis) => [
   { id: 'cercle', ecran: { tel: ONGLETS_TEL }, cible: ONGLET('commu'), geste: 1, attend: { vue: 'commu' },
-    titre: 'Le cercle', texte: 'Tes amis, tes défis, tes clubs.', aide: { pc: 'Touche « Cercle des lecteurs »', tel: ICONE } },
+    titre: 'Mes amis', texte: 'Tes amis, tes défis, tes clubs.', aide: { pc: 'Touche « Mes amis »', tel: ICONE } },
   { id: 'amis', ecran: 'commu', reprise: 'cercle', cible: ['.cc-carte:has(> .cc-amis)'], titre, texte: amis }
 ];
 
 const courrier = (texte, vu) => [
   { id: 'courrier', ecran: { tel: 'home' }, cible: COURRIER, geste: 1, attend: { vue: 'mail' },
-    titre: 'Ton courrier', texte, aide: { pc: 'Touche « Courrier »', tel: 'Touche l’enveloppe' } },
+    titre: 'Tes messages', texte, aide: { pc: 'Touche « Messages »', tel: 'Touche l’enveloppe' } },
   { id: 'courrier-vu', ecran: 'mail', reprise: 'courrier', cible: ['.co-boite', '#app .empty'], titre: 'Ta boîte', texte: vu }
 ];
 
@@ -171,22 +171,22 @@ const professeur = [
     permis: ['.pf-corps [data-pf="eleve"]'], sauf: ['.pf-cb'], geste: 1, attend: { feuille: 'pf' },
     titre: 'Ses élèves', texte: 'Chacun a sa fiche.', aide: 'Touchez un élève' },
   { id: 'fiche', tant: 'feuille', reprise: 'eleve', cible: FEUILLE, ferme: 1,
-    titre: 'Sa fiche', texte: 'Ses devoirs, ses pages lues, ce qui lui résiste.' },
+    titre: 'Sa fiche', texte: 'Ses devoirs, ses cartes révisées, ce qui lui résiste.' },
   { id: 'devoirs', tant: 'classes', ecran: 'profclasse', reprise: 'classe', cible: ['[data-pf="onglet"][data-v="devoirs"]'],
     geste: 1, attend: { onglet: 'devoirs' }, titre: 'Ses devoirs', texte: 'Ce que vous avez donné, et qui l’a rendu.',
     aide: 'Touchez « Devoirs »' },
   /* donner un devoir : choisir un livre, puis donner ; « Créer un nouveau livre » attendra la fin du tuto */
   { id: 'donner', si: ['livres'], tant: 'classes', ecran: 'profclasse', reprise: 'classe', cible: DONNER, geste: 1,
-    attend: { feuille: 'pf' }, titre: 'Donner un devoir', texte: 'Un livre, une classe, une date.', aide: 'Touchez « Donner un devoir »' },
+    attend: { feuille: 'pf' }, titre: 'Donner un devoir', texte: 'Un paquet, une classe, une date.', aide: 'Touchez « Donner un devoir »' },
   { id: 'livre', si: ['livres'], tant: 'feuille', reprise: 'donner', cible: ['#pflivres'], trou: FEUILLE,
     permis: ['#pflivres [data-pf="livre"]'], geste: 1, attend: { details: 1 }, passable: 1,
-    titre: 'Le livre', texte: 'Celui que la classe lira.', aide: 'Touchez un livre' },
+    titre: 'Le paquet', texte: 'Celui que la classe lira.', aide: 'Touchez un paquet' },
   { id: 'donne', si: ['livres'], tant: 'feuille', reprise: 'donner', cible: ['[data-pf="donner-go"]'], trou: FEUILLE,
     permis: ['[data-pf="donner-go"]', '[data-pf="cible"]', '[data-pf="due"]', '[data-pf="f-mois"]', '.menu:not(.sort) .pf-fl'],
     geste: 1, attend: { donne: 1 }, passable: 1,
     titre: 'C’est prêt', texte: 'Cette classe, dans une semaine : changez si besoin.', aide: 'Puis touchez « Donner »' },
   { id: 'donner-vu', si: ['!livres'], tant: 'classes', ecran: 'profclasse', reprise: 'classe', cible: DONNER,
-    titre: 'Donner un devoir', texte: 'Un livre de votre bibliothèque, une classe, une date.' },
+    titre: 'Donner un devoir', texte: 'Un paquet de vos paquets, une classe, une date.' },
   { id: 'bilan', tant: 'classes', ecran: 'profclasse', reprise: 'classe', cible: ['[data-pf="onglet"][data-v="bilan"]'],
     geste: 1, attend: { onglet: 'bilan' }, titre: 'Le bilan', texte: 'Qui décroche, ce qui bloque la classe.', aide: 'Touchez « Bilan »' },
   { id: 'direct', tant: 'classes', ecran: 'profclasse', reprise: 'classe', cible: ['.pf-cha [data-pf="direct"]'],
@@ -195,9 +195,9 @@ const professeur = [
     titre: 'L’agenda', texte: 'Tous vos devoirs, jour par jour.', aide: 'Touchez « Agenda »' },
   /* et ce qu'il partage avec tous : ses livres, son courrier */
   { id: 'livres', cible: ONGLET('home'), geste: 1, attend: { vue: 'home' },
-    titre: 'Vos livres', texte: 'Ceux que vous donnez en devoir : créez-les ici.', aide: { pc: 'Touchez « Livres »', tel: ICONEZ } },
+    titre: 'Vos paquets', texte: 'Ceux que vous donnez en devoir : créez-les ici.', aide: { pc: 'Touchez « Paquets »', tel: ICONEZ } },
   { id: 'courrier', cible: ONGLET('mail'), geste: 1, attend: { vue: 'mail' },
-    titre: 'Le courrier', texte: 'Les livres et les mots que l’on vous envoie.', aide: { pc: 'Touchez « Courrier »', tel: ICONEZ } },
+    titre: 'Les messages', texte: 'Les paquets et les mots que l’on vous envoie.', aide: { pc: 'Touchez « Messages »', tel: ICONEZ } },
   { id: 'fin', carte: 'fin' }
 ];
 
@@ -206,13 +206,13 @@ export const SCENARIOS = {
   perso: [
     { id: 'debut', carte: 'debut' },
     ...creation,
-    ouvrir('Chacun sa matière ; chaque page, une flashcard.'),
+    ouvrir('Chacun sa matière ; chaque carte, une flashcard.'),
     ...lecture,
     ...fabrique,
     ...journal,
     ...classe(['classe']),
     ...cercle('Tes amis', 'Ajoute-les par leur pseudo, puis défie-les.'),
-    ...courrier('Les livres que tes amis te prêtent.', 'Ouvre une lettre : tu vois le livre avant de l’ajouter.'),
+    ...courrier('Les paquets que tes amis t’envoient.', 'Ouvre un message : tu vois le paquet avant de l’ajouter.'),
     { id: 'fin', carte: 'fin' }
   ],
 
@@ -220,13 +220,13 @@ export const SCENARIOS = {
   classe: [
     { id: 'debut', carte: 'debut' },
     ...creation,
-    ouvrir('Tes devoirs y arrivent ; chaque page, une flashcard.'),
+    ouvrir('Tes devoirs y arrivent ; chaque carte, une flashcard.'),
     ...lecture,
     ...fabrique,
     ...journal,
     ...classe(undefined),
     ...cercle('Tes camarades', 'Ta classe et tes amis : défie-les.'),
-    ...courrier('Les mots de ton prof, les livres qu’on te prête.', 'Ouvre une lettre : un mot, ou un livre à ajouter.'),
+    ...courrier('Les mots de ton prof, les paquets qu’on te partage.', 'Ouvre un message : un mot, ou un paquet à ajouter.'),
     { id: 'fin', carte: 'fin' }
   ],
 
@@ -337,8 +337,8 @@ export function debutDe(role, ctx = {}) {
 }
 
 /* Ce que Mirandola+ ajoute (la page d'accueil, #tarifs), en quatre lignes. */
-const PLUS = [['spark', 'Ton cours, une photo ou un PDF : l’IA en fait des pages'],
-  ['layers', 'Des livres sans limite'], ['grid', 'QCM et associations'], ['image', 'Images et sons sur tes pages']];
+const PLUS = [['spark', 'Ton cours, une photo ou un PDF : l’IA en fait des cartes'],
+  ['layers', 'Des paquets sans limite'], ['grid', 'QCM et associations'], ['image', 'Images et sons sur tes cartes']];
 
 /* La fin : Mirandola+ pour un élève ; Mirandola Campus pour un professeur ou un
    référent de la démo ; « tout est prêt » pour un professeur ou un
@@ -354,8 +354,8 @@ export function finDe(role, { demo, aPlus } = {}) {
     // un élève de classe (Campus, 2026-10-29) : sa classe d'abord, et rien à lui vendre
     return { cle: 'pret', titre: 'Tout est prêt',
       points: role === 'classe'
-        ? [['school', 'Ta classe et tes devoirs'], ['layers', 'Tes livres, partout'], ['chart', 'Ton journal, chaque jour']]
-        : [['layers', 'Tes livres, partout'], ['chart', 'Ton journal, chaque jour'], ['users', 'Tes amis et tes défis']],
+        ? [['school', 'Ta classe et tes devoirs'], ['layers', 'Tes paquets, partout'], ['chart', 'Tes statistiques, chaque jour']]
+        : [['layers', 'Tes paquets, partout'], ['chart', 'Tes statistiques, chaque jour'], ['users', 'Tes amis et tes défis']],
       actions: [{ t: 'Commencer', fin: 1, pri: 1 }] };
   }
   if (eleve && demo) {
@@ -377,7 +377,7 @@ export function finDe(role, { demo, aPlus } = {}) {
   return { cle: 'pret', titre: 'Tout est prêt',
     points: role === 'ref'
       ? [['key', 'Deux codes qui changent seuls'], ['school', 'Les classes et les comptes'], ['money', 'La licence et les factures']]
-      : [['key', 'Votre code, projeté en classe'], ['card', 'Des devoirs suivis page par page'], ['bolt', 'Des défis en direct']],
+      : [['key', 'Votre code, projeté en classe'], ['card', 'Des devoirs suivis carte par carte'], ['bolt', 'Des défis en direct']],
     actions: [{ t: 'Commencer', fin: 1, pri: 1 }] };
 }
 

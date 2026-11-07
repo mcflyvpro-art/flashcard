@@ -57,13 +57,13 @@ test('un devoir ouvert depuis « Ma classe » y revient par « Retour »', async
   await expect(ecran(page)).toHaveAttribute('data-view', 'classes');
 
   // rouvert depuis la bibliothèque, le même livre y ramène
-  await page.getByRole('button', { name: 'Livres', exact: true }).click();
+  await page.getByRole('button', { name: 'Paquets', exact: true }).click();
   await page.locator('[data-go]', { hasText: 'Capitales' }).first().click();
   await page.getByRole('button', { name: 'Retour' }).click();
   await expect(ecran(page)).toHaveAttribute('data-view', 'home');
 });
 
-test('balayer : Livres → Classe → Cercle des lecteurs, la voisine visible sous le doigt', async ({ browser, browserName }) => {
+test('balayer : Paquets → Classe → Mes amis, la voisine visible sous le doigt', async ({ browser, browserName }) => {
   test.skip(browserName === 'webkit', 'un doigt qui glisse passe par CDP, que seul Chromium a');
   const page = await telephone(browser, eleveEnClasse());
   const erreurs = [];
@@ -90,7 +90,7 @@ test('balayer : Livres → Classe → Cercle des lecteurs, la voisine visible so
   await expect(ecran(page)).toHaveAttribute('data-view', 'classes');
   await page.glisser(80, 300);
   await expect(ecran(page)).toHaveAttribute('data-view', 'home');
-  await expect(page.locator('.tabs button.on')).toHaveAttribute('aria-label', 'Livres');
+  await expect(page.locator('.tabs button.on')).toHaveAttribute('aria-label', 'Paquets');
   expect(erreurs).toEqual([]);
 });
 

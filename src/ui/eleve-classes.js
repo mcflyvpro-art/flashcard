@@ -187,7 +187,7 @@ async function ouvrirDevoir(aid) {
     });
     const d = importPayload({ name: r.nom, subjectName: r.matiere, cards }, true);   // la matière du professeur, retrouvée ou créée chez l'élève
     eleveClassesPull();
-    if (d) { go('deck', d.id); toast(I.check, 'Devoir ajouté à ta bibliothèque'); }
+    if (d) { go('deck', d.id); toast(I.check, 'Devoir ajouté à tes paquets'); }
   } catch (e) { toast(I.x, messageErreur(e).slice(0, 120) || 'Impossible pour l’instant'); }
 }
 

@@ -136,20 +136,20 @@ function bandeau(role) {
    prix ne se coupe jamais : espaces insécables). */
 const PRIX = 'dès 4,17\u00a0€\u00a0par\u00a0mois';
 const ENVIES = {
-  ia: { t: 'L’IA écrit le livre pour toi',
-    s: `Colle ton cours\u202f: elle en tire les questions et les réponses, une par page. Avec Mirandola+, 30\u00a0cours par mois, ${PRIX}.` },
-  photo: { t: 'Ton cahier en photo, et c’est un livre',
+  ia: { t: 'L’IA écrit le paquet pour toi',
+    s: `Colle ton cours\u202f: elle en tire les questions et les réponses, une par carte. Avec Mirandola+, 30\u00a0cours par mois, ${PRIX}.` },
+  photo: { t: 'Ton cahier en photo, et c’est un paquet',
     s: `Prends ton cours en photo\u202f: l’IA le lit et en fait des flashcards. Avec Mirandola+, ${PRIX}.` },
-  fichier: { t: 'Ton PDF devient un livre',
+  fichier: { t: 'Ton PDF devient un paquet',
     s: `Dépose le PDF d’un cours\u202f: l’IA en tire les flashcards. Avec Mirandola+, ${PRIX}.` },
   exercices: { t: 'QCM et associations',
-    s: `Quatre réponses au choix, ou des paires à relier, tirées de tes pages\u202f: de quoi t’entraîner avant le contrôle. Avec Mirandola+, ${PRIX}.` },
-  livres: { t: 'Ta bibliothèque est pleine',
-    s: `Mirandola gratuit garde 5\u00a0livres. Avec Mirandola+, des livres sans limite, ${PRIX}.` },
-  media: { t: 'Des images et des sons sur tes pages',
-    s: `Un schéma, une carte, la prononciation d’un mot\u202f: ils se glissent sur tes pages. Avec Mirandola+, ${PRIX}.` },
-  journal: { t: 'Ton journal complet',
-    s: `Ta mémoire, tes heures, tes matières et les pages qui résistent. Avec Mirandola+, ${PRIX}.` }
+    s: `Quatre réponses au choix, ou des paires à relier, tirées de tes cartes\u202f: de quoi t’entraîner avant le contrôle. Avec Mirandola+, ${PRIX}.` },
+  livres: { t: 'Tes 5 paquets sont pris',
+    s: `Mirandola gratuit garde 5\u00a0paquets. Avec Mirandola+, des paquets sans limite, ${PRIX}.` },
+  media: { t: 'Des images et des sons sur tes cartes',
+    s: `Un schéma, une carte, la prononciation d’un mot\u202f: ils se glissent sur tes cartes. Avec Mirandola+, ${PRIX}.` },
+  journal: { t: 'Toutes tes statistiques',
+    s: `Ta mémoire, tes heures, tes matières et les cartes qui résistent. Avec Mirandola+, ${PRIX}.` }
 };
 
 /* Ce que Mirandola gratuit n'a pas, dans la démo d'un élève (qui essaie Mirandola

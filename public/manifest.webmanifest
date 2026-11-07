@@ -40,7 +40,7 @@
       "purpose": "maskable"
     }
   ],
-  "description": "Tes cours, reliés en livres. Fiches de révision, récitation et étagère partagée.",
+  "description": "Tes cours en paquets de flashcards, révisés au bon moment grâce à la répétition espacée.",
   "screenshots": [
     {
       "src": "shots/wide.png",
@@ -57,9 +57,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Lire maintenant",
-      "short_name": "Lire",
-      "description": "Ouvre les fiches du jour, toute la bibliothèque confondue.",
+      "name": "Réviser maintenant",
+      "short_name": "Réviser",
+      "description": "Ouvre les cartes du jour, tous paquets confondus.",
       "url": "/app?go=study",
       "icons": [
         {
@@ -69,9 +69,9 @@
       ]
     },
     {
-      "name": "Nouveau livre",
+      "name": "Nouveau paquet",
       "short_name": "Écrire",
-      "description": "Crée un livre et ouvre sa première fiche.",
+      "description": "Crée un paquet et ajoute ses premières cartes.",
       "url": "/app?go=new",
       "icons": [
         {
@@ -81,9 +81,9 @@
       ]
     },
     {
-      "name": "Courrier",
-      "short_name": "Courrier",
-      "description": "Les livres qu’on t’a prêtés.",
+      "name": "Messages",
+      "short_name": "Messages",
+      "description": "Les paquets qu’on t’a envoyés.",
       "url": "/app?go=mail",
       "icons": [
         {

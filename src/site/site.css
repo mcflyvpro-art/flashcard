@@ -741,7 +741,7 @@ button{font:inherit;color:inherit}
 .js .offres .offre-plus.rv.vu{animation:tour 6s linear infinite}
 
 .comparatif{margin-top:clamp(40px,6vw,64px);border:1px solid var(--filet);border-radius:28px;background:#FFF;box-shadow:var(--ombre1);overflow-x:auto;-webkit-overflow-scrolling:touch}
-.comparatif table{width:100%;min-width:600px;border-collapse:collapse}
+.comparatif table{width:100%;min-width:680px;border-collapse:collapse}
 .comparatif th,.comparatif td{padding:15px 18px;text-align:center;border-bottom:1px solid var(--filet);font-size:15px}
 .comparatif tbody tr:last-child th,.comparatif tbody tr:last-child td{border-bottom:0}
 .comparatif thead th{padding-top:22px;padding-bottom:18px;font:700 19px var(--serif)}
@@ -752,6 +752,9 @@ button{font:inherit;color:inherit}
 .comparatif td{font-weight:650;color:var(--encre2)}
 .comparatif .col-plus{background:rgba(154,120,207,.09)}
 .comparatif thead .col-plus{border-radius:18px 18px 0 0}
+.comparatif .col-infini{background:rgba(212,162,60,.08)}
+.comparatif .o-n.infini{font-style:italic;color:#9A6F1E}
+.comparatif .col-infini .ic.oui{color:#A8771C}
 .comparatif .ic{margin:0 auto;width:22px;height:22px}
 .comparatif .oui{color:var(--ok);stroke-width:2.6}
 .comparatif .non{color:#C8C3B9;stroke-width:2.4}
@@ -770,19 +773,29 @@ button{font:inherit;color:inherit}
 .tranches tr.ici td:first-child{box-shadow:inset 3px 0 0 var(--az4);padding-left:10px;transition:padding .3s var(--e)}
 
 /* les professeurs particuliers */
-/* Mirandola Infini (2026-11-06) : un bandeau sous les trois offres, le niveau au-dessus de Mirandola+ */
-.offre-infini{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr) auto;gap:18px 36px;align-items:center;margin-top:18px;
-  padding:26px 30px;border-radius:30px;color:var(--creme);background:linear-gradient(135deg,#141b3d,#1d1c19 55%,#2b1730);
-  box-shadow:var(--ombre1),inset 0 0 0 1px rgba(243,238,227,.08)}
-.offre-infini :is(h2,h3){font:700 26px/1.1 var(--serif);letter-spacing:-.02em}
-.offre-infini h3 em,.offre-infini h2 em{font-style:italic;background:linear-gradient(135deg,#8DA2F0,#B996EC 50%,#F38DB2);-webkit-background-clip:text;background-clip:text;color:transparent}
-.offre-infini .prix{margin-top:12px;min-height:0}
-.offre-infini .prix b{font-size:clamp(36px,3.6vw,46px)}
-.offre-infini .prix span,.offre-infini .prix-note{color:var(--creme2)}
-.offre-infini .prix-note{min-height:0;margin:6px 0 0}
-.offre-infini .bt{background:var(--creme);color:var(--encre);box-shadow:none;white-space:nowrap}
-.offre-infini .inclus{margin:0;padding:0 0 0 30px;border:0;border-left:1px solid rgba(243,238,227,.14);gap:9px}
-.offre-infini .inclus li:not(:has(b))::before{background-color:rgba(141,162,240,.18);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A9B9F6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
+/* Mirandola Infini (2026-11-07) : la troisième offre, à droite — le papier
+   ivoire et l'or, quand Mirandola+, au milieu, a la nuit et la lumière de la
+   marque. Le milieu reste ce que l'œil prend d'abord (plus haut, plus grand,
+   « Le plus choisi ») : Infini, au-dessus en prix, le rend raisonnable. */
+.offre-infini{background:linear-gradient(180deg,#FFFDF6,#F8F0DC);box-shadow:var(--ombre1),inset 0 0 0 1.5px #D9B25A}
+.offre-infini :is(h2,h3) em{font-style:italic;background:linear-gradient(135deg,#8A6114,#C9952E 45%,#B07F22);-webkit-background-clip:text;background-clip:text;color:transparent}
+.offre-infini .inclus{border-color:rgba(176,127,34,.25)}
+.offre-infini .inclus li:not(:has(b))::before{background-color:rgba(201,149,46,.16);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23996A16' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
+.bt-or{background:#16130C;color:#F3D98C;box-shadow:inset 0 0 0 1px rgba(243,217,140,.35)}
+.bt-or:hover{background:#221D12}
+.ruban-or{background:linear-gradient(135deg,#D4A23C,#F3D98C);color:#16130C}
+/* le milieu, mis en avant : plus haut et un peu plus grand que ses voisines */
+.offres .offre-plus{z-index:1}
+.offres .offre-plus.rv.vu{transform:translateY(-18px) scale(1.035)}
+/* Mirandola Campus (2026-11-07) : sous les trois offres, en bandeau */
+.bandeau-campus{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr) auto;gap:18px 36px;align-items:center;margin-top:26px;
+  padding:26px 30px;border-radius:30px;background:#FFF;box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
+.bandeau-campus{text-align:left}
+.bandeau-campus :is(h2,h3){font:700 24px/1.1 var(--serif);letter-spacing:-.02em;justify-content:flex-start}
+.bandeau-campus .prix{margin-top:12px;min-height:0}
+.bandeau-campus .prix b{font-size:clamp(32px,3.2vw,40px)}
+.bandeau-campus .prix-note{min-height:0;margin:6px 0 0}
+.bandeau-campus .inclus{margin:0;padding:0 0 0 30px;border:0;border-left:1px solid var(--filet);gap:9px}
 .particulier{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px 32px;align-items:center;margin-top:18px;
   padding:clamp(22px,3vw,34px);border-radius:30px;background:var(--papier2);box-shadow:inset 0 0 0 1px var(--filet)}
 .particulier :is(h2,h3){grid-column:1 / -1;font:700 clamp(22px,2.4vw,27px)/1.2 var(--serif);letter-spacing:-.02em}
@@ -886,9 +899,11 @@ button{font:inherit;color:inherit}
   .tete-liens,.tete-code,.tete-connexion{display:none}
   .burger{display:inline-flex}
   .offres{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto}
-  .offre-infini{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto;padding:28px 26px}
-  .offre-infini .inclus{padding:20px 0 0;border-left:0;border-top:1px solid rgba(243,238,227,.14)}
-  .offre-infini .bt{width:100%}
+  .bandeau-campus{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto;padding:28px 26px}
+  .bandeau-campus .inclus{padding:20px 0 0;border-left:0;border-top:1px solid var(--filet)}
+  .bandeau-campus .bt{width:100%}
+  .offres .offre-plus.rv.vu{transform:none}
+  .offres .offre-plus{order:-1}
   .offre-plus,.offres .offre-plus.rv.vu{transform:none}
   .etapes{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto}
   .roles{grid-template-columns:minmax(0,1fr);max-width:520px}

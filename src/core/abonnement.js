@@ -31,12 +31,24 @@ export function offreLocale() {
    (migration pas appliquée : 404) ou une coupure : ce qu'on savait, sinon
    RIEN — une offre inconnue ne bride pas (ui/bridage.js) ; jamais une
    erreur à l'écran pour ça. */
+/* Ce qui, dans l'offre, change ce que l'app ouvre : l'offre, le niveau,
+   l'état et la formule de l'abonnement. Deux lectures de même signature,
+   rien à repeindre. */
+export const signatureOffre = o => (o ? [o.offre, o.niveau, o.abonnement && o.abonnement.statut,
+  o.abonnement && o.abonnement.formule, o.abonnement && o.abonnement.finPrevue].join('|') : '');
+
 export async function offrePull() {
   if (!auth) return offre;
+  const avant = signatureOffre(offre);
   try {
     const r = await api('/rest/v1/rpc/mon_offre', 'POST', {});
     if (!r || typeof r !== 'object' || Array.isArray(r)) throw new Error('mon_offre');
     setOffre(lireOffre(r));
+    /* L'offre a changé (un paiement, un Mirandola+ offert depuis la console) :
+       l'IA du mois se relit avec elle. Sans ça, un compte passé de gratuit à
+       Mirandola+ gardait le quota 0 de son ancienne offre, et ses onglets
+       d'IA restaient grisés jusqu'au redémarrage (2026-11-07). */
+    if (avant && signatureOffre(offre) !== avant) await iaPull();
     if (!demoEtab) {
       try { localStorage.setItem(cle(), JSON.stringify(r)); }
       catch (e) { /* stockage plein ou refusé : la prochaine ouverture redemandera */ }

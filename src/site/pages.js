@@ -30,19 +30,19 @@ export const PAGES = [
     titre: 'Mirandola : flashcards IA et répétition espacée pour réviser',
     description: 'L’IA fait de ton cours des flashcards, Mirandola te les repose juste avant l’oubli, avec l’algorithme FSRS. Gratuit, hors ligne, pour élèves, profs et lycées.',
     maj: '2026-11-05', image: '/site/og.jpg',
-    imageAlt: 'Mirandola, l’app de révision : trois livres empilés, l’app sur ordinateur et téléphone, et une page de flashcard'
+    imageAlt: 'Mirandola, l’app de révision : son logo, l’app sur ordinateur et téléphone, et une flashcard'
   },
   {
     chemin: '/flashcards-ia', fichier: 'flashcards-ia.html', nom: 'Flashcards avec l’IA',
     titre: 'Créer des flashcards avec l’IA, depuis ton cours | Mirandola',
-    description: 'Colle ton cours, prends une photo de ton cahier ou importe un PDF : l’IA de Mirandola en fait un livre de flashcards en quelques secondes, prêt à réviser.',
+    description: 'Colle ton cours, prends une photo de ton cahier ou importe un PDF : l’IA de Mirandola en fait un paquet de flashcards en quelques secondes, prêt à réviser.',
     maj: '2026-11-04', image: '/site/og/flashcards-ia.jpg',
-    imageAlt: 'Un cours transformé en livre de flashcards par l’IA de Mirandola'
+    imageAlt: 'Un cours transformé en paquet de flashcards par l’IA de Mirandola'
   },
   {
     chemin: '/repetition-espacee', fichier: 'repetition-espacee.html', nom: 'La répétition espacée', type: 'Article',
     titre: 'La répétition espacée, expliquée simplement | Mirandola',
-    description: 'Courbe de l’oubli, intervalles, algorithme FSRS : comment la répétition espacée fait retenir 9 pages sur 10, et comment t’en servir pour tes examens.',
+    description: 'Courbe de l’oubli, intervalles, algorithme FSRS : comment la répétition espacée fait retenir 9 cartes sur 10, et comment t’en servir pour tes examens.',
     maj: '2026-11-05', image: '/site/og/repetition-espacee.jpg',
     imageAlt: 'La courbe de l’oubli, et la mémoire qui reste haute avec la répétition espacée'
   },
@@ -56,7 +56,7 @@ export const PAGES = [
   {
     chemin: '/academie', fichier: 'academie.html', nom: 'Mirandola Academy', type: 'CollectionPage',
     titre: 'Mirandola Academy : les tutos vidéo, geste par geste',
-    description: 'Les tutos vidéo de Mirandola : réviser, créer un livre avec l’IA, donner un devoir, gérer un établissement. Pour élèves, profs et référents.',
+    description: 'Les tutos vidéo de Mirandola : réviser, créer un paquet avec l’IA, donner un devoir, gérer un établissement. Pour élèves, profs et référents.',
     maj: '2026-11-05', image: '/site/og/academie.jpg',
     imageAlt: 'La Mirandola Academy : les tutos vidéo de l’élève, du professeur et du référent'
   },
@@ -70,7 +70,7 @@ export const PAGES = [
   {
     chemin: '/professeurs', fichier: 'professeurs.html', nom: 'Professeurs',
     titre: 'Mirandola pour les professeurs : devoirs, suivi, défis',
-    description: 'Donnez un livre de flashcards en devoir, voyez qui l’a lu et ce qui bloque, lancez un défi en direct en classe. Gratuit pour les cours particuliers.',
+    description: 'Donnez un paquet de flashcards en devoir, voyez qui l’a révisé et ce qui bloque, lancez un défi en direct en classe. Gratuit pour les cours particuliers.',
     maj: '2026-11-04', image: '/site/og/professeurs.jpg',
     imageAlt: 'Le tableau de bord du professeur dans Mirandola'
   },

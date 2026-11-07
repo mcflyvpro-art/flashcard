@@ -60,20 +60,20 @@ async function entrerDemo(page, role) {
   await expect(page.locator('#tu')).toHaveCount(0, { timeout: 10000 });
 }
 
-test('l’élève : sa classe, ses livres, un livre, le cercle', async ({ page }) => {
+test('l’élève : sa classe, ses paquets, un paquet, ses amis', async ({ page }) => {
   test.setTimeout(120000);
   await entrerDemo(page, 'eleve');
   await audit(page, 'élève — sa classe (son arrivée)');
-  await page.getByRole('button', { name: 'Livres', exact: true }).click();
+  await page.getByRole('button', { name: 'Paquets', exact: true }).click();
   await page.waitForTimeout(600);
-  await audit(page, 'élève — ses livres');
+  await audit(page, 'élève — ses paquets');
   await page.locator('[data-go]:visible').first().click();
   await page.waitForTimeout(600);
-  await audit(page, 'élève — un livre');
+  await audit(page, 'élève — un paquet');
   await page.getByRole('button', { name: 'Retour' }).first().click();
-  await page.getByRole('button', { name: /^Cercle des lecteurs/ }).click();
+  await page.getByRole('button', { name: /^Mes amis/ }).click();
   await page.waitForTimeout(800);
-  await audit(page, 'élève — le cercle');
+  await audit(page, 'élève — ses amis');
 });
 
 test('le professeur : son tableau de bord', async ({ page }) => {

@@ -51,17 +51,17 @@ const lignes = t => String(t || '').split(/\n+/)
 
 function retoucher(cartes, msg) {
   if (/invers|change le sens|échange/i.test(msg)) {
-    return { cards: cartes.map(c => ({ f: c.b, b: c.f })), note: `J’ai inversé recto et verso de ${cartes.length} pages.` };
+    return { cards: cartes.map(c => ({ f: c.b, b: c.f })), note: `J’ai inversé recto et verso de ${cartes.length} cartes.` };
   }
   const enlever = msg.match(/^\s*(?:enl[eè]ve|supprime|retire)\s+(.+)$/i);
   if (enlever) {
     const mot = enlever[1].trim().toLowerCase();
     const reste = cartes.filter(c => !`${c.f} ${c.b}`.toLowerCase().includes(mot));
-    return { cards: reste, note: `J’ai retiré ${cartes.length - reste.length} page(s), il en reste ${reste.length}.` };
+    return { cards: reste, note: `J’ai retiré ${cartes.length - reste.length} carte(s), il en reste ${reste.length}.` };
   }
   const nouvelles = lignes(msg);
   const cards = cartes.concat(nouvelles);
-  return { cards, note: `${cards.length} pages${nouvelles.length && cartes.length ? `, dont ${nouvelles.length} ajoutées` : ''}.` };
+  return { cards, note: `${cards.length} cartes${nouvelles.length && cartes.length ? `, dont ${nouvelles.length} ajoutées` : ''}.` };
 }
 
 /* L'examen blanc (2026-11-06), joué sans modèle : le sujet reprend les
@@ -105,7 +105,7 @@ export function aiFaux(store, b, user) {
   let r;
   if (op === 'prompt') r = retoucher((b.cards || []).map(c => ({ f: String(c.f || ''), b: String(c.b || '') })), String(b.message || ''));
   else if (op === 'cards') r = { cards: lignes(b.text), note: '' };
-  else r = { cards: [{ f: 'Page lue', b: 'Sur la photo' }], note: '' };
+  else r = { cards: [{ f: 'Carte révisée', b: 'Sur la photo' }], note: '' };
   usage(store).push({ user_id: user.id, day: auj(), op, cents: 0.4 });
   mois.fait += 1;
   if (!r.cards.length && op !== 'prompt') return [422, { error: 'empty', mois }];

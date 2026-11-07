@@ -14,7 +14,7 @@ function infini(store, email = 'lea@exemple.fr') {
     fin_periode: new Date(Date.now() + 300 * 86400000).toISOString() }];
 }
 
-test('Infini : fixer la date d’un examen, la voir en tête du livre, la changer, la retirer', async ({ page }) => {
+test('Infini : fixer la date d’un examen, la voir en tête du paquet, la changer, la retirer', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
@@ -22,7 +22,7 @@ test('Infini : fixer la date d’un examen, la voir en tête du livre, la change
   await page.reload();
   await creerLivre(page, 'Histoire', 4);
 
-  await page.getByRole('button', { name: 'Menu du livre' }).click();
+  await page.getByRole('button', { name: 'Menu du paquet' }).click();
   await page.getByRole('button', { name: 'Objectif examen' }).click();
   const feuille = page.locator('.menu.ex');
   await expect(feuille).toBeVisible({ timeout: 10000 });
@@ -52,14 +52,53 @@ test('Infini : fixer la date d’un examen, la voir en tête du livre, la change
   await expect.poll(() => (store.tables.decks.find(d => d.name === 'Histoire') || {}).meta?.examen ?? null, { timeout: 10000 }).toBeNull();
 });
 
-test('Mirandola+ : ni objectif examen, ni pastille', async ({ page }) => {
+/* Un abonné Mirandola+ (2026-11-07) : « Objectif examen » porte la pastille
+   Infini et mène à la montée — ce qu'Infini ajoute, le prix en plus, puis le
+   portail de Stripe au prorata ; revenu, il est en Infini, sans redémarrer. */
+test('Mirandola+ : l’objectif examen mène à Infini, la montée se fait au prorata', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
+  const u = store.users.find(x => x.email === 'lea@exemple.fr');
+  store.tables.abonnements = [{ user_id: u.id, source: 'stripe', statut: 'actif', formule: 'mensuel', fin_prevue: false,
+    client_stripe: 'cus_lea', abonnement_stripe: 'sub_lea', fin_periode: new Date(Date.now() + 20 * 86400000).toISOString() }];
+  await page.reload();
   await creerLivre(page, 'Histoire', 2);
-  await page.getByRole('button', { name: 'Menu du livre' }).click();
-  await expect(page.getByRole('button', { name: 'Réglages du livre' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Objectif examen' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Menu du paquet' }).click();
+  await expect(page.locator('.mi-infini')).toHaveText('Infini');
+  await expect(page.locator('.head .exa')).toHaveCount(0);
+  await page.getByRole('button', { name: /Objectif examen/ }).click();
+
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'plus', { timeout: 10000 });
+  await expect(page.locator('.fp-raison')).toContainText('dans Mirandola Infini');
+  await expect(page.locator('.hero')).toContainText('Infini');
+  await expect(page.locator('.fp-avantages')).toContainText('Ce qu’Infini ajoute');
+  await expect(page.getByRole('radio', { name: /Mensuel/ })).toContainText('9,99');
+  await expect(page.locator('.fp-note')).toContainText('Au prorata');
+  await page.getByRole('checkbox', { name: /J’accepte les/ }).check();
+  await page.locator('.fp-payer').click();
+  await expect(page.locator('html')).toHaveClass(/offre-infini/, { timeout: 10000 });
+  expect(store.tables.abonnements.find(a => a.user_id === u.id && a.source === 'stripe').formule).toBe('infini_mensuel');
+  await expect(page.locator('.fp-montee')).toHaveCount(0);                  // plus rien à monter
+});
+
+test('Mirandola+ : la carte de la licence propose Infini, et l’on peut en revenir', async ({ page }) => {
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  const u = store.users.find(x => x.email === 'lea@exemple.fr');
+  store.tables.abonnements = [{ user_id: u.id, source: 'stripe', statut: 'actif', formule: 'annuel', fin_prevue: false,
+    client_stripe: 'cus_lea', abonnement_stripe: 'sub_lea', fin_periode: new Date(Date.now() + 200 * 86400000).toISOString() }];
+  await page.goto('./app?plus=retour');
+  await expect(page.locator('.fp-licence')).toBeVisible({ timeout: 10000 });
+  const carte = page.locator('.fp-montee');
+  await expect(carte).toContainText('+2,92 €/mois');                         // 6,67 − 3,75 à l'année
+  await expect(carte).toContainText('L’examen blanc');
+  await carte.getByRole('button', { name: /Passer à Infini/ }).click();
+  await expect(page.getByRole('radio', { name: /Annuel/ })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('79,99');
+  await page.getByRole('button', { name: 'Ma licence' }).click();
+  await expect(page.locator('.fp-licence')).toBeVisible();
 });
 
 /* L'examen blanc (2026-11-06) : la fausse IA de la base locale compose avec
@@ -71,10 +110,10 @@ async function ouvrirBlanc(page, store) {
   infini(store);
   await page.reload();
   await creerLivre(page, 'Capitales', 6);
-  await page.getByRole('button', { name: 'Menu du livre' }).click();
+  await page.getByRole('button', { name: 'Menu du paquet' }).click();
   await page.getByRole('button', { name: 'Objectif examen' }).click();
   await page.locator('.menu.ex').getByRole('button', { name: /Examen blanc/ }).click();
-  await expect(page).toHaveURL(/\/livres\/[^/]+\/examen-blanc$/, { timeout: 10000 });
+  await expect(page).toHaveURL(/\/paquets\/[^/]+\/examen-blanc$/, { timeout: 10000 });
 }
 
 test('l’examen blanc au clavier : rien sur ce qui est juste, une correction et un conseil sur ce qui ne l’est pas', async ({ page }) => {
@@ -103,13 +142,13 @@ test('l’examen blanc au clavier : rien sur ce qui est juste, une correction et
   expect(store.tables.examens[0]).toMatchObject({ note: 13.5, questions: 6, justes: 4, copie: 'clavier' });
 
   // revoir les pages en cause, tout de suite
-  await page.getByRole('button', { name: 'Revoir 2 pages' }).click();
+  await page.getByRole('button', { name: 'Revoir 2 cartes' }).click();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'study');
   await page.goBack();
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'deck', { timeout: 10000 });
 });
 
-test('l’examen blanc sur papier : la copie photographiée, lue et corrigée ; l’historique du livre', async ({ page }) => {
+test('l’examen blanc sur papier : la copie photographiée, lue et corrigée ; l’historique du paquet', async ({ page }) => {
   const store = { ...nouveauStore(), copieLue: ['Capitale 1', 'Capitale 2', 'Capitale 3', 'Capitale 4', 'Capitale 5', 'Capitale 6'] };
   await ouvrirBlanc(page, store);
   await page.getByRole('radio', { name: 'Sur papier' }).click();
@@ -119,7 +158,7 @@ test('l’examen blanc sur papier : la copie photographiée, lue et corrigée ; 
   await page.locator('[data-eb-photo]').setInputFiles([
     { name: 'copie-1.png', mimeType: 'image/png', buffer: png }, { name: 'copie-2.png', mimeType: 'image/png', buffer: png }]);
   await expect(page.locator('.eb-photos figure')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Retirer la page 2' }).click();
+  await page.getByRole('button', { name: 'Retirer la carte 2' }).click();
   await expect(page.locator('.eb-photos figure')).toHaveCount(1);
   await page.getByRole('button', { name: 'Rendre ma copie' }).click();
   await expect(page.locator('.eb-note b')).toHaveText('20', { timeout: 10000 });
@@ -128,7 +167,7 @@ test('l’examen blanc sur papier : la copie photographiée, lue et corrigée ; 
 
   // l'historique du livre : la dernière note, au retour sur l'examen blanc
   await page.getByRole('button', { name: 'Terminer' }).click();
-  await page.getByRole('button', { name: 'Menu du livre' }).click();
+  await page.getByRole('button', { name: 'Menu du paquet' }).click();
   await page.getByRole('button', { name: 'Objectif examen' }).click();
   await page.locator('.menu.ex').getByRole('button', { name: /Examen blanc/ }).click();
   await expect(page.locator('.eb-histo b')).toHaveText('20', { timeout: 10000 });

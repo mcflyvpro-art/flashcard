@@ -257,7 +257,7 @@ function detailPersonne(g) {
             autocapitalize="none" aria-label="Nouveau mot de passe">
           <button class="rf-b" type="submit">${svg(I.key)}Remplacer</button>
         </form>
-      <button class="rf-b ko large rf-retirer" data-rf="retirer" title="Il quitte ses classes ; son compte et ses livres restent">
+      <button class="rf-b ko large rf-retirer" data-rf="retirer" title="Il quitte ses classes ; son compte et ses paquets restent">
         ${svg(I.exit)}<span>Retirer de l’établissement</span></button>
     </div>`;
 }

@@ -31,9 +31,9 @@ function chargerJournal() {
 export function statsView() {
   if (ecranJournal) return ecranJournal.journalEcran();
   $.innerHTML = `<div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
-    <div class="page"><div class="top"><div class="hero">Journal</div></div><div class="empty">${svg(I.chart)}</div></div>`;
+    <div class="page"><div class="top"><div class="hero">Statistiques</div></div><div class="empty">${svg(I.chart)}</div></div>`;
   chargerJournal().then(() => { if (view.name === 'stats') { setAnimate(false); render(); } })
-    .catch(() => toast(I.x, 'Le journal n’a pas pu s’ouvrir : vérifie ta connexion'));
+    .catch(() => toast(I.x, 'Les statistiques n’ont pas pu s’ouvrir : vérifie ta connexion'));
 }
 
 export async function exportStats() {
@@ -63,7 +63,7 @@ function findResults(q) {
 export function findView() {
   $.innerHTML = `
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button>
-      <div class="fld"><input id="fq" type="search" placeholder="Chercher un mot, un livre…"
+      <div class="fld"><input id="fq" type="search" placeholder="Chercher un mot, un paquet…"
         autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search"
         value="${esc(findQ)}" aria-label="Recherche"></div></div>
     <div class="page" id="fres"></div>`;
@@ -75,12 +75,12 @@ function paintFind() {
   box.innerHTML = `
       ${!findQ.trim() ? `<div class="empty">${svg(I.search)}</div>`
         : (!r.decks.length && !r.cards.length) ? `<div class="empty">${svg(I.search)}<p><b>Rien trouvé</b>pour « ${esc(findQ)} »</p></div>`
-        : `${r.decks.length ? `<div class="lbl"><span>Livres</span><span>${r.decks.length}</span></div>
+        : `${r.decks.length ? `<div class="lbl"><span>Paquets</span><span>${r.decks.length}</span></div>
           <div class="slist">${r.decks.map(d => `<button class="sr flat" data-go="${d.id}">
             <i class="ldot" style="${sty(subj(d.subject))}"></i>
             <span class="n">${esc(d.name)}</span>
             <span class="c">${d.cards.length}</span>${svg(I.arrow)}</button>`).join('')}</div>` : ''}
-        ${r.cards.length ? `<div class="lbl"><span>Pages</span><span>${r.cards.length}</span></div>
+        ${r.cards.length ? `<div class="lbl"><span>Cartes</span><span>${r.cards.length}</span></div>
           <div class="slist">${r.cards.map(({ c, d }) => `<button class="sr flat" data-go="${d.id}">
             <span class="ml2"><span class="n">${hl(plain(c.f), findQ)}</span>
               <span class="sub">${hl(plain(c.b), findQ)} · ${esc(d.name)}</span></span>
@@ -130,13 +130,13 @@ export function askPages(done) {
   const w = document.createElement('div');
   w.innerHTML = `<div class="scrim" id="pgx"></div>
     <div class="menu">
-      <div class="mi" style="font-weight:750">${svg(I.file)}Quelles pages ?</div>
-      <input class="tok" id="pgin" placeholder="Toutes les pages" spellcheck="false"
+      <div class="mi" style="font-weight:750">${svg(I.file)}Quelles cartes ?</div>
+      <input class="tok" id="pgin" placeholder="Toutes les cartes" spellcheck="false"
         autocapitalize="none" inputmode="numeric" enterkeyhint="done">
       <div class="note">Par exemple <b>3-7</b> pour une suite, <b>2, 5, 9</b> pour un choix,
         ou rien du tout pour prendre le document entier.</div>
       <button class="mi" id="pgok" style="justify-content:center;font-weight:700">
-        ${svg(I.check)}Lire le PDF</button>
+        ${svg(I.check)}Importer le PDF</button>
     </div>`;
   mountMenu(w);
   const inp = document.getElementById('pgin');

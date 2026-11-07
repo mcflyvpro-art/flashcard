@@ -64,7 +64,7 @@ test.describe('un iPhone, dans Safari', () => {
     await expect(porte(page)).toBeVisible({ timeout: 10000 });
 
     // recharger, revenir à l'adresse d'un espace : toujours la porte
-    await page.goto('./eleve/livres');
+    await page.goto('./eleve/paquets');
     await expect(porte(page)).toBeVisible({ timeout: 10000 });
     const largeur = await page.evaluate(() => document.documentElement.scrollWidth);
     expect(largeur).toBeLessThanOrEqual(390);
@@ -184,7 +184,7 @@ test.describe('un téléphone Android, dans Chrome', () => {
     const nav = await context.newPage();
     await nav.goto('./app');
     await expect(nav.locator('.pw-carte')).toBeVisible({ timeout: 10000 });
-    await expect(nav.getByText('Ta bibliothèque est vide')).toHaveCount(0);
+    await expect(nav.getByText('Aucun paquet pour l’instant')).toHaveCount(0);
     await expect(nav.locator('.tabs')).toHaveCount(0);
     await expect(nav.getByRole('button', { name: 'Essayer sans compte' })).toHaveCount(0);
     await expect(nav.locator('.pw-carte')).toContainText('ton compte t’y attend', { timeout: 5000 });

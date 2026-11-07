@@ -15,9 +15,9 @@ describe('chemin — un écran, son adresse', () => {
     expect(chemin({ name: 'home' })).toBeNull();                 // sans session, pas d'espace
   });
   it('chaque rôle a son espace', () => {
-    expect(chemin({ name: 'home' }, 'eleve')).toBe('/eleve/livres');
-    expect(chemin({ name: 'deck', id: 'a b' }, 'eleve')).toBe('/eleve/livres/a%20b');
-    expect(chemin({ name: 'home' }, 'prof')).toBe('/prof/livres');
+    expect(chemin({ name: 'home' }, 'eleve')).toBe('/eleve/paquets');
+    expect(chemin({ name: 'deck', id: 'a b' }, 'eleve')).toBe('/eleve/paquets/a%20b');
+    expect(chemin({ name: 'home' }, 'prof')).toBe('/prof/paquets');
     expect(chemin({ name: 'prof' }, 'prof')).toBe('/prof');
     expect(chemin({ name: 'profclasse', id: 'c1', sous: 'devoirs' }, 'prof')).toBe('/prof/classes/c1/devoirs');
     expect(chemin({ name: 'profclasse', id: 'c1' }, 'prof')).toBe('/prof/classes/c1');
@@ -78,12 +78,38 @@ describe('lireChemin — une adresse, son écran', () => {
     expect(lireChemin('/demo/referent/classes')).toMatchObject({ role: 'ref', demo: true, sous: 'classes' });
     expect(lireChemin('/nimporte/quoi')).toBeNull();
     expect(lireChemin('/eleve/agenda')).toBeNull();           // l'agenda est au professeur
-    expect(lireChemin('/eleve/livres/%E0%A4%A')).toBeNull();   // adresse abîmée
+    expect(lireChemin('/eleve/paquets/%E0%A4%A')).toBeNull();   // adresse abîmée
     expect(lireChemin('/connexion?x=1')).toEqual({ name: 'login', id: 'in' });
   });
   it('ce qui ne se reprend pas se rouvre à sa place', () => {
+    expect(aRouvrir(lireChemin('/eleve/paquets/d1/revision'))).toMatchObject({ name: 'deck', id: 'd1' });
+    expect(aRouvrir(lireChemin('/eleve/amis/direct'))).toMatchObject({ name: 'commu', id: null });
+    expect(aRouvrir(lireChemin('/eleve/paquets/d1'))).toMatchObject({ name: 'deck', id: 'd1' });
+  });
+});
+
+/* Le vocabulaire classique (2026-11-07) : les adresses disent paquets,
+   révision, statistiques, messages, amis, profils — et celles d'avant (le
+   vocabulaire du livre) se lisent encore, un favori ou un lien partagé ne
+   cassant pas, mais ne s'écrivent plus. */
+describe('les adresses d’avant le 2026-11-07', () => {
+  it('se lisent encore, vers le même écran', () => {
+    expect(lireChemin('/eleve/livres')).toMatchObject({ name: 'home' });
+    expect(lireChemin('/eleve/livres/d1')).toMatchObject({ name: 'deck', id: 'd1' });
     expect(aRouvrir(lireChemin('/eleve/livres/d1/lecture'))).toMatchObject({ name: 'deck', id: 'd1' });
-    expect(aRouvrir(lireChemin('/eleve/cercle/direct'))).toMatchObject({ name: 'commu', id: null });
-    expect(aRouvrir(lireChemin('/eleve/livres/d1'))).toMatchObject({ name: 'deck', id: 'd1' });
+    expect(lireChemin('/eleve/journal')).toMatchObject({ name: 'stats' });
+    expect(lireChemin('/eleve/courrier/m1')).toMatchObject({ name: 'lettre', id: 'm1' });
+    expect(lireChemin('/eleve/cercle')).toMatchObject({ name: 'commu' });
+    expect(lireChemin('/eleve/cercle/amis')).toMatchObject({ name: 'friends' });
+    expect(lireChemin('/eleve/cercle/clubs/c1')).toMatchObject({ name: 'club', id: 'c1' });
+    expect(lireChemin('/eleve/lecteurs/u1')).toMatchObject({ name: 'profil', id: 'u1' });
+  });
+  it('ne s’écrivent plus', () => {
+    expect(chemin({ name: 'stats' }, 'eleve')).toBe('/eleve/statistiques');
+    expect(chemin({ name: 'mail' }, 'eleve')).toBe('/eleve/messages');
+    expect(chemin({ name: 'commu' }, 'eleve')).toBe('/eleve/amis');
+    expect(chemin({ name: 'friends' }, 'eleve')).toBe('/eleve/amis/liste');
+    expect(chemin({ name: 'profil', id: 'u1' }, 'eleve')).toBe('/eleve/profils/u1');
+    expect(chemin({ name: 'study', id: 'd1' }, 'eleve')).toBe('/eleve/paquets/d1/revision');
   });
 });

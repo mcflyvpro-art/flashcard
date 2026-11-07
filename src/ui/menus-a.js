@@ -29,6 +29,7 @@ import { installSheet } from './onboarding.js';
 import { paintMenuPdf } from './pdf-porte.js';
 import { paintMenuExamen } from './examen-porte.js';
 import { aInfini } from './bridage.js';
+import { infiniAPrendre } from './plus-porte.js';
 
 /* ---------- menu contextuel ----------
    Sur ordinateur, une feuille n'est pas un tiroir de téléphone posé au
@@ -349,18 +350,19 @@ function paintMenuDeck(w) {
       <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
       <button class="mi" data-mact="mcq">${svg(I.grid)}QCM</button>
       <button class="mi" data-mact="match">${svg(I.link)}Association</button>
-      ${aInfini() ? `<button class="mi" data-mact="examen">${svg(I.target)}Objectif examen</button>` : ''}
-      <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du livre</button>
+      ${aInfini() ? `<button class="mi" data-mact="examen">${svg(I.target)}Objectif examen</button>`
+    : infiniAPrendre() ? `<button class="mi" data-mact="examen-infini">${svg(I.target)}Objectif examen<span class="tail mi-infini">Infini</span></button>` : ''}
+      <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du paquet</button>
       ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
       <div class="msep"></div>
       ${canUndo() ? `<button class="mi" data-mact="undo">${svg(I.redo)}Annuler<span class="tail">${esc(undoLabel())}</span></button>` : ''}
       ${d.cards.length ? `<button class="mi" data-mact="fnropen">${svg(I.search)}Chercher et remplacer</button>` : ''}
-      <button class="mi" data-mact="versopen">${svg(I.clock)}Éditions précédentes</button>
+      <button class="mi" data-mact="versopen">${svg(I.clock)}Versions précédentes</button>
       <button class="mi" data-mact="clone">${svg(I.copy)}Dupliquer</button>
       ${db.decks.length > 1 ? `<button class="mi" data-mact="mergeopen">${svg(I.link)}Fusionner avec…</button>` : ''}
       ${d.cards.length > 3 ? `<button class="mi" data-mact="splitopen">${svg(I.split)}Scinder<span class="tail">${d.cards.length}</span></button>` : ''}
       <button class="mi" data-mact="sharepick">${svg(I.share)}Partager</button>
-      ${d.cards.length ? `<button class="mi" data-mact="pdfopen">${svg(I.file)}PDF du livre<span class="tail">${d.cards.length}</span></button>` : ''}
+      ${d.cards.length ? `<button class="mi" data-mact="pdfopen">${svg(I.file)}PDF du paquet<span class="tail">${d.cards.length}</span></button>` : ''}
       <button class="mi warn" data-mact="del">${svg(I.trash)}<span>Supprimer</span></button>
     </div>`;
   mountMenu(w);
@@ -416,7 +418,7 @@ function paintMenuBackup(w) {
   const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
-        <button class="mi" data-mact="backup-file">${svg(I.check)}Exporter toute ma bibliothèque
+        <button class="mi" data-mact="backup-file">${svg(I.check)}Exporter tous mes paquets
           <span class="tail">${n} · ${c}</span></button>
         <button class="mi" data-mact="backup-restore">${svg(I.arrow)}Restaurer depuis un fichier</button>
         <button class="mi" data-mact="backup">${svg(I.share)}Partager un lien (recto et verso seulement)</button>

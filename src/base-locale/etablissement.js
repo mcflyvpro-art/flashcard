@@ -313,7 +313,7 @@ function enregistrer(store, et, m, uid, b) {
   const f = b.fiche || {}, nom = String(f.nom || '').trim();
   if (nom.length < 2) erreur('Un nom de 2 à 120 caractères');
   const uai = String(f.uai || '').trim().toUpperCase();
-  if (uai && !/^[0-9]{7}[A-Z]$/.test(uai)) erreur('L’UAI s’écrit 7 chiffres et une lettre');
+  if (uai && !/^[0-9]{7}[A-Z]$/.test(uai)) erreur('L’UAI s’écrit 7 chiffres et un message');
   let o = b.org && et.orgs.find(x => x.id === b.org);
   if (b.org && !o) erreur('Établissement inconnu');
   if (!o) {

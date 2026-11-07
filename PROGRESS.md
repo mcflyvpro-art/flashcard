@@ -32,12 +32,28 @@ DERNIER   2026-11-07 · La fiabilité, demandé : « le max du debug
           mutation 78,4 %. Accessibilité 0 violation grave (M09.T3).
           Safari : le flou des 33 cartes de l'Academy faisait gonfler la
           mémoire de WebKit sans fin — retiré. docs/FIABILITE.md.
-Avant :   2026-11-06 · Suite du débogage. M10.T3 cochée : les 156
+Avant :   2026-11-07 · Le vocabulaire redevient classique partout
+          (app, site, démo, textes du cadre, e-mails, manifeste) : paquet,
+          cartes, réviser, Mes amis, Statistiques, Messages ; nouvelles
+          adresses (/eleve/paquets, /statistiques, /messages, /amis), les
+          anciennes se lisent encore (test/routes.test.js) ; noms internes
+          inchangés. L'offre et l'IA se relisent sans redémarrer (un
+          Mirandola+ offert laissait les onglets d'IA fermés « Ton
+          établissement… » : e2e/mirandola-plus.e2e.js « sans redémarrer »,
+          rouge sur l'ancien code). Infini a son identité, l'or sur la
+          nuit, et la montée depuis Mirandola+ (e2e/examen.e2e.js) ; le
+          site met Mirandola+ au milieu, plus haut, Infini à droite,
+          Campus en bandeau dessous. Avant :
+          2026-11-06 · Suite du débogage. M10.T3 cochée : les 156
           fonctions de la base relues, puis attaquées par un inconnu
           (2 028 appels, rien d'un autre ne revient). Le singe a fait le
-          tour de la démo : aucune erreur JavaScript. vite 8.3.6 et
-          vitest 5.1. La CSP appliquée vérifiée en production.
-Avant :   2026-11-06 · Mirandola Infini se montre : l'écran Mirandola+
+          tour de la démo, trois rôles, téléphone et ordinateur : aucune
+          erreur JavaScript. vite 8.3.6 et vitest 5.1 (deux failles
+          élevées des outils de build fermées ; reste minimatch dans
+          ESLint, sans surface). Le tuto du professeur s'arrêtait sur sa
+          dernière étape dans les parcours : la borne du test, pas l'app.
+          La CSP appliquée vérifiée en production. Avant :
+          2026-11-06 · Mirandola Infini se montre : l'écran Mirandola+
           choisit le niveau puis la période (e2e/mirandola-plus.e2e.js),
           la licence et l'engagement disent son nom, « ∞ » et sa lumière
           chez un abonné ; le site a son bandeau sous les offres et ses
@@ -367,7 +383,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 ## M09 · Accessibilité (socle) [P0] 0/4
 - [ ] M09.T1 · navigation clavier complète — cible: 100 % des actions atteignables — preuve: test Playwright clavier
 - [ ] M09.T2 · contrastes — cible: 100 % du texte ≥ 4,5:1 — preuve: axe-core 0 violation
-- [x] M09.T3 · lecteur d'écran sur les 6 écrans principaux — cible: 0 élément sans nom accessible — preuve: axe-core — **fait le 2026-11-07** : `e2e/accessibilite.e2e.js`, axe-core (WCAG 2.2 AA) sur 13 écrans — cinq pages du site, la connexion, l'inscription, et la vraie app dans la démo : l'élève (sa classe, ses livres, un livre, le cercle), le professeur, le référent — 0 violation grave ou critique, sous Chromium et sous Safari (WebKit). Corrigé pour y arriver : `--soft` à 4,5:1 sur nos fonds (3,1 avant), des boutons à icône sans nom (aperçu, supprimer une page, micro, retourner une question, gérer), des noms qui disent la pastille (« Boîte de réception, 3 non lues »), les onglets de l'espace professeur en vrais onglets, les zones qui défilent rejointes au clavier, les formules du moteur nommées
+- [x] M09.T3 · lecteur d'écran sur les 6 écrans principaux — cible: 0 élément sans nom accessible — preuve: axe-core — **fait le 2026-11-07** : `e2e/accessibilite.e2e.js`, axe-core (WCAG 2.2 AA) sur 13 écrans — cinq pages du site, la connexion, l'inscription, et la vraie app dans la démo : l'élève (sa classe, ses paquets, un paquet, ses amis), le professeur, le référent — 0 violation grave ou critique, sous Chromium et sous Safari (WebKit). Corrigé pour y arriver : `--soft` à 4,5:1 sur nos fonds (3,1 avant), des boutons à icône sans nom (aperçu, supprimer une page, micro, retourner une question, gérer), des noms qui disent la pastille (« Boîte de réception, 3 non lues »), les onglets de l'espace professeur en vrais onglets, les zones qui défilent rejointes au clavier, les formules du moteur nommées
 - [ ] M09.T4 · taille de cible tactile ≥ 44 px — cible: 0 bouton en dessous — preuve: test
 
 ## M10 · Sécurité [P0] 3/8

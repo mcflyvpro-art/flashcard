@@ -27,11 +27,11 @@ export const resetComp = extra => { setComp({ subject: '', cards: [], edit: -1, 
   text: '', dups: false, ...(extra || {}) }); };
 
 const MODES = [
-  { id: 'ecrire', icon: 'pen', nom: 'Écrire', aide: 'Page par page, au clavier. Entrée passe au verso, puis ajoute la page.' },
-  { id: 'coller', icon: 'rows', nom: 'Coller', aide: 'Une page par ligne : le mot, puis une tabulation, un tiret ou « = », puis la réponse.' },
+  { id: 'ecrire', icon: 'pen', nom: 'Écrire', aide: 'Carte par carte, au clavier. Entrée passe au verso, puis ajoute la carte.' },
+  { id: 'coller', icon: 'rows', nom: 'Coller', aide: 'Une carte par ligne : le mot, puis une tabulation, un tiret ou « = », puis la réponse.' },
   { id: 'fichier', icon: 'file', nom: 'Fichier', aide: 'Un PDF de cours, ou un tableau : CSV, texte, export Anki ou Quizlet.' },
   { id: 'photo', icon: 'image', nom: 'Photo', aide: 'Une ou plusieurs pages de cours, prises sur le moment ou choisies dans la galerie.' },
-  { id: 'ia', icon: 'spark', nom: 'Prompt', aide: 'Colle ton cours ou dis ce que tu veux : l’IA écrit les pages, puis les retouche à ta demande.' }
+  { id: 'ia', icon: 'spark', nom: 'Prompt', aide: 'Colle ton cours ou dis ce que tu veux : l’IA écrit les cartes, puis les retouche à ta demande.' }
 ];
 
 /* Les pages en attente dans la zone de vérification : « Créer » les prend
@@ -39,13 +39,13 @@ const MODES = [
 let enAttente = null;
 
 function titre(t) {
-  return t ? esc(t.name) : comp.pour === 'devoir' ? 'Nouveau devoir' : 'Nouveau livre';
+  return t ? esc(t.name) : comp.pour === 'devoir' ? 'Nouveau devoir' : 'Nouveau paquet';
 }
 
 function identiteHtml() {
   const mats = db.subjects.map(x => subj(x.id));
   return `<section class="cr-id">
-      <input id="nm" class="cr-titre" placeholder="${comp.pour === 'devoir' ? 'Titre du devoir' : 'Titre du livre'}"
+      <input id="nm" class="cr-titre" placeholder="${comp.pour === 'devoir' ? 'Titre du devoir' : 'Titre du paquet'}"
         aria-label="Titre" spellcheck="false" enterkeyhint="next" value="${esc(comp.name || '')}">
       ${mats.length ? `<div class="cr-mat" role="group" aria-label="Matière">
         <button class="p ${comp.subject ? '' : 'on'}" data-nsubj="">Sans matière</button>
@@ -80,7 +80,7 @@ function ongletHtml(m, mode) {
       data-cmode="${m.id}" aria-selected="${m.id === mode}" ${attrs}>${svg(I[m.icon])}<span>${m.nom}</span>${pin}</button>`;
 }
 
-const ongletsHtml = mode => `<div class="cr-tabs" role="tablist" aria-label="Façon de créer les pages">
+const ongletsHtml = mode => `<div class="cr-tabs" role="tablist" aria-label="Façon de créer les cartes">
     ${MODES.map(m => ongletHtml(m, mode)).join('')}
   </div>`;
 
@@ -109,7 +109,7 @@ function ecrireHtml(s) {
         <input id="cf" class="cf" placeholder="La question, le mot" enterkeyhint="next" spellcheck="false"></label>
       <label class="cr-f"><span>Verso</span>
         <input id="cb" class="cb" placeholder="La réponse" enterkeyhint="done" spellcheck="false"></label>
-      <button class="cr-add" id="cadd">${svg(ed ? I.check : I.plus)}<span>${ed ? 'Enregistrer la page' : 'Ajouter la page'}</span></button>
+      <button class="cr-add" id="cadd">${svg(ed ? I.check : I.plus)}<span>${ed ? 'Enregistrer la carte' : 'Ajouter la carte'}</span></button>
     </div>`;
 }
 
@@ -130,7 +130,7 @@ function lotHtml(mode) {
     ${mode === 'photo' ? depotHtml('aishot', I.image, 'Prendre ou choisir des photos', '') : ''}
     <div class="cr-lot" id="lot" ${vide ? 'hidden' : ''}>
       ${mode === 'fichier' || mode === 'photo' ? '<div class="cr-sous">À vérifier avant d’ajouter</div>' : ''}
-      <div class="cr-ta"><textarea id="tx" placeholder="${PLACE[mode]}" aria-label="Pages à ajouter"
+      <div class="cr-ta"><textarea id="tx" placeholder="${PLACE[mode]}" aria-label="Cartes à ajouter"
         autocapitalize="off" autocorrect="off" spellcheck="false">${esc(comp.text)}</textarea></div>
 
       <div class="prev" id="prev"></div>
@@ -146,7 +146,7 @@ function lotHtml(mode) {
 }
 
 function okLabel(t) {
-  return t ? 'Ajouter au livre' : comp.pour === 'devoir' ? 'Continuer' : 'Créer le livre';
+  return t ? 'Ajouter au paquet' : comp.pour === 'devoir' ? 'Continuer' : 'Créer le paquet';
 }
 
 /* Recevoir le livre de quelqu'un, par son code (src/livre-code.js) : une
@@ -176,7 +176,7 @@ export function importView() {
         </section>
       </div>
       <aside class="cr-pages">
-        <div class="lbl"><span>Pages</span><span id="cn">${comp.cards.length}</span></div>
+        <div class="lbl"><span>Cartes</span><span id="cn">${comp.cards.length}</span></div>
         <div class="dlist" id="dlist"></div>
         <button class="cta cr-ok" id="ok" disabled>${okLabel(t)}${svg(I.check)}</button>
       </aside>
@@ -190,7 +190,15 @@ export function importView() {
   else bindLot(t, mode);
   paintDraft();
   bindOk(t);
-  if (!ia && !demoEtab) iaPull().then(peindreOnglets);
+  /* l'IA du mois, relue à chaque arrivée sur l'écran (au plus une fois par
+     minute) : un paiement ou un Mirandola+ offert entre-temps s'y voit aussitôt */
+  relireIA();
+}
+let iaLue = 0;
+function relireIA() {
+  if (demoEtab || (ia && Date.now() - iaLue < 60000)) return;
+  iaLue = Date.now();
+  iaPull().then(peindreOnglets);
 }
 
 /* Ce que l'IA sait du livre : son titre, sa matière, et la classe de qui
@@ -258,7 +266,7 @@ function bindEcrire(nm) {
     if (comp.edit >= 0) { comp.cards[comp.edit] = { f, b }; comp.edit = -1; }
     else comp.cards.push({ f, b });
     cf.value = ''; cb.value = ''; comp.f = ''; comp.b = ''; cf.focus();
-    document.getElementById('cadd').innerHTML = svg(I.plus) + '<span>Ajouter la page</span>';
+    document.getElementById('cadd').innerHTML = svg(I.plus) + '<span>Ajouter la carte</span>';
     paintDraft();
   };
   cf.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cb.focus(); } });
@@ -294,7 +302,7 @@ function apercuHtml({ cards, dup, big }) {
     + cards.slice(0, 40).map(c => `<div class="pr ${(c.dup && !comp.dups) || c.big ? 'dup' : ''}">
       <span class="a">${esc(c.f.slice(0, 120))}</span>${svg(I.arrow)}<span class="b">${esc(c.b.slice(0, 120))}</span>
       ${c.big ? `<i class="dpi" title="${c.big === 'f' ? 'Recto' : 'Verso'} trop long">${svg(I.warn)}</i>`
-        : c.dup ? `<i class="dpi" title="${c.dup === 'deck' ? 'Déjà dans le livre' : 'En double dans le texte'}">${svg(I.copy)}</i>` : ''}
+        : c.dup ? `<i class="dpi" title="${c.dup === 'deck' ? 'Déjà dans le paquet' : 'En double dans le texte'}">${svg(I.copy)}</i>` : ''}
     </div>`).join('');
 }
 
@@ -306,7 +314,7 @@ function bindLot(t, mode) {
     comp.text = tx.value;
     const tri = trier(tx.value, t);
     add.disabled = !tri.keep.length;
-    add.lastChild.textContent = tri.keep.length ? `Ajouter ${plur(tri.keep.length, 'page')}` : 'Ajouter';
+    add.lastChild.textContent = tri.keep.length ? `Ajouter ${plur(tri.keep.length, 'carte')}` : 'Ajouter';
     prev.innerHTML = apercuHtml(tri);
     const dt = document.getElementById('dupt');
     if (dt) dt.onclick = () => { comp.dups = !comp.dups; up(); };
@@ -331,7 +339,7 @@ function bindLot(t, mode) {
     if (!keep.length) return;
     comp.cards.push(...keep); comp.text = '';
     render();
-    toast(I.check, plur(keep.length, 'page')
+    toast(I.check, plur(keep.length, 'carte')
       + (!comp.dups && dup.total ? ` · ${dup.total} doublon${dup.total > 1 ? 's' : ''} écarté${dup.total > 1 ? 's' : ''}` : '')
       + (big ? ` · ${big} trop longue${big > 1 ? 's' : ''}` : ''));
   };
@@ -358,7 +366,7 @@ function bindDepots(t, nomLivre, verser) {
       }
     }
     occupe(shot, false); peindreOnglets();
-    if (total) toast(I.spark, plur(total, 'page') + (fail ? ` · ${fail} photo${fail > 1 ? 's' : ''} en échec` : ''));
+    if (total) toast(I.spark, plur(total, 'carte') + (fail ? ` · ${fail} photo${fail > 1 ? 's' : ''} en échec` : ''));
     else toast(I.x, lastMsg);
   };
   const viaPdf = async (f, pages) => {
@@ -367,7 +375,7 @@ function bindDepots(t, nomLivre, verser) {
     try {
       const cards = await aiFromFile(f, nomLivre(), pages);
       if (!cards.length) throw new Error('empty');
-      verser(cards); toast(I.spark, plur(cards.length, 'page'));
+      verser(cards); toast(I.spark, plur(cards.length, 'carte'));
     } catch (x) {
       toast(I.x, AIERR[String(x.message)] || 'IA indisponible');
     }
@@ -386,7 +394,7 @@ function bindDepots(t, nomLivre, verser) {
     try { txt = await f.text(); } catch (x) { return toast(I.x, 'Fichier illisible'); }
     const found = parseText(txt);
     if (!found.length) return toast(I.x, 'Aucune carte reconnue');
-    verser(found); toast(I.check, plur(found.length, 'page'));
+    verser(found); toast(I.check, plur(found.length, 'carte'));
   };
   if (shot) { shot.onclick = () => { if (!aiBusy) fshot.click(); }; deposer(shot, fs => photos(fs.filter(f => f.type.startsWith('image/')))); }
   if (pdf) { pdf.onclick = () => { if (!aiBusy) fpdf.click(); }; deposer(pdf, fs => fichier(fs[0])); }
@@ -421,7 +429,7 @@ function bindOk(t) {
       if (pour === 'devoir') { donnerLivre(d); return; }
       go('deck', d.id);
     }
-    toast(I.check, plur(cards.length, 'page'));
+    toast(I.check, plur(cards.length, 'carte'));
   };
 }
 
@@ -447,9 +455,9 @@ function paintDraft() {
   const l = document.getElementById('dlist'); if (!l) return;
   l.innerHTML = comp.cards.length ? comp.cards.map((c, i) => `<div class="dc ${i === comp.edit ? 'on' : ''}" data-ed="${i}" data-k="dc:${esc(c.f)}|${esc(c.b)}">
       <div class="tx"><b>${esc(c.f) || '—'}</b><span>${esc(c.b) || '—'}</span></div>
-      <button class="x" data-dl="${i}" aria-label="Retirer la page">${svg(I.x)}</button>
+      <button class="x" data-dl="${i}" aria-label="Retirer la carte">${svg(I.x)}</button>
     </div>`).reverse().join('')
-    : '<div class="cr-vide">Les pages ajoutées s’affichent ici, quelle que soit la méthode.</div>';
+    : '<div class="cr-vide">Les cartes ajoutées s’affichent ici, quelle que soit la méthode.</div>';
   const n = document.getElementById('cn'); if (n) n.textContent = comp.cards.length;
   const ok = document.getElementById('ok');
   if (ok) ok.disabled = !comp.cards.length && !(enAttente && enAttente().length);

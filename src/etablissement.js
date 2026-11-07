@@ -236,7 +236,7 @@ export function courrielCompte({ nom, email, pw, role, site }) {
   const prenom = String(nom || '').trim().split(/\s+/)[0];
   const suite = role === 'prof'
     ? `3. Créez votre classe, puis donnez votre code à vos élèves : ils créent leur compte Mirandola, entrent ce code, et vous les acceptez dans votre salle d’attente.`
-    : role === 'admin' ? '3. La console de l’éditeur s’ouvre d’elle-même.' : '3. Vos livres vous attendent.';
+    : role === 'admin' ? '3. La console de l’éditeur s’ouvre d’elle-même.' : '3. Vos paquets vous attendent.';
   return {
     sujet: role === 'prof' ? 'Mirandola · votre compte professeur' : 'Mirandola · votre compte',
     corps: `${prenom ? `Bonjour ${prenom},` : 'Bonjour,'}

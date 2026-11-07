@@ -33,13 +33,13 @@ const MODELES = [
     para('Bonjour,', 0) + para('Il ne reste qu’une étape&#8239;: confirmer que cette adresse est bien la tienne.')
       + avecCode('Tape ce code dans Mirandola, ton compte s’ouvre aussitôt&#8239;:')
       + para('Ou touche le bouton&#8239;:', 18) + bouton(L, 'Confirmer mon adresse') + DUREE
-      + liste(['Tes cours deviennent des livres de flashcards, écrits par toi ou par l’IA.',
+      + liste(['Tes cours deviennent des paquets de flashcards, écrits par toi ou par l’IA.',
         'Le Memory Engine te repose chaque page juste avant que tu l’oublies.',
         'Hors ligne, sur ton téléphone comme sur ton ordinateur.'])
       + secours(L) + encadre(rien), PIED_DEMANDE],
   ['invitation', 'Invite user', 'Ton compte Mirandola t’attend', 'On t’a ouvert un compte',
     'Accepte l’invitation et choisis ton mot de passe.',
-    para('Bonjour,', 0) + para('Un compte Mirandola a été créé pour <b style="color:#1D1C19">{{ .Email }}</b>. Accepte l’invitation pour choisir ton mot de passe et retrouver tes livres.')
+    para('Bonjour,', 0) + para('Un compte Mirandola a été créé pour <b style="color:#1D1C19">{{ .Email }}</b>. Accepte l’invitation pour choisir ton mot de passe et retrouver tes paquets.')
       + bouton(L, 'Accepter l’invitation') + secours(L)
       + encadre('Tu ne t’attendais pas à cette invitation&#8239;? Ignore cet e-mail, ou écris-nous à <a href="mailto:contact@mirandola.fr" style="color:#3E4FA0">contact@mirandola.fr</a>.'), PIED_DEMANDE],
   ['lien-magique', 'Magic link', 'Ton code de connexion à Mirandola', 'Te connecter en un clic',

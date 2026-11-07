@@ -280,7 +280,7 @@ function ficheCompte() {
   return `<div class="ed-fiche">
       ${PC() ? '' : `<button class="ed-b sm" data-adm="fermer">${svg(I.back)}Retour</button>`}
       <div class="ed-qui">${avatar(a.id, a.handle || a.name || '', 'lg')}<div><b>${esc(a.name || a.handle || a.email)}</b>
-        <i>${esc(a.email)}${a.handle ? ' · @' + esc(a.handle) : ''} · ${plur(+a.livres || 0, 'livre')}${a.cree ? ' · ' + timeAgo(a.cree) : ''}</i></div></div>
+        <i>${esc(a.email)}${a.handle ? ' · @' + esc(a.handle) : ''} · ${plur(+a.livres || 0, 'paquet')}${a.cree ? ' · ' + timeAgo(a.cree) : ''}</i></div></div>
       ${infosCompte(a)}
       <h2 class="ed-h2">Rôle</h2>
       <div class="ed-seg" role="radiogroup">${Object.entries(ROLES).map(([k, t]) => `<button role="radio" aria-checked="${a.role === k}"

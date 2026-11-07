@@ -22,14 +22,14 @@ async function codeDeLea(page) {
 }
 
 async function entrerCode(page, code) {
-  await page.getByRole('button', { name: 'Nouveau livre' }).click();
+  await page.getByRole('button', { name: 'Nouveau paquet' }).click();
   await page.getByRole('button', { name: 'J’ai un code' }).click();
   await page.locator('#cecode').fill(code);
   await expect(page.locator('#cecode')).toHaveValue(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{2}$/);   // remis en forme XXXX-XXXX-XX
   await page.locator('#ceok').click();
 }
 
-test('un code prête le livre ; révoqué, il ne mène plus à rien', async ({ page, browser }) => {
+test('un code prête le paquet ; révoqué, il ne mène plus à rien', async ({ page, browser }) => {
   const store = nouveauStore();
   const erreurs = [];
   page.on('pageerror', e => erreurs.push(e.message));
@@ -50,7 +50,7 @@ test('un code prête le livre ; révoqué, il ne mène plus à rien', async ({ p
   await expect(p2.locator('.hero', { hasText: 'Capitales' })).toBeVisible();
   await expect(p2.getByText('Pays 2', { exact: true })).toBeVisible();
   await p2.locator('[data-act="addshared"]').click();
-  await expect(p2.getByRole('button', { name: 'Menu du livre' })).toBeVisible();
+  await expect(p2.getByRole('button', { name: 'Menu du paquet' })).toBeVisible();
   await expect(p2.locator('main .lbl').first()).toContainText('3');
 
   // Léa révoque : le même code ne mène plus à rien
@@ -58,16 +58,16 @@ test('un code prête le livre ; révoqué, il ne mène plus à rien', async ({ p
   await expect(page.locator('[data-mact="rolink"]')).toBeVisible();
   await p2.getByRole('button', { name: 'Retour' }).first().click();
   await entrerCode(p2, code);
-  await expect(p2.getByText('Aucun livre à ce code')).toBeVisible();
+  await expect(p2.getByText('Aucun paquet à ce code')).toBeVisible();
   expect(erreurs).toEqual([]);
   await hugo.close();
 });
 
-test.describe('le lien d’un livre, sans session', () => {
+test.describe('le lien d’un paquet, sans session', () => {
   test.use({ viewport: { width: 1280, height: 860 }, isMobile: false, hasTouch: false,
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36' });
 
-  test('sur ordinateur : il attend la connexion, puis le livre s’ouvre', async ({ page, browser }) => {
+  test('sur ordinateur : il attend la connexion, puis le paquet s’ouvre', async ({ page, browser }) => {
     const store = nouveauStore();
     await brancher(page, store);
     const code = await codeDeLea(page);
@@ -89,7 +89,7 @@ test.describe('le lien d’un livre, sans session', () => {
     await hugo.close();
   });
 
-  test('avec une session : le lien ouvre le livre tout de suite', async ({ page }) => {
+  test('avec une session : le lien ouvre le paquet tout de suite', async ({ page }) => {
     const store = nouveauStore();
     await brancher(page, store);
     const code = await codeDeLea(page);
@@ -100,7 +100,7 @@ test.describe('le lien d’un livre, sans session', () => {
   });
 });
 
-test.describe('le lien d’un livre, dans Safari sur iPhone', () => {
+test.describe('le lien d’un paquet, dans Safari sur iPhone', () => {
   test.use({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1' });
 
   test('la porte d’installation montre le code à recopier dans l’app', async ({ page, browser }) => {
@@ -121,7 +121,7 @@ test.describe('le lien d’un livre, dans Safari sur iPhone', () => {
   });
 });
 
-test('un lien de livre collé dans « J’ai un code » marche aussi', async ({ page, browser }) => {
+test('un lien de paquet collé dans « J’ai un code » marche aussi', async ({ page, browser }) => {
   const store = nouveauStore();
   await brancher(page, store);
   const code = await codeDeLea(page);
@@ -129,7 +129,7 @@ test('un lien de livre collé dans « J’ai un code » marche aussi', async ({ 
   await brancher(hugo, store);
   const p2 = await hugo.newPage();
   await inscrire(p2, 'hugo@exemple.fr');
-  await p2.getByRole('button', { name: 'Nouveau livre' }).click();
+  await p2.getByRole('button', { name: 'Nouveau paquet' }).click();
   await p2.getByRole('button', { name: 'J’ai un code' }).click();
   await p2.locator('#cecode').fill('« Capitales » sur Mirandola Code : ' + code + ' https://mirandola.fr/#s=' + code.replace(/-/g, '').toLowerCase());
   await expect(p2.locator('#cecode')).toHaveValue(code);

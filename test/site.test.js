@@ -55,12 +55,15 @@ describe('page d’accueil', () => {
   });
 
   /* « Fiche » trompe : en français, une fiche de révision est un résumé
-     écrit. La page dit « un livre de flashcards », des pages recto verso
+     écrit. La page dit « un paquet de flashcards », des cartes recto verso
      (demandé le 2026-10-27). */
-  it('aucune « fiche » dans le texte affiché : des pages, des livres, des flashcards', () => {
+  it('aucune « fiche » ni « livre » dans le texte affiché : des paquets, des cartes, des flashcards', () => {
     const fautes = texteVisible(html).split('\n').filter(l => /\bfiches?\b/i.test(l)).map(l => l.trim());
     expect(fautes).toEqual([]);
-    expect(texteVisible(html)).toMatch(/livre de flashcards/);
+    expect(texteVisible(html)).toMatch(/paquet de flashcards/);
+    // et plus le champ lexical du livre (2026-11-07 : « reviens à du plus traditionnel »)
+    const livre = texteVisible(html).split('\n').filter(l => /\b(livres?|biblioth[eè]que|lecteurs?)\b/i.test(l)).map(l => l.trim());
+    expect(livre).toEqual([]);
   });
 
   it('les données structurées se lisent', () => {

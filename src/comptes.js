@@ -11,7 +11,7 @@ export const TRIS = {
   vu: 'Dernière connexion',
   revise: 'Dernière révision',
   revisions: 'Révisions',
-  livres: 'Livres',
+  livres: 'Paquets',
   nom: 'Nom'
 };
 

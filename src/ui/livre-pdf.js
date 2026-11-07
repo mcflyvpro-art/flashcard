@@ -82,8 +82,8 @@ async function caseDe(texte, image, gras, fond) {
   return c;
 }
 
-const nomDeFichier = nom => ([...String(nom || 'Livre')].filter(c => c.charCodeAt(0) > 31).join('')
-  .replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Livre') + '.pdf';
+const nomDeFichier = nom => ([...String(nom || 'Paquet')].filter(c => c.charCodeAt(0) > 31).join('')
+  .replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) || 'Paquet') + '.pdf';
 
 export async function fichierPdf(d, { versoVide = false } = {}) {
   const s = subj(d.subject);

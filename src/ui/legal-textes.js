@@ -25,17 +25,17 @@ import { PWMIN } from './connexion.js';
    (LCEN) et les logiciels libres (les notices que leurs licences exigent).
    Les prix et les quotas viennent des modules qui les appliquent : le texte
    ne peut pas dire autre chose que l'app. */
-const LEGALV = '6 novembre 2026';  // l'examen blanc de Mirandola Infini (CGU § 7, confidentialité)
+const LEGALV = '7 novembre 2026';  // le vocabulaire classique : paquets, cartes, révision (et l'examen blanc, le 6)
 const E = ENTREPRISE;
 const mois = FORMULES.mensuel, an = FORMULES.annuel, imois = FORMULES.infini_mensuel, ian = FORMULES.infini_annuel;
 
 export const LEGAL = {
   cgu: ['Conditions d’utilisation', `
 **1. Ce que Mirandola est.** Une application de révision : tu ranges ce que tu
-dois apprendre en livres de pages (des flashcards), et le moteur de
+dois apprendre en paquets de cartes (des flashcards), et le moteur de
 répétition espacée décide quand te les représenter. Autour : la création de
-pages par l’intelligence artificielle, les classes et les devoirs d’un
-professeur, les clubs, les défis et le courrier entre lecteurs. Elle est
+cartes par l’intelligence artificielle, les classes et les devoirs d’un
+professeur, les clubs, les défis et les messages entre utilisateurs. Elle est
 éditée par ${EDITEUR} (voir les Mentions légales).
 
 **2. Ces conditions.** Créer un compte, ou utiliser Mirandola sans compte
@@ -44,7 +44,7 @@ importante, tu en es prévenu dans l’app ou par e-mail au moins 30 jours
 avant ; tu peux alors supprimer ton compte si tu n’es pas d’accord.
 
 **3. Les offres.** *Mirandola gratuit* : sans paiement, jusqu’à
-${LIVRES_GRATUITS} livres à toi. *Mirandola+* : un abonnement payant, régi en plus
+${LIVRES_GRATUITS} paquets à toi. *Mirandola+* : un abonnement payant, régi en plus
 par les Conditions de vente. *Mirandola Campus* : l’accès qu’un
 établissement ou un professeur particulier ouvre à ses élèves, régi par
 son contrat avec l’éditeur.
@@ -60,20 +60,20 @@ se prend par un majeur, ou avec l’accord d’un parent.
 d’au moins ${PWMIN} caractères, ou ton compte Google. Tu peux ajouter la
 vérification en deux étapes. Garde tes accès pour toi : ce qui est fait
 depuis ton compte est réputé fait par toi. Ton pseudo est visible des
-lecteurs avec qui tu partages quelque chose ; il ne doit tromper personne
+personnes avec qui tu partages quelque chose ; il ne doit tromper personne
 sur ton identité ni blesser qui que ce soit.
 
-**6. Ce que tu écris t’appartient.** Tes livres, tes pages, tes images et
+**6. Ce que tu écris t’appartient.** Tes paquets, tes cartes, tes images et
 tes sons restent les tiens. Tu nous autorises seulement à les héberger, les
 copier entre tes appareils et les montrer aux personnes avec qui tu choisis
-de les partager (un ami à qui tu prêtes un livre, un club, une classe, un
+de les partager (un ami avec qui tu partages un paquet, un club, une classe, un
 lien de partage), le temps qu’ils sont en ligne. Tu peux les retirer quand
 tu veux. Tu garantis avoir le droit d’y mettre ce que tu y mets.
 
 **7. L’intelligence artificielle.** Dans Mirandola+ et Campus, une IA peut
-écrire des pages à partir d’un cours, d’une photo ou d’un document, et te
+écrire des cartes à partir d’un cours, d’une photo ou d’un document, et te
 répondre quand tu lui demandes de les retoucher ; avec Mirandola Infini, elle
-compose aussi un examen blanc à partir d’un livre et corrige ta copie, tapée
+compose aussi un examen blanc à partir d’un paquet et corrige ta copie, tapée
 ou photographiée. Tu échanges alors avec une machine, pas avec une personne.
 Ce qu’elle écrit, ou la note qu’elle donne, peut être inexact : relis avant
 d’apprendre, et vois l’examen blanc comme un entraînement, jamais comme une
@@ -114,7 +114,7 @@ comme consommateur.
 Réglages : tout ce qui est à toi est alors effacé. Si tu enfreins ces
 conditions, ton compte peut être suspendu ou supprimé, avec sa raison
 (article 9). Si Mirandola devait fermer, tu serais prévenu au moins 60
-jours avant, avec le moyen d’exporter tes livres.
+jours avant, avec le moyen d’exporter tes paquets.
 
 **13. Propriété.** Le nom Mirandola, son logo, ses textes et son code
 appartiennent à l’éditeur. Mirandola s’appuie aussi sur des logiciels
@@ -135,17 +135,17 @@ complètent les Conditions d’utilisation. Un établissement ou un professeur
 qui achète Mirandola Campus signe un contrat à part.
 
 **2. Ce que Mirandola+ ouvre.** Le Memory Engine Ultra (le moteur qui se
-règle sur ta mémoire) ; des livres sans limite ; la création de pages par
+règle sur ta mémoire) ; des paquets sans limite ; la création de cartes par
 l’IA à partir d’un cours, d’une photo ou d’un document, jusqu’à
 ${IA_PAR_MOIS.plus} générations par mois (${IA_PROF_PAR_MOIS} pour un professeur) ;
-les QCM et les associations ; les images et les sons sur les pages ; toutes
-les statistiques du journal.
+les QCM et les associations ; les images et les sons sur les cartes ; toutes
+les statistiques.
 
 **2 bis. Ce que Mirandola Infini ajoute.** Tout Mirandola+, et : l’IA sans
 compter — 150 générations par mois sur le modèle le plus avancé, puis sans
 limite sur un modèle plus rapide, dans les bornes d’un usage personnel
-(60 générations par jour) ; des documents jusqu’à 20 Mo et 300 pages par
-génération ; l’objectif examen (une date par livre, et le moteur qui vise
+(60 générations par jour) ; des documents jusqu’à 20 Mo et 300 cartes par
+génération ; l’objectif examen (une date par paquet, et le moteur qui vise
 95 % de souvenir dans les 30 jours qui la précèdent) ; l’examen blanc,
 composé et corrigé par l’IA, copie tapée ou photographiée. Ce qui est dit
 ici de Mirandola+ vaut pour Mirandola Infini, sauf ce qui est propre à ses
@@ -176,7 +176,7 @@ ${ESSAI_JOURS} jours gratuits : la carte est demandée à la commande, rien n’
 prélevé pendant l’essai, et l’IA y est limitée à 10 générations. Résilier
 avant la fin de l’essai ne coûte rien ; sinon l’abonnement commence au
 prix choisi, à la fin de l’essai. L’essai ne se donne qu’une fois par
-personne. À la fin d’un essai non poursuivi, tes livres restent ; au-delà
+personne. À la fin d’un essai non poursuivi, tes paquets restent ; au-delà
 de ${LIVRES_GRATUITS}, tu ne peux plus en créer de nouveaux tant que tu es en
 Mirandola gratuit.
 
@@ -196,7 +196,7 @@ et ta facture t’arrivent par e-mail.
 traité par Stripe Payments Europe ; nous ne voyons jamais ton numéro de
 carte. Si un prélèvement échoue, Stripe réessaie pendant quelques jours ;
 s’il échoue encore, ton compte repasse à Mirandola gratuit, sans rien perdre
-de tes livres. Dans l’app d’un magasin (App Store, Google Play), le paiement
+de tes paquets. Dans l’app d’un magasin (App Store, Google Play), le paiement
 et le remboursement suivent aussi les conditions du magasin.
 
 **6. Durée et renouvellement.** La formule au mois se renouvelle chaque mois,
@@ -261,13 +261,13 @@ par un contrat de sous-traitance.
   les codes envoyés par e-mail (valables une heure), et les journaux
   techniques de nos hébergeurs (adresse IP, date, page demandée), gardés
   quelques jours. Pour protéger ton compte et le service.
-- *Tes livres et ton historique* : tes pages, images et sons ; chacune de
-  tes révisions (la page, ta réponse, juste ou faux, en combien de temps,
-  quand). C’est ce qui fait choisir au moteur quand une page revient, et
-  tracer ton journal. Tant que le compte existe ; un livre supprimé part en
+- *Tes paquets et ton historique* : tes cartes, images et sons ; chacune de
+  tes révisions (la carte, ta réponse, juste ou faux, en combien de temps,
+  quand). C’est ce qui fait choisir au moteur quand une carte revient, et
+  tracer tes statistiques. Tant que le compte existe ; un paquet supprimé part en
   corbeille et s’efface au bout de 30 jours ; les dix dernières versions
-  d’un livre sont gardées.
-- *Ce que tu partages* : amis, clubs, défis, parties en direct, courrier,
+  d’un paquet sont gardées.
+- *Ce que tu partages* : amis, clubs, défis, parties en direct, messages,
   classements. Seulement quand tu le fais. Une partie en direct s’efface le
   lendemain ; le reste, tant que tu le gardes.
 - *Ta classe* : si tu rejoins un établissement ou un professeur, ton nom
@@ -279,7 +279,7 @@ par un contrat de sous-traitance.
   Le texte, la photo ou le document que tu envoies ne sont pas gardés par
   Mirandola.
 - *Un examen blanc* (Mirandola Infini) : la note, les questions, ce que l’IA
-  a lu de ta copie, sa correction et ses conseils, rangés avec le livre et
+  a lu de ta copie, sa correction et ses conseils, rangés avec le paquet et
   supprimés avec lui (ou avec ton compte). La photo de ta copie ne sert qu’à
   la correction : elle n’est pas gardée.
 - *Un signalement* : son motif et une copie du contenu visé, lue seulement
@@ -289,13 +289,13 @@ par un contrat de sous-traitance.
   coordonnées de la personne qui écrit. Trois ans après le dernier échange.
 
 **Sur quelle base.** L’exécution du service que tu demandes (ton compte,
-tes livres, l’abonnement) ; ton choix, pour ce que tu partages et pour l’IA,
+tes paquets, l’abonnement) ; ton choix, pour ce que tu partages et pour l’IA,
 qui ne part jamais seule ; notre intérêt légitime pour la sécurité et pour
 répondre à une demande de démo ; nos obligations légales (factures) ; et,
 dans un établissement public, sa mission d’intérêt public.
 
 **Sur ton appareil.** Mirandola garde sur ton appareil ce qui lui permet de
-marcher, même hors ligne : ta session, une copie de tes livres et de ce qui
+marcher, même hors ligne : ta session, une copie de tes paquets et de ce qui
 attend d’être envoyé, tes réglages, ton offre, les codes d’une classe ou
 d’une partie que tu as ouverts avant de te connecter (une heure au plus).
 Aucun cookie, aucun traceur, aucune mesure d’audience, aucune publicité :
@@ -306,14 +306,14 @@ que ce que tu partages avec lui, et c’est la base elle-même qui refuse le
 reste. Ce que voient les autres :
 
 - tes amis et les membres de tes clubs : ton pseudo, ton visage, tes
-  chiffres de lecture (jamais tes livres ni tes réponses) ;
+  chiffres de révision (jamais tes paquets ni tes réponses) ;
 - ton professeur : ton avancement et tes réussites sur ses devoirs, et les
-  pages de ses devoirs qui te résistent, jamais tes livres personnels ;
+  cartes de ses devoirs qui te résistent, jamais tes paquets personnels ;
 - le référent de ton établissement : ton nom, ta classe ; il peut corriger
   ton identité ou te donner un mot de passe provisoire, et chacun de ses
   gestes est tracé ;
 - l’éditeur : de quoi gérer les comptes (adresse, rôle, dates, nombres de
-  livres et de révisions), jamais le contenu de tes livres.
+  paquets et de révisions), jamais le contenu de tes paquets.
 
 **Nos prestataires**, qui n’agissent que sur nos instructions :
 
@@ -338,8 +338,8 @@ ou ta sécurité changent.
 
 **Tes droits.** Accès, rectification, effacement, portabilité, opposition,
 limitation, et directives sur ce que deviennent tes données après ton décès.
-Dans l’app : corriger ton profil dans Réglages, exporter ta bibliothèque
-(Réglages, Sauvegarde) et ton journal, supprimer ton compte (Réglages), ce
+Dans l’app : corriger ton profil dans Réglages, exporter tes paquets
+(Réglages, Sauvegarde) et tes statistiques, supprimer ton compte (Réglages), ce
 qui efface tout aussitôt. Pour le reste, écris à ${CONTACT} : réponse sous
 un mois. Avant 15 ans, un parent peut exercer ces droits pour toi. Tu peux
 aussi saisir la CNIL (cnil.fr, 3 place de Fontenoy, 75007 Paris).
@@ -372,7 +372,7 @@ services numériques, en français ou en anglais.
 
 **Propriété.** Le nom Mirandola, son logo, ses textes, ses images et son code
 appartiennent à l’éditeur ; toute reproduction demande son accord. Les
-pages écrites par les utilisateurs restent à leurs auteurs. Les logiciels
+cartes écrites par les utilisateurs restent à leurs auteurs. Les logiciels
 libres que Mirandola utilise restent sous leur licence (voir Logiciels
 libres). Anki est une marque d’Ankitects Pty Ltd, Quizlet une marque de
 Quizlet Inc. ; Mirandola n’est lié ni à l’une ni à l’autre.

@@ -7,7 +7,7 @@ import { brancher, nouveauStore } from './faux-supabase.js';
 import { semerAmis, semerClub, semerCompte, semerLectures, semerPseudo } from './faux-cercle.js';
 import { inscrire } from './aide.js';
 
-const versCercle = page => page.getByRole('button', { name: /^(Le )?[Cc]ercle( des lecteurs)?(,.*)?$/ }).first().click();
+const versCercle = page => page.getByRole('button', { name: /^Mes amis(,.*)?$/ }).first().click();
 
 test('le profil d’un ami, d’une demande en attente, d’un membre de club', async ({ page }) => {
   const store = nouveauStore();
@@ -32,7 +32,7 @@ test('le profil d’un ami, d’une demande en attente, d’un membre de club', 
   await expect(tuiles.filter({ hasText: '7 jours' })).toContainText('12');
   await expect(tuiles.filter({ hasText: 'Justes' })).toContainText('75 %');
   await expect(page.locator('.lp-cal i:not(.vide)')).toHaveCount(35);
-  await expect(page.getByRole('button', { name: 'Lui prêter un livre' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Lui envoyer un paquet' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.getByRole('button', { name: 'Retour' }).first().click();
   await expect(page.locator('.cc-moi')).toBeVisible();
@@ -46,7 +46,7 @@ test('le profil d’un ami, d’une demande en attente, d’un membre de club', 
   await page.locator('[data-act="friends"]').first().click();
   await page.locator('.cc-qui', { hasText: 'Inès' }).click();
   await expect(page.locator('.lp-tete')).toContainText('Inès Roux');
-  await expect(page.locator('.lp-prive')).toContainText('Journal réservé à ses amis');
+  await expect(page.locator('.lp-prive')).toContainText('Statistiques réservées à ses amis');
   await expect(page.locator('.lp-tuile')).toHaveCount(0);
   await page.getByRole('button', { name: 'Retour' }).first().click();
 

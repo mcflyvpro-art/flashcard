@@ -38,7 +38,7 @@ function banniereHtml(g) {
     <i class="cl-emb">${iconeClub(g)}</i>
     <div class="cl-ban-t"><h1>${esc(g.nom)}</h1>${g.devise ? `<p>${esc(g.devise)}</p>` : ''}</div>
     <div class="cl-stats"><span title="Membres">${svg(I.users)}<b>${n}</b></span>
-      <span title="Pages lues cette semaine">${svg(I.book)}<b>${g.pages}</b></span>
+      <span title="Cartes révisées cette semaine">${svg(I.book)}<b>${g.pages}</b></span>
       ${n > 1 && g.mes_pages ? `<span title="Ta place">${svg(I.trophy)}<b>${placeTexte(g.mon_rang)}</b></span>` : ''}</div>
     <div class="cl-ban-a">
       <button class="cl-chip" data-cc="club-inviter">${svg(I.plus)}Inviter<b>${esc(codeClubLisible(g.code))}</b></button>
@@ -73,7 +73,7 @@ function classementPane(g) {
     ${champion && l.length > 1 ? `<div class="cl-champion">${svg(I.crown)}${avatar(champion.user_id, ident(champion.pseudo, champion.nom))}<span>
       <b>${esc(champion.nom)}</b></span><em>${svg(I.book)}${champion.pages}</em></div>` : ''}
     <div class="cc-rank">${l.map(r => rangLigne(r, r.nom, [['check', Math.round(r.justes / (r.pages || 1) * 100) + ' %', 'Réponses justes'],
-      ['cal', r.jours, 'Jours de lecture']])).join('')}</div>
+      ['cal', r.jours, 'Jours de révision']])).join('')}</div>
   </section>`;
 }
 

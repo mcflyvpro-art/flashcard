@@ -93,7 +93,8 @@ function actions(p) {
 
 function ligneIA() {
   if (plus.ia == null) return '';
-  const prof = isProf(), ia = iaDuMois(plus.ia, iaParMois(offre.offre, prof), prof);
+  // Infini : sans compter, comme un professeur — le nombre seul, jamais une jauge
+  const prof = isProf() || offre.niveau === 'infini', ia = iaDuMois(plus.ia, iaParMois(offre.offre, prof), prof);
   return `<div class="fp-ia"><dt>IA ce mois-ci</dt><dd>${esc(ia.t)}${prof ? '' : `<i class="fp-jauge"><b style="width:${ia.pc}%"></b></i>`}</dd></div>`;
 }
 
@@ -105,6 +106,27 @@ function licenceHtml(p) {
       <dl class="fp-l">${l.lignes.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}${ligneIA()}</dl>
       <p class="fp-engage">${esc(l.engagement)}</p>
       ${actions(p)}
+    </section>${monter(p)}`;
+}
+
+/* Monter à Infini (2026-11-07, demandé : « quand on a + on peut upgrade ») :
+   un abonné Mirandola+ — payé, offert, d'un magasin — voit ce qu'Infini
+   ajoute et le prix en plus ; « Passer à Infini » ouvre le choix de sa
+   formule (offreHtml, le niveau fixé). Par Stripe, le changement se fait au
+   prorata dans son portail ; offert, Infini s'achète par-dessus. Jamais
+   pendant une résiliation ni un impayé : il faut d'abord régler cela. */
+const peutMonter = () => offre && offre.offre === 'plus' && offre.niveau !== 'infini'
+  && !(offre.abonnement && (offre.abonnement.finPrevue || offre.abonnement.statut === 'impaye'));
+
+function monter() {
+  if (!peutMonter()) return '';
+  const a = offre.abonnement, periode = a && FORMULES[a.formule] && FORMULES[a.formule].par === 'mois' ? 'mensuel' : 'annuel';
+  const de = FORMULES[periode], vers = FORMULES['infini_' + periode];
+  const ecart = periode === 'annuel' ? `+${euros(vers.mois - de.mois)}/mois` : `+${euros(vers.prix - de.prix)}/mois`;
+  return `<section class="fp-montee">
+      <div class="fp-m-tete"><h2>Mirandola <em>Infini</em></h2><span>${ecart}</span></div>
+      <ul>${AVANTAGES_INFINI.map(x => `<li>${svg(I[x.ic] || I.check)}<b>${esc(x.t)}</b></li>`).join('')}</ul>
+      <button class="fp-monter" data-fp="monter" data-v="${periode}">Passer à Infini${svg(I.arrow)}</button>
     </section>`;
 }
 
@@ -147,7 +169,8 @@ const garantie = p => (vente(p) === 'stripe' ? 'Paiement sécurisé par Stripe �
 /* L'essai (2026-11-05) : un compte qui n'a jamais eu d'abonnement Stripe a
    7 jours gratuits — la fonction paiement en décide, l'écran le dit, avec
    le jour avant lequel rien n'est prélevé. */
-const essaiPossible = () => !offre.abonnement;
+// l'essai : jamais d'abonnement payé — un Mirandola+ offert y a droit aussi, pour Infini (la fonction paiement en décide pareil)
+const essaiPossible = () => !offre.abonnement || offre.abonnement.source === 'offert';
 const finEssai = () => new Date(Date.now() + ESSAI_JOURS * 864e5).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 
 /* Le code d'un lien des réseaux, gardé 14 jours par ui/plus-porte.js. */
@@ -158,28 +181,37 @@ export function promoGardee() {
   } catch (e) { return ''; }                                   // stockage illisible : pas de code, le champ de Stripe reste
 }
 
+// le bouton d'achat et ce qu'il engage, dit dessous
+function payer(p, monte) {
+  const libelle = plus.envoi === 'payer' ? 'Ouverture du paiement…' : essaiPossible() ? `Essayer ${ESSAI_JOURS} jours gratuits`
+    : infini() ? 'Passer à Mirandola Infini' : 'Passer à Mirandola+';
+  const note = monte && offre.abonnement && offre.abonnement.source === 'stripe' ? 'Au prorata de ta période en cours, sur la page de Stripe'
+    : essaiPossible() && vente(p) === 'stripe' ? `Rien n’est prélevé avant le ${finEssai()}. Résiliable d’un geste.` : garantie(p);
+  return `<button class="fp-payer${infini() ? ' fp-payer-infini' : ''}" data-fp="payer" ${plus.envoi || !plus.accord ? 'disabled' : ''}
+      aria-describedby="fp-accord">${libelle}${svg(I.arrow)}</button>
+    <p class="fp-note">${svg(I.lock)}${note}</p>`;
+}
+
 function offreHtml(p) {
-  const r = resume(offre), promo = promoGardee();
-  return `${r.ligne !== 'Gratuit' ? `<p class="fp-alerte">${svg(I.warn)}${esc(r.ligne)}</p>` : ''}
-    <section class="fp-offre">
-      ${niveaux()}
+  const r = resume(offre), promo = promoGardee(), monte = plus.monter;
+  return `${r.ligne !== 'Gratuit' && !monte ? `<p class="fp-alerte">${svg(I.warn)}${esc(r.ligne)}</p>` : ''}
+    <section class="fp-offre${infini() ? ' fp-offre-infini' : ''}">
+      ${monte ? `<button class="lnk fp-arriere" data-fp="licence">${svg(I.back)}Ma licence</button>` : niveaux()}
       <div class="fp-formules" role="radiogroup" aria-label="Formule">${formule('annuel')}${formule('mensuel')}</div>
       ${promo ? `<p class="fp-promo">${svg(I.tag)}<span>Code <b>${esc(promo)}</b> : posé sur la page de paiement</span></p>` : ''}
       ${accord()}
-      <button class="fp-payer" data-fp="payer" ${plus.envoi || !plus.accord ? 'disabled' : ''} aria-describedby="fp-accord">${plus.envoi === 'payer' ? 'Ouverture du paiement…'
-        : essaiPossible() ? `Essayer ${ESSAI_JOURS} jours gratuits` : infini() ? 'Passer à Mirandola Infini' : 'Passer à Mirandola+'}${svg(I.arrow)}</button>
-      <p class="fp-note">${svg(I.lock)}${essaiPossible() && vente(p) === 'stripe'
-        ? `Rien n’est prélevé avant le ${finEssai()}. Résiliable d’un geste.` : garantie(p)}</p>
+      ${payer(p, monte)}
       ${p.natif ? `<button class="lnk fp-restaurer" data-fp="restaurer" ${plus.envoi ? 'disabled' : ''}>${
         plus.envoi === 'restaurer' ? 'Recherche…' : 'Restaurer mes achats'}</button>` : ''}
       ${plus.err ? `<p class="fp-err" role="alert">${esc(plus.err)}</p>` : ''}
     </section>
-    ${r.gerer ? actions(p) : ''}`;
+    ${r.gerer && !monte ? actions(p) : ''}`;
 }
 
 function gauche(p) {
   if (plus.etape === 'merci') return merci();
   if (!offre) return `<section class="fp-licence fp-charge"><div class="fp-l-tete"><h2 class="fp-h2">Ma licence</h2></div></section>`;
+  if (plus.monter && peutMonter()) return offreHtml(p);
   return resume(offre).payer ? offreHtml(p) : licenceHtml(p) + (plus.err ? `<p class="fp-err" role="alert">${esc(plus.err)}</p>` : '');
 }
 
@@ -188,12 +220,12 @@ function avantagesHtml() {
   const prof = isProf(), gratuit = !offre || offre.offre === 'gratuit';
   const li = a => `<li><i class="fp-av-ic">${svg(I[a.ic] || I.check)}</i><span><b>${esc(a.t)}</b>${esc(prof && a.prof ? a.prof : a.s)}</span></li>`;
   const aInfini = offre && offre.niveau === 'infini';
-  if ((gratuit && infini()) || aInfini) {
+  if ((gratuit && infini()) || aInfini || plus.monter) {
     return `<section class="fp-avantages fp-av-infini">
-      <h2 class="fp-h2">${aInfini ? 'Tes avantages' : 'Ce que Mirandola Infini t’ouvre'}</h2>
+      <h2 class="fp-h2">${aInfini ? 'Tes avantages' : plus.monter ? 'Ce qu’Infini ajoute' : 'Ce que Mirandola Infini t’ouvre'}</h2>
       <ul class="fp-av">${AVANTAGES_INFINI.map(li).join('')}</ul>
-      <p class="fp-et">Et tout Mirandola+ :</p>
-      <ul class="fp-av fp-av-court">${AVANTAGES_DETAIL.map(a => `<li><i class="fp-av-ic">${svg(I[a.ic] || I.check)}</i><span><b>${esc(a.t)}</b></span></li>`).join('')}</ul>
+      ${plus.monter ? '<p class="fp-et">Et tu gardes tout Mirandola+.</p>' : `<p class="fp-et">Et tout Mirandola+ :</p>
+      <ul class="fp-av fp-av-court">${AVANTAGES_DETAIL.map(a => `<li><i class="fp-av-ic">${svg(I[a.ic] || I.check)}</i><span><b>${esc(a.t)}</b></span></li>`).join('')}</ul>`}
     </section>`;
   }
   return `<section class="fp-avantages">
@@ -217,11 +249,11 @@ function installHtml(p) {
 }
 
 // ce que l'élève vient de toucher, s'il arrive d'un geste bridé (ui/bridage.js)
-const raison = () => (plus.raison && RAISONS[plus.raison] && offre && offre.offre === 'gratuit'
+const raison = () => (plus.raison && RAISONS[plus.raison] && offre && (offre.offre === 'gratuit' || plus.monter)
   ? `<p class="fp-raison">${svg(I.spark)}${esc(RAISONS[plus.raison])}</p>` : '');
 
 const titre = () => (offre && offre.offre === 'campus' ? 'Mirandola <em class="fp-campus">Campus</em>'
-  : (offre && offre.niveau === 'infini') || (offre && offre.offre === 'gratuit' && infini()) ? 'Mirandola <em class="fp-infini">Infini</em>'
+  : (offre && offre.niveau === 'infini') || (offre && (offre.offre === 'gratuit' || plus.monter) && infini()) ? 'Mirandola <em class="fp-infini">Infini</em>'
     : 'Mirandola<span class="fp-plus">+</span>');
 
 export function plusEcran() {
@@ -270,6 +302,8 @@ function vers(action) {
 const GESTES = {
   formule: b => { plus.formule = b.dataset.v === 'mensuel' ? 'mensuel' : 'annuel'; plus.err = ''; render(); },
   niveau: b => { plus.niveau = b.dataset.v === 'infini' ? 'infini' : 'plus'; plus.err = ''; render(); },
+  monter: b => { Object.assign(plus, { monter: true, niveau: 'infini', formule: b.dataset.v === 'mensuel' ? 'mensuel' : 'annuel', err: '', accord: false }); render(); },
+  licence: () => { Object.assign(plus, { monter: false, niveau: 'plus', err: '' }); render(); },
   payer: () => { if (plus.accord) vers('payer'); },
   accord: b => { plus.accord = !!b.checked; render(); },
   gerer: () => vers('gerer'),

@@ -203,7 +203,7 @@ function tapAddshared() {
   const nd = importPayload({ name: sd.name, subjectName: sd.subject_name, cards }, true);
   setShared(null);
   if (nd) go('deck', nd.id); else go('home');
-  return toast(I.check, plur(cards.length, 'page') + ' ajoutée' + (cards.length > 1 ? 's' : ''));
+  return toast(I.check, plur(cards.length, 'carte') + ' ajoutée' + (cards.length > 1 ? 's' : ''));
 }
 
 const tapExpstats = () => exportStats();

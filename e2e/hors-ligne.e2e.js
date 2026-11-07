@@ -19,7 +19,7 @@ test('50 révisions hors ligne, app rouverte hors ligne, 50 retrouvées au retou
   // page.route passe avant la coupure de Playwright : couper les deux, comme un vrai tunnel
   await context.setOffline(true); store.online = false;
   await page.getByRole('button', { name: /Révisions/ }).click();
-  await page.getByRole('button', { name: /^Lire/ }).click();
+  await page.getByRole('button', { name: /^Réviser/ }).click();
   for (let k = 0; k < 50; k++) await noter(page, 'Facile');
   await expect(page.locator('main')).toContainText('100%');
   expect(store.tables.reviews || []).toHaveLength(0);            // rien n'a pu partir

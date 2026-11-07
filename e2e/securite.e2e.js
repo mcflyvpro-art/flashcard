@@ -50,7 +50,7 @@ test('mot de passe oublié : l’adresse, le code reçu, puis un nouveau mot de 
   await page.locator('#mdp1').fill('tout-neuf-2026');
   await page.locator('#mdp2').fill('tout-neuf-2026');
   await page.getByRole('button', { name: 'Enregistrer' }).click();
-  await expect(page.getByRole('button', { name: 'Nouveau livre' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Nouveau paquet' })).toBeVisible({ timeout: 10000 });
   expect(store.users.find(u => u.id === id).password).toBe('tout-neuf-2026');
 });
 
@@ -74,7 +74,7 @@ test('connexion par code : sans mot de passe ; une adresse inconnue ne se trahit
   await expect(page.getByText('Code à 8 chiffres envoyé à')).toBeVisible({ timeout: 10000 });
   await expect(page.locator('#vfr')).toBeDisabled();                  // pas deux e-mails dans la minute
   await page.getByRole('textbox', { name: 'Code à 8 chiffres' }).fill(dernier(store, 'magiclink').code);
-  await expect(page.getByRole('button', { name: 'Nouveau livre' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Nouveau paquet' })).toBeVisible({ timeout: 10000 });
 });
 
 test('vérification en deux étapes : activée, demandée à la connexion suivante, rien n’est lu avant, puis retirée', async ({ page }) => {
@@ -108,11 +108,11 @@ test('vérification en deux étapes : activée, demandée à la connexion suivan
   await page.waitForTimeout(600);
   expect(lus).toEqual([]);
   await page.getByRole('textbox', { name: 'Code à 6 chiffres' }).fill('123456');
-  await expect(page.getByRole('button', { name: 'Nouveau livre' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Nouveau paquet' })).toBeVisible({ timeout: 10000 });
 
   // rouvrir l'app ne le redemande pas : la session reste
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Nouveau livre' })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Nouveau paquet' })).toBeVisible({ timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Code de vérification.' })).toHaveCount(0);
 
   // la retirer : deux appuis

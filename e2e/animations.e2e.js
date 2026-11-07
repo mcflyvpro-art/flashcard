@@ -103,20 +103,20 @@ test('dix appuis sur le même onglet ne rejouent pas l’écran ; une vraie arri
   });
   const arrivees = () => page.evaluate(() => window.entreesEcran);
 
-  const livres = page.getByRole('button', { name: 'Livres' });
+  const livres = page.getByRole('button', { name: 'Paquets' });
   for (let k = 0; k < 10; k++) {
     await livres.click();
-    expect(await entrees(page), `appui ${k + 1} sur « Livres »`).toEqual([]);
+    expect(await entrees(page), `appui ${k + 1} sur « Paquets »`).toEqual([]);
   }
-  expect(await arrivees(), 'Livres est déjà à l’écran : rien n’arrive').toBe(0);
+  expect(await arrivees(), 'Paquets est déjà à l’écran : rien n’arrive').toBe(0);
 
-  const cercle = page.getByRole('button', { name: 'Cercle des lecteurs' });
+  const cercle = page.getByRole('button', { name: 'Mes amis' });
   await cercle.click();
   await expect.poll(arrivees, { message: 'arriver sur le Cercle s’anime' }).toBe(1);
   await page.waitForTimeout(800);
   for (let k = 0; k < 5; k++) {
     await cercle.click();
-    expect(await entrees(page), `appui ${k + 1} sur « Cercle des lecteurs »`).toEqual([]);
+    expect(await entrees(page), `appui ${k + 1} sur « Mes amis »`).toEqual([]);
   }
   expect(await arrivees(), 'une seule entrée pour six appuis').toBe(1);
 });

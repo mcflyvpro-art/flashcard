@@ -77,7 +77,7 @@ export function pdfLivre(livre, { versoVide = false } = {}) {
   // un texte posé ; l'espacement des lettres (Tc) survit à ET : chaque texte dit le sien
   const T = (police, corps, couleur, x, yb, ansi, extra = '0 Tc ') =>
     `BT ${rvb(couleur)} rg ${extra}${n(x)} ${n(yb)} Td ${ecrire(ansi, police, n(corps))} ET`;
-  const titreAnsi = approche(livre.titre || 'Livre');
+  const titreAnsi = approche(livre.titre || 'Paquet');
   const matiereAnsi = livre.matiere && livre.matiere.nom ? approche(livre.matiere.nom).toUpperCase() : '';
 
   // une image JPEG du document, posée une fois
@@ -103,7 +103,7 @@ export function pdfLivre(livre, { versoVide = false } = {}) {
       lignes.forEach((l, i) => o.push(T('F2', 22, ENCRE, M.g, yy - 17 - i * 26, l, '-0.3 Tc ')));
       yy -= lignes.length * 26 + 6;
       const nb = livre.pages.length;
-      const meta = approche(`${nb} page${nb > 1 ? 's' : ''}${versoVide ? ' · verso à compléter' : ''}${livre.date ? ' · ' + livre.date : ''}`);
+      const meta = approche(`${nb} carte${nb > 1 ? 's' : ''}${versoVide ? ' · verso à compléter' : ''}${livre.date ? ' · ' + livre.date : ''}`);
       o.push(T('F1', 9.5, DOUX, M.g, yy - 9, meta));
       y = yy - 26;
     } else {
@@ -193,9 +193,9 @@ export function pdfLivre(livre, { versoVide = false } = {}) {
       // la valeur d'un champ : le texte d'origine (le lecteur le recoupe lui-même) ; d'un morceau, ses lignes
       const valeur = (c, m) => (morceaux.length > 1 ? deAnsi(m.lignes.join(' ')) : String(c.texte || ''));
       poserCase(pg.recto, mo.r, M.g + NUM + PX, y - PY, y - h + PY - 2, `p${i + 1}_recto${suffixe}`,
-        `Page ${i + 1}, recto`, 'F2', valeur(pg.recto, mo.r));
+        `Carte ${i + 1}, recto`, 'F2', valeur(pg.recto, mo.r));
       poserCase(pg.verso, mo.v, M.g + NUM + COL + PX, y - PY, y - h + PY - 2, `p${i + 1}_verso${suffixe}`,
-        `Page ${i + 1}, verso`, 'F1', versoVide ? '' : valeur(pg.verso, mo.v));
+        `Carte ${i + 1}, verso`, 'F1', versoVide ? '' : valeur(pg.verso, mo.v));
       y -= h;
     });
     rangee++;
@@ -222,7 +222,7 @@ export function pdfLivre(livre, { versoVide = false } = {}) {
     + ` /DA (/Helv 0 Tf 0 g) /DR << /Font << /Helv ${f1} 0 R /HeBo ${f2} 0 R /F3 ${f3} 0 R >> >> >>`);
   doc.poser(catalogue, `<< /Type /Catalog /Pages ${arbre} 0 R /AcroForm ${formulaire} 0 R /Lang (fr-FR)`
     + ' /ViewerPreferences << /DisplayDocTitle true >> >>');
-  doc.poser(info, `<< /Title ${texteUnicode(livre.titre || 'Livre')} /Producer (Mirandola) /Creator (Mirandola - mirandola.fr) >>`);
+  doc.poser(info, `<< /Title ${texteUnicode(livre.titre || 'Paquet')} /Producer (Mirandola) /Creator (Mirandola - mirandola.fr) >>`);
   return doc.fin(catalogue, info);
 }
 

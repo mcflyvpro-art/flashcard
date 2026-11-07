@@ -117,8 +117,8 @@ test('l’aiguillage : avec une session, la racine ouvre l’app ; « ?site » m
   await brancher(page, store);
   await inscrire(page);
   await page.goto('./');
-  await expect(page).toHaveURL(/\/eleve\/livres$/, { timeout: 10000 });
-  await expect(page.getByRole('button', { name: 'Nouveau livre' })).toBeVisible({ timeout: 10000 });
+  await expect(page).toHaveURL(/\/eleve\/paquets$/, { timeout: 10000 });
+  await expect(page.getByRole('button', { name: 'Nouveau paquet' })).toBeVisible({ timeout: 10000 });
   await page.goto('./?site');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(TITRE);
 });

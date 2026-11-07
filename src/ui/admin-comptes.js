@@ -176,7 +176,7 @@ export function detailLigne(a) {
   if (t === 'vu') return a.vu ? timeAgo(a.vu) : 'jamais';
   if (t === 'revise') return a.revise ? timeAgo(a.revise) : 'aucune';
   if (t === 'revisions') return plur(+a.revisions || 0, 'révision');
-  if (t === 'livres') return plur(+a.livres || 0, 'livre');
+  if (t === 'livres') return plur(+a.livres || 0, 'paquet');
   return a.cree ? timeAgo(a.cree) : '';
 }
 
@@ -206,7 +206,7 @@ export function infosCompte(a) {
       ${ligne('Adresse', oui(a.confirme, 'confirmée', 'à confirmer'), a.confirme ? '' : 'chaud')}
       ${ligne('Offre', { gratuit: 'Gratuit', plus: 'Mirandola+', campus: 'Campus' }[a.offre] || '—')}
       ${a.etablissement ? ligne('Établissement', esc(a.etablissement)) : ''}
-      ${ligne('Livres', +a.livres || 0)}${ligne('Pages', +a.cartes || 0)}${ligne('Révisions', +a.revisions || 0)}
+      ${ligne('Paquets', +a.livres || 0)}${ligne('Cartes', +a.cartes || 0)}${ligne('Révisions', +a.revisions || 0)}
       ${ligne('Dernière révision', a.revise ? timeAgo(a.revise) : 'aucune')}
       ${ligne('Connexion', [a.google ? 'Google' : 'e-mail', a.deux_etapes ? 'deux étapes' : ''].filter(Boolean).join(' · '))}
       ${a.provisoire ? ligne('Mot de passe', 'provisoire', 'chaud') : ''}

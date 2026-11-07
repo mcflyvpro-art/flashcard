@@ -17,7 +17,7 @@ async function ouvrirJournal(page) {
   await expect(page.locator('.jr-kpi')).toBeVisible({ timeout: 10000 });
 }
 
-test('changer la matière d’un livre puis le supprimer : son temps reste en Droit', async ({ page }) => {
+test('changer la matière d’un paquet puis le supprimer : son temps reste en Droit', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
