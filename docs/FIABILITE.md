@@ -16,6 +16,7 @@ monde, et de pouvoir **revenir en arrière** en une minute.
 | Parcours de bout en bout, Chromium (≈ 150) | idem | `ci.yml` › e2e | un parcours rouge |
 | CodeQL (`security-extended`) | idem, et chaque lundi | `codeql.yml` | une alerte dans l'onglet Security |
 | Base neuve : toutes les migrations depuis la première, puis toute la suite SQL | chaque changement de `supabase/`, chaque nuit | `base.yml` | une migration qui ne se rejoue plus, un cas SQL en échec |
+| Le cliquet des types stricts : aucune erreur `tsc --strict` de plus par fichier | avec les types, à chaque push | `ci.yml` › check (`npm run typecheck`) | une erreur de type stricte nouvelle |
 | Revue de sécurité par Claude | chaque PR (avec `ANTHROPIC_API_KEY`) | `revue-securite.yml` | — (commentaires sur la PR) |
 | Safari (WebKit) : iPhone 13 et Safari de bureau, toute la suite | chaque nuit | `nuit.yml` › safari | un parcours rouge sous Safari |
 | Le singe : 150 gestes au hasard par rôle et par écran, graine nouvelle | chaque nuit | `nuit.yml` › singe | la moindre erreur JavaScript |
@@ -134,6 +135,25 @@ suppression par erreur) :
 
 La CI fait les étapes 2 à 4 chaque nuit sur une base vierge : la procédure est
 éprouvée, pas seulement écrite (M13.T5).
+
+## Ce que le premier passage a trouvé (2026-11-07)
+
+Les workflows ont trouvé, dès leur première nuit, ce qu'aucun test local ne
+voyait :
+
+- **Base neuve** : toutes les migrations se rejouent de zéro, mais cinq
+  fichiers de tests SQL ne passaient plus — écrits avant « un seul code »
+  (2026-10-26), la salle d'attente du professeur particulier et la place
+  du référent (2026-10-29), ou la treizième table protégée par la double
+  authentification. Mis à jour, chacun vérifié sur la production en
+  transaction annulée. Et un **vrai défaut** : le référent corrigeait le nom
+  d'un élève, le professeur voyait toujours l'ancien
+  (`20261107213201_le_nom_corrige_partout`).
+- **Vigie** : sans problème, elle ouvrait quand même un ticket vide (une
+  ligne vide comptée pour un problème) ; corrigé dans
+  `tools/vigie/verifier.sh`.
+- **Accessibilité** : l'or de Mirandola Infini, ajouté le même jour, n'avait
+  que 4,24:1 de contraste.
 
 ## Ce qui reste à la main
 

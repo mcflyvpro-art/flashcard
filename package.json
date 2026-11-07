@@ -7,7 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && node tools/types-cliquet.js",
     "check": "npm run lint && npm run test && npm run build && npm run budget",
     "test": "vitest run",
     "e2e": "playwright test",

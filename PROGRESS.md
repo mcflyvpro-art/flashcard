@@ -32,6 +32,11 @@ DERNIER   2026-11-07 · La fiabilité, demandé : « le max du debug
           mutation 78,4 %. Accessibilité 0 violation grave (M09.T3).
           Safari : le flou des 33 cartes de l'Academy faisait gonfler la
           mémoire de WebKit sans fin — retiré. docs/FIABILITE.md.
+          Premier passage : la base neuve rejoue toutes les migrations,
+          trouve cinq tests SQL périmés (mis à jour, vérifiés sur la
+          production) et un vrai défaut — le nom corrigé par le référent
+          n'arrivait pas chez le professeur (20261107213201). Cliquet des
+          types stricts : 289, jamais plus.
 Avant :   2026-11-07 · Le vocabulaire redevient classique partout
           (app, site, démo, textes du cadre, e-mails, manifeste) : paquet,
           cartes, réviser, Mes amis, Statistiques, Messages ; nouvelles

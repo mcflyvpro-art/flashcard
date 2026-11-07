@@ -58,5 +58,8 @@ if [ -n "${SUPABASE_DB_URL:-}" ]; then
   fi
 fi
 
-printf '%s\n' "${problemes[@]+"${problemes[@]}"}" | jq -R . | jq -s --argjson base "$base" '{problemes: ., base: $base}' > vigie.json
+# sans problème, printf écrit quand même une ligne vide : elle ne compte pas
+# (le 2026-11-07, elle ouvrait un ticket « Vigie : » sans rien dedans)
+printf '%s\n' "${problemes[@]+"${problemes[@]}"}" | jq -R . |
+  jq -s --argjson base "$base" '{problemes: map(select(length > 0)), base: $base}' > vigie.json
 echo "── ${#problemes[@]} problème(s)"

@@ -1,5 +1,6 @@
 -- Tests de 20261026130000 : la licence d'un établissement. Une place par
--- élève et par professeur, retirer quelqu'un libère sa place ; les
+-- élève, par professeur et par référent (20261029090000), retirer quelqu'un
+-- libère sa place ; les
 -- coordonnées de facturation ; les factures (totaux calculés en base,
 -- numérotation continue sans trou, photographie du vendeur et du client,
 -- inaltérables, avoirs) ; les échanges entre le référent et Mirandola ; qui lit
@@ -54,7 +55,7 @@ begin
   o := public.admin_etab_enregistrer(null, '{"nom":"ZZ Lycée Camus","ville":"Nîmes"}'::jsonb);
   o2 := public.admin_etab_enregistrer(null, '{"nom":"ZZ Collège Hugo","ville":"Lyon"}'::jsonb);
   o3 := public.admin_etab_enregistrer(null, '{"nom":"ZZ École Ferry","ville":"Arles"}'::jsonb);
-  j := public.admin_lancer_demo(o, 3, 30, true);
+  j := public.admin_lancer_demo(o, 4, 30, true);
   perform public.zz_comme(dir); perform public.rejoindre(j->>'code_ref', 'Marie', 'Curie');
   perform public.zz_comme(adm);
   j := public.admin_lancer_demo(o2, 30, 30, false);
@@ -63,23 +64,28 @@ begin
   select k.eleve, k.prof into ce, cp from public.org_codes k where k.org_id = o;
   select c.id into c1 from public.classes c where c.org_id = o and c.genre = 'classe' order by c.name limit 1;
 
-  -- ══════════ une place par professeur et par élève ══════════
+  -- ══════════ une place par élève, par professeur et par référent (20261029090000) ══════════
   perform public.zz_comme(jean); perform public.rejoindre(cp, 'Jean', 'Moulin');
   perform public.zz_comme(emma); perform public.rejoindre(ce, 'Emma', 'Durand', c1);
   perform public.zz_comme(lucas); perform public.rejoindre(ce, 'Lucas', 'Martin', c1);
   perform public.zz_comme(paul);
   j := public.code_apercu(ce);
-  insert into public.zz_res (nom, ok, vu) values ('trois places : un professeur et deux élèves, la quatrième personne voit « plein »',
+  insert into public.zz_res (nom, ok, vu) values ('quatre places : le référent, un professeur et deux élèves, la cinquième personne voit « plein »',
     j->>'statut' = 'plein', j::text);
   perform public.zz_comme(dir);
   j := public.licence_tableau();
-  insert into public.zz_res (nom, ok, vu) values ('le tableau du référent : 3 places prises (1 professeur, 2 élèves) sur 3',
-    (j->>'prises')::int = 3 and (j->>'profs')::int = 1 and (j->>'eleves')::int = 2 and (j->>'places')::int = 3
+  insert into public.zz_res (nom, ok, vu) values ('le tableau du référent : 4 places prises (lui, 1 professeur, 2 élèves) sur 4',
+    (j->>'prises')::int = 4 and (j->>'profs')::int = 1 and (j->>'eleves')::int = 2 and (j->>'places')::int = 4
     and j->>'org' = 'ZZ Lycée Camus', j::text);
   s := public.zz_leve('select public.ref_new_account(''zz-' || gen_random_uuid() || '@exemple.invalid'', ''Anne LEROY'', '''', ''prof'', null, ''provisoire-123'')');
   insert into public.zz_res (nom, ok, vu) values ('licence pleine : le référent n''ouvre pas de compte de plus', s like '%places de la licence%', s);
-  select count(*) into n from public.prof_creer_eleves(c1, '[{"prenom":"Alice","nom":"Bernard"}]'::jsonb) x where x.statut = 'complet';
-  insert into public.zz_res (nom, ok, vu) values ('licence pleine : les cartes élève non plus', n = 1, n::text);
+  -- (les cartes élève, l'autre porte d'avant, sont parties le 2026-10-28)
+  perform public.zz_comme(paul);
+  j := public.rejoindre(ce, 'Paul', 'Petit', c1);
+  perform public.zz_root();
+  insert into public.zz_res (nom, ok, vu) values ('licence pleine : un élève qui tape le code n''entre pas',
+    j->>'statut' = 'plein' and not exists (select 1 from public.org_members m where m.user_id = paul), j::text);
+  perform public.zz_comme(dir);
 
   -- ══════════ retirer quelqu'un libère sa place ══════════
   perform public.zz_comme(jean);
@@ -106,7 +112,7 @@ begin
   anne := public.ref_new_account('zz-' || gen_random_uuid() || '@exemple.invalid', 'Anne LEROY', '', 'prof', null, 'provisoire-123');
   j := public.licence_tableau();
   insert into public.zz_res (nom, ok, vu) values ('une place libérée : le référent ouvre le compte d''une professeure',
-    (j->>'prises')::int = 2 and (j->>'profs')::int = 1, j::text);
+    (j->>'prises')::int = 3 and (j->>'profs')::int = 1, j::text);
   perform public.zz_root();
   insert into public.zz_res (nom, ok, vu) values ('son adresse ne va pas au journal',
     exists (select 1 from public.ref_audit a where a.cible = anne and a.acte = 'compte ouvert' and not a.detail ? 'adresse'), 'trace');

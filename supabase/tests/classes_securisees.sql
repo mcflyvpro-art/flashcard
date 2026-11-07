@@ -67,6 +67,18 @@ begin
   cid := public.prof_creer_classe('ZZ 2nde 4', 'Seconde', 'Anglais');
   perform public.zz_root();
   select c.code into code1 from public.classes c where c.id = cid;
+  /* Depuis « un seul code » (20261026001000, 20261026030000), ce qu'un
+     professeur crée dans un établissement est un GROUPE, fermé aux codes :
+     ses élèves, il les coche (prof_groupe). On le vérifie, puis on rend à
+     la classe l'état d'une classe d'avant (genre « classe », code ouvert) :
+     ces codes-là marchent encore (class_preview, class_join), et c'est leur
+     chemin que ce fichier attaque. */
+  perform public.zz_comme(e5);
+  select p.statut into s from public.class_join(code1) p;
+  perform public.zz_root();
+  insert into public.zz_res (nom, ok, vu) values ('un groupe neuf d''établissement ne se rejoint pas par son code',
+    s = 'ferme' and exists (select 1 from public.classes c where c.id = cid and c.genre = 'groupe' and not c.join_open), s);
+  update public.classes set genre = 'classe', join_open = true where id = cid;
   insert into public.zz_res (nom, ok, vu) values ('code de 8 caractères sûrs',
     code1 ~ '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$', code1);
   insert into public.zz_res (nom, ok, vu) values ('rattachée à l''établissement, prof principal',
@@ -273,6 +285,8 @@ begin
   perform public.zz_comme(pp);
   cid2 := public.prof_creer_classe('ZZ Soutien', '', 'Maths');
   perform public.zz_root();
+  -- un professeur particulier n'admet qu'avec sa licence (20261029090000)
+  insert into public.prof_licences (prof, places, fin) values (pp, 5, current_date + 30);
   select c.code into kcol from public.classes c where c.id = cid2;
   perform public.zz_comme(e1);
   select p.statut into s from public.class_join(kcol) p;
