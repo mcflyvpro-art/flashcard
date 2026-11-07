@@ -161,7 +161,7 @@ function tapSndSay(a, ds, b) {
 const tapHome = () => (gestion() ? allerClasses() : go('home'));
 // le « Retour » d'un livre : là d'où on l'a ouvert (« Ma classe » pour un devoir)
 const tapDeckback = () => { const o = retourLivre(); return o.name === 'classes' ? allerClasses() : go(o.name, o.id); };
-const tapCommu = () => { commuPull(); return go('commu'); };
+const tapCommu = () => { commuPull(true); return go('commu'); };
 const tapFriends = () => { if (!friends) friendsPull(); return go('friends'); };
 const tapFriendsBoard = () => { if (!board.rows) boardPull(); return tapFriends(); };
 const tapDoadd = () => doAdd();

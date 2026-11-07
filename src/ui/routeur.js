@@ -122,7 +122,7 @@ const OUVRIR = {
   mod: () => { if (!mods.list) modPull(); go('mod'); },
   classes: () => allerClasses(),
   classe: id => { eleveClassesPull(); ouvrirClasseEleve(id); },
-  commu: () => { commuPull(); go('commu'); },
+  commu: () => { commuPull(true); go('commu'); },
   friends: () => { if (!friends) friendsPull(); go('friends'); },
   club: id => { commuPull(); cercle.onglet = 'defis'; clubPull(id); go('club', id); },
   profil: id => ouvrirProfil(id),

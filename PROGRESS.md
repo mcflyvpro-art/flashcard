@@ -16,9 +16,9 @@
 
 ## ÉTAT
 ```
-CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M13.T5, M22.T5 attendent tes secrets GitHub (docs/FIABILITE.md)
+CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
-FAIT      53 / 148
+FAIT      54 / 148
 DERNIER   2026-11-07 · La fiabilité, demandé : « le max du debug
           possible ». Un rapporteur d'erreurs à nous, anonyme (M05.T1),
           la vigie et son alerte (M05.T6), l'onglet Santé de l'éditeur,
@@ -36,7 +36,10 @@ DERNIER   2026-11-07 · La fiabilité, demandé : « le max du debug
           trouve cinq tests SQL périmés (mis à jour, vérifiés sur la
           production) et un vrai défaut — le nom corrigé par le référent
           n'arrivait pas chez le professeur (20261107213201). Cliquet des
-          types stricts : 289, jamais plus.
+          types stricts : 289, jamais plus. La sauvegarde de bout en
+          bout verte (575 cas SQL sur la base restaurée, après avoir
+          rendu les droits que le vidage perdait) ; un ami accepté app
+          ouverte paraît enfin dans « Mes amis » sans redémarrer.
 Avant :   2026-11-07 · Le vocabulaire redevient classique partout
           (app, site, démo, textes du cadre, e-mails, manifeste) : paquet,
           cartes, réviser, Mes amis, Statistiques, Messages ; nouvelles
@@ -421,7 +424,7 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M13.T2 · Vercel Pro (le gratuit interdit l'usage commercial) + domaine — preuve: facture
 - [ ] M13.T3 · Supabase Pro, région Paris (`eu-west-3`) — preuve: `get_project`
 - [ ] M13.T4 · environnement de préproduction séparé — cible: 0 test sur la base de production — preuve: 2 projets distincts
-- [ ] M13.T5 · restauration réellement testée — cible: base restaurée en < 30 min, procédure écrite — preuve: journal de l'exercice
+- [x] M13.T5 · restauration réellement testée — cible: base restaurée en < 30 min, procédure écrite — preuve: journal de l'exercice — **fait le 2026-11-07** : `sauvegarde.yml` (source « essai », sans secret) vide une base faite de toutes nos migrations, la chiffre, la restaure dans une pile Supabase vierge (`tools/sauvegarde/restaurer.sh`), compare 97 tables (0 écart) et y passe toute la suite SQL : 575 cas, en 1 min 47 s (exécution GitHub 42417507626). Les deux premiers essais ont échoué et l'ont rendue vraie : le chargement en superutilisateur, puis `droits.sql` (sans lui, la base restaurée ouvrait à anon toutes les fonctions internes et perdait nos déclencheurs sur auth.users, nos politiques du stockage et les tâches pg_cron). Procédure à la main : docs/FIABILITE.md, « Restaurer la base ». La même chaîne sur la production chaque nuit dès que `SUPABASE_DB_URL` et `SAUVEGARDE_CLE` sont posés (M22.T5).
 - [ ] M13.T6 · migrations appliquées par la CI, jamais à la main — preuve: workflow
 
 ---

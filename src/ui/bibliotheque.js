@@ -316,7 +316,7 @@ function railClick(e) {
   if (quoi === 'mod') { if (!mods.list) modPull(); return go('mod'); }
   if (r === 'mail') { mailPull(); return go('mail'); }      // ce qu'on a s'affiche aussitôt, la relecture arrive par-dessus
   if (r === 'stats') { statsPull(); return go('stats'); }
-  if (r === 'commu') { commuPull(); return go('commu'); }
+  if (r === 'commu') { commuPull(true); return go('commu'); }
   if (r === 'classes') return allerClasses();
   if (r === 'plus') return ouvrirPlus();
   go(r === 'settings' ? 'settings' : 'home');
@@ -371,7 +371,7 @@ export const vueOnglet = k => ({ home, classes: mesClassesView, commu: commuView
 /* Ouvrir un onglet déjà glissé à l'écran : mêmes lectures que son bouton,
    mais sans fondu — la page est là, il ne reste qu'à la rendre vraie. */
 export function allerOnglet(k) {
-  if (k === 'commu') commuPull();
+  if (k === 'commu') commuPull(true);
   if (k === 'classes') { eleveClassesPull(); sallesPull(); duelsPull(); }
   go(k, null, 0, true);
 }

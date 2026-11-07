@@ -73,7 +73,7 @@ const GOTO = {
                  startStudy('all', false, null, { only: 'due', both: prefs.both }); },
   new: () => { resetComp(); go('import'); },
   mail: () => { mailPull(); go('mail'); },
-  commu: () => { commuPull(); go('commu'); },
+  commu: () => { commuPull(true); go('commu'); },
   stats: () => { statsPull(); go('stats'); },
   /* « Changer le mot de passe » des gestionnaires de mots de passe :
      /.well-known/change-password mène ici (vercel.json) */

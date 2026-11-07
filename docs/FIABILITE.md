@@ -165,6 +165,12 @@ voyait :
 - **Vigie** : sans problème, elle ouvrait quand même un ticket vide (une
   ligne vide comptée pour un problème) ; corrigé dans
   `tools/vigie/verifier.sh`.
+- **Parcours en CI** : `e2e/profil.e2e.js`, vert ici, rouge deux fois sur
+  GitHub — une course, et derrière elle un vrai défaut : un ami accepté
+  pendant que l'app était ouverte n'apparaissait dans « Mes amis » qu'au
+  redémarrage (le préchargement de l'arrivée avait déjà lu la liste).
+  Rouvrir l'onglet relit désormais amis et classement ; un parcours le
+  rejoue à coup sûr, rouge sur l'ancien code.
 - **Accessibilité** : l'or de Mirandola Infini, ajouté le même jour, n'avait
   que 4,24:1 de contraste.
 
