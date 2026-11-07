@@ -882,8 +882,15 @@ l'air de marcher ».
     `src/licence.js`, son nom dans la licence et l'engagement, « Bienvenue
     dans Mirandola Infini » ; `?plus=infini_annuel` l'ouvre ; un abonné
     Infini a `html.offre-infini` — la lumière de la marque plus profonde,
-    « ∞ » après le nom ; sur le site, le bandeau `.offre-infini` sous les
-    trois offres des tarifs et deux offres en données structurées ; les
+    « ∞ » après le nom ; sur le site (refait le 2026-11-07, demandé :
+    « Campus en bas, monte celui du milieu ») : trois offres côte à côte —
+    gratuit, **Mirandola+ au milieu, plus haut et plus grand, « Le plus
+    choisi »** (premier au téléphone), Infini à droite en papier ivoire et or
+    (`.offre-infini`, `.bt-or`, `.ruban-or`) —, Mirandola Campus en bandeau
+    dessous (`.bandeau-campus`, « Demander mon devis »), le tableau
+    comparatif en quatre colonnes (`.col-infini`, et « Pour tes examens » :
+    examen blanc, objectif examen, gros PDF), deux offres de plus en données
+    structurées ; les
     conditions de vente § 2 bis, ses prix et le changement de formule au
     prorata, `CGV_VERSION` 2026-11-06 ; **son identité, l'or sur la nuit**
     (2026-11-07, demandé : « vraiment différencier visuellement Infini et
