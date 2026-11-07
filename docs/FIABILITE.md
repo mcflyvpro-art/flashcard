@@ -122,11 +122,17 @@ suppression par erreur) :
    le `.tar.gz.gpg`).
 2. La déchiffrer : `gpg --decrypt mirandola-….tar.gz.gpg | tar xzf - -C restauration/`
    (la phrase : `SAUVEGARDE_CLE`, depuis ton gestionnaire de mots de passe).
-   On y trouve `roles.sql`, `schema.sql`, `data.sql`, `comptes.tsv` (le nombre
-   de lignes de chaque table) et, si la clé de service était posée, `media/`.
+   On y trouve `roles.sql`, `schema.sql`, `data.sql`, `droits.sql` (les droits
+   exacts, nos déclencheurs sur `auth.users`, nos politiques du stockage, les
+   tâches pg_cron : ce que le vidage de Supabase ne rend pas), `comptes.tsv`
+   (le nombre de lignes de chaque table) et, si la clé de service était posée,
+   `media/`.
 3. Dans un projet Supabase **neuf** (jamais par-dessus la production abîmée :
    on garde de quoi comparer), avec sa chaîne de connexion `$URL` :
-   `psql "$URL" --single-transaction -v ON_ERROR_STOP=1 -f roles.sql -f schema.sql -c 'set session_replication_role = replica' -f data.sql`
+   `psql "$URL" --single-transaction -v ON_ERROR_STOP=1 -f roles.sql -f schema.sql -c 'set session_replication_role = replica' -f data.sql`,
+   puis `psql "$URL" --single-transaction -v ON_ERROR_STOP=1 -f droits.sql`
+   — **jamais sans lui** : une base vierge recrée chaque fonction avec ses
+   droits par défaut, ouverts à `anon` (le premier essai l'a montré).
 4. Vérifier comme le fait la CI chaque nuit : `tools/sauvegarde/restaurer.sh`
    (le même nombre de lignes, puis toute la suite SQL).
 5. Pointer l'app vers le nouveau projet (`VITE_SUPABASE_URL`,
@@ -149,6 +155,13 @@ voyait :
   transaction annulée. Et un **vrai défaut** : le référent corrigeait le nom
   d'un élève, le professeur voyait toujours l'ancien
   (`20261107213201_le_nom_corrige_partout`).
+- **Sauvegarde** : la restauration d'essai ramenait toutes les données
+  (97 tables, 0 écart) mais pas les droits — la base vierge ouvrait à `anon`
+  toutes les fonctions internes, et perdait nos déclencheurs sur
+  `auth.users`, nos politiques du stockage et les tâches pg_cron. La
+  sauvegarde emporte désormais `droits.sql`, écrit depuis le catalogue
+  (`tools/sauvegarde/droits-ecrire.sql`), et la restauration charge en
+  superutilisateur.
 - **Vigie** : sans problème, elle ouvrait quand même un ticket vide (une
   ligne vide comptée pour un problème) ; corrigé dans
   `tools/vigie/verifier.sh`.

@@ -17,6 +17,10 @@ mkdir -p "$out"
 supabase db dump --db-url "$SUPABASE_DB_URL" --role-only -f "$out/roles.sql"
 supabase db dump --db-url "$SUPABASE_DB_URL" -f "$out/schema.sql"
 supabase db dump --db-url "$SUPABASE_DB_URL" --data-only --use-copy -f "$out/data.sql"
+# ce que le vidage ne rend pas fidèlement (les droits exacts, nos déclencheurs
+# sur auth.users, nos politiques du stockage, les tâches pg_cron) : écrit
+# depuis le catalogue, rejoué après les données (droits-ecrire.sql)
+psql "$SUPABASE_DB_URL" -X -A -t -q -v ON_ERROR_STOP=1 -f "$(dirname "$0")/droits-ecrire.sql" > "$out/droits.sql"
 
 # le compte exact de chaque table de ce qu'on restaure
 psql "$SUPABASE_DB_URL" -X -A -t -q -F $'\t' > "$out/comptes.tsv" <<'SQL'
@@ -35,4 +39,4 @@ if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
       "$SUPABASE_URL/storage/v1/object/authenticated/media/$nom"
   done
 fi
-echo "vidage : $(du -sh "$out" | cut -f1), $(wc -l < "$out/comptes.tsv") tables comptées"
+echo "vidage : $(du -sh "$out" | cut -f1), $(wc -l < "$out/comptes.tsv") tables comptées, $(grep -c ';' "$out/droits.sql") instructions de droits"

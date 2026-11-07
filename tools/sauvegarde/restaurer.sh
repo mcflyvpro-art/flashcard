@@ -23,6 +23,12 @@ A=postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
 psql "$A" -X -q --single-transaction -v ON_ERROR_STOP=1 \
   -f "$d/roles.sql" -f "$d/schema.sql" \
   -c 'set session_replication_role = replica' -f "$d/data.sql"
+# puis les droits exacts de la source, nos déclencheurs sur auth.users, nos
+# politiques du stockage et les tâches pg_cron (droits-ecrire.sql) : sans eux,
+# la base vierge ouvrait à anon toutes les fonctions internes (le premier
+# essai, 2026-11-07)
+psql "$A" -X -q --single-transaction -v ON_ERROR_STOP=1 \
+  -c 'create extension if not exists pg_cron with schema extensions' -f "$d/droits.sql"
 echo "restaurée"
 
 # table par table, le même nombre de lignes
