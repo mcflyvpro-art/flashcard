@@ -241,8 +241,14 @@ export const demandePrix = f => ({
 });
 export const demandeCoupon = () => ({ id: PROMO.coupon, percent_off: String(PROMO.remise), duration: 'repeating',
   duration_in_months: String(PROMO.mois), name: `Lancement −${PROMO.remise} %`, 'metadata[app]': 'mirandola' });
-export const demandeCodePromo = () => ({ coupon: PROMO.coupon, code: PROMO.code,
-  'restrictions[first_time_transaction]': 'true', 'metadata[app]': 'mirandola' });
+/* Le code d'un coupon. Depuis la version « clover » de l'interface de
+   Stripe (septembre 2025), il se rattache par `promotion[coupon]` ; un
+   compte resté sur une version d'avant attend `coupon` (`ancienne`). Un
+   compte récent refusait l'ancienne forme (« unknown parameter: coupon »,
+   2026-11-07) : « Brancher Stripe » s'arrêtait là, sans ranger les prix. */
+export const demandeCodePromo = ancienne => ({
+  ...(ancienne ? { coupon: PROMO.coupon } : { 'promotion[type]': 'coupon', 'promotion[coupon]': PROMO.coupon }),
+  code: PROMO.code, 'restrictions[first_time_transaction]': 'true', 'metadata[app]': 'mirandola' });
 export const demandeWebhook = url => {
   const d = { url, description: 'Mirandola : abonnements', 'metadata[app]': 'mirandola' };
   EVENEMENTS.forEach((e, i) => { d[`enabled_events[${i}]`] = e; });

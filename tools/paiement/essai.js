@@ -134,7 +134,12 @@ function stripe(req, res, url, corps) {
     return envoie(res, 200, { data: monde.codes.filter(c => c.code === code && (c.active || url.searchParams.get('active') !== 'true')) });
   }
   if (p === 'promotion_codes' && req.method === 'POST') {
-    const c = { id: 'promo_' + monde.codes.length, code: f.code, coupon: f.coupon, active: true, premier: f['restrictions[first_time_transaction]'] };
+    /* la version de l'interface de Stripe du compte : depuis « clover », `coupon` est inconnu (le refus réel du
+       2026-11-07) ; un compte resté sur une version d'avant ne connaît pas `promotion[…]` (monde.apiAncienne) */
+    const inconnu = monde.apiAncienne ? ('promotion[coupon]' in f && 'promotion') : ('coupon' in f && 'coupon');
+    if (inconnu) return envoie(res, 400, { error: { code: 'parameter_unknown', message: 'Received unknown parameter: ' + inconnu } });
+    const c = { id: 'promo_' + monde.codes.length, code: f.code, coupon: f['promotion[coupon]'] ?? f.coupon, active: true,
+      premier: f['restrictions[first_time_transaction]'] };
     monde.codes.push(c); return envoie(res, 200, c);
   }
   if (p === 'webhook_endpoints' && req.method === 'GET') return envoie(res, 200, { data: monde.points });
@@ -328,7 +333,8 @@ async function essaisBrancher() {
     && an.tax_behavior === 'inclusive' && monde.prix.length === 4, monde.prix);
   verifie('… le code de lancement : −20 % sur trois mois, premier abonnement seulement', monde.coupons.mirandola_lancement
     && monde.coupons.mirandola_lancement.percent_off === '20' && monde.coupons.mirandola_lancement.duration_in_months === '3'
-    && monde.codes.length === 1 && monde.codes[0].code === 'LANCEMENT' && monde.codes[0].premier === 'true', { c: monde.coupons, p: monde.codes });
+    && monde.codes.length === 1 && monde.codes[0].code === 'LANCEMENT' && monde.codes[0].premier === 'true'
+    && monde.codes[0].coupon === 'mirandola_lancement', { c: monde.coupons, p: monde.codes });
   const point = monde.points[0] || {};
   verifie('… un point d’arrivée vers stripe-webhook, tous les évènements', monde.points.length === 1
     && point.url === ICI + '/functions/v1/stripe-webhook' && point.enabled_events.length === 8, monde.points);
@@ -343,6 +349,13 @@ async function essaisBrancher() {
   verifie('rebrancher ne crée rien deux fois (prix, code, point d’arrivée, portail)', r.statut === 200 && monde.prix.length === 4
     && monde.codes.length === 1 && monde.points.length === 1 && monde.portails.length === 1,
     { prix: monde.prix.length, codes: monde.codes.length, points: monde.points.length, portails: monde.portails.length });
+  // un compte Stripe resté sur une version d'avant « clover » : le code se crée par l'ancienne forme, en repli
+  const codesAvant = monde.codes;
+  monde.codes = []; monde.apiAncienne = true;
+  r = await appel({ action: 'preparer' }, 'editeur');
+  verifie('… un compte Stripe d’avant « clover » : le code de lancement passe par l’ancienne forme',
+    r.statut === 200 && monde.codes.length === 1 && monde.codes[0].coupon === 'mirandola_lancement', { r: r.j, codes: monde.codes });
+  monde.codes = codesAvant; monde.apiAncienne = false;
   r = await appel({ action: 'payer', formule: 'mensuel', cgv: '2026-11-05' }, 'u7');
   verifie('payer : le prix posé par « Brancher Stripe »', r.statut === 200 && recu.checkout.at(-1)['line_items[0][price]'] === mois.id, recu.checkout.at(-1));
   r = await appel({ action: 'gerer' }, 'u2');

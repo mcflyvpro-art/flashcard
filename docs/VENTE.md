@@ -259,14 +259,16 @@ dit `infini` (migration `20261105174551_infini_et_essai`).
   le site ; la grille de `src/tarifs.js` reste celle de la console de
   l'éditeur, qui fait les devis.
 
-**Fait le 2026-11-07** : `paiement` (v8), `stripe-webhook` (v8), `magasins`
-(v7) et `ai` (v17) sont déployées (`npx supabase functions deploy <nom>
+**Fait le 2026-11-07** : `paiement` (v9), `stripe-webhook` (v9), `magasins`
+(v8) et `ai` (v17) sont déployées (`npx supabase functions deploy <nom>
 --project-ref qqbzefpdeinlynjtarqr --use-api --yes`, `--no-verify-jwt` pour
 `stripe-webhook` et `magasins`). **Reste à rappuyer sur « Brancher Stripe »**
 (console de l'éditeur → Entreprise) : il crée le produit `mirandola_infini`
 et ses deux prix, le coupon de lancement, et refait les prix de Mirandola+
 s'ils n'étaient plus au bon montant — les abonnés gardent le leur. Rien ne
-se crée deux fois.
+se crée deux fois. (La v8 de `paiement` répondait « Stripe a refusé » :
+le compte Stripe, récent, n'accepte plus `coupon` pour créer le code de
+lancement, mais `promotion[coupon]` ; corrigé dans la v9.)
 
 **Réglages à poser dans le tableau de bord de Stripe** (Paramètres →
 Facturation → Abonnements et e-mails) : « Envoyer un rappel avant la fin

@@ -253,7 +253,12 @@ describe('Infini, l’essai, le code de lancement (2026-11-05)', async () => {
   });
   it('le code de lancement : −20 % trois mois, premier abonnement ; posé d’avance quand il vient d’un lien', () => {
     expect(S.demandeCoupon()).toMatchObject({ percent_off: '20', duration: 'repeating', duration_in_months: '3' });
-    expect(S.demandeCodePromo()).toMatchObject({ code: 'LANCEMENT', 'restrictions[first_time_transaction]': 'true' });
+    expect(S.demandeCodePromo()).toMatchObject({ code: 'LANCEMENT', 'restrictions[first_time_transaction]': 'true',
+      'promotion[type]': 'coupon', 'promotion[coupon]': 'mirandola_lancement' });
+    // un compte Stripe récent refuse « coupon » (2026-11-07) ; l'ancienne forme ne sert qu'en repli
+    expect(S.demandeCodePromo()).not.toHaveProperty('coupon');
+    expect(S.demandeCodePromo(true)).toMatchObject({ coupon: 'mirandola_lancement', code: 'LANCEMENT' });
+    expect(S.demandeCodePromo(true)).not.toHaveProperty('promotion[coupon]');
     const d = S.demandePaiement({ formule: 'mensuel', prix: 'p', userId: 'u', site: 's', promo: 'promo_1' });
     expect(d['discounts[0][promotion_code]']).toBe('promo_1');
     expect(d.allow_promotion_codes).toBeUndefined();

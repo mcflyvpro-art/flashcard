@@ -134,7 +134,10 @@ async function preparer(cle: string, mode: string) {
   // le code de lancement : le coupon, puis son code (chacun une fois)
   await stripe("coupons", demandeCoupon(), cle, undefined, "POST", "resource_already_exists");
   const codes = (await lireStripe(`promotion_codes?code=${PROMO.code}&limit=1`, cle))?.data ?? [];
-  if (!codes.length) await stripe("promotion_codes", demandeCodePromo(), cle);
+  // la forme d'aujourd'hui, puis celle d'avant pour un compte resté sur une ancienne version de Stripe
+  if (!codes.length && !await stripe("promotion_codes", demandeCodePromo(), cle, undefined, "POST", "parameter_unknown")) {
+    await stripe("promotion_codes", demandeCodePromo(true), cle);
+  }
   const url = `${URL_SB}/functions/v1/stripe-webhook`;
   const points = (await lireStripe("webhook_endpoints?limit=100", cle))?.data ?? [];
   const nos = points.filter((w: any) => w.url === url);
