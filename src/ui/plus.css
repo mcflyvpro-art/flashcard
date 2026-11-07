@@ -147,7 +147,7 @@
 .fp-n span{font-size:12px;font-weight:650;color:var(--soft)}
 .fp-n.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(29,28,25,.08),inset 0 0 0 1px var(--hair)}
 .fp-n[data-v="plus"].on b{background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);-webkit-background-clip:text;background-clip:text;color:transparent}
-.fp-n[data-v="infini"]:not(.on) b{color:#9A6F1E}
+.fp-n[data-v="infini"]:not(.on) b{color:#8A6318}
 .fp-n[data-v="infini"].on{background:#16130C;color:#F3D98C;box-shadow:inset 0 0 0 1px rgba(243,217,140,.35),0 8px 20px -10px rgba(190,140,40,.8)}
 .fp-n[data-v="infini"].on span{color:rgba(243,217,140,.7)}
 /* les prix d'Infini : la formule choisie cernée d'or, sa remise en or */

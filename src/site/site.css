@@ -753,7 +753,9 @@ button{font:inherit;color:inherit}
 .comparatif .col-plus{background:rgba(154,120,207,.09)}
 .comparatif thead .col-plus{border-radius:18px 18px 0 0}
 .comparatif .col-infini{background:rgba(212,162,60,.08)}
-.comparatif .o-n.infini{font-style:italic;color:#9A6F1E}
+/* l'or d'un texte : 5,1:1 sur le papier du site (#9A6F1E n'avait que 4,24,
+   sous les 4,5 d'un texte courant — e2e/accessibilite.e2e.js) */
+.comparatif .o-n.infini{font-style:italic;color:#8A6318}
 .comparatif .col-infini .ic.oui{color:#A8771C}
 .comparatif .ic{margin:0 auto;width:22px;height:22px}
 .comparatif .oui{color:var(--ok);stroke-width:2.6}
