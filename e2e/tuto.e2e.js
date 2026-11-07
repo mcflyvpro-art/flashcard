@@ -155,7 +155,7 @@ test('un particulier : son premier paquet, une carte révisée et notée, ses st
   await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'centre');
   await suivant(page);
 
-  expect(await jusqua(page, '')).toEqual(['Tes statistiques', 'Tes progrès', 'Le cercle', 'Tes amis', 'Tes messages', 'Ta boîte']);
+  expect(await jusqua(page, '')).toEqual(['Tes statistiques', 'Tes progrès', 'Mes amis', 'Tes amis', 'Tes messages', 'Ta boîte']);
   // la fin se lit sur « Mes livres », pas sur le courrier où l'on était
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'home', { timeout: 10000 });
 

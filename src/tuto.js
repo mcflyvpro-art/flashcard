@@ -125,7 +125,7 @@ const classe = si => [
 
 const cercle = (titre, amis) => [
   { id: 'cercle', ecran: { tel: ONGLETS_TEL }, cible: ONGLET('commu'), geste: 1, attend: { vue: 'commu' },
-    titre: 'Tes amis', texte: 'Tes amis, tes défis, tes clubs.', aide: { pc: 'Touche « Mes amis »', tel: ICONE } },
+    titre: 'Mes amis', texte: 'Tes amis, tes défis, tes clubs.', aide: { pc: 'Touche « Mes amis »', tel: ICONE } },
   { id: 'amis', ecran: 'commu', reprise: 'cercle', cible: ['.cc-carte:has(> .cc-amis)'], titre, texte: amis }
 ];
 
@@ -212,7 +212,7 @@ export const SCENARIOS = {
     ...journal,
     ...classe(['classe']),
     ...cercle('Tes amis', 'Ajoute-les par leur pseudo, puis défie-les.'),
-    ...courrier('Les paquets que tes amis te prêtent.', 'Ouvre un message : tu vois le paquet avant de l’ajouter.'),
+    ...courrier('Les paquets que tes amis t’envoient.', 'Ouvre un message : tu vois le paquet avant de l’ajouter.'),
     { id: 'fin', carte: 'fin' }
   ],
 
