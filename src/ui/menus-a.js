@@ -29,6 +29,7 @@ import { installSheet } from './onboarding.js';
 import { paintMenuPdf } from './pdf-porte.js';
 import { paintMenuExamen } from './examen-porte.js';
 import { aInfini } from './bridage.js';
+import { infiniAPrendre } from './plus-porte.js';
 
 /* ---------- menu contextuel ----------
    Sur ordinateur, une feuille n'est pas un tiroir de téléphone posé au
@@ -349,7 +350,8 @@ function paintMenuDeck(w) {
       <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
       <button class="mi" data-mact="mcq">${svg(I.grid)}QCM</button>
       <button class="mi" data-mact="match">${svg(I.link)}Association</button>
-      ${aInfini() ? `<button class="mi" data-mact="examen">${svg(I.target)}Objectif examen</button>` : ''}
+      ${aInfini() ? `<button class="mi" data-mact="examen">${svg(I.target)}Objectif examen</button>`
+    : infiniAPrendre() ? `<button class="mi" data-mact="examen-infini">${svg(I.target)}Objectif examen<span class="tail mi-infini">Infini</span></button>` : ''}
       <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du livre</button>
       ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}
       <div class="msep"></div>

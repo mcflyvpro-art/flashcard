@@ -297,3 +297,27 @@ test('Mirandola Infini : choisir le niveau, voir ce qu’il ajoute, s’abonner'
   await expect(page.locator('.fp-avantages')).toContainText('Tes avantages');
   await expect(page.locator('.fp-avantages')).toContainText('L’objectif examen');
 });
+
+/* Le bug du 2026-11-07 : Mirandola+ offert depuis la console pendant que
+   l'élève avait l'app ouverte — l'offre passait, mais ses onglets d'IA
+   restaient fermés « Ton établissement n'a pas ouvert l'IA » (le quota 0 de
+   son ancienne offre) jusqu'au redémarrage. Au retour sur l'app, l'offre et
+   l'IA se relisent ensemble. */
+test('Mirandola+ offert pendant que l’app est ouverte : l’IA s’ouvre sans redémarrer', async ({ page }) => {
+  const store = gratuit();
+  await brancher(page, store);
+  await inscrire(page);
+  await page.getByRole('button', { name: 'Nouveau livre' }).click();
+  await expect(page.locator('[data-cmode="ia"]')).toHaveClass(/payant/, { timeout: 10000 });
+  await page.getByRole('button', { name: 'Retour' }).first().click();
+
+  const u = store.users.find(x => x.email === 'lea@exemple.fr');
+  store.tables.abonnements = [{ user_id: u.id, source: 'offert', statut: 'actif', formule: null, fin_periode: null }];
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.locator('html')).toHaveClass(/offre-plus/, { timeout: 10000 });
+
+  await page.getByRole('button', { name: 'Nouveau livre' }).click();
+  const prompt = page.locator('[data-cmode="ia"]');
+  await expect(prompt).not.toHaveClass(/payant|ferme/);
+  await expect(prompt.locator('.cr-reste')).toHaveText('30', { timeout: 10000 });
+});

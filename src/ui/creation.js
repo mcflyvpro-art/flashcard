@@ -190,7 +190,15 @@ export function importView() {
   else bindLot(t, mode);
   paintDraft();
   bindOk(t);
-  if (!ia && !demoEtab) iaPull().then(peindreOnglets);
+  /* l'IA du mois, relue à chaque arrivée sur l'écran (au plus une fois par
+     minute) : un paiement ou un Mirandola+ offert entre-temps s'y voit aussitôt */
+  relireIA();
+}
+let iaLue = 0;
+function relireIA() {
+  if (demoEtab || (ia && Date.now() - iaLue < 60000)) return;
+  iaLue = Date.now();
+  iaPull().then(peindreOnglets);
 }
 
 /* Ce que l'IA sait du livre : son titre, sa matière, et la classe de qui

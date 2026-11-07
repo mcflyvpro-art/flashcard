@@ -38,18 +38,31 @@ export const sansFolioPlus = () => myRole === 'ref' || myRole === 'admin' || !!d
    l'écran reste dans les Réglages (gérer son abonnement). */
 export const ongletPlus = () => !sansFolioPlus() && !!offre && offre.offre === 'gratuit';
 
+// Infini peut se prendre d'ici : un compte gratuit ou Mirandola+, jamais Campus (2026-11-07)
+export const infiniAPrendre = () => !sansFolioPlus() && !!offre && (offre.offre === 'gratuit' || offre.offre === 'plus')
+  && offre.niveau !== 'infini';
+
 /* L'entrée de la barre latérale, sur ordinateur (2026-10-28) : toujours
    là pour un élève ou un professeur, en bas au-dessus des Réglages — pour
    un compte gratuit, ce qu'il peut prendre ; pour un abonné ou un compte
    d'établissement, sa licence (échéance, prix, résilier). */
 export const entreePlus = () => !sansFolioPlus() && !!offre;
 
+// un abonné Mirandola+ qui peut monter : la période qu'il paie déjà (offert : à l'année), sinon rien
+const periodeMontee = () => (offre && offre.offre === 'plus' && offre.niveau !== 'infini'
+  ? (offre.abonnement && /mensuel$/.test(offre.abonnement.formule || '') ? 'mensuel' : 'annuel') : '');
+
 /* `o` : { etape, formule, raison } — le retour de Stripe, la formule
    choisie sur le site, ce que l'élève vient de toucher (ui/bridage.js). */
 export function ouvrirPlus(o = {}) {
   // « infini_annuel » (un lien du site) : le niveau, puis la période
   const f = String(o.formule || '');
-  setPlus({ ...plusNeuf(), formule: /mensuel$/.test(f) ? 'mensuel' : 'annuel', niveau: o.niveau === 'infini' || /^infini_/.test(f) ? 'infini' : 'plus', etape: o.etape || null, raison: o.raison || null });
+  const versInfini = o.niveau === 'infini' || /^infini_/.test(f);
+  // un abonné Mirandola+ qui vient pour Infini : le choix de sa montée, tout de suite (`monter`, ui/plus.js),
+  // à la période qu'il paie déjà
+  const monter = versInfini && periodeMontee();
+  setPlus({ ...plusNeuf(), monter: !!monter,
+    formule: monter || (/mensuel$/.test(f) ? 'mensuel' : 'annuel'), niveau: versInfini ? 'infini' : 'plus', etape: o.etape || null, raison: o.raison || null });
   go('plus');
   offrePull().then(() => (offre && offre.offre !== 'gratuit' ? iaMoisPull() : null))
     .then(() => { if (view.name === 'plus') render(); });

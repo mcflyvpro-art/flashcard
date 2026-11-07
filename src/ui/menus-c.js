@@ -22,6 +22,7 @@ import {
 import { trouverParNom } from '../matieres.js';
 import { clickPdf } from './pdf-porte.js';
 import { ouvrirExamen } from './examen-porte.js';
+import { ouvrirPlus } from './plus-porte.js';
 import {
   deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
   setMeta, slugify, solveConflict, subj
@@ -522,6 +523,7 @@ const CLICK_RULES = [
   [a => a === 'sharepick', clickPkShare],
   [a => a === 'pdfopen' || (!!a && a.startsWith('pdf-')), clickPdf],
   [a => a === 'examen', () => ouvrirExamen()],
+  [a => a === 'examen-infini', () => { closeMenu(); ouvrirPlus({ niveau: 'infini', raison: 'examen' }); }],
   [a => ['rolink', 'roff', 'lccopy', 'lcshare'].includes(a), clickPartage],
   [a => a === 'duelnew2', clickDuelnew2],
   [a => a === 'versopen', clickVersopen],

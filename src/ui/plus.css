@@ -133,9 +133,12 @@
   color:var(--ink2);background:color-mix(in srgb,var(--az3) 18%,var(--card))}
 .fp-promo svg{flex:none;width:16px;height:16px;color:var(--az5)}
 
-/* Mirandola Infini (2026-11-06) : le niveau au-dessus, choisi avant la période.
-   Une pastille foncée au liseré de la marque, comme la carte de Campus. */
-.fp-infini{font-style:italic;background:linear-gradient(135deg,#243473,#5A76D0 45%,#D7648D);-webkit-background-clip:text;
+/* Mirandola Infini (2026-11-06, refait le 2026-11-07 : « vraiment
+   différencier visuellement Infini et + ») : l'or sur la nuit. Mirandola+
+   garde la lumière bleu-rose de la marque ; Infini a la sienne, chaude et
+   profonde, partout où il paraît — le titre, le choix du niveau, ses
+   avantages, son bouton, la carte de la montée. */
+.fp-infini{font-style:italic;background:linear-gradient(135deg,#8A6114,#D4A23C 38%,#F3D98C 58%,#C08B2B);-webkit-background-clip:text;
   background-clip:text;color:transparent;padding-right:.08em}
 .fp-niveaux{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:18px;background:var(--bg2);box-shadow:var(--edge)}
 .fp-n{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 8px;border:0;border-radius:13px;background:none;
@@ -143,12 +146,36 @@
 .fp-n b{font-size:15px;font-weight:750}
 .fp-n span{font-size:12px;font-weight:650;color:var(--soft)}
 .fp-n.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(29,28,25,.08),inset 0 0 0 1px var(--hair)}
-.fp-n[data-v="infini"].on{background:#1D1C19;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 6px 18px -8px #5A76D0}
-.fp-n[data-v="infini"].on span{color:rgba(255,255,255,.66)}
-.fp-av-infini .fp-av-ic{color:#fff;background:linear-gradient(135deg,#243473,#5A76D0 55%,#D7648D)}
+.fp-n[data-v="plus"].on b{background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);-webkit-background-clip:text;background-clip:text;color:transparent}
+.fp-n[data-v="infini"]:not(.on) b{color:#9A6F1E}
+.fp-n[data-v="infini"].on{background:#16130C;color:#F3D98C;box-shadow:inset 0 0 0 1px rgba(243,217,140,.35),0 8px 20px -10px rgba(190,140,40,.8)}
+.fp-n[data-v="infini"].on span{color:rgba(243,217,140,.7)}
+/* les prix d'Infini : la formule choisie cernée d'or, sa remise en or */
+.fp-offre-infini .fp-f.on{box-shadow:inset 0 0 0 2px #B8862B}
+.fp-offre-infini .fp-f-nom em{color:#1D1C19;background:linear-gradient(135deg,#D4A23C,#F3D98C)}
+.fp-payer-infini{background:#16130C;color:#F3D98C;box-shadow:inset 0 0 0 1px rgba(243,217,140,.4)}
+.fp-payer-infini:not(:disabled){box-shadow:inset 0 0 0 1px rgba(243,217,140,.4),0 14px 26px -14px rgba(190,140,40,.9)}
+.fp-av-infini .fp-av-ic{color:#16130C;background:linear-gradient(135deg,#B8862B,#F3D98C)}
 .fp-et{margin:6px 0 -2px;font-size:13px;font-weight:700;color:var(--soft)}
 .fp-av-court{gap:6px}
 .fp-av-court li{align-items:center}
-.fp-av-court .fp-av-ic{width:26px;height:26px;border-radius:8px}
+.fp-av-court .fp-av-ic{width:26px;height:26px;border-radius:8px;color:#fff;background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D)}
 .fp-av-court .fp-av-ic svg{width:14px;height:14px}
 .fp-av-court b{font-size:13.5px;font-weight:650}
+/* la montée, sous la licence d'un abonné Mirandola+ */
+.fp-montee{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:22px;color:#F6F1E3;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(212,162,60,.22),transparent 60%),#16130C;
+  box-shadow:inset 0 0 0 1px rgba(243,217,140,.22),0 18px 40px -24px rgba(120,85,20,.9)}
+.fp-m-tete{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.fp-m-tete h2{margin:0;font:600 24px/1.1 var(--serif)}
+.fp-m-tete h2 em{font-style:italic;background:linear-gradient(135deg,#D4A23C,#F3D98C 55%,#C08B2B);-webkit-background-clip:text;background-clip:text;color:transparent}
+.fp-m-tete span{font-size:13.5px;font-weight:750;color:#F3D98C;font-variant-numeric:tabular-nums}
+.fp-montee ul{display:flex;flex-direction:column;gap:9px;margin:0;padding:0;list-style:none}
+.fp-montee li{display:flex;align-items:center;gap:10px;font-size:14px}
+.fp-montee li svg{width:17px;height:17px;color:#E2B54F;flex:none}
+.fp-montee li b{font-weight:650}
+.fp-monter{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border:0;border-radius:14px;cursor:pointer;
+  font-size:15px;font-weight:750;color:#16130C;background:linear-gradient(135deg,#D4A23C,#F3D98C 55%,#C99A36)}
+.fp-monter svg{width:17px;height:17px}
+.fp-arriere{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:0;font-size:14px;font-weight:650;color:var(--soft)}
+.fp-arriere svg{width:16px;height:16px}

@@ -787,7 +787,15 @@ l'air de marcher ».
     appliquées par trois marques de la racine, `html.offre-gratuit`,
     `html.livres-plein`, `html.offre-plus`, et un écouteur en capture : un
     geste bridé ouvre l'écran Mirandola+ avec sa raison, `RAISONS`, ou la
-    fenêtre de la démo). **Une offre inconnue ne bride rien** (pas encore lue,
+    fenêtre de la démo). **L'offre se relit sans redémarrer** (2026-11-07 : un Mirandola+ offert
+    depuis la console laissait les onglets d'IA fermés « Ton établissement
+    n'a pas ouvert l'IA » jusqu'au redémarrage) : `offrePull` relit `mon_ia`
+    quand la signature de l'offre change (`signatureOffre`), le retour sur
+    l'app relit l'offre et repeint (`relireOffre` de `ui/synchro-ecran.js`,
+    écran de création compris), la création relit l'IA à chaque arrivée, et
+    `etatIA` ne ferme que Campus — une IA lue pour une autre offre attend sa
+    relecture ; parcours « sans redémarrer » de `e2e/mirandola-plus.e2e.js`.
+    **Une offre inconnue ne bride rien** (pas encore lue,
     base sans la fonction, hors ligne sans copie) : `offrePull` ne retombe
     jamais sur « gratuit », `offreLocale()` lit au démarrage la copie
     `folio.offre.<uid>`, `accueil()` la redemande avec le rôle et repeint si
@@ -877,7 +885,21 @@ l'air de marcher ».
     « ∞ » après le nom ; sur le site, le bandeau `.offre-infini` sous les
     trois offres des tarifs et deux offres en données structurées ; les
     conditions de vente § 2 bis, ses prix et le changement de formule au
-    prorata, `CGV_VERSION` 2026-11-06) — `FORMULES` de
+    prorata, `CGV_VERSION` 2026-11-06 ; **son identité, l'or sur la nuit**
+    (2026-11-07, demandé : « vraiment différencier visuellement Infini et
+    + » — Mirandola+ garde le bleu-rose de la marque) : le choix du niveau,
+    ses prix, son bouton `.fp-payer-infini`, ses avantages, et chez un
+    abonné `html.offre-infini` qui pose l'or dans `--plus` ; **la montée**
+    (« quand on a + on peut upgrade ») : sous la licence d'un abonné
+    Mirandola+, la carte `.fp-montee` (ce qu'Infini ajoute, l'écart de prix,
+    « Passer à Infini » — `peutMonter`, jamais pendant une résiliation ni un
+    impayé), qui ouvre le choix de la formule Infini à la période qu'il paie
+    déjà (`plus.monter`, `periodeMontee` de `ui/plus-porte.js`) ; par Stripe,
+    la fonction `paiement` l'envoie au portail au prorata, offert il achète
+    Infini par-dessus (essai compris) — la base locale le joue ; dans le menu
+    d'un livre, « Objectif examen » porte la pastille d'or `Infini` pour qui
+    peut le prendre (`infiniAPrendre`) et ouvre l'écran sur Infini, raison
+    `examen`) — `FORMULES` de
     `src/abonnement.js` (quatre formules, `niveauDe`, `formuleDe`), les
     prix Stripe (`PRIX` de `_shared/abonnement.js`, deux produits,
     `mirandola_plus` et `mirandola_infini`) et la page d'accueil disent la

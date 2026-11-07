@@ -68,7 +68,9 @@ export const RAISONS = {
   exercices: 'QCM et associations',
   media: 'Des images et des sons sur tes pages',
   livres: 'Ta bibliothèque est pleine : 5 livres avec Mirandola gratuit',
-  journal: 'Ton journal complet'
+  journal: 'Ton journal complet',
+  // Mirandola Infini (2026-11-07) : un geste du menu d'un livre
+  examen: 'L’objectif examen et l’examen blanc sont dans Mirandola Infini'
 };
 
 // 2999 → « 29,99 € » (espace insécable : le prix ne se coupe jamais)

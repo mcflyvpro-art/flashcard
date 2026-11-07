@@ -9,6 +9,12 @@ describe('l’IA du mois sur les onglets de la création', () => {
     expect(etatIA(null, { offre: 'campus' }).cle).toBe('inconnu');
     expect(etatIA({ fait: null, quota: null }, null).cle).toBe('inconnu');
   });
+  it('passé de gratuit à Mirandola+ (offert, payé) : l’IA lue avant ne ferme rien, on attend la relecture', () => {
+    // le bug du 2026-11-07 : « Ton établissement n’a pas ouvert l’IA » chez un compte B2C, jusqu'au redémarrage
+    expect(etatIA({ fait: 0, quota: 0, offre: 'gratuit' }, { offre: 'plus' }).cle).toBe('inconnu');
+    expect(etatIA({ fait: 0, quota: 0 }, { offre: 'plus' }).cle).toBe('inconnu');
+    expect(etatIA({ fait: 2, quota: 30, offre: 'plus' }, { offre: 'plus' }).cle).toBe('ouvert');
+  });
   it('une licence Campus qui n’accorde rien : fermé, et par qui', () => {
     const e = etatIA({ fait: 0, quota: 0 }, { offre: 'campus', etablissement: 'Lycée Camus' });
     expect(e).toEqual({ cle: 'ferme', texte: 'Ton établissement n’a pas ouvert l’IA à ton compte' });
