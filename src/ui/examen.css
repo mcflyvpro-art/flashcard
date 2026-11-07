@@ -1,0 +1,28 @@
+/* ══════════ l'objectif examen (2026-11-05, ui/examen.js, préfixe ex-) ══════════
+   Le compte à rebours en serif, comme un titre ; la prévision en azur (elle
+   se compte, src/couleurs.js) ; les deux faits du moteur en pastilles. */
+.ex-j{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 16px 14px}
+.ex-j b{font:600 46px/1 var(--serif);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.ex-j span{font-size:14px;font-weight:600;color:var(--soft);text-transform:capitalize}
+.ex-prev{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;margin:0 16px 12px;
+  padding:12px 14px;border-radius:14px;background:var(--bg2);box-shadow:var(--edge);font-size:14px;font-weight:650}
+.ex-prev i{height:8px;border-radius:99px;background:var(--az1);overflow:hidden;position:relative}
+.ex-prev i::after{content:'';position:absolute;inset:0 auto 0 0;width:var(--p);border-radius:inherit;background:var(--az5)}
+.ex-prev b{font-variant-numeric:tabular-nums;min-width:3.2em;text-align:right}
+.ex-faits{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:0 16px 12px}
+.ex-faits span{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:99px;
+  font-size:13px;font-weight:650;color:var(--soft);background:var(--bg2);box-shadow:var(--edge)}
+.ex-faits span.on{color:var(--az6);background:var(--az1);box-shadow:none}
+.ex-faits svg{width:15px;height:15px}
+.ex-f{display:flex;flex-direction:column;gap:10px;padding:2px 14px 6px}
+.ex-date{display:flex;align-items:center;gap:10px;height:52px;padding:0 14px;border-radius:14px;
+  background:var(--bg2);box-shadow:var(--edge)}
+.ex-date:focus-within{box-shadow:inset 0 0 0 1px rgba(29,28,25,.24),var(--ring)}
+.ex-date svg{width:18px;height:18px;color:var(--soft);flex:none}
+.ex-date input{flex:1;min-width:0;height:100%;font-size:16px;font-weight:600;background:none}
+.ex-f .cta{border-radius:99px}
+.ex-blanc{border-top:1px solid var(--hair);margin-top:4px;padding-top:4px}
+.ex-blanc .mi{font-weight:700}
+.ex-gestes{border-top:1px solid var(--hair);margin-top:2px;padding-top:4px}
+
+/* la pastille du livre (en tête de sa page) : posée dans app.css, `.exa` */

@@ -20,13 +20,13 @@ const pages = i => [1, 2, 3, 4].map(k => [`question ${i}.${k}`, `réponse ${i}.$
 /* L'accord avant de payer (2026-11-05) : le bouton reste éteint tant que les
    conditions de vente et le démarrage immédiat ne sont pas acceptés. */
 async function accepter(page) {
-  await expect(page.getByRole('button', { name: 'Passer à Mirandola+' })).toBeDisabled({ timeout: 10000 });
+  await expect(page.locator('.fp-payer')).toBeDisabled({ timeout: 10000 });
   await page.getByRole('checkbox', { name: /J’accepte les/ }).check();
-  await expect(page.getByRole('button', { name: 'Passer à Mirandola+' })).toBeEnabled();
+  await expect(page.locator('.fp-payer')).toBeEnabled();
 }
 
 test('un compte gratuit : l’onglet Mirandola+, le paiement, le retour ; l’onglet s’en va, Mirandola+ se voit', async ({ page }) => {
-  const store = gratuit();
+  const store = { ...gratuit(), sansEssai: true };              // un abonnement payé d'emblée : l'essai a ses parcours
   await brancher(page, store);
   await inscrire(page);
   const onglet = page.locator('.tabs [data-act="tab-plus"]');
@@ -39,16 +39,16 @@ test('un compte gratuit : l’onglet Mirandola+, le paiement, le retour ; l’on
   await expect(page.locator('.tabs [data-act="tab-plus"]')).toHaveClass(/on/);
   await expect(page.locator('.fp-avantages')).toContainText('Ce que Mirandola+ t’ouvre');
   await expect(page.getByRole('radio', { name: /Annuel/ })).toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('49,99');
+  await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('44,99');
   await page.getByRole('radio', { name: /Mensuel/ }).click();
   await expect(page.getByRole('radio', { name: /Mensuel/ })).toHaveAttribute('aria-checked', 'true');
 
   await accepter(page);
-  await page.getByRole('button', { name: 'Passer à Mirandola+' }).click();
+  await page.locator('.fp-payer').click();
   await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola+' })).toBeVisible({ timeout: 10000 });
   await expect(page).toHaveURL(/\/eleve\/mirandola-plus$/);                // ?plus=merci&session=… consommé
   await expect(page.locator('.fp-merci')).toContainText('Mensuel · renouvelé le');
-  await expect(page.getByRole('button', { name: 'Passer à Mirandola+' })).toHaveCount(0);
+  await expect(page.locator('.fp-payer')).toHaveCount(0);
   const u = store.users.find(x => x.email === 'lea@exemple.fr');
   expect(store.tables.abonnements.find(a => a.user_id === u.id)).toMatchObject({ statut: 'actif', formule: 'mensuel' });
 
@@ -72,7 +72,7 @@ test('un compte gratuit : l’onglet Mirandola+, le paiement, le retour ; l’on
   const licence = page.locator('.fp-licence');
   await expect(licence.locator('.fp-pastille')).toHaveText('Actif', { timeout: 10000 });
   await expect(licence).toContainText('Mensuelle');
-  await expect(licence).toContainText('6,99\u00a0€ par mois');
+  await expect(licence).toContainText('5,99\u00a0€ par mois');
   await expect(licence).toContainText('Prochain prélèvement');
   await expect(licence).toContainText('Carte bancaire, par Stripe');
   await expect(licence.locator('.fp-engage')).toContainText('Sans engagement');
@@ -124,17 +124,45 @@ test('le paiement pas encore branché, hors ligne : chaque cas dit ce qu’il en
   await expect(ecran(page)).toBeVisible({ timeout: 10000 });
   store.paiement = 'absent';                                             // la fonction n'est pas déployée
   await accepter(page);
-  await page.getByRole('button', { name: 'Passer à Mirandola+' }).click();
+  await page.locator('.fp-payer').click();
   await expect(page.locator('.fp-err')).toHaveText('Le paiement ouvre bientôt');
   store.paiement = 'nokey';                                              // déployée, sans clé Stripe
-  await page.getByRole('button', { name: 'Passer à Mirandola+' }).click();
+  await page.locator('.fp-payer').click();
   await expect(page.locator('.fp-err')).toHaveText('Le paiement ouvre bientôt');
   store.paiement = undefined;
   store.online = false;
   await page.evaluate(() => window.dispatchEvent(new Event('offline')));
-  await page.getByRole('button', { name: 'Passer à Mirandola+' }).click();
+  await page.locator('.fp-payer').click();
   await expect(page.locator('.fp-err')).toHaveText(/Hors ligne|ne répond pas/);
   expect(store.tables.abonnements || []).toHaveLength(0);
+});
+
+test('un code des réseaux : gardé depuis l’adresse, montré, posé sur la commande ; un code fini s’oublie', async ({ page }) => {
+  const store = gratuit();
+  await brancher(page, store);
+  await inscrire(page);
+  await page.goto('./eleve/mirandola-plus?promo=lancement');
+  await expect(page.locator('.fp-promo')).toContainText('LANCEMENT', { timeout: 10000 });
+  await expect(page).not.toHaveURL(/promo=/);                                 // l'adresse est nettoyée
+  await expect(page.locator('.fp-payer')).toContainText('Essayer 7 jours gratuits');
+  await accepter(page);
+  await page.locator('.fp-payer').click();
+  await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola+' })).toBeVisible({ timeout: 10000 });
+  expect(store.commandes.at(-1)).toEqual({ formule: 'annuel', promo: 'LANCEMENT' });
+});
+
+test('un code qui n’est plus valable : dit, oublié, le prochain appui passe sans lui', async ({ page }) => {
+  const store = gratuit();
+  await brancher(page, store);
+  await inscrire(page);
+  await page.goto('./eleve/mirandola-plus?promo=PERIME');
+  await accepter(page);
+  await page.locator('.fp-payer').click();
+  await expect(page.locator('.fp-err')).toContainText('n’est plus valable');
+  await expect(page.locator('.fp-promo')).toHaveCount(0);
+  await page.locator('.fp-payer').click();
+  await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola+' })).toBeVisible({ timeout: 10000 });
+  expect(store.commandes.at(-1).promo).toBeNull();
 });
 
 test('Stripe ramène avant que l’abonnement soit écrit : l’écran attend, puis l’ouvre', async ({ page }) => {
@@ -144,7 +172,7 @@ test('Stripe ramène avant que l’abonnement soit écrit : l’écran attend, p
   store.paiement = 'lent';
   await page.goto('./eleve/mirandola-plus');
   await accepter(page);
-  await page.getByRole('button', { name: 'Passer à Mirandola+' }).click({ timeout: 10000 });
+  await page.locator('.fp-payer').click({ timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Paiement reçu' })).toBeVisible({ timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola+' })).toBeVisible({ timeout: 15000 });
 });
@@ -178,7 +206,7 @@ test('un élève d’un établissement sous licence : Mirandola Campus, rien à 
   await expect(page.locator('.fp-licence')).toContainText('Offerte par Lycée Camus', { timeout: 10000 });
   await expect(page.locator('.fp-licence')).toContainText('Rien à payer');
   await expect(page.locator('.hero')).toContainText('Campus');
-  await expect(page.getByRole('button', { name: 'Passer à Mirandola+' })).toHaveCount(0);
+  await expect(page.locator('.fp-payer')).toHaveCount(0);
   await page.goto('./eleve/reglages');
   await expect(page.locator('[data-act="plus"]')).toContainText('Campus', { timeout: 10000 });
 });
@@ -237,7 +265,35 @@ test('dans l’app des magasins : l’achat intégré, jamais Stripe', async ({ 
   await expect(page.locator('.fp-offre')).not.toContainText('Stripe');
   await expect(page.getByRole('button', { name: 'Restaurer mes achats' })).toBeVisible();
   await accepter(page);
-  await page.getByRole('button', { name: 'Passer à Mirandola+' }).click();
+  await page.locator('.fp-payer').click();
   await expect(page.locator('.fp-err')).toHaveText('Le paiement ouvre bientôt');
   expect(store.tables.abonnements || []).toHaveLength(0);
+});
+
+/* Mirandola Infini (2026-11-06) : le niveau au-dessus, choisi avant la
+   période ; ses prix, ce qu'il ajoute, puis l'abonnement Infini et son nom
+   partout (le titre, la licence). */
+test('Mirandola Infini : choisir le niveau, voir ce qu’il ajoute, s’abonner', async ({ page }) => {
+  const store = { ...gratuit(), sansEssai: true };
+  await brancher(page, store);
+  await inscrire(page);
+  await page.locator('.tabs [data-act="tab-plus"]').click();
+  await expect(ecran(page)).toBeVisible({ timeout: 10000 });
+  await page.getByRole('radio', { name: /^Infini/ }).click();
+  await expect(page.locator('.hero')).toContainText('Mirandola Infini');
+  await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('6,67');
+  await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('79,99');
+  await expect(page.locator('.fp-avantages')).toContainText('Ce que Mirandola Infini t’ouvre');
+  await expect(page.locator('.fp-avantages')).toContainText('L’examen blanc');
+  await expect(page.locator('.fp-avantages')).toContainText('Et tout Mirandola+');
+  await page.getByRole('radio', { name: /Mensuel/ }).click();
+  await expect(page.getByRole('radio', { name: /Mensuel/ })).toContainText('9,99');
+  await accepter(page);
+  await expect(page.locator('#fp-accord')).toContainText('Mirandola Infini commence tout de suite');
+  await page.locator('.fp-payer').click();
+  await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola Infini' })).toBeVisible({ timeout: 10000 });
+  const u = store.users.find(x => x.email === 'lea@exemple.fr');
+  expect(store.tables.abonnements.find(a => a.user_id === u.id)).toMatchObject({ statut: 'actif', formule: 'infini_mensuel' });
+  await expect(page.locator('.fp-avantages')).toContainText('Tes avantages');
+  await expect(page.locator('.fp-avantages')).toContainText('L’objectif examen');
 });

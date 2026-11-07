@@ -125,4 +125,30 @@
 /* l'accord avant de payer (2026-11-05) */
 .fp-accord{display:flex;align-items:flex-start;gap:10px;margin:0;font-size:13px;font-weight:550;line-height:1.45;color:var(--ink2);cursor:pointer}
 .fp-accord input{flex:none;width:18px;height:18px;margin:1px 0 0;accent-color:var(--ink)}
-.fp-accord .lnk{padding:0;font:inherit;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+.fp-accord{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:start}
+.fp-accord > span{display:block;width:auto;grid-column:2}
+.fp-accord .lnk{display:inline;min-height:0;height:auto;margin:0;vertical-align:baseline;padding:0;font:inherit;font-weight:700;color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+/* le code d'un lien des réseaux (2026-11-05) */
+.fp-promo{display:flex;align-items:center;gap:8px;margin:0;padding:9px 12px;border-radius:12px;font-size:13px;font-weight:600;
+  color:var(--ink2);background:color-mix(in srgb,var(--az3) 18%,var(--card))}
+.fp-promo svg{flex:none;width:16px;height:16px;color:var(--az5)}
+
+/* Mirandola Infini (2026-11-06) : le niveau au-dessus, choisi avant la période.
+   Une pastille foncée au liseré de la marque, comme la carte de Campus. */
+.fp-infini{font-style:italic;background:linear-gradient(135deg,#243473,#5A76D0 45%,#D7648D);-webkit-background-clip:text;
+  background-clip:text;color:transparent;padding-right:.08em}
+.fp-niveaux{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:18px;background:var(--bg2);box-shadow:var(--edge)}
+.fp-n{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 8px;border:0;border-radius:13px;background:none;
+  color:var(--ink2);cursor:pointer;transition:background .2s var(--e),color .2s var(--e),box-shadow .2s var(--e)}
+.fp-n b{font-size:15px;font-weight:750}
+.fp-n span{font-size:12px;font-weight:650;color:var(--soft)}
+.fp-n.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(29,28,25,.08),inset 0 0 0 1px var(--hair)}
+.fp-n[data-v="infini"].on{background:#1D1C19;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 6px 18px -8px #5A76D0}
+.fp-n[data-v="infini"].on span{color:rgba(255,255,255,.66)}
+.fp-av-infini .fp-av-ic{color:#fff;background:linear-gradient(135deg,#243473,#5A76D0 55%,#D7648D)}
+.fp-et{margin:6px 0 -2px;font-size:13px;font-weight:700;color:var(--soft)}
+.fp-av-court{gap:6px}
+.fp-av-court li{align-items:center}
+.fp-av-court .fp-av-ic{width:26px;height:26px;border-radius:8px}
+.fp-av-court .fp-av-ic svg{width:14px;height:14px}
+.fp-av-court b{font-size:13.5px;font-weight:650}

@@ -77,8 +77,8 @@ export const PAGES = [
   {
     chemin: '/tarifs', fichier: 'tarifs.html', nom: 'Tarifs',
     titre: 'Tarifs : Mirandola gratuit, Mirandola+ et Mirandola Campus',
-    description: 'Mirandola est gratuit. Mirandola+ ouvre l’IA et le Memory Engine Ultra pour 4,17 € par mois à l’année. Campus : de 5 à 2 € HT par élève et par an.',
-    maj: '2026-11-04', image: '/site/og/tarifs.jpg',
+    description: 'Mirandola est gratuit. Mirandola+ ouvre l’IA et le Memory Engine Ultra dès 3,75 € par mois. Établissements : un tarif sur mesure et 30 jours d’essai.',
+    maj: '2026-11-05', image: '/site/og/tarifs.jpg',
     imageAlt: 'Les trois offres de Mirandola : gratuit, Mirandola+ et Mirandola Campus'
   },
   {

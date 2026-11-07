@@ -471,8 +471,11 @@ export function setMeta(d, patch) { d.meta = { ...metaOf(d), ...patch }; saveDec
    fois (migration 20260917200000). */
 const OUTMAX = 5000;
 
-export function enqueue(path, row) {
-  outbox.push({ path, row });
+/* `ignorer` : une ligne qui ne se modifie jamais (un examen blanc, dont la
+   table n'a pas de droit de mise à jour) se renvoie sans « merge » — un
+   upsert demanderait ce droit, et la ligne resterait bloquée en tête. */
+export function enqueue(path, row, ignorer) {
+  outbox.push(ignorer ? { path, row, ignorer: 1 } : { path, row });
   if (outbox.length > OUTMAX) outbox.splice(0, outbox.length - OUTMAX);
   save();
   scheduleFlush();
@@ -480,9 +483,9 @@ export function enqueue(path, row) {
 
 async function flushOutbox() {
   while (outbox.length) {
-    const { path, row } = outbox[0];
+    const { path, row, ignorer } = outbox[0];
     try {
-      await api(path, 'POST', [row], { Prefer: 'resolution=merge-duplicates,return=minimal' });
+      await api(path, 'POST', [row], { Prefer: `resolution=${ignorer ? 'ignore' : 'merge'}-duplicates,return=minimal` });
     } catch (e) {
       /* 4xx : le serveur a compris et refuse — réessayer à l'infini
          bloquerait tout ce qui suit. On jette cette ligne-là, bruyamment,

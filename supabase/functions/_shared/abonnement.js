@@ -10,7 +10,9 @@
    version. Même chose pour la facture, dont l'abonnement est passé sous
    `parent.subscription_details`. */
 
-export const FORMULES = ['annuel', 'mensuel'];
+// Mirandola+ et Mirandola Infini, chacun à l'année et au mois (2026-11-05)
+export const FORMULES = ['annuel', 'mensuel', 'infini_annuel', 'infini_mensuel'];
+const periodeDe = f => (String(f).endsWith('mensuel') ? 'mensuel' : 'annuel');
 
 /* Le statut Stripe → celui de la table abonnements. « past_due » : Stripe
    relance la carte pendant quelques jours, l'accès reste ouvert le temps
@@ -29,15 +31,19 @@ export const ouvre = (statut, fin, maintenant = Date.now()) =>
 const ligne = sub => (sub && sub.items && sub.items.data && sub.items.data[0]) || null;
 
 /* La formule : d'après l'identifiant du prix quand on le connaît (les prix
-   de STRIPE_PRIX_ANNUEL et STRIPE_PRIX_MENSUEL), sinon d'après sa
-   récurrence — un prix créé plus tard dans le tableau de bord de Stripe
-   reste lisible. */
+   rangés par « Brancher Stripe », ou STRIPE_PRIX_ANNUEL / _MENSUEL), puis
+   d'après sa clé de recherche (mirandola_infini_annuel…), puis d'après son
+   produit et sa récurrence — un prix créé plus tard dans le tableau de bord
+   de Stripe reste lisible. */
 export function formuleDe(sub, prix = {}) {
   const p = (ligne(sub) || {}).price || {};
-  if (p.id && p.id === prix.annuel) return 'annuel';
-  if (p.id && p.id === prix.mensuel) return 'mensuel';
-  const r = p.recurring && p.recurring.interval;
-  return r === 'year' ? 'annuel' : r === 'month' ? 'mensuel' : null;
+  const connue = FORMULES.find(f => p.id && p.id === prix[f]);
+  if (connue) return connue;
+  const parCle = FORMULES.find(f => p.lookup_key && p.lookup_key === PRIX[f].cle);
+  if (parCle) return parCle;
+  const r = p.recurring && p.recurring.interval, infini = (p.product && (p.product.id || p.product)) === PRODUITS.infini;
+  const periode = r === 'year' ? 'annuel' : r === 'month' ? 'mensuel' : null;
+  return periode && (infini ? 'infini_' + periode : periode);
 }
 
 /* Le prix d'une période, en centimes : celui du prix Stripe de
@@ -118,7 +124,16 @@ export const EVENEMENTS = [
    (à activer dans son tableau de bord ; sinon, le prix affiché est le prix
    payé, TVA française comprise). `cgv` : faire cocher les conditions de
    vente (STRIPE_CGV=1, une fois leur adresse donnée à Stripe). */
-export function demandePaiement({ formule, prix, userId, email, client, site, taxe, cgv, accord }) {
+/* Ce que l'on s'engage à payer, en une phrase : l'essai d'abord s'il y en a un. */
+export function messageEngagement(formule, essai) {
+  const suite = periodeDe(formule) === 'annuel'
+    ? 'payé pour un an, renouvelé chaque année sauf résiliation, depuis Mirandola, avant l’échéance.'
+    : 'sans engagement, résiliable à tout moment depuis Mirandola.';
+  return essai ? `${ESSAI_JOURS} jours gratuits, résiliables d’un geste avant leur fin. Ensuite : ${suite}`
+    : suite.charAt(0).toUpperCase() + suite.slice(1);
+}
+
+export function demandePaiement({ formule, prix, userId, email, client, site, taxe, cgv, accord, essai, promo }) {
   const d = {
     mode: 'subscription',
     'line_items[0][price]': prix,
@@ -138,10 +153,18 @@ export function demandePaiement({ formule, prix, userId, email, client, site, ta
     locale: 'fr',
     billing_address_collection: 'auto',
     // ce que l'on s'engage à payer, dit juste au-dessus du bouton de Stripe
-    'custom_text[submit][message]': formule === 'annuel'
-      ? 'Payé pour un an, renouvelé chaque année sauf résiliation, depuis Mirandola, avant l’échéance.'
-      : 'Sans engagement : résiliable à tout moment, depuis Mirandola.'
+    'custom_text[submit][message]': messageEngagement(formule, essai)
   };
+  /* L'essai (2026-11-05) : un premier abonnement seulement, la carte
+     demandée d'emblée, rien de prélevé avant la fin ; sans carte valide à
+     la fin, l'abonnement s'arrête au lieu de rester impayé. */
+  if (essai) {
+    d['subscription_data[trial_period_days]'] = String(ESSAI_JOURS);
+    d['subscription_data[trial_settings][end_behavior][missing_payment_method]'] = 'cancel';
+    d.payment_method_collection = 'always';
+  }
+  // un code venu d'un lien (?promo=…) est posé d'avance ; sinon la page de Stripe garde son champ
+  if (promo) { delete d.allow_promotion_codes; d['discounts[0][promotion_code]'] = promo; }
   /* l'adresse technique d'un élève à carte (…@eleves.folio.invalid) n'en
      est pas une : Stripe demandera la vraie sur sa page */
   if (client) d.customer = client; else if (email && !/\.invalid$/i.test(email)) d.customer_email = email;
@@ -158,10 +181,16 @@ export function demandePaiement({ formule, prix, userId, email, client, site, ta
    `resilier` (l'abonnement Stripe) : le portail s'ouvre droit sur sa
    résiliation — « Résilier l'abonnement » de l'écran Mirandola+ —, puis
    ramène dans l'app (2026-10-28). */
-export function demandePortail({ client, site, resilier, configuration }) {
+export function demandePortail({ client, site, resilier, changer, configuration }) {
   const retour = `${site}/app?plus=retour`;
   const d = { customer: client, return_url: retour };
   if (configuration) d.configuration = configuration;
+  /* passer de Mirandola+ à Infini (2026-11-05) : le portail s'ouvre sur le
+     changement de formule de l'abonnement qui court, au prorata */
+  if (changer) {
+    return { ...d, 'flow_data[type]': 'subscription_update', 'flow_data[subscription_update][subscription]': changer,
+      'flow_data[after_completion][type]': 'redirect', 'flow_data[after_completion][redirect][return_url]': retour };
+  }
   if (!resilier) return d;
   return {
     ...d,
@@ -181,22 +210,39 @@ export function demandePortail({ client, site, resilier, configuration }) {
    fois ; passer en vrai, c'est changer de clé et rappuyer (chaque mode a
    ses objets : `test:…`, `live:…`). Les prix sont ceux de FORMULES de
    src/abonnement.js et de la page d'accueil (test/paiement.test.js). */
-export const PRODUIT = 'mirandola_plus';
+export const PRODUITS = { plus: 'mirandola_plus', infini: 'mirandola_infini' };
+export const PRODUIT = PRODUITS.plus;
+export const produitDe = f => (String(f).startsWith('infini') ? PRODUITS.infini : PRODUITS.plus);
 export const PRIX = {
-  annuel: { centimes: 4999, intervalle: 'year', cle: 'mirandola_plus_annuel', nom: 'Mirandola+ à l’année' },
-  mensuel: { centimes: 699, intervalle: 'month', cle: 'mirandola_plus_mensuel', nom: 'Mirandola+ au mois' }
+  annuel: { centimes: 4499, intervalle: 'year', cle: 'mirandola_plus_annuel', nom: 'Mirandola+ à l’année' },
+  mensuel: { centimes: 599, intervalle: 'month', cle: 'mirandola_plus_mensuel', nom: 'Mirandola+ au mois' },
+  infini_annuel: { centimes: 7999, intervalle: 'year', cle: 'mirandola_infini_annuel', nom: 'Mirandola Infini à l’année' },
+  infini_mensuel: { centimes: 999, intervalle: 'month', cle: 'mirandola_infini_mensuel', nom: 'Mirandola Infini au mois' }
 };
+/* Le code de lancement (2026-11-05) : −20 %, sur les trois premiers mois
+   en mensuel ou sur la première année en annuel (un coupon « repeating »
+   de trois mois couvre la première facture d'un abonnement annuel), pour
+   un premier abonnement seulement. Son code se donne sur les réseaux :
+   mirandola.fr/?promo=LANCEMENT, ou à taper sur la page de paiement. */
+export const PROMO = { code: 'LANCEMENT', coupon: 'mirandola_lancement', remise: 20, mois: 3 };
+export const ESSAI_JOURS = 7;
 export const modeDeLaCle = cle => (/^[sr]k_live_/.test(String(cle)) ? 'live' : 'test');
 
-// un prix Stripe déjà là fait-il l'affaire ? (même montant, même rythme, en euros TTC, actif)
+// un prix Stripe déjà là fait-il l'affaire ? (même produit, même montant, même rythme, en euros TTC, actif)
 export const prixConforme = (p, f) => !!p && p.active !== false && p.currency === 'eur' && p.unit_amount === PRIX[f].centimes
-  && !!p.recurring && p.recurring.interval === PRIX[f].intervalle && p.tax_behavior === 'inclusive';
+  && !!p.recurring && p.recurring.interval === PRIX[f].intervalle && p.tax_behavior === 'inclusive'
+  && (p.product === produitDe(f) || (p.product && p.product.id) === produitDe(f));
 
-export const demandeProduit = () => ({ id: PRODUIT, name: 'Mirandola+', 'metadata[app]': 'mirandola' });
+export const demandeProduit = (n = 'plus') => ({ id: PRODUITS[n], name: n === 'infini' ? 'Mirandola Infini' : 'Mirandola+',
+  'metadata[app]': 'mirandola' });
 export const demandePrix = f => ({
-  product: PRODUIT, currency: 'eur', unit_amount: String(PRIX[f].centimes), 'recurring[interval]': PRIX[f].intervalle,
+  product: produitDe(f), currency: 'eur', unit_amount: String(PRIX[f].centimes), 'recurring[interval]': PRIX[f].intervalle,
   tax_behavior: 'inclusive', lookup_key: PRIX[f].cle, transfer_lookup_key: 'true', nickname: PRIX[f].nom
 });
+export const demandeCoupon = () => ({ id: PROMO.coupon, percent_off: String(PROMO.remise), duration: 'repeating',
+  duration_in_months: String(PROMO.mois), name: `Lancement −${PROMO.remise} %`, 'metadata[app]': 'mirandola' });
+export const demandeCodePromo = () => ({ coupon: PROMO.coupon, code: PROMO.code,
+  'restrictions[first_time_transaction]': 'true', 'metadata[app]': 'mirandola' });
 export const demandeWebhook = url => {
   const d = { url, description: 'Mirandola : abonnements', 'metadata[app]': 'mirandola' };
   EVENEMENTS.forEach((e, i) => { d[`enabled_events[${i}]`] = e; });
@@ -208,7 +254,7 @@ export const webhookConforme = (w, url) => !!w && w.url === url && w.status === 
 
 /* Le portail client : moyen de paiement, factures, adresse, passer d'une
    formule à l'autre, résilier à la fin de la période. */
-export function demandePortailConfig({ site, annuel, mensuel }) {
+export function demandePortailConfig({ site, annuel, mensuel, infini_annuel, infini_mensuel }) {
   return {
     'business_profile[headline]': 'Mirandola+',
     default_return_url: `${site}/app?plus=retour`,
@@ -226,6 +272,12 @@ export function demandePortailConfig({ site, annuel, mensuel }) {
     'features[subscription_update][products][0][product]': PRODUIT,
     'features[subscription_update][products][0][prices][0]': annuel,
     'features[subscription_update][products][0][prices][1]': mensuel,
+    // passer de Mirandola+ à Infini (ou revenir) depuis le portail, au prorata
+    ...(infini_annuel && infini_mensuel ? {
+      'features[subscription_update][products][1][product]': PRODUITS.infini,
+      'features[subscription_update][products][1][prices][0]': infini_annuel,
+      'features[subscription_update][products][1][prices][1]': infini_mensuel
+    } : {}),
     'metadata[app]': 'mirandola'
   };
 }

@@ -26,7 +26,7 @@ export const AIERR = {
   big: 'Fichier trop lourd', mime: 'Format non reconnu',
   nokey: 'IA non configurée', empty: 'Rien à extraire',
   plus: 'L’IA est dans Mirandola+', mquota: 'Ton IA du mois est épuisée : la suite le 1er',
-  demo: 'Avec un compte Mirandola',
+  demo: 'Avec un compte Mirandola', infini: 'L’examen blanc est dans Mirandola Infini',
   // ce que la fonction ai rend quand rien n'a marché (2026-10-29) : rien n'est compté
   surcharge: 'L’IA est très demandée : réessaie dans une minute',
   credit: 'L’IA fait une courte pause : réessaie un peu plus tard',
@@ -55,6 +55,7 @@ export async function aiCall(payload, tout) {
   const j = await r.json().catch(() => ({}));
   if (j.mois) setIa(compter(ia, j.mois));
   if (!r.ok) throw new Error(codeErreur(j.error));
+  if (tout === 'brut') return j;                 // l'examen blanc : le sujet ou la correction, relus par src/examen-blanc.js
   const cards = (j.cards || []).map(c => ({
     f: String(c.f || '').replace(/[\t\r\n]+/g, ' ').trim(),
     b: String(c.b || '').replace(/[\t\r\n]+/g, ' ').trim()
@@ -71,7 +72,7 @@ export async function aiCall(payload, tout) {
    limitent le travail. */
 const IMGMAX = 1568;
 
-function shrink(file) {
+export function shrink(file) {
   return new Promise((res, rej) => {
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {

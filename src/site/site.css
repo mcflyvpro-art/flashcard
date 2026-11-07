@@ -762,27 +762,27 @@ button{font:inherit;color:inherit}
 .comparatif.vu tbody tr{opacity:1;transform:none;transition:opacity .6s var(--e),transform .6s var(--e);transition-delay:calc(var(--i,0) * 45ms + .15s)}
 
 /* combien pour mon établissement : la grille dégressive (src/tarifs.js) */
-.calcul{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px 40px;align-items:center;margin-top:clamp(40px,6vw,64px);
-  padding:clamp(24px,3.4vw,40px);border-radius:30px;background:var(--carte);box-shadow:var(--ombre1),inset 0 0 0 1px var(--filet)}
-.calcul-tete h3{font:700 clamp(24px,2.6vw,30px)/1.15 var(--serif);letter-spacing:-.02em}
-.calcul-tete p{margin-top:10px;color:var(--encre2);font-size:16px;line-height:1.5}
-.calcul-corps{display:flex;flex-direction:column;gap:14px;grid-row:span 2}
-.calcul-champ{display:flex;align-items:center;justify-content:space-between;gap:14px;font-weight:650;color:var(--encre2)}
-.calcul-champ input{width:110px;height:48px;padding:0 14px;border:0;border-radius:14px;background:var(--papier);box-shadow:inset 0 0 0 1px var(--filet2);
-  font:700 20px var(--sans);text-align:right;color:var(--encre);font-variant-numeric:tabular-nums}
-.calcul-champ input:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--az4)}
-#calcul-curseur{width:100%;accent-color:var(--az5)}
-.calcul-total{color:var(--doux);font-weight:650;line-height:1.4}
-.calcul-total b{display:block;font:700 clamp(36px,4vw,48px)/1.05 var(--serif);letter-spacing:-.03em;color:var(--encre);font-variant-numeric:tabular-nums}
 .tranches{width:100%;border-collapse:collapse;font-size:15px}
 .tranches th{padding:0 0 8px;text-align:left;font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--doux)}
 .tranches th:last-child,.tranches td:last-child{text-align:right}
 .tranches td{padding:10px 0;border-top:1px solid var(--filet);font-weight:650;color:var(--encre2);font-variant-numeric:tabular-nums;transition:color .3s}
 .tranches tr.ici td{color:var(--az5)}
 .tranches tr.ici td:first-child{box-shadow:inset 3px 0 0 var(--az4);padding-left:10px;transition:padding .3s var(--e)}
-.calcul-pied{grid-column:1 / -1;margin:0}
 
 /* les professeurs particuliers */
+/* Mirandola Infini (2026-11-06) : un bandeau sous les trois offres, le niveau au-dessus de Mirandola+ */
+.offre-infini{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr) auto;gap:18px 36px;align-items:center;margin-top:18px;
+  padding:26px 30px;border-radius:30px;color:var(--creme);background:linear-gradient(135deg,#141b3d,#1d1c19 55%,#2b1730);
+  box-shadow:var(--ombre1),inset 0 0 0 1px rgba(243,238,227,.08)}
+.offre-infini :is(h2,h3){font:700 26px/1.1 var(--serif);letter-spacing:-.02em}
+.offre-infini h3 em,.offre-infini h2 em{font-style:italic;background:linear-gradient(135deg,#8DA2F0,#B996EC 50%,#F38DB2);-webkit-background-clip:text;background-clip:text;color:transparent}
+.offre-infini .prix{margin-top:12px;min-height:0}
+.offre-infini .prix b{font-size:clamp(36px,3.6vw,46px)}
+.offre-infini .prix span,.offre-infini .prix-note{color:var(--creme2)}
+.offre-infini .prix-note{min-height:0;margin:6px 0 0}
+.offre-infini .bt{background:var(--creme);color:var(--encre);box-shadow:none;white-space:nowrap}
+.offre-infini .inclus{margin:0;padding:0 0 0 30px;border:0;border-left:1px solid rgba(243,238,227,.14);gap:9px}
+.offre-infini .inclus li:not(:has(b))::before{background-color:rgba(141,162,240,.18);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A9B9F6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
 .particulier{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px 32px;align-items:center;margin-top:18px;
   padding:clamp(22px,3vw,34px);border-radius:30px;background:var(--papier2);box-shadow:inset 0 0 0 1px var(--filet)}
 .particulier :is(h2,h3){grid-column:1 / -1;font:700 clamp(22px,2.4vw,27px)/1.2 var(--serif);letter-spacing:-.02em}
@@ -791,8 +791,6 @@ button{font:inherit;color:inherit}
 .particulier li .ic{flex:none;width:20px;height:20px;margin-top:1px;color:var(--ok);stroke-width:2.6}
 .particulier li b{color:var(--encre)}
 @media (max-width:860px){
-  .calcul{grid-template-columns:minmax(0,1fr)}
-  .calcul-corps{grid-row:auto}
   .particulier{grid-template-columns:minmax(0,1fr)}
   .particulier .bt{justify-self:start}
 }
@@ -888,6 +886,9 @@ button{font:inherit;color:inherit}
   .tete-liens,.tete-code,.tete-connexion{display:none}
   .burger{display:inline-flex}
   .offres{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto}
+  .offre-infini{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto;padding:28px 26px}
+  .offre-infini .inclus{padding:20px 0 0;border-left:0;border-top:1px solid rgba(243,238,227,.14)}
+  .offre-infini .bt{width:100%}
   .offre-plus,.offres .offre-plus.rv.vu{transform:none}
   .etapes{grid-template-columns:minmax(0,1fr);max-width:520px;margin-inline:auto}
   .roles{grid-template-columns:minmax(0,1fr);max-width:520px}

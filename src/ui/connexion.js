@@ -29,6 +29,8 @@ import { CONTACT, EDITEUR } from '../editeur.js';
 import { armer, desarmer, installee, synchroniser } from './routeur.js';
 import { chargerDemo } from './demo-porte.js';
 import { etatVerif, ouvrirVerif, verifView } from './mdp-porte.js';
+import { aInfini } from './bridage.js';
+import { compte } from '../examen.js';
 
 /* ---------- sélection multiple ----------
    `sel` est nul hors du mode ; sinon c'est l'ensemble des cartes cochées.
@@ -69,7 +71,10 @@ function ctaButton(d) {
 }
 
 function deckHeadMeta(d) {
-  return d.hidden ? `<span>${svg(I.eyeoff)}Masqué</span>` : '';
+  // l'objectif examen (Mirandola Infini) : « J-12 », qui rouvre sa feuille
+  const j = aInfini() && d.meta ? compte(d.meta.examen, Date.now()) : '';
+  return (j ? `<button class="exa" data-mact="examen">${svg(I.target)}${j}</button>` : '')
+    + (d.hidden ? `<span>${svg(I.eyeoff)}Masqué</span>` : '');
 }
 
 function findButton(d) {

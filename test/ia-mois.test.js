@@ -29,4 +29,11 @@ describe('l’IA du mois sur les onglets de la création', () => {
     expect(compter({ fait: 3, quota: 30 }, { fait: 4, quota: null })).toEqual({ fait: 4, quota: 30 });
     expect(compter({ fait: 3, quota: 30 }, null)).toEqual({ fait: 3, quota: 30 });
   });
+  it('Infini (2026-11-05) : sans compter, jamais épuisé ; le compte d’une réponse le garde', () => {
+    const e = etatIA({ fait: 400, quota: 150, sans_compter: true }, { offre: 'plus' });
+    expect(e.cle).toBe('infini');
+    expect(e.reste).toBeUndefined();
+    expect(compter({ fait: 3, quota: 150, sans_compter: true }, { fait: 4, quota: 150 }).sans_compter).toBe(true);
+    expect(compter({ fait: 3, quota: 30 }, { fait: 4, quota: 150, sans_compter: true }).sans_compter).toBe(true);
+  });
 });

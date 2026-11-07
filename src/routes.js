@@ -42,6 +42,7 @@ export const ROUTES = [
   R('import', 'livres/nouveau'),
   R('deck', 'livres/:id'),
   R('study', 'livres/:id/lecture', { repli: 'deck' }),
+  R('examen', 'livres/:id/examen-blanc', { repli: 'deck' }),
   R('import', 'livres/:id/ajouter'),
   R('run', 'quiz', { repli: 'home' }),
   R('stats', 'journal'),

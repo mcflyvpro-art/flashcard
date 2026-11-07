@@ -88,12 +88,13 @@ function codeDe(e) {
 /* `action` : « payer » (avec la formule) ou « gerer ». Rend l'adresse de la
    page Stripe ; sinon lève une Error dont le message est un code de
    src/abonnement.js (erreurDe). */
-export async function versStripe(action, formule, accord) {
+export async function versStripe(action, formule, accord, promo) {
   if (demoEtab) throw new Error('demo');
   if (!online) throw new Error('hors');
   let r;
   // l'accord (conditions de vente et démarrage immédiat) ne voyage qu'avec un paiement
-  const corps = action === 'payer' ? { action, formule, cgv: accord ? CGV_VERSION : null } : { action, formule };
+  const corps = action === 'payer' ? { action, formule, cgv: accord ? CGV_VERSION : null, promo: promo || undefined }
+    : { action, formule };
   try { r = await api('/functions/v1/paiement', 'POST', corps); }
   catch (e) { throw new Error(codeDe(e), { cause: e }); }
   if (!r || typeof r.url !== 'string' || !/^https:\/\//.test(r.url) && !r.url.startsWith('/app?')) throw new Error('stripe');

@@ -190,26 +190,14 @@ describe('Mirandola+ et les appareils', async () => {
   });
 });
 
-/* La grille Campus de la page (le calculateur, son tableau, la FAQ) est
-   celle de src/tarifs.js, la même que la console de l'éditeur. */
-describe('le prix d’une licence d’établissement', async () => {
-  const { TRANCHES, MINIMUM } = await import('../src/tarifs.js');
+/* Campus sur devis (décidé le 2026-11-05 : « pour le B2B, pas de valeur
+   dans la présentation ») : aucun prix d'établissement sur la page — la
+   grille de src/tarifs.js reste celle de la console de l'éditeur, qui fait
+   les devis. */
+describe('Mirandola Campus, sur devis', () => {
   const plat = s => s.replace(/&nbsp;|&#8239;|\u00a0|\u202f/g, ' ').replace(/\s+/g, ' ');
-  const page = plat(html);
-  const euro = c => (c / 100).toFixed(2).replace('.', ',').replace(',00', '') + ' €';
-  it('chaque tranche du tableau a le prix de la grille', () => {
-    const lignes = [...html.matchAll(/<tr data-tranche="(\d)"><td>[^<]*<\/td><td>([^<]*)<\/td><\/tr>/g)];
-    expect(lignes).toHaveLength(TRANCHES.length);
-    for (const [, i, prix] of lignes) expect(plat(prix)).toBe(euro(TRANCHES[+i].prix) + ' HT');
-  });
-  it('le total écrit dans la page (avant tout script) est celui de sa valeur de départ', async () => {
-    const { prixCampus } = await import('../src/tarifs.js');
-    const places = +html.match(/id="calcul-places"[^>]*value="(\d+)"/)[1];
-    const total = plat(html.match(/<b id="calcul-prix">([^<]*)<\/b>/)[1]);
-    expect(total).toBe(euro(prixCampus(places)).replace(/(\d)(\d{3}) €/, '$1 $2 €') + ' HT');
-  });
-  it('le minimum et les bornes des tranches sont ceux de la grille', () => {
-    expect(page).toContain(euro(MINIMUM) + ' HT minimum');
-    for (const t of TRANCHES.slice(0, -1)) expect(page).toMatch(new RegExp(`à ${t.jusqua.toLocaleString('fr-FR').replace(/\s/g, ' ')}\\b`));
+  it('ni prix par place, ni calculateur, ni minimum', () => {
+    expect(html).not.toMatch(/€\s*HT|calcul-campus|par place et par an/);
+    expect(plat(html)).toMatch(/Sur devis/);
   });
 });

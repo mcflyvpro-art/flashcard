@@ -8,6 +8,7 @@ import {
   reorder, setAnimate, setDeckOpen, setDeckQ, setDeckShow, setLiveAt, setLiveSoon, setLiveT,
   setPageDir, setPreviewOf, setView, view
 } from '../data/etat.js';
+import { examenView } from './examen-porte.js';
 import { commuPull, commuView, friendsView, profilView } from './cercle.js';
 import { clubPull, clubView } from './club.js';
 import { defiView } from './defi-nouveau.js';
@@ -119,7 +120,8 @@ export function render() {
               prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
               ref: refView,
               admin: adminView,
-              commu: commuView, friends: friendsView, profil: profilView, club: clubView, defi: defiView, direct: directView };
+              commu: commuView, friends: friendsView, profil: profilView, club: clubView, defi: defiView, direct: directView,
+              examen: examenView };
   /* Seul un vrai changement d'écran s'anime (mouvement.js) : redemander
      l'écran où l'on est — un onglet touché dix fois, une réponse qui
      arrive, une case cochée — ne rejoue rien. */

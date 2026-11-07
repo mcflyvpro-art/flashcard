@@ -13,7 +13,7 @@
 import { modele } from './classes.js';
 import { etab, orgDe } from './etablissement.js';
 import { licenceProf } from './licences.js';
-import { offreDe } from './abonnements.js';
+import { enEssai, niveauDuCompte, offreDe } from './abonnements.js';
 
 const auj = () => new Date().toISOString().slice(0, 10);
 const usage = store => (store.tables.ai_usage = store.tables.ai_usage || []);
@@ -32,10 +32,13 @@ function iaQuota(store, uid) {
   return c ? licenceProf(store, c.owner).ia_eleve : null;
 }
 
+// mon_ia (migration infini_et_essai) : l'essai 10, Infini 150 puis sans compter, un professeur 400, un élève 30
 export function monIa(store, uid) {
-  const q = iaQuota(store, uid), offre = offreDe(store, uid);
+  const q = iaQuota(store, uid), offre = offreDe(store, uid), niveau = niveauDuCompte(store, uid), essai = enEssai(store, uid);
   const prof = ['prof', 'ref', 'admin'].includes(modele(store).roles[uid]);
-  return { fait: faitDuMois(store, uid), quota: q ?? (offre === 'gratuit' ? 0 : prof ? 400 : 30), licence: q != null, offre };
+  const quota = q ?? (offre === 'gratuit' ? 0 : essai ? 10 : niveau === 'infini' ? 150 : prof ? 400 : 30);
+  return { fait: faitDuMois(store, uid), quota, licence: q != null, offre, niveau, essai,
+    sans_compter: niveau === 'infini' && !essai };
 }
 
 export const rpcIa = (store, nom, user) => (nom === 'mon_ia' ? [200, monIa(store, user.id)] : null);
@@ -61,14 +64,44 @@ function retoucher(cartes, msg) {
   return { cards, note: `${cards.length} pages${nouvelles.length && cartes.length ? `, dont ${nouvelles.length} ajoutées` : ''}.` };
 }
 
+/* L'examen blanc (2026-11-06), joué sans modèle : le sujet reprend les
+   premières pages, recto en question, verso attendu ; la correction compare
+   chaque réponse à l'attendu, sans casse ni espaces — juste : rien de plus ;
+   faux : la correction et un conseil. Une copie photographiée se lit dans
+   `store.copieLue` (les réponses qu'un parcours y a « écrites »). */
+const egal = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+
+function examenFaux(store, b) {
+  if (b.op === 'examen') {
+    const pages = (b.cards || []).slice(0, Math.max(1, +b.n || 10));
+    return { sujet: { questions: pages.map((c, i) => ({ q: String(c.f || ''), attendu: String(c.b || ''), pages: [i] })) } };
+  }
+  const sujet = b.sujet || [];
+  const rep = (b.photos || []).length ? (store.copieLue || []) : (b.reponses || []);
+  return { correction: {
+    bilan: 'Tes erreurs portent sur les dates : reprends-les d’abord.',
+    questions: sujet.map((q, i) => (egal(rep[i], q.attendu)
+      ? { lu: rep[i], sur: 1, points: 1, ok: true, correction: '', conseil: '' }
+      : { lu: rep[i] || '', sur: 1, points: 0, ok: false, correction: `C’est « ${q.attendu} ».`,
+        conseil: rep[i] ? `Tu as confondu avec « ${rep[i]} » : associe « ${q.q} » à « ${q.attendu} ».` : 'Réponds même sans être sûr : une piste vaut des points.' }))
+  } };
+}
+
 export function aiFaux(store, b, user) {
   const ia = monIa(store, user.id);
   if (ia.offre === 'gratuit') return [402, { error: 'plus' }];
-  const mois = { fait: ia.fait, quota: ia.quota };
-  if (ia.fait >= ia.quota) return [429, { error: 'mquota', quota: ia.quota, mois }];
+  if ((b.op === 'examen' || b.op === 'corriger') && ia.niveau !== 'infini') return [402, { error: 'infini' }];
+  // Infini (2026-11-05) : au-delà de ses 150, la vraie passe sur Haiku, jamais « mquota »
+  const mois = { fait: ia.fait, quota: ia.quota, sans_compter: !!ia.sans_compter };
+  if (ia.fait >= ia.quota && !ia.sans_compter) return [429, { error: 'mquota', quota: ia.quota, mois }];
   // une panne jouée par un parcours (store.iaPanne : « credit », « surcharge »…) : rien n'est compté, comme en vrai
   if (store.iaPanne) return [503, { error: store.iaPanne, mois }];
   const op = String(b.op || '');
+  if (op === 'examen' || op === 'corriger') {
+    usage(store).push({ user_id: user.id, day: auj(), op, cents: 1 });
+    mois.fait += 1;
+    return [200, { ...examenFaux(store, b), mois }];
+  }
   let r;
   if (op === 'prompt') r = retoucher((b.cards || []).map(c => ({ f: String(c.f || ''), b: String(c.b || '') })), String(b.message || ''));
   else if (op === 'cards') r = { cards: lignes(b.text), note: '' };

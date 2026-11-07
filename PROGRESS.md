@@ -28,7 +28,32 @@ DERNIER   2026-11-06 · Suite du débogage. M10.T3 cochée : les 156
           ESLint, sans surface). Le tuto du professeur s'arrêtait sur sa
           dernière étape dans les parcours : la borne du test, pas l'app.
           La CSP appliquée vérifiée en production.
-Avant :   2026-11-05 · Session de débogage, demandée : « que tout soit
+Avant :   2026-11-06 · Mirandola Infini se montre : l'écran Mirandola+
+          choisit le niveau puis la période (e2e/mirandola-plus.e2e.js),
+          la licence et l'engagement disent son nom, « ∞ » et sa lumière
+          chez un abonné ; le site a son bandeau sous les offres et ses
+          deux offres en données structurées ; conditions de vente § 2 bis
+          (CGV 2026-11-06). docs/ENTREPRISE.md : la forme d'entreprise,
+          ses coûts, les démarches, sources datées. Avant :
+          2026-11-06 · L'examen blanc de Mirandola Infini : l'IA compose
+          un sujet depuis un livre (les pages qui résistent d'abord), la
+          copie se tape ou se photographie (8 pages), l'IA corrige — rien
+          sur ce qui est juste, la correction et un conseil sur le reste —,
+          note sur 20, « Revoir N pages ». Table examens (migration
+          20261106054530, supabase/tests/examens.sql 13/13), règles dans
+          src/examen-blanc.js (test/examen-blanc.test.js 8/8), parcours
+          e2e/examen.e2e.js ; fonction ai : ops examen et corriger (pas
+          encore déployée). Avant :
+          2026-11-06 · Mirandola Infini, ses premiers avantages : l'IA
+          sans compter (150 sur le meilleur modèle puis Haiku, gros
+          documents ; posée sur la réservation de l'IA de main, fonction
+          ai pas encore redéployée) et l'objectif examen (src/examen.js :
+          95 % visés à 30 jours, rien après le jour J ; test/examen.test.js
+          9/9, e2e/examen.e2e.js). Avant, les prix : Mirandola+ 5,99 € /
+          44,99 €, Infini 9,99 € / 79,99 €, essai de 7 jours, code
+          LANCEMENT, Campus sur devis (paiement et stripe-webhook à
+          déployer). Et, d'une autre session :
+          2026-11-05 · Session de débogage, demandée : « que tout soit
           nickel, fais-toi attaquer ». Le partage d'un livre passe par un
           CODE (« J'ai un code », dans Nouveau livre et les Réglages ; le
           lien attend la connexion ou l'app installée) ; shared_deck ne

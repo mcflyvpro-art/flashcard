@@ -101,8 +101,10 @@ Deno.serve(async (req) => {
         console.error("webhook sans compte", ev.id, sub.id);
       } else {
         const r = reglagesDuMode(lignes, modeDeLaCle(cle));
+        // les quatre prix rangés par « Brancher Stripe » (ceux posés à la main passent avant)
         const prix = { annuel: Deno.env.get("STRIPE_PRIX_ANNUEL") || r.prix_annuel,
-          mensuel: Deno.env.get("STRIPE_PRIX_MENSUEL") || r.prix_mensuel };
+          mensuel: Deno.env.get("STRIPE_PRIX_MENSUEL") || r.prix_mensuel,
+          infini_annuel: r.prix_infini_annuel, infini_mensuel: r.prix_infini_mensuel };
         const nouvelle = ligneAbonnement(sub, uid, prix);
         const [actuelle] = (await base(`abonnements?select=*&user_id=eq.${uid}&source=eq.stripe`)) ?? [];
         if (aEcrire(actuelle, nouvelle)) {

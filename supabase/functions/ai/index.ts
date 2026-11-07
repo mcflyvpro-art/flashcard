@@ -78,6 +78,13 @@ const DAILY_PROF = Number(Deno.env.get("AI_DAILY_PROF") ?? 80);
 const DAILY_FILES_PROF = Number(Deno.env.get("AI_DAILY_FILES_PROF") ?? 30);
 const MAX_CHARS = 24000;
 const MAX_CARDS = 120;
+/* Mirandola Infini (2026-11-05) : l'IA sans compter — 150 générations par
+   mois sur le meilleur modèle, puis Claude Haiku 5.5 (vingt fois moins
+   cher) sans limite de mois, sous usage raisonnable (60 appels et 20
+   fichiers par jour) —, des documents plus gros, plus de pages, une
+   conversation plus longue. L'essai, lui, s'arrête à 10. */
+const INFINI = { premium: 150, jour: 60, fichiers: 20, cartes: 300, hist: 40, pdf: 20 * 1024 * 1024, jetons: 32000 };
+const ESSAI = 10;
 /* en octets une fois décodé — l'API accepte 5 Mo par image, 32 Mo par PDF,
    mais on reste bien en dessous : au-delà, c'est la facture qui parle */
 const MAX_IMG = 4 * 1024 * 1024;
@@ -112,10 +119,10 @@ type Essai =
 /* Un appel à l'API Messages, modèle par modèle (MODELES). Ce qui revient
    d'Anthropic en erreur part au journal de la fonction (le type et le
    message de l'API, jamais la demande de l'élève). */
-async function demander(corps: Record<string, unknown>, key: string): Promise<Essai> {
+async function demander(corps: Record<string, unknown>, key: string, modeles = MODELES): Promise<Essai> {
   const debut = Date.now();
   let dernier: Essai = { ok: false, erreur: "upstream", statut: 502 };
-  for (const [i, modele] of MODELES.entries()) {
+  for (const [i, modele] of modeles.entries()) {
     if (i && Date.now() - debut > BUDGET_MS) break;
     if (i) await new Promise((r) => setTimeout(r, 400 * i));
     let res: Response;
@@ -245,6 +252,79 @@ const SCHEMA_PROMPT = {
   additionalProperties: false,
 };
 
+/* L'examen blanc de Mirandola Infini (2026-11-06) : composer un sujet à
+   partir des pages d'un livre, puis corriger une copie — tapée ou
+   photographiée. La correction ne commente pas ce qui est juste : c'est sur
+   ce qui est faux que l'élève a besoin d'un vrai conseil. L'app revérifie
+   tout ce qui revient (src/examen-blanc.js). */
+const SYSTEM_EXAMEN = `Tu es un professeur exigeant et bienveillant. Tu composes un examen blanc à partir des pages d'un livre de révision : chaque page est numérotée, son recto ⟶ son verso.
+
+Compose exactement le nombre de questions demandé, dans un ordre qui monte en difficulté :
+- surtout de la restitution (le recto donné, retrouver le verso) ;
+- quelques questions inverses (le verso donné, retrouver le recto) ;
+- une ou deux questions qui demandent de relier plusieurs pages (comparer, expliquer une cause, ordonner des dates) ;
+- jamais deux questions sur la même chose.
+
+Chaque question : q l'énoncé, clair, sans la réponse dedans ; attendu la réponse attendue, juste et courte ; pages les numéros des pages sur lesquelles elle s'appuie.
+N'invente rien qui ne soit pas dans les pages. Respecte la langue et l'orthographe des pages. Vise le niveau du contexte quand il est donné.`;
+
+const SYSTEM_CORRIGER = `Tu corriges l'examen blanc d'un élève. Tu reçois le sujet (chaque question et sa réponse attendue) et sa copie : ses réponses tapées, ou les photos de sa copie manuscrite (plusieurs pages possibles, dans l'ordre ; les réponses y sont numérotées comme les questions, sinon retrouve-les par leur sens).
+
+Pour chaque question, dans l'ordre du sujet :
+- lu : la réponse de l'élève telle qu'il l'a écrite, mot pour mot (transcris l'écriture manuscrite ; vide s'il n'a rien répondu ; « illisible » si tu ne peux pas la lire) ;
+- sur : le barème, de 1 à 4 selon la difficulté de la question ;
+- points : ce que la réponse mérite, par demi-point ;
+- ok : vrai seulement si la réponse est juste et complète ;
+- correction : VIDE si la réponse est juste. Sinon la bonne réponse, en une ou deux phrases ;
+- conseil : VIDE si la réponse est juste. Sinon un conseil concret pour ne plus se tromper : nomme l'erreur exacte (confusion avec quoi, oubli de quoi), puis un moyen précis de la retenir. Jamais de généralité (« relis ton cours »), jamais de compliment.
+
+Sois juste : une réponse correcte dite autrement est juste ; une faute d'orthographe qui ne change pas le sens ne coûte rien, sauf si la question porte sur l'orthographe ; une réponse vague ou incomplète n'a qu'une partie des points.
+
+bilan : deux phrases au plus, en tutoyant : ce qui revient dans les erreurs et ce qu'il faut travailler d'abord. Ni félicitations ni formule.`;
+
+const SCHEMA_EXAMEN = {
+  type: "object",
+  properties: {
+    questions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { q: { type: "string" }, attendu: { type: "string" }, pages: { type: "array", items: { type: "integer" } } },
+        required: ["q", "attendu", "pages"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["questions"],
+  additionalProperties: false,
+};
+
+const SCHEMA_CORRIGER = {
+  type: "object",
+  properties: {
+    bilan: { type: "string" },
+    questions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          lu: { type: "string" }, sur: { type: "integer" }, points: { type: "number" }, ok: { type: "boolean" },
+          correction: { type: "string" }, conseil: { type: "string" },
+        },
+        required: ["lu", "sur", "points", "ok", "correction", "conseil"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["bilan", "questions"],
+  additionalProperties: false,
+};
+
+const EXAMEN_PAGES = 300;     // pages données pour composer
+const EXAMEN_QUESTIONS = 30;  // questions d'un sujet, au plus
+const EXAMEN_PHOTOS = 8;      // pages de copie manuscrite
+const EXAMEN_REPONSE = 1500;  // une réponse tapée, en caractères
+
 const MAX_HIST = 12;      // les messages d'avant qu'on rappelle au modèle
 const MAX_PAGE = 600;     // un recto ou un verso, en caractères
 
@@ -271,15 +351,62 @@ Deno.serve(async (req) => {
   if (!uid) return json({ error: "auth" }, 401);
 
   let body: { op?: string; text?: string; hint?: string; data?: string; mime?: string; pages?: string;
-    message?: string; cards?: unknown; historique?: unknown };
+    message?: string; cards?: unknown; historique?: unknown; n?: unknown; sujet?: unknown; reponses?: unknown;
+    photos?: unknown };
   try {
     body = await req.json();
   } catch {
     return json({ error: "body" }, 400);
   }
   const op = String(body.op ?? "");
-  if (op !== "cards" && op !== "ocr" && op !== "pdf" && op !== "prompt") return json({ error: "op" }, 400);
+  if (!["cards", "ocr", "pdf", "prompt", "examen", "corriger"].includes(op)) return json({ error: "op" }, 400);
   const isFile = op === "ocr" || op === "pdf";
+  const examen = op === "examen" || op === "corriger";
+
+  /* Ce que ce compte a le droit de faire, en une lecture (ia_droits,
+     migration infini_et_essai) : son offre, son niveau, l'essai, s'il est
+     professeur, le quota de sa licence. Une base sans la fonction laisse
+     passer, comme avant. */
+  const { data: droits, error: sansOffre } = await admin.rpc("ia_droits", { u: uid });
+  const d = (droits ?? {}) as { offre?: string; niveau?: string; essai?: boolean; prof?: boolean; licence?: number | null };
+  const infini = !sansOffre && d.niveau === "infini" && !d.essai;
+  const prof = !!d.prof;
+  const maxCartes = infini ? INFINI.cartes : MAX_CARDS;
+  const maxHist = infini ? INFINI.hist : MAX_HIST;
+  const maxPdf = infini ? INFINI.pdf : MAX_PDF;
+
+  // l'examen blanc est à Mirandola Infini, son essai compris (ses 10 générations)
+  if (examen && !sansOffre && d.niveau !== "infini") return json({ error: "infini" }, 402);
+  const ligne = (v: unknown, n: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+  let pagesEx: { f: string; b: string }[] = [], nEx = 0;
+  let sujet: { q: string; attendu: string }[] = [], reponses: string[] = [];
+  let photos: { mime: string; data: string }[] = [];
+  if (op === "examen") {
+    const brutes = Array.isArray(body.cards) ? body.cards.slice(0, EXAMEN_PAGES) : [];
+    pagesEx = brutes.map((c) => {
+      const x = (c ?? {}) as { f?: unknown; b?: unknown };
+      return { f: ligne(x.f, MAX_PAGE), b: ligne(x.b, MAX_PAGE) };
+    });
+    nEx = Math.max(1, Math.min(EXAMEN_QUESTIONS, Math.floor(Number(body.n) || 10), pagesEx.length));
+    if (pagesEx.filter((c) => c.f && c.b).length < 5) return json({ error: "short" }, 400);
+  } else if (op === "corriger") {
+    sujet = (Array.isArray(body.sujet) ? body.sujet.slice(0, EXAMEN_QUESTIONS) : []).map((q) => {
+      const x = (q ?? {}) as { q?: unknown; attendu?: unknown };
+      return { q: ligne(x.q, MAX_PAGE), attendu: ligne(x.attendu, MAX_PAGE) };
+    });
+    if (!sujet.length) return json({ error: "short" }, 400);
+    reponses = (Array.isArray(body.reponses) ? body.reponses : []).slice(0, sujet.length)
+      .map((r) => String(r ?? "").trim().slice(0, EXAMEN_REPONSE));
+    photos = (Array.isArray(body.photos) ? body.photos : []).slice(0, EXAMEN_PHOTOS).map((p) => {
+      const x = (p ?? {}) as { mime?: unknown; data?: unknown };
+      return { mime: String(x.mime ?? ""), data: String(x.data ?? "") };
+    });
+    for (const p of photos) {
+      if (!IMG_TYPES.includes(p.mime) || !p.data) return json({ error: "mime" }, 415);
+      if (Math.floor(p.data.length * 3 / 4) > MAX_IMG) return json({ error: "big", max: MAX_IMG }, 413);
+    }
+    if (!photos.length && !reponses.some(Boolean)) return json({ error: "short" }, 400);
+  }
 
   /* Le Prompt : un message (de quoi faire au moins une consigne), les pages
      en cours (bornées comme celles qu'il rendra) et les messages d'avant. */
@@ -289,14 +416,14 @@ Deno.serve(async (req) => {
     if (message.length < 2) return json({ error: "short" }, 400);
     if (message.length > MAX_CHARS) return json({ error: "long", max: MAX_CHARS }, 413);
     const brutes = Array.isArray(body.cards) ? body.cards : [];
-    if (brutes.length > MAX_CARDS) return json({ error: "long", max: MAX_CARDS }, 413);
+    if (brutes.length > maxCartes) return json({ error: "long", max: maxCartes }, 413);
     actuelles = brutes.map((c) => {
       const x = (c ?? {}) as { f?: unknown; b?: unknown };
       return { f: String(x.f ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_PAGE),
                b: String(x.b ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_PAGE) };
     }).filter((c) => c.f || c.b);
     hist = (Array.isArray(body.historique) ? body.historique : [])
-      .map((h) => String(h ?? "").replace(/\s+/g, " ").trim().slice(0, 600)).filter(Boolean).slice(-MAX_HIST);
+      .map((h) => String(h ?? "").replace(/\s+/g, " ").trim().slice(0, 600)).filter(Boolean).slice(-maxHist);
   }
 
   let text = "";
@@ -312,7 +439,7 @@ Deno.serve(async (req) => {
       if (bytes > MAX_IMG) return json({ error: "big", max: MAX_IMG }, 413);
     } else {
       if (mime !== "application/pdf") return json({ error: "mime" }, 415);
-      if (bytes > MAX_PDF) return json({ error: "big", max: MAX_PDF }, 413);
+      if (bytes > maxPdf) return json({ error: "big", max: maxPdf }, 413);
     }
   } else if (op === "cards") {
     text = String(body.text ?? "").trim();
@@ -329,19 +456,19 @@ Deno.serve(async (req) => {
     .toISOString().slice(0, 10);
   const today = now.toISOString().slice(0, 10);
 
-  const [{ data: offre, error: sansOffre }, { data: roles }, { data: quota }] = await Promise.all([
-    admin.rpc("offre_de", { u: uid }),
-    admin.from("user_roles").select("role").eq("user_id", uid),
-    admin.rpc("ia_quota", { u: uid }),
-  ]);
-  const prof = (roles ?? []).some((r: { role: string }) => ["prof", "ref", "admin"].includes(r.role));
-  if (!sansOffre && offre === "gratuit") return json({ error: "plus" }, 402);
-  // le quota de la licence Campus d'abord ; nul (Mirandola+, ou une base sans la fonction) : celui des secrets
-  const mensuel = typeof quota === "number" ? quota : prof ? MONTHLY_PROF : MONTHLY_PLUS;
+  if (!sansOffre && d.offre === "gratuit") return json({ error: "plus" }, 402);
+  /* Le quota du mois : celui de la licence Campus d'abord ; puis l'essai
+     (10), Infini (150 sur le meilleur modèle, puis Haiku sans limite :
+     jamais « mquota »), un professeur, un élève. */
+  const mensuel = typeof d.licence === "number" ? d.licence : d.essai ? ESSAI
+    : infini ? INFINI.premium : prof ? MONTHLY_PROF : MONTHLY_PLUS;
+  const parJour = infini ? INFINI.jour : prof ? DAILY_PROF : DAILY_CALLS;
+  const fichiersJour = infini ? INFINI.fichiers : prof ? DAILY_FILES_PROF : DAILY_FILES;
   const { data: resa, error: sansResa } = await admin.rpc("ia_reserver", {
-    u: uid, p_op: op, p_jour: today, p_mois: firstOfMonth, p_mensuel: sansOffre ? null : mensuel,
-    p_par_jour: prof ? DAILY_PROF : DAILY_CALLS, p_fichiers_par_jour: prof ? DAILY_FILES_PROF : DAILY_FILES,
-    p_budget_cents: BUDGET_CENTS,
+    u: uid, p_op: op, p_jour: today, p_mois: firstOfMonth,
+    // Infini ne bute jamais sur le mois : au-delà de ses 150, il continue sur Haiku
+    p_mensuel: sansOffre || infini ? null : mensuel,
+    p_par_jour: parJour, p_fichiers_par_jour: fichiersJour, p_budget_cents: BUDGET_CENTS,
   });
   if (sansResa || !resa) {
     console.error("ia_reserver", sansResa?.message ?? "vide");
@@ -355,6 +482,7 @@ Deno.serve(async (req) => {
   if (r.statut === "fquota") return json({ error: "fquota" }, 429);
   if (r.statut !== "ok" || !r.id) return json({ error: "upstream" }, 503);
   const rid = r.id;
+  const auDela = myMonth >= mensuel;
 
   const hint = String(body.hint ?? "").slice(0, 200).trim();
   const pages = String(body.pages ?? "").slice(0, 60).trim();
@@ -363,7 +491,19 @@ Deno.serve(async (req) => {
      on adjoint la consigne de pages. Choisir les pages côté navigateur
      demanderait une bibliothèque de lecture PDF ; les nommer au modèle
      donne le même résultat sans rien ajouter à l'app. */
-  const content: unknown[] = isFile
+  const sujetTexte = () => sujet.map((q, i) => `${i + 1}. ${q.q}\n   Réponse attendue : ${q.attendu}`).join("\n");
+  const content: unknown[] = op === "examen"
+    ? [{ type: "text", text: (hint ? `Contexte : ${hint}\n\n` : "")
+      + `Pages du livre (${pagesEx.length}) :\n${pagesEx.map((c, i) => `${i}. ${c.f} ⟶ ${c.b}`).join("\n")}\n\n`
+      + `Compose un examen blanc de ${nEx} questions.` }]
+    : op === "corriger"
+    ? [
+      ...photos.map((p) => ({ type: "image", source: { type: "base64", media_type: p.mime, data: p.data } })),
+      { type: "text", text: (hint ? `Contexte : ${hint}\n\n` : "") + `Sujet (${sujet.length} questions) :\n${sujetTexte()}\n\n`
+        + (photos.length ? `La copie de l'élève est dans les ${photos.length} photo(s) ci-dessus.`
+          : `Copie de l'élève :\n${sujet.map((_, i) => `${i + 1}. ${reponses[i] || "(pas de réponse)"}`).join("\n")}`) },
+    ]
+    : isFile
     ? [
       op === "ocr"
         ? { type: "image", source: { type: "base64", media_type: mime, data: b64 } }
@@ -372,24 +512,30 @@ Deno.serve(async (req) => {
         type: "text",
         text: (hint ? `Consigne : ${hint}\n` : "")
           + (pages ? `N'utilise que ces pages : ${pages}. Ignore toutes les autres.\n` : "")
-          + "Fabrique les cartes à partir de ce document.",
+          + "Fabrique les cartes à partir de ce document."
+          + (infini ? ` Ce compte peut recevoir jusqu'à ${INFINI.cartes} cartes.` : ""),
       },
     ]
     : op === "prompt"
     ? [{ type: "text", text: messagePrompt(message, actuelles, hist, hint) }]
-    : [{ type: "text", text: (hint ? `Consigne : ${hint}\n\n` : "") + "Texte :\n\n" + text }];
+    : [{ type: "text", text: (hint ? `Consigne : ${hint}\n\n` : "")
+      + (infini ? `Ce compte peut recevoir jusqu'à ${INFINI.cartes} cartes.\n\n` : "") + "Texte :\n\n" + text }];
 
+  // au-delà des 150 du mois, Infini continue sur Haiku seul : le meilleur reste pour le gros de l'usage
+  const modeles = infini && auDela ? MODELES.filter((m) => m.id.startsWith("claude-haiku")) : MODELES;
   const essai = await demander({
-    max_tokens: 16000,
-    system: op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM,
+    max_tokens: infini ? INFINI.jetons : 16000,
+    system: op === "examen" ? SYSTEM_EXAMEN : op === "corriger" ? SYSTEM_CORRIGER
+      : op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM,
     thinking: { type: "adaptive" },
     output_config: {
       // lire une page, ou suivre une consigne sur tout un paquet, demande plus d'attention
-      effort: isFile || op === "prompt" ? "medium" : "low",
-      format: { type: "json_schema", schema: op === "prompt" ? SCHEMA_PROMPT : SCHEMA },
+      effort: examen ? "high" : isFile || op === "prompt" ? "medium" : "low",
+      format: { type: "json_schema", schema: op === "examen" ? SCHEMA_EXAMEN : op === "corriger" ? SCHEMA_CORRIGER
+        : op === "prompt" ? SCHEMA_PROMPT : SCHEMA },
     },
     messages: [{ role: "user", content }],
-  }, key);
+  }, key, modeles);
   // rien n'est compté : la réservation est rendue, le mois reste tel quel
   if (!essai.ok) {
     await admin.rpc("ia_annuler", { rid }).then(() => {}, () => {});
@@ -404,6 +550,20 @@ Deno.serve(async (req) => {
   const { error: sansSolde } = await admin.rpc("ia_solder", { rid, p_in: inTok, p_out: outTok, p_cents: +cents.toFixed(4) });
   if (sansSolde) console.error("ia_solder", sansSolde.message);
 
+  /* l'examen blanc : ce que le modèle rend, l'app le relit et le borne
+     (lireSujet, lireCorrection de src/examen-blanc.js) */
+  if (examen) {
+    const brut = (data as { parsed_output?: unknown }).parsed_output ?? (() => {
+      const t = ((data.content ?? []) as { type: string; text?: string }[])
+        .filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
+      try { return JSON.parse(t); } catch { return null; }
+    })();
+    const moisEx = { fait: myMonth + 1, quota: sansOffre ? null : mensuel, sans_compter: infini };
+    if (!brut || !Array.isArray((brut as { questions?: unknown }).questions)) return json({ error: "empty", mois: moisEx }, 422);
+    return json({ [op === "examen" ? "sujet" : "correction"]: brut, mois: moisEx,
+      usage: { in: inTok, out: outTok, cents: +cents.toFixed(4) } });
+  }
+
   let cards: { f: string; b: string }[] = [];
   const parsed = (data as { parsed_output?: { cards?: unknown; note?: unknown } }).parsed_output;
   const raw = parsed ?? (() => {
@@ -415,10 +575,10 @@ Deno.serve(async (req) => {
     cards = ((raw as { cards: { f?: unknown; b?: unknown }[] }).cards)
       .map((c) => ({ f: String(c.f ?? "").trim(), b: String(c.b ?? "").trim() }))
       .filter((c) => c.f && c.b)
-      .slice(0, MAX_CARDS);
+      .slice(0, maxCartes);
   }
   // le compte du mois, cet appel compris : l'écran le pose sur ses onglets
-  const mois = { fait: myMonth + 1, quota: sansOffre ? null : mensuel };
+  const mois = { fait: myMonth + 1, quota: sansOffre ? null : mensuel, sans_compter: infini };
   const note = op === "prompt" ? String((raw as { note?: unknown } | null)?.note ?? "").trim().slice(0, 300) : "";
   /* Un Prompt peut légitimement tout retirer (« enlève tout ce qui parle
      de… ») : une liste vide n'est une erreur que pour une génération. */
@@ -429,7 +589,7 @@ Deno.serve(async (req) => {
     note,
     mois,
     usage: { in: inTok, out: outTok, cents: +cents.toFixed(4) },
-    left: Math.max(0, DAILY_CALLS - mine - 1),
-    filesLeft: isFile ? Math.max(0, DAILY_FILES - myFiles - 1) : undefined,
+    left: Math.max(0, parJour - mine - 1),
+    filesLeft: isFile ? Math.max(0, fichiersJour - myFiles - 1) : undefined,
   });
 });

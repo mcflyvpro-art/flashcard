@@ -235,19 +235,53 @@ describe('l’app des magasins : un abonné RevenueCat devient sa ligne apple ou
 
 /* « Brancher Stripe » (2026-11-02) : ce que la fonction paiement pose chez
    Stripe, d'une seule clé. Les prix y sont ceux de l'app et de la page. */
+describe('Infini, l’essai, le code de lancement (2026-11-05)', async () => {
+  const S = await import('../supabase/functions/_shared/abonnement.js');
+  it('la formule d’un abonnement : par son prix connu, sa clé de recherche, ou son produit et sa récurrence', () => {
+    const sub = price => ({ items: { data: [{ price }] } });
+    expect(S.formuleDe(sub({ id: 'p9' }), { infini_mensuel: 'p9' })).toBe('infini_mensuel');
+    expect(S.formuleDe(sub({ id: 'x', lookup_key: 'mirandola_infini_annuel' }))).toBe('infini_annuel');
+    expect(S.formuleDe(sub({ id: 'y', product: 'mirandola_infini', recurring: { interval: 'month' } }))).toBe('infini_mensuel');
+    expect(S.formuleDe(sub({ id: 'z', product: 'mirandola_plus', recurring: { interval: 'year' } }))).toBe('annuel');
+  });
+  it('l’essai : 7 jours, la carte demandée, la phrase qui le dit', () => {
+    const d = S.demandePaiement({ formule: 'infini_annuel', prix: 'p', userId: 'u', site: 'https://mirandola.fr', essai: true });
+    expect(d['subscription_data[trial_period_days]']).toBe('7');
+    expect(d.payment_method_collection).toBe('always');
+    expect(d['custom_text[submit][message]']).toMatch(/^7 jours gratuits.*payé pour un an/);
+    expect(S.demandePaiement({ formule: 'mensuel', prix: 'p', userId: 'u', site: 's' })['subscription_data[trial_period_days]']).toBeUndefined();
+  });
+  it('le code de lancement : −20 % trois mois, premier abonnement ; posé d’avance quand il vient d’un lien', () => {
+    expect(S.demandeCoupon()).toMatchObject({ percent_off: '20', duration: 'repeating', duration_in_months: '3' });
+    expect(S.demandeCodePromo()).toMatchObject({ code: 'LANCEMENT', 'restrictions[first_time_transaction]': 'true' });
+    const d = S.demandePaiement({ formule: 'mensuel', prix: 'p', userId: 'u', site: 's', promo: 'promo_1' });
+    expect(d['discounts[0][promotion_code]']).toBe('promo_1');
+    expect(d.allow_promotion_codes).toBeUndefined();
+  });
+  it('le portail : passer d’un niveau à l’autre, ou s’ouvrir sur ce changement', () => {
+    const c = S.demandePortailConfig({ site: 's', annuel: 'a', mensuel: 'm', infini_annuel: 'ia', infini_mensuel: 'im' });
+    expect(c['features[subscription_update][products][1][product]']).toBe('mirandola_infini');
+    expect(S.demandePortail({ client: 'c', site: 's', changer: 'sub_1' })['flow_data[type]']).toBe('subscription_update');
+  });
+});
+
 describe('brancher Stripe', async () => {
   const S = await import('../supabase/functions/_shared/abonnement.js');
   const { FORMULES: APP } = await import('../src/abonnement.js');
   it('les prix posés chez Stripe sont ceux de l’app (et donc de la page d’accueil)', () => {
-    expect(S.PRIX.annuel.centimes).toBe(APP.annuel.prix);
-    expect(S.PRIX.mensuel.centimes).toBe(APP.mensuel.prix);
-    expect(S.demandePrix('annuel')).toMatchObject({ product: S.PRODUIT, currency: 'eur', unit_amount: '4999',
+    for (const f of S.FORMULES) expect(S.PRIX[f].centimes, f).toBe(APP[f].prix);
+    expect(Object.keys(APP)).toEqual(S.FORMULES);
+    expect(S.demandePrix('infini_mensuel')).toMatchObject({ product: 'mirandola_infini', unit_amount: '999',
+      lookup_key: 'mirandola_infini_mensuel' });
+    expect(S.demandePrix('annuel')).toMatchObject({ product: S.PRODUIT, currency: 'eur', unit_amount: '4499',
       'recurring[interval]': 'year', tax_behavior: 'inclusive', lookup_key: 'mirandola_plus_annuel', transfer_lookup_key: 'true' });
   });
   it('un prix déjà là ne se refait pas s’il est le bon ; un autre montant, si', () => {
-    const bon = { active: true, currency: 'eur', unit_amount: 699, recurring: { interval: 'month' }, tax_behavior: 'inclusive' };
+    const bon = { active: true, currency: 'eur', unit_amount: 599, recurring: { interval: 'month' }, tax_behavior: 'inclusive',
+      product: 'mirandola_plus' };
     expect(S.prixConforme(bon, 'mensuel')).toBe(true);
-    expect(S.prixConforme({ ...bon, unit_amount: 499 }, 'mensuel')).toBe(false);
+    expect(S.prixConforme({ ...bon, unit_amount: 699 }, 'mensuel')).toBe(false);     // l'ancien prix se refait
+    expect(S.prixConforme({ ...bon, product: 'mirandola_infini' }, 'mensuel')).toBe(false);
     expect(S.prixConforme({ ...bon, tax_behavior: 'exclusive' }, 'mensuel')).toBe(false);
     expect(S.prixConforme(bon, 'annuel')).toBe(false);
     expect(S.prixConforme(null, 'annuel')).toBe(false);

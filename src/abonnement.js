@@ -27,12 +27,26 @@ export const REVENUECAT = { ios: '', android: '' };
    l'abonnement — la preuve de l'accord et de la demande de démarrage
    immédiat (article L221-25 du code de la consommation). Elle change avec
    le texte « cgv » de ui/legal-textes.js. */
-export const CGV_VERSION = '2026-11-05';
+export const CGV_VERSION = '2026-11-06';
 
+/* Les prix du 2026-11-05 (décidés : « plus psychologiques, un peu à la
+   baisse, rentables avec l'IA ») : Mirandola+ sous Quizlet Plus, l'annuel
+   présenté au mois ; Infini au-dessus, l'IA sans compter et ses outils
+   d'examen. `sans` : douze mois au mois, pour dire la remise de l'annuel —
+   jamais affiché comme un prix barré (article L112-1-1). */
 export const FORMULES = {
-  annuel: { prix: 4999, par: 'an', mois: 417, sans: 8388, remise: 40 },
-  mensuel: { prix: 699, par: 'mois' }
+  annuel: { prix: 4499, par: 'an', mois: 375, sans: 7188, remise: 37 },
+  mensuel: { prix: 599, par: 'mois' },
+  infini_annuel: { prix: 7999, par: 'an', mois: 667, sans: 11988, remise: 33, niveau: 'infini' },
+  infini_mensuel: { prix: 999, par: 'mois', niveau: 'infini' }
 };
+// « plus » ou « infini » : le niveau d'une formule (une formule inconnue reste Mirandola+)
+export const niveauDe = f => (FORMULES[f] && FORMULES[f].niveau) || 'plus';
+// la formule d'un niveau, pour une période : formuleDe('infini', 'annuel') → 'infini_annuel'
+export const formuleDe = (niveau, periode) => (niveau === 'infini' ? 'infini_' : '') + (periode === 'mensuel' ? 'mensuel' : 'annuel');
+// l'essai gratuit d'un premier abonnement Stripe (2026-11-05), et le code de lancement
+export const ESSAI_JOURS = 7;
+export const PROMO = { code: 'LANCEMENT', remise: 20, mois: 3 };
 
 /* Ce que Mirandola+ ouvre, dit comme sur la page d'accueil (tarifs) : les
    règles elles-mêmes sont dans src/offres.js. */
@@ -83,6 +97,8 @@ export function lireOffre(r) {
   const o = r && typeof r === 'object' && !Array.isArray(r) ? r : {};
   return {
     offre: o.offre === 'plus' || o.offre === 'campus' ? o.offre : 'gratuit',
+    // Mirandola Infini (2026-11-05) : un niveau au-dessus de Mirandola+, la même offre
+    niveau: o.niveau === 'infini' && o.offre === 'plus' ? 'infini' : o.offre === 'plus' || o.offre === 'campus' ? o.offre : 'gratuit',
     etablissement: typeof o.etablissement === 'string' ? o.etablissement : '',
     // Campus chez un professeur particulier : son nom (20261029090000), qui dit à l'élève qui lui ouvre l'IA
     professeur: typeof o.professeur === 'string' ? o.professeur : '',
@@ -100,7 +116,8 @@ function ligneAbonne(a) {
   if (a.source === 'offert') return date ? `Offert jusqu’au ${date}` : 'Offert';
   if (a.finPrevue) return date ? `Se termine le ${date}` : 'Résilié';
   if (a.statut === 'essai') return date ? `Essai jusqu’au ${date}` : 'Essai';
-  const f = a.formule === 'annuel' ? 'Annuel' : a.formule === 'mensuel' ? 'Mensuel' : 'Abonnement';
+  const f = FORMULES[a.formule] ? (niveauDe(a.formule) === 'infini' ? 'Infini · ' : '') + (FORMULES[a.formule].par === 'an' ? 'Annuel' : 'Mensuel')
+    : 'Abonnement';
   return date ? `${f} · renouvelé le ${date}` : f;
 }
 
@@ -184,6 +201,6 @@ export const erreurDe = code => ERREURS[{ nokey: 'bientot', noprix: 'bientot' }[
 export function lireRetour(v) {
   const s = String(v || '').toLowerCase();
   if (s === 'merci' || s === 'annule' || s === 'retour') return { etape: s, formule: null };
-  if (s === 'annuel' || s === 'mensuel') return { etape: null, formule: s };
+  if (FORMULES[s]) return { etape: null, formule: s };
   return s ? { etape: null, formule: null } : null;
 }
