@@ -19,7 +19,11 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-07 · L'IA de la création n'est plus une méthode :
+DERNIER   2026-11-07 · Les fonctions déployées : ai v17, paiement v8,
+          stripe-webhook v8, magasins v7 (Infini, l'examen blanc, la
+          barre de l'IA en entier) ; chacune répond par son propre code.
+          Reste « Brancher Stripe » à rappuyer pour créer Infini. Avant :
+          2026-11-07 · L'IA de la création n'est plus une méthode :
           une barre « Demande à l'IA » sous Écrire, Coller, Fichier et
           Photo. Des photos (8) ou un PDF y attendent avec une consigne
           facultative, un texte collé aussi ; sans rien, elle crée ou
