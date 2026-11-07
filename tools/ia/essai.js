@@ -1,5 +1,5 @@
 /* La fonction `ai` (supabase/functions/ai), lancée pour de vrai sous Deno,
-   face à une fausse base (PostgREST : offre_de, user_roles, ia_quota et la
+   face à une fausse base (PostgREST : ia_droits, offre_de, user_roles, ia_quota et la
    réservation — ia_reserver, ia_solder, ia_annuler, 20261105185359) et un
    faux Anthropic servis ici. Ce que l'on prouve (2026-11-05) : un compte
    gratuit refusé sans rien dépenser ; une génération réservée puis soldée
@@ -53,6 +53,14 @@ const serveur = createServer(async (req, res) => {
     if (anthropic.panne) return envoie(res, 529, { error: { type: 'overloaded_error' } });
     return envoie(res, 200, { content: [{ type: 'text', text: JSON.stringify({ cards: [{ f: 'Paris', b: 'France' }] }) }],
       usage: { input_tokens: 1000, output_tokens: 200 } });
+  }
+  /* ce que la fonction lit du compte, en une fois (ia_droits, depuis Mirandola
+     Infini) ; offre_de reste pour une fonction d'avant. Sans réponse, la
+     fonction laisse passer, comme face à une base pas encore migrée : le
+     banc doit donc répondre, sinon « gratuit » passerait. */
+  if (p === '/rest/v1/rpc/ia_droits') {
+    const offre = offres[a.u] || 'plus';
+    return envoie(res, 200, { offre, niveau: offre, essai: false, prof: false, licence: null });
   }
   if (p === '/rest/v1/rpc/offre_de') return envoie(res, 200, offres[a.u] || 'plus');
   if (p === '/rest/v1/rpc/ia_quota') return envoie(res, 200, null);
