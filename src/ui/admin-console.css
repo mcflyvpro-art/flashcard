@@ -229,3 +229,6 @@ button.ed-ligne:hover{background:var(--surf)}
 .ed-sante-k i{font-style:normal;color:var(--soft)}
 .ed-sante-c pre{margin:4px 0 0;padding:10px;background:var(--bg2);border-radius:8px;font-size:12px;white-space:pre-wrap;word-break:break-all}
 .ed-sante>.ed-b{align-self:flex-start}
+/* offrir Mirandola Infini : son or, comme partout où Infini se dit */
+.ed-seg button.ed-infini{color:#8A6114}
+.ed-seg button.ed-infini svg{color:#C08B2B}

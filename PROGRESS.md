@@ -19,7 +19,10 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-07 · Le site au téléphone : les tableaux en cartes,
+DERNIER   2026-11-07 · L'éditeur offre Mirandola Infini (migration
+          20261107231943, 11 tests SQL, parcours e2e) ; la licence d'un
+          abonné Infini garde sa formule et son prix. Avant :
+          2026-11-07 · Le site au téléphone : les tableaux en cartes,
           le comparatif dans la largeur, les rubans sur le bord des
           offres. Le code LANCEMENT en tête de chaque page, au-dessus
           des offres, et d'office dans l'écran Mirandola+ avec le prix

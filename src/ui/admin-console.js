@@ -286,8 +286,9 @@ function ficheCompte() {
       <div class="ed-seg" role="radiogroup">${Object.entries(ROLES).map(([k, t]) => `<button role="radio" aria-checked="${a.role === k}"
         class="${a.role === k ? 'on' : ''}" data-adm="role" data-id="${k}" ${moi && k !== 'admin' ? 'disabled' : ''}>${t}</button>`).join('')}</div>
       ${moi ? '<p class="ed-rien">C’est ton compte : tu ne peux pas te retirer ton rôle.</p>' : ''}
-      <h2 class="ed-h2">Mirandola+</h2>
-      <div class="ed-seg"><button data-adm="offrir">${svg(I.spark)}Offrir Mirandola+</button>
+      <h2 class="ed-h2">Offrir</h2>
+      <div class="ed-seg"><button data-adm="offrir">${svg(I.spark)}Mirandola+</button>
+        <button data-adm="offrir" data-id="infini" class="ed-infini">${svg(I.spark)}Mirandola Infini</button>
         <button data-adm="reprendre">Reprendre</button></div>
       <p class="ed-rien">Offert sans fin. Un abonnement payé reste à Stripe ou au magasin.</p>
       ${blocProf(a)}${blocMdp(a)}${blocGestion(a)}
@@ -377,7 +378,7 @@ const ACTIONS = {
   crole: k => { adm.crole = k; repeint(); },
   compte: id => { adm.copen = id; adm.csel = null; if (adm.neuf && adm.neuf.mdpDe !== id) adm.neuf = null; adm.tab = 'comptes'; repeint(); },
   role: k => { const a = (accounts || []).find(x => x.id === adm.copen); if (a && a.role !== k) admRole(a.id, k); },
-  offrir: () => { if (adm.copen) admOffrirPlus(adm.copen, false); },
+  offrir: id => { if (adm.copen) admOffrirPlus(adm.copen, false, id === 'infini' ? 'infini' : 'plus'); },
   reprendre: () => { if (adm.copen) admOffrirPlus(adm.copen, true); },
   'copier-courriel': copierCourriel,
   'code-ref': () => admAgir('admin_code_ref', { org: adm.open }, 'Nouveau code référent : l’ancien ne marche plus'),

@@ -83,7 +83,8 @@ export function licence(o) {
   const fin = a && dateLisible(a.fin);
   return {
     etat: { k: 'ok', t: 'Offert' },
-    lignes: [['Formule', 'Offerte par Mirandola'], ['Échéance', fin ? `Jusqu’au ${fin}` : 'Sans fin'], ['Prix', 'Rien à payer']],
+    lignes: [['Formule', a && niveauDe(a.formule) === 'infini' ? 'Mirandola Infini, offert par Mirandola' : 'Offerte par Mirandola'],
+      ['Échéance', fin ? `Jusqu’au ${fin}` : 'Sans fin'], ['Prix', 'Rien à payer']],
     engagement: 'Un cadeau : rien à résilier.'
   };
 }

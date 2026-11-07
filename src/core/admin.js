@@ -145,14 +145,18 @@ export async function admRole(cible, nouveau) {
   return r;
 }
 
-/* Mirandola+ offert à un compte, sans fin, ou repris (admin_offrir_plus,
-   20261027210000) : un ami, un testeur, un geste commercial. Ne touche
-   jamais un abonnement payé — il reste à Stripe ou au magasin. */
-export async function admOffrirPlus(cible, retirer) {
-  const r = await admAgir('admin_offrir_plus', { cible, jusqua: null, retirer: !!retirer });
+/* Mirandola+ ou Mirandola Infini offert à un compte, sans fin, ou repris
+   (admin_offrir_plus, 20261027210000 ; son niveau, 20261107231943) : un ami,
+   un testeur, un geste commercial. Ne touche jamais un abonnement payé — il
+   reste à Stripe ou au magasin. */
+export async function admOffrirPlus(cible, retirer, niveau = 'plus') {
+  const r = await admAgir('admin_offrir_plus', retirer ? { cible, jusqua: null, retirer: true }
+    : { cible, jusqua: null, retirer: false, niveau });
   if (r && r.offre) {
-    toast(I.check, r.offre === 'gratuit' ? 'Mirandola+ repris : le compte est en Mirandola gratuit'
-      : r.offre === 'campus' ? 'Enregistré : son établissement lui offre déjà tout' : 'Mirandola+ offert');
+    toast(I.check, r.offre === 'gratuit' ? 'Repris : le compte est en Mirandola gratuit'
+      : r.offre === 'campus' ? 'Enregistré : son établissement lui offre déjà tout'
+        : niveau === 'infini' ? 'Mirandola Infini offert'
+          : r.niveau === 'infini' ? 'Mirandola+ offert : son abonnement Infini continue' : 'Mirandola+ offert');
   }
   return r;
 }

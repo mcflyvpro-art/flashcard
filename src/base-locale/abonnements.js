@@ -73,14 +73,19 @@ export function monOffre(store, uid) {
   };
 }
 
-/* admin_offrir_plus : la ligne « offert », comme en base */
+/* admin_offrir_plus : la ligne « offert », comme en base ; Infini (niveau,
+   20261107231943) se lit à sa formule « infini_annuel », reprendre la garde */
 function offrir(store, b, user) {
   if (modele(store).roles[user.id] !== 'admin') return [400, { code: '42501', message: 'Réservé à l’éditeur' }];
   if (!store.users.some(u => u.id === b.cible)) return [400, { code: '22023', message: 'Compte inconnu' }];
-  store.tables.abonnements = table(store).filter(x => !(x.user_id === b.cible && x.source === 'offert'));
-  table(store).push({ user_id: b.cible, offre: 'plus', statut: b.retirer ? 'fini' : 'actif', source: 'offert', formule: null,
+  const niveau = b.niveau ?? 'plus';
+  if (!['plus', 'infini'].includes(niveau)) return [400, { code: '22023', message: 'Niveau inconnu' }];
+  const avant = table(store).find(x => x.user_id === b.cible && x.source === 'offert');
+  store.tables.abonnements = table(store).filter(x => x !== avant);
+  table(store).push({ user_id: b.cible, offre: 'plus', statut: b.retirer ? 'fini' : 'actif', source: 'offert',
+    formule: b.retirer ? (avant ? avant.formule : null) : niveau === 'infini' ? 'infini_annuel' : null,
     fin_periode: b.retirer ? new Date().toISOString() : b.jusqua || null, fin_prevue: false });
-  return [200, { offre: offreDe(store, b.cible) }];
+  return [200, { offre: offreDe(store, b.cible), niveau: niveauDuCompte(store, b.cible) }];
 }
 
 export function rpcAbonnements(store, nom, user, body) {

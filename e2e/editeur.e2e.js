@@ -247,6 +247,46 @@ test.describe('sur ordinateur', () => {
     expect(store.users.some(u => u.id === zoe)).toBe(true);
     await expect(page.locator('.ed-lot b')).toHaveText('1 compte');
   });
+
+  test('offrir Mirandola Infini : le compte le voit, sa licence le dit ; Mirandola+, puis reprendre', async ({ page, browser }) => {
+    const store = { ...nouveauStore(), parDefaut: 'gratuit' };
+    editeurEtProspect(store);
+    const lea = semerCompte(store, 'lea@exemple.fr');
+    modele(store).noms[lea] = 'Léa Petit';
+    store.tables.prefs.push({ id: lea, user_id: lea, data: { tuto: 1 } });
+    await brancher(page, store);
+    await entrer(page);
+    await page.locator('#rail [data-r="adm:comptes"]').click();
+    await page.locator('.ed-ligne', { hasText: 'lea@exemple.fr' }).click();
+    await page.locator('[data-adm="offrir"][data-id="infini"]').click();
+    await expect(page.locator('.toast:not(.sort)')).toContainText('Mirandola Infini offert');
+    const offert = () => store.tables.abonnements.find(a => a.user_id === lea && a.source === 'offert');
+    expect(offert()).toMatchObject({ statut: 'actif', formule: 'infini_annuel', fin_periode: null });
+
+    // Léa, sur son téléphone : Infini, et sa licence le dit
+    const autre = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const p2 = await autre.newPage();
+    await brancher(p2, store);
+    await p2.goto('./app');
+    await expect(p2.locator('#boot')).toHaveCount(0, { timeout: 10000 });
+    await p2.getByRole('textbox', { name: 'Adresse e-mail' }).fill('lea@exemple.fr');
+    await p2.getByRole('textbox', { name: 'Mot de passe' }).fill('motdepasse-solide-42');
+    await p2.getByRole('button', { name: 'Se connecter' }).click();
+    await expect(p2.locator('html')).toHaveClass(/offre-infini/, { timeout: 10000 });
+    await p2.goto('./eleve/mirandola-plus');
+    await expect(p2.locator('.fp-licence')).toContainText('Mirandola Infini, offert par Mirandola', { timeout: 10000 });
+    await expect(p2.locator('.fp-licence')).toContainText('Rien à payer');
+    await autre.close();
+
+    // revenir à Mirandola+ (la même ligne), puis reprendre : Mirandola gratuit
+    await page.locator('[data-adm="offrir"]:not([data-id])').click();
+    await expect(page.locator('.toast:not(.sort)')).toContainText('Mirandola+ offert');
+    expect(offert()).toMatchObject({ statut: 'actif', formule: null });
+    expect(store.tables.abonnements.filter(a => a.user_id === lea)).toHaveLength(1);
+    await page.locator('[data-adm="reprendre"]').click();
+    await expect(page.locator('.toast:not(.sort)')).toContainText('Mirandola gratuit');
+    expect(offert().statut).toBe('fini');
+  });
 });
 
 test('au téléphone : la liste, puis la fiche, et retour', async ({ page }) => {

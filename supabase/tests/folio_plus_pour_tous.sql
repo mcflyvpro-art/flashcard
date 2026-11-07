@@ -108,7 +108,7 @@ begin
     not has_function_privilege('authenticated', 'public.offre_de(uuid)', 'execute')
     and not has_function_privilege('anon', 'public.offre_de(uuid)', 'execute'), 'droits');
   insert into public.zz_res (nom, ok, vu) values ('admin_offrir_plus : pas anon',
-    not has_function_privilege('anon', 'public.admin_offrir_plus(uuid, timestamptz, boolean)', 'execute'), 'droits');
+    not has_function_privilege('anon', 'public.admin_offrir_plus(uuid, timestamptz, boolean, text)', 'execute'), 'droits');
   insert into public.zz_res (nom, ok, vu) values ('visuels : pas anon',
     not has_function_privilege('anon', 'public.visuels(uuid[], uuid[])', 'execute'), 'droits');
 end $$;

@@ -98,7 +98,9 @@ export function dateLisible(iso) {
 function lireAbonnement(a) {
   if (!a || typeof a !== 'object') return null;
   return {
-    statut: String(a.statut || 'fini'), formule: a.formule === 'annuel' || a.formule === 'mensuel' ? a.formule : null,
+    // les quatre formules (les deux d'Infini comprises : jusqu'au 2026-11-07, la
+    // licence d'un abonné Infini perdait sa formule et son prix)
+    statut: String(a.statut || 'fini'), formule: Object.hasOwn(FORMULES, a.formule) ? a.formule : null,
     source: String(a.source || 'stripe'), fin: a.fin_periode || null, finPrevue: !!a.fin_prevue,
     montant: Number.isInteger(a.montant) && a.montant >= 0 ? a.montant : null
   };

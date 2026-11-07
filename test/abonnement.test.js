@@ -14,6 +14,10 @@ describe('ce que dit la base', () => {
   it('le niveau (2026-11-05) : Infini seulement sur une offre plus, jamais deviné', () => {
     expect(lireOffre({ offre: 'plus', niveau: 'infini' }).niveau).toBe('infini');
     expect(lireOffre({ offre: 'plus' }).niveau).toBe('plus');
+    // les formules d'Infini se gardent (la licence d'un abonné Infini les perdait) ; une inconnue, non
+    expect(lireOffre({ offre: 'plus', niveau: 'infini', abonnement: { statut: 'actif', formule: 'infini_mensuel' } }).abonnement.formule)
+      .toBe('infini_mensuel');
+    expect(lireOffre({ offre: 'plus', abonnement: { statut: 'actif', formule: 'toString' } }).abonnement.formule).toBeNull();
     expect(lireOffre({ offre: 'gratuit', niveau: 'infini' }).niveau).toBe('gratuit');
     expect(lireOffre({ offre: 'campus', niveau: 'infini' }).niveau).toBe('campus');
   });
@@ -127,6 +131,9 @@ describe('la licence, ligne par ligne', () => {
   });
   it('offert, avec ou sans fin ; Campus : l’établissement et son échéance', () => {
     expect(lignes(licence({ offre: 'plus', abonnement: ab({ source: 'offert', fin: null, formule: null }) })).Échéance).toBe('Sans fin');
+    // Mirandola Infini offert par l'éditeur (20261107231943) : son nom dans la licence
+    expect(lignes(licence({ offre: 'plus', abonnement: ab({ source: 'offert', fin: null, formule: 'infini_annuel' }) })).Formule)
+      .toBe('Mirandola Infini, offert par Mirandola');
     const c = licence({ offre: 'campus', etablissement: 'Lycée Démo', licenceFin: '2027-08-31', abonnement: null });
     expect(lignes(c)).toEqual({ Licence: 'Offerte par Lycée Démo', Échéance: '31 août 2027', Prix: 'Rien à payer' });
   });
