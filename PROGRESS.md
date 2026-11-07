@@ -18,8 +18,17 @@
 ```
 CURSEUR   M08.T3 (hors ligne complet) — M05.T1/T4/T5/T6 en attente de toi
 PHASE     P0 — lancement B2C
-FAIT      49 / 148
-DERNIER   2026-11-05 · Session de débogage, demandée : « que tout soit
+FAIT      50 / 148
+DERNIER   2026-11-06 · Suite du débogage. M10.T3 cochée : les 156
+          fonctions de la base relues, puis attaquées par un inconnu
+          (2 028 appels, rien d'un autre ne revient). Le singe a fait le
+          tour de la démo, trois rôles, téléphone et ordinateur : aucune
+          erreur JavaScript. vite 8.3.6 et vitest 5.1 (deux failles
+          élevées des outils de build fermées ; reste minimatch dans
+          ESLint, sans surface). Le tuto du professeur s'arrêtait sur sa
+          dernière étape dans les parcours : la borne du test, pas l'app.
+          La CSP appliquée vérifiée en production.
+Avant :   2026-11-05 · Session de débogage, demandée : « que tout soit
           nickel, fais-toi attaquer ». Le partage d'un livre passe par un
           CODE (« J'ai un code », dans Nouveau livre et les Réglages ; le
           lien attend la connexion ou l'app installée) ; shared_deck ne
@@ -327,10 +336,10 @@ But : ne plus jamais deviner pourquoi ça plante.
 - [ ] M09.T3 · lecteur d'écran sur les 6 écrans principaux — cible: 0 élément sans nom accessible — preuve: axe-core
 - [ ] M09.T4 · taille de cible tactile ≥ 44 px — cible: 0 bouton en dessous — preuve: test
 
-## M10 · Sécurité [P0] 2/8
+## M10 · Sécurité [P0] 3/8
 - [x] M10.T1 · `anon` ne peut plus appeler les fonctions d'administration — preuve: migration `20260917210000` + curl 400 — **corrigé le 2026-10-24** : ce retrait visait `anon`, mais Postgres accorde `execute` à PUBLIC, dont `anon` hérite — 30 fonctions restaient appelables sans compte, et `ref_trace` par tout compte connecté (faux journal d'audit). Migration `20261024122609` : PUBLIC retiré partout, privilèges par défaut changés ; `anon` n'appelle plus que `shared_deck` (vérifié par `has_function_privilege`)
 - [ ] M10.T2 · revue des 100+ politiques RLS, une par une — cible: 0 avertissement Supabase — preuve: `get_advisors security`
-- [ ] M10.T3 · chaque fonction `security definer` teste son appelant en première ligne — cible: 100 % — preuve: revue documentée
+- [x] M10.T3 · chaque fonction `security definer` teste son appelant en première ligne — cible: 100 % — preuve: revue documentée — **fait le 2026-11-06** : les 156 fonctions ouvertes à `authenticated` relues par requête sur `pg_proc` — celles qui écrivent ont leur garde avant d'écrire (première instruction, ou dès la déclaration : `licence_org`, `ref_garde`, `class_manager`, `class_staff`, `auth.uid()` exigé), `eleve_annuler` ne touche que les lignes de l'appelant ; celles qui lisent filtrent sur l'appelant ou sur une garde (`is_admin()`, `is_ref() and my_org()`, `class_staff`, `in_group`, `voit_personne`) — les huit dont l'extrait laissait un doute (`prof_devoirs`, `leaderboard`…) relues en entier ; seules `shared_deck` et `demander_demo` s'ouvrent à `anon`, exprès. Puis **l'attaque** : `supabase/tests/fonctions_inconnu.sql` sème un établissement, deux classes, des élèves, un devoir, une partie, un club, un livre, et un compte neuf appelle chaque fonction avec chaque identifiant (2 028 appels) → **17/17**, rien d'un autre ne revient (le seul « vrai » relevé, `blocked`, était un blocage que l'inconnu venait de poser lui-même par `block_user`) ; `code_apercu` répond « trop » dès le onzième code faux.
 - [ ] M10.T4 · protection mots de passe compromis + longueur 10 — preuve: réglage Supabase actif
 - [x] M10.T5 · CSP en application réelle (plus en observation) — cible: 0 violation sur les parcours de test — preuve: console vide — **fait le 2026-11-05** : `vite preview` sert la CSP de `vercel.json` appliquée avec un `report-uri` (`cspStricte`, `tools/pw-csp.config.js`) ; 138 parcours et ~1 200 gestes du singe (élève, téléphone et ordinateur) : 0 violation (une violation provoquée exprès arrive bien dans le fichier : le canal marche) ; `vercel.json` passe de `Content-Security-Policy-Report-Only` à `Content-Security-Policy`
 - [ ] M10.T6 · limitation de débit sur inscription, connexion, IA — cible: 5 tentatives / 15 min — preuve: 6ᵉ tentative refusée

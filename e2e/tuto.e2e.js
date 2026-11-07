@@ -76,10 +76,13 @@ const etatTuto = page => page.evaluate(() => {
 });
 
 /* Joue le tuto, comme quelqu'un qui suit les bulles, jusqu'à l'étape qui
-   porte ce titre (ou jusqu'à la carte de fin) ; rend les titres traversés. */
+   porte ce titre (ou jusqu'à la carte de fin) ; rend les titres traversés.
+   La borne ne sert qu'à ne pas tourner sans fin : chaque attente de 100 ms
+   en prend un tour, et le tour du professeur en demande déjà une soixantaine
+   (2026-11-06 : à 60, il s'arrêtait sur « Le courrier », la dernière étape). */
 async function jusqua(page, but) {
   const vus = [];
-  for (let n = 0; n < 60; n++) {
+  for (let n = 0; n < 150; n++) {
     const s = await etatTuto(page);
     if (s && s.fini) return vus;
     if (!s || s.fini === false) { await page.waitForTimeout(100); continue; }
