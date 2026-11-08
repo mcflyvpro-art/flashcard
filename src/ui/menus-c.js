@@ -45,6 +45,7 @@ import {
   friendsPull, sendDeck, versPull
 } from '../core/reglages-corbeille.js';
 import { startStudy } from './revision.js';
+import { ouvrirRetouche } from './retouche-porte.js';
 
 /* Fermer la feuille de partage sans choisir rejette la promesse (AbortError) :
    c'est un « non merci », pas une erreur à remonter. */
@@ -522,6 +523,7 @@ const CLICK_RULES = [
   [a => a && a.startsWith('pk'), clickPkPrefix],
   [a => a === 'sharepick', clickPkShare],
   [a => a === 'pdfopen' || (!!a && a.startsWith('pdf-')), clickPdf],
+  [a => a === 'retouche', () => ouvrirRetouche()],
   [a => a === 'examen', () => ouvrirExamen()],
   [a => a === 'examen-infini', () => { closeMenu(); ouvrirPlus({ niveau: 'infini', raison: 'examen' }); }],
   [a => ['rolink', 'roff', 'lccopy', 'lcshare'].includes(a), clickPartage],

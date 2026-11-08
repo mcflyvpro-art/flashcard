@@ -1,0 +1,5 @@
+/* ══════════ modifier un paquet avec l'IA (chargée avec ui/retouche.js) ══════════
+   La feuille porte la barre de l'IA (prompt-ia.css) : sur le papier de la
+   feuille, elle n'a pas besoin de sa propre ombre. */
+.menu.retouche .pi{margin-top:4px;box-shadow:none}
+.menu.retouche .pi-fil{max-height:min(34vh,320px)}

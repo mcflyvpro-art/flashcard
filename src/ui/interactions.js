@@ -48,6 +48,7 @@ import {
 } from './revision.js';
 import { lancerTuto } from './tuto-porte.js';
 import { ouvrirSecurite } from './securite-porte.js';
+import { ouvrirRetouche } from './retouche-porte.js';
 
 
 
@@ -456,6 +457,7 @@ const CLICK_RULES = [
   [a => a === 'expstats', tapExpstats],
   [a => a === 'find', tapFind],
   [a => a === 'deckfind', tapDeckfind],
+  [a => a === 'retouche', () => ouvrirRetouche()],
   [a => a === 'sortpick', tapSortpick],
   [a => a === 'listview', tapListview],
   [a => a === 'reorder', tapReorder],

@@ -77,6 +77,11 @@ function deckHeadMeta(d) {
     + (d.hidden ? `<span>${svg(I.eyeoff)}Masqué</span>` : '');
 }
 
+/* Modifier tout le paquet avec l'IA (2026-11-07) : en tête de la liste,
+   là où l'on regarde ses cartes — « Carte » et « Coller » restent en bas. */
+const iaButton = () => `<button class="pick ia" data-act="retouche" aria-label="Modifier le paquet avec l’IA"
+        title="Modifier avec l’IA">${svg(I.spark)}IA</button>`;
+
 function findButton(d) {
   if (d.cards.length <= 5) return '';
   return `<button class="pick ico ${deckQ ? 'on' : ''}" data-act="deckfind"
@@ -290,6 +295,7 @@ export function deckView() {
     </div>
     ${simpleMode() ? '' : mixBar(d)}
     <div class="lbl"><span>Cartes</span>
+      ${sel ? '' : iaButton()}
       ${findButton(d)}
       ${selectButton(d)}
       <span id="dcount">${countLabel(shown, d)}</span></div>

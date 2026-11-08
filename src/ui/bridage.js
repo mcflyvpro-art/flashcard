@@ -49,7 +49,8 @@ export function envie(cle) {
    création (qui se grise lui-même, ui/creation.js). */
 const SEUL = {
   exercices: '[data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"]',
-  media: '[data-mact^="med-"]'
+  media: '[data-mact^="med-"]',
+  ia: '[data-act="retouche"],[data-mact="retouche"]'      // retoucher un paquet par l'IA (2026-11-07)
 };
 
 // écouté avant le gestionnaire de l'app : le geste ouvre Mirandola+ au lieu de la fonction

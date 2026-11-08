@@ -19,8 +19,11 @@ import './prompt-ia.css';
      recto et verso », « plus courtes »), cartes écrites à la main comprises.
    Ce qu'elle rend va droit dans la liste des cartes, et « Annuler » remet la
    liste d'avant. Chaque envoi est une génération du mois (la pastille).
-   Chargé à la demande par ui/creation.js (qui seul l'importe). L'état vit
-   dans `comp.prompt` : il survit à un rendu, et part avec le paquet créé. */
+   Chargé à la demande par ui/creation.js et, pour retoucher un paquet entier
+   (2026-11-07), par ui/retouche.js — eux seuls l'importent. L'état vit dans
+   `comp.prompt` (il survit à un rendu, et part avec le paquet créé) ; la
+   retouche donne le sien (`ctx.etatPrompt`), ses puces (`ctx.puces`) et son
+   « Annuler » (`ctx.annuler`, qui repose le paquet d'avant, état compris). */
 
 const MAX_PIECES = 8;                 // photos d'un envoi (MAX_IMAGES de la fonction ai)
 const HIST = 12;                      // les messages d'avant rappelés à l'IA
@@ -38,11 +41,14 @@ const PLACE = {
   liste: 'Ex. : inverse recto et verso, ajoute 5 cartes'
 };
 
-const P = () => (comp.prompt = comp.prompt || { fil: [], texte: '', envoi: false, pieces: null, avant: null });
+const neuf = () => ({ fil: [], texte: '', envoi: false, pieces: null, avant: null });
+let monte = null;                     // { n, ctx } : la barre à l'écran
+const P = () => (monte && monte.ctx.etatPrompt ? monte.ctx.etatPrompt(neuf)
+  : (comp.prompt = comp.prompt || neuf()));
+const pucesDe = (ctx, g) => (g === 'liste' && ctx.puces ? ctx.puces : PUCES[g]);
 const court = t => (t.length > 280 ? t.slice(0, 260).trimEnd() + ' …' : t);
 const taille = o => (o >= 1048576 ? (o / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(o / 1024)) + ' Ko');
 
-let monte = null;                     // { n, ctx } : la barre à l'écran
 
 /* Ce que l'IA a sous la main : des photos, un PDF, un texte collé — ou
    rien, et elle travaille alors sur la liste. */
@@ -104,7 +110,7 @@ function dessiner() {
     n.toggleAttribute('data-offre', bloque.cle !== 'ferme');
     if (bloque.cle !== 'ferme') n.dataset.offre = 'plus';
   } else { n.removeAttribute('data-astuce'); n.removeAttribute('data-offre'); }
-  const puces = PUCES[groupe(s)];
+  const puces = pucesDe(ctx, groupe(s));
   n.innerHTML = `
     <div class="pi-tete"><b>${svg(I.spark)}Demande à l’IA</b>${bloque ? '' : pastille(ctx.etat())}</div>
     <div class="pi-fil" aria-live="polite">${p.fil.map(bulle).join('')}${
@@ -186,8 +192,10 @@ async function faire(ctx, sup, msg, hist, p) {
   }
   // rien sous la main : l'IA travaille sur la liste, et la rend entière
   const r = await aiCall({ op: 'prompt', message: msg, cards: ctx.liste(), historique: hist, hint: opts.contexte }, true);
-  const big = ctx.remplacer(r.cards);
-  return (r.note || plur(r.cards.length, 'carte')) + (big ? ` · ${big} trop longue${big > 1 ? 's' : ''} écartée${big > 1 ? 's' : ''}` : '');
+  // la création rend combien de cartes trop longues elle a écartées ; la retouche, aussi ce qui a changé
+  const res = ctx.remplacer(r.cards), big = typeof res === 'number' ? res : res.big;
+  return (r.note || plur(r.cards.length, 'carte')) + (big ? ` · ${big} trop longue${big > 1 ? 's' : ''} écartée${big > 1 ? 's' : ''}` : '')
+    + (res && res.dit ? '\n' + res.dit : '');
 }
 
 async function envoyer(brut) {
@@ -222,12 +230,12 @@ function agir(b) {
   const { n, ctx } = monte, p = P(), k = b.dataset.pi, i = +b.dataset.i;
   if (k === 'depart') {
     // un début de consigne : il se complète (le sujet, le chapitre), il ne part pas seul
-    const ta = n.querySelector('#pimsg'), t = PUCES[groupe(situation(ctx))][i];
+    const ta = n.querySelector('#pimsg'), t = pucesDe(ctx, groupe(situation(ctx)))[i];
     ta.value = (ta.value.trim() ? ta.value.trim() + ', ' + t.charAt(0).toLowerCase() + t.slice(1) : t);
     p.texte = ta.value; ajuster(ta); majBouton(); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
     return;
   }
-  if (k === 'retouche') return envoyer(PUCES.liste[i]);
+  if (k === 'retouche') return envoyer(pucesDe(ctx, 'liste')[i]);
   if (k === 'sans') {
     URL.revokeObjectURL(p.pieces.apercus[i] || '');
     p.pieces.fichiers.splice(i, 1); p.pieces.apercus.splice(i, 1);
@@ -235,7 +243,8 @@ function agir(b) {
     return dessiner();
   }
   if (k === 'annuler' && p.avant) {
-    ctx.remplacer(p.avant); p.avant = null;
+    if (ctx.annuler) ctx.annuler(); else ctx.remplacer(p.avant);
+    p.avant = null;
     p.fil = p.fil.map(x => (x.annuler ? { ...x, annuler: false } : x));
     p.fil.push({ qui: 'ia', t: 'Annulé : tes cartes sont comme avant.' });
     toast(I.redo, 'Cartes remises comme avant');
@@ -265,7 +274,7 @@ export function monter(n, ctx) {
     if (b && !b.disabled) agir(b);
   };
   // l'écran peut se redessiner pendant qu'on écrit ici : creation.js y remet le focus (comp.champ)
-  n.onfocusin = e => { if (e.target.id === 'pimsg') comp.champ = 'pimsg'; };
+  n.onfocusin = e => { if (e.target.id === 'pimsg' && !ctx.etatPrompt) comp.champ = 'pimsg'; };
   n.oninput = e => { if (e.target.id === 'pimsg') { P().texte = e.target.value; ajuster(e.target); majBouton(); } };
   n.onsubmit = e => { e.preventDefault(); envoyer(n.querySelector('#pimsg').value); };
   // Ctrl+Entrée (Cmd sur Mac) envoie ; Entrée seule va à la ligne

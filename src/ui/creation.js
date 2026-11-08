@@ -217,7 +217,8 @@ function relireIA() {
    l'écrit (prefs.niveau, prefs.annee, posés par l'accueil) — « 10 pages sur
    la Révolution » ne s'écrit pas pareil en 4e et en prépa. */
 const NIVEAUX = { college: 'collège', lycee: 'lycée', sup: 'études supérieures' };
-function contexte(t) {
+// ce que l'IA sait du paquet (la retouche d'un paquet entier s'en sert aussi, ui/retouche.js)
+export function contexte(t) {
   const m = db.subjects.find(x => x.id === (t ? t.subject : comp.subject));
   const classe = prefs.annee ? `${prefs.annee}${NIVEAUX[prefs.niveau] ? ` (${NIVEAUX[prefs.niveau]})` : ''}` : NIVEAUX[prefs.niveau] || '';
   return [(t ? t.name : comp.name) || '', m ? 'matière : ' + m.name : '', classe ? 'classe : ' + classe : '']

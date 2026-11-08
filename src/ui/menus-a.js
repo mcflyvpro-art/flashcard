@@ -27,6 +27,7 @@ import { paintMenuSharepick } from './partage-porte.js';
 import { paintMenuSecurite } from './securite-porte.js';
 import { installSheet } from './onboarding.js';
 import { paintMenuPdf } from './pdf-porte.js';
+import { paintMenuRetouche } from './retouche-porte.js';
 import { paintMenuExamen } from './examen-porte.js';
 import { aInfini } from './bridage.js';
 import { infiniAPrendre } from './plus-porte.js';
@@ -158,7 +159,10 @@ function glisserHauteur(box, h0) {
   const fin = e => {
     if (e && (e.target !== box || e.propertyName !== 'height')) return;
     box.removeEventListener('transitionend', fin);
-    if (box.style.height === h1 + 'px') { box.style.height = ''; box.style.transition = ''; }
+    /* le navigateur arrondit la hauteur posée (« 123.766px » pour 123.76600646…) :
+       comparée telle quelle, elle ne se retirait jamais, et la feuille restait
+       figée à cette hauteur quand son contenu grandissait ensuite */
+    if (Math.abs(parseFloat(box.style.height) - h1) < 0.5) { box.style.height = ''; box.style.transition = ''; }
   };
   box.addEventListener('transitionend', fin);
   setTimeout(fin, 360);
@@ -332,6 +336,7 @@ function menuPainter(m) {
     split: paintMenuSplit,
     rename: paintMenuRename, delacc: paintMenuRename,
     pdf: paintMenuPdf,
+    retouche: paintMenuRetouche,
     examen: paintMenuExamen
   }[m];
 }
@@ -350,6 +355,7 @@ function paintMenuDeck(w) {
       <button class="mi" data-mact="studyall">${svg(I.play)}Tout revoir<span class="tail">${d.cards.length}</span></button>
       <button class="mi" data-mact="mcq">${svg(I.grid)}QCM</button>
       <button class="mi" data-mact="match">${svg(I.link)}Association</button>
+      <button class="mi" data-mact="retouche">${svg(I.spark)}Modifier avec l’IA</button>
       ${aInfini() ? `<button class="mi" data-mact="examen">${svg(I.target)}Objectif examen</button>`
     : infiniAPrendre() ? `<button class="mi" data-mact="examen-infini">${svg(I.target)}Objectif examen<span class="tail mi-infini">Infini</span></button>` : ''}
       <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du paquet</button>

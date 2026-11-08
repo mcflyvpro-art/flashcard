@@ -321,6 +321,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   color:var(--ink);font-size:12.5px;font-weight:750;letter-spacing:-.1px;text-transform:none;
   transition:background .2s,color .2s,transform .2s var(--sp)}
 .lbl > .pick:first-of-type{margin-left:auto}
+.pick.ia svg{color:#7E77D0}html.offre-gratuit .pick.ia::after{position:absolute;top:-5px;right:-5px}
 .pick svg{width:15px;height:15px;stroke-width:2.1}
 /* sans texte, le remplissage prévu pour « icône + mot » décalait la loupe
    vers la gauche : un carré, et elle tombe au milieu */
@@ -1305,11 +1306,11 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
    en colonne il coiffe l'icône. Les onglets de création (.payant), les
    QCM, les associations, les images et les sons ; « Nouveau livre » quand
    la bibliothèque est pleine ; les volets du journal, floutés. */
-.payant[data-offre="plus"]::before,html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"])::after,
+.payant[data-offre="plus"]::before,html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"],[data-act="retouche"],[data-mact="retouche"])::after,
 html.livres-plein [data-act="new"]::after,.plus-floute .jr-h::after{content:'';order:9;flex:none;width:16px;height:16px;border-radius:50%;
   pointer-events:none;background:var(--plus-s),var(--plus)}
-html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"]){position:relative;color:var(--soft)}
-html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"]) svg{opacity:.45}
+html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"],[data-act="retouche"],[data-mact="retouche"]){position:relative;color:var(--soft)}
+html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"],[data-act="retouche"],[data-mact="retouche"]) svg{opacity:.45}
 .cr-tabs .payant[data-offre="plus"]::before,html.offre-gratuit .acts :is([data-act="mcq"],[data-act="match"])::after{position:absolute;top:5px;left:calc(50% + 3px)}
 html.offre-gratuit [data-mact^="med-"]::after{position:absolute;top:-4px;right:-4px}
 html.livres-plein [data-act="new"]:not(.fab){position:relative}

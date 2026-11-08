@@ -58,6 +58,12 @@ function retoucher(cartes, msg) {
   if (/invers|change le sens|échange/i.test(msg)) {
     return { cards: cartes.map(c => ({ f: c.b, b: c.f })), note: `J’ai inversé recto et verso de ${cartes.length} cartes.` };
   }
+  // « corrige X en Y » : X remplacé par Y au recto et au verso (la retouche d'un paquet, 2026-11-07)
+  const corr = msg.match(/^\s*corrige\s+(.+?)\s+en\s+(.+?)\s*$/i);
+  if (corr) {
+    const [, de, vers] = corr, fix = t => t.split(de).join(vers);
+    return { cards: cartes.map(c => ({ f: fix(c.f), b: fix(c.b) })), note: `J’ai corrigé « ${de} ».` };
+  }
   const enlever = msg.match(/^\s*(?:enl[eè]ve|supprime|retire)\s+(.+)$/i);
   if (enlever) {
     const mot = enlever[1].trim().toLowerCase();

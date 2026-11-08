@@ -19,7 +19,11 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-07 · Les défis à son rythme se règlent : QCM, vrai
+DERNIER   2026-11-07 · « Modifier avec l'IA » : un paquet entier se
+          retouche par une consigne (Mirandola+, Infini, Campus), une
+          carte corrigée garde son état d'apprentissage ; Annuler.
+          Avant :
+          2026-11-07 · Les défis à son rythme se règlent : QCM, vrai
           ou faux, réponse écrite, 5 à 20 questions (migration
           20261107232536) ; un score envoyé ne disparaît plus de l'écran.
           Avant :

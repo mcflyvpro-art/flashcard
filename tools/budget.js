@@ -157,6 +157,9 @@
 // JS et 1 Ko CSS : le vrai ou faux et la réponse écrite ne tenaient plus au
 // démarrage (128,1 Ko), et l'écran ne sert qu'une fois la partie lancée ;
 // sorti avec l'écran du QCM, le démarrage repasse à 127,3.
+// Le même jour, « Modifier avec l'IA » (`retouche-…` : la feuille et
+// l'appariement des cartes, src/retouche.js) a le sien, 5 Ko JS et 1 Ko CSS :
+// la barre de l'IA qu'elle porte reste comptée à la demande, avec la création.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { SOUS_PAGES } from '../src/site/pages.js';
@@ -169,7 +172,7 @@ import { SOUS_PAGES } from '../src/site/pages.js';
 // démarrage passe de 124,3 à 127,0 Ko, sous ses 128.
 const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 71 * 1024, cssDemande: 27 * 1024, jsDemo: 33 * 1024, cssDemo: 3 * 1024,
   jsGestion: 34 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
-  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, site: 51 * 1024, pages: 41 * 1024, moteur: 56 * 1024 };
+  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, jsRetouche: 5 * 1024, cssRetouche: 1024, site: 51 * 1024, pages: 41 * 1024, moteur: 56 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',
   jsGestion: 'JS des consoles (référent, éditeur)', cssGestion: 'CSS des consoles (référent, éditeur)',
@@ -180,6 +183,7 @@ const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS 
   jsCode: 'JS de « J’ai un code »', cssCode: 'CSS de « J’ai un code »',
   jsInfini: 'JS de Mirandola Infini (examen)', cssInfini: 'CSS de Mirandola Infini (examen)',
   jsDefis: 'JS d’un défi à son rythme', cssDefis: 'CSS d’un défi à son rythme',
+  jsRetouche: 'JS de « Modifier avec l’IA »', cssRetouche: 'CSS de « Modifier avec l’IA »',
   site: 'Page d’accueil (HTML + CSS + JS)', pages: 'Autres pages du site, la plus lourde (HTML + CSS + JS)',
   moteur: 'Page du moteur (HTML + CSS + JS)' };
 const dir = 'dist/assets';
@@ -191,7 +195,7 @@ const auDemarrage = f => app.includes('/assets/' + f);
 const duSite = f => site.includes('/assets/' + f);
 const dUnePage = f => autres.some(x => x.html.includes('/assets/' + f));
 const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, jsDemo: 0, cssDemo: 0, jsGestion: 0, cssGestion: 0,
-  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, jsSecurite: 0, cssSecurite: 0, jsCode: 0, cssCode: 0, jsInfini: 0, cssInfini: 0, jsDefis: 0, cssDefis: 0, site: gz(site), pages: 0, moteur: 0 };
+  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, jsSecurite: 0, cssSecurite: 0, jsCode: 0, cssCode: 0, jsInfini: 0, cssInfini: 0, jsDefis: 0, cssDefis: 0, jsRetouche: 0, cssRetouche: 0, site: gz(site), pages: 0, moteur: 0 };
 const parPage = Object.fromEntries(autres.map(x => [x.nom, gz(x.html)]));
 for (const f of readdirSync(dir)) {
   const ext = f.split('.').pop();
@@ -203,7 +207,8 @@ for (const f of readdirSync(dir)) {
   const part = auDemarrage(f) ? ext : /^demo-/.test(f) ? ext + 'Demo' : /^pwa-/.test(f) ? ext + 'Porte'
     : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion'
       : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : /^(verif|securite|compte-auth)-/.test(f) ? ext + 'Securite'
-        : /^(code-entree|etablissement)-/.test(f) ? ext + 'Code' : /^examen-/.test(f) ? ext + 'Infini' : /^duel-jeu-/.test(f) ? ext + 'Defis' : ext + 'Demande';
+        : /^(code-entree|etablissement)-/.test(f) ? ext + 'Code' : /^examen-/.test(f) ? ext + 'Infini' : /^duel-jeu-/.test(f) ? ext + 'Defis'
+          : /^retouche-/.test(f) ? ext + 'Retouche' : ext + 'Demande';
   total[part] += n;
 }
 total.moteur = parPage['moteur.html'] || 0;
