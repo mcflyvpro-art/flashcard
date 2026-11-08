@@ -1,4 +1,4 @@
--- Tests de la migration 20261108130000_visuels_chacun_son_niveau : visuels()
+-- Tests de la migration 20261108133515_visuels_chacun_son_niveau : visuels()
 -- dit le niveau de chacun — Mirandola+, Infini ou rien —, jamais celui de
 -- qui regarde. Même mode que jetons.sql : transaction ANNULÉE, comptes
 -- jetables, vrai rôle `authenticated`.

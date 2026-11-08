@@ -22,7 +22,7 @@ FAIT      54 / 148
 DERNIER   2026-11-08 · Statistiques sans révision : plus de volet
           flouté ; le liseré du jeton dit l'offre de chacun (arc-en-ciel
           Mirandola+, or Infini, rien sinon), plus celle de qui regarde
-          (migration 20261108130000 écrite, PAS ENCORE APPLIQUÉE). Avant :
+          (migration 20261108133515 appliquée). Avant :
           2026-11-08 · L'IA rentable quel que soit l'usage : un plafond
           de coût par compte et par mois (la moitié du pire net :
           0,89 $ Mirandola+, 1,60 $ Infini), le pire coût de chaque
