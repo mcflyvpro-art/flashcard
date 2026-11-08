@@ -27,7 +27,7 @@ export const REVENUECAT = { ios: '', android: '' };
    l'abonnement — la preuve de l'accord et de la demande de démarrage
    immédiat (article L221-25 du code de la consommation). Elle change avec
    le texte « cgv » de ui/legal-textes.js. */
-export const CGV_VERSION = '2026-11-07';
+export const CGV_VERSION = '2026-11-08';
 
 /* Les prix du 2026-11-05 (décidés : « plus psychologiques, un peu à la
    baisse, rentables avec l'IA ») : Mirandola+ sous Quizlet Plus, l'annuel

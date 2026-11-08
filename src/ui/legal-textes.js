@@ -25,7 +25,7 @@ import { PWMIN } from './connexion.js';
    (LCEN) et les logiciels libres (les notices que leurs licences exigent).
    Les prix et les quotas viennent des modules qui les appliquent : le texte
    ne peut pas dire autre chose que l'app. */
-const LEGALV = '7 novembre 2026';  // le vocabulaire classique : paquets, cartes, révision (et l'examen blanc, le 6)
+const LEGALV = '8 novembre 2026';  // l'usage raisonnable de l'IA (la veille : le vocabulaire classique ; le 6, l'examen blanc)
 const E = ENTREPRISE;
 const mois = FORMULES.mensuel, an = FORMULES.annuel, imois = FORMULES.infini_mensuel, ian = FORMULES.infini_annuel;
 
@@ -139,12 +139,19 @@ règle sur ta mémoire) ; des paquets sans limite ; la création de cartes par
 l’IA à partir d’un cours, d’une photo ou d’un document, jusqu’à
 ${IA_PAR_MOIS.plus} générations par mois (${IA_PROF_PAR_MOIS} pour un professeur) ;
 les QCM et les associations ; les images et les sons sur les cartes ; toutes
-les statistiques.
+les statistiques. L’IA s’entend dans les bornes d’un usage raisonnable :
+chaque compte a, pour le mois, une limite de ce que coûtent ses générations,
+que l’usage ordinaire n’approche pas ; un usage exceptionnel (de très gros
+documents, par exemple) qui en prend les trois quarts passe sur un modèle
+plus rapide, et celui qui l’atteint met l’IA en pause jusqu’au 1er du mois
+suivant. Un document trop lourd pour ce qui reste du mois est refusé avant
+d’être lu : rien n’est compté.
 
 **2 bis. Ce que Mirandola Infini ajoute.** Tout Mirandola+, et : l’IA sans
 compter — 150 générations par mois sur le modèle le plus avancé, puis sans
-limite sur un modèle plus rapide, dans les bornes d’un usage personnel
-(60 générations par jour) ; des documents jusqu’à 20 Mo et 300 cartes par
+limite de nombre sur un modèle plus rapide, dans les bornes d’un usage
+personnel (60 générations par jour) et de l’usage raisonnable dit à
+l’article 2 ; des documents jusqu’à 20 Mo et 300 cartes par
 génération ; l’objectif examen (une date par paquet, et le moteur qui vise
 95 % de souvenir dans les 30 jours qui la précèdent) ; l’examen blanc,
 composé et corrigé par l’IA, copie tapée ou photographiée. Ce qui est dit

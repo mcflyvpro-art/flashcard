@@ -37,8 +37,10 @@ const ROLES_NEUFS = { prof: 'Professeur particulier', admin: 'Éditeur', eleve: 
 /* ---------- ce que coûte l'IA, en une ligne ---------- */
 function ligneCout(o) {
   const c = coutIA({ ...o, moyenne: adm.cout && adm.cout.moyenne });
+  // le pire (2026-11-08) : chaque génération au plafond que la base tient — le devis doit le couvrir
   return `${svg(I.spark)}<span>IA : <b>${eurosDe(c.cents)}</b> par mois au plus · ${eurosDe(c.centsAn)} par an
-    <i>${plur(c.generations, 'génération')} · ${eurosDe(c.parGeneration).replace(/,00 €$/, ' €')} l’une${c.estime ? ' (estimé)' : ''}</i></span>`;
+    <i>${plur(c.generations, 'génération')} · ${eurosDe(c.parGeneration).replace(/,00 €$/, ' €')} l’une${c.estime ? ' (estimé)' : ''}
+    · au pire ${eurosDe(c.pire)} par mois, ${eurosDe(c.pireAn)} par an</i></span>`;
 }
 // un prix de licence indicatif, la grille de src/tarifs.js : les places des élèves et celle du professeur
 const ligneLicence = places => (+places > 0 ? `${svg(I.money)}<span>Licence : <b>${Math.round(prixCampus(+places + 1) / 100)} € HT</b> par an

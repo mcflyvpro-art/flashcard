@@ -46,17 +46,19 @@
    sous-modules internes ne se résout pas ici) et la fonction ne répond
    jamais. curl/HTTP brut n'a pas ce problème. */
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { COMPTER, borneJetons, coutCents, econome, pireCents, plafondCents } from "../_shared/rentabilite.js";
 
 /* Les modèles, dans l'ordre (2026-10-29 : « l'IA doit être dispo partout ») :
    le principal, puis deux secours quand il est surchargé, limité, en panne
    ou introuvable — 429, 529, 5xx, 404, une coupure réseau. Une erreur qui
    ne tient pas au modèle (crédit épuisé, clé refusée, requête refusée)
    s'arrête au premier : un autre modèle du même compte n'y changerait rien.
-   Tarifs en cents par token, pour ai_usage et le budget du mois. */
+   Leurs tarifs vivent dans _shared/rentabilite.js (TARIFS, coutCents), avec
+   le plafond de coût de chaque compte (2026-11-08). */
 const MODELES = [
-  { id: "claude-sonnet-5", entree: 200 / 1e6, sortie: 1000 / 1e6 },
-  { id: "claude-sonnet-5-5", entree: 200 / 1e6, sortie: 1000 / 1e6 },
-  { id: "claude-haiku-5-5", entree: 10 / 1e6, sortie: 50 / 1e6 },
+  { id: "claude-sonnet-5" },
+  { id: "claude-sonnet-5-5" },
+  { id: "claude-haiku-5-5" },
 ];
 /* L'API Messages ; ANTHROPIC_URL ne sert qu'à l'essai sous Deno (tools/ia/essai.js). */
 const ANTHROPIC_URL = Deno.env.get("ANTHROPIC_URL") ?? "https://api.anthropic.com/v1/messages";
@@ -122,6 +124,37 @@ const admin = createClient(
 type Essai =
   | { ok: true; data: { usage?: { input_tokens?: number; output_tokens?: number }; content?: unknown; parsed_output?: unknown }; modele: (typeof MODELES)[number] }
   | { ok: false; erreur: string; statut: number };
+
+/* Les jetons d'entrée d'une génération, pour en réserver le pire coût
+   (2026-11-08). Un texte : une borne (un jeton pour deux signes) ; au-delà de
+   COMPTER, ou pour un PDF — dont rien ne borne les jetons qu'un comptage —,
+   l'API les compte (gratuit). Une photo : 5 000 jetons au plus (la plus
+   grande image qu'un modèle lise en pèse moins). Un comptage impossible pour
+   un PDF le suppose aussi lourd qu'un contexte entier : il ne passe alors que
+   s'il reste de quoi le payer. */
+const PAR_IMAGE = 5000;
+async function jetonsEntree(systeme: string, content: unknown[], modele: string, key: string): Promise<number> {
+  let signes = systeme.length, images = 0, pdf = false;
+  for (const b of content as { type: string; text?: string }[]) {
+    if (b.type === "text") signes += (b.text ?? "").length;
+    else if (b.type === "image") images++;
+    else if (b.type === "document") pdf = true;
+  }
+  const borne = borneJetons(signes) + images * PAR_IMAGE;
+  if (!pdf && borne - images * PAR_IMAGE <= COMPTER) return borne;
+  try {
+    const r = await fetch(ANTHROPIC_URL + "/count_tokens", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: modele, system: systeme, messages: [{ role: "user", content }] }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    const j = r.ok ? await r.json() as { input_tokens?: number } : null;
+    // le schéma de réponse et la réflexion ajoutent quelques centaines de jetons : on prend large
+    if (j && Number(j.input_tokens) > 0) return Number(j.input_tokens) + 2000;
+  } catch (e) { console.error("count_tokens", String(e)); }
+  return pdf ? 1_000_000 : borne;
+}
 
 /* Un appel à l'API Messages, modèle par modèle (MODELES). Ce qui revient
    d'Anthropic en erreur part au journal de la fonction (le type et le
@@ -384,7 +417,8 @@ Deno.serve(async (req) => {
      professeur, le quota de sa licence. Une base sans la fonction laisse
      passer, comme avant. */
   const { data: droits, error: sansOffre } = await admin.rpc("ia_droits", { u: uid });
-  const d = (droits ?? {}) as { offre?: string; niveau?: string; essai?: boolean; prof?: boolean; licence?: number | null };
+  const d = (droits ?? {}) as { offre?: string; niveau?: string; essai?: boolean; prof?: boolean; licence?: number | null;
+    fait?: number; depense?: number };
   const infini = !sansOffre && d.niveau === "infini" && !d.essai;
   const prof = !!d.prof;
   const maxCartes = infini ? INFINI.cartes : MAX_CARDS;
@@ -470,43 +504,6 @@ Deno.serve(async (req) => {
     if (text.length > MAX_CHARS) return json({ error: "long", max: MAX_CHARS }, 413);
   }
 
-  /* garde-fous de dépense : plafond du mois, budget du projet, quota du jour.
-     Contrôlés ET réservés d'un seul tenant par la base (ia_reserver, un
-     compte à la fois) : compter ici puis écrire après l'appel laissait
-     passer ensemble cinquante appels lancés ensemble (2026-11-05). */
-  const now = new Date();
-  const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-    .toISOString().slice(0, 10);
-  const today = now.toISOString().slice(0, 10);
-
-  if (!sansOffre && d.offre === "gratuit") return json({ error: "plus" }, 402);
-  /* Le quota du mois : celui de la licence Campus d'abord ; puis l'essai
-     (10), Infini (150 sur le meilleur modèle, puis Haiku sans limite :
-     jamais « mquota »), un professeur, un élève. */
-  const mensuel = typeof d.licence === "number" ? d.licence : d.essai ? ESSAI
-    : infini ? INFINI.premium : prof ? MONTHLY_PROF : MONTHLY_PLUS;
-  const parJour = infini ? INFINI.jour : prof ? DAILY_PROF : DAILY_CALLS;
-  const fichiersJour = infini ? INFINI.fichiers : prof ? DAILY_FILES_PROF : DAILY_FILES;
-  const { data: resa, error: sansResa } = await admin.rpc("ia_reserver", {
-    u: uid, p_op: op, p_jour: today, p_mois: firstOfMonth,
-    // Infini ne bute jamais sur le mois : au-delà de ses 150, il continue sur Haiku
-    p_mensuel: sansOffre || infini ? null : mensuel,
-    p_par_jour: parJour, p_fichiers_par_jour: fichiersJour, p_budget_cents: BUDGET_CENTS,
-  });
-  if (sansResa || !resa) {
-    console.error("ia_reserver", sansResa?.message ?? "vide");
-    return json({ error: "upstream" }, 503);
-  }
-  const r = resa as { statut: string; id?: number; fait?: number; jour?: number; fichiers?: number };
-  const myMonth = r.fait ?? 0, mine = r.jour ?? 0, myFiles = r.fichiers ?? 0;
-  if (r.statut === "mquota") return json({ error: "mquota", quota: mensuel, mois: { fait: myMonth, quota: mensuel } }, 429);
-  if (r.statut === "budget") return json({ error: "budget" }, 402);
-  if (r.statut === "quota") return json({ error: "quota" }, 429);
-  if (r.statut === "fquota") return json({ error: "fquota" }, 429);
-  if (r.statut !== "ok" || !r.id) return json({ error: "upstream" }, 503);
-  const rid = r.id;
-  const auDela = myMonth >= mensuel;
-
   const hint = String(body.hint ?? "").slice(0, 200).trim();
   const pages = String(body.pages ?? "").slice(0, 60).trim();
   /* La consigne de l'élève et le contexte du paquet, chacun à sa place
@@ -553,12 +550,69 @@ Deno.serve(async (req) => {
     : [{ type: "text", text: (enTete ? enTete + "\n" : "")
       + (infini ? `Ce compte peut recevoir jusqu'à ${INFINI.cartes} cartes.\n\n` : "") + "Texte :\n\n" + text }];
 
-  // au-delà des 150 du mois, Infini continue sur Haiku seul : le meilleur reste pour le gros de l'usage
-  const modeles = infini && auDela ? MODELES.filter((m) => m.id.startsWith("claude-haiku")) : MODELES;
+  /* garde-fous de dépense : plafond du mois, budget du projet, quota du jour.
+     Contrôlés ET réservés d'un seul tenant par la base (ia_reserver, un
+     compte à la fois) : compter ici puis écrire après l'appel laissait
+     passer ensemble cinquante appels lancés ensemble (2026-11-05). */
+  const now = new Date();
+  const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    .toISOString().slice(0, 10);
+  const today = now.toISOString().slice(0, 10);
+
+  if (!sansOffre && d.offre === "gratuit") return json({ error: "plus" }, 402);
+  /* Le quota du mois : celui de la licence Campus d'abord ; puis l'essai
+     (10), Infini (150 sur le meilleur modèle, puis Haiku sans limite :
+     jamais « mquota »), un professeur, un élève. */
+  const mensuel = typeof d.licence === "number" ? d.licence : d.essai ? ESSAI
+    : infini ? INFINI.premium : prof ? MONTHLY_PROF : MONTHLY_PLUS;
+  const parJour = infini ? INFINI.jour : prof ? DAILY_PROF : DAILY_CALLS;
+  const fichiersJour = infini ? INFINI.fichiers : prof ? DAILY_FILES_PROF : DAILY_FILES;
+
+  /* La rentabilité (2026-11-08, _shared/rentabilite.js) : le plafond de coût
+     de ce compte pour le mois ; le meilleur modèle tant que les trois quarts
+     n'en sont pas pris (et, pour Infini, ses 150 premières), le plus économe
+     ensuite ; et le PIRE coût de cette génération — son entrée (comptée par
+     l'API pour un PDF ou un long texte, bornée sinon) et sa sortie au maximum
+     permis — réservé avant d'appeler le modèle. */
+  const plafond = sansOffre ? null : plafondCents({ niveau: d.niveau, essai: d.essai, licence: d.licence });
+  const economie = (infini && (d.fait ?? 0) >= INFINI.premium) || econome(Number(d.depense ?? 0), plafond);
+  const modeles = economie ? MODELES.filter((m) => m.id.startsWith("claude-haiku")) : MODELES;
+  const systeme = op === "examen" ? SYSTEM_EXAMEN : op === "corriger" ? SYSTEM_CORRIGER
+    : op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM;
+  const maxSortie = infini ? INFINI.jetons : 16000;
+  const entree = await jetonsEntree(systeme, content, modeles[0].id, key);
+  const estime = +pireCents(modeles.map((m) => m.id), entree, maxSortie).toFixed(4);
+
+  const { data: resa, error: sansResa } = await admin.rpc("ia_reserver", {
+    u: uid, p_op: op, p_jour: today, p_mois: firstOfMonth,
+    // Infini ne bute jamais sur le mois : au-delà de ses 150, il continue sur Haiku
+    p_mensuel: sansOffre || infini ? null : mensuel,
+    p_par_jour: parJour, p_fichiers_par_jour: fichiersJour, p_budget_cents: BUDGET_CENTS,
+    p_plafond_cents: plafond, p_estime_cents: estime,
+  });
+  if (sansResa || !resa) {
+    console.error("ia_reserver", sansResa?.message ?? "vide");
+    return json({ error: "upstream" }, 503);
+  }
+  const r = resa as { statut: string; id?: number; fait?: number; jour?: number; fichiers?: number; reste?: number };
+  const myMonth = r.fait ?? 0, mine = r.jour ?? 0, myFiles = r.fichiers ?? 0;
+  if (r.statut === "mquota") return json({ error: "mquota", quota: mensuel, mois: { fait: myMonth, quota: mensuel } }, 429);
+  if (r.statut === "budget") return json({ error: "budget" }, 402);
+  /* Le plafond du compte : épuisé (« plafond », la suite le 1er), ou cette
+     génération-ci trop lourde pour ce qui reste (« lourd » : un document plus
+     court passerait). */
+  if (r.statut === "plafond") {
+    const reste = Number(r.reste ?? 0);
+    return json({ error: reste < 1 ? "plafond" : "lourd", mois: { fait: myMonth, quota: sansOffre ? null : mensuel } }, 429);
+  }
+  if (r.statut === "quota") return json({ error: "quota" }, 429);
+  if (r.statut === "fquota") return json({ error: "fquota" }, 429);
+  if (r.statut !== "ok" || !r.id) return json({ error: "upstream" }, 503);
+  const rid = r.id;
+
   const essai = await demander({
-    max_tokens: infini ? INFINI.jetons : 16000,
-    system: op === "examen" ? SYSTEM_EXAMEN : op === "corriger" ? SYSTEM_CORRIGER
-      : op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM,
+    max_tokens: maxSortie,
+    system: systeme,
     thinking: { type: "adaptive" },
     output_config: {
       // lire une page, ou suivre une consigne sur tout un paquet, demande plus d'attention
@@ -577,7 +631,7 @@ Deno.serve(async (req) => {
 
   const inTok = data.usage?.input_tokens ?? 0;
   const outTok = data.usage?.output_tokens ?? 0;
-  const cents = inTok * essai.modele.entree + outTok * essai.modele.sortie;
+  const cents = coutCents(essai.modele.id, inTok, outTok);
   // le coût de l'appel sur sa réservation (attendu : une fonction peut s'arrêter dès sa réponse partie)
   const { error: sansSolde } = await admin.rpc("ia_solder", { rid, p_in: inTok, p_out: outTok, p_cents: +cents.toFixed(4) });
   if (sansSolde) console.error("ia_solder", sansSolde.message);

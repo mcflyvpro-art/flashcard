@@ -19,7 +19,13 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-07 · « Modifier avec l'IA » : un paquet entier se
+DERNIER   2026-11-08 · L'IA rentable quel que soit l'usage : un plafond
+          de coût par compte et par mois (la moitié du pire net :
+          0,89 $ Mirandola+, 1,60 $ Infini), le pire coût de chaque
+          génération réservé avant l'appel, Haiku aux trois quarts
+          (migration 20261108111044, fonction ai redéployée,
+          docs/RENTABILITE.md). Avant :
+          2026-11-07 · « Modifier avec l'IA » : un paquet entier se
           retouche par une consigne (Mirandola+, Infini, Campus), une
           carte corrigée garde son état d'apprentissage ; Annuler.
           Avant :

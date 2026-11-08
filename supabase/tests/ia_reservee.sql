@@ -54,11 +54,11 @@ begin
     not exists (select 1 from public.ai_usage where id = (k->>'id')::bigint), k->>'id');
 
   insert into public.zz_res (nom, ok, vu) values ('rôle service seul : ni authenticated ni anon',
-    not has_function_privilege('authenticated', 'public.ia_reserver(uuid, text, date, date, integer, integer, integer, numeric)', 'execute')
-    and not has_function_privilege('anon', 'public.ia_reserver(uuid, text, date, date, integer, integer, integer, numeric)', 'execute')
+    not has_function_privilege('authenticated', 'public.ia_reserver(uuid, text, date, date, integer, integer, integer, numeric, numeric, numeric)', 'execute')
+    and not has_function_privilege('anon', 'public.ia_reserver(uuid, text, date, date, integer, integer, integer, numeric, numeric, numeric)', 'execute')
     and not has_function_privilege('authenticated', 'public.ia_solder(bigint, integer, integer, numeric)', 'execute')
     and not has_function_privilege('authenticated', 'public.ia_annuler(bigint)', 'execute')
-    and has_function_privilege('service_role', 'public.ia_reserver(uuid, text, date, date, integer, integer, integer, numeric)', 'execute'),
+    and has_function_privilege('service_role', 'public.ia_reserver(uuid, text, date, date, integer, integer, integer, numeric, numeric, numeric)', 'execute'),
     'droits');
 end $$;
 

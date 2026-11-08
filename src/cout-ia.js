@@ -12,18 +12,26 @@
 /* Une génération moyenne, sans historique : un cours collé (~0,7 c), une
    photo (~1 c), un PDF (~4,6 c), mesurés en octobre 2026 ; on prend large. */
 export const PAR_GENERATION_DEFAUT = 1.5;
+/* Le pire (2026-11-08) : chaque compte d'une licence a pour plafond de coût
+   par mois son quota fois 3 cents (PAR_GENERATION_CAMPUS de
+   supabase/functions/_shared/rentabilite.js — test/cout-ia.test.js garde les
+   deux d'accord). Un devis qui couvre ce pire-là reste rentable, quel que
+   soit l'usage. */
+export const PAR_GENERATION_PLAFOND = 3;
 
 const entier = n => Math.max(0, Math.floor(+n || 0));
 
 export const parGeneration = moyenne => (+moyenne > 0 ? +moyenne : PAR_GENERATION_DEFAUT);
 
 /* Ce que coûtent, au plus, les générations accordées pour un mois :
-   { generations, cents, centsAn, parGeneration, estime } (`estime` : sans
-   historique, le coût d'une génération est notre estimation). */
+   { generations, cents, centsAn, parGeneration, estime, pire, pireAn } (`estime` :
+   sans historique, le coût d'une génération est notre estimation ; `pire` :
+   toutes les générations au plafond, ce que la base ne laisse jamais dépasser). */
 export function coutIA({ profs = 0, eleves = 0, iaProf = 0, iaEleve = 0, moyenne = null } = {}) {
   const generations = entier(profs) * entier(iaProf) + entier(eleves) * entier(iaEleve);
   const p = parGeneration(moyenne), cents = Math.round(generations * p);
-  return { generations, cents, centsAn: cents * 12, parGeneration: p, estime: !(+moyenne > 0) };
+  const pire = generations * PAR_GENERATION_PLAFOND;
+  return { generations, cents, centsAn: cents * 12, parGeneration: p, estime: !(+moyenne > 0), pire, pireAn: pire * 12 };
 }
 
 /* « 1,23 € » depuis des centimes (une fraction de centime arrondie). */

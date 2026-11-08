@@ -198,6 +198,22 @@ test('l’IA épuisée le dit, la consigne revient et les photos attendent encor
   await expect(cartes(page)).toHaveCount(0);
 });
 
+test('le plafond de coût du mois (rentabilité) : l’IA le dit en clair, un document trop lourd aussi', async ({ page }) => {
+  const store = nouveauStore();
+  eleve(store, 'lea@exemple.fr');
+  await brancher(page, store);
+  await connexion(page, 'lea@exemple.fr');
+  await nouveau(page, 'Histoire');
+  store.iaPanne = 'plafond';                                  // ce que rend la fonction ai au plafond du compte
+  await ia(page).fill('10 cartes sur la Révolution');
+  await page.getByRole('button', { name: 'Envoyer' }).click();
+  await expect(page.locator('.pi-b.err')).toContainText('usage raisonnable du mois', { timeout: 10000 });
+  await expect(ia(page)).toHaveValue('10 cartes sur la Révolution');
+  store.iaPanne = 'lourd';
+  await page.getByRole('button', { name: 'Envoyer' }).click();
+  await expect(page.locator('.pi-b.err')).toContainText('document plus court', { timeout: 10000 });
+});
+
 test('un élève Campus sans IA : la barre, Photo et Fichier grisés, et pourquoi', async ({ page }) => {
   const store = nouveauStore(), m = modele(store);
   const lucie = semerCompte(store, 'lucie@exemple.fr');

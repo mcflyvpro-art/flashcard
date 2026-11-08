@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { PAR_GENERATION_DEFAUT, coutIA, eurosDe, parGeneration } from '../src/cout-ia.js';
+import { PAR_GENERATION_DEFAUT, PAR_GENERATION_PLAFOND, coutIA, eurosDe, parGeneration } from '../src/cout-ia.js';
+import { PAR_GENERATION_CAMPUS } from '../supabase/functions/_shared/rentabilite.js';
 
 describe('ce que coûte l’IA d’une licence', () => {
   it('le coût moyen mesuré, sinon notre estimation', () => {
@@ -13,6 +14,12 @@ describe('ce que coûte l’IA d’une licence', () => {
     expect(c.cents).toBe(Math.round(760 * 0.8));
     expect(c.centsAn).toBe(c.cents * 12);
     expect(c.estime).toBe(false);
+  });
+  it('le pire : chaque génération accordée au plafond de la base, celui que tient la fonction ai', () => {
+    expect(PAR_GENERATION_PLAFOND).toBe(PAR_GENERATION_CAMPUS);
+    const c = coutIA({ profs: 1, eleves: 12, iaProf: 400, iaEleve: 30, moyenne: 0.8 });
+    expect(c.pire).toBe(760 * PAR_GENERATION_PLAFOND);
+    expect(c.pireAn).toBe(c.pire * 12);
   });
   it('rien d’accordé, rien à payer ; des saisies vides ou fausses comptent pour zéro', () => {
     expect(coutIA({ profs: 3, iaProf: 0 }).cents).toBe(0);
