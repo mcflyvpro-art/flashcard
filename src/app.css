@@ -1332,10 +1332,16 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
    du nom, sa lumière sur ce qui avance (onglet allumé, bouton principal,
    barres de progression, bouton rond) — et son jeton, comme celui de ses
    amis qui l'ont (visuels() le dit), porte le liseré de la marque. */
-.jt.jt-plus{border:2.5px solid transparent;background:linear-gradient(var(--k,var(--ink2)) 0 0) padding-box,var(--plus) border-box;
+/* Le liseré dit l'offre de CETTE personne, jamais celle de qui regarde
+   (2026-11-08) : il ne lit donc pas --plus, que html.offre-infini passe à
+   l'or. Mirandola+ : un arc-en-ciel qui fait le tour ; Infini : l'or. */
+.jt{--lis:conic-gradient(from 200deg,#5A76D0,#9A78CF,#D7648D,#EE9A5A,#E9C85A,#6FC39A,#4FA6DA,#5A76D0)}
+.jt.jt-infini{--lis:conic-gradient(from 200deg,#8A6114,#D4A23C,#F3D98C,#C08B2B,#8A6114,#E4B957,#8A6114)}
+.jt:is(.jt-plus,.jt-infini){border:2.5px solid transparent;background:linear-gradient(var(--k,var(--ink2)) 0 0) padding-box,var(--lis) border-box;
   box-shadow:0 4px 14px -4px rgba(154,120,207,.8)}
-.jt.lg.jt-plus,.jt.xl.jt-plus{border-width:3.5px}
-.jt.vis.jt-plus{background:linear-gradient(color-mix(in srgb,var(--k) 30%,#fff) 0 0) padding-box,var(--plus) border-box}
+.jt.jt-infini{box-shadow:0 4px 14px -4px rgba(176,128,40,.85)}
+.jt:is(.lg,.xl):is(.jt-plus,.jt-infini){border-width:3.5px}
+.jt.vis:is(.jt-plus,.jt-infini){background:linear-gradient(color-mix(in srgb,var(--k) 30%,#fff) 0 0) padding-box,var(--lis) border-box}
 html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:var(--plus);-webkit-background-clip:text;
   background-clip:text;color:transparent}
 html.offre-plus :is(.tabs .sl,.fab,.prog i){background:var(--plus)}

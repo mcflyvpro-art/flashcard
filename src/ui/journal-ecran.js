@@ -230,15 +230,21 @@ export function journalEcran() {
   const avant = per < 365 ? activite(J, { depuis: decaler(depuis, -per), jusqua: depuis, aujourdhui: auj }) : null;
   const sv = savoir(db.decks, { maintenant: Date.now(), w: fsrsW() });
   const tous = activite(J, { aujourdhui: auj }).jours;          // la grille et le rythme d'un an débordent la période
+  /* Rien encore de révisé : aucun volet (2026-11-08, demandé : « que ça floute
+     vraiment quand il y a des stats »). Une mémoire de 0 carte sue et des
+     paquets à 0 %, floutés sous « Avec Mirandola+ » pour un compte gratuit,
+     vendaient un écran vide. Une carte déjà apprise (une sauvegarde
+     restaurée sans son journal) suffit à les montrer. */
+  const vu = J.toujours.n > 0 || sv.total.learn + sv.total.young + sv.total.mature > 0;
   $.innerHTML = `${barre}
     <div class="page jr">
       ${entete()}
       ${J.toujours.n ? chiffres(a, avant) : `<div class="empty">${svg(I.book)}<p>Aucune carte révisée pour l’instant</p></div>`}
       ${J.toujours.n ? annee(a, tous, auj) : ''}
-      <div class="jr-g">
+      ${vu ? `<div class="jr-g">
         <div class="jr-col">${J.toujours.n ? rythmeHtml(a, tous, auj, per) + matieres(a, J, sv) : ''}${livres(a, J, sv)}</div>
         <div class="jr-col">${memoire(sv)}${fidelite(a)}${heures(a)}${resistent()}</div>
-      </div>
+      </div>` : ''}
       ${depuisToujours(J)}
     </div>`;
   lier();

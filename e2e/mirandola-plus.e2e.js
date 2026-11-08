@@ -8,7 +8,7 @@
 // tools/paiement/essai.js.
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
-import { semerCompte } from './faux-cercle.js';
+import { semerCompte, semerLectures } from './faux-cercle.js';
 import { etab, semerEtablissement } from './faux-etablissement.js';
 import { inscrire } from './aide.js';
 
@@ -252,8 +252,13 @@ test('Mirandola gratuit grise ce qui est dans Mirandola+ ; le toucher ouvre Mira
   await page.locator('[data-act="mcq"]').first().click();
   await expect(page.locator('.fp-raison')).toContainText('QCM et associations', { timeout: 10000 });
 
-  // le journal : la série reste, la mémoire se floute
+  // le journal sans aucune révision : rien de flouté, rien à vendre
   await page.goto('./eleve/statistiques');
+  await expect(page.locator('.jr .empty')).toContainText('Aucune carte révisée', { timeout: 10000 });
+  await expect(page.locator('[data-volet]')).toHaveCount(0);
+  // des révisions : la série reste, la mémoire se floute
+  semerLectures(store, 'lea@exemple.fr', 6);
+  await page.reload();
   await expect(page.locator('[data-volet="memoire"]')).toHaveClass(/plus-floute/, { timeout: 10000 });
 });
 

@@ -11,7 +11,7 @@
 // dans `store.ce`. `store.lectureMs` règle les secondes de lecture avant les
 // choix (3 000 en vrai ; un parcours peut le raccourcir).
 import { uuid as randomUUID } from './uuid.js';
-import { offreDe } from './abonnements.js';
+import { niveauDuCompte, offreDe } from './abonnements.js';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const tire = n => Array.from({ length: n }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
@@ -281,7 +281,8 @@ export function rpcCercle(store, nom, b, user) {
       ...(c.personnes || []).map(id => ({ id, genre: 'p', ...(store.jetons || {})['p:' + id] })),
       ...(c.classes || []).map(id => ({ id, genre: 'c', ...(store.jetons || {})['c:' + id] }))
     ].map(r => ({ id: r.id, genre: r.genre, cle: r.cle || null, teinte: r.teinte == null ? null : r.teinte,
-      plus: r.genre === 'p' && offreDe(store, r.id) === 'plus' })),
+      plus: r.genre === 'p' && offreDe(store, r.id) === 'plus',
+      infini: r.genre === 'p' && niveauDuCompte(store, r.id) === 'infini' })),
     mon_jeton: () => { (store.jetons = store.jetons || {})['p:' + uid] = { cle: c.cle, teinte: c.rang }; return null; },
     prof_jeton_classe: () => { (store.jetons = store.jetons || {})['c:' + c.cid] = { cle: c.cle, teinte: c.rang }; return null; }
   }[nom];

@@ -79,3 +79,34 @@ test('un ami accepté pendant que l’app est ouverte paraît dès qu’on ouvre
   await versCercle(page);
   await expect(page.locator('.cc-ami', { hasText: 'Tom' })).toBeVisible({ timeout: 10000 });
 });
+
+// Le liseré du jeton dit l'offre de CHACUN (2026-11-08, demandé : « ceux +
+// en arc-en-ciel, Infini en or, les autres rien »). Avant, un abonné Infini
+// voyait en or tous ses amis Mirandola+ : leur liseré lisait sa lumière à lui.
+test('le liseré : Mirandola+ en arc-en-ciel, Infini en or, rien sinon — jamais l’offre de qui regarde', async ({ page }) => {
+  const store = { ...nouveauStore(), parDefaut: 'gratuit' };
+  await brancher(page, store);
+  await inscrire(page);
+  for (const [e, h] of [['tom@exemple.fr', 'tom'], ['ines@exemple.fr', 'ines'], ['ava@exemple.fr', 'ava']]) {
+    semerCompte(store, e); semerPseudo(store, e, h, h); semerAmis(store, 'lea@exemple.fr', e);
+  }
+  const uid = e => store.users.find(u => u.email === e).id;
+  const offert = (e, formule) => (store.tables.abonnements = store.tables.abonnements || [])
+    .push({ user_id: uid(e), offre: 'plus', statut: 'actif', source: 'offert', formule, fin_periode: null, fin_prevue: false });
+  offert('lea@exemple.fr', 'infini_annuel');           // qui regarde : Infini
+  offert('tom@exemple.fr', null);                      // Mirandola+
+  offert('ines@exemple.fr', 'infini_annuel');          // Infini
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/offre-infini/, { timeout: 10000 });
+  await versCercle(page);
+  const jeton = nom => page.locator('.cc-ami', { hasText: nom }).locator('.jt').first();
+  await expect(jeton('tom')).toHaveClass(/jt-plus/, { timeout: 10000 });
+  await expect(jeton('tom')).not.toHaveClass(/jt-infini/);
+  await expect(jeton('ines')).toHaveClass(/jt-infini/);
+  await expect(jeton('ava')).not.toHaveClass(/jt-(plus|infini)/);
+  await expect(page.locator('.cc-moi .jt').first()).toHaveClass(/jt-infini/);
+  // l'arc-en-ciel de Tom ne prend pas l'or de Léa
+  const fond = await jeton('tom').evaluate(e => getComputedStyle(e).backgroundImage);
+  expect(fond).toContain('conic-gradient');
+  expect(fond).not.toMatch(/rgb\(212, 162, 60\)/);
+});

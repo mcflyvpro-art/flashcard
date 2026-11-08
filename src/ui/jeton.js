@@ -6,7 +6,7 @@ import { voir } from '../core/visuels.js';
 import { COULEURS, EMBLEMES, embleme, jetonGroupe, jetonPersonne } from '../jeton.js';
 import { DE_PRES, ONGLETS, TEINTES_TRAIT, TRAITS, avatarSvg, choixDe, nomOnglet } from '../avatar.js';
 import { medaille } from '../club.js';
-import { aFolioPlus } from './bridage.js';
+import { aFolioPlus, aInfini } from './bridage.js';
 
 /* ══════════ les jetons : un seul dessin, partout ══════════
    Une personne : un rond, ses initiales ou son avatar (src/avatar.js). Une
@@ -18,13 +18,20 @@ import { aFolioPlus } from './bridage.js';
 
 const TAILLE = /^(xs|sm|lg|xl)$/;
 
-/* Mirandola+ se voit sur le jeton (app.css, .jt-plus) : le mien selon mon
-   offre, celui d'un autre selon visuels(), qui le dit. */
-const aPlus = (id, v) => (auth && id === auth.uid ? aFolioPlus() : !!(v && v.plus));
+/* L'offre se voit sur le jeton (app.css) : Mirandola+ en arc-en-ciel
+   (.jt-plus), Mirandola Infini en or (.jt-infini), rien pour les autres — le
+   mien selon mon offre, celui d'un autre selon visuels(), qui dit le niveau
+   de chacun (2026-11-08 : avant, un abonné Infini voyait en or le liseré de
+   tous ses amis Mirandola+, sa lumière à lui passant sur le leur). */
+function lisere(id, v) {
+  const moi = auth && id === auth.uid;
+  if (moi ? aInfini() : !!(v && v.infini)) return ' jt-infini';
+  return (moi ? aFolioPlus() : !!(v && v.plus)) ? ' jt-plus' : '';
+}
 
 function personneHtml(id, nom, v, taille) {
   const j = jetonPersonne(id, nom, v && { figure: v.cle, teinte: v.teinte });
-  return `<i class="jt${taille ? ' ' + taille : ''}${j.avatar ? ' vis' : ''}${aPlus(id, v) ? ' jt-plus' : ''}" data-jt="p:${esc(id || '')}"
+  return `<i class="jt${taille ? ' ' + taille : ''}${j.avatar ? ' vis' : ''}${lisere(id, v)}" data-jt="p:${esc(id || '')}"
     data-nom="${esc(nom || '')}" style="--k:${j.couleur}" aria-hidden="true">${j.avatar ? avatarSvg(j.avatar) : esc(j.texte)}</i>`;
 }
 

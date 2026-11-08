@@ -19,7 +19,11 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-08 · L'IA rentable quel que soit l'usage : un plafond
+DERNIER   2026-11-08 · Statistiques sans révision : plus de volet
+          flouté ; le liseré du jeton dit l'offre de chacun (arc-en-ciel
+          Mirandola+, or Infini, rien sinon), plus celle de qui regarde
+          (migration 20261108130000 écrite, PAS ENCORE APPLIQUÉE). Avant :
+          2026-11-08 · L'IA rentable quel que soit l'usage : un plafond
           de coût par compte et par mois (la moitié du pire net :
           0,89 $ Mirandola+, 1,60 $ Infini), le pire coût de chaque
           génération réservé avant l'appel, Haiku aux trois quarts
