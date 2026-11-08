@@ -358,6 +358,11 @@ async function essaisBrancher() {
   monde.codes = codesAvant; monde.apiAncienne = false;
   r = await appel({ action: 'payer', formule: 'mensuel', cgv: '2026-11-05' }, 'u7');
   verifie('payer : le prix posé par « Brancher Stripe »', r.statut === 200 && recu.checkout.at(-1)['line_items[0][price]'] === mois.id, recu.checkout.at(-1));
+  r = await appel({ action: 'payer', formule: 'infini_mensuel', cgv: '2026-11-05' }, 'u7');
+  const fi = recu.checkout.at(-1);
+  verifie('un premier abonnement Infini : son prix, et pas d’essai — l’essai est pour Mirandola+ seul',
+    r.statut === 200 && fi['line_items[0][price]'] === imois.id && !fi['subscription_data[trial_period_days]']
+    && !/jours gratuits/.test(fi['custom_text[submit][message]'] || ''), fi);
   r = await appel({ action: 'gerer' }, 'u2');
   verifie('gérer : le portail configuré par « Brancher Stripe »', r.statut === 200 && recu.portail.configuration === 'bpc_0', recu.portail);
 }

@@ -996,10 +996,16 @@ l'air de marcher ».
     prix Stripe (`PRIX` de `_shared/abonnement.js`, deux produits,
     `mirandola_plus` et `mirandola_infini`) et la page d'accueil disent la
     même chose (`test/site.test.js`, `test/paiement.test.js`). **L'essai de
-    7 jours** (`ESSAI_JOURS`) pour un premier abonnement Stripe (la
-    fonction `paiement` en décide : aucune ligne `stripe` connue), carte
-    demandée, IA limitée à 10 (`mon_ia`) ; « Essayer 7 jours gratuits » sur
-    l'écran Mirandola+ (`essaiPossible`). **Le code de lancement**
+    7 jours** (`ESSAI_JOURS`) pour un premier abonnement Stripe **à
+    Mirandola+ seulement** (2026-11-08, demandé : « pas d'essai gratuit pour
+    Infini » ; la fonction `paiement` en décide : aucune ligne `stripe`
+    connue et pas une formule Infini — déployée le jour même), carte
+    demandée, IA limitée à 10 (`mon_ia`) ; **mis en avant** : sur le site, la
+    pastille « 7 jours gratuits » et le bouton « Essayer 7 jours gratuits » de
+    l'offre Mirandola+ (`.essai-plus`, `.essai-note`), dans l'app la pastille
+    sur le choix du niveau (`.fp-essai`) et le bouton (`essaiPossible` =
+    `premier()` et pas Infini ; le code de lancement suit `premier()`, Infini
+    compris) ; les conditions de vente § 3 bis le disent. **Le code de lancement**
     (`PROMO` : `LANCEMENT`, −20 % trois mois — la première année en annuel
     —, premier abonnement ; coupon et code créés par « Brancher Stripe ») :
     `?promo=` sur le site suit jusqu'à `/app` (`relierVente` de
@@ -1009,8 +1015,10 @@ l'air de marcher ».
     (`promo`, 404). **Il est mis en avant depuis le 2026-11-07** (demandé : « je
     veux qu'il soit visible au début », `PROMO.enCours`) : un bandeau en tête
     de chaque page du site (`.lancement` de `partiels/tete.html`,
-    `data-promo`, « Copier » par `copierCode` de `commun.js`) et une ligne
-    au-dessus des offres (`.promo-tarifs`) ; les boutons d'achat l'emportent
+    `data-promo`, « Copier » par `copierCode` de `commun.js` ; « Infini » en
+    or, `.lancement-or`) et une ligne au-dessus des offres (`.promo-tarifs`,
+    dite sans détour le 2026-11-08 : « Au mois : tes 3 premiers mois. À
+    l'année : toute ta première année. ») ; les boutons d'achat l'emportent
     d'office ; l'écran Mirandola+ le pose d'office sur un premier abonnement
     Stripe (`promoActive` de `ui/plus.js`) et dit ce qu'il donne pour la
     formule choisie (`lignePromo`, `prixPromo` de `src/abonnement.js` :

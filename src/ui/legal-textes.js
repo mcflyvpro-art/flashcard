@@ -25,7 +25,7 @@ import { PWMIN } from './connexion.js';
    (LCEN) et les logiciels libres (les notices que leurs licences exigent).
    Les prix et les quotas viennent des modules qui les appliquent : le texte
    ne peut pas dire autre chose que l'app. */
-const LEGALV = '8 novembre 2026';  // l'usage raisonnable de l'IA (la veille : le vocabulaire classique ; le 6, l'examen blanc)
+const LEGALV = '8 novembre 2026';  // l'usage raisonnable de l'IA, l'essai pour Mirandola+ seul (la veille : le vocabulaire classique ; le 6, l'examen blanc)
 const E = ENTREPRISE;
 const mois = FORMULES.mensuel, an = FORMULES.annuel, imois = FORMULES.infini_mensuel, ian = FORMULES.infini_annuel;
 
@@ -178,8 +178,8 @@ Le prix payé est celui affiché au moment de la commande. S’il change, tu en
 es prévenu au moins 30 jours avant ta prochaine échéance ; le nouveau prix ne
 s’applique qu’à partir d’elle, et tu peux résilier avant.
 
-**3 bis. L’essai gratuit.** Un premier abonnement commence par
-${ESSAI_JOURS} jours gratuits : la carte est demandée à la commande, rien n’est
+**3 bis. L’essai gratuit.** Un premier abonnement à Mirandola+ commence par
+${ESSAI_JOURS} jours gratuits (Mirandola Infini n’a pas d’essai) : la carte est demandée à la commande, rien n’est
 prélevé pendant l’essai, et l’IA y est limitée à 10 générations. Résilier
 avant la fin de l’essai ne coûte rien ; sinon l’abonnement commence au
 prix choisi, à la fin de l’essai. L’essai ne se donne qu’une fois par

@@ -19,7 +19,11 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-08 · Statistiques sans révision : plus de volet
+DERNIER   2026-11-08 · L'essai de 7 jours pour Mirandola+ seul, mis en
+          avant (site et app ; fonction paiement déployée) ; le bandeau du
+          code : Infini en or, ce que donne le code dit clairement ; la
+          phrase « Pour tout l'établissement… » retirée. Avant :
+          2026-11-08 · Statistiques sans révision : plus de volet
           flouté ; le liseré du jeton dit l'offre de chacun (arc-en-ciel
           Mirandola+, or Infini, rien sinon), plus celle de qui regarde
           (migration 20261108133515 appliquée). Avant :

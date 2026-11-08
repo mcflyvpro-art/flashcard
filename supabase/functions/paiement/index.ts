@@ -265,10 +265,11 @@ Deno.serve(async (req) => {
     if (offre?.offre === "plus" && !(infini && offre?.abonnement?.source === "offert")) return json({ error: "deja" }, 409);
 
     /* L'essai : seulement pour qui n'a jamais eu d'abonnement Stripe (la
-       ligne garde le client d'un abonnement fini). Le code promo d'un lien :
-       retrouvé chez Stripe ; inconnu ou fini, on le dit plutôt que de
-       facturer plein tarif sans prévenir. */
-    const essai = !ligne;
+       ligne garde le client d'un abonnement fini), et pour Mirandola+ seul
+       (2026-11-08, demandé : « pas d'essai gratuit pour Infini, que pour
+       Mirandola+ »). Le code promo d'un lien : retrouvé chez Stripe ; inconnu
+       ou fini, on le dit plutôt que de facturer plein tarif sans prévenir. */
+    const essai = !ligne && !infini;
     let promo: string | undefined;
     if (body.promo) {
       const code = String(body.promo).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 30);

@@ -242,7 +242,11 @@ prix ; le portail passe de l'un à l'autre au prorata. En base, l'offre
 reste `plus` pour les deux, le niveau (`niveau_de`, `mon_offre().niveau`)
 dit `infini` (migration `20261105174551_infini_et_essai`).
 
-- **L'essai** : 7 jours pour un premier abonnement Stripe, la carte
+- **L'essai** : 7 jours pour un premier abonnement Stripe **à Mirandola+
+  seulement** (2026-11-08, demandé : « pas d'essai gratuit pour Infini » ;
+  `essai = !ligne && !infini` de la fonction `paiement`, `essaiPossible` de
+  `ui/plus.js`), mis en avant sur le site (`.essai-plus` de l'offre
+  Mirandola+) et sur l'écran Mirandola+ (`.fp-essai`), la carte
   demandée d'emblée, l'abonnement arrêté sans carte valide à la fin ;
   l'IA y est limitée à 10 générations (`mon_ia`, `ia_droits`). À la fin
   d'un essai non poursuivi, les livres restent ; au-delà de 5, on n'en

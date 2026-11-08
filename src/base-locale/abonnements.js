@@ -121,9 +121,11 @@ function payer(store, b, uid) {
     }
     if (!(infini && !s && table(store).some(x => x.user_id === uid && x.source === 'offert'))) return [409, { error: 'deja' }];
   }
-  /* comme la vraie : 7 jours d'essai pour un premier abonnement Stripe
-     (`store.sansEssai` : un parcours qui veut un abonnement payé d'emblée) */
-  const essai = !store.sansEssai && !table(store).some(x => x.user_id === uid && x.source === 'stripe');
+  /* comme la vraie : 7 jours d'essai pour un premier abonnement Stripe à
+     Mirandola+, jamais à Infini (2026-11-08) ; `store.sansEssai` : un
+     parcours qui veut un abonnement payé d'emblée */
+  const essai = !store.sansEssai && !String(b.formule || '').startsWith('infini')
+    && !table(store).some(x => x.user_id === uid && x.source === 'stripe');
   const annuel = FORMULES[b.formule].par === 'an';
   const ligne = { user_id: uid, offre: 'plus', statut: essai ? 'essai' : 'actif', source: 'stripe', formule: b.formule,
     client_stripe: 'cus_' + uid.slice(0, 8), abonnement_stripe: 'sub_' + uid.slice(0, 8),

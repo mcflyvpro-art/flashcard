@@ -299,13 +299,18 @@ test('dans l’app des magasins : l’achat intégré, jamais Stripe', async ({ 
 /* Mirandola Infini (2026-11-06) : le niveau au-dessus, choisi avant la
    période ; ses prix, ce qu'il ajoute, puis l'abonnement Infini et son nom
    partout (le titre, la licence). */
-test('Mirandola Infini : choisir le niveau, voir ce qu’il ajoute, s’abonner', async ({ page }) => {
-  const store = { ...gratuit(), sansEssai: true };
+test('Mirandola Infini : choisir le niveau, voir ce qu’il ajoute, s’abonner — sans essai, l’essai est pour Mirandola+', async ({ page }) => {
+  const store = gratuit();                                    // un premier abonnement : l'essai irait à Mirandola+, jamais à Infini
   await brancher(page, store);
   await inscrire(page);
   await page.locator('.tabs [data-act="tab-plus"]').click();
   await expect(ecran(page)).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.fp-n[data-v="plus"] .fp-essai')).toHaveText('7 jours gratuits');
+  await expect(page.locator('.fp-n[data-v="infini"] .fp-essai')).toHaveCount(0);
+  await expect(page.locator('.fp-payer')).toContainText('Essayer 7 jours gratuits');
   await page.getByRole('radio', { name: /^Infini/ }).click();
+  await expect(page.locator('.fp-payer')).toContainText('Passer à Mirandola Infini');
+  await expect(page.locator('.fp-note')).not.toContainText('Rien n’est prélevé');
   await expect(page.locator('.hero')).toContainText('Mirandola Infini');
   await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('6,67');
   await expect(page.getByRole('radio', { name: /Annuel/ })).toContainText('79,99');

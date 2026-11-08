@@ -137,8 +137,10 @@ const infini = () => plus.niveau === 'infini';
 const commande = () => formuleDe(plus.niveau, plus.formule);
 
 function niveaux() {
+  // l'essai se voit sur Mirandola+ dès le choix du niveau (2026-11-08, demandé : « mets en avant l'essai de 7 jours »)
+  const essai = cle => (cle === 'plus' && premier() ? `<i class="fp-essai">${ESSAI_JOURS} jours gratuits</i>` : '');
   const n = (cle, nom, depuis) => `<button class="fp-n${plus.niveau === cle ? ' on' : ''}" role="radio" aria-checked="${plus.niveau === cle}"
-      data-fp="niveau" data-v="${cle}"><b>${nom}</b><span>dès ${euros(depuis)}/mois</span></button>`;
+      data-fp="niveau" data-v="${cle}">${essai(cle)}<b>${nom}</b><span>dès ${euros(depuis)}/mois</span></button>`;
   return `<div class="fp-niveaux" role="radiogroup" aria-label="Niveau">${n('plus', 'Mirandola+', FORMULES.annuel.mois)}${
     n('infini', 'Infini', FORMULES.infini_annuel.mois)}</div>`;
 }
@@ -169,8 +171,10 @@ const garantie = p => (vente(p) === 'stripe' ? 'Paiement sécurisé par Stripe �
 /* L'essai (2026-11-05) : un compte qui n'a jamais eu d'abonnement Stripe a
    7 jours gratuits — la fonction paiement en décide, l'écran le dit, avec
    le jour avant lequel rien n'est prélevé. */
-// l'essai : jamais d'abonnement payé — un Mirandola+ offert y a droit aussi, pour Infini (la fonction paiement en décide pareil)
-const essaiPossible = () => !offre.abonnement || offre.abonnement.source === 'offert';
+// un premier abonnement : jamais d'abonnement payé — un Mirandola+ offert compte comme tel (la fonction paiement en décide pareil)
+const premier = () => !offre.abonnement || offre.abonnement.source === 'offert';
+// l'essai : un premier abonnement à Mirandola+, jamais à Infini (2026-11-08, demandé : « pas d'essai gratuit pour Infini »)
+const essaiPossible = () => premier() && !infini();
 const finEssai = () => new Date(Date.now() + ESSAI_JOURS * 864e5).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 
 /* Le code d'un lien des réseaux, gardé 14 jours par ui/plus-porte.js. */
@@ -188,7 +192,7 @@ export function promoGardee() {
 const lancementFini = () => { try { return !!localStorage.getItem('folio.promo.fini'); } catch (e) { return false; } };
 function promoActive(monte) {
   if (monte && offre.abonnement && offre.abonnement.source === 'stripe') return '';
-  return promoGardee() || (PROMO.enCours && essaiPossible() && !lancementFini() ? PROMO.code : '');
+  return promoGardee() || (PROMO.enCours && premier() && !lancementFini() ? PROMO.code : '');
 }
 const promoHtml = code => (code === PROMO.code
   ? `<p class="fp-promo fp-lancement">${svg(I.tag)}<span><b class="fp-remise">−${PROMO.remise}&nbsp;%</b>Lancement : ${

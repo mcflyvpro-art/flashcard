@@ -747,6 +747,16 @@ button{font:inherit;color:inherit}
 .promo-tarifs{margin:20px auto 0;max-width:36em;text-align:center;font-size:15px;line-height:1.6;color:var(--encre2)}
 .promo-tarifs .lancement-code{margin:0 3px;border-color:var(--az4);color:var(--encre)}
 .promo-tarifs .lancement-ok{background:var(--encre);color:#fff}
+.promo-detail{display:inline-block;margin-top:4px;font-size:14px;color:var(--encre2)}
+/* Infini dans le bandeau : son or (2026-11-08) */
+.lancement-or{font-weight:750;font-style:italic;background:linear-gradient(135deg,#D4A23C,#F3D98C 55%,#E4B957);-webkit-background-clip:text;
+  background-clip:text;color:transparent;padding-right:.06em}
+/* l'essai de Mirandola+ (2026-11-08) : une pastille au-dessus du bouton, une ligne dessous */
+.essai-plus{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin:2px 0 12px;padding:5px 12px;border-radius:99px;
+  background:var(--degrade);color:#fff;font-size:13.5px;line-height:1.2}
+.essai-plus .ic{width:15px;height:15px}
+.essai-plus b{font-weight:800}
+.essai-note{margin:8px 0 0;font-size:12.5px;text-align:center;color:var(--creme2)}
 @media (max-width:600px){ .lancement{font-size:13px;padding:7px 12px} .lancement-sur{display:none} }
 
 /* à cheval sur le bord du haut, centré (2026-11-07) : en haut à droite, il
