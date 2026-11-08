@@ -6,9 +6,9 @@ import { go, render } from './bibliotheque.js';
 import { isProf, isPupil } from './classement.js';
 import { esc, subj } from '../core/coeur-sync.js';
 import { ouvrirSalle } from '../core/cercle.js';
-import { duelMake, DUELQ } from '../core/defis.js';
+import { duelMake } from '../core/defis.js';
 import { rangerClasses } from '../classe.js';
-import { DUREES, JEUX, NOMBRES, fabriquerQuestions, jouable, pagesJouables } from '../defi.js';
+import { DUREES, JEUX, NOMBRES, fabriquerQuestions, jouable, pagesJouables, rythmePossible } from '../defi.js';
 import { infos } from './cercle.js';
 import { blason, blasonClub } from './jeton.js';
 import { hlp } from './connexion.js';
@@ -24,8 +24,9 @@ import { toast } from './import-cartes.js';
    - Un club : en direct ou à son rythme.
    - Une classe (professeur) : en direct ou à son rythme.
    - Une salle ouverte : en direct seulement, avec un code à donner.
-   « À son rythme » est un QCM de 10 questions (les défis d'avant) ; le
-   direct se règle : jeu, nombre de questions, temps par question. */
+   Les deux se règlent : le jeu et le nombre de questions ; le direct,
+   aussi le temps par question (à son rythme, chacun prend le sien — il
+   était toujours un QCM de 10 avant le 2026-11-07). */
 
 export function ouvrirDefi(o = {}) {
   setDefi({ ...defiNeuf(), ...o });
@@ -52,14 +53,12 @@ const modesPossibles = ou => ou === 'amis' ? ['rythme'] : ou === 'ouverte' ? ['d
 function ajusterMode() {
   const m = modesPossibles(defi.ou);
   if (!m.includes(defi.mode)) defi.mode = m[0];
-  if (defi.mode === 'rythme') defi.jeu = 'qcm';
 }
 
 const cartesDe = d => pagesJouables(d.cards.filter(c => !c.x).map(c => ({ f: plain(c.f), b: plain(c.b) })));
 
 function livrePossible(d) {
-  if (defi.mode === 'rythme') return new Set(cartesDe(d).map(c => c.b.toLowerCase())).size >= 4;
-  return jouable(cartesDe(d), defi.jeu);
+  return defi.mode === 'rythme' ? rythmePossible(cartesDe(d), defi.jeu) : jouable(cartesDe(d), defi.jeu);
 }
 
 function ouHtml() {
@@ -98,10 +97,11 @@ function commentHtml() {
       <button class="dn-mode ${direct ? '' : 'on'}" data-cc="dn-mode" data-id="rythme" ${m.includes('rythme') ? '' : 'disabled'}>
         ${svg(I.clock)}<b>À son rythme</b></button>
     </div>
-    ${direct ? `<div class="dn-jeux">${Object.entries(JEUX).map(([k, j]) => `
-        <button class="dn-jeu ${defi.jeu === k ? 'on' : ''}" data-cc="dn-jeu" data-id="${k}">${svg(I[ICONE_JEU[k]])}<b>${j.nom}</b></button>`).join('')}</div>
-      <div class="dn-reglages">${seg('n', NOMBRES, defi.n, 'card', 'Questions')}${seg('duree', DUREES, defi.duree, 'clock', 'Temps par question')}</div>`
-      : `<p class="dn-rythme">${svg(I.card)}${DUELQ} · QCM</p>`}
+    <div class="dn-jeux">${Object.entries(JEUX).map(([k, j]) => `
+      <button class="dn-jeu ${defi.jeu === k ? 'on' : ''}" data-cc="dn-jeu" data-id="${k}" aria-pressed="${defi.jeu === k}">${
+        svg(I[ICONE_JEU[k]])}<b>${j.nom}</b></button>`).join('')}</div>
+    <div class="dn-reglages">${seg('n', NOMBRES, defi.n, 'card', 'Questions')}${
+      direct ? seg('duree', DUREES, defi.duree, 'clock', 'Temps par question') : ''}</div>
   </section>`;
 }
 
@@ -149,7 +149,7 @@ async function lancer() {
   defi.envoi = true; repeint();
   if (defi.mode === 'rythme') {
     cercle.retour = club ? { name: 'club', id: club } : { name: 'commu' };
-    const ok = await duelMake(d, { club, classe });
+    const ok = await duelMake(d, { club, classe }, { jeu: defi.jeu, n: defi.n });
     defi.envoi = false;
     if (ok) return go(cercle.retour.name, cercle.retour.id);
     return repeint();

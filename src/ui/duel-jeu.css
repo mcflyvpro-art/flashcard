@@ -1,0 +1,13 @@
+/* ══════════ jouer un défi à son rythme (chargée avec ui/duel-jeu.js) ══════════
+   Le QCM garde les choix de l'app (.opts, .op d'app.css) ; ici, le vrai ou
+   faux (la réponse proposée, deux boutons côte à côte) et la réponse écrite
+   (un champ et « Valider », la bonne réponse dite quand c'est faux). */
+.opts.vf{flex-direction:row}.opts.vf .op{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.opts.vf .op svg{width:20px;height:20px}
+.duel-propose{display:flex;flex-direction:column;gap:3px;margin:0 0 12px;padding:13px 16px;border-radius:16px;background:var(--bg2);box-shadow:var(--edge)}
+.duel-propose i{font-style:normal;font-size:12px;font-weight:650;color:var(--soft)}.duel-propose b{font-size:17px}
+.duel-juste{margin:12px 2px 0;font-weight:700;color:var(--ok)}
+.duel-ecrit{display:flex;gap:8px}.duel-ecrit .fld{height:52px;border-radius:14px}.duel-ecrit .fld input{font-size:16px}
+.duel-ecrit .cta{flex:none;width:auto;padding:0 18px}
+.duel-ecrit-fait{display:flex;align-items:center;gap:9px;padding:14px 16px;border-radius:18px;color:#fff;font-weight:700}
+.duel-ecrit-fait.ok{background:var(--ok)}.duel-ecrit-fait.ko{background:var(--ko)}.duel-ecrit-fait svg{width:20px;height:20px;flex:none}

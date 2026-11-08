@@ -19,7 +19,11 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-07 · L'éditeur offre Mirandola Infini (migration
+DERNIER   2026-11-07 · Les défis à son rythme se règlent : QCM, vrai
+          ou faux, réponse écrite, 5 à 20 questions (migration
+          20261107232536) ; un score envoyé ne disparaît plus de l'écran.
+          Avant :
+          2026-11-07 · L'éditeur offre Mirandola Infini (migration
           20261107231943, 11 tests SQL, parcours e2e) ; la licence d'un
           abonné Infini garde sa formule et son prix. Avant :
           2026-11-07 · Le site au téléphone : les tableaux en cartes,

@@ -577,7 +577,7 @@ export const HELP = {
   classementClub: ['Classement du club', 'Les cartes révisées par chaque membre ces sept derniers jours.'],
   modes: ['En direct ou à son rythme',
     'En direct : tout le monde joue en même temps avec un code à six chiffres, et voit le classement après chaque question.' +
-    '\n\nÀ son rythme : un QCM de dix questions, les mêmes pour tous. Chacun le joue quand il veut, une seule fois.'],
+    '\n\nÀ son rythme : le jeu et le nombre de questions que tu choisis, les mêmes pour tous. Chacun le joue quand il veut, une seule fois.'],
   jMatieres: ['Temps par matière',
     'Chaque minute reste dans la matière où tu l’as passée. Changer la matière d’un paquet, le fusionner ou le ' +
     'supprimer ne réécrit pas le passé : seules les révisions suivantes vont ailleurs.'],

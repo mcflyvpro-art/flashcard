@@ -95,6 +95,41 @@ export function fabriquerQuestions(cartes, jeu, n, alea = Math.random) {
   }).filter(q => jeu !== 'ecrit' || q.a.length);
 }
 
+/* ---------- à son rythme (les `duels`, réglables depuis le 2026-11-07) ----------
+   Demandé : « les défis sont toujours QCM 10, on ne peut pas choisir ». Le
+   jeu et le nombre de questions se choisissent comme en direct ; les
+   questions se figent à la création (tout le monde répond aux mêmes, dans
+   le même ordre — sinon comparer les scores ne voudrait rien dire). Une
+   ligne par question, que lit encore une app d'avant (elle jouait tout en
+   QCM sur [recto, verso]) : QCM et réponse écrite [recto, verso], vrai ou
+   faux [recto, verso, réponse proposée] — proposée figée elle aussi. */
+const MIN_RYTHME = { qcm: 4, vf: 2, ecrit: 1 };      // réponses différentes qu'il faut au paquet
+export const jeuRythme = j => (Object.hasOwn(MIN_RYTHME, j) ? j : 'qcm');
+
+export function rythmePossible(cartes, jeu) {
+  const p = pagesJouables(cartes);
+  return !!p.length && reponsesDistinctes(p) >= MIN_RYTHME[jeuRythme(jeu)];
+}
+
+export function questionsRythme(cartes, jeu, n, alea = Math.random) {
+  const j = jeuRythme(jeu), combien = Math.max(1, Math.min(+n || 10, 50));
+  if (!rythmePossible(cartes, j)) return [];
+  if (j === 'vf') return fabriquerQuestions(cartes, 'vf', combien, alea).map(q => [q.e, q.r, q.c[0]]);
+  if (j === 'ecrit') return fabriquerQuestions(cartes, 'ecrit', combien, alea).map(q => [q.e, q.r]);
+  // QCM : une réponse par question (les choix se tirent parmi les autres réponses du défi)
+  const vues = new Set(), uniques = [];
+  for (const c of melanger(pagesJouables(cartes), alea)) {
+    const k = cleReponse(c.b);
+    if (!vues.has(k)) { vues.add(k); uniques.push([c.f, c.b]); }
+  }
+  return uniques.slice(0, combien);
+}
+
+// vrai ou faux : la réponse proposée est-elle la bonne ? (une app d'avant n'a pas de troisième case)
+export const proposeeJuste = q => q.length < 3 || cleReponse(q[2]) === cleReponse(q[1]);
+// réponse écrite : juste si elle est l'une des réponses admises, accents et ponctuation pardonnés
+export const ecriteJuste = (q, texte) => !!cleReponse(texte) && reponsesAdmises(q[1]).includes(cleReponse(texte));
+
 /* ---------- le code d'une salle ---------- */
 export const pinDepuisTexte = s => {
   const m = String(s || '').match(/[?&]defi=([0-9 ]+)/);

@@ -1948,8 +1948,6 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,[contenteditable
 .dn-reglage{display:flex;align-items:center;gap:10px}
 .dn-reglage > svg{width:20px;height:20px;flex:none;color:var(--soft)}
 .dn-reglage .dn-seg{flex:1}
-.dn-rythme{display:flex;align-items:center;gap:8px;margin:10px 2px 0;font-size:14px;font-weight:650;color:var(--ink2)}
-.dn-rythme svg{width:18px;height:18px;color:var(--soft)}
 .dn-seg{display:flex;gap:3px;padding:3px;border-radius:12px;background:var(--bg2)}
 .dn-seg button{flex:1;height:36px;border-radius:9px;font-size:14px;font-weight:650;color:var(--soft);
   font-variant-numeric:tabular-nums;transition:background .15s,color .15s}

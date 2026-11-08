@@ -4,7 +4,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   JEUX, cleReponse, decalage, ecoule, fabriquerQuestions, jouable, lienDefi, messageSalle, pagesJouables,
-  phase, pinComplet, pinDepuisTexte, pinLisible, placeTexte, places, podium, reponsesAdmises, restant, signature
+  phase, pinComplet, pinDepuisTexte, pinLisible, placeTexte, places, podium, reponsesAdmises, restant, signature,
+  ecriteJuste, jeuRythme, proposeeJuste, questionsRythme, rythmePossible
 } from '../src/defi.js';
 
 const graine = s => () => (s = (s * 1103515245 + 12345) % 2147483648) / 2147483648;
@@ -73,6 +74,44 @@ describe('les questions d’un livre', () => {
     expect(reponsesAdmises('chat / matou')).toEqual(['chat matou', 'chat', 'matou']);
     expect(reponsesAdmises('Paris')).toEqual(['paris']);
     expect(Object.keys(JEUX)).toEqual(['qcm', 'vf', 'ecrit']);
+  });
+});
+
+describe('un défi à son rythme (2026-11-07)', () => {
+  it('le jeu et le nombre se choisissent ; une app d’avant lit encore recto et verso', () => {
+    const qcm = questionsRythme(LIVRE, 'qcm', 3, graine(3));
+    expect(qcm).toHaveLength(3);
+    for (const q of qcm) expect(q).toHaveLength(2);
+    expect(questionsRythme(LIVRE, 'qcm', 20, graine(3))).toHaveLength(5);     // pas plus que de réponses différentes
+    const vf = questionsRythme(LIVRE, 'vf', 5, graine(5));
+    expect(vf).toHaveLength(5);
+    for (const q of vf) {
+      expect(q).toHaveLength(3);
+      expect(pagesJouables(LIVRE).some(p => p.f === q[0] && p.b === q[1])).toBe(true);
+    }
+    expect(new Set(vf.map(proposeeJuste)).size).toBe(2);                     // des vrais et des faux
+    for (const q of questionsRythme(LIVRE, 'ecrit', 4, graine(9))) expect(q).toHaveLength(2);
+  });
+  it('ce qu’il faut au paquet : 4 réponses pour un QCM, 2 pour un vrai ou faux, 1 pour l’écrit', () => {
+    const deux = LIVRE.slice(0, 2);
+    expect(rythmePossible(deux, 'qcm')).toBe(false);
+    expect(rythmePossible(deux, 'vf')).toBe(true);
+    expect(rythmePossible(LIVRE.slice(0, 1), 'vf')).toBe(false);
+    expect(rythmePossible(LIVRE.slice(0, 1), 'ecrit')).toBe(true);
+    expect(questionsRythme(deux, 'qcm', 10)).toEqual([]);
+    expect(rythmePossible([], 'ecrit')).toBe(false);
+  });
+  it('juger : la proposée, l’écrite (accents pardonnés, une partie d’une énumération), un défi d’avant', () => {
+    expect(proposeeJuste(['merci', 'grazie', 'Grazie !'])).toBe(true);
+    expect(proposeeJuste(['merci', 'grazie', 'il treno'])).toBe(false);
+    expect(proposeeJuste(['merci', 'grazie'])).toBe(true);
+    expect(ecriteJuste(['élève', 'Élève'], 'eleve')).toBe(true);
+    expect(ecriteJuste(['chat', 'chat, matou'], 'matou')).toBe(true);
+    expect(ecriteJuste(['chat', 'chat'], '  ')).toBe(false);
+    expect(ecriteJuste(['chat', 'chat'], 'chien')).toBe(false);
+    expect(jeuRythme('vf')).toBe('vf');
+    expect(jeuRythme(undefined)).toBe('qcm');
+    expect(jeuRythme('toString')).toBe('qcm');
   });
 });
 

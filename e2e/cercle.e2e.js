@@ -7,6 +7,7 @@ import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
 import { semerAmis, semerClub, semerCompte, semerLectures, semerPseudo } from './faux-cercle.js';
 import { connecter, inscrire } from './aide.js';
+import { proposeeJuste } from '../src/defi.js';
 
 const CAPITALES = [['France', 'Paris'], ['Italie', 'Rome'], ['Espagne', 'Madrid'], ['Portugal', 'Lisbonne'],
   ['Allemagne', 'Berlin'], ['Autriche', 'Vienne'], ['Belgique', 'Bruxelles'], ['Suède', 'Stockholm']];
@@ -119,6 +120,71 @@ test('défi en direct : un hôte, deux joueurs, un code, un podium', async ({ pa
   const scores = store.ce.joueurs.map(j => j.score);
   expect(scores.reduce((a, b) => a + b, 0)).toBeGreaterThan(0);    // des bonnes réponses ont rapporté des points
   expect(store.ce.reponses).toHaveLength(10);                      // 5 questions × 2 joueurs, une réponse chacun
+});
+
+test('un défi à son rythme se règle : un vrai ou faux en 5, une réponse écrite, joués par un ami', async ({ page, browser }) => {
+  test.setTimeout(90000);
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  semerCompte(store, 'tom@exemple.fr');
+  semerPseudo(store, 'lea@exemple.fr', 'lea');
+  semerPseudo(store, 'tom@exemple.fr', 'tom');
+  semerAmis(store, 'lea@exemple.fr', 'tom@exemple.fr');
+  semerLivre(store, 'lea@exemple.fr', 'Capitales', CAPITALES);
+  await page.reload();
+  await expect(page.locator('#boot')).toHaveCount(0, { timeout: 10000 });
+
+  // Léa : à ses amis, le jeu et le nombre se choisissent (plus de « 10 · QCM » imposé)
+  const lancer = async (jeu, n) => {
+    await page.getByRole('button', { name: 'Lancer un défi' }).click();
+    await page.locator('[data-cc="dn-ou"][data-id="amis"]').click();
+    await page.locator('[data-cc="dn-livre"]', { hasText: 'Capitales' }).click();
+    await expect(page.locator('[data-cc="dn-mode"][data-id="rythme"]')).toHaveClass(/\bon\b/);
+    await expect(page.locator('[data-cc="dn-duree"]')).toHaveCount(0);          // à son rythme, chacun son temps
+    await page.locator(`[data-cc="dn-jeu"][data-id="${jeu}"]`).click();
+    await page.locator(`[data-cc="dn-n"][data-id="${n}"]`).click();
+    await page.getByRole('button', { name: 'Lancer le défi' }).click();
+  };
+  await versCercle(page);
+  await lancer('vf', 5);
+  await expect(page.locator('.toast:not(.sort)')).toContainText('5 questions · Vrai ou faux', { timeout: 10000 });
+  await lancer('ecrit', 5);
+  await expect(page.locator('.toast:not(.sort)')).toContainText('5 questions · Réponse écrite', { timeout: 10000 });
+  const vf = store.tables.duels.find(d => d.jeu === 'vf'), ecrit = store.tables.duels.find(d => d.jeu === 'ecrit');
+  expect(vf.total).toBe(5);
+  for (const q of vf.cards) expect(q).toHaveLength(3);                     // la réponse proposée, figée pour tous
+  expect(ecrit.cards).toHaveLength(5);
+
+  // Tom joue le vrai ou faux en répondant toujours « Vrai »
+  const p = await telephone(browser, store);
+  await connecter(p, 'tom@exemple.fr');
+  await versCercle(p);
+  const jouer = async (du, repondre) => {
+    await p.locator(`[data-duel="${du.id}"]`).click();
+    await p.locator('[data-mact="duelgo"]').click();
+    for (let i = 0; i < du.cards.length; i++) {
+      await expect(p.locator('.bar .num')).toHaveText(`${i + 1}/${du.cards.length}`, { timeout: 10000 });
+      await repondre(du.cards[i], i);
+    }
+    await expect(p.locator('.menu .bdr.me')).toBeVisible({ timeout: 10000 });
+  };
+  await jouer(vf, () => p.locator('[data-dpick="0"]').click());
+  const attendu = vf.cards.filter(proposeeJuste).length;
+  await expect(p.locator('.menu .bdr.me')).toContainText(`${attendu}/5`);
+  await p.keyboard.press('Escape');
+
+  // puis la réponse écrite : sans accents ni majuscules, la première fausse
+  await jouer(ecrit, async (q, i) => {
+    const champ = p.locator('#duelecrit');
+    await expect(champ).toBeFocused();
+    await champ.fill(i === 0 ? 'je ne sais pas' : q[1].toLowerCase());
+    await champ.press('Enter');
+    if (i === 0) await expect(p.locator('.duel-juste')).toHaveText(q[1]);      // la bonne réponse se lit
+  });
+  await expect(p.locator('.menu .bdr.me')).toContainText('4/5');
+  const scores = store.tables.duel_scores.filter(x => x.user_id === store.users.find(u => u.email === 'tom@exemple.fr').id);
+  expect(scores.map(x => x.score).sort()).toEqual([attendu, 4].sort());
 });
 
 test('mon jeton : un avatar et une couleur, le même visage chez un ami', async ({ page, browser }) => {

@@ -1,15 +1,8 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
-import { $ } from '../racine.js';
-import { I, svg } from '../icones.js';
-import { shuffle } from '../file.js';
-import {
-  auth, cercle, duelRun, duels, setAnimate, setDuelRun, setView
-} from '../data/etat.js';
-import { go, render } from './bibliotheque.js';
-import { esc } from '../core/coeur-sync.js';
-import { duelEnd } from '../core/defis.js';
-import { beep, toast } from './import-cartes.js';
-import { closeMenu } from './menus-a.js';
+import { I } from '../icones.js';
+import { auth, cercle, duels, setDuelRun } from '../data/etat.js';
+import { go } from './bibliotheque.js';
+import { toast } from './import-cartes.js';
 
 /* ---------- défis ----------
    Les questions sont figées à la création : tout le monde répond
@@ -21,50 +14,26 @@ export const myScore = id => (duels.scores || []).find(s => s.duel_id === id && 
 export const rankOf = id => (duels.scores || []).filter(s => s.duel_id === id)
   .sort((a, b) => b.score - a.score || a.ms - b.ms);
 
-function duelOpts() {
-  const r = duelRun, c = r.cards[r.i];
-  const pool = r.cards.filter((_, k) => k !== r.i).map(x => x[1]).filter(v => v !== c[1]);
-  r.opts = shuffle([c[1], ...shuffle(pool).slice(0, 3)]);
-  r.pick = null;
-}
+/* ---------- la porte de l'écran de jeu ----------
+   L'écran d'une partie (ui/duel-jeu.js et sa feuille) se charge quand on
+   lance la partie : rien d'autre ne doit l'importer. Le service worker le
+   garde avec le reste, il s'ouvre aussi hors ligne. */
+let jeu = null, chargement = null;
+const charger = () => chargement || (chargement = import('./duel-jeu.js').then(m => (jeu = m)));
 
-export function duelStart(du) {
+export async function duelStart(du) {
   if (myScore(du.id)) return;
-  setDuelRun({ id: du.id, name: du.name, cards: du.cards || [], i: 0, score: 0,
-              t0: Date.now(), pick: null, opts: [] });
-  if (duelRun.cards.length < 4) { setDuelRun(null); return toast(I.x, 'Défi incomplet'); }
-  duelOpts(); closeMenu();
-  setView({ name: 'duel' }); setAnimate(true); render();
+  try { await charger(); }
+  catch (e) { chargement = null; return toast(I.x, 'Défi indisponible pour l’instant'); }
+  jeu.commencer(du);
 }
 
-export function duelPick(k) {
-  const r = duelRun; if (!r || r.pick != null) return;
-  r.pick = k;
-  const good = r.opts[k] === r.cards[r.i][1];
-  if (good) r.score++;
-  beep(good);
-  render();
-  setTimeout(() => {
-    if (!duelRun || duelRun !== r) return;
-    if (r.i + 1 >= r.cards.length) return duelEnd();
-    r.i++; duelOpts(); render();
-  }, good ? 700 : 1300);
-}
-
+// une adresse de partie rouverte sans partie en cours : retour d'où l'on venait
 export function duelView() {
-  const r = duelRun;
-  if (!r) { const ret = cercle.retour || { name: 'commu' }; return go(ret.name, ret.id); }
-  const c = r.cards[r.i], good = c[1];
-  $.innerHTML = `
-    <div class="bar"><button class="ic" data-act="duelquit" aria-label="Abandonner">${svg(I.x)}</button>
-      <h1>${esc(r.name)}</h1>
-      <span class="num">${r.i + 1}/${r.cards.length}</span></div>
-    <div class="page">
-      <div class="dbar"><i style="width:${Math.round(r.i / r.cards.length * 100)}%"></i></div>
-      <div class="qcard" data-k="duel:${r.i}"><span>${esc(c[0])}</span></div>
-      <div class="opts">${r.opts.map((o, k) => {
-        const cl = r.pick == null ? '' : o === good ? ' ok' : (r.pick === k ? ' ko' : ' dim');
-        return `<button class="op${cl}" data-dpick="${k}">${esc(o)}</button>`;
-      }).join('')}</div>
-    </div>`;
+  if (jeu) return jeu.duelView();
+  setDuelRun(null);
+  const ret = cercle.retour || { name: 'commu' };
+  return go(ret.name, ret.id);
 }
+
+export function duelPick(k) { if (jeu) jeu.duelPick(k); }

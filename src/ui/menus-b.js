@@ -19,6 +19,7 @@ import {
 import { mountMenu } from './menus-a.js';
 import { timeAgo } from './reglages-corbeille.js';
 import { VERSN } from '../core/reglages-corbeille.js';
+import { JEUX, jeuRythme } from '../defi.js';
 
 export function paintMenuCard(w) {
   const d = deck(view.id), c = d && d.cards.find(x => x.id === cardEdit);
@@ -278,7 +279,7 @@ export function paintMenuDuelitem(w) {
         <div class="mhd">${svg(I.bolt)}
           <span class="mhx"><b>${esc(du.name)}</b>
             <i>lancé par ${esc(noDetect(shortWho(du.who) || 'un compte'))} · ${plur(du.total, 'question')}
-              · ${timeAgo(du.created_at)}</i></span>
+              · ${JEUX[jeuRythme(du.jeu)].nom} · ${timeAgo(du.created_at)}</i></span>
         </div>
         <div class="mscroll">${r.length ? r.map((sc, i) => `<div class="bdr ${sc.user_id === auth.uid ? 'me' : ''}">
             <span class="bdp">${medailleHtml(i + 1)}</span>
