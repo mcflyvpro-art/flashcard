@@ -121,3 +121,48 @@ export const borneJetons = signes => Math.ceil(Math.max(0, signes) / 2) + SYSTEM
 export function pireCents(modeles, entree, sortieMax) {
   return Math.max(...modeles.map(m => coutCents(m, entree, sortieMax)));
 }
+
+/* ---------- le modèle de chaque opération (2026-11-13) ----------
+   Demandé : « choisis à chaque fois le modèle le moins cher qui fait la
+   tâche parfaitement ». Claude Haiku 5.5 coûte vingt fois moins que Sonnet
+   et sait extraire et transformer ce qu'on lui donne : un texte collé ou un
+   PDF en cartes (`cards`, `pdf`), une retouche de la liste ou un cours collé
+   dans l'atelier (`prompt`). Sonnet garde ce qui demande un œil ou un
+   jugement : lire une écriture à la main (`ocr`, des photos de cahier),
+   composer un examen et corriger une copie (`examen`, `corriger`), et écrire
+   de mémoire des cartes sur un sujet (« 10 cartes sur… », « ajoute… » : des
+   faits que rien, dans ce qu'on lui donne, ne vérifie). Haiku en tête, une
+   réponse inutilisable — rien de lisible, une liste vide, un refus — repart
+   sur Sonnet (`escalade`) : l'élève a toujours un résultat, et ne paie le
+   meilleur modèle que quand il le faut. Passé les trois quarts du plafond
+   (`econome`), Haiku seul, pour tout. Mirandola Infini a 150 générations par
+   mois « sur le modèle le plus avancé » (conditions de vente, § 2 bis) :
+   pendant celles-là (`premium`), Sonnet d'abord, pour tout. Ce partage
+   tient à la nature de chaque tâche, pas à une mesure sur de vraies
+   demandes : docs/RENTABILITE.md dit comment la faire. */
+export const HAIKU = 'claude-haiku-5-5';
+export const SONNETS = ['claude-sonnet-5', 'claude-sonnet-5-5'];
+// un message de l'atelier plus long que ça apporte son texte : on travaille dessus, pas de mémoire
+export const SOURCE = 400;
+const DE_MEMOIRE = /ajout|rajout|compl[eèé]t|davantage|encore|\d+\s*(cartes|questions|pages)/i;
+
+export function deMemoire(op, { cartes = 0, message = '' } = {}) {
+  if (op !== 'prompt') return false;
+  const m = String(message);
+  return m.length < SOURCE && (cartes === 0 || DE_MEMOIRE.test(m));
+}
+
+export function modelesPour(op, contexte = {}, economie = false, premium = false) {
+  if (economie) return [HAIKU];
+  if (premium) return [...SONNETS, HAIKU];
+  const transforme = op === 'cards' || op === 'pdf' || (op === 'prompt' && !deMemoire(op, contexte));
+  return transforme ? [HAIKU, ...SONNETS] : [...SONNETS, HAIKU];
+}
+
+// Haiku en tête, suivi d'un autre modèle : sa réponse peut repartir sur Sonnet
+export const escalade = modeles => modeles[0] === HAIKU && modeles.some(m => m !== HAIKU);
+
+// le pire d'une génération qui peut coûter deux appels : Haiku, puis le plus cher qui suit
+export function pireReserve(modeles, entree, sortieMax) {
+  return pireCents(modeles, entree, sortieMax) + (escalade(modeles) ? coutCents(HAIKU, entree, sortieMax) : 0);
+}

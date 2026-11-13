@@ -83,20 +83,62 @@ environ **0,07 cent**, vingt fois moins.
 - **Un professeur en Mirandola+** : environ 50 générations sur le meilleur
   modèle, puis environ 340 sur Haiku, soit à peu près ses 400.
 
+## Le modèle de chaque opération (2026-11-13)
+
+Demandé : « choisis à chaque fois le modèle le moins cher qui fait la tâche
+parfaitement ». `modelesPour` de `_shared/rentabilite.js` en décide :
+
+| Opération | D'abord | Pourquoi |
+|---|---|---|
+| un texte collé en cartes (`cards`) | Claude Haiku 5.5 | extraire ce qu'on lui donne, sa force |
+| un PDF en cartes (`pdf`) | Claude Haiku 5.5 | le texte est imprimé ; vingt fois moins cher sur le document le plus lourd |
+| retoucher un paquet, un cours collé dans l'atelier (`prompt`) | Claude Haiku 5.5 | transformer une liste qu'il a sous les yeux |
+| des cartes écrites de mémoire (`prompt` court sur une liste vide, « ajoute… », « 10 cartes… ») | Sonnet | des faits que rien, dans ce qu'on lui donne, ne vérifie |
+| des photos de cahier (`ocr`) | Sonnet | lire une écriture à la main |
+| composer un examen blanc (`examen`) | Sonnet | relier les cartes, doser la difficulté |
+| corriger une copie (`corriger`) | Sonnet | lire la copie, juger juste, conseiller |
+
+- **Haiku en tête, Sonnet en repli de qualité** (`escalade`) : une réponse
+  inutilisable de Haiku — rien de lisible, une liste vide pour une
+  génération, un refus — repart aussitôt sur Sonnet. Les deux appels sont
+  soldés ensemble. La réservation couvre les deux (`pireReserve` : le pire
+  de Sonnet, plus celui de Haiku).
+- **Un gros PDF que Sonnet ne pourrait pas payer** dans ce qui reste du
+  plafond est lu par Haiku seul, sans repli, au lieu d'être refusé
+  (« lourd »).
+- **Mirandola Infini, pendant ses 150 générations du mois**, a Sonnet
+  d'abord pour tout : les conditions de vente (§ 2 bis) les promettent « sur
+  le modèle le plus avancé ». Le routage ne vaut que pour Mirandola+, l'essai,
+  Campus et l'examen offert d'un compte gratuit. Pour router Infini aussi, il
+  faudrait d'abord changer cette promesse.
+- **Passé les trois quarts du plafond**, et passé les 150 d'Infini, Haiku
+  seul, pour tout, comme avant.
+- Un texte ordinaire coûte vingt fois moins sur Haiku : un cours collé
+  passe d'environ 0,7 cent à 0,04 cent.
+
+**Ce partage tient à la nature de chaque tâche, pas à une mesure.** Aucune
+clé d'API n'était à portée pour comparer les deux modèles sur de vraies
+demandes. Pour le mesurer : prendre une vingtaine de demandes réelles par
+opération (cours collés, PDF, retouches), les passer aux deux modèles, et
+comparer les cartes rendues (fidélité au texte, aucune carte inventée,
+consigne suivie). Si Haiku faiblit sur une opération, la passer côté Sonnet
+dans `modelesPour` ; le test dit le reste.
+
 ## Comment la base le tient
 
 1. **La fonction `ai` choisit le modèle** avant de réserver. Elle lit le
-   nombre et la dépense du mois dans `ia_droits`. Le meilleur modèle sert
-   tant que la dépense n'atteint pas les trois quarts du plafond
-   (`PART_PREMIUM`), et, pour Infini, tant que ses 150 générations ne sont
-   pas faites. Le plus économe sert ensuite.
+   nombre et la dépense du mois dans `ia_droits`. Le modèle de l'opération
+   (ci-dessus) sert tant que la dépense n'atteint pas les trois quarts du
+   plafond (`PART_PREMIUM`), et, pour Infini, tant que ses 150 générations ne
+   sont pas faites. Haiku seul sert ensuite.
 
 2. **Elle estime le pire coût de la génération** :
    - son entrée : comptée par l'API (`count_tokens`, gratuit) pour un PDF ou
      un texte de plus de 20 000 jetons ; bornée sinon, à un jeton pour deux
      signes, plus 5 000 jetons par photo ;
    - sa sortie : au maximum permis (16 000 jetons, 32 000 pour Infini) ;
-   - le tout au tarif du modèle le plus cher qu'elle pourrait essayer.
+   - le tout au tarif du modèle le plus cher qu'elle pourrait essayer, plus
+     celui de Haiku quand sa réponse peut repartir sur Sonnet.
 
 3. **`ia_reserver` réserve ce pire coût, d'un seul tenant**, un compte à la
    fois (verrou consultatif). La réservation n'est acceptée que si la
@@ -105,7 +147,7 @@ environ **0,07 cent**, vingt fois moins.
    le plafond.
 
 4. **`ia_solder` remplace le pire coût par le coût réel**, au tarif du
-   modèle qui a répondu. Haiku 5.5 coûte cinq fois plus au-delà de 100 000
+   modèle qui a répondu (et de Haiku, si sa réponse a été écartée). Haiku 5.5 coûte cinq fois plus au-delà de 100 000
    jetons d'entrée (`TARIFS`), et ce palier est compté. Une réservation que
    personne n'a soldée (une fonction tombée en route) cesse de compter au
    bout de dix minutes.
@@ -118,22 +160,28 @@ environ **0,07 cent**, vingt fois moins.
      ce qu'il te reste d'IA ce mois-ci : essaie un document plus court ».
 
 Les conditions de vente le disent (article 2, « usage raisonnable » ;
-`CGV_VERSION` du 2026-11-08).
+`CGV_VERSION` du 2026-11-13, qui dit aussi le modèle de chaque génération).
 
 ## Les preuves
 
 - `test/rentabilite.test.js` : les tarifs de la référence de l'API ; chaque
   formule, au prix plein comme au lancement, garde au moins 0,80 € de marge
-  par mois ; les modèles de la fonction ont tous leur tarif.
+  par mois ; les modèles de la fonction ont tous leur tarif ; le modèle de
+  chaque opération ; la réservation qui couvre Haiku puis Sonnet.
 - `supabase/tests/ia_rentable.sql` (10 cas) : le plafond tenu par la
   réservation au pire ; le solde ; la réservation abandonnée ; `ia_droits` ;
   les droits.
-- `node tools/ia/essai.js` (16 vérifications, la vraie fonction sous Deno) :
+- `node tools/ia/essai.js` (34 vérifications, la vraie fonction sous Deno) :
   - un compte à son plafond est refusé sans appeler le modèle ;
-  - un PDF trop lourd est compté puis refusé sans être lu ;
+  - un PDF trop lourd, même pour Haiku, est compté puis refusé sans être
+    lu ; un gros PDF que Sonnet ne pourrait pas payer est lu par Haiku seul ;
+  - chaque opération va d'abord à son modèle ; une liste vide ou un refus de
+    Haiku repart sur Sonnet, les deux soldés ; Haiku vide puis Sonnet en
+    panne : la réponse payée de Haiku reste soldée ;
   - Haiku prend le relais aux trois quarts du plafond et passé les 150
     d'Infini, soldé à son tarif ;
-  - trois appels lancés ensemble, avec la place d'un seul : un seul passe.
+  - trois appels lancés ensemble, avec la place d'un seul (des photos, sur
+    Sonnet) : un seul passe.
 - `e2e/prompt.e2e.js` : l'élève lit les deux refus en clair.
 
 ## Quand quelque chose change

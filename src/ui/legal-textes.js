@@ -25,7 +25,7 @@ import { PWMIN } from './connexion.js';
    (LCEN) et les logiciels libres (les notices que leurs licences exigent).
    Les prix et les quotas viennent des modules qui les appliquent : le texte
    ne peut pas dire autre chose que l'app. */
-const LEGALV = '8 novembre 2026';  // l'usage raisonnable de l'IA, l'essai pour Mirandola+ seul, l'examen blanc offert (la veille : le vocabulaire classique ; le 6, l'examen blanc)
+const LEGALV = '13 novembre 2026';  // le modèle de chaque génération (le 8 : l'usage raisonnable de l'IA, l'essai pour Mirandola+ seul, l'examen blanc offert ; le 7 : le vocabulaire classique ; le 6, l'examen blanc)
 const E = ENTREPRISE;
 const mois = FORMULES.mensuel, an = FORMULES.annuel, imois = FORMULES.infini_mensuel, ian = FORMULES.infini_annuel;
 
@@ -140,11 +140,15 @@ l’IA à partir d’un cours, d’une photo ou d’un document, jusqu’à
 ${IA_PAR_MOIS.plus} générations par mois (${IA_PROF_PAR_MOIS} pour un professeur) ;
 les QCM et les associations ; les images et les sons sur les cartes ; toutes
 les statistiques. L’IA s’entend dans les bornes d’un usage raisonnable :
-chaque compte a, pour le mois, une limite de ce que coûtent ses générations,
-que l’usage ordinaire n’approche pas ; un usage exceptionnel (de très gros
-documents, par exemple) qui en prend les trois quarts passe sur un modèle
-plus rapide, et celui qui l’atteint met l’IA en pause jusqu’au 1er du mois
-suivant. Un document trop lourd pour ce qui reste du mois est refusé avant
+chaque génération va au modèle qui la fait bien pour le moins cher — un
+modèle rapide pour mettre en cartes un texte ou un document et retoucher un
+paquet ; le modèle le plus avancé pour lire une écriture à la main, écrire
+des cartes sur un sujet, composer et corriger un examen blanc, et reprendre
+ce que le modèle rapide n’a pas su faire ; chaque compte a, pour le mois,
+une limite de ce que coûtent ses générations, que l’usage ordinaire
+n’approche pas ; un usage exceptionnel (de très gros documents, par exemple)
+qui en prend les trois quarts passe tout entier sur le modèle rapide, et
+celui qui l’atteint met l’IA en pause jusqu’au 1er du mois suivant. Un document trop lourd pour ce qui reste du mois est refusé avant
 d’être lu : rien n’est compté.
 
 **2 bis. Ce que Mirandola Infini ajoute.** Tout Mirandola+, et : l’IA sans

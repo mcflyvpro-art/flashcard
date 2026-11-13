@@ -14,7 +14,12 @@
    (« plafond »), un PDF trop lourd pour ce qui reste refusé après son seul
    comptage (« lourd »), trois appels lancés ensemble quand il ne reste la
    place que d'un : un seul passe ; passé les trois quarts du plafond (ou les
-   150 d'Infini), le modèle le plus économe, soldé à son tarif.
+   150 d'Infini), le modèle le plus économe, soldé à son tarif. Et
+   (2026-11-13) le modèle de chaque opération : Claude Haiku 5.5 pour un
+   texte, un PDF, une retouche ; Sonnet pour des photos, un examen, une
+   copie, des cartes écrites de mémoire ; une réponse vide ou refusée de
+   Haiku qui repart sur Sonnet, les deux soldées ; un gros PDF lu par Haiku
+   seul quand Sonnet ne tiendrait pas dans le plafond.
 
      node tools/ia/essai.js
    Deno : la variable DENO (chemin du binaire) ou `npx --yes deno@2`. Le port
@@ -33,7 +38,9 @@ const QUOTA_JOUR = 5;
 /* ---------- le faux monde ---------- */
 const offres = { gratuit1: 'gratuit', gratuit2: 'gratuit', inf1: 'infini', inf150: 'infini', infex: 'infini' };   // les autres : Mirandola+
 const usage = [];                                // les lignes de ai_usage, réservées puis soldées
-let anthropic = { appels: 0, panne: false, comptes: 0, jetons: 1500 };
+/* haiku : ce que rend Claude Haiku — « vide » (une liste vide), « refus »
+   (stop_reason refusal) ; panneSonnet : les Sonnet surchargés, Haiku non. */
+let anthropic = { appels: 0, panne: false, comptes: 0, jetons: 1500, haiku: '', panneSonnet: false, suite: [] };
 let prochainId = 1;
 
 const lire = req => new Promise(res => { let b = ''; req.on('data', c => (b += c)); req.on('end', () => res(b)); });
@@ -65,9 +72,13 @@ const serveur = createServer(async (req, res) => {
   const p = url.pathname;
   if (p === '/anthropic/count_tokens') { anthropic.comptes++; return envoie(res, 200, { input_tokens: anthropic.jetons }); }
   if (p === '/anthropic') {
-    anthropic.appels++; anthropic.dernier = a;
+    anthropic.appels++; anthropic.dernier = a; anthropic.suite.push(a.model);
     await new Promise(r => setTimeout(r, 60));    // l'appel prend du temps : les appels lancés ensemble se chevauchent
-    if (anthropic.panne) return envoie(res, 529, { error: { type: 'overloaded_error' } });
+    const haiku = a.model === 'claude-haiku-5-5';
+    if (anthropic.panne || (anthropic.panneSonnet && !haiku)) return envoie(res, 529, { error: { type: 'overloaded_error' } });
+    const usage = { input_tokens: 1000, output_tokens: 200 };
+    if (haiku && anthropic.haiku === 'refus') return envoie(res, 200, { content: [], stop_reason: 'refusal', usage });
+    if (haiku && anthropic.haiku === 'vide') return envoie(res, 200, { content: [{ type: 'text', text: '{"cards":[]}' }], usage });
     // l'examen blanc (son schéma de réponse : des questions) ; des cartes sinon
     const examen = /examen blanc/.test(String(a.system || ''));
     const rendu = examen ? { questions: [{ q: 'Question 1', attendu: 'Réponse 1', pages: [1], lu: '', sur: 1, points: 1, ok: true,
@@ -147,8 +158,8 @@ async function essais() {
   verifie('une génération : les pages, et sa ligne soldée de son vrai coût',
     r.statut === 200 && r.j.cards.length === 1 && l && l.in_tok === 1000 && l.out_tok === 200 && l.cents > 0
       && r.j.mois.fait === 1, { r, l });
-  verifie('soldée au tarif de son modèle : 1 000 + 200 jetons de Sonnet, 0,4 cent ; le pire réservé effacé',
-    l && Math.abs(l.cents - 0.4) < 1e-9 && l.estime === 0 && anthropic.dernier.model === 'claude-sonnet-5', l);
+  verifie('un texte collé : Claude Haiku, un seul appel, 1 000 + 200 jetons à 0,02 cent ; le pire réservé effacé',
+    l && Math.abs(l.cents - 0.02) < 1e-9 && l.estime === 0 && anthropic.suite.join() === 'claude-haiku-5-5', l);
 
   anthropic.panne = true;
   const avant = usage.filter(x => x.user_id === 'tom').length;
@@ -196,29 +207,36 @@ async function essais() {
     r.statut === 429 && r.j.error === 'plafond' && anthropic.appels === appels
       && usage.filter(x => x.user_id === 'plafond1').length === 3, r);
 
-  anthropic.jetons = 500000;                       // un PDF de 500 000 jetons : 100 cents d'entrée, au pire
+  anthropic.jetons = 2000000;                      // un PDF de 2 millions de jetons : 100 cents d'entrée même sur Haiku
   const comptes = anthropic.comptes; appels = anthropic.appels;
   r = await appel('pdf1', { op: 'pdf', mime: 'application/pdf', data: 'JVBERi0xLjQK' });
-  verifie('un PDF trop lourd pour le plafond : compté par l’API, « lourd », jamais lu',
+  verifie('un PDF trop lourd pour le plafond, même sur Haiku : compté par l’API, « lourd », jamais lu',
     r.statut === 429 && r.j.error === 'lourd' && anthropic.comptes === comptes + 1 && anthropic.appels === appels, r);
+  anthropic.jetons = 500000;                       // 500 000 jetons : Sonnet n'y tiendrait pas (116 cents), Haiku seul oui (29)
+  anthropic.suite = [];
+  r = await appel('pdf2', { op: 'pdf', mime: 'application/pdf', data: 'JVBERi0xLjQK' });
+  verifie('un gros PDF que Sonnet ne pourrait pas payer : lu par Haiku seul, sous le plafond',
+    r.statut === 200 && anthropic.suite.join() === 'claude-haiku-5-5' && depense('pdf2') <= 89, { r, suite: anthropic.suite });
   anthropic.jetons = 3000;
   r = await appel('pdf1', { op: 'pdf', mime: 'application/pdf', data: 'JVBERi0xLjQK' });
-  verifie('un PDF ordinaire, compté puis lu', r.statut === 200 && anthropic.comptes === comptes + 2, r);
+  verifie('un PDF ordinaire, compté puis lu', r.statut === 200 && anthropic.comptes === comptes + 3, r);
 
   semer('econome1', 2, 67);                         // plus des trois quarts de 89
-  r = await appel('econome1');
+  r = await appel('econome1', { op: 'ocr', images: [img] });   // une photo, d'ordinaire sur Sonnet
   let ligne = usage.filter(x => x.user_id === 'econome1').pop();
-  verifie('passé les trois quarts du plafond : Claude Haiku, soldé à son tarif (0,02 cent)',
+  verifie('passé les trois quarts du plafond : même une photo sur Claude Haiku, soldée à son tarif (0,02 cent)',
     r.statut === 200 && anthropic.dernier.model === 'claude-haiku-5-5' && Math.abs(ligne.cents - 0.02) < 1e-9, { r, ligne });
 
   semer('inf150', 150, 30);                         // Infini : ses 150, pour 30 cents seulement
   r = await appel('inf150');
   verifie('Infini au-delà de ses 150 : Claude Haiku, sans « mquota »', r.statut === 200 && anthropic.dernier.model === 'claude-haiku-5-5', r);
   r = await appel('inf1');
-  verifie('Infini au début du mois : le meilleur modèle', r.statut === 200 && anthropic.dernier.model === 'claude-sonnet-5', r);
+  verifie('Infini dans ses 150 : même un texte collé sur Sonnet, le modèle le plus avancé promis',
+    r.statut === 200 && anthropic.dernier.model === 'claude-sonnet-5', r);
 
   semer('serre', 2, 60);                            // 29 cents de reste : la place d'un appel au pire (~17 cents)
-  const trois = await Promise.all([appel('serre'), appel('serre'), appel('serre')]);
+  const photo = { op: 'ocr', images: [img] };
+  const trois = await Promise.all([appel('serre', photo), appel('serre', photo), appel('serre', photo)]);
   verifie('trois appels ensemble, la place d’un seul : un passe, deux refusés, le plafond jamais dépassé',
     trois.filter(x => x.statut === 200).length === 1 && trois.filter(x => x.statut === 429).length === 2
       && depense('serre') <= 89, { statuts: trois.map(x => x.statut + ':' + (x.j.error || '')), depense: depense('serre') });
@@ -251,6 +269,46 @@ async function essais() {
   for (let k = 0; k < 4; k++) await appel('infex', { op: 'examen', n: 10, cards: pages });
   verifie('Infini : sans limite, sur 300 cartes', usage.filter(x => x.user_id === 'infex' && x.op === 'examen').length === 4
     && anthropic.dernier.messages[0].content.map(b => b.text || '').join('').includes('Question 199'), usage.length);
+
+  /* ---------- le modèle de chaque opération (2026-11-13) ---------- */
+  const premier = async (sub, corps) => { anthropic.suite = []; const x = await appel(sub, corps); return { x, m: anthropic.suite[0] }; };
+  let q = await premier('route1', { op: 'pdf', mime: 'application/pdf', data: 'JVBERi0xLjQK' });
+  verifie('un PDF : Claude Haiku d’abord', q.x.statut === 200 && q.m === 'claude-haiku-5-5', q);
+  q = await premier('route1', { op: 'ocr', images: [img] });
+  verifie('des photos de cahier : Sonnet d’abord', q.x.statut === 200 && q.m === 'claude-sonnet-5', q);
+  q = await premier('route2', { op: 'examen', n: 10, cards: pages });
+  verifie('composer un examen : Sonnet d’abord', q.x.statut === 200 && q.m === 'claude-sonnet-5', q);
+  q = await premier('route2', { op: 'corriger', sujet, photos: [img] });
+  verifie('corriger une copie : Sonnet d’abord', q.x.statut === 200 && q.m === 'claude-sonnet-5', q);
+  const liste = [{ f: 'Paris', b: 'France' }, { f: 'Rome', b: 'Italie' }];
+  q = await premier('route3', { op: 'prompt', message: 'Inverse le recto et le verso', cards: liste });
+  verifie('retoucher un paquet : Claude Haiku', q.x.statut === 200 && q.m === 'claude-haiku-5-5', q);
+  q = await premier('route3', { op: 'prompt', message: '10 cartes sur les capitales d’Europe', cards: [] });
+  verifie('des cartes écrites de mémoire : Sonnet', q.x.statut === 200 && q.m === 'claude-sonnet-5', q);
+  q = await premier('route3', { op: 'prompt', message: 'Ajoute 5 cartes', cards: liste });
+  verifie('« ajoute » à un paquet : Sonnet', q.x.statut === 200 && q.m === 'claude-sonnet-5', q);
+
+  anthropic.haiku = 'vide'; anthropic.suite = [];
+  r = await appel('escalade1');
+  ligne = usage.filter(x => x.user_id === 'escalade1').pop();
+  verifie('une liste vide de Haiku : repart sur Sonnet, les deux soldés (0,02 + 0,4 cent), les cartes de Sonnet',
+    r.statut === 200 && r.j.cards.length === 1 && anthropic.suite.join() === 'claude-haiku-5-5,claude-sonnet-5'
+      && Math.abs(ligne.cents - 0.42) < 1e-9 && ligne.in_tok === 2000, { r, suite: anthropic.suite, ligne });
+  anthropic.haiku = 'refus'; anthropic.suite = [];
+  r = await appel('escalade1');
+  verifie('un refus de Haiku : repart sur Sonnet', r.statut === 200 && anthropic.suite.join() === 'claude-haiku-5-5,claude-sonnet-5',
+    { r, suite: anthropic.suite });
+  anthropic.haiku = 'vide'; anthropic.suite = [];
+  r = await appel('escalade1', { op: 'prompt', message: 'Enlève tout ce qui parle de Rome', cards: liste });
+  verifie('une retouche qui vide la liste : gardée, sans repartir sur Sonnet', r.statut === 200 && anthropic.suite.join() === 'claude-haiku-5-5', r);
+  anthropic.haiku = 'vide'; anthropic.panneSonnet = true; anthropic.suite = [];
+  const avantPanne = usage.filter(x => x.user_id === 'escalade2').length;
+  r = await appel('escalade2');
+  ligne = usage.filter(x => x.user_id === 'escalade2').pop();
+  verifie('Haiku vide, puis Sonnet en panne : « surcharge », et la réponse de Haiku payée reste soldée (0,02 cent)',
+    r.statut === 503 && r.j.error === 'surcharge' && usage.filter(x => x.user_id === 'escalade2').length === avantPanne + 1
+      && Math.abs(ligne.cents - 0.02) < 1e-9, { r, ligne });
+  anthropic.haiku = ''; anthropic.panneSonnet = false;
 
   const salve = await Promise.all(Array.from({ length: 20 }, () => appel('zoe')));
   const passes = salve.filter(x => x.statut === 200).length, refus = salve.filter(x => x.statut === 429).length;

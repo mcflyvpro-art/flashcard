@@ -19,7 +19,13 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-13 · Le professeur particulier à part de
+DERNIER   2026-11-13 · L'IA choisit le modèle le moins cher qui fait
+          la tâche : Claude Haiku 5.5 pour un texte, un PDF, une retouche ;
+          Sonnet pour des photos, un examen, une copie, des cartes de
+          mémoire ; une réponse vide ou refusée de Haiku repart sur Sonnet ;
+          Infini garde Sonnet pour ses 150 (promis) ; conditions de vente
+          2026-11-13 (fonction ai v20). Avant :
+          2026-11-13 · Le professeur particulier à part de
           l'établissement : sa demande à lui (/professeur-particulier,
           migration 20261113171304, fonction prevenir v6), reçue en tête
           des Comptes de l'éditeur ; ni lui ni ses élèves ne lisent plus

@@ -34,8 +34,8 @@
    comptée comme les autres. Toute réponse rend aussi le compte du mois
    (`mois` : fait, quota), que l'écran pose sur ses onglets.
 
-   Toujours disponible, autant que possible (2026-10-29) : si le modèle
-   principal est surchargé, la fonction réessaie sur deux autres (MODELES) ;
+   Toujours disponible, autant que possible (2026-10-29) : si le premier
+   modèle est surchargé, la fonction réessaie sur les suivants (modelesPour) ;
    un crédit Anthropic épuisé répond « credit », une surcharge partout
    « surcharge » — l'app les dit en clair, et rien n'est compté.
 
@@ -46,20 +46,17 @@
    sous-modules internes ne se résout pas ici) et la fonction ne répond
    jamais. curl/HTTP brut n'a pas ce problème. */
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { COMPTER, EXAMEN_PAGES_OFFERT, borneJetons, coutCents, econome, examenPermis, pireCents, plafondCents } from "../_shared/rentabilite.js";
+import { COMPTER, EXAMEN_PAGES_OFFERT, HAIKU, borneJetons, coutCents, econome, examenPermis, modelesPour, pireReserve, plafondCents } from "../_shared/rentabilite.js";
 
 /* Les modèles, dans l'ordre (2026-10-29 : « l'IA doit être dispo partout ») :
-   le principal, puis deux secours quand il est surchargé, limité, en panne
+   le premier, puis les suivants quand il est surchargé, limité, en panne
    ou introuvable — 429, 529, 5xx, 404, une coupure réseau. Une erreur qui
    ne tient pas au modèle (crédit épuisé, clé refusée, requête refusée)
    s'arrête au premier : un autre modèle du même compte n'y changerait rien.
-   Leurs tarifs vivent dans _shared/rentabilite.js (TARIFS, coutCents), avec
-   le plafond de coût de chaque compte (2026-11-08). */
-const MODELES = [
-  { id: "claude-sonnet-5" },
-  { id: "claude-sonnet-5-5" },
-  { id: "claude-haiku-5-5" },
-];
+   Quel modèle d'abord, selon l'opération (2026-11-13 : Claude Haiku 5.5 pour
+   ce qui transforme ce qu'on lui donne, Sonnet pour l'écriture à la main,
+   l'examen et la copie), leurs tarifs et le plafond de coût de chaque
+   compte vivent dans _shared/rentabilite.js (modelesPour, TARIFS, coutCents). */
 /* L'API Messages ; ANTHROPIC_URL ne sert qu'à l'essai sous Deno (tools/ia/essai.js). */
 const ANTHROPIC_URL = Deno.env.get("ANTHROPIC_URL") ?? "https://api.anthropic.com/v1/messages";
 const REESSAYER = new Set([404, 408, 409, 429, 500, 502, 503, 504, 529]);
@@ -121,9 +118,24 @@ const admin = createClient(
   { auth: { persistSession: false } },
 );
 
+type Reponse = { usage?: { input_tokens?: number; output_tokens?: number }; content?: unknown; parsed_output?: unknown; stop_reason?: string };
+/* `avant` : ce qu'a coûté une réponse de Haiku écartée avant celle-ci (escalade). */
+type Avant = { in: number; out: number; cents: number };
 type Essai =
-  | { ok: true; data: { usage?: { input_tokens?: number; output_tokens?: number }; content?: unknown; parsed_output?: unknown }; modele: (typeof MODELES)[number] }
-  | { ok: false; erreur: string; statut: number };
+  | { ok: true; data: Reponse; modele: string; avant: Avant }
+  | { ok: false; erreur: string; statut: number; avant: Avant };
+
+/* Ce que rend le modèle, lu : sa sortie structurée, ou le JSON de son texte ;
+   rien pour un refus. */
+function sortie(data: Reponse): Record<string, unknown> | null {
+  if (data.stop_reason === "refusal") return null;
+  const brut = data.parsed_output ?? (() => {
+    const t = ((data.content ?? []) as { type: string; text?: string }[])
+      .filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
+    try { return JSON.parse(t); } catch { return null; }
+  })();
+  return brut && typeof brut === "object" ? brut as Record<string, unknown> : null;
+}
 
 /* Les jetons d'entrée d'une génération, pour en réserver le pire coût
    (2026-11-08). Un texte : une borne (un jeton pour deux signes) ; au-delà de
@@ -156,39 +168,56 @@ async function jetonsEntree(systeme: string, content: unknown[], modele: string,
   return pdf ? 1_000_000 : borne;
 }
 
-/* Un appel à l'API Messages, modèle par modèle (MODELES). Ce qui revient
+/* Un appel à l'API Messages, modèle par modèle (modelesPour). Ce qui revient
    d'Anthropic en erreur part au journal de la fonction (le type et le
-   message de l'API, jamais la demande de l'élève). */
-async function demander(corps: Record<string, unknown>, key: string, modeles = MODELES): Promise<Essai> {
+   message de l'API, jamais la demande de l'élève). Haiku en tête : une
+   réponse inutilisable (`utilisable` faux : rien de lisible, une liste vide,
+   un refus) repart sur le modèle suivant, et son coût est compté (`avant`). */
+async function demander(corps: Record<string, unknown>, key: string, modeles: string[],
+  utilisable: (data: Reponse) => boolean): Promise<Essai> {
   const debut = Date.now();
-  let dernier: Essai = { ok: false, erreur: "upstream", statut: 502 };
+  const avant: Avant = { in: 0, out: 0, cents: 0 };
+  let dernier: Essai = { ok: false, erreur: "upstream", statut: 502, avant };
+  let pause = false;
   for (const [i, modele] of modeles.entries()) {
     if (i && Date.now() - debut > BUDGET_MS) break;
-    if (i) await new Promise((r) => setTimeout(r, 400 * i));
+    if (pause) await new Promise((r) => setTimeout(r, 400 * i));
+    pause = true;
     let res: Response;
     try {
       res = await fetch(ANTHROPIC_URL, {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ ...corps, model: modele.id }),
+        body: JSON.stringify({ ...corps, model: modele }),
       });
     } catch (e) {
-      console.error("anthropic réseau", modele.id, e instanceof Error ? e.message : e);
-      dernier = { ok: false, erreur: "upstream", statut: 502 };
+      console.error("anthropic réseau", modele, e instanceof Error ? e.message : e);
+      dernier = { ok: false, erreur: "upstream", statut: 502, avant };
       continue;
     }
-    if (res.ok) return { ok: true, data: await res.json(), modele };
+    if (res.ok) {
+      const data = await res.json() as Reponse;
+      const suivant = modeles[i + 1];
+      if (modele === HAIKU && suivant && suivant !== HAIKU && !utilisable(data)) {
+        const e = data.usage?.input_tokens ?? 0, s = data.usage?.output_tokens ?? 0;
+        avant.in += e; avant.out += s; avant.cents += coutCents(modele, e, s);
+        console.log("escalade", modele, "→", suivant, data.stop_reason ?? "");
+        pause = false;
+        continue;
+      }
+      return { ok: true, data, modele, avant };
+    }
     const texte = await res.text().catch(() => "");
     let type = "";
     try { type = JSON.parse(texte)?.error?.type ?? ""; } catch { /* corps illisible : le statut suffit */ }
-    console.error("anthropic", modele.id, res.status, type, texte.slice(0, 300));
+    console.error("anthropic", modele, res.status, type, texte.slice(0, 300));
     // le crédit du compte Anthropic : 402 billing_error (ou un 400 qui le dit, sur une API plus ancienne)
     if (res.status === 402 || type === "billing_error" || /credit balance/i.test(texte)) {
-      return { ok: false, erreur: "credit", statut: 503 };
+      return { ok: false, erreur: "credit", statut: 503, avant };
     }
-    if (res.status === 401 || res.status === 403) return { ok: false, erreur: "nokey", statut: 503 };
-    if (!REESSAYER.has(res.status)) return { ok: false, erreur: "upstream", statut: 502 };
-    dernier = { ok: false, erreur: res.status === 429 || res.status === 529 ? "surcharge" : "upstream", statut: 503 };
+    if (res.status === 401 || res.status === 403) return { ok: false, erreur: "nokey", statut: 503, avant };
+    if (!REESSAYER.has(res.status)) return { ok: false, erreur: "upstream", statut: 502, avant };
+    dernier = { ok: false, erreur: res.status === 429 || res.status === 529 ? "surcharge" : "upstream", statut: 503, avant };
   }
   return dernier;
 }
@@ -577,27 +606,40 @@ Deno.serve(async (req) => {
   const fichiersJour = infini ? INFINI.fichiers : prof ? DAILY_FILES_PROF : DAILY_FILES;
 
   /* La rentabilité (2026-11-08, _shared/rentabilite.js) : le plafond de coût
-     de ce compte pour le mois ; le meilleur modèle tant que les trois quarts
-     n'en sont pas pris (et, pour Infini, ses 150 premières), le plus économe
-     ensuite ; et le PIRE coût de cette génération — son entrée (comptée par
-     l'API pour un PDF ou un long texte, bornée sinon) et sa sortie au maximum
-     permis — réservé avant d'appeler le modèle. */
+     de ce compte pour le mois ; le modèle de l'opération (modelesPour,
+     2026-11-13 : Claude Haiku 5.5 pour ce qui transforme ce qu'on lui donne,
+     Sonnet pour l'écriture à la main, l'examen, la copie et ce qui s'écrit de
+     mémoire ; Sonnet pour tout pendant les 150 d'Infini) tant que les trois
+     quarts n'en sont pas pris (et, pour Infini, ses 150 premières), Haiku
+     seul ensuite ; et le PIRE coût de cette génération — son entrée (comptée
+     par l'API pour un PDF ou un long texte, bornée sinon) et sa sortie au
+     maximum permis, Haiku puis Sonnet quand l'un peut repartir sur l'autre —
+     réservé avant d'appeler le modèle. */
   const plafond = sansOffre ? null : plafondCents({ niveau: d.niveau, essai: d.essai, licence: d.licence });
   const economie = (infini && (d.fait ?? 0) >= INFINI.premium) || econome(Number(d.depense ?? 0), plafond);
-  const modeles = economie ? MODELES.filter((m) => m.id.startsWith("claude-haiku")) : MODELES;
+  // Infini, dans ses 150 : le modèle le plus avancé pour tout, comme le disent les conditions de vente
+  let modeles = modelesPour(op, { cartes: actuelles.length, message }, economie, infini);
   const systeme = op === "examen" ? SYSTEM_EXAMEN : op === "corriger" ? SYSTEM_CORRIGER
     : op === "prompt" ? SYSTEM_PROMPT : isFile ? SYSTEM_FILE : SYSTEM;
   const maxSortie = infini ? INFINI.jetons : 16000;
-  const entree = await jetonsEntree(systeme, content, modeles[0].id, key);
-  const estime = +pireCents(modeles.map((m) => m.id), entree, maxSortie).toFixed(4);
-
-  const { data: resa, error: sansResa } = await admin.rpc("ia_reserver", {
+  // compté avec le plus cher de la liste : c'est lui que la réservation doit couvrir
+  const entree = await jetonsEntree(systeme, content, modeles.find((m) => m !== HAIKU) ?? modeles[0], key);
+  const reserver = (estime: number) => admin.rpc("ia_reserver", {
     u: uid, p_op: op, p_jour: today, p_mois: firstOfMonth,
     // Infini ne bute jamais sur le mois : au-delà de ses 150, il continue sur Haiku
     p_mensuel: sansOffre || infini ? null : mensuel,
     p_par_jour: parJour, p_fichiers_par_jour: fichiersJour, p_budget_cents: BUDGET_CENTS,
-    p_plafond_cents: plafond, p_estime_cents: estime,
+    p_plafond_cents: plafond, p_estime_cents: +estime.toFixed(4),
   });
+  let { data: resa, error: sansResa } = await reserver(pireReserve(modeles, entree, maxSortie));
+  /* Trop lourd pour ce qui reste si Haiku devait repartir sur Sonnet, mais
+     pas pour Haiku seul (un gros PDF) : Haiku, sans repli. */
+  const refus = resa as { statut?: string; reste?: number } | null;
+  if (refus?.statut === "plafond" && modeles[0] === HAIKU && modeles.length > 1
+    && Number(refus.reste ?? 0) >= pireReserve([HAIKU], entree, maxSortie)) {
+    modeles = [HAIKU];
+    ({ data: resa, error: sansResa } = await reserver(pireReserve(modeles, entree, maxSortie)));
+  }
   if (sansResa || !resa) {
     console.error("ia_reserver", sansResa?.message ?? "vide");
     return json({ error: "upstream" }, 503);
@@ -629,17 +671,29 @@ Deno.serve(async (req) => {
         : op === "prompt" ? SCHEMA_PROMPT : SCHEMA },
     },
     messages: [{ role: "user", content }],
-  }, key, modeles);
-  // rien n'est compté : la réservation est rendue, le mois reste tel quel
+  }, key, modeles, (data) => {
+    const s = sortie(data);
+    if (!s) return false;
+    if (examen) return Array.isArray(s.questions) && s.questions.length > 0;
+    return Array.isArray(s.cards) && (op === "prompt"
+      || (s.cards as { f?: unknown; b?: unknown }[]).some((c) => String(c?.f ?? "").trim() && String(c?.b ?? "").trim()));
+  });
   if (!essai.ok) {
-    await admin.rpc("ia_annuler", { rid }).then(() => {}, () => {});
+    /* Rien n'est compté : la réservation est rendue, le mois reste tel quel —
+       sauf si une réponse de Haiku, écartée, a déjà été payée : son coût est
+       soldé, le plafond ne doit rien ignorer de ce qui est dépensé. */
+    if (essai.avant.cents > 0) {
+      await admin.rpc("ia_solder", { rid, p_in: essai.avant.in, p_out: essai.avant.out, p_cents: +essai.avant.cents.toFixed(4) })
+        .then(() => {}, () => {});
+    } else await admin.rpc("ia_annuler", { rid }).then(() => {}, () => {});
     return json({ error: essai.erreur, mois: { fait: myMonth, quota: sansOffre ? null : mensuel } }, essai.statut);
   }
   const data = essai.data;
 
-  const inTok = data.usage?.input_tokens ?? 0;
-  const outTok = data.usage?.output_tokens ?? 0;
-  const cents = coutCents(essai.modele.id, inTok, outTok);
+  // les jetons et le coût de l'appel gardé, plus ceux d'une réponse de Haiku écartée
+  const inTok = (data.usage?.input_tokens ?? 0) + essai.avant.in;
+  const outTok = (data.usage?.output_tokens ?? 0) + essai.avant.out;
+  const cents = coutCents(essai.modele, data.usage?.input_tokens ?? 0, data.usage?.output_tokens ?? 0) + essai.avant.cents;
   // le coût de l'appel sur sa réservation (attendu : une fonction peut s'arrêter dès sa réponse partie)
   const { error: sansSolde } = await admin.rpc("ia_solder", { rid, p_in: inTok, p_out: outTok, p_cents: +cents.toFixed(4) });
   if (sansSolde) console.error("ia_solder", sansSolde.message);
@@ -647,11 +701,7 @@ Deno.serve(async (req) => {
   /* l'examen blanc : ce que le modèle rend, l'app le relit et le borne
      (lireSujet, lireCorrection de src/examen-blanc.js) */
   if (examen) {
-    const brut = (data as { parsed_output?: unknown }).parsed_output ?? (() => {
-      const t = ((data.content ?? []) as { type: string; text?: string }[])
-        .filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
-      try { return JSON.parse(t); } catch { return null; }
-    })();
+    const brut = sortie(data);
     const moisEx = { fait: myMonth + 1, quota: sansOffre ? null : mensuel, sans_compter: infini };
     if (!brut || !Array.isArray((brut as { questions?: unknown }).questions)) return json({ error: "empty", mois: moisEx }, 422);
     return json({ [op === "examen" ? "sujet" : "correction"]: brut, mois: moisEx,
@@ -659,12 +709,7 @@ Deno.serve(async (req) => {
   }
 
   let cards: { f: string; b: string }[] = [];
-  const parsed = (data as { parsed_output?: { cards?: unknown; note?: unknown } }).parsed_output;
-  const raw = parsed ?? (() => {
-    const content = (data.content ?? []) as { type: string; text?: string }[];
-    const t = content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
-    try { return JSON.parse(t); } catch { return null; }
-  })();
+  const raw = sortie(data);
   if (raw && Array.isArray((raw as { cards?: unknown }).cards)) {
     cards = ((raw as { cards: { f?: unknown; b?: unknown }[] }).cards)
       .map((c) => ({ f: String(c.f ?? "").trim(), b: String(c.b ?? "").trim() }))

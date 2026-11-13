@@ -6,7 +6,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
   CHARGES, ESSAI_CENTS, EXAMENS_OFFERTS, EXAMEN_PAGES_OFFERT, GRATUIT_CENTS, PART_IA, PAR_GENERATION_CAMPUS, TARIFS,
-  borneJetons, coutCents, econome, examenPermis, examensPermis, netMensuel, pireCents, pireNet, plafondCents, prixPromo
+  HAIKU, SONNETS, SOURCE, borneJetons, coutCents, deMemoire, econome, escalade, examenPermis, examensPermis, modelesPour,
+  netMensuel, pireCents, pireNet, pireReserve, plafondCents, prixPromo
 } from '../supabase/functions/_shared/rentabilite.js';
 import { PRIX } from '../supabase/functions/_shared/abonnement.js';
 
@@ -18,11 +19,10 @@ describe('ce que coûte une génération', () => {
     expect(coutCents('claude-haiku-5-5', 100001, 1e4)).toBeCloseTo(7.50005, 4);   // le second palier, entrée et sortie
     expect(coutCents('un-modele-inconnu', 1e6, 0)).toBe(200);                    // au prix du plus cher
   });
-  it('les mêmes modèles que la fonction ai', () => {
+  it('chaque modèle appelé a son tarif, et la fonction ai n’en nomme aucun autre', () => {
+    for (const id of [HAIKU, ...SONNETS]) expect(TARIFS[id], id).toBeTruthy();
     const src = readFileSync('supabase/functions/ai/index.ts', 'utf8');
-    const ids = [...src.matchAll(/\{ id: "([^"]+)"/g)].map(m => m[1]);
-    expect(ids.length).toBeGreaterThan(0);
-    for (const id of ids) expect(TARIFS[id], id).toBeTruthy();
+    for (const [, id] of src.matchAll(/"(claude-[a-z0-9-]+)"/g)) expect(TARIFS[id], id).toBeTruthy();
   });
   it('le pire coût d’une génération : la sortie au maximum, au tarif du plus cher', () => {
     expect(pireCents(['claude-sonnet-5', 'claude-haiku-5-5'], 10000, 16000)).toBe(18);
@@ -105,5 +105,45 @@ describe('l’examen blanc offert', () => {
     const composer = pireCents(['claude-sonnet-5'], borneJetons(EXAMEN_PAGES_OFFERT * 1200), 16000);
     const corriger = pireCents(['claude-sonnet-5'], 8 * 5000 + 4000 + 30 * 600, 16000);
     expect(composer + corriger).toBeLessThanOrEqual(GRATUIT_CENTS);      // 31,2 + 28,4 cents, même à un jeton pour deux signes
+  });
+});
+
+describe('le modèle de chaque opération', () => {
+  const sonnet = [...SONNETS, HAIKU], haiku = [HAIKU, ...SONNETS];
+  it('Haiku d’abord pour ce qui transforme ce qu’on lui donne : un texte, un PDF, une retouche, un cours collé', () => {
+    expect(modelesPour('cards')).toEqual(haiku);
+    expect(modelesPour('pdf')).toEqual(haiku);
+    expect(modelesPour('prompt', { cartes: 12, message: 'Inverse le recto et le verso' })).toEqual(haiku);
+    expect(modelesPour('prompt', { cartes: 12, message: 'Corrige les fautes' })).toEqual(haiku);
+    expect(modelesPour('prompt', { cartes: 0, message: 'x'.repeat(SOURCE) })).toEqual(haiku);
+  });
+  it('Sonnet d’abord pour ce qui demande un œil ou un jugement : l’écriture à la main, l’examen, la copie', () => {
+    expect(modelesPour('ocr')).toEqual(sonnet);
+    expect(modelesPour('examen')).toEqual(sonnet);
+    expect(modelesPour('corriger')).toEqual(sonnet);
+  });
+  it('… et pour écrire de mémoire : un sujet sans texte, « ajoute », « 10 cartes »', () => {
+    expect(modelesPour('prompt', { cartes: 0, message: '10 cartes sur les capitales d’Europe' })).toEqual(sonnet);
+    expect(modelesPour('prompt', { cartes: 8, message: 'Ajoute 10 cartes' })).toEqual(sonnet);
+    expect(modelesPour('prompt', { cartes: 8, message: 'Complète avec les dates' })).toEqual(sonnet);
+    expect(deMemoire('cards', { cartes: 0, message: '' })).toBe(false);
+  });
+  it('Infini dans ses 150 : le modèle le plus avancé pour tout, comme promis', () => {
+    for (const op of ['cards', 'pdf', 'prompt', 'ocr', 'examen', 'corriger']) expect(modelesPour(op, {}, false, true)).toEqual(sonnet);
+    expect(modelesPour('cards', {}, true, true)).toEqual([HAIKU]);            // ses 150 faites : Haiku
+  });
+  it('passé les trois quarts du plafond, Haiku seul, pour tout', () => {
+    for (const op of ['cards', 'pdf', 'prompt', 'ocr', 'examen', 'corriger']) expect(modelesPour(op, {}, true)).toEqual([HAIKU]);
+  });
+  it('Haiku en tête peut repartir sur Sonnet : la réservation couvre les deux appels', () => {
+    expect(escalade(haiku)).toBe(true);
+    expect(escalade(sonnet)).toBe(false);
+    expect(escalade([HAIKU])).toBe(false);
+    expect(pireReserve(sonnet, 10000, 16000)).toBe(pireCents(sonnet, 10000, 16000));
+    expect(pireReserve(haiku, 10000, 16000)).toBeCloseTo(18 + coutCents(HAIKU, 10000, 16000), 6);
+    expect(pireReserve([HAIKU], 10000, 16000)).toBeCloseTo(coutCents(HAIKU, 10000, 16000), 6);
+  });
+  it('un texte ordinaire coûte vingt fois moins sur Haiku', () => {
+    expect(coutCents(SONNETS[0], 6000, 2000) / coutCents(HAIKU, 6000, 2000)).toBeCloseTo(20, 6);
   });
 });
