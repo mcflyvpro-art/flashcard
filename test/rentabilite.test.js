@@ -5,8 +5,8 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
-  CHARGES, ESSAI_CENTS, PART_IA, PAR_GENERATION_CAMPUS, TARIFS, borneJetons, coutCents, econome,
-  netMensuel, pireCents, pireNet, plafondCents, prixPromo
+  CHARGES, ESSAI_CENTS, EXAMENS_OFFERTS, EXAMEN_PAGES_OFFERT, GRATUIT_CENTS, PART_IA, PAR_GENERATION_CAMPUS, TARIFS,
+  borneJetons, coutCents, econome, examenPermis, examensPermis, netMensuel, pireCents, pireNet, plafondCents, prixPromo
 } from '../supabase/functions/_shared/rentabilite.js';
 import { PRIX } from '../supabase/functions/_shared/abonnement.js';
 
@@ -73,5 +73,37 @@ describe('le plafond de chaque compte', () => {
     expect(econome(66, 89)).toBe(false);
     expect(econome(67, 89)).toBe(true);
     expect(econome(1000, null)).toBe(false);
+  });
+});
+
+describe('l’examen blanc offert', () => {
+  it('1 en Mirandola gratuit, 2 en Mirandola+ et Campus, sans limite pour Infini — le même tableau que l’app', async () => {
+    const app = await import('../src/offres.js');
+    expect(EXAMENS_OFFERTS).toEqual(app.EXAMENS_OFFERTS);
+    expect(examensPermis('gratuit')).toBe(1);
+    expect(examensPermis('plus')).toBe(2);
+    expect(examensPermis('infini')).toBe(Infinity);
+    expect(examensPermis('inconnu')).toBe(0);
+    expect(app.examensRestants('gratuit', 0)).toBe(1);
+    expect(app.examensRestants('plus', 1)).toBe(1);
+    expect(app.examensRestants('plus', 5)).toBe(0);
+    expect(app.examensRestants('infini', 99)).toBe(Infinity);
+  });
+  it('composer demande un examen de reste ; corriger, un sujet qui attend sa correction', () => {
+    expect(examenPermis('examen', 'gratuit', 0, 0)).toBe(true);
+    expect(examenPermis('examen', 'gratuit', 1, 0)).toBe(false);
+    expect(examenPermis('corriger', 'gratuit', 1, 0)).toBe(true);
+    expect(examenPermis('corriger', 'gratuit', 1, 1)).toBe(false);       // pas deux corrections pour un sujet
+    expect(examenPermis('examen', 'plus', 1, 1)).toBe(true);
+    expect(examenPermis('examen', 'plus', 2, 2)).toBe(false);
+    expect(examenPermis('examen', 'infini', 40, 40)).toBe(true);
+    expect(examenPermis('corriger', 'infini', 0, 9)).toBe(true);
+  });
+  it('un compte gratuit : de quoi composer et corriger un examen au pire, pas plus', () => {
+    expect(plafondCents({ niveau: 'gratuit' })).toBe(GRATUIT_CENTS);
+    // 120 cartes de 1 200 signes au plus, un jeton pour deux signes, et 16 000 jetons de sortie au meilleur modèle
+    const composer = pireCents(['claude-sonnet-5'], borneJetons(EXAMEN_PAGES_OFFERT * 1200), 16000);
+    const corriger = pireCents(['claude-sonnet-5'], 8 * 5000 + 4000 + 30 * 600, 16000);
+    expect(composer + corriger).toBeLessThanOrEqual(GRATUIT_CENTS);      // 31,2 + 28,4 cents, même à un jeton pour deux signes
   });
 });

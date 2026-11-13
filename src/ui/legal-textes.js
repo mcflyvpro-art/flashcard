@@ -25,7 +25,7 @@ import { PWMIN } from './connexion.js';
    (LCEN) et les logiciels libres (les notices que leurs licences exigent).
    Les prix et les quotas viennent des modules qui les appliquent : le texte
    ne peut pas dire autre chose que l'app. */
-const LEGALV = '8 novembre 2026';  // l'usage raisonnable de l'IA, l'essai pour Mirandola+ seul (la veille : le vocabulaire classique ; le 6, l'examen blanc)
+const LEGALV = '8 novembre 2026';  // l'usage raisonnable de l'IA, l'essai pour Mirandola+ seul, l'examen blanc offert (la veille : le vocabulaire classique ; le 6, l'examen blanc)
 const E = ENTREPRISE;
 const mois = FORMULES.mensuel, an = FORMULES.annuel, imois = FORMULES.infini_mensuel, ian = FORMULES.infini_annuel;
 
@@ -153,8 +153,10 @@ limite de nombre sur un modèle plus rapide, dans les bornes d’un usage
 personnel (60 générations par jour) et de l’usage raisonnable dit à
 l’article 2 ; des documents jusqu’à 20 Mo et 300 cartes par
 génération ; l’objectif examen (une date par paquet, et le moteur qui vise
-95 % de souvenir dans les 30 jours qui la précèdent) ; l’examen blanc,
-composé et corrigé par l’IA, copie tapée ou photographiée. Ce qui est dit
+95 % de souvenir dans les 30 jours qui la précèdent) ; l’examen blanc sans
+limite, composé et corrigé par l’IA, copie tapée ou photographiée
+(Mirandola gratuit en offre un, Mirandola+ deux, à vie : un examen, c’est
+un sujet composé et sa correction). Ce qui est dit
 ici de Mirandola+ vaut pour Mirandola Infini, sauf ce qui est propre à ses
 prix.
 
@@ -285,7 +287,7 @@ par un contrat de sous-traitance.
 - *L’IA* : le nombre de générations et leur coût, pour tenir les plafonds.
   Le texte, la photo ou le document que tu envoies ne sont pas gardés par
   Mirandola.
-- *Un examen blanc* (Mirandola Infini) : la note, les questions, ce que l’IA
+- *Un examen blanc* (offert, ou Mirandola Infini) : la note, les questions, ce que l’IA
   a lu de ta copie, sa correction et ses conseils, rangés avec le paquet et
   supprimés avec lui (ou avec ton compte). La photo de ta copie ne sert qu’à
   la correction : elle n’est pas gardée.

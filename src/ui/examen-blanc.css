@@ -20,6 +20,15 @@
 .eb-courbe polyline{fill:none;stroke:var(--az5);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 
 .eb-choix{display:flex;flex-direction:column;gap:12px}
+/* l'examen offert (2026-11-08) : ce qui en reste, puis Infini */
+.eb-offert{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;color:var(--ink2)}
+.eb-offert svg{width:17px;height:17px;flex:none;color:#9A78CF}
+.eb-offert b{font-weight:800;color:var(--ink)}
+.eb-offert.fini{flex-wrap:wrap;padding:12px 14px;border-radius:16px;background:#16130C;color:#F3D98C}
+.eb-offert.fini p{flex:1;margin:0;font-weight:650}
+.eb-offert.fini svg{color:#F3D98C}
+.eb-infini{border:0;border-radius:99px;padding:8px 14px;font:800 13.5px/1 var(--sans);color:#16130C;cursor:pointer;
+  background:linear-gradient(135deg,#D4A23C,#F3D98C)}
 .eb-seg button{height:46px;font-size:14.5px;font-weight:650;display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .eb-seg svg{width:17px;height:17px}
 .eb-choix .cta,.eb-rendre .cta,.eb-fin .cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:99px}

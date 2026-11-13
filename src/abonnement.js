@@ -79,6 +79,7 @@ export const RAISONS = {
   livres: 'Tes 5 paquets de Mirandola gratuit sont pris',
   journal: 'Toutes tes statistiques',
   // Mirandola Infini (2026-11-07) : un geste du menu d'un livre
+  // l'objectif examen, ou les examens blancs offerts tous faits (2026-11-08)
   examen: 'L’objectif examen et l’examen blanc sont dans Mirandola Infini'
 };
 

@@ -46,7 +46,7 @@
    sous-modules internes ne se résout pas ici) et la fonction ne répond
    jamais. curl/HTTP brut n'a pas ce problème. */
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { COMPTER, borneJetons, coutCents, econome, pireCents, plafondCents } from "../_shared/rentabilite.js";
+import { COMPTER, EXAMEN_PAGES_OFFERT, borneJetons, coutCents, econome, examenPermis, pireCents, plafondCents } from "../_shared/rentabilite.js";
 
 /* Les modèles, dans l'ordre (2026-10-29 : « l'IA doit être dispo partout ») :
    le principal, puis deux secours quand il est surchargé, limité, en panne
@@ -418,21 +418,28 @@ Deno.serve(async (req) => {
      passer, comme avant. */
   const { data: droits, error: sansOffre } = await admin.rpc("ia_droits", { u: uid });
   const d = (droits ?? {}) as { offre?: string; niveau?: string; essai?: boolean; prof?: boolean; licence?: number | null;
-    fait?: number; depense?: number };
+    fait?: number; depense?: number; examens?: number; corrections?: number };
   const infini = !sansOffre && d.niveau === "infini" && !d.essai;
   const prof = !!d.prof;
   const maxCartes = infini ? INFINI.cartes : MAX_CARDS;
   const maxHist = infini ? INFINI.hist : MAX_HIST;
   const maxPdf = infini ? INFINI.pdf : MAX_PDF;
 
-  // l'examen blanc est à Mirandola Infini, son essai compris (ses 10 générations)
-  if (examen && !sansOffre && d.niveau !== "infini") return json({ error: "infini" }, 402);
+  /* L'examen blanc (2026-11-08) : sans limite pour Infini ; offert sinon —
+     1 à vie en Mirandola gratuit, 2 en Mirandola+ et Campus (EXAMENS_OFFERTS
+     de _shared/rentabilite.js) : composer demande un examen offert de reste,
+     corriger un sujet composé qui attend sa correction. Au-delà : Infini. */
+  const offert = examen && !sansOffre && d.niveau !== "infini";
+  if (offert && !examenPermis(op, d.niveau, Number(d.examens ?? 0), Number(d.corrections ?? 0))) {
+    return json({ error: "infini", examens: Number(d.examens ?? 0) }, 402);
+  }
   const ligne = (v: unknown, n: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n);
   let pagesEx: { f: string; b: string }[] = [], nEx = 0;
   let sujet: { q: string; attendu: string }[] = [], reponses: string[] = [];
   let photos: { mime: string; data: string }[] = [];
   if (op === "examen") {
-    const brutes = Array.isArray(body.cards) ? body.cards.slice(0, EXAMEN_PAGES) : [];
+    // un examen offert compose sur 120 cartes au plus : les plus utiles, que l'app met en tête
+    const brutes = Array.isArray(body.cards) ? body.cards.slice(0, offert ? EXAMEN_PAGES_OFFERT : EXAMEN_PAGES) : [];
     pagesEx = brutes.map((c) => {
       const x = (c ?? {}) as { f?: unknown; b?: unknown };
       return { f: ligne(x.f, MAX_PAGE), b: ligne(x.b, MAX_PAGE) };
@@ -559,7 +566,8 @@ Deno.serve(async (req) => {
     .toISOString().slice(0, 10);
   const today = now.toISOString().slice(0, 10);
 
-  if (!sansOffre && d.offre === "gratuit") return json({ error: "plus" }, 402);
+  // Mirandola gratuit n'a que son examen blanc offert : tout le reste est dans Mirandola+
+  if (!sansOffre && d.offre === "gratuit" && !examen) return json({ error: "plus" }, 402);
   /* Le quota du mois : celui de la licence Campus d'abord ; puis l'essai
      (10), Infini (150 sur le meilleur modèle, puis Haiku sans limite :
      jamais « mquota »), un professeur, un élève. */

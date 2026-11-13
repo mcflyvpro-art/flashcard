@@ -4,9 +4,12 @@ import { $ } from '../racine.js';
 import { online, view } from '../data/etat.js';
 import { deck, esc, sty, subj } from '../core/coeur-sync.js';
 import { composer, corriger, examensPull, garder, historiqueDe } from '../core/examen.js';
+import { iaPull } from '../core/abonnement.js';
 import { MAX_PHOTOS, MAX_REPONSE, noteLisible, questionsPossibles, tendance } from '../examen-blanc.js';
 import { go, render } from './bibliotheque.js';
 import { AIERR, toast } from './import-cartes.js';
+import { examensOfferts } from './examen-porte.js';
+import { ouvrirPlus } from './plus-porte.js';
 import { startStudy } from './revision.js';
 import './examen-blanc.css';
 
@@ -27,6 +30,18 @@ let e = neuf(null);
 export function preparer(id) {
   if (e.id !== id || e.etape === 'resultat' || e.etape === 'erreur') { liberer(); e = neuf(id); }
   examensPull(id).then(() => { if (view.name === 'examen' && e.etape === 'choix') render(); });
+  // ce qui reste d'examens offerts (2026-11-08) : relu à chaque ouverture
+  iaPull().then(() => { if (view.name === 'examen' && e.etape === 'choix') render(); });
+}
+
+/* L'examen offert (2026-11-08) : 1 en Mirandola gratuit, 2 en Mirandola+ ;
+   ce qui en reste se dit au-dessus du bouton, et, tout pris, Infini. */
+function offert() {
+  const n = examensOfferts();
+  if (n == null || n === Infinity) return '';
+  if (!n) return `<div class="eb-offert fini">${svg(I.target)}<p>Tes examens blancs offerts sont faits</p>
+      <button class="eb-infini" data-eb="infini">Passer à Infini</button></div>`;
+  return `<p class="eb-offert">${svg(I.spark)}<span>Examen blanc offert · il t’en reste <b>${n}</b></span></p>`;
 }
 
 function liberer() { for (const u of e.apercus) URL.revokeObjectURL(u); }
@@ -61,7 +76,8 @@ function choix(d) {
     <div class="eb-choix">
       ${opts.length > 1 ? `<div class="seg eb-seg" role="radiogroup" aria-label="Nombre de questions">${opts.map(n => seg('n', n, n + ' questions')).join('')}</div>` : ''}
       <div class="seg eb-seg" role="radiogroup" aria-label="Copie">${seg('mode', 'clavier', 'Au clavier', I.type)}${seg('mode', 'photo', 'Sur papier', I.pen)}</div>
-      <button class="cta" data-eb="composer" ${online ? '' : 'disabled'}>${svg(I.spark)}Composer le sujet</button>
+      ${offert()}
+      <button class="cta" data-eb="composer" ${online && examensOfferts() !== 0 ? '' : 'disabled'}>${svg(I.spark)}Composer le sujet</button>
     </div>`;
 }
 
@@ -145,8 +161,9 @@ async function etape(fn, attenteEtape, repli) {
   try { await fn(); }
   catch (x) {
     if (e.id !== id) return;
-    e.etape = repli; e.erreur = message(x);
-    if (repli !== 'erreur') toast(I.x, e.erreur);
+    // les examens offerts sont faits : le choix le dit, et mène à Infini
+    e.etape = String(x && x.message) === 'infini' ? 'choix' : repli; e.erreur = message(x);
+    if (e.etape !== 'erreur') toast(I.x, e.erreur);
   }
   if (e.id === id && view.name === 'examen') render();
 }
@@ -157,9 +174,12 @@ const GESTES = {
   mode: b => { e.mode = b.dataset.v; render(); },
   composer: () => etape(async () => {
     const d = deck(e.id);
-    const s = await composer(d, e.n);
-    Object.assign(e, { sujet: s.sujet, envoyees: s.envoyees, reponses: [], etape: 'copie' });
+    try {
+      const s = await composer(d, e.n);
+      Object.assign(e, { sujet: s.sujet, envoyees: s.envoyees, reponses: [], etape: 'copie' });
+    } finally { iaPull().then(() => { if (view.name === 'examen' && e.etape === 'choix') render(); }); }
   }, 'prepa', 'erreur'),
+  infini: () => ouvrirPlus({ niveau: 'infini', raison: 'examen' }),
   sans: b => {
     const i = +b.dataset.v;
     URL.revokeObjectURL(e.apercus[i]);

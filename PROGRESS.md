@@ -19,7 +19,11 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-08 · L'essai de 7 jours pour Mirandola+ seul, mis en
+DERNIER   2026-11-08 · L'examen blanc offert : 1 en Mirandola gratuit,
+          2 en Mirandola+, sans limite pour Infini (migration
+          20261108134716, fonction ai déployée), dans le menu de chaque
+          paquet. Avant :
+          2026-11-08 · L'essai de 7 jours pour Mirandola+ seul, mis en
           avant (site et app ; fonction paiement déployée) ; le bandeau du
           code : Infini en or, ce que donne le code dit clairement ; la
           phrase « Pour tout l'établissement… » retirée. Avant :

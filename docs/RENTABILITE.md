@@ -52,6 +52,15 @@ D'autres comptes ont leur propre plafond :
 
 - **L'essai de 7 jours : 25 cents.** Aucun paiement n'est encore passé. Il
   n'est pas rentable par lui-même : c'est un coût d'acquisition, borné.
+- **Mirandola gratuit : 60 cents** (`GRATUIT_CENTS`, 2026-11-08). Il n'a
+  qu'un examen blanc offert, à vie : un sujet composé sur 120 cartes au plus
+  (`EXAMEN_PAGES_OFFERT`), puis sa correction. Au pire, l'un coûte 31,2
+  cents et l'autre 28,4 (`test/rentabilite.test.js`) : le plafond couvre cet
+  examen, et rien d'autre. Comme l'essai, c'est un coût d'acquisition borné ;
+  le compter à vie (`examens` de `ia_droits`), et non au mois, l'empêche de
+  revenir chaque mois. Mirandola+ et Campus ont un examen offert de plus
+  (deux en tout), pris dans leur propre plafond ; Infini, sans limite, dans
+  le sien.
 - **Campus : le quota de la licence fois 3 cents par génération**
   (`PAR_GENERATION_CAMPUS`). Le prix est sur devis. La console de l'éditeur
   affiche ce pire pendant la saisie d'une licence (« au pire … par mois »,

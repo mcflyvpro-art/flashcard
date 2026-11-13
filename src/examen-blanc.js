@@ -12,6 +12,7 @@
 export const NOMBRES = [10, 20];          // questions proposées
 export const MIN_PAGES = 5;               // en dessous, pas d'examen blanc
 export const MAX_ENVOI = 300;             // pages données à l'IA pour composer
+export const MAX_ENVOI_OFFERT = 120;      // un examen offert (Mirandola gratuit, Mirandola+) : celle de la fonction ai
 export const MAX_PHOTOS = 8;              // pages de copie manuscrite
 export const MAX_REPONSE = 1500;          // caractères d'une réponse tapée
 const MAX_TEXTE = 600;
@@ -30,13 +31,13 @@ export function questionsPossibles(cartes) {
    ratées souvent, oubliées vite, jamais lues —, puis les autres, dans la
    limite de MAX_ENVOI. Chacune garde son rang dans la liste (`i`), par
    lequel l'IA dit d'où vient chaque question. */
-export function pagesPourSujet(cartes) {
+export function pagesPourSujet(cartes, max = MAX_ENVOI) {
   const poids = c => (c.l || 0) * 3 + (c.S ? Math.max(0, 30 - c.S) / 10 : 4);
   return (cartes || [])
     .filter(c => !c.x && c.f && c.b)
     .map((c, k) => ({ c, k, p: poids(c) }))
     .sort((a, b) => b.p - a.p || a.k - b.k)
-    .slice(0, MAX_ENVOI)
+    .slice(0, max)
     .map(({ c }, i) => ({ i, id: c.id, f: propre(c.f), b: propre(c.b) }));
 }
 

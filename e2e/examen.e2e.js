@@ -172,3 +172,41 @@ test('l’examen blanc sur papier : la copie photographiée, lue et corrigée ; 
   await page.locator('.menu.ex').getByRole('button', { name: /Examen blanc/ }).click();
   await expect(page.locator('.eb-histo b')).toHaveText('20', { timeout: 10000 });
 });
+
+/* L'examen blanc offert (2026-11-08, demandé : « Mirandola gratuit peut
+   tester un examen IA gratuit, et avec + il en débloque 1 de plus ») : le
+   menu d'un paquet le propose, l'écran dit ce qui en reste ; fait, le menu
+   porte la pastille d'or et mène à Infini, sans appeler l'IA. */
+test('Mirandola gratuit : un examen blanc offert, puis Infini', async ({ page }) => {
+  const store = { ...nouveauStore(), parDefaut: 'gratuit' };
+  await brancher(page, store);
+  await inscrire(page);
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/offre-gratuit/, { timeout: 10000 });
+  await creerLivre(page, 'Capitales', 6);
+
+  await page.getByRole('button', { name: 'Menu du paquet' }).click();
+  await page.getByRole('button', { name: /Examen blanc/ }).click();
+  await expect(page).toHaveURL(/\/paquets\/[^/]+\/examen-blanc$/, { timeout: 10000 });
+  await expect(page.locator('.eb-offert')).toContainText('il t’en reste 1', { timeout: 10000 });
+  await page.getByRole('button', { name: 'Composer le sujet' }).click();
+  const reponses = page.locator('.eb-q textarea');
+  await expect(reponses).toHaveCount(6, { timeout: 10000 });
+  await reponses.nth(0).fill('capitale 1');
+  await page.getByRole('button', { name: 'Rendre ma copie' }).click();
+  await expect(page.locator('.eb-note b')).toBeVisible({ timeout: 10000 });
+  expect((store.tables.ai_usage || []).map(x => x.op)).toEqual(['examen', 'corriger']);
+
+  // l'offert est fait : le menu mène à Infini, l'écran le dit, l'IA n'est plus appelée
+  await page.getByRole('button', { name: 'Terminer' }).click();
+  await page.getByRole('button', { name: 'Menu du paquet' }).click();
+  const mi = page.locator('[data-mact="examen-blanc"]');
+  await expect(mi.locator('.mi-infini')).toHaveText('Infini', { timeout: 10000 });
+  await mi.click();
+  await expect(page.locator('.fp-raison')).toContainText('l’examen blanc sont dans Mirandola Infini', { timeout: 10000 });
+  await page.goto('./eleve/paquets');
+  await page.getByText('Capitales', { exact: true }).first().click();
+  await page.getByRole('button', { name: 'Menu du paquet' }).click();
+  await page.locator('[data-mact="examen-blanc"] .mi-infini').waitFor();
+  expect(store.tables.ai_usage.length).toBe(2);
+});

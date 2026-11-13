@@ -31,7 +31,7 @@ const PORT = 54398, ICI = `http://127.0.0.1:${PORT}`, FONCTION = 'http://127.0.0
 const QUOTA_JOUR = 5;
 
 /* ---------- le faux monde ---------- */
-const offres = { gratuit1: 'gratuit', inf1: 'infini', inf150: 'infini' };   // les autres : Mirandola+
+const offres = { gratuit1: 'gratuit', gratuit2: 'gratuit', inf1: 'infini', inf150: 'infini', infex: 'infini' };   // les autres : Mirandola+
 const usage = [];                                // les lignes de ai_usage, réservées puis soldées
 let anthropic = { appels: 0, panne: false, comptes: 0, jetons: 1500 };
 let prochainId = 1;
@@ -68,8 +68,11 @@ const serveur = createServer(async (req, res) => {
     anthropic.appels++; anthropic.dernier = a;
     await new Promise(r => setTimeout(r, 60));    // l'appel prend du temps : les appels lancés ensemble se chevauchent
     if (anthropic.panne) return envoie(res, 529, { error: { type: 'overloaded_error' } });
-    return envoie(res, 200, { content: [{ type: 'text', text: JSON.stringify({ cards: [{ f: 'Paris', b: 'France' }] }) }],
-      usage: { input_tokens: 1000, output_tokens: 200 } });
+    // l'examen blanc (son schéma de réponse : des questions) ; des cartes sinon
+    const examen = /examen blanc/.test(String(a.system || ''));
+    const rendu = examen ? { questions: [{ q: 'Question 1', attendu: 'Réponse 1', pages: [1], lu: '', sur: 1, points: 1, ok: true,
+      correction: '', conseil: '' }], bilan: '' } : { cards: [{ f: 'Paris', b: 'France' }] };
+    return envoie(res, 200, { content: [{ type: 'text', text: JSON.stringify(rendu) }], usage: { input_tokens: 1000, output_tokens: 200 } });
   }
   /* ce que la fonction lit du compte, en une fois (ia_droits, depuis Mirandola
      Infini) ; offre_de reste pour une fonction d'avant. Sans réponse, la
@@ -77,8 +80,9 @@ const serveur = createServer(async (req, res) => {
      banc doit donc répondre, sinon « gratuit » passerait. */
   if (p === '/rest/v1/rpc/ia_droits') {
     const niveau = offres[a.u] || 'plus', offre = niveau === 'infini' ? 'plus' : niveau;
+    const de = op => usage.filter(x => x.user_id === a.u && x.op === op).length;
     return envoie(res, 200, { offre, niveau, essai: false, prof: false, licence: null,
-      fait: usage.filter(x => x.user_id === a.u).length, depense: depense(a.u) });
+      fait: usage.filter(x => x.user_id === a.u).length, depense: depense(a.u), examens: de('examen'), corrections: de('corriger') });
   }
   if (p === '/rest/v1/rpc/offre_de') return envoie(res, 200, offres[a.u] || 'plus');
   if (p === '/rest/v1/rpc/ia_quota') return envoie(res, 200, null);
@@ -218,6 +222,35 @@ async function essais() {
   verifie('trois appels ensemble, la place d’un seul : un passe, deux refusés, le plafond jamais dépassé',
     trois.filter(x => x.statut === 200).length === 1 && trois.filter(x => x.statut === 429).length === 2
       && depense('serre') <= 89, { statuts: trois.map(x => x.statut + ':' + (x.j.error || '')), depense: depense('serre') });
+
+  /* ---------- l'examen blanc offert (2026-11-08) ---------- */
+  const pages = Array.from({ length: 200 }, (_, i) => ({ f: 'Question ' + i, b: 'Réponse ' + i }));
+  const sujet = [{ q: 'Question 1', attendu: 'Réponse 1' }];
+  appels = anthropic.appels;
+  r = await appel('gratuit2');
+  verifie('Mirandola gratuit : des cartes, toujours dans Mirandola+', r.statut === 402 && r.j.error === 'plus' && anthropic.appels === appels, r);
+  r = await appel('gratuit2', { op: 'examen', n: 10, cards: pages });
+  const envoye = anthropic.dernier && anthropic.dernier.messages[0].content.map(b => b.text || '').join('');
+  verifie('… mais son examen blanc offert : composé, sur 120 cartes au plus', r.statut === 200
+    && usage.filter(x => x.user_id === 'gratuit2' && x.op === 'examen').length === 1
+    && envoye.includes('Question 119') && !envoye.includes('Question 120'), { r: r.statut, j: r.j });
+  r = await appel('gratuit2', { op: 'corriger', sujet, reponses: ['Réponse 1'] });
+  verifie('… et corrigé', r.statut === 200 && usage.filter(x => x.user_id === 'gratuit2' && x.op === 'corriger').length === 1, r);
+  appels = anthropic.appels;
+  const encore = await Promise.all([appel('gratuit2', { op: 'examen', n: 10, cards: pages }),
+    appel('gratuit2', { op: 'corriger', sujet, reponses: ['Réponse 1'] })]);
+  verifie('… un deuxième : Infini, sans appeler Anthropic ; pas de seconde correction non plus',
+    encore.every(x => x.statut === 402 && x.j.error === 'infini') && anthropic.appels === appels, encore);
+  for (let k = 0; k < 2; k++) {
+    r = await appel('plusex', { op: 'examen', n: 10, cards: pages });
+    if (r.statut === 200) await appel('plusex', { op: 'corriger', sujet, reponses: ['Réponse 1'] });
+  }
+  r = await appel('plusex', { op: 'examen', n: 10, cards: pages });
+  verifie('Mirandola+ : deux examens offerts, le troisième dans Infini',
+    usage.filter(x => x.user_id === 'plusex' && x.op === 'examen').length === 2 && r.statut === 402 && r.j.error === 'infini', r);
+  for (let k = 0; k < 4; k++) await appel('infex', { op: 'examen', n: 10, cards: pages });
+  verifie('Infini : sans limite, sur 300 cartes', usage.filter(x => x.user_id === 'infex' && x.op === 'examen').length === 4
+    && anthropic.dernier.messages[0].content.map(b => b.text || '').join('').includes('Question 199'), usage.length);
 
   const salve = await Promise.all(Array.from({ length: 20 }, () => appel('zoe')));
   const passes = salve.filter(x => x.statut === 200).length, refus = salve.filter(x => x.statut === 429).length;

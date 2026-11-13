@@ -57,6 +57,26 @@ export const ESSAI_CENTS = 25;
    que la console de l'éditeur met dans un devis (src/cout-ia.js). */
 export const PAR_GENERATION_CAMPUS = 3;
 
+/* L'examen blanc offert (2026-11-08, demandé : « Mirandola gratuit peut
+   tester un examen IA gratuit, et avec + il en débloque 1 de plus, pour
+   faire 2 ») : des examens à vie — composés ; chacun a droit à sa
+   correction —, sans limite pour Infini. Le même tableau que src/offres.js
+   (test/rentabilite.test.js). Un examen offert compose sur 120 cartes au plus
+   (Infini : 300) ; un compte gratuit n'a que ce plafond-là, de quoi composer
+   et corriger un examen au pire (≈ 30 + 26 cents). */
+export const EXAMENS_OFFERTS = { gratuit: 1, plus: 2, campus: 2 };
+export const EXAMEN_PAGES_OFFERT = 120;
+export const GRATUIT_CENTS = 60;
+export const examensPermis = niveau => (niveau === 'infini' ? Infinity : EXAMENS_OFFERTS[niveau] ?? 0);
+/* `composes` : les examens déjà composés, `corriges` : les copies corrigées.
+   Composer demande un examen offert de reste ; corriger, un sujet composé
+   qui attend encore sa correction. */
+export function examenPermis(op, niveau, composes, corriges) {
+  if (niveau === 'infini') return true;
+  if (op === 'examen') return composes < examensPermis(niveau);
+  return corriges < composes;
+}
+
 const mois = f => (PRIX[f].intervalle === 'year' ? 12 : 1);
 export const prixPromo = f => Math.round((PRIX[f].centimes * (100 - PROMO.remise)) / 100);
 
@@ -81,6 +101,7 @@ export function pireNet(niveau) {
 export function plafondCents({ niveau, essai, licence } = {}) {
   if (typeof licence === 'number') return Math.max(0, licence) * PAR_GENERATION_CAMPUS;
   if (essai) return ESSAI_CENTS;
+  if (niveau === 'gratuit') return GRATUIT_CENTS;              // l'examen blanc offert, et rien d'autre
   return Math.floor((pireNet(niveau === 'infini' ? 'infini' : 'plus') * PART_IA) / CHARGES.euroParDollar);
 }
 

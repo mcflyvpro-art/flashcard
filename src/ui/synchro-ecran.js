@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { auth, cardEdit, demoEtab, mailbox, menu, offre, quiz, sel, setAnimate, study, tuto, view } from '../data/etat.js';
-import { offrePull, signatureOffre } from '../core/abonnement.js';
+import { iaPull, offrePull, signatureOffre } from '../core/abonnement.js';
 import { mailPull } from '../core/reglages-corbeille.js';
 import { statsPull } from '../core/ecran-groupe.js';
 import { eleveClassesPull } from '../core/eleve-classes.js';
@@ -43,6 +43,7 @@ export function prechauffer() {
     if (mailbox.list == null) mailPull();
     statsPull(1);                                     // de fond : ne repeint que si le journal est à l'écran et a bougé
     commuPull();
+    iaPull();                                         // l'IA du mois : la barre de l'IA, les examens blancs offerts du menu d'un paquet
     if (aUneClasse() && !isProf()) { eleveClassesPull(); sallesPull(); duelsPull(); }
   }, { timeout: 3000 });
 }

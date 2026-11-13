@@ -1,7 +1,8 @@
 import { auth, online } from '../data/etat.js';
 import { api, enqueue, subj, uid } from './coeur-sync.js';
 import { aiCall, shrink } from '../ui/import-cartes.js';
-import { ligneExamen, lireCorrection, lireSujet, pagesPourSujet } from '../examen-blanc.js';
+import { MAX_ENVOI, MAX_ENVOI_OFFERT, ligneExamen, lireCorrection, lireSujet, pagesPourSujet } from '../examen-blanc.js';
+import { examensOfferts } from '../ui/examen-porte.js';
 
 /* L'examen blanc de Mirandola Infini (2026-11-06) : le transport. Chargé
    avec son écran (ui/examen-blanc.js), jamais au démarrage. L'IA compose,
@@ -36,7 +37,7 @@ const contexte = d => [d.name, d.subject ? subj(d.subject).name : ''].filter(Boo
    l'IA en a fait, relu. Rend aussi les pages envoyées, par lesquelles la
    correction retrouve les pages à revoir. */
 export async function composer(d, n) {
-  const envoyees = pagesPourSujet(d.cards);
+  const envoyees = pagesPourSujet(d.cards, examensOfferts() === Infinity ? MAX_ENVOI : MAX_ENVOI_OFFERT);
   const j = await aiCall({ op: 'examen', n, hint: contexte(d), cards: envoyees.map(({ f, b }) => ({ f, b })) }, 'brut');
   const sujet = lireSujet(j.sujet, envoyees, n);
   if (!sujet.length) throw new Error('empty');

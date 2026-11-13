@@ -19,10 +19,13 @@ import { modele } from './classes.js';
 import { etab, orgDe } from './etablissement.js';
 import { licenceProf } from './licences.js';
 import { enEssai, niveauDuCompte, offreDe } from './abonnements.js';
+import { EXAMENS_OFFERTS } from '../offres.js';
 
 const auj = () => new Date().toISOString().slice(0, 10);
 const usage = store => (store.tables.ai_usage = store.tables.ai_usage || []);
 const faitDuMois = (store, uid) => usage(store).filter(a => a.user_id === uid && a.day >= auj().slice(0, 8) + '01').length;
+// les sujets composés et les copies corrigées, à vie (migration examens_offerts, 2026-11-08)
+const aVie = (store, uid, op) => usage(store).filter(a => a.user_id === uid && a.op === op).length;
 
 /* ia_quota : celui d'un établissement, d'un professeur particulier sous
    licence, ou de l'élève d'un tel professeur ; nul sinon. */
@@ -43,7 +46,7 @@ export function monIa(store, uid) {
   const prof = ['prof', 'ref', 'admin'].includes(modele(store).roles[uid]);
   const quota = q ?? (offre === 'gratuit' ? 0 : essai ? 10 : niveau === 'infini' ? 150 : prof ? 400 : 30);
   return { fait: faitDuMois(store, uid), quota, licence: q != null, offre, niveau, essai,
-    sans_compter: niveau === 'infini' && !essai };
+    sans_compter: niveau === 'infini' && !essai, examens: aVie(store, uid, 'examen') };
 }
 
 export const rpcIa = (store, nom, user) => (nom === 'mon_ia' ? [200, monIa(store, user.id)] : null);
@@ -99,16 +102,22 @@ function examenFaux(store, b) {
 }
 
 export function aiFaux(store, b, user) {
-  const ia = monIa(store, user.id);
-  if (ia.offre === 'gratuit') return [402, { error: 'plus' }];
-  if ((b.op === 'examen' || b.op === 'corriger') && ia.niveau !== 'infini') return [402, { error: 'infini' }];
+  const ia = monIa(store, user.id), op = String(b.op || ''), examen = op === 'examen' || op === 'corriger';
+  // Mirandola gratuit n'a que son examen blanc offert (2026-11-08)
+  if (ia.offre === 'gratuit' && !examen) return [402, { error: 'plus' }];
+  /* l'examen blanc offert, comme la vraie (EXAMENS_OFFERTS) : composer demande
+     un examen de reste, corriger un sujet qui attend sa correction ; Infini, sans limite */
+  if (examen && ia.niveau !== 'infini') {
+    const composes = aVie(store, user.id, 'examen'), corriges = aVie(store, user.id, 'corriger');
+    const permis = op === 'examen' ? composes < (EXAMENS_OFFERTS[ia.niveau] ?? 0) : corriges < composes;
+    if (!permis) return [402, { error: 'infini', examens: composes }];
+  }
   // Infini (2026-11-05) : au-delà de ses 150, la vraie passe sur Haiku, jamais « mquota »
   const mois = { fait: ia.fait, quota: ia.quota, sans_compter: !!ia.sans_compter };
-  if (ia.fait >= ia.quota && !ia.sans_compter) return [429, { error: 'mquota', quota: ia.quota, mois }];
+  if (ia.fait >= ia.quota && !ia.sans_compter && ia.offre !== 'gratuit') return [429, { error: 'mquota', quota: ia.quota, mois }];
   // une panne jouée par un parcours (store.iaPanne : « credit », « surcharge »…) : rien n'est compté, comme en vrai
   if (store.iaPanne) return [503, { error: store.iaPanne, mois }];
-  const op = String(b.op || '');
-  if (op === 'examen' || op === 'corriger') {
+  if (examen) {
     usage(store).push({ user_id: user.id, day: auj(), op, cents: 1 });
     mois.fait += 1;
     return [200, { ...examenFaux(store, b), mois }];

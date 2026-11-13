@@ -1351,6 +1351,7 @@ html.offre-plus #rail nav button.on svg{color:#8A6BCB}
 html.offre-infini{--plus:linear-gradient(135deg,#8A6114,#D4A23C 38%,#F3D98C 58%,#C08B2B)}
 html.offre-infini #rail .brand span::after{content:'\2009∞'}
 /* ce qui est dans Infini, dans un menu : sa pastille d'or */
+.mi .mi-offert{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#fff;background:var(--plus)}
 .mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#16130C;background:linear-gradient(135deg,#D4A23C,#F3D98C)}
 html.offre-infini .cta:not(:disabled){color:#16130C;box-shadow:0 10px 22px -12px rgba(150,105,20,.75)}
 /* l'onglet Mirandola+ d'un compte gratuit : son nom et son icône dans la lumière de la marque */

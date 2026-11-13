@@ -35,6 +35,13 @@ export const PLUS_SEUL = ['ia', 'photo', 'fichier', 'exercices', 'media', 'livre
    volets-là (data-volet de ui/journal-ecran.js) sont dans Mirandola+. */
 export const JOURNAL_PLUS = ['memoire', 'pause', 'heures', 'matieres', 'livres', 'resistent'];
 
+/* L'examen blanc offert (2026-11-08) : 1 à vie en Mirandola gratuit, 2 en
+   Mirandola+ (et Campus), sans limite pour Infini. Le même tableau que la
+   fonction ai (supabase/functions/_shared/rentabilite.js), qui en décide. */
+export const EXAMENS_OFFERTS = { gratuit: 1, plus: 2, campus: 2 };
+export const examensRestants = (niveau, faits) => (niveau === 'infini' ? Infinity
+  : Math.max(0, (EXAMENS_OFFERTS[niveau] ?? 0) - (Number(faits) || 0)));
+
 export const permis = (offre, fonction) => offre !== 'gratuit' || !PLUS_SEUL.includes(fonction);
 export const livresPermis = (offre, n) => offre !== 'gratuit' || n < LIVRES_GRATUITS;
 export const voletPermis = (offre, volet) => offre !== 'gratuit' || !JOURNAL_PLUS.includes(volet);

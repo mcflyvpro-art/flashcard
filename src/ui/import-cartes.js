@@ -29,7 +29,7 @@ export const AIERR = {
   // le plafond de coût du compte (2026-11-08, supabase/functions/_shared/rentabilite.js)
   plafond: 'Ton IA a atteint son usage raisonnable du mois : la suite le 1er',
   lourd: 'Trop lourd pour ce qu’il te reste d’IA ce mois-ci : essaie un document plus court',
-  demo: 'Avec un compte Mirandola', infini: 'L’examen blanc est dans Mirandola Infini',
+  demo: 'Avec un compte Mirandola', infini: 'Tes examens offerts sont faits : la suite est dans Infini',
   // ce que la fonction ai rend quand rien n'a marché (2026-10-29) : rien n'est compté
   surcharge: 'L’IA est très demandée : réessaie dans une minute',
   credit: 'L’IA fait une courte pause : réessaie un peu plus tard',
