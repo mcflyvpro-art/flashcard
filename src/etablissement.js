@@ -267,8 +267,15 @@ const DEMANDE = {
   champs: ['ko', 'Il manque le nom de l’établissement ou le vôtre', ''],
   trop: ['ko', 'Beaucoup de demandes en ce moment', 'Réessayez dans une heure.']
 };
-export function messageDemande(statut) {
-  const [ton, titre, texte] = DEMANDE[statut] || ['ko', 'Envoi impossible', 'Vérifiez votre connexion et réessayez.'];
+/* La demande d'un professeur particulier (2026-11-13) : ce qui diffère de
+   celle d'un établissement — rien de démo ni d'établissement. */
+const DEMANDE_PROF = {
+  ok: ['ok', 'Merci, c’est noté', 'Nous vous écrivons sous deux jours ouvrés pour ouvrir votre espace.'],
+  champs: ['ko', 'Il manque votre nom', '']
+};
+export function messageDemande(statut, prof = false) {
+  const [ton, titre, texte] = (prof && DEMANDE_PROF[statut]) || DEMANDE[statut]
+    || ['ko', 'Envoi impossible', 'Vérifiez votre connexion et réessayez.'];
   return { ton, titre, texte };
 }
 export const FONCTIONS = ['Direction', 'Professeur', 'CPE', 'Professeur documentaliste', 'Autre'];

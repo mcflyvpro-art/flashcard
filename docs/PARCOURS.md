@@ -243,8 +243,23 @@ reporter dans le registre des traitements de son établissement.
    dans sa classe ; il change son mot de passe à sa première connexion.
 4. Il corrige ce qui doit l'être : un nom, un élève dans la mauvaise classe.
 
-### 4.5 Le professeur particulier (2026-10-29)
+### 4.5 Le professeur particulier (2026-10-29, à part de l'établissement depuis le 2026-11-13)
 
+Un professeur particulier n'est pas un établissement : il ne passe jamais
+par « Demander une démo » ni par Mirandola Campus. Ni lui ni ses élèves ne
+lisent « Campus » dans l'app : pour eux, c'est **Mirandola+, offert par
+leur professeur** (« Ma licence » de l'écran Mirandola+, la ligne des
+Réglages, la barre latérale).
+
+0. **Il te demande son espace** : « Ouvrir mon espace » sur la page des
+   tarifs ou `/professeurs` mène à `mirandola.fr/professeur-particulier`
+   (son nom, son adresse, son téléphone, combien d'élèves, ce qu'il
+   enseigne ; sans compte, une demande par adresse et par jour). Tu reçois
+   l'e-mail « Professeur particulier : … » (bouton « Ouvrir son compte »),
+   lui un accusé de réception ; sa demande est en tête d'Administration →
+   Comptes. « Ouvrir son compte » y remplit le formulaire de l'étape 1 (le
+   rôle, son nom, son adresse, ses places) ; une fois le compte ouvert, la
+   demande est marquée traitée (« Traitée » le fait à la main).
 1. **Tu ouvres son compte** : Administration → Comptes → « Compte » →
    Professeur particulier, son prénom, son nom, son adresse ; un mot de
    passe provisoire est proposé. Sa **licence** dans le même formulaire :
@@ -261,8 +276,8 @@ reporter dans le registre des traitements de son établissement.
 4. **Ses élèves** ouvrent mirandola.fr (le QR y mène ; au téléphone,
    l'installation d'abord), **créent leur propre compte**, et, à leur
    accueil, « J'ai un code » : le code, leur prénom et leur nom, sa classe.
-   Ils sont en **salle d'attente** : une place est réservée, Mirandola Campus
-   est déjà ouvert ; l'élève attend sur son accueil (« En attente de … »,
+   Ils sont en **salle d'attente** : une place est réservée, Mirandola+ (offert
+   par leur professeur) est déjà ouvert ; l'élève attend sur son accueil (« En attente de … »,
    « Annuler ma demande »). Un code tapé sur le site avant d'avoir un compte
    l'attend une heure : connecté, l'accueil s'ouvre sur le prénom, le nom et
    la classe.
@@ -290,6 +305,7 @@ reporter dans le registre des traitements de son établissement.
 | créer une fiche, noter un besoin, une relance | toi | idem → Nouvel établissement / la fiche |
 | lancer une démo, passer en licence | toi | la fiche |
 | renvoyer un code référent | toi | la fiche |
+| lire la demande d'un professeur particulier | toi | Administration → Comptes (en tête) → « Ouvrir son compte » |
 | ouvrir le compte d'un professeur particulier, sa licence, un mot de passe oublié | toi | Administration → Comptes → « Compte » / sa fiche |
 | régler l'IA d'un établissement (par professeur, par élève) | toi | la fiche → IA par mois |
 | voir ses places, en commander, accepter ou refuser un élève | professeur particulier | son espace (bandeau du code, onglet Demandes d'une classe) |

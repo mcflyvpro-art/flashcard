@@ -177,6 +177,11 @@ describe('messageDemande — le formulaire public', () => {
     for (const s of ['email', 'champs', 'trop']) expect(messageDemande(s).ton).toBe('ko');
     expect(messageDemande('???').titre).toBe('Envoi impossible');
   });
+  it('un professeur particulier (2026-11-13) : son espace, jamais une démo ni un établissement', () => {
+    expect(messageDemande('ok', true).texte).toMatch(/votre espace/);
+    expect(messageDemande('champs', true).titre).toBe('Il manque votre nom');
+    for (const s of ['ok', 'deja', 'champs', 'email', 'trop']) expect(JSON.stringify(messageDemande(s, true))).not.toMatch(/démo|établissement/);
+  });
 });
 
 describe('le message d’un compte ouvert par l’éditeur', () => {

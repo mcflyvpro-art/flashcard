@@ -3,8 +3,8 @@ import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { offre, plus, view } from '../data/etat.js';
-import { ESSAI_JOURS, FORMULES, PROMO, RAISONS, erreurDe, euros, formuleDe, gestion, lignePromo, resume } from '../abonnement.js';
-import { AVANTAGES_DETAIL, AVANTAGES_INFINI, iaDuMois, licence } from '../licence.js';
+import { ESSAI_JOURS, FORMULES, PROMO, erreurDe, euros, formuleDe, gestion, lignePromo, resume } from '../abonnement.js';
+import { AVANTAGES_DETAIL, AVANTAGES_INFINI, RAISONS, iaDuMois, licence } from '../licence.js';
 import { iaParMois } from '../offres.js';
 import { NOMS, mobile, plateforme, vente } from '../plateformes.js';
 import { qrSvg } from '../qr.js';
@@ -270,7 +270,8 @@ function installHtml(p) {
 const raison = () => (plus.raison && RAISONS[plus.raison] && offre && (offre.offre === 'gratuit' || plus.monter)
   ? `<p class="fp-raison">${svg(I.spark)}${esc(RAISONS[plus.raison])}</p>` : '');
 
-const titre = () => (offre && offre.offre === 'campus' ? 'Mirandola <em class="fp-campus">Campus</em>'
+// Campus, seulement pour un établissement : chez un professeur particulier, c'est Mirandola+ (2026-11-13)
+const titre = () => (offre && offre.offre === 'campus' && offre.etablissement ? 'Mirandola <em class="fp-campus">Campus</em>'
   : (offre && offre.niveau === 'infini') || (offre && (offre.offre === 'gratuit' || plus.monter) && infini()) ? 'Mirandola <em class="fp-infini">Infini</em>'
     : 'Mirandola<span class="fp-plus">+</span>');
 

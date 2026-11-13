@@ -9,6 +9,7 @@ describe('chemin — un écran, son adresse', () => {
     expect(chemin({ name: 'login', id: 'carte' })).toBe('/connexion');
     expect(chemin({ name: 'decouvrir' })).toBe('/essayer');
     expect(chemin({ name: 'demande' })).toBe('/demande-demo');
+    expect(chemin({ name: 'demandeprof' })).toBe('/professeur-particulier');          // à part de l'établissement (2026-11-13)
     expect(chemin({ name: 'legal', id: 'vie' })).toBe('/mentions/confidentialite');   // la clé de l'app, l'adresse publique
     expect(chemin({ name: 'legal', id: 'mentions' })).toBe('/mentions/mentions');
     expect(chemin({ name: 'legal', id: 'nimporte' })).toBe('/mentions/cgu');

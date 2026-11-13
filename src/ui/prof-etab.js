@@ -58,7 +58,7 @@ function licenceBande() {
   if (etab()) return '';
   const l = prof.licence;
   if (l === null) { licencePull(); return ''; }
-  if (!l) return `<button class="pf-cb-lic ko" data-pf="places">${svg(I.lock)}Pas encore de licence Campus</button>`;
+  if (!l) return `<button class="pf-cb-lic ko" data-pf="places">${svg(I.lock)}Pas encore de places</button>`;
   if (!l.active) return `<button class="pf-cb-lic ko" data-pf="places">${svg(I.lock)}Licence finie le ${esc(jourLong(l.fin))}</button>`;
   return `<button class="pf-cb-lic${libresDe(l) ? '' : ' ko'}" data-pf="places">${svg(I.users)}
       <span><b>${l.inscrits}</b>/${l.places} élèves</span>${l.attente ? `<span class="am"><b>${l.attente}</b> en attente</span>` : ''}
@@ -89,7 +89,7 @@ function places(w) {
   const l = prof.licence;
   if (l === null) licencePull();
   const corps = !l ? `<p class="pf-note">${l === null ? 'Chargement…'
-      : 'Pas encore de licence Campus : demandez des places, Mirandola vous répond vite.'}</p>`
+      : 'Pas encore de places : demandez-en, Mirandola vous répond vite.'}</p>`
     : `<div class="pf-mini">
         <span><b>${l.inscrits}<small>/${l.places}</small></b><i>élèves</i></span>
         <span class="${l.attente ? 'am' : ''}"><b>${l.attente}</b><i>en attente</i></span>
@@ -98,7 +98,7 @@ function places(w) {
       <p class="pf-note">${l.fin ? (l.fin < aujourdhui() ? 'Licence finie le ' : 'Licence jusqu’au ') + esc(jourLong(l.fin)) : 'Licence sans date de fin'}
         · ${plur(l.ia_eleve, 'génération')} IA par élève et par mois</p>`;
   const d = l && l.demande;
-  feuille(w, '', '<b>Mes places</b>', 'Mirandola Campus', `${corps}
+  feuille(w, '', '<b>Mes places</b>', 'Cours particuliers', `${corps}
       ${d ? `<p class="pf-alerte">${svg(I.clock)}Demande envoyée : ${plur(d.places, 'place')} de plus · ${timeAgo(d.le)}</p>` : ''}
       <h3 class="pf-h3">Commander des places</h3>
       ${champ('Combien de places de plus ?', 'nb', 'id="pfnb" inputmode="numeric" maxlength="4"', prof.f.nb ?? '10')}

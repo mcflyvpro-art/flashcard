@@ -25,7 +25,7 @@ import { render } from './bibliotheque.js';
    d'envoyer ce qui attendait (boot() suit son cours, seul l'écran change),
    et le code d'un lien attend l'app (ui/passage.js). */
 
-const LIBRES = new Set(['decouvrir', 'legal', 'demande']);
+const LIBRES = new Set(['decouvrir', 'legal', 'demande', 'demandeprof']);
 let ici = null;
 const appareil = () => ici || (ici = plateforme({ ua: navigator.userAgent, touches: navigator.maxTouchPoints || 0,
   capacitor: window.Capacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : null }));

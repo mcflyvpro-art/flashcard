@@ -41,10 +41,25 @@ function effacer(store, m, et, id) {
   delete m.roles[id]; delete m.noms[id]; delete et.membres[id];
 }
 
-const NOMS = ['admin_comptes', 'admin_supprimer_compte', 'admin_suspendre', 'admin_confirmer', 'admin_vigie', 'admin_erreurs'];
+const NOMS = ['admin_comptes', 'admin_supprimer_compte', 'admin_suspendre', 'admin_confirmer', 'admin_vigie', 'admin_erreurs',
+  'admin_demandes_profs', 'admin_demande_prof_traitee'];
+
+/* La demande d'un professeur particulier (migration
+   20261113171304), ouverte à anon comme la vraie : `store.demandesProfs`. */
+function demanderEspaceProf(store, b) {
+  const l = (store.demandesProfs ||= []), mel = String(b.email || '').trim().toLowerCase();
+  if (String(b.nom || '').trim().length < 2) return 'champs';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mel)) return 'email';
+  if (b.eleves != null && !(b.eleves >= 1 && b.eleves <= 1000)) return 'champs';
+  if (l.some(d => d.email === mel)) return 'deja';
+  l.push({ id: 'dp-' + (l.length + 1), nom: String(b.nom).trim(), email: mel, tel: b.tel || '', eleves: b.eleves ?? null,
+    message: b.message || '', cree: new Date().toISOString(), traitee_le: null });
+  return 'ok';
+}
 
 export function repondreComptes(store, { url, headers, body }) {
   const nom = url.pathname.replace('/rest/v1/rpc/', '');
+  if (nom === 'demander_espace_prof') return [200, demanderEspaceProf(store, body || {})];
   if (!url.pathname.startsWith('/rest/v1/rpc/') || !NOMS.includes(nom)) return null;
   const user = userOf(store, { headers });
   return user ? rpcComptes(store, nom, user, body || {}) : [401, { message: 'JWT expired' }];
@@ -70,6 +85,14 @@ function rpcComptes(store, nom, user, b) {
     return [200, { jour: { demarrages: ouv, erreurs: nb - bloques, bloques, installees: 0, cases: [ouv, 0, 0, 0, 0, 0] },
       neuves: erreurs.map(({ empreinte, type, n }) => ({ empreinte, type, n })),
       raisons: erreurs.length ? ['erreur nouvelle'] : [], alerte: erreurs.length > 0 }];
+  }
+  if (nom === 'admin_demandes_profs') {
+    return [200, [...(store.demandesProfs || [])].sort((x, y) => !!x.traitee_le - !!y.traitee_le || y.cree.localeCompare(x.cree))];
+  }
+  if (nom === 'admin_demande_prof_traitee') {
+    const d = (store.demandesProfs || []).find(x => x.id === b.did);
+    if (d) d.traitee_le = b.traitee === false ? null : new Date().toISOString();
+    return [200, !!d];
   }
   if (nom === 'admin_comptes') {
     return [200, store.users.map(u => ligne(store, m, et, u)).sort((x, y) => y.cree.localeCompare(x.cree))];

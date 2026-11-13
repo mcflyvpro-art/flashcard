@@ -6,3 +6,6 @@ import { api } from './coeur-sync.js';
    file d'attente hors ligne : sans réseau, l'écran le dit et rien n'est
    perdu, le formulaire reste rempli. */
 export const demanderDemo = f => api('/rest/v1/rpc/demander_demo', 'POST', f);
+/* La demande d'un professeur particulier (2026-11-13) : la sienne, à part de
+   tout établissement — freinée en base de même (demander_espace_prof). */
+export const demanderEspaceProf = f => api('/rest/v1/rpc/demander_espace_prof', 'POST', f);

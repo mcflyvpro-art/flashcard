@@ -165,7 +165,8 @@ select 'rien d''un autre pour ' || fn,
     'code_apercu', 'rejoindre', 'class_preview', 'class_join',         -- un statut : ce code n'existe pas
     'salle_rejoindre', 'salle_etat', 'salle_repondre',
     'pseudo_libre', 'changer_pseudo', 'profil_lecteur', 'eleve_classe',
-    'demander_demo', 'club_creer', 'join_group', 'salle_ouvrir',      -- un statut, ou ce qu'il vient de créer pour lui
+    'demander_demo', 'demander_espace_prof',                           -- un statut
+    'club_creer', 'join_group', 'salle_ouvrir',                         -- un statut, ou ce qu'il vient de créer pour lui
     'blocked',                                                         -- ceux qu'il vient de bloquer : block_user passe juste avant dans la boucle
     'shared_deck'                                                      -- public par nature : un livre prêté par son code
   ]) and (fn <> 'profil_lecteur' or bool_and(quoi like '%statut=inconnu'))

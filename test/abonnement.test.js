@@ -1,9 +1,9 @@
 // Mirandola+ dans l'app : lire ce que dit la base, le dire en clair (src/abonnement.js),
 // et l'appareil : la porte d'installation, le bon geste (src/plateformes.js).
 import { describe, expect, it } from 'vitest';
-import { FORMULES, GERER, formuleDe, niveauDe, RAISONS, VENTE_OUVERTE, dateLisible, erreurDe, euros, gestion, lireOffre, lireRetour, resume }
+import { FORMULES, GERER, formuleDe, niveauDe, VENTE_OUVERTE, dateLisible, erreurDe, euros, gestion, lireOffre, lireRetour, resume }
   from '../src/abonnement.js';
-import { AVANTAGES_DETAIL, iaDuMois, licence } from '../src/licence.js';
+import { AVANTAGES_DETAIL, RAISONS, iaDuMois, licence } from '../src/licence.js';
 import { PLUS_SEUL } from '../src/offres.js';
 import { MAGASINS, installer, mobile, plateforme, porte, vente } from '../src/plateformes.js';
 
@@ -87,6 +87,15 @@ describe('ce que l’écran en dit', () => {
     expect(r.gerer).toBe(true);
     expect(resume({ offre: 'campus', etablissement: 'L', abonnement: ab({ finPrevue: true }) }).alerte).toBe('');
   });
+  /* chez un professeur particulier (2026-11-13) : rien de Campus ni d'établissement */
+  it('chez un professeur particulier : Mirandola+, offert par lui — jamais Campus ni établissement', () => {
+    const eleve = resume({ offre: 'campus', etablissement: '', professeur: 'Lucie MIRA', abonnement: null });
+    expect(eleve).toMatchObject({ cle: 'campus', titre: 'Mirandola+', ligne: 'Offert par Lucie MIRA', payer: false });
+    const prof = resume({ offre: 'campus', etablissement: '', professeur: '', licenceFin: '2027-06-30', abonnement: null });
+    expect(prof).toMatchObject({ titre: 'Mirandola+', ligne: 'Ta licence de professeur jusqu’au 30 juin 2027' });
+    expect(resume({ offre: 'campus', etablissement: '', professeur: 'Lucie MIRA', abonnement: ab() }).alerte).toMatch(/ton professeur/);
+    for (const r of [eleve, prof]) expect(JSON.stringify(r)).not.toMatch(/Campus|établissement/);
+  });
   it('un abonnement fini : de nouveau Mirandola gratuit, les factures restent', () => {
     const r = resume({ offre: 'gratuit', abonnement: ab({ statut: 'fini' }) });
     expect(r.ligne).toBe('Ton abonnement Mirandola+ a pris fin');
@@ -136,6 +145,13 @@ describe('la licence, ligne par ligne', () => {
       .toBe('Mirandola Infini, offert par Mirandola');
     const c = licence({ offre: 'campus', etablissement: 'Lycée Démo', licenceFin: '2027-08-31', abonnement: null });
     expect(lignes(c)).toEqual({ Licence: 'Offerte par Lycée Démo', Échéance: '31 août 2027', Prix: 'Rien à payer' });
+    // chez un professeur particulier (2026-11-13) : son élève, et lui-même
+    const e = licence({ offre: 'campus', etablissement: '', professeur: 'Lucie MIRA', abonnement: null });
+    expect(lignes(e)).toEqual({ Licence: 'Offerte par Lucie MIRA', Échéance: 'Fixée par ton professeur', Prix: 'Rien à payer' });
+    expect(e.engagement).toBe('Ton professeur gère la licence : rien à résilier de ton côté.');
+    const p = licence({ offre: 'campus', etablissement: '', professeur: '', licenceFin: null, abonnement: null });
+    expect(lignes(p)).toEqual({ Licence: 'Ta licence de professeur particulier', Échéance: 'Sans date de fin', Prix: 'Sur devis' });
+    for (const x of [e, p]) expect(JSON.stringify(x)).not.toMatch(/Campus|établissement/);
   });
   it('l’IA du mois : compté pour un élève, pas pour un professeur', () => {
     expect(iaDuMois(12, 30, false)).toEqual({ t: '12 sur 30', pc: 40 });

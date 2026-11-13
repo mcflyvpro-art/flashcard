@@ -200,3 +200,76 @@ test('refusé, l’élève retombe en gratuit et reçoit un mot ; la licence ple
   await page.locator('[data-pf="places-go"]').click();
   await expect.poll(() => licences(store).demandes.map(d => d.places)).toEqual([5]);
 });
+
+/* Le professeur particulier a son chemin à lui (2026-11-13, demandé : « prof
+   particulier c'est prof particulier ; là ça redirige vers Mirandola
+   Campus ») : depuis les tarifs du site, sa propre demande — ni Campus, ni
+   établissement, ni démo —, rangée à part (aucun établissement créé) ;
+   l'éditeur la voit dans ses comptes et ouvre le compte d'un geste, le
+   formulaire déjà rempli ; la demande se marque traitée. */
+test('depuis le site, sa propre demande, rien d’un établissement ; l’éditeur ouvre son compte depuis elle', async ({ page, browser }) => {
+  const store = nouveauStore(), m = modele(store);
+  const moi = semerCompte(store, 'editeur@mirandola.fr');
+  m.roles[moi] = 'admin'; m.noms[moi] = 'Clément';
+  sansTuto(store, 'editeur@mirandola.fr');
+  const avant = etab(store).orgs.length;
+  await brancher(page, store, { navigateur: true });
+  await page.goto('./tarifs');
+  await page.locator('.particulier').getByRole('link', { name: 'Ouvrir mon espace professeur' }).click();
+  await expect(page).toHaveURL(/\/professeur-particulier$/, { timeout: 10000 });
+  await expect(page.locator('.dd-t')).toContainText('cours particuliers', { timeout: 10000 });
+  const ecran = page.locator('#app');
+  await expect(ecran).not.toContainText('Campus');
+  await expect(ecran).not.toContainText(/établissement|Établissement|démo/);
+  await page.getByLabel('Votre nom').fill('Lucie Mira');
+  await page.getByLabel('E-mail').fill('Lucie@Exemple.fr');
+  await page.getByLabel('Nombre d’élèves').fill('8');
+  await page.getByLabel('Ce que vous enseignez').fill('Maths, lycée');
+  await page.getByRole('button', { name: 'Ouvrir mon espace' }).click();
+  await expect(page.locator('.dd-merci')).toContainText('votre espace', { timeout: 10000 });
+  expect(store.demandesProfs).toEqual([expect.objectContaining({ nom: 'Lucie Mira', email: 'lucie@exemple.fr', eleves: 8,
+    message: 'Maths, lycée', traitee_le: null })]);
+  expect(etab(store).orgs.length).toBe(avant);                                 // aucun établissement prospect
+
+  // l'éditeur, dans ses comptes : la demande, puis le compte ouvert d'un geste
+  const ctx = await browser.newContext({ viewport: { width: 1360, height: 900 } });
+  const ed = await ctx.newPage();
+  await brancher(ed, store);
+  await connexion(ed, 'editeur@mirandola.fr');
+  await expect(ed.locator('.ed-chiffres')).toBeVisible({ timeout: 10000 });
+  await ed.locator('#rail [data-r="adm:comptes"]').click();
+  const dem = ed.locator('.ed-dprof', { hasText: 'Lucie Mira' });
+  await expect(dem).toContainText('8 élèves', { timeout: 10000 });
+  await expect(dem).toContainText('Maths, lycée');
+  await dem.getByRole('button', { name: 'Ouvrir son compte' }).click();
+  await expect(ed.locator('#nc-prenom')).toHaveValue('Lucie');
+  await expect(ed.locator('#nc-nom')).toHaveValue('Mira');
+  await expect(ed.locator('#nc-mail')).toHaveValue('lucie@exemple.fr');
+  await expect(ed.locator('#nc-places')).toHaveValue('8');
+  await ed.getByRole('button', { name: 'Ouvrir le compte' }).click();
+  await expect(ed.locator('.ed-mdp .ed-code')).toBeVisible({ timeout: 10000 });
+  const lucie = store.users.find(u => u.email === 'lucie@exemple.fr');
+  expect(m.roles[lucie.id]).toBe('prof');
+  expect(licences(store).profs[lucie.id]).toMatchObject({ places: 8 });
+  await expect.poll(() => store.demandesProfs[0].traitee_le).toBeTruthy();
+  await expect(ed.locator('.ed-dprofs')).toHaveCount(0);
+  await ctx.close();
+});
+
+/* Ce que l'élève d'un professeur particulier lit de son offre (2026-11-13) :
+   Mirandola+, offert par sa professeure — jamais « Campus » ni
+   « établissement ». */
+test('l’élève d’un professeur particulier : Mirandola+, offert par sa professeure, jamais Campus', async ({ page }) => {
+  const { store, m, eleves, cid } = semer();
+  m.membres.push({ cid, uid: eleves.tom, who: 'Tom DURAND', depuis: new Date().toISOString() });
+  await brancher(page, store);
+  await connexion(page, 'tom@exemple.fr');
+  await expect(page.locator('html')).not.toHaveClass(/offre-gratuit/, { timeout: 10000 });
+  await page.goto('./eleve/reglages');
+  const ligne = page.locator('[data-act="plus"], [data-act="tab-plus"], .rg').filter({ hasText: 'Mirandola+' }).first();
+  await expect(ligne).toContainText('Offert', { timeout: 10000 });
+  await page.goto('./eleve/mirandola-plus');
+  await expect(page.locator('.fp-lic, .fp-licence').first()).toContainText('Offerte par Lucie MIRA', { timeout: 10000 });
+  await expect(page.locator('#app')).not.toContainText('Campus');
+  await expect(page.locator('#app')).not.toContainText(/établissement/);
+});

@@ -74,7 +74,21 @@ export async function admConfirmer(cible) {
 
 export async function admCharger() {
   await Promise.allSettled([admOrgsPull(), admEtatPull(), admComptesPull(), admAttentePull(), admVendeurPull(),
-    admProfsPull(), admCoutPull(), admOrgsIaPull()]);
+    admProfsPull(), admCoutPull(), admOrgsIaPull(), admDemandesProfsPull()]);
+}
+
+/* Les professeurs particuliers qui demandent leur espace (20261113171304) :
+   à part des établissements ; l'éditeur ouvre leur compte, puis les marque
+   traités. Une base sans la fonction : aucune demande. */
+export async function admDemandesProfsPull() {
+  try { adm.dprofs = await rpc('admin_demandes_profs') || []; } catch (e) { adm.dprofs = adm.dprofs || []; }
+  repeint();
+}
+
+export async function admDemandeProfTraitee(did) {
+  const r = await admAgir('admin_demande_prof_traitee', { did });
+  if (r) await admDemandesProfsPull();
+  return r;
 }
 
 /* ══════════ les comptes que l'éditeur ouvre (20261029090000) ══════════

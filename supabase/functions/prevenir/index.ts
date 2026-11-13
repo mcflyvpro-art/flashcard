@@ -1,4 +1,5 @@
-/* Mirandola — prévenir l'éditeur d'une demande de démo (2026-11-02).
+/* Mirandola — prévenir l'éditeur d'une demande de démo (2026-11-02), ou
+   d'une demande d'espace d'un professeur particulier (2026-11-13).
    Appelée par la base (déclencheur prevenir_demande, pg_net) à chaque
    « Demander une démo » ; elle relit la demande, l'envoie à l'éditeur et
    en accuse réception au demandeur, par l'API de Brevo.
@@ -18,7 +19,7 @@
    Rien de personnel dans les journaux : l'identifiant de l'établissement,
    le statut de Brevo, jamais une adresse. */
 
-import { accuseDemande, alerteDemande, aPrevenir, envoiBrevo } from "../_shared/courriels.js";
+import { accuseDemande, accuseDemandeProf, alerteDemande, alerteDemandeProf, aPrevenir, aPrevenirProf, envoiBrevo } from "../_shared/courriels.js";
 
 const URL_SB = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -42,8 +43,26 @@ Deno.serve(async (req) => {
   const de = Deno.env.get("EXPEDITEUR") || "noreply@mirandola.fr";
   const site = (Deno.env.get("SITE_URL") || "https://mirandola.fr").replace(/\/$/, "");
 
-  let org = "";
-  try { org = String((await req.json()).org || ""); } catch { /* corps illisible : rien à prévenir */ }
+  let org = "", prof = "";
+  try { const b = await req.json(); org = String(b.org || ""); prof = String(b.prof || ""); }
+  catch { /* corps illisible : rien à prévenir */ }
+
+  /* La demande d'un professeur particulier (2026-11-13, déclencheur
+     prevenir_demande_prof) : sa table à elle, ses e-mails à eux. */
+  if (/^[0-9a-f-]{36}$/.test(prof)) {
+    const r = await fetch(`${URL_SB}/rest/v1/demandes_profs?id=eq.${prof}&select=nom,email,tel,eleves,message,cree,prevenu_le`, { headers: HS });
+    const [d] = r.ok ? await r.json() : [];
+    if (!aPrevenirProf(d)) return rep(200, { rien: "deja" });
+    const m = await fetch(`${URL_SB}/rest/v1/demandes_profs?id=eq.${prof}&prevenu_le=is.null`, {
+      method: "PATCH", headers: { ...HS, Prefer: "return=representation" },
+      body: JSON.stringify({ prevenu_le: new Date().toISOString() }),
+    });
+    if (!m.ok || !(await m.json()).length) return rep(200, { rien: "deja" });
+    const a = await envoyer(cle, envoiBrevo({ de, a: alerte, repondreA: d.email, courriel: alerteDemandeProf(d, site) }));
+    const b = await envoyer(cle, envoiBrevo({ de, a: d.email, repondreA: alerte, courriel: accuseDemandeProf(d) }));
+    console.log("prevenir prof", prof, a ? "alerte" : "alerte en échec", b ? "accusé" : "sans accusé");
+    return rep(200, { alerte: a, accuse: b });
+  }
   if (!/^[0-9a-f-]{36}$/.test(org)) return rep(400, { error: "org" });
 
   const r = await fetch(`${URL_SB}/rest/v1/org_suivi?org_id=eq.${org}&select=source,contact_nom,contact_fonction,`

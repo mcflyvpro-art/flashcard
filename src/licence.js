@@ -4,6 +4,23 @@
    (ui/plus.js), chargé à la demande. */
 import { FORMULES, dateLisible, euros, niveauDe } from './abonnement.js';
 
+/* Ce que l'élève vient de toucher, quand l'écran Mirandola+ s'ouvre sur un
+   geste bridé (ui/bridage.js) : dit en tête, au-dessus des formules. Ici et
+   non dans src/abonnement.js depuis le 2026-11-13 : seul l'écran Mirandola+,
+   chargé à la demande, le lit — au démarrage, c'était du poids pour rien. */
+export const RAISONS = {
+  ia: 'L’IA écrit tes paquets pour toi',
+  photo: 'Ton cahier en photo, et c’est un paquet',
+  fichier: 'Ton PDF devient un paquet',
+  exercices: 'QCM et associations',
+  media: 'Des images et des sons sur tes cartes',
+  livres: 'Tes 5 paquets de Mirandola gratuit sont pris',
+  journal: 'Toutes tes statistiques',
+  // Mirandola Infini (2026-11-07) : un geste du menu d'un livre
+  // l'objectif examen, ou les examens blancs offerts tous faits (2026-11-08)
+  examen: 'L’objectif examen et l’examen blanc sont dans Mirandola Infini'
+};
+
 /* Les avantages (AVANTAGES de src/abonnement.js), en détail : une icône (src/icones.js),
    un titre, une ligne. `prof` : ce qui change pour un professeur. */
 export const AVANTAGES_DETAIL = [
@@ -67,17 +84,22 @@ function licenceAbonne(a) {
   };
 }
 
+function licenceCampus(o) {
+  // un établissement ; ou, sans lui, un professeur particulier — son élève, ou lui-même (2026-11-13)
+  const fin = dateLisible(o.licenceFin), qui = o.etablissement || o.professeur;
+  const de = o.etablissement ? 'ton établissement' : o.professeur ? 'ton professeur' : '';
+  return {
+    etat: { k: 'ok', t: 'Active' },
+    lignes: [['Licence', qui ? `Offerte par ${qui}` : 'Ta licence de professeur particulier'],
+      ['Échéance', fin || (de ? `Fixée par ${de}` : 'Sans date de fin')], ['Prix', de ? 'Rien à payer' : 'Sur devis']],
+    engagement: de ? `${de[0].toUpperCase() + de.slice(1)} gère la licence : rien à résilier de ton côté.`
+      : 'Tes places se commandent depuis ton espace professeur.'
+  };
+}
+
 export function licence(o) {
   if (!o || o.offre === 'gratuit') return null;
-  if (o.offre === 'campus') {
-    const fin = dateLisible(o.licenceFin);
-    return {
-      etat: { k: 'ok', t: 'Active' },
-      lignes: [['Licence', o.etablissement ? `Offerte par ${o.etablissement}` : 'Offerte par ton établissement'],
-        ['Échéance', fin || 'Fixée par ton établissement'], ['Prix', 'Rien à payer']],
-      engagement: 'Ton établissement gère la licence : rien à résilier de ton côté.'
-    };
-  }
+  if (o.offre === 'campus') return licenceCampus(o);
   const a = o.abonnement;
   if (a && a.source !== 'offert') return licenceAbonne(a);
   const fin = a && dateLisible(a.fin);

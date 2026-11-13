@@ -68,21 +68,6 @@ export const AVANTAGES = [
   'Toutes tes stats : mémoire, matières, cartes qui résistent'
 ];
 
-/* Ce que l'élève vient de toucher, quand l'écran Mirandola+ s'ouvre sur un
-   geste bridé (ui/bridage.js) : dit en tête, au-dessus des formules. */
-export const RAISONS = {
-  ia: 'L’IA écrit tes paquets pour toi',
-  photo: 'Ton cahier en photo, et c’est un paquet',
-  fichier: 'Ton PDF devient un paquet',
-  exercices: 'QCM et associations',
-  media: 'Des images et des sons sur tes cartes',
-  livres: 'Tes 5 paquets de Mirandola gratuit sont pris',
-  journal: 'Toutes tes statistiques',
-  // Mirandola Infini (2026-11-07) : un geste du menu d'un livre
-  // l'objectif examen, ou les examens blancs offerts tous faits (2026-11-08)
-  examen: 'L’objectif examen et l’examen blanc sont dans Mirandola Infini'
-};
-
 // 2999 → « 29,99 € » (espace insécable : le prix ne se coupe jamais)
 export const euros = c => (c / 100).toFixed(2).replace('.', ',') + ' €';
 
@@ -135,14 +120,20 @@ function ligneAbonne(a) {
   return date ? `${f} · renouvelé le ${date}` : f;
 }
 
+/* Un compte Campus : celui d'un établissement (Mirandola Campus), ou, sans
+   établissement, la licence d'un professeur particulier — le professeur
+   lui-même, ou son élève (`professeur`). Chez un professeur particulier, rien
+   ne dit « Campus » ni « établissement » (2026-11-13, demandé : « prof
+   particulier c'est prof particulier ») : c'est Mirandola+, offert par lui. */
 function resumeCampus(o) {
-  const a = o.abonnement, fin = dateLisible(o.licenceFin);
+  const a = o.abonnement, fin = dateLisible(o.licenceFin), etab = o.etablissement;
   const double = !!a && a.source === 'stripe' && court(a) && !a.finPrevue;
+  const qui = etab ? 'ton établissement' : o.professeur ? 'ton professeur' : 'ta licence';
   return {
     cle: 'campus',
-    titre: 'Mirandola Campus',
-    ligne: (o.etablissement ? `Offert par ${o.etablissement}` : 'Offert par ton établissement') + (fin ? ` jusqu’au ${fin}` : ''),
-    alerte: double ? 'Ton abonnement Mirandola+ continue d’être prélevé : ton établissement t’offre déjà tout.' : '',
+    titre: etab ? 'Mirandola Campus' : 'Mirandola+',
+    ligne: (etab ? `Offert par ${etab}` : o.professeur ? `Offert par ${o.professeur}` : 'Ta licence de professeur') + (fin ? ` jusqu’au ${fin}` : ''),
+    alerte: double ? `Ton abonnement Mirandola+ continue d’être prélevé : ${qui} t’offre déjà tout.` : '',
     payer: false, gerer: !!a && a.source !== 'offert' && court(a)
   };
 }

@@ -352,7 +352,7 @@ let demande = null;
 export function demandeView() {
   if (demande) return demande.demandeEcran();
   $.innerHTML = attente();
-  import('./demande-demo.js').then(m => { demande = m; if (view.name === 'demande') render(); })
+  import('./demande-demo.js').then(m => { demande = m; if (/^demande/.test(view.name)) render(); })
     .catch(() => toast(I.x, 'Le formulaire n’a pas pu s’ouvrir : vérifie ta connexion'));
 }
 

@@ -22,7 +22,7 @@ import {
 } from './admin-facturation.js';
 import { admFacturePull } from '../core/admin.js';
 import {
-  ACTIONS_COMPTES, blocGestion, blocMdp, blocProf, comptesVus, detailLigne, FORMULAIRES_COMPTES, infosCompte, nouveauCompte,
+  ACTIONS_COMPTES, blocGestion, blocMdp, blocProf, comptesVus, demandesProfs, detailLigne, FORMULAIRES_COMPTES, infosCompte, nouveauCompte,
   outilsComptes, premierChamp, suivreCout, suivreRole, suivreTri, tuileIa
 } from './admin-comptes.js';
 import './admin-console.css';
@@ -261,7 +261,7 @@ function ligneCompte(a) {
 function listeComptes() {
   if (!accounts) return vide(I.users, 'Chargement…');
   const n = r => accounts.filter(a => a.role === r).length, l = comptesVus(), montres = l.slice(0, 300);
-  return `<div class="ed-filtres">
+  return `${demandesProfs()}<div class="ed-filtres">
       <div class="ed-puces">${['', 'eleve', 'prof', 'ref', 'admin'].map(k => `<button class="${adm.crole === k ? 'on' : ''}"
         data-adm="crole" data-id="${k}">${k ? ROLES[k] : 'Tous'}<i>${k ? n(k) : accounts.length}</i></button>`).join('')}</div>
       ${outilsComptes()}

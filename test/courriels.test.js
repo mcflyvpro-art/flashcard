@@ -2,7 +2,7 @@
 // fonction `prevenir`) : tout ce que la demande dit, rien d'injecté, un
 // texte brut avec le HTML, et jamais deux fois la même demande.
 import { describe, expect, it } from 'vitest';
-import { accuseDemande, alerteDemande, aPrevenir, envoiBrevo } from '../supabase/functions/_shared/courriels.js';
+import { accuseDemande, accuseDemandeProf, alerteDemande, alerteDemandeProf, aPrevenir, aPrevenirProf, envoiBrevo } from '../supabase/functions/_shared/courriels.js';
 
 const d = { source: 'demande', etab: 'Lycée Victor Hugo', ville: 'Lyon', contact_nom: 'Claire Martin', contact_fonction: 'Proviseure adjointe',
   contact_email: 'claire@exemple.fr', contact_tel: '', eleves_estimes: 450, message: 'Pour la rentrée <b>2027</b>', cree: '2026-11-02T10:00:00Z', prevenu_le: null };
@@ -48,5 +48,31 @@ describe('l’envoi', () => {
     expect(aPrevenir({ ...d, source: 'editeur' }, t)).toBe(false);
     expect(aPrevenir(d, Date.parse('2026-11-02T13:00:00Z'))).toBe(false);
     expect(aPrevenir(null, t)).toBe(false);
+  });
+});
+
+/* La demande d'un professeur particulier (2026-11-13) : rien de Campus, ni
+   d'établissement. */
+describe('la demande d’un professeur particulier', () => {
+  const d = { nom: 'Marie Curie', email: 'marie@exemple.fr', tel: '06 12 34 56 78', eleves: 12, message: 'Physique <b>', cree: '2026-11-13T10:00:00Z' };
+  it('l’alerte : son nom, ses élèves, son message échappé, vers les comptes de la console', () => {
+    const c = alerteDemandeProf(d);
+    expect(c.sujet).toBe('Professeur particulier : Marie Curie');
+    expect(c.html).toContain('12');
+    expect(c.html).toContain('Physique &lt;b&gt;');
+    expect(c.html).toContain('/admin/comptes');
+    expect(c.texte).toContain('E-mail : marie@exemple.fr');
+  });
+  it('l’accusé : son prénom, son espace professeur, jamais Campus ni établissement', () => {
+    const c = accuseDemandeProf(d);
+    expect(c.html).toContain('Bonjour Marie');
+    for (const t of [c.html, c.texte, c.sujet]) expect(t).not.toMatch(/Campus|établissement/);
+  });
+  it('prévenue une fois, et seulement fraîche', () => {
+    const t = Date.parse('2026-11-13T10:05:00Z');
+    expect(aPrevenirProf(d, t)).toBe(true);
+    expect(aPrevenirProf({ ...d, prevenu_le: '2026-11-13T10:00:05Z' }, t)).toBe(false);
+    expect(aPrevenirProf(d, Date.parse('2026-11-13T13:00:00Z'))).toBe(false);
+    expect(aPrevenirProf(null, t)).toBe(false);
   });
 });

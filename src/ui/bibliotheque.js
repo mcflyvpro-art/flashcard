@@ -115,7 +115,7 @@ const ecranSeul = () => (aInstaller() ? ['porte', porteView] : mfaAFaire() ? ['m
 export function render() {
   const v = { home, deck: deckView, study: studyView, import: importView,
               run: quizView, login: loginView, settings: settingsView, trash: trashView, mail: mailView, lettre: lettreView, stats: statsView, find: findView,
-              shared: sharedView, duel: duelView, legal: legalView, demande: demandeView, decouvrir: decouvrirView, bienvenue: bienvenueView, plus: plusView, mod: modView,
+              shared: sharedView, duel: duelView, legal: legalView, demande: demandeView, demandeprof: demandeView, decouvrir: decouvrirView, bienvenue: bienvenueView, plus: plusView, mod: modView,
               classes: mesClassesView, classe: classeEleveView,
               prof: profAccueilView, profclasse: profClasseView, profagenda: profAgendaView,
               ref: refView,
@@ -217,7 +217,7 @@ const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' :
    plus). Pour un compte d'établissement, « Campus ». */
 const railPlus = on => {
   if (!entreePlus()) return '';
-  const nom = offre && offre.offre === 'campus' ? 'Campus' : 'Mirandola+';
+  const nom = offre && offre.offre === 'campus' && offre.etablissement ? 'Campus' : 'Mirandola+';
   return `<button class="r-plus${on === 'plus' ? ' on' : ''}" data-r="plus" aria-label="${nom}">${svg(I.spark)}<span>${nom}</span></button>`;
 };
 

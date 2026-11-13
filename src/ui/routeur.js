@@ -134,6 +134,7 @@ const OUVRIR = {
   login: id => { setLoginMode(id || 'in'); go('login'); },
   legal: id => { setLegalTab(id); setLegalBack('login'); go('legal'); },
   demande: () => go('demande'),
+  demandeprof: () => go('demandeprof'),
   decouvrir: () => go('decouvrir')
 };
 

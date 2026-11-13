@@ -112,6 +112,43 @@ export function accuseDemande(d) {
   return { sujet: 'Votre demande de démo Mirandola Campus', html, texte };
 }
 
+/* La demande d'un professeur particulier (2026-11-13) : à part de tout
+   établissement — rien de Campus, ni dans l'alerte, ni dans l'accusé. */
+export const champsDemandeProf = d => [
+  ['Professeur', d.nom], ['E-mail', d.email], ['Téléphone', d.tel],
+  ['Élèves', d.eleves != null ? String(d.eleves) : '']
+].filter(([, v]) => v);
+
+export function alerteDemandeProf(d, site = 'https://mirandola.fr') {
+  const champs = champsDemandeProf(d);
+  const message = d.message ? `<p style="margin:16px 0 0;padding:14px 16px;background:#F6F5F1;border-radius:12px;white-space:pre-wrap">${esc(d.message)}</p>` : '';
+  const html = gabarit(`Professeur particulier : ${d.nom}`,
+    `<table role="presentation" cellpadding="0" cellspacing="0" style="font-size:15px">${champs.map(([k, v]) => ligne(k, v)).join('')}</table>
+${message}
+<p style="margin:22px 0 0"><a href="${esc(site)}/admin/comptes" style="display:inline-block;padding:12px 20px;border-radius:99px;background:#1D1C19;color:#FFFFFF;text-decoration:none;font-weight:700">Ouvrir son compte</a></p>
+<p style="margin:14px 0 0;font-size:13px;color:#6B675F">Répondre à cet e-mail écrit directement au professeur.</p>`,
+    { apercu: esc(`${d.nom}${d.eleves != null ? ' · ' + d.eleves + ' élèves' : ''}`) });
+  const texte = [`Professeur particulier : ${d.nom}`, '', ...champs.map(([k, v]) => `${k} : ${v}`),
+    ...(d.message ? ['', d.message] : []), '', `Console : ${site}/admin/comptes`].join('\n');
+  return { sujet: `Professeur particulier : ${d.nom}`, html, texte };
+}
+
+export function accuseDemandeProf(d) {
+  const prenom = String(d.nom || '').trim().split(/\s+/)[0] || '';
+  const html = gabarit('Votre demande est bien arrivée',
+    `<p style="margin:0">Bonjour${prenom ? ' ' + esc(prenom) : ''},</p>
+<p style="margin:12px 0 0">Merci pour votre demande d’espace professeur sur Mirandola. Nous ouvrons votre compte très vite&#8239;: votre code, vos classes, vos élèves qui vous rejoignent.</p>
+<p style="margin:12px 0 0">Une question d’ici là&#8239;? Répondez simplement à cet e-mail.</p>
+<p style="margin:18px 0 0">L’équipe Mirandola</p>`, { apercu: 'Nous ouvrons votre espace professeur très vite.' });
+  const texte = [`Bonjour${prenom ? ' ' + prenom : ''},`, '',
+    'Merci pour votre demande d’espace professeur sur Mirandola. Nous ouvrons votre compte très vite : votre code, vos classes, vos élèves qui vous rejoignent.',
+    '', 'Une question d’ici là ? Répondez simplement à cet e-mail.', '', 'L’équipe Mirandola'].join('\n');
+  return { sujet: 'Votre espace professeur Mirandola', html, texte };
+}
+
+// une demande de professeur à prévenir : la même règle, sans source (la table ne reçoit que des demandes)
+export const aPrevenirProf = (d, maintenant = Date.now()) => !!d && !d.prevenu_le && maintenant - Date.parse(d.cree) < 2 * 3600 * 1000;
+
 /* Ce qu'on envoie à Brevo (API transactionnelle, POST /v3/smtp/email). */
 export function envoiBrevo({ de, nom = 'Mirandola', a, repondreA, courriel }) {
   const e = { sender: { name: nom, email: de }, to: [{ email: a }], subject: courriel.sujet,

@@ -3,7 +3,7 @@ import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { accounts, adm, auth, setAnimate, view } from '../data/etat.js';
 import { esc, plur } from '../core/coeur-sync.js';
-import { admConfirmer, admCreerCompte, admIa, admLicenceProf, admMdp, admSupprimer, admSuspendre } from '../core/admin.js';
+import { admConfirmer, admCreerCompte, admDemandeProfTraitee, admIa, admLicenceProf, admMdp, admSupprimer, admSuspendre } from '../core/admin.js';
 import {
   bilanSuppression, compterFiltres, FILTRES, filtrerComptes, finSuspension, sansFin, SUSPENSIONS, TRIS, trierComptes
 } from '../comptes.js';
@@ -89,6 +89,33 @@ function carteMdp(n) {
     </div>`;
 }
 
+/* ---------- les professeurs particuliers qui attendent (2026-11-13) ----------
+   Leur demande arrive du site (/professeur-particulier), à part de tout
+   établissement : « Ouvrir son compte » remplit le formulaire « Compte » —
+   professeur particulier, son nom, son adresse, ses élèves en places —, et
+   la marque traitée une fois le compte ouvert. */
+export function demandesProfs() {
+  const l = (adm.dprofs || []).filter(d => !d.traitee_le);
+  if (!l.length) return '';
+  return `<section class="ed-dprofs"><h2 class="ed-h2">Professeurs particuliers qui attendent<em class="ed-dr chaud">${l.length}</em></h2>
+    ${l.map(d => `<div class="ed-dprof"><div class="ed-l1"><b>${esc(d.nom)}</b><i>${esc(d.email)}${d.tel ? ' · ' + esc(d.tel) : ''}${
+      d.eleves ? ' · ' + plur(d.eleves, 'élève') : ''} · ${timeAgo(d.cree)}</i></div>
+      ${d.message ? `<p>${esc(d.message)}</p>` : ''}
+      <div class="ed-actions"><button class="ed-b pri sm" data-adm="dprof-ouvrir" data-id="${esc(d.id)}">${svg(I.user)}Ouvrir son compte</button>
+        <button class="ed-b sm" data-adm="dprof-traitee" data-id="${esc(d.id)}">${svg(I.check)}Traitée</button></div></div>`).join('')}
+  </section>`;
+}
+
+function ouvrirDemande(id) {
+  const d = (adm.dprofs || []).find(x => x.id === id);
+  if (!d) return;
+  const [prenom, ...reste] = String(d.nom).trim().split(/\s+/);
+  Object.assign(adm, { tab: 'comptes', copen: 'nouveau', neuf: { role: 'prof', prenom, nomfam: reste.join(' '), adresse: d.email,
+    demande: d.id, places: d.eleves || 30 } });
+  repeint();
+  premierChamp('nc-prenom');
+}
+
 /* ---------- « Nouveau compte » ---------- */
 export function nouveauCompte() {
   const n = adm.neuf || {};
@@ -106,8 +133,8 @@ export function nouveauCompte() {
       ${champ('nc-nom', 'Nom', n.nomfam, 'maxlength="40" required')}
       ${champ('nc-mail', 'Adresse e-mail', n.adresse, 'type="email" maxlength="200" spellcheck="false" autocapitalize="none" required')}
       ${champ('nc-pw', 'Mot de passe provisoire', n.pw || motDePasseProvisoire(alea), 'minlength="10" maxlength="72" spellcheck="false" autocapitalize="none"')}
-      <fieldset class="ed-licence" id="nc-licence" ${prof ? '' : 'hidden'}><legend>Licence Campus</legend>
-        ${champsLicence('nc', { places: 30, ia_prof: 400, ia_eleve: 30, fin: '' })}</fieldset>
+      <fieldset class="ed-licence" id="nc-licence" ${prof ? '' : 'hidden'}><legend>Licence de professeur particulier</legend>
+        ${champsLicence('nc', { places: n.places || 30, ia_prof: 400, ia_eleve: 30, fin: '' })}</fieldset>
       <div class="ed-actions"><button class="ed-b pri" type="submit">${svg(I.check)}Ouvrir le compte</button></div>
     </form></div>`;
 }
@@ -129,7 +156,7 @@ export function blocProf(a) {
   const p = (adm.profs || {})[a.id];
   if (a.role !== 'prof' || !p) return '';
   const l = p.licence ? p : { places: p.demande_places || 30, ia_prof: 400, ia_eleve: 30, fin: '' };
-  return `<h2 class="ed-h2">Licence Campus${p.demande_places ? '<em class="ed-dr chaud">places demandées</em>' : ''}</h2>
+  return `<h2 class="ed-h2">Licence de professeur particulier${p.demande_places ? '<em class="ed-dr chaud">places demandées</em>' : ''}</h2>
     ${etatLicenceProf(p)}
     ${p.demande_places ? `<p class="ed-message">${svg(I.quote)}<span><b>${plur(p.demande_places, 'place')} de plus</b>${
       p.demande_mot ? ' · ' + esc(p.demande_mot) : ''} · ${timeAgo(p.demande_le)}</span></p>` : ''}
@@ -306,6 +333,8 @@ export const ACTIONS_COMPTES = {
   'nouveau-compte': () => { Object.assign(adm, { tab: 'comptes', copen: 'nouveau', neuf: { role: 'prof' } }); repeint();
     premierChamp('nc-prenom'); },
   'copier-acces': copierAcces,
+  'dprof-ouvrir': ouvrirDemande,
+  'dprof-traitee': id => admDemandeProfTraitee(id),
   'nouveau-mdp': nouveauMdp,
   csel: () => { adm.csel = adm.csel ? null : []; repeint(); },
   cchoisir: choisir,
@@ -321,14 +350,17 @@ export const ACTIONS_COMPTES = {
 export const FORMULAIRES_COMPTES = {
   ednouveau: async () => {
     const role = val('nc-role') || 'prof', prenom = val('nc-prenom'), nomfam = val('nc-nom'),
-      adresse = val('nc-mail').toLowerCase(), pw = val('nc-pw');
-    adm.neuf = { role, prenom, nomfam, adresse, pw };
+      adresse = val('nc-mail').toLowerCase(), pw = val('nc-pw'), demande = adm.neuf && adm.neuf.demande;
+    adm.neuf = { role, prenom, nomfam, adresse, pw, demande };
     if (!nomValide(prenom) || !nomValide(nomfam)) return toast(I.x, 'Le prénom et le nom');
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(adresse)) return toast(I.x, 'Une adresse e-mail');
     if (pw.length < 10) return toast(I.x, 'Mot de passe : dix caractères au moins');
     const nom = nomPropre(prenom, nomfam), licence = role === 'prof' ? licenceDuFormulaire('nc') : null;
     const id = await admCreerCompte({ adresse, nom, qrole: role, pw, licence });
-    if (id) { adm.neuf = { fait: true, id, role, nom, adresse, pw }; toast(I.check, 'Compte ouvert'); repeint(); }
+    if (id) {
+      adm.neuf = { fait: true, id, role, nom, adresse, pw }; toast(I.check, 'Compte ouvert'); repeint();
+      if (demande && role === 'prof') admDemandeProfTraitee(demande);         // la demande du site : traitée
+    }
   },
   edlicprof: () => (adm.copen ? admLicenceProf(adm.copen, licenceDuFormulaire('pl')) : null),
   edia: () => (adm.open ? admIa(adm.open, nombre('ia-prof', 0), nombre('ia-eleve', 0)) : null)

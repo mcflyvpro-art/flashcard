@@ -103,7 +103,7 @@ function settingsMatieresHtml() {
 function lignePlus() {
   if (sansFolioPlus() || !(VENTE_OUVERTE || (offre && offre.offre !== 'gratuit'))) return '';
   const r = offre ? resume(offre) : null;
-  const etat = !r ? '' : r.cle === 'gratuit' ? 'Gratuit' : r.cle === 'campus' ? 'Campus'
+  const etat = !r ? '' : r.cle === 'gratuit' ? 'Gratuit' : r.cle === 'campus' ? (offre.etablissement ? 'Campus' : 'Offert')
     : offre.abonnement && offre.abonnement.source === 'offert' ? 'Offert' : offre.abonnement && offre.abonnement.finPrevue ? 'Résilié' : 'Actif';
   return `<button class="sr flat" data-act="plus">${svg(I.star)}<span class="n">Mirandola+</span>
           <span class="c">${esc(etat)}</span>${svg(I.arrow)}</button>`;

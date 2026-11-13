@@ -5,7 +5,7 @@
    ne pouvait pas se donner. Chaque écran a maintenant son adresse, rangée
    dans l'espace de son métier, comme le font Pronote ou Quizlet :
 
-     /connexion, /inscription, /essayer, /demande-demo,
+     /connexion, /inscription, /essayer, /demande-demo, /professeur-particulier,
      /mentions/<texte>                              avant la connexion
      /eleve/…  /prof/…  /referent/…  /admin/…       un espace par rôle
      /demo/<rôle>/…                                 la démo sans compte
@@ -21,7 +21,8 @@ const ROLE_DE = { eleve: 'eleve', prof: 'prof', referent: 'ref', admin: 'admin' 
 
 /* Avant la connexion. `login` porte le mode du formulaire dans son id. */
 const MODES = { in: 'connexion', up: 'inscription' };
-const PUBLICS = { demande: 'demande-demo', decouvrir: 'essayer' };
+// la demande d'un professeur particulier a la sienne, à part de l'établissement (2026-11-13)
+const PUBLICS = { demande: 'demande-demo', demandeprof: 'professeur-particulier', decouvrir: 'essayer' };
 /* Les textes du cadre : la clé de l'app (LEGAL_TITRES, ui/legal-textes.js)
    et son adresse publique — celle du pied de la page d'accueil et de l'écran
    de consentement de Google. « vie » se lit /mentions/confidentialite : sans
