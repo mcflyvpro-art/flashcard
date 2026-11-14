@@ -110,7 +110,20 @@ l'air de marcher ».
     démo sans compte, à 10 h du matin (`node tools/affiches.js`, sur un
     `vite preview` au port 4190 ; des noms d'affiches pour n'en refaire que
     quelques-unes ; il marque les tutos de la démo comme vus, la Mirandola
-    Academy aussi). Dans Mirandola Campus, l'ordinateur de chaque rôle a, pour
+    Academy aussi ; il clique les repères `data-r` de la barre, jamais ses
+    libellés : écrit sur « Livres » et « Mes classes », il ne tournait plus
+    depuis le vocabulaire du 2026-11-07, et les affiches du site montraient
+    encore « Mes livres » — refaites le 2026-11-14, avec les images de
+    partage, dont celle des tarifs qui annonçait l'ancien prix). **Le
+    positionnement** (2026-11-14, demandé : « mets-moi le plus en avant, la
+    meilleure alternative du marché ») : « L'alternative à Anki et Quizlet »
+    en troisième pastille du héros (un lien vers le comparatif), dans la
+    description de l'accueil, le titre, la description et le chapeau de
+    `/anki-quizlet` et la FAQ — toujours en faits vérifiables (le moteur
+    FSRS qu'Anki utilise aussi, sans réglage ; sans publicité ; l'IA), jamais
+    « n° 1 » ni « le meilleur » dit comme un fait : une publicité comparative
+    doit être objective et vérifiable, et `test/site.test.js` refuse déjà
+    « le meilleur moteur au monde ». Dans Mirandola Campus, l'ordinateur de chaque rôle a, pour
     l'élève et le professeur, le même espace au téléphone posé contre lui
     (`#tel-campus`, écrans `data-onglet`, rangé pour le référent :
     `onglets()` de site.js, depuis le 2026-10-27). **Le même logo est celui de l'app**

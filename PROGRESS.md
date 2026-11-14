@@ -19,7 +19,17 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-13 · L'IA choisit le modèle le moins cher qui fait
+DERNIER   2026-11-14 · La grande vérification avant la vente. Le
+          premier passage : un paquet neuf se propose en entier, 20 neuves
+          par jour ensuite. Les devis : émis par l'éditeur, acceptés en
+          ligne par le référent, la licence ouverte et la facture émise
+          d'un geste (migration 20261114090000, PAS ENCORE APPLIQUÉE : elle
+          attend ta confirmation ; prouvée 46/46 sur base vierge) ;
+          docs/DOCUMENTS.md (circuit de vente, relances, modèles, RGPD). Un
+          test à retardement de la purge corrigé. Le site : « l'alternative
+          à Anki et Quizlet », les affiches et images de partage refaites
+          (elles montraient l'ancien vocabulaire et un ancien prix). Avant :
+          2026-11-13 · L'IA choisit le modèle le moins cher qui fait
           la tâche : Claude Haiku 5.5 pour un texte, un PDF, une retouche ;
           Sonnet pour des photos, un examen, une copie, des cartes de
           mémoire ; une réponse vide ou refusée de Haiku repart sur Sonnet ;

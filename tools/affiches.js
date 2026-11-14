@@ -21,7 +21,7 @@ const chrome = process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium';
 const AFFICHES = [
   { nom: 'pc', role: 'eleve', fenetre: { width: 1152, height: 720 }, densite: 1.25,
     async chemin(p) {
-      await p.locator('aside, nav, .rail').getByText('Livres', { exact: true }).first().click();
+      await p.locator('#rail [data-r="home"]').first().click();
       await p.getByText('La cellule', { exact: true }).first().click();
       await p.locator('[data-act="study"]:visible').first().click();
       await p.waitForTimeout(900);
@@ -31,7 +31,7 @@ const AFFICHES = [
     async chemin(p) { await p.click('[data-act="tab-home"]'); } },
   { nom: 'eleve', role: 'eleve', fenetre: { width: 1280, height: 800 }, densite: 1.125,
     async chemin(p) {
-      await p.locator('aside, nav, .rail').getByText('Mes classes', { exact: true }).first().click();
+      await p.locator('#rail [data-r="classes"]').first().click();
       await p.locator('[data-el="classe"]:visible').first().click();   // sa classe : devoirs, professeurs, camarades
       await p.waitForTimeout(600);
     } },
@@ -93,7 +93,7 @@ async function webp(page, png, qualite, echelle = 1) {
    La taille en pixels doit être celle que déclare le manifeste. */
 const CAPTURES = [
   { nom: 'wide', role: 'eleve', fenetre: { width: 1440, height: 900 }, densite: 1,
-    async chemin(p) { await p.locator('aside, nav, .rail').getByText('Livres', { exact: true }).first().click(); } },
+    async chemin(p) { await p.locator('#rail [data-r="home"]').first().click(); } },
   { nom: 'narrow', role: 'eleve', fenetre: { width: 414, height: 896 }, densite: 1, mobile: true,
     async chemin(p) { await p.click('[data-act="tab-home"]'); } }
 ];
@@ -105,12 +105,12 @@ const CAPTURES = [
    affiches déjà faites : rien à photographier, pas besoin de serveur).
      node tools/affiches.js pages */
 const OG_PAGES = {
-  'flashcards-ia': { sujet: 'Flashcards avec l’IA', titre: 'L’IA fait tes <em>flashcards.</em>', ligne: 'Un cours, une photo, un PDF :<br>un livre de flashcards en quelques secondes.', pc: 'pc', tel: 'mobile' },
-  'repetition-espacee': { sujet: 'Le guide', titre: 'La répétition <em>espacée.</em>', ligne: 'Revoir chaque page juste avant<br>de l’oublier, et la garder des mois.', courbe: true },
+  'flashcards-ia': { sujet: 'Flashcards avec l’IA', titre: 'L’IA fait tes <em>flashcards.</em>', ligne: 'Un cours, une photo, un PDF :<br>un paquet de flashcards en quelques secondes.', pc: 'pc', tel: 'mobile' },
+  'repetition-espacee': { sujet: 'Le guide', titre: 'La répétition <em>espacée.</em>', ligne: 'Revoir chaque carte juste avant<br>de l’oublier, et la garder des mois.', courbe: true },
   etablissements: { sujet: 'Mirandola Campus', titre: 'Tout l’établissement, <em>en deux codes.</em>', ligne: 'Collège, lycée, prépa :<br>ouvert en dix minutes.', pc: 'prof', tel: 'eleve-mobile' },
   professeurs: { sujet: 'Pour les professeurs', titre: 'Vos élèves révisent. <em>Vous le voyez.</em>', ligne: 'Devoirs suivis, ce qui bloque,<br>défis en direct au tableau.', pc: 'prof', tel: 'prof-mobile' },
-  tarifs: { sujet: 'Tarifs', titre: 'Gratuit pour <em>réviser.</em>', ligne: 'Mirandola+ dès 4,17 € par mois.<br>Campus de 5 à 2 € HT par élève et par an.', pc: 'pc', tel: 'mobile' },
-  'anki-quizlet': { sujet: 'Le comparatif', titre: 'Anki, Quizlet <em>ou Mirandola ?</em>', ligne: 'Trois apps de flashcards,<br>et comment passer de l’une à l’autre.', pc: 'pc', tel: 'mobile' },
+  tarifs: { sujet: 'Tarifs', titre: 'Gratuit pour <em>réviser.</em>', ligne: 'Mirandola+ dès 3,75 € par mois, 7 jours gratuits.<br>Mirandola Campus sur devis.', pc: 'pc', tel: 'mobile' },
+  'anki-quizlet': { sujet: 'Le comparatif', titre: 'L’alternative à <em>Anki et Quizlet.</em>', ligne: 'Le moteur d’Anki sans réglage,<br>la simplicité de Quizlet, l’IA en plus.', pc: 'pc', tel: 'mobile' },
   'a-propos': { sujet: 'Le nom', titre: 'Pourquoi <em>Mirandola ?</em>', ligne: 'D’après Pic de la Mirandole,<br>l’érudit à la mémoire prodigieuse.', logo: true },
   academie: { sujet: 'Mirandola Academy', titre: 'Tout Mirandola, en <em>vidéos courtes.</em>', ligne: 'Élève, professeur, référent :<br>un tuto par geste, téléphone et ordinateur.', pc: 'referent', tel: 'eleve-mobile' },
   moteur: { sujet: 'Memory Engine · FSRS-6', titre: 'Le moteur, <em>formule par formule.</em>', ligne: 'Trois variables, vingt et un paramètres,<br>une courbe. Sans rien arrondir.', moteur: true }
@@ -269,7 +269,7 @@ await og.setContent(`<!doctype html><html lang="fr"><head><meta charset="utf-8">
   <div class="g"><div class="m">${logo}<span>Mirandola</span></div>
     <div class="p"><i></i>Testé et validé en prépa · boosté à l’IA</div>
     <h1>Révise moins.<br>Retiens <em>tout.</em></h1>
-    <p class="s">L’IA fait de ton cours un livre<br>de flashcards. Mirandola te repose chaque<br>page juste avant que tu l’oublies.</p></div>
+    <p class="s">L’IA fait de ton cours un paquet<br>de flashcards. Mirandola te repose chaque<br>carte juste avant que tu l’oublies.</p></div>
   <div class="pc"><img src="${dataUri(SORTIE + 'pc.webp', 'image/webp')}"></div><div class="socle"></div>
   <div class="tel"><img src="${dataUri(SORTIE + 'mobile.webp', 'image/webp')}"><i></i></div>
   <div class="f"><small>Histoire</small><b>14 juillet 1789</b></div>

@@ -28,7 +28,7 @@ export const PAGES = [
   {
     chemin: '/', fichier: 'index.html', nom: 'Accueil',
     titre: 'Mirandola : flashcards IA et répétition espacée pour réviser',
-    description: 'L’IA fait de ton cours des flashcards, Mirandola te les repose juste avant l’oubli, avec l’algorithme FSRS. Gratuit, hors ligne, pour élèves, profs et lycées.',
+    description: 'Flashcards IA et répétition espacée : le moteur d’Anki sans réglage, la simplicité de Quizlet, l’IA en plus. Gratuit, sans publicité, même hors ligne.',
     maj: '2026-11-05', image: '/site/og.jpg',
     imageAlt: 'Mirandola, l’app de révision : son logo, l’app sur ordinateur et téléphone, et une flashcard'
   },
@@ -83,9 +83,9 @@ export const PAGES = [
   },
   {
     chemin: '/anki-quizlet', fichier: 'anki-quizlet.html', nom: 'Anki, Quizlet ou Mirandola',
-    titre: 'Anki, Quizlet ou Mirandola : quelle app de flashcards ?',
-    description: 'Anki, Quizlet, Mirandola : ce que fait chaque app de flashcards, pour qui, et à quel prix. Et comment reprendre tes paquets Anki et tes listes Quizlet.',
-    maj: '2026-11-05', image: '/site/og/anki-quizlet.jpg',
+    titre: 'Alternative à Anki et Quizlet : Mirandola, sans réglage',
+    description: 'Mirandola, l’alternative à Anki et Quizlet : le moteur FSRS d’Anki sans un réglage, la simplicité de Quizlet sans publicité, et l’IA. Le comparatif complet.',
+    maj: '2026-11-14', image: '/site/og/anki-quizlet.jpg',
     imageAlt: 'Trois apps de flashcards comparées : Anki, Quizlet et Mirandola'
   },
   {
