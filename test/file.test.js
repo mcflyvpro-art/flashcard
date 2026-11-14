@@ -175,7 +175,7 @@ describe('buildQueue — pureté', () => {
 /* 2026-10-25 : la file suit les réglages d'Anki — journée qui bascule à 4 h,
    20 pages neuves par jour et par livre, l'ordre « échéance puis hasard »,
    les neuves réparties parmi les révisions. */
-import { aLire, debutJour, entrelacer, estNeuve, finJour, garderNeuves, neuvesPermises, ordreAnki } from '../src/file.js';
+import { aLire, debutJour, entrelacer, estNeuve, finJour, garderNeuves, neuvesPermises, ordreAnki, premierPassage } from '../src/file.js';
 
 const local = (j, h, m = 0) => new Date(2026, 9, j, h, m).getTime();   // octobre 2026, heure de l'appareil
 
@@ -211,8 +211,37 @@ describe('le quota de pages neuves', () => {
     expect(neuvesPermises([...neuves(30), ...lues, hier], t)).toBe(15);
   });
   it('jamais négatif', () => {
-    const lues = Array.from({ length: 25 }, (_, i) => carte('l' + i, { fl: local(25, 9) }));
-    expect(neuvesPermises(lues, t)).toBe(0);
+    const lues = Array.from({ length: 25 }, (_, i) => carte('l' + i, { fl: local(25, 9), lr: local(25, 9), S: 1, st: 1 }));
+    const hier = carte('h', { fl: local(24, 9), lr: local(24, 9), S: 1, st: 2 });
+    expect(neuvesPermises([...lues, hier], t)).toBe(0);
+  });
+  it('le premier passage : un paquet neuf se propose en entier', () => {
+    expect(premierPassage(neuves(214), t)).toBe(true);
+    expect(neuvesPermises(neuves(214), t)).toBe(Infinity);
+    expect(aLire(neuves(214), t)).toBe(214);
+  });
+  it('le premier passage dure toute la journée de la découverte', () => {
+    // 30 cartes lues ce matin, on reprend le soir : tout le reste est encore là
+    const lues = Array.from({ length: 30 }, (_, i) => carte('l' + i, { fl: local(25, 9), lr: local(25, 9), S: 1, st: 2, d: local(27, 9) }));
+    expect(neuvesPermises([...lues, ...neuves(40)], t)).toBe(Infinity);
+    expect(aLire([...lues, ...neuves(40)], t)).toBe(40);
+    // après minuit mais avant 4 h : c'est encore le même jour d'Anki
+    expect(neuvesPermises([...lues, ...neuves(40)], local(26, 1))).toBe(Infinity);
+  });
+  it('dès le lendemain, ce qui reste de neuf arrive à 20 par jour', () => {
+    const lues = Array.from({ length: 30 }, (_, i) => carte('l' + i, { fl: local(24, 9), lr: local(24, 9), S: 1, st: 2, d: local(28, 9) }));
+    expect(premierPassage([...lues, ...neuves(40)], t)).toBe(false);
+    expect(neuvesPermises([...lues, ...neuves(40)], t)).toBe(20);
+    expect(aLire([...lues, ...neuves(40)], t)).toBe(20);
+  });
+  it('une carte lue avant que la première lecture soit datée : le paquet est commencé', () => {
+    const ancienne = carte('v', { n: 3, lr: 1, S: 12, st: 2, d: t + DAY });
+    expect(premierPassage([ancienne, ...neuves(50)], t)).toBe(false);
+    expect(neuvesPermises([ancienne, ...neuves(50)], t)).toBe(20);
+  });
+  it('des cartes ajoutées à un paquet déjà commencé gardent le quota', () => {
+    const sue = carte('s', { fl: local(2, 9), n: 4, lr: local(20, 9), S: 30, st: 2, d: t + 9 * DAY });
+    expect(aLire([sue, ...neuves(35)], t)).toBe(20);
   });
   it('un devoir n’en a pas', () => {
     expect(neuvesPermises(Array.from({ length: 50 }, (_, i) => carte('a:dv:' + i)), t)).toBe(Infinity);

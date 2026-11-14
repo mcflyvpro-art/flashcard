@@ -47,11 +47,26 @@ export const estNeuve = c => !c.n && !c.lr && !c.S;
    `fl` est l'heure de la première lecture d'une page (posée par grade()) ;
    les pages lues pour la première fois depuis le début de la journée
    entament le quota. Un devoir n'en a pas : ce que le professeur a donné
-   doit pouvoir se faire d'un trait. */
+   doit pouvoir se faire d'un trait.
+
+   Le premier passage (2026-11-13, demandé : « la première fois qu'on a un
+   paquet, on lit toutes les cartes, et après elles rentrent dans le
+   moteur ») : un paquet que l'on découvre — aucune carte lue avant
+   aujourd'hui — se propose en entier, sans quota, toute la journée de sa
+   découverte (on s'arrête, on reprend : tout est encore là). C'est le
+   « augmenter la limite du jour » d'Anki, fait d'office le seul jour où il
+   va de soi. Dès le lendemain, ce qui reste de neuf, comme les cartes
+   ajoutées plus tard à un paquet déjà commencé, arrive à 20 par jour :
+   c'est ce qui empêche les révisions de s'empiler. Une carte lue avant
+   que `fl` n'existe (ni neuve, ni datée) compte pour « commencé avant ». */
 export const NEUVES_PAR_JOUR = 20;
 export const deDevoir = cards => cards.some(c => String(c.id).startsWith('a:'));
+export function premierPassage(cards, now) {
+  const t0 = debutJour(now);
+  return !cards.some(c => (c.fl ? c.fl < t0 : !estNeuve(c)));
+}
 export function neuvesPermises(cards, now) {
-  if (deDevoir(cards)) return Infinity;
+  if (deDevoir(cards) || premierPassage(cards, now)) return Infinity;
   const t0 = debutJour(now);
   const lues = cards.filter(c => c.fl >= t0).length;
   return Math.max(0, NEUVES_PAR_JOUR - lues);

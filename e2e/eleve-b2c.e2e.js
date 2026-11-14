@@ -186,17 +186,31 @@ test('sur ordinateur, seules les cartes d’un gros paquet défilent', async ({ 
   expect(Math.abs(await page.locator('.rows').evaluate(r => r.scrollTop) - avant)).toBeLessThan(40);
 });
 
-/* Réglé comme Anki (2026-10-25) : 20 pages neuves par jour et par livre,
+/* Réglé comme Anki (2026-10-25) : 20 cartes neuves par jour et par paquet,
    « +20 » pour aller plus loin, et plus aucun réglage du moteur à
-   comprendre dans les Réglages. */
-test('un paquet de 30 cartes neuves : 20 aujourd’hui, « +20 » pour la suite, des réglages sans moteur', async ({ page }) => {
+   comprendre dans les Réglages. Et le premier passage (2026-11-13) : un
+   paquet qu'on découvre se propose en entier, le quota ne vaut qu'ensuite. */
+test('un paquet neuf se propose en entier ; commencé, 20 neuves par jour puis « +20 » ; des réglages sans moteur', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
   semerLivre(store, 'lea@exemple.fr', 'Verbes', Array.from({ length: 30 }, (_, j) => ['verbe ' + j, 'sens ' + j]));
+  /* un paquet commencé il y a trois jours : une carte sue, trente encore neuves */
+  const j = 86400000, t = Date.now();
+  semerLivre(store, 'lea@exemple.fr', 'Dates', [
+    ['1789', 'Prise de la Bastille', { fl: t - 3 * j, lr: t - 3 * j, S: 40, D: 5, st: 2, d: t + 30 * j, n: 1 }],
+    ...Array.from({ length: 30 }, (_, k) => ['date ' + k, 'fait ' + k])
+  ]);
   await page.reload();
   await page.getByRole('button', { name: /Verbes/ }).click();
-  await page.getByRole('button', { name: 'Réviser 20' }).click();
+  await page.getByRole('button', { name: 'Réviser 30' }).click();          // le premier passage : tout le paquet
+  await expect(page.getByText('1/30')).toBeVisible();
+  for (let k = 0; k < 12; k++) await noter(page, 'Facile');
+  await page.getByRole('button', { name: 'Retour' }).first().click();     // on s'arrête en route…
+  await expect(page.getByRole('button', { name: 'Réviser 18' })).toBeVisible();   // … le reste est encore là
+  await page.getByRole('button', { name: 'Retour' }).first().click();
+  await page.getByRole('button', { name: /Dates/ }).click();
+  await page.getByRole('button', { name: 'Réviser 20' }).click();          // commencé avant aujourd'hui : le quota
   await expect(page.getByText('1/20')).toBeVisible();
   for (let k = 0; k < 20; k++) await noter(page, 'Facile');
   await page.getByRole('button', { name: 'Fin' }).click();
