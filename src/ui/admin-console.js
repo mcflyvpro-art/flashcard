@@ -18,7 +18,7 @@ import { avatar } from './jeton.js';
 import { toast } from './import-cartes.js';
 import { timeAgo } from './reglages-corbeille.js';
 import {
-  ACTIONS_FACTURATION, admLicencePull, blocFacturation, FORMULAIRES_FACTURATION, suivreSaisie, vueEntreprise, vuePiece
+  ACTIONS_FACTURATION, admLicencePull, blocFacturation, FORMULAIRES_FACTURATION, ouvrirDevis, suivreSaisie, vueEntreprise, vuePiece
 } from './admin-facturation.js';
 import { admFacturePull } from '../core/admin.js';
 import {
@@ -302,7 +302,8 @@ export function allerA(k, id) {
   if (k === 'facture' && id) {
     // une pièce ouverte depuis son adresse : sa fiche derrière elle
     adm.fid = id;
-    admFacturePull(id).then(() => { if (adm.facture) { adm.open = adm.facture.org_id; admLicencePull(adm.open); } });
+    if (String(id).startsWith('d-')) ouvrirDevis(id).then(() => { if (adm.devis) { adm.open = adm.devis.org_id; admLicencePull(adm.open); } });
+    else admFacturePull(id).then(() => { if (adm.facture) { adm.open = adm.facture.org_id; admLicencePull(adm.open); } });
   } else if (adm.tab === 'suivi') {
     adm.open = id || null;
     if (id) admLicencePull(id);

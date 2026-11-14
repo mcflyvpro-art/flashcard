@@ -24,6 +24,16 @@ import { blocStripe } from './admin-stripe.js';
 
 const repeint = () => { if (view.name === 'admin') { setAnimate(false); render(); } };
 const vide = (ic, t) => `<div class="ed-vide">${svg(ic)}<p>${t}</p></div>`;
+
+/* Les devis (ui/devis.js, 2026-11-14) : un morceau à part, chargé à la
+   première fiche ouverte ; tant qu'il n'est pas là, rien ne s'affiche. */
+let dv = null;
+const devis = () => {
+  if (dv === null) { dv = false; import('./devis.js').then(m => { dv = m; m.relireAvec('adm', admLicencePull); repeint(); }).catch(() => { dv = null; }); }
+  return dv;
+};
+const estDevis = id => String(id || '').startsWith('d-');
+export const ouvrirDevis = id => import('./devis.js').then(m => { dv = m; m.relireAvec('adm', admLicencePull); return m.ouvrir(id); });
 const champ = (id, lab, v, attr = '') => `<label class="ed-ch"><span>${lab}</span>
   <input id="${id}" value="${esc(v ?? '')}" ${attr}></label>`;
 const val = id => ((document.getElementById(id) || {}).value || '').trim();
@@ -32,7 +42,8 @@ const val = id => ((document.getElementById(id) || {}).value || '').trim();
 export function blocFacturation(o) {
   const l = adm.licence && adm.licence.org_id === o.id ? adm.licence : null;
   if (!l) return `<h2 class="ed-h2">Facturation</h2>${vide(I.money, 'Chargement…')}`;
-  return `<h2 class="ed-h2">Facturation${nonLus(l.echanges, 'folio') ? '<em class="ed-dr chaud">message</em>' : ''}</h2>
+  // dans l'ordre du travail : le devis, puis la facture
+  return `${devis() ? dv.blocEditeur(o, l) : ''}<h2 class="ed-h2">Facturation${nonLus(l.echanges, 'folio') ? '<em class="ed-dr chaud">message</em>' : ''}</h2>
     ${pieces(l)}${emettre(o, l)}${coordonnees(l)}${fil(l)}`;
 }
 
@@ -104,6 +115,7 @@ function fil(l) {
 
 /* ---------- une pièce ---------- */
 export function vuePiece() {
+  if (estDevis(adm.fid)) return devis() ? dv.pieceEditeur() : vide(I.file, 'Chargement…');
   const f = adm.facture;
   const retour = `<button class="ed-b sm" data-adm="piece-fin">${svg(I.back)}Retour</button>`;
   if (f === null) return `<div class="ed-barre-piece">${retour}</div>${vide(I.file, 'Chargement…')}`;
@@ -151,7 +163,7 @@ async function dateDuJour(champ, b) {
 
 export const ACTIONS_FACTURATION = {
   piece: id => { adm.fid = id; admFacturePull(id); repeint(); },
-  'piece-fin': () => { adm.fid = null; adm.facture = null; repeint(); },
+  'piece-fin': () => { adm.fid = null; adm.facture = null; adm.devis = null; repeint(); },
   deposee: (_, b) => dateDuJour('deposee', b),
   payee: (_, b) => dateDuJour('payee', b),
   avoir: async (_, b) => {

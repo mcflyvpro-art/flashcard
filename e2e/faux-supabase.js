@@ -4,6 +4,7 @@
 import { nouveauStore as storeNeuf, repondre } from '../src/base-locale/serveur.js';
 import { repondreSecurite } from '../src/base-locale/securite.js';
 import { repondreComptes } from '../src/base-locale/comptes.js';
+import { repondreDevis } from '../src/base-locale/devis.js';
 
 export { semerLivre, semerPaquetDu } from '../src/base-locale/serveur.js';
 
@@ -43,7 +44,7 @@ export async function brancher(cible, store, { navigateur = false } = {}) {
     }
     const demande = { method: req.method(), url: new URL(req.url()), headers: req.headers(), body };
     const [status, json, headers] = repondreSecurite(store, demande) || repondreComptes(store, demande)
-      || repondre(store, demande);
+      || repondreDevis(store, demande) || repondre(store, demande);
     return route.fulfill({ status, headers: { 'content-type': 'application/json', ...(headers || {}) },
       body: json == null ? '' : JSON.stringify(json) });
   });

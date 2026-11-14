@@ -160,6 +160,19 @@
 // Le même jour, « Modifier avec l'IA » (`retouche-…` : la feuille et
 // l'appariement des cartes, src/retouche.js) a le sien, 5 Ko JS et 1 Ko CSS :
 // la barre de l'IA qu'elle porte reste comptée à la demande, avec la création.
+// 2026-11-14 : le plafond « à la demande » passe de 71 à 72 Ko. Il était
+// plein à l'octet près (72 704), et un changement qui ne touche aucun de ses
+// morceaux le faisait basculer : le nom haché du morceau de démarrage change,
+// chaque morceau qui l'importe se compresse 2 à 6 octets autrement, une
+// vingtaine de morceaux, 9 octets de trop. Un plafond sans marge échoue sur
+// du bruit ; celui-ci garde son rôle (rien n'y grossit d'1 Ko sans qu'on le
+// décide).
+// 2026-11-14 : les devis (`devis-…` : ui/devis.js, src/devis.js, core/devis.js,
+// et `tarifs-…`, la grille que la console de l'éditeur lit aussi et que le
+// build range désormais à part) ont leur plafond, 6 Ko JS et 1 Ko
+// CSS. Ils ne se chargent que chez l'éditeur qui ouvre la fiche d'un
+// établissement, ou chez un référent dont la licence porte un devis : hors
+// du plafond des consoles, qui n'avait plus que 0,5 Ko de marge.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { SOUS_PAGES } from '../src/site/pages.js';
@@ -170,9 +183,9 @@ import { SOUS_PAGES } from '../src/site/pages.js';
 // de 33 à 34 Ko. Au démarrage, le rapporteur d'erreurs (src/erreurs.js,
 // core/rapport-erreurs.js) DOIT y être, évalué avant tout le reste : le
 // démarrage passe de 124,3 à 127,0 Ko, sous ses 128.
-const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 71 * 1024, cssDemande: 27 * 1024, jsDemo: 33 * 1024, cssDemo: 3 * 1024,
+const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 72 * 1024, cssDemande: 27 * 1024, jsDemo: 33 * 1024, cssDemo: 3 * 1024,
   jsGestion: 34 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
-  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, jsRetouche: 5 * 1024, cssRetouche: 1024, site: 51 * 1024, pages: 41 * 1024, moteur: 56 * 1024 };
+  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, jsRetouche: 5 * 1024, cssRetouche: 1024, jsDevis: 6 * 1024, cssDevis: 1024, site: 51 * 1024, pages: 41 * 1024, moteur: 56 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',
   jsGestion: 'JS des consoles (référent, éditeur)', cssGestion: 'CSS des consoles (référent, éditeur)',
@@ -184,6 +197,7 @@ const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS 
   jsInfini: 'JS de Mirandola Infini (examen)', cssInfini: 'CSS de Mirandola Infini (examen)',
   jsDefis: 'JS d’un défi à son rythme', cssDefis: 'CSS d’un défi à son rythme',
   jsRetouche: 'JS de « Modifier avec l’IA »', cssRetouche: 'CSS de « Modifier avec l’IA »',
+  jsDevis: 'JS des devis', cssDevis: 'CSS des devis',
   site: 'Page d’accueil (HTML + CSS + JS)', pages: 'Autres pages du site, la plus lourde (HTML + CSS + JS)',
   moteur: 'Page du moteur (HTML + CSS + JS)' };
 const dir = 'dist/assets';
@@ -195,7 +209,7 @@ const auDemarrage = f => app.includes('/assets/' + f);
 const duSite = f => site.includes('/assets/' + f);
 const dUnePage = f => autres.some(x => x.html.includes('/assets/' + f));
 const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, jsDemo: 0, cssDemo: 0, jsGestion: 0, cssGestion: 0,
-  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, jsSecurite: 0, cssSecurite: 0, jsCode: 0, cssCode: 0, jsInfini: 0, cssInfini: 0, jsDefis: 0, cssDefis: 0, jsRetouche: 0, cssRetouche: 0, site: gz(site), pages: 0, moteur: 0 };
+  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, jsSecurite: 0, cssSecurite: 0, jsCode: 0, cssCode: 0, jsInfini: 0, cssInfini: 0, jsDefis: 0, cssDefis: 0, jsRetouche: 0, cssRetouche: 0, jsDevis: 0, cssDevis: 0, site: gz(site), pages: 0, moteur: 0 };
 const parPage = Object.fromEntries(autres.map(x => [x.nom, gz(x.html)]));
 for (const f of readdirSync(dir)) {
   const ext = f.split('.').pop();
@@ -208,7 +222,7 @@ for (const f of readdirSync(dir)) {
     : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion'
       : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : /^(verif|securite|compte-auth)-/.test(f) ? ext + 'Securite'
         : /^(code-entree|etablissement)-/.test(f) ? ext + 'Code' : /^examen-/.test(f) ? ext + 'Infini' : /^duel-jeu-/.test(f) ? ext + 'Defis'
-          : /^retouche-/.test(f) ? ext + 'Retouche' : ext + 'Demande';
+          : /^retouche-/.test(f) ? ext + 'Retouche' : /^(devis|tarifs)-/.test(f) ? ext + 'Devis' : ext + 'Demande';
   total[part] += n;
 }
 total.moteur = parPage['moteur.html'] || 0;

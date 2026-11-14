@@ -14,7 +14,7 @@ grant all on sequence public.zz_res_n_seq to authenticated, anon;
 do $$
 declare
   lea uuid := gen_random_uuid(); tom uuid := gen_random_uuid(); zoe uuid := gen_random_uuid();
-  vieux uuid := gen_random_uuid(); neuf uuid := gen_random_uuid(); google uuid := gen_random_uuid();
+  vieux uuid := gen_random_uuid(); oublie uuid := gen_random_uuid(); neuf uuid := gen_random_uuid(); google uuid := gen_random_uuid();
   venu uuid := gen_random_uuid(); confirme uuid := gen_random_uuid(); o uuid;
   n integer; refus text;
 begin
@@ -81,7 +81,8 @@ begin
 
   -- ══════════ les comptes jamais confirmés ══════════
   insert into auth.users (instance_id, id, aud, role, email, email_confirmed_at, last_sign_in_at, created_at)
-  values ('00000000-0000-0000-0000-000000000000', vieux, 'authenticated', 'authenticated', 'zz-' || vieux || '@exemple.invalid', null, null, now() - interval '8 days'),
+  values ('00000000-0000-0000-0000-000000000000', vieux, 'authenticated', 'authenticated', 'zz-' || vieux || '@exemple.invalid', null, null, timestamptz '2026-11-01 08:00:00+00'),
+         ('00000000-0000-0000-0000-000000000000', oublie, 'authenticated', 'authenticated', 'zz-' || oublie || '@exemple.invalid', null, null, timestamptz '2026-11-06 00:00:00+00'),
          ('00000000-0000-0000-0000-000000000000', neuf, 'authenticated', 'authenticated', 'zz-' || neuf || '@exemple.invalid', null, null, now() - interval '2 days'),
          ('00000000-0000-0000-0000-000000000000', google, 'authenticated', 'authenticated', 'zz-' || google || '@exemple.invalid', null, null, now() - interval '30 days'),
          ('00000000-0000-0000-0000-000000000000', venu, 'authenticated', 'authenticated', 'zz-' || venu || '@exemple.invalid', null, now() - interval '9 days', now() - interval '10 days'),
@@ -90,10 +91,16 @@ begin
   insert into auth.identities (provider_id, user_id, identity_data, provider)
   values (google::text, google, jsonb_build_object('sub', google::text, 'email', 'zz-' || google || '@exemple.invalid'), 'google');
   insert into public.profiles (id, email, name) values (vieux, 'zz-' || vieux || '@exemple.invalid', 'Zz') on conflict (id) do nothing;
+  insert into public.profiles (id, email, name) values (oublie, 'zz-' || oublie || '@exemple.invalid', 'Zz') on conflict (id) do nothing;
   perform public.purger_comptes_non_confirmes();
-  -- décidé le 2026-11-05 : rien de ce qui existait avant le 2026-11-06 ne se supprime
-  insert into public.zz_res (nom, ok, vu) values ('jamais confirmé depuis 8 jours, mais d’avant le 2026-11-06 : gardé, son profil avec',
+  /* décidé le 2026-11-05 : rien de ce qui existait avant le 2026-11-06 ne se
+     supprime. Des dates fixes, pas « il y a 8 jours » : à partir du
+     2026-11-14, huit jours en arrière tombaient après le 6, le compte était
+     purgé à raison et ce cas échouait (trouvé par la base neuve de la CI). */
+  insert into public.zz_res (nom, ok, vu) values ('jamais confirmé, né avant le 2026-11-06 : gardé, son profil avec',
     exists (select 1 from auth.users where id = vieux) and exists (select 1 from public.profiles where id = vieux), null);
+  insert into public.zz_res (nom, ok, vu) values ('jamais confirmé ni connecté, né le 2026-11-06, plus de 7 jours : purgé, son profil avec',
+    not exists (select 1 from auth.users where id = oublie) and not exists (select 1 from public.profiles where id = oublie), null);
   insert into public.zz_res (nom, ok, vu) values ('la purge ne vise que les comptes nés à partir du 2026-11-06',
     position('2026-11-06' in pg_get_functiondef('public.purger_comptes_non_confirmes()'::regprocedure)) > 0, null);
   insert into public.zz_res (nom, ok, vu) values ('… créé il y a 2 jours : encore là', exists (select 1 from auth.users where id = neuf), null);

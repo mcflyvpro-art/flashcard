@@ -27,11 +27,18 @@ const DOCS = { cgv: 'Conditions générales de vente', dpa: 'Contrat de sous-tra
 let documents = null;
 const chargerDocuments = () => import('./documents-etab.js').then(m => (documents = m));
 
+/* Les devis (ui/devis.js, 2026-11-14) : un morceau à part, chargé quand la
+   licence en porte un ou qu'on en ouvre un par son adresse. */
+let dv = null;
+const chargerDevis = () => import('./devis.js').then(m => { dv = m; m.relireAvec('ref', refLicencePull); return m; });
+const estDevis = id => String(id || '').startsWith('d-');
+
 /* ---------- l'onglet ---------- */
 export function poserLicence(id) {
   ref.facture = null; ref.doc = ''; ref.open = id || null;
   if (!ref.licence) refLicencePull();
-  if (id) refFacturePull(id);
+  if (estDevis(id)) chargerDevis().then(m => m.ouvrir(id));
+  else if (id) refFacturePull(id);
 }
 
 export function licence() {
@@ -40,8 +47,9 @@ export function licence() {
   const l = ref.licence;
   if (l === null) return vide(I.build, 'Chargement…');
   if (!l) return vide(I.lock, 'Réservé au référent de l’établissement');
+  if ((l.devis || []).length && !dv) chargerDevis().then(repeint).catch(() => {});
   return `<div class="rf-ltab">
-      <div class="rf-ltab-g">${tuilePlaces(l)}${tuileFactures(l)}${tuileDocuments()}</div>
+      <div class="rf-ltab-g">${tuilePlaces(l)}${dv ? dv.tuileReferent(l) : ''}${tuileFactures(l)}${tuileDocuments()}</div>
       <div class="rf-ltab-d">${tuileEchanges(l)}${tuileFacturation(l)}</div>
     </div>`;
 }
@@ -113,6 +121,7 @@ function tuileFacturation(l) {
 
 /* ---------- une pièce ---------- */
 function vuePiece() {
+  if (estDevis(ref.open)) return dv ? dv.pieceReferent() : vide(I.file, 'Chargement…');
   const f = ref.facture, l = ref.licence || {};
   const barre = e => `<div class="rf-barre-piece">
       <button class="rf-b sm" data-rf="lic-retour">${svg(I.back)}Licence</button>
@@ -139,7 +148,7 @@ function vueDocument() {
 export const ACTIONS_LICENCE = {
   'lic-piece': id => { ref.open = id; ref.facture = null; refFacturePull(id); repeint(); },
   'lic-doc': k => { ref.doc = k; repeint(); },
-  'lic-retour': () => { ref.open = null; ref.facture = null; ref.doc = ''; repeint(); },
+  'lic-retour': () => { ref.open = null; ref.facture = null; ref.devis = null; ref.doc = ''; repeint(); },
   'lic-demander': k => {
     ref.sujet = k;
     repeint();
