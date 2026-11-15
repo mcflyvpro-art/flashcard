@@ -84,9 +84,10 @@ button{font:inherit;color:inherit}
   padding-right:.1em;margin-right:-.06em}
 /* en biais et plus épais (le « + » de la serif est un trait fin) : sur un
    seul signe, le dégradé de « tout. » ne montrait que son violet */
-.plus{font-family:var(--sans);font-weight:800;background:linear-gradient(135deg,#4258B8 26%,#8A48AC 50%,#C8467A 74%);
+.plus{font-family:var(--sans);font-weight:800;background:linear-gradient(135deg,#8A5200 20%,#D99A1E 50%,#A86400 80%);
   -webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .03em}
-.offre-infini .plus{background-image:linear-gradient(135deg,#8DA2F0 24%,#B996EC 50%,#F38DB2 76%)}
+/* le « + » de Mirandola+ : son or (2026-11-15), clair sur la nuit */
+:is(.lancement,.offre-infini,.moteur-plus,.p-nuit-cartes) .plus{background-image:linear-gradient(135deg,#F5C542 20%,#FFF1B8 50%,#E0A21B 80%)}
 .centre{text-align:center}
 .surtitre{font:700 12px/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--doux);margin-bottom:18px}
 .texte{font-size:clamp(17px,1.5vw,20px);line-height:1.5;color:var(--encre2);max-width:32em;margin-top:18px;text-wrap:pretty}
@@ -412,7 +413,6 @@ button{font:inherit;color:inherit}
 .moteur-plus h3{background:var(--degrade-clair);-webkit-background-clip:text;background-clip:text;color:transparent;align-self:flex-start;padding-right:.08em}
 .moteur-plus p{color:var(--creme2)}
 .moteur-plus .moteur-offre{color:#C9C2D6}
-.moteur-plus .plus{background-image:linear-gradient(135deg,#8DA2F0 24%,#B996EC 50%,#F38DB2 76%)}
 .moteur-plus .lien{margin-top:auto;padding-top:8px;align-self:flex-start;color:var(--creme);font-weight:700;text-decoration-color:rgba(243,238,227,.3)}
 .moteurs .rv:nth-child(2){transition-delay:.1s}
 
@@ -785,7 +785,7 @@ button{font:inherit;color:inherit}
 .comparatif tbody th{text-align:left;font-weight:600;color:var(--encre2)}
 .comparatif td{font-weight:650;color:var(--encre2)}
 .comparatif .col-plus{background:#f5c54224}
-.comparatif thead .col-plus{border-radius:18px 18px 0 0}
+.comparatif thead :is(.col-plus,.col-infini){border-radius:18px 18px 0 0}
 .comparatif .col-infini{background:#9333ea0f}
 /* le violet d'Infini en texte : 7:1 sur le papier du site (e2e/accessibilite.e2e.js veut 4,5) */
 .comparatif .o-n.infini{font-style:italic;color:#6D28D9}
@@ -813,15 +813,16 @@ button{font:inherit;color:inherit}
    d'abord (plus haut, plus grand, « Le plus choisi »). */
 .offre-infini{border:2.5px solid transparent;color:var(--creme);box-shadow:var(--ombre3),0 30px 60px -28px #9333ea99;
   background:radial-gradient(80% 55% at 100% 0%,#db277738,#0000 62%) padding-box,radial-gradient(80% 55% at 0% 100%,#4f46e547,#0000 62%) padding-box,
-    linear-gradient(var(--nuit),var(--nuit)) padding-box,conic-gradient(from var(--angle,0deg),#4F46E5,#9333EA,#DB2777,#F97316,#FACC15,#16A34A,#0EA5E9,#4F46E5) border-box;animation:tour 6s linear infinite}
+    linear-gradient(var(--nuit),var(--nuit)) padding-box,conic-gradient(from var(--angle,0deg),#6366F1,#A855F7,#EC4899,#F97316,#FACC15,#A3E635,#22D3EE,#6366F1) border-box;animation:tour 6s linear infinite}
 .offre-infini :is(h2,h3) em{font-style:italic;background:linear-gradient(115deg,#A5B4FC,#F0ABFC 40%,#FDA4AF 70%,#FDBA74);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
 .offre-infini .prix span,.offre-infini .prix-note{color:var(--creme2)}
 .offre-infini .inclus{border-color:rgba(243,238,227,.14)}
 .offre-infini .inclus li:not(:has(b))::before{background-color:#c084fc33;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F0ABFC' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
-.bt-holo{position:relative;overflow:hidden;color:#fff;text-shadow:0 1px 2px #1e1b4b59;background:linear-gradient(115deg,#4F46E5,#7C3AED 20%,#C026D3 38%,#DB2777 52%,#C2410C 66%,#0F766E 82%,#2563EB) 0 0/250% 100%;
-  box-shadow:inset 0 1px 0 #fff6,0 14px 30px -12px #9333eae6;animation:prisme 7s ease-in-out infinite alternate}
-@keyframes prisme{to{background-position:100% 0}}
-.ruban-holo{background:linear-gradient(115deg,#4F46E5,#7C3AED 20%,#C026D3 38%,#DB2777 52%,#C2410C 66%,#0F766E 82%,#2563EB);color:#fff;box-shadow:inset 0 1px 0 #fff6,0 6px 16px -8px #9333eacc}
+.bt-holo{position:relative;overflow:hidden;color:#fff;text-shadow:0 1px 3px #3b0764a6;background:linear-gradient(#fff3,#0000 55%),linear-gradient(100deg,#22D3EE,#6366F1 20%,#A855F7 38%,#EC4899 56%,#F97316 74%,#FACC15 88%,#A3E635);
+  box-shadow:inset 0 1px 0 #fff8,0 14px 30px -12px #a855f7e6;animation:irise 6s ease-in-out infinite alternate}
+/* l'arc-en-ciel ondule autour de ses teintes : tout le spectre, jamais une zone sombre */
+@keyframes irise{from{filter:hue-rotate(-22deg) saturate(1.1)}to{filter:hue-rotate(22deg) saturate(1.25)}}
+.ruban-holo{background:linear-gradient(#fff3,#0000 55%),linear-gradient(100deg,#22D3EE,#6366F1 20%,#A855F7 38%,#EC4899 56%,#F97316 74%,#FACC15 88%,#A3E635);color:#fff;text-shadow:0 1px 2px #3b0764a6;box-shadow:inset 0 1px 0 #fff8,0 6px 16px -8px #a855f7cc}
 /* le milieu, mis en avant : plus haut et un peu plus grand que ses voisines */
 .offres .offre-plus{z-index:1}
 .offres .offre-plus.rv.vu{transform:translateY(-18px) scale(1.035)}
