@@ -175,7 +175,7 @@ describe('buildQueue — pureté', () => {
 /* 2026-10-25 : la file suit les réglages d'Anki — journée qui bascule à 4 h,
    20 pages neuves par jour et par livre, l'ordre « échéance puis hasard »,
    les neuves réparties parmi les révisions. */
-import { aLire, debutJour, entrelacer, estNeuve, finJour, garderNeuves, neuvesPermises, ordreAnki, premierPassage } from '../src/file.js';
+import { aLire, ajouteeDuJour, debutJour, entrelacer, estNeuve, finJour, garderNeuves, neuvesPermises, ordreAnki, premierPassage } from '../src/file.js';
 
 const local = (j, h, m = 0) => new Date(2026, 9, j, h, m).getTime();   // octobre 2026, heure de l'appareil
 
@@ -227,6 +227,24 @@ describe('le quota de pages neuves', () => {
     expect(aLire([...lues, ...neuves(40)], t)).toBe(40);
     // après minuit mais avant 4 h : c'est encore le même jour d'Anki
     expect(neuvesPermises([...lues, ...neuves(40)], local(26, 1))).toBe(Infinity);
+  });
+  it('des cartes ajoutées aujourd’hui à un paquet commencé : toutes, hors quota, même quota pris', () => {
+    // le cas rencontré : 20 neuves déjà lues ce jour, 177 anciennes jamais lues, 58 ajoutées
+    const hier = carte('h', { fl: local(20, 9), lr: local(24, 9), S: 30, st: 2, d: local(40, 9) });
+    const lues = Array.from({ length: 20 }, (_, i) => carte('l' + i, { fl: local(25, 9), lr: local(25, 9), S: 1, st: 2, d: local(28, 9) }));
+    const ajoutees = Array.from({ length: 58 }, (_, i) => carte('a' + i, { ad: local(25, 12) }));
+    const cartes = [hier, ...lues, ...neuves(177), ...ajoutees];
+    expect(neuvesPermises(cartes, t)).toBe(0);
+    expect(aLire(cartes, t)).toBe(58);
+    const gardees = garderNeuves(cartes, () => neuvesPermises(cartes, t), undefined, c => ajouteeDuJour(c, t));
+    expect(gardees.filter(c => c.ad).length).toBe(58);
+    expect(gardees.filter(c => estNeuve(c) && !c.ad).length).toBe(0);
+    // révisées, elles n'entament pas les 20 du jour des anciennes
+    const ajouteesLues = ajoutees.map(c => ({ ...c, fl: local(25, 13), lr: local(25, 13), S: 1, st: 2, d: local(28, 9) }));
+    expect(neuvesPermises([hier, ...ajouteesLues, ...neuves(10)], t)).toBe(20);
+    // le lendemain, plus « du jour » : le quota reprend
+    expect(ajouteeDuJour(ajoutees[0], local(26, 9))).toBe(false);
+    expect(aLire([hier, ...ajoutees], local(26, 9))).toBe(20);
   });
   it('dès le lendemain, ce qui reste de neuf arrive à 20 par jour', () => {
     const lues = Array.from({ length: 30 }, (_, i) => carte('l' + i, { fl: local(24, 9), lr: local(24, 9), S: 1, st: 2, d: local(28, 9) }));

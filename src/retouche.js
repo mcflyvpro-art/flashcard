@@ -103,7 +103,7 @@ export function appliquer(anciennes, rendues, nouvelId) {
      ou aux accents près, elle doit pouvoir passer en majuscules si on le demande */
   const cartes = neuves.map((r, k) => {
     const ch = choix[k];
-    if (!ch) { bilan.ajoutees++; return { f: r.f, b: r.b, id: nouvelId() }; }
+    if (!ch) { bilan.ajoutees++; return { f: r.f, b: r.b, id: nouvelId(), ad: Date.now() }; }
     const meme = ch.v.c.f === r.f && ch.v.c.b === r.b;
     if (meme) bilan.gardees++; else bilan.modifiees++;
     return meme ? ch.v.c : { ...ch.v.c, f: r.f, b: r.b };

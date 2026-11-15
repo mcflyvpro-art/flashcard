@@ -61,6 +61,16 @@ export const estNeuve = c => !c.n && !c.lr && !c.S;
    que `fl` n'existe (ni neuve, ni datée) compte pour « commencé avant ». */
 export const NEUVES_PAR_JOUR = 20;
 export const deDevoir = cards => cards.some(c => String(c.id).startsWith('a:'));
+
+/* Ajoutée aujourd'hui (2026-11-15) : la même règle, carte par carte. Des
+   cartes qu'on vient d'ajouter à un paquet déjà commencé se proposent le
+   jour même, toutes, hors quota — elles passaient derrière les neuves plus
+   anciennes et n'arrivaient qu'au bout de plusieurs jours (un paquet de 494
+   cartes, 177 jamais lues : 58 ajoutées attendaient douze jours). `ad` est
+   l'heure de l'ajout, posée par l'écran qui ajoute ; elle voyage dans
+   `cards.meta`. Révisées, elles ne comptent pas dans les 20 du jour. Ne
+   se demande que d'une carte neuve (`aLire`, `garderNeuves`). */
+export const ajouteeDuJour = (c, now) => c.ad >= debutJour(now);
 export function premierPassage(cards, now) {
   const t0 = debutJour(now);
   return !cards.some(c => (c.fl ? c.fl < t0 : !estNeuve(c)));
@@ -68,17 +78,18 @@ export function premierPassage(cards, now) {
 export function neuvesPermises(cards, now) {
   if (deDevoir(cards) || premierPassage(cards, now)) return Infinity;
   const t0 = debutJour(now);
-  const lues = cards.filter(c => c.fl >= t0).length;
+  const lues = cards.filter(c => c.fl >= t0 && !(c.ad >= t0)).length;
   return Math.max(0, NEUVES_PAR_JOUR - lues);
 }
 
 /* Ne garde, parmi les neuves, que les premières permises de chaque paquet
    (`reste(clé)`), dans l'ordre reçu ; les autres cartes passent toutes. */
-/** @param {(c: any) => any} [cle] */
-export function garderNeuves(cards, reste, cle = c => '') {
+/* `libre` : les neuves qui passent hors quota (ajoutées aujourd'hui). */
+/** @param {(c: any) => any} [cle] @param {(c: any) => boolean} [libre] */
+export function garderNeuves(cards, reste, cle = c => '', libre = c => false) {
   const prises = new Map(), max = new Map();
   return cards.filter(c => {
-    if (!estNeuve(c)) return true;
+    if (!estNeuve(c) || libre(c)) return true;
     const k = cle(c);
     if (!max.has(k)) max.set(k, reste(k));
     const n = prises.get(k) || 0;
@@ -94,7 +105,7 @@ export function aLire(cards, now) {
   let vues = 0, neuves = 0;
   for (const c of cards) {
     if (!isDue(c, now)) continue;
-    if (estNeuve(c)) neuves++; else vues++;
+    if (estNeuve(c) && !ajouteeDuJour(c, now)) neuves++; else vues++;
   }
   return vues + Math.min(neuves, neuvesPermises(cards, now));
 }

@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
-import { buildQueue, garderNeuves, neuvesPermises, reprise, shuffle } from '../file.js';
+import { ajouteeDuJour, buildQueue, garderNeuves, neuvesPermises, reprise, shuffle } from '../file.js';
 import {
   auth, db, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
   study
@@ -40,7 +40,7 @@ function studyIds(id, cards, subset, o, sm) {
      le « augmenter la limite du jour » d'Anki ; « Tout lire » n'en a pas. */
   const marathon = id === 'all';
   const reste = k => neuvesPermises(marathon ? (deck(k) || { cards: [] }).cards : cards, now) + (o.plus || 0);
-  const permises = o.tout ? cards : garderNeuves(cards, reste, marathon ? c => c._d : undefined);
+  const permises = o.tout ? cards : garderNeuves(cards, reste, marathon ? c => c._d : undefined, c => ajouteeDuJour(c, now));
   /* l'ordre d'Anki, sauf si l'appelant en demande un (le bouton mélanger) */
   return buildQueue(permises, { ...o, order: o.order || 'anki', cap: 0 }, now).map(c => c.id);
 }

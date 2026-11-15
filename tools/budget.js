@@ -233,7 +233,7 @@ let ok = true;
 for (const k of Object.keys(BUDGET)) {
   const ko = (n) => (n / 1024).toFixed(1) + ' Ko';
   const dedans = total[k] <= BUDGET[k];
-  console.log(`${dedans ? '✓' : '✗'} ${NOMS[k]} ${ko(total[k])} gzip / budget ${ko(BUDGET[k])}`);
+  console.log(`${dedans ? "✓" : "✗"} ${NOMS[k]} ${ko(total[k])} gzip / budget ${ko(BUDGET[k])}${k === "js" ? " (" + (BUDGET[k] - total[k]) + " octets de marge)" : ""}`);
   ok = ok && dedans;
 }
 process.exit(ok ? 0 : 1);

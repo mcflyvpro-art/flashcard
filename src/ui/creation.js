@@ -427,7 +427,8 @@ function bindOk(t) {
     if (!cards.length) return;
     const pour = comp.pour;
     if (t) {
-      t.cards.push(...cards.map(c => ({ ...c, id: uid() })));
+      // ajoutées aujourd'hui : proposées aujourd'hui (src/file.js)
+      t.cards.push(...cards.map(c => ({ ...c, id: uid(), ad: Date.now() })));
       saveDeck(t); resetComp(); go('deck', t.id);
     } else {
       const d = addDeck(comp.name, cards, comp.subject);

@@ -226,3 +226,31 @@ test('un paquet neuf se propose en entier ; commencé, 20 neuves par jour puis �
     await expect(reglages).not.toContainText(parti);
   }
 });
+
+/* Le cas rencontré le 2026-11-15 : un paquet commencé, les 20 neuves du
+   jour déjà lues, des neuves plus anciennes en attente ; une carte ajoutée
+   passait derrière elles et n'était pas proposée. Ajoutée aujourd'hui, elle
+   se propose aujourd'hui, hors quota. */
+test('une carte ajoutée à un paquet commencé se propose le jour même, quota pris', async ({ page }) => {
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  const j = 86400000, t = Date.now();
+  semerLivre(store, 'lea@exemple.fr', 'Dates', [
+    ['1789', 'Prise de la Bastille', { fl: t - 3 * j, lr: t - 3 * j, S: 40, D: 5, st: 2, d: t + 30 * j, n: 1 }],
+    ...Array.from({ length: 20 }, (_, k) => ['lue ' + k, 'ce jour ' + k, { fl: t - 60000, lr: t - 60000, S: 3, D: 5, st: 2, d: t + 3 * j, n: 1 }]),
+    ...Array.from({ length: 30 }, (_, k) => ['ancienne ' + k, 'jamais lue ' + k])
+  ]);
+  await page.reload();
+  await page.getByRole('button', { name: /Dates/ }).click();
+  await expect(page.getByRole('button', { name: 'Réviser +20' })).toBeVisible();   // le quota est pris
+  await page.locator('[data-act="add"]').click();
+  const champs = page.locator('.rows .row').last().locator('input');
+  await champs.nth(0).fill('1815');
+  await champs.nth(1).fill('Waterloo');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Réviser 1' })).toBeVisible();
+  await page.getByRole('button', { name: 'Réviser 1' }).click();
+  await expect(page.getByText('1/1')).toBeVisible();
+  await expect(page.getByText('1815')).toBeVisible();
+});

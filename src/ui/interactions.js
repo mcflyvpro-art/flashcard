@@ -396,7 +396,7 @@ const tapRedo = () => startQuiz(quiz.id, shuffle(quiz.bad.slice()), quiz.rev);
 
 function tapAdd() {
   const d = deck(view.id);
-  d.cards.push({ id: uid(), f: '', b: '' }); saveDeck(d); render();
+  d.cards.push({ id: uid(), f: '', b: '', ad: Date.now() }); saveDeck(d); render();
   const i = $.querySelector('.rows .row:last-of-type input'); if (i) i.focus();
 }
 
