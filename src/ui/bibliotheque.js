@@ -217,7 +217,7 @@ const railEntry = (on, k, ic, nom, badge) => `<button class="${on === k ? 'on' :
    plus). Pour un compte d'établissement, « Campus ». */
 const railPlus = on => {
   if (!entreePlus()) return '';
-  const nom = offre && offre.offre === 'campus' && offre.etablissement ? 'Campus' : 'Mirandola+';
+  const nom = offre && offre.offre === 'campus' && offre.etablissement ? 'Campus' : offre && offre.niveau === 'infini' ? 'Infini' : 'Mirandola+';
   return `<button class="r-plus${on === 'plus' ? ' on' : ''}" data-r="plus" aria-label="${nom}">${svg(I.spark)}<span>${nom}</span></button>`;
 };
 

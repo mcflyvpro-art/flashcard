@@ -1336,10 +1336,12 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
    (2026-11-08) : il ne lit donc pas --plus, que html.offre-infini passe à
    l'or. Mirandola+ : un arc-en-ciel qui fait le tour ; Infini : l'or. */
 .jt{--lis:conic-gradient(from 200deg,#5A76D0,#9A78CF,#D7648D,#EE9A5A,#E9C85A,#6FC39A,#4FA6DA,#5A76D0)}
-.jt.jt-infini{--lis:conic-gradient(from 200deg,#8A6114,#D4A23C,#F3D98C,#C08B2B,#8A6114,#E4B957,#8A6114)}
+/* Infini : un or poli, du bronze profond au champagne, un filet sombre qui
+   le détache du papier clair ; il tourne chez un abonné Infini (ui/infini-lumiere.css) */
+.jt.jt-infini{--lis:conic-gradient(from var(--a,200deg),#5C3D0A,#B98A2E,#FFF2C6,#D6A53F,#6B470D,#ECCB72,#5C3D0A)}
 .jt:is(.jt-plus,.jt-infini){border:2.5px solid transparent;background:linear-gradient(var(--k,var(--ink2)) 0 0) padding-box,var(--lis) border-box;
   box-shadow:0 4px 14px -4px rgba(154,120,207,.8)}
-.jt.jt-infini{box-shadow:0 4px 14px -4px rgba(176,128,40,.85)}
+.jt.jt-infini{box-shadow:0 0 0 1px rgba(92,61,10,.4),0 5px 16px -4px rgba(201,150,46,.95)}
 .jt:is(.lg,.xl):is(.jt-plus,.jt-infini){border-width:3.5px}
 .jt.vis:is(.jt-plus,.jt-infini){background:linear-gradient(color-mix(in srgb,var(--k) 30%,#fff) 0 0) padding-box,var(--lis) border-box}
 html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:var(--plus);-webkit-background-clip:text;
@@ -1347,13 +1349,18 @@ html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:
 html.offre-plus :is(.tabs .sl,.fab,.prog i){background:var(--plus)}
 html.offre-plus .cta:not(:disabled){background:var(--plus);color:#fff;box-shadow:0 10px 22px -12px rgba(120,70,160,.75)}
 html.offre-plus #rail nav button.on svg{color:#8A6BCB}
-/* Mirandola Infini (2026-11-07) : sa lumière à lui, l'or, et « ∞ » après le nom ; un texte sombre sur l'or */
-html.offre-infini{--plus:linear-gradient(135deg,#8A6114,#D4A23C 38%,#F3D98C 58%,#C08B2B)}
-html.offre-infini #rail .brand span::after{content:'\2009∞'}
+/* Mirandola Infini (refait le 2026-11-15, demandé : « le jaune est moche,
+   plat, sans contraste ; rends-le premium, au-dessus de + ») : la nuit et
+   l'or. Ce qu'on touche — le bouton principal, l'onglet allumé, le bouton
+   rond — passe sur une nuit chaude, son texte en champagne (13:1), cerné
+   d'un filet d'or, et un reflet le traverse lentement ; ce qui se mesure —
+   les barres, les pastilles — prend un or poli, du bronze au champagne. */
+html.offre-infini{--plus:linear-gradient(110deg,#8E6216,#D2A23F 28%,#FCEBB6 47%,#D9AC48 64%,#946A1C)}
+html.offre-infini #rail .brand span::after{content:'\2009∞';background-image:linear-gradient(135deg,#7A520F,#C08B2B)}
+/* la nuit de ce qu'on touche : ui/infini-lumiere.css, chargée pour un abonné Infini seulement (ui/bridage.js) */
 /* ce qui est dans Infini, dans un menu : sa pastille d'or */
 .mi .mi-offert{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#fff;background:var(--plus)}
-.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#16130C;background:linear-gradient(135deg,#D4A23C,#F3D98C)}
-html.offre-infini .cta:not(:disabled){color:#16130C;box-shadow:0 10px 22px -12px rgba(150,105,20,.75)}
+.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#F2DCA2;background:linear-gradient(135deg,#2B2215,#100C07)}
 /* l'onglet Mirandola+ d'un compte gratuit : son nom et son icône dans la lumière de la marque */
 .tabs .t-plus svg{color:#9A78CF;fill:rgba(154,120,207,.18)} .tabs .t-plus.on svg{color:var(--bg);fill:none}
 #rail nav .r-plus span{background:var(--plus);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:750}

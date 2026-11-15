@@ -221,7 +221,7 @@ for (const f of readdirSync(dir)) {
   const part = auDemarrage(f) ? ext : /^demo-/.test(f) ? ext + 'Demo' : /^pwa-/.test(f) ? ext + 'Porte'
     : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion'
       : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : /^(verif|securite|compte-auth)-/.test(f) ? ext + 'Securite'
-        : /^(code-entree|etablissement)-/.test(f) ? ext + 'Code' : /^examen-/.test(f) ? ext + 'Infini' : /^duel-jeu-/.test(f) ? ext + 'Defis'
+        : /^(code-entree|etablissement)-/.test(f) ? ext + 'Code' : /^(examen|infini)-/.test(f) ? ext + 'Infini' : /^duel-jeu-/.test(f) ? ext + 'Defis'
           : /^retouche-/.test(f) ? ext + 'Retouche' : /^(devis|tarifs)-/.test(f) ? ext + 'Devis' : ext + 'Demande';
   total[part] += n;
 }
@@ -233,7 +233,7 @@ let ok = true;
 for (const k of Object.keys(BUDGET)) {
   const ko = (n) => (n / 1024).toFixed(1) + ' Ko';
   const dedans = total[k] <= BUDGET[k];
-  console.log(`${dedans ? "✓" : "✗"} ${NOMS[k]} ${ko(total[k])} gzip / budget ${ko(BUDGET[k])}${k === "js" ? " (" + (BUDGET[k] - total[k]) + " octets de marge)" : ""}`);
+  console.log(`${dedans ? "✓" : "✗"} ${NOMS[k]} ${ko(total[k])} gzip / budget ${ko(BUDGET[k])}${(k === "js" || k === "css") ? " (" + (BUDGET[k] - total[k]) + " octets de marge)" : ""}`);
   ok = ok && dedans;
 }
 process.exit(ok ? 0 : 1);

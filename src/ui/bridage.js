@@ -67,7 +67,9 @@ document.addEventListener('click', ev => {
    (une fois par image) : gratuit, bibliothèque pleine, Mirandola+ ; et les
    volets du journal réservés (data-volet de ui/journal-ecran.js), floutés
    sous leur titre. */
-let image = 0;
+/* la nuit et l'or d'Infini, chargés une fois pour un abonné Infini ; une
+   panne (hors ligne avant la mise en cache) se retente au marquage suivant */
+let image = 0, lumiere = null;
 function marquer() {
   image = 0;
   const html = document.documentElement, gratuit = offreActive() === 'gratuit';
@@ -75,6 +77,7 @@ function marquer() {
   html.classList.toggle('livres-plein', gratuit && plein());
   html.classList.toggle('offre-plus', aFolioPlus());
   html.classList.toggle('offre-infini', aInfini());
+  if (aInfini() && !lumiere) lumiere = import('./infini-lumiere.css').catch(() => { lumiere = null; });
   for (const v of document.querySelectorAll('[data-volet]')) v.classList.toggle('plus-floute', gratuit && JOURNAL_PLUS.includes(v.dataset.volet));
 }
 export const remarquer = () => { if (!image) image = requestAnimationFrame(marquer); };

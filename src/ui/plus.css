@@ -142,7 +142,7 @@
    garde la lumière bleu-rose de la marque ; Infini a la sienne, chaude et
    profonde, partout où il paraît — le titre, le choix du niveau, ses
    avantages, son bouton, la carte de la montée. */
-.fp-infini{font-style:italic;background:linear-gradient(135deg,#8A6114,#D4A23C 38%,#F3D98C 58%,#C08B2B);-webkit-background-clip:text;
+.fp-infini{font-style:italic;background:linear-gradient(135deg,#6E4A0E,#B8862B 45%,#D9A93F 70%,#8E6216);-webkit-background-clip:text;
   background-clip:text;color:transparent;padding-right:.08em}
 .fp-niveaux{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:18px;background:var(--bg2);box-shadow:var(--edge)}
 .fp-n{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 8px;border:0;border-radius:13px;background:none;
@@ -162,7 +162,7 @@
 .fp-offre-infini .fp-f-nom em{color:#1D1C19;background:linear-gradient(135deg,#D4A23C,#F3D98C)}
 .fp-payer-infini{background:#16130C;color:#F3D98C;box-shadow:inset 0 0 0 1px rgba(243,217,140,.4)}
 .fp-payer-infini:not(:disabled){box-shadow:inset 0 0 0 1px rgba(243,217,140,.4),0 14px 26px -14px rgba(190,140,40,.9)}
-.fp-av-infini .fp-av-ic{color:#16130C;background:linear-gradient(135deg,#B8862B,#F3D98C)}
+.fp-av-infini .fp-av-ic{color:#F2DCA2;background:linear-gradient(135deg,#2B2215,#100C07);box-shadow:inset 0 0 0 1px #f2dca255}
 .fp-et{margin:6px 0 -2px;font-size:13px;font-weight:700;color:var(--soft)}
 .fp-av-court{gap:6px}
 .fp-av-court li{align-items:center}

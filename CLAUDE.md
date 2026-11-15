@@ -994,7 +994,7 @@ l'air de marcher ».
     (2026-11-07, demandé : « vraiment différencier visuellement Infini et
     + » — Mirandola+ garde le bleu-rose de la marque) : le choix du niveau,
     ses prix, son bouton `.fp-payer-infini`, ses avantages, et chez un
-    abonné `html.offre-infini` qui pose l'or dans `--plus` ; **la montée**
+    abonné `html.offre-infini` qui pose l'or dans `--plus` ; **refaite le 2026-11-15** (demandé : « le jaune est moche, plat, sans contraste ; rends Infini premium, qu'on voie qu'il est au-dessus de + ») : **la nuit et l'or** — ce qu'on touche (bouton principal, onglet allumé, bouton rond, pastille « Infini » d'un menu) sur une nuit chaude, texte champagne `#F2DCA2` (13:1), filet d'or et un reflet qui passe lentement ; ce qui se mesure (barres, pastilles) en or poli du bronze au champagne ; le liseré du jeton Infini plus profond, avec un filet sombre, qui tourne chez un abonné Infini ; l'entrée de la barre latérale dit « Infini » ; ces règles-là dans **`ui/infini-lumiere.css`**, chargée par `marquer()` de `ui/bridage.js` pour un abonné Infini seulement (le démarrage CSS n'avait plus que 125 octets ; plafond Infini de `tools/budget.js`, fichiers `infini-…`) — seuls `--plus` et le liseré, que voient aussi ses amis, restent dans `app.css` ; **la montée**
     (« quand on a + on peut upgrade ») : sous la licence d'un abonné
     Mirandola+, la carte `.fp-montee` (ce qu'Infini ajoute, l'écart de prix,
     « Passer à Infini » — `peutMonter`, jamais pendant une résiliation ni un

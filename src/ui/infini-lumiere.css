@@ -1,0 +1,22 @@
+/* Mirandola Infini se voit (2026-11-15, demandé : « le jaune est moche, plat,
+   sans contraste ; rends-le premium, qu'on voie qu'il est au-dessus de + ») :
+   ce qu'on touche — le bouton principal, l'onglet allumé, le bouton rond, la
+   pastille Infini d'un menu — passe sur une nuit chaude, son texte en
+   champagne (13:1 sur la nuit), cerné d'un filet d'or, et un reflet le
+   traverse lentement. L'or poli de --plus (app.css) reste à ce qui se mesure.
+   Chargée par ui/bridage.js pour un abonné Infini seulement : le démarrage de
+   tout le monde n'en paie rien. */
+html.offre-infini{--nuit:linear-gradient(110deg,#0000 35%,#ffe9b333 50%,#0000 65%) 0 0/300% 100%,
+  linear-gradient(135deg,#2B2215,#100C07 55%,#261D11)}
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab,.mi .mi-infini){background:var(--nuit);color:#F2DCA2;
+  box-shadow:inset 0 0 0 1px #f2dca266,0 12px 26px -14px #6e4a0ee6;animation:or-reflet 5s ease-in-out infinite}
+@keyframes or-reflet{0%,55%{background-position:120% 0,0 0}to{background-position:-20% 0,0 0}}
+html.offre-infini .tabs button.on{color:#F2DCA2}
+/* le liseré d'or d'un jeton Infini tourne lentement */
+@property --a{syntax:'<angle>';inherits:false;initial-value:200deg}
+html.offre-infini .jt.jt-infini{animation:or-tour 6s linear infinite}
+@keyframes or-tour{to{--a:560deg}}
+html.offre-infini #rail nav :is(button.on,.r-plus) svg{color:#B8862B}
+html.offre-infini #rail nav .r-plus span{background-image:linear-gradient(135deg,#7A520F,#C08B2B)}
+html.offre-infini .prog i{background-size:300% 100%;animation:or-reflet 5s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){html.offre-infini *{animation:none!important}}
