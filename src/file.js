@@ -43,72 +43,21 @@ export const isDue = (c, now) => !c.x && (!c.d || c.d <= now || (c.st === 2 && c
    et un quota de neuves ne doit jamais la retirer d'une séance. */
 export const estNeuve = c => !c.n && !c.lr && !c.S;
 
-/* ---------- le quota de pages neuves (Anki : 20 par jour et par paquet) ----------
-   `fl` est l'heure de la première lecture d'une page (posée par grade()) ;
-   les pages lues pour la première fois depuis le début de la journée
-   entament le quota. Un devoir n'en a pas : ce que le professeur a donné
-   doit pouvoir se faire d'un trait.
-
-   Le premier passage (2026-11-13, demandé : « la première fois qu'on a un
-   paquet, on lit toutes les cartes, et après elles rentrent dans le
-   moteur ») : un paquet que l'on découvre — aucune carte lue avant
-   aujourd'hui — se propose en entier, sans quota, toute la journée de sa
-   découverte (on s'arrête, on reprend : tout est encore là). C'est le
-   « augmenter la limite du jour » d'Anki, fait d'office le seul jour où il
-   va de soi. Dès le lendemain, ce qui reste de neuf, comme les cartes
-   ajoutées plus tard à un paquet déjà commencé, arrive à 20 par jour :
-   c'est ce qui empêche les révisions de s'empiler. Une carte lue avant
-   que `fl` n'existe (ni neuve, ni datée) compte pour « commencé avant ». */
-export const NEUVES_PAR_JOUR = 20;
+/* ---------- les cartes neuves : toutes, puis le moteur ----------
+   Décidé le 2026-11-15 (« le statut Nouvelle doit toujours être proposé
+   pour les lancer dans le moteur, et après n'afficher que celles qui
+   reviennent avec le temps ») : plus de quota de neuves. Une carte jamais
+   révisée est toujours proposée — paquet neuf, cartes ajoutées, devoir —,
+   sa première note la fait entrer dans le moteur, qui seul décide ensuite
+   quand elle revient. Avant : 20 neuves par jour et par paquet, comme
+   Anki ; des cartes ajoutées attendaient derrière les neuves plus
+   anciennes (un paquet réel : 58 cartes, douze jours d'attente).
+   `fl` (l'heure de la première révision, posée par grade()) reste rangé. */
 export const deDevoir = cards => cards.some(c => String(c.id).startsWith('a:'));
 
-/* Ajoutée aujourd'hui (2026-11-15) : la même règle, carte par carte. Des
-   cartes qu'on vient d'ajouter à un paquet déjà commencé se proposent le
-   jour même, toutes, hors quota — elles passaient derrière les neuves plus
-   anciennes et n'arrivaient qu'au bout de plusieurs jours (un paquet de 494
-   cartes, 177 jamais lues : 58 ajoutées attendaient douze jours). `ad` est
-   l'heure de l'ajout, posée par l'écran qui ajoute ; elle voyage dans
-   `cards.meta`. Révisées, elles ne comptent pas dans les 20 du jour. Ne
-   se demande que d'une carte neuve (`aLire`, `garderNeuves`). */
-export const ajouteeDuJour = (c, now) => c.ad >= debutJour(now);
-export function premierPassage(cards, now) {
-  const t0 = debutJour(now);
-  return !cards.some(c => (c.fl ? c.fl < t0 : !estNeuve(c)));
-}
-export function neuvesPermises(cards, now) {
-  if (deDevoir(cards) || premierPassage(cards, now)) return Infinity;
-  const t0 = debutJour(now);
-  const lues = cards.filter(c => c.fl >= t0 && !(c.ad >= t0)).length;
-  return Math.max(0, NEUVES_PAR_JOUR - lues);
-}
-
-/* Ne garde, parmi les neuves, que les premières permises de chaque paquet
-   (`reste(clé)`), dans l'ordre reçu ; les autres cartes passent toutes. */
-/* `libre` : les neuves qui passent hors quota (ajoutées aujourd'hui). */
-/** @param {(c: any) => any} [cle] @param {(c: any) => boolean} [libre] */
-export function garderNeuves(cards, reste, cle = c => '', libre = c => false) {
-  const prises = new Map(), max = new Map();
-  return cards.filter(c => {
-    if (!estNeuve(c) || libre(c)) return true;
-    const k = cle(c);
-    if (!max.has(k)) max.set(k, reste(k));
-    const n = prises.get(k) || 0;
-    if (n >= max.get(k)) return false;
-    prises.set(k, n + 1);
-    return true;
-  });
-}
-
-/* Ce qu'affiche le bouton « Lire » d'un paquet : les cartes dues déjà
-   commencées, plus les neuves dans la limite du quota du jour. */
-export function aLire(cards, now) {
-  let vues = 0, neuves = 0;
-  for (const c of cards) {
-    if (!isDue(c, now)) continue;
-    if (estNeuve(c) && !ajouteeDuJour(c, now)) neuves++; else vues++;
-  }
-  return vues + Math.min(neuves, neuvesPermises(cards, now));
-}
+/* Ce qu'affiche le bouton « Réviser » d'un paquet : tout ce qui est dû,
+   les neuves comprises. */
+export const aLire = (cards, now) => cards.filter(c => isDue(c, now)).length;
 
 /* Coriace : huit échecs ou plus depuis la dernière remise à zéro (l). */
 export const isLeech = c => (c.l || 0) >= 8;

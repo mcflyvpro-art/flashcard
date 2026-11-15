@@ -186,55 +186,18 @@ test('sur ordinateur, seules les cartes d’un gros paquet défilent', async ({ 
   expect(Math.abs(await page.locator('.rows').evaluate(r => r.scrollTop) - avant)).toBeLessThan(40);
 });
 
-/* Réglé comme Anki (2026-10-25) : 20 cartes neuves par jour et par paquet,
-   « +20 » pour aller plus loin, et plus aucun réglage du moteur à
-   comprendre dans les Réglages. Et le premier passage (2026-11-13) : un
-   paquet qu'on découvre se propose en entier, le quota ne vaut qu'ensuite. */
-test('un paquet neuf se propose en entier ; commencé, 20 neuves par jour puis « +20 » ; des réglages sans moteur', async ({ page }) => {
+/* Les cartes neuves (2026-11-15, décidé : « le statut Nouvelle toujours
+   proposé pour les lancer dans le moteur, puis seulement celles qui
+   reviennent avec le temps ») : plus de quota. Un paquet neuf se propose en
+   entier, une carte ajoutée à un paquet commencé aussi ; une carte révisée
+   ne revient qu'à son échéance. Et plus aucun réglage du moteur. */
+test('toutes les cartes neuves sont proposées, puis seul le moteur décide ; des réglages sans moteur', async ({ page }) => {
   const store = nouveauStore();
   await brancher(page, store);
   await inscrire(page);
   semerLivre(store, 'lea@exemple.fr', 'Verbes', Array.from({ length: 30 }, (_, j) => ['verbe ' + j, 'sens ' + j]));
-  /* un paquet commencé il y a trois jours : une carte sue, trente encore neuves */
-  const j = 86400000, t = Date.now();
-  semerLivre(store, 'lea@exemple.fr', 'Dates', [
-    ['1789', 'Prise de la Bastille', { fl: t - 3 * j, lr: t - 3 * j, S: 40, D: 5, st: 2, d: t + 30 * j, n: 1 }],
-    ...Array.from({ length: 30 }, (_, k) => ['date ' + k, 'fait ' + k])
-  ]);
-  await page.reload();
-  await page.getByRole('button', { name: /Verbes/ }).click();
-  await page.getByRole('button', { name: 'Réviser 30' }).click();          // le premier passage : tout le paquet
-  await expect(page.getByText('1/30')).toBeVisible();
-  for (let k = 0; k < 12; k++) await noter(page, 'Facile');
-  await page.getByRole('button', { name: 'Retour' }).first().click();     // on s'arrête en route…
-  await expect(page.getByRole('button', { name: 'Réviser 18' })).toBeVisible();   // … le reste est encore là
-  await page.getByRole('button', { name: 'Retour' }).first().click();
-  await page.getByRole('button', { name: /Dates/ }).click();
-  await page.getByRole('button', { name: 'Réviser 20' }).click();          // commencé avant aujourd'hui : le quota
-  await expect(page.getByText('1/20')).toBeVisible();
-  for (let k = 0; k < 20; k++) await noter(page, 'Facile');
-  await page.getByRole('button', { name: 'Fin' }).click();
-  await page.getByRole('button', { name: 'Réviser +20' }).click();
-  await expect(page.getByText('1/10')).toBeVisible();          // les 10 qui restaient
-  await noter(page, 'Facile');
-  await page.getByRole('button', { name: 'Retour' }).first().click();     // quitter la séance
-  await page.getByRole('button', { name: 'Retour' }).first().click();     // quitter le livre
-  await page.getByRole('button', { name: 'Réglages' }).click();
-  const reglages = page.locator('main');
-  await expect(reglages).toContainText('Objectif du jour');
-  for (const parti of ['Rétention', 'Nouvelles cartes par séance', 'Régler le moteur', 'Vérifier mes paquets', 'Mode simple', 'Ordre des cartes']) {
-    await expect(reglages).not.toContainText(parti);
-  }
-});
-
-/* Le cas rencontré le 2026-11-15 : un paquet commencé, les 20 neuves du
-   jour déjà lues, des neuves plus anciennes en attente ; une carte ajoutée
-   passait derrière elles et n'était pas proposée. Ajoutée aujourd'hui, elle
-   se propose aujourd'hui, hors quota. */
-test('une carte ajoutée à un paquet commencé se propose le jour même, quota pris', async ({ page }) => {
-  const store = nouveauStore();
-  await brancher(page, store);
-  await inscrire(page);
+  /* le cas rencontré : un paquet commencé, 20 neuves déjà révisées ce jour,
+     30 neuves plus anciennes jamais révisées */
   const j = 86400000, t = Date.now();
   semerLivre(store, 'lea@exemple.fr', 'Dates', [
     ['1789', 'Prise de la Bastille', { fl: t - 3 * j, lr: t - 3 * j, S: 40, D: 5, st: 2, d: t + 30 * j, n: 1 }],
@@ -242,15 +205,27 @@ test('une carte ajoutée à un paquet commencé se propose le jour même, quota 
     ...Array.from({ length: 30 }, (_, k) => ['ancienne ' + k, 'jamais lue ' + k])
   ]);
   await page.reload();
+  await page.getByRole('button', { name: /Verbes/ }).click();
+  await page.getByRole('button', { name: 'Réviser 30' }).click();          // tout le paquet
+  await expect(page.getByText('1/30')).toBeVisible();
+  for (let k = 0; k < 12; k++) await noter(page, 'Facile');
+  await page.getByRole('button', { name: 'Retour' }).first().click();     // on s'arrête en route…
+  await expect(page.getByRole('button', { name: 'Réviser 18' })).toBeVisible();   // … les 12 révisées attendent leur échéance
+  await page.getByRole('button', { name: 'Retour' }).first().click();
   await page.getByRole('button', { name: /Dates/ }).click();
-  await expect(page.getByRole('button', { name: 'Réviser +20' })).toBeVisible();   // le quota est pris
-  await page.locator('[data-act="add"]').click();
+  await expect(page.getByRole('button', { name: 'Réviser 30' })).toBeVisible();   // toutes les neuves, quota ou pas
+  await page.locator('[data-act="add"]').click();                         // une carte ajoutée
   const champs = page.locator('.rows .row').last().locator('input');
   await champs.nth(0).fill('1815');
   await champs.nth(1).fill('Waterloo');
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Réviser 1' })).toBeVisible();
-  await page.getByRole('button', { name: 'Réviser 1' }).click();
-  await expect(page.getByText('1/1')).toBeVisible();
-  await expect(page.getByText('1815')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Réviser 31' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /\+20/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Retour' }).first().click();     // quitter le paquet
+  await page.getByRole('button', { name: 'Réglages' }).click();
+  const reglages = page.locator('main');
+  await expect(reglages).toContainText('Objectif du jour');
+  for (const parti of ['Rétention', 'Nouvelles cartes par séance', 'Régler le moteur', 'Vérifier mes paquets', 'Mode simple', 'Ordre des cartes']) {
+    await expect(reglages).not.toContainText(parti);
+  }
 });

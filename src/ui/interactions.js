@@ -316,7 +316,6 @@ function tapStudy() {
 }
 
 /* le quota du jour est atteint et des pages neuves attendent : vingt de plus */
-const tapStudyplus = () => startStudy(view.id, false, null, { only: 'due', plus: 20, both: prefs.both });
 const tapStudyall = () => { closeMenu(); return startStudy(view.id, false, null, { tout: true }); };
 const tapStudyleech = () => { closeMenu(); return startStudy(view.id, false, null, { only: 'leech' }); };
 const tapQuizdeck = () => startQuiz(view.id);
@@ -396,7 +395,7 @@ const tapRedo = () => startQuiz(quiz.id, shuffle(quiz.bad.slice()), quiz.rev);
 
 function tapAdd() {
   const d = deck(view.id);
-  d.cards.push({ id: uid(), f: '', b: '', ad: Date.now() }); saveDeck(d); render();
+  d.cards.push({ id: uid(), f: '', b: '' }); saveDeck(d); render();
   const i = $.querySelector('.rows .row:last-of-type input'); if (i) i.focus();
 }
 
@@ -494,7 +493,6 @@ const CLICK_RULES = [
   [a => a === 'deck', tapDeckAction],
   [a => a === 'menu', tapMenu],
   [a => a === 'study', tapStudy],
-  [a => a === 'studyplus', tapStudyplus],
   [a => a === 'studyall', tapStudyall],
   [a => a === 'studyleech', tapStudyleech],
   [a => a === 'quizdeck', tapQuizdeck],

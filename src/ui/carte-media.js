@@ -457,8 +457,7 @@ export const STATE = { new: 'Nouvelle', learn: 'En cours', young: 'Récente',
 export function grade(c, rating, d) {
   const now = Date.now();
   const p = etats(c, now, d)[cl(rating | 0, 0, 3)];
-  /* l'heure de la première lecture : le quota de pages neuves du jour se
-     compte là-dessus (src/file.js, `neuvesPermises`) */
+  /* l'heure de la première révision, gardée avec la carte */
   if (estNeuve(c)) c.fl = now;
   charge = null;                     // une page vient de changer de jour
   if (rating === 0 && (c.st === 2 || (c.i || 0) >= 1)) c.l = (c.l || 0) + 1;

@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
-import { estNeuve, isLeech } from '../file.js';
+import { isLeech } from '../file.js';
 import {
   auth, db, deckOpen, DECKPAGE, deckQ, deckShow, dirty, legalBack, legalTab, loginBusy, loginMode,
   prof, sel, setAnimate, setDb, setDeckQ, setDeckShow, setLoginBusy, setLoginMode, setSel,
@@ -63,10 +63,6 @@ function ctaButton(d) {
         ${svg(I.share)}Donner ce devoir</button>`;
   }
   const due = !simpleMode() && dueCount(d);
-  /* rien de dû, mais des pages neuves au-delà du quota du jour : « +20 » */
-  if (!due && !simpleMode() && d.cards.some(c => !c.x && estNeuve(c))) {
-    return `<button class="cta read" data-act="studyplus">${svg(I.play)}Réviser <b>+20</b></button>`;
-  }
   return `<button class="cta read" data-act="study">${svg(I.play)}Réviser${due ? ` <b>${due}</b>` : ''}</button>`;
 }
 

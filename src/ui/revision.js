@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
-import { ajouteeDuJour, buildQueue, garderNeuves, neuvesPermises, reprise, shuffle } from '../file.js';
+import { buildQueue, reprise, shuffle } from '../file.js';
 import {
   auth, db, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
   study
@@ -35,14 +35,9 @@ function studyIds(id, cards, subset, o, sm) {
   }
   const now = Date.now();
   if (sm) return buildQueue(cards, { order: o.order || 'random', only: o.only === 'leech' ? 'leech' : '' }, now).map(c => c.id);
-  /* Le quota de pages neuves d'Anki, 20 par livre et par jour (aucun pour un
-     devoir) ; en marathon, chaque livre garde le sien. « +20 » (o.plus) est
-     le « augmenter la limite du jour » d'Anki ; « Tout lire » n'en a pas. */
-  const marathon = id === 'all';
-  const reste = k => neuvesPermises(marathon ? (deck(k) || { cards: [] }).cards : cards, now) + (o.plus || 0);
-  const permises = o.tout ? cards : garderNeuves(cards, reste, marathon ? c => c._d : undefined, c => ajouteeDuJour(c, now));
-  /* l'ordre d'Anki, sauf si l'appelant en demande un (le bouton mélanger) */
-  return buildQueue(permises, { ...o, order: o.order || 'anki', cap: 0 }, now).map(c => c.id);
+  /* toutes les neuves, puis le moteur (src/file.js) ; l'ordre d'Anki, sauf
+     si l'appelant en demande un (le bouton mélanger) */
+  return buildQueue(cards, { ...o, order: o.order || 'anki', cap: 0 }, now).map(c => c.id);
 }
 
 /* Le QCM a besoin d'au moins deux réponses distinctes pour avoir un sens ;
