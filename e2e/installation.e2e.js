@@ -83,15 +83,15 @@ test.describe('un iPhone, dans Safari', () => {
 
 test.describe('un iPhone, dans Safari 26', () => {
   test.use({ userAgent: UA.iphone26 });
-  test('Partager est dans le menu ••• en bas à droite : la flèche y pointe', async ({ page }) => {
+  test('Partager est dans le menu ≡, à gauche de l’adresse en bas : la flèche y pointe', async ({ page }) => {
     await brancher(page, nouveauStore(), { navigateur: true });
     await page.goto('./connexion');
     await expect(porte(page)).toBeVisible({ timeout: 10000 });
-    await expect(etapes(page).first()).toHaveText('Touche ••• en bas à droite, puis Partager');
+    await expect(etapes(page).first()).toHaveText('Touche ≡, à gauche de l’adresse en bas, puis Partager');
     await expect(etapes(page)).toHaveCount(5);
     await expect(etapes(page).nth(1)).toHaveText('Touche En voir plus, au bout de la rangée');
-    await expect(page.locator('.pw-fleche.bas-droite')).toBeVisible();
-    await expect(page.locator('.pw-scene[data-fleche="bas-droite"]')).toHaveCount(1);
+    await expect(page.locator('.pw-fleche.bas-gauche')).toBeVisible();
+    await expect(page.locator('.pw-scene[data-fleche="bas-gauche"]')).toHaveCount(1);
   });
 });
 

@@ -22,6 +22,8 @@ FAIT      54 / 148
 DERNIER   2026-11-15 · Plus de quota de cartes neuves : toute carte
           Nouvelle est proposée, puis seul le moteur la ramène (des cartes
           ajoutées attendaient douze jours derrière les neuves anciennes).
+          La porte d'installation suit l'iPhone : ≡ à gauche de l'adresse
+          dans Safari 26, Partager puis « Ouvrir dans Safari » dans l'app Google.
           Avant : 2026-11-14 · La grande vérification avant la vente. Le
           premier passage : un paquet neuf se propose en entier, 20 neuves
           par jour ensuite. Les devis : émis par l'éditeur, acceptés en

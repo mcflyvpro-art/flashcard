@@ -97,7 +97,9 @@ function barre(g, e) {
     ? `<div class="pw-pop ${g.fleche === 'haut-droite' ? 'haut' : ''}"><span></span><span class="cible2">${svg(I.share)}${T(mots[1])}</span><span></span><span></span></div>` : '';
   const url = `<span class="pw-url">${T('mirandola.fr')}</span>`;
   let chrome;
-  if (g.cas === 'ios26') chrome = `<div class="pw-bas pw-bas26"><i class="pw-p">‹</i>${url}${b}</div>`;
+  // Safari 26 : ‹, l'adresse et son ≡ à gauche, les onglets ; l'app Google : Partager à côté de l'adresse
+  if (g.cas === 'ios26') chrome = `<div class="pw-bas pw-bas26"><i class="pw-p">‹</i><span class="pw-url">${b}${T('mirandola.fr')}</span><i class="pw-p">⧉</i></div>`;
+  else if (g.fleche === 'haut-partage') chrome = `<div class="pw-haut pw-haut-c"><i class="pw-p">✕</i><span class="pw-url">${T('mirandola.fr')}${b}</span><i class="pw-p">•••</i></div>`;
   else if (g.cas === 'ios-chrome') chrome = `<div class="pw-haut pw-haut-c"><span class="pw-url">${T('mirandola.fr')}${b}</span></div>
     <div class="pw-bas">${pts}${pts}${pts}${pts}${pts}</div>`;
   else if (g.fleche === 'bas') chrome = `<div class="pw-haut pw-haut-t">${url}</div><div class="pw-bas">${pts}${pts}${b}${pts}${pts}</div>`;
@@ -109,7 +111,8 @@ function barre(g, e) {
 
 // le menu d'un navigateur d'Android (ou de l'app qui enferme) : sous le bouton s'il est en haut, en feuille s'il est en bas
 function menu(g, e) {
-  const bas = g.fleche === 'bas' || g.fleche === 'bas-droite';
+  // l'app Google ouvre une feuille qui monte du bas
+  const bas = g.fleche === 'bas' || g.fleche === 'bas-droite' || g.fleche === 'bas-gauche' || g.fleche === 'haut-partage';
   const ic = g.cas === 'integre' ? I.globe : CARRE_PLUS;
   return `${fond()}<div class="pw-voile"></div><div class="pw-menu ${bas ? 'bas' : ''}"><span></span><span></span>
     <span class="cible">${svg(ic)}${T(gras(e)[0] || g.ligne)}</span><span></span></div>`;

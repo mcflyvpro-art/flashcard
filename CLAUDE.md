@@ -1090,11 +1090,11 @@ l'air de marcher ».
     `pwa.css`, préfixe `pw-`, chargés à la demande, plafond à part dans
     `tools/budget.js` ; rien d'autre ne doit importer `ui/pwa.js`) montre le
     geste de CE navigateur (`guide` de `src/installation.js` : Safari
-    jusqu'à 18 — Partager en bas —, Safari 26 — ••• puis Partager, lu dans
+    jusqu'à 18 — Partager en bas —, Safari 26 — ≡ à gauche de l'adresse en bas puis Partager (refait le 2026-11-15 d'après l'iPhone de l'utilisateur : la flèche visait ••• en bas à droite, qui n'y est pas ; `bas-gauche`), lu dans
     `Version/26`, la signature gardant « iPhone OS 18_6 » —, iPad, Chrome et
     Firefox d'iOS, Chrome, Samsung Internet, Edge, Firefox d'Android, et le
     navigateur enfermé dans une autre app — Instagram, TikTok, une vue web
-    d'ENT —, d'où l'on sort : « Copier le lien » vers Safari, « Ouvrir dans
+    d'ENT ; l'app Google, `GSA/`, a Partager à côté de l'adresse puis « Ouvrir dans Safari » plus bas dans la feuille, `app: 'google'`, flèche `haut-partage`, 2026-11-15 —, d'où l'on sort : « Copier le lien » vers Safari, « Ouvrir dans
     Chrome » par un lien `intent:`) : un téléphone dessiné rejoue le geste,
     **une scène par étape** (refait le 2026-11-02, d'après l'iPhone de
     l'utilisateur : `barre` le navigateur et son bouton — Partager en haut à

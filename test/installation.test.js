@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { MOTS, enGras, guide, langueEcran, lienChrome, navigateur } from '../src/installation.js';
 
 const UA = {
+  google: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) GSA/392.0.794393645 Mobile/15E148 Safari/604.1',
   iphone18: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
   // Safari 26 garde « iPhone OS 18_6 » : seule Version/26 dit la vraie
   iphone26: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1',
@@ -56,10 +57,10 @@ describe('le guide de chaque téléphone', () => {
     expect(r.etapes.at(-1).texte).toContain('connecte-toi');
     expect(r.ligne).toBe('Sur l’écran d’accueil');
   });
-  it('iPhone, Safari 26 : Partager est dans le menu ••• en bas à droite', () => {
+  it('iPhone, Safari 26 : Partager est dans le menu ≡, à gauche de l’adresse en bas', () => {
     const r = g('iphone26');
-    expect(r).toMatchObject({ cas: 'ios26', fleche: 'bas-droite', ios26: true });
-    expect(r.etapes[0].texte).toBe('Touche **•••** en bas à droite, puis **Partager**');
+    expect(r).toMatchObject({ cas: 'ios26', fleche: 'bas-gauche', ios26: true });
+    expect(r.etapes[0].texte).toBe('Touche **≡**, à gauche de l’adresse en bas, puis **Partager**');
   });
   it('iOS 26 : la feuille de partage cache ses actions derrière « En voir plus »', () => {
     const r = g('iphone26');
@@ -99,6 +100,13 @@ describe('le guide de chaque téléphone', () => {
   it('dans une autre app : sortir d’abord, vers Safari (copier le lien) ou Chrome (un geste)', () => {
     expect(g('instagram')).toMatchObject({ cas: 'integre', titre: 'Continue dans Safari', bouton: 'copier', secours: null });
     expect(g('tiktok')).toMatchObject({ cas: 'integre', titre: 'Continue dans Chrome', bouton: 'chrome', secours: 'copier' });
+    expect(g('instagram')).toMatchObject({ fleche: 'haut-droite' });
+  });
+  it('dans l’app Google : Partager à côté de l’adresse, puis Ouvrir dans Safari dans la feuille', () => {
+    const r = g('google');
+    expect(r).toMatchObject({ cas: 'integre', titre: 'Continue dans Safari', fleche: 'haut-partage', bouton: 'copier' });
+    expect(r.etapes[0].texte).toBe('Touche **Partager**, en haut, à côté de l’adresse');
+    expect(r.etapes[1].texte).toContain('Ouvrir dans Safari');
   });
   it('Android : l’invite du navigateur installe en un geste', () => {
     const r = g('chrome', { invite: true });

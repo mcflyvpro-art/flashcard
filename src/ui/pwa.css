@@ -95,6 +95,7 @@
 .pw-b{flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:7px;background:#fff;color:#2B7BE4;
   box-shadow:0 0 0 1px rgba(43,123,228,.3)}
 .pw-bas26 .pw-b{width:20px;height:20px;border-radius:50%}
+.pw-bas26 .pw-url{justify-content:flex-start;gap:6px;padding:0 4px}.pw-bas26 .pw-url .pw-b{width:16px;height:16px;flex:none}
 .pw-haut-c .pw-b{width:16px;height:16px;border-radius:5px}
 .pw-b svg{width:12px;height:12px;stroke-width:2.3}
 .pw-b .pw-txt{font-size:8px;letter-spacing:.5px;color:#2B7BE4}
@@ -197,16 +198,18 @@
 .pw-fleche.bas{left:calc(50% - 23px);bottom:calc(8px + env(safe-area-inset-bottom))}
 .pw-fleche.bas-droite{right:12px;bottom:calc(8px + env(safe-area-inset-bottom))}
 .pw-fleche.haut-droite{right:10px;top:calc(6px + env(safe-area-inset-top));animation-name:pw-rebond-haut}
-.pw-fleche.haut-droite svg{transform:rotate(180deg)}
+.pw-fleche.haut-droite svg,.pw-fleche.haut-partage svg{transform:rotate(180deg)}
+.pw-fleche.bas-gauche{left:calc(29% - 23px);bottom:calc(8px + env(safe-area-inset-bottom))}
+.pw-fleche.haut-partage{right:calc(25% - 23px);top:calc(6px + env(safe-area-inset-top));animation-name:pw-rebond-haut}
 @keyframes pw-rebond{from{transform:translateY(-4px)}to{transform:translateY(5px)}}
 @keyframes pw-rebond-haut{from{transform:translateY(4px)}to{transform:translateY(-5px)}}
-.pw-avec-bas,.pw-avec-bas-droite{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
-.pw-avec-haut-droite{padding-top:max(58px,calc(52px + env(safe-area-inset-top)))}
+.pw-avec-bas,.pw-avec-bas-droite,.pw-avec-bas-gauche{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+.pw-avec-haut-droite,.pw-avec-haut-partage{padding-top:max(58px,calc(52px + env(safe-area-inset-top)))}
 
 /* ---------- une tablette, un grand écran : plus grand, la marque en tête ---------- */
 @media (min-width:700px){
   .pw > .pub-tete{display:flex}
-  .pw-avec-haut-droite{padding-top:max(6px,env(safe-area-inset-top))}
+  .pw-avec-haut-droite,.pw-avec-haut-partage{padding-top:max(6px,env(safe-area-inset-top))}
   .pw-avec-haut-droite .pub-tete{padding-right:60px}
   .login.pw-carte{max-width:600px;padding:30px 28px 22px;gap:16px}
   .pw-carte .lt{font-size:36px}

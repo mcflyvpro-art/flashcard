@@ -31,7 +31,9 @@ export function navigateur(ua = '') {
   return {
     nom: integre ? 'integre' : ios ? NAV_IOS(ua) : NAV_ANDROID(ua),
     version: v ? Number(v[1]) : 0,
-    tablette: /iPad|Macintosh/.test(ua) || (android && !/Mobile/.test(ua))
+    tablette: /iPad|Macintosh/.test(ua) || (android && !/Mobile/.test(ua)),
+    // l'app Google : sa barre a Partager à côté de l'adresse, pas de ••• qui mène à Safari
+    ...(/GSA\//.test(ua) ? { app: 'google' } : {})
   };
 }
 
@@ -99,18 +101,24 @@ const ouvrir = (ios, session) => E('folio', session && !ios ? 'Ouvre **Mirandola
    « iPhone OS 18_6 ») : l'écran le devine à ce que son moteur sait faire. */
 export function guide(os, n, { invite = false, session = false, langue = 'fr', ios26 = false } = {}) {
   const m = MOTS[langue] || MOTS.fr;
-  const r = n.nom === 'integre' ? sortir(os === 'ios', m)
+  const r = n.nom === 'integre' ? sortir(os === 'ios', m, n.app)
     : os === 'ios' ? guideIos(n, session, m, ios26 || (n.nom === 'safari' && n.version >= 26)) : guideAndroid(n, invite, session, m);
   return { ...r, mots: m };
 }
 
-function sortir(ios, m) {
+/* L'app Google (2026-11-15, d'après l'iPhone de l'utilisateur) : Partager
+   est dans la barre du haut, à côté de l'adresse, et « Open in Safari »
+   plus bas dans la feuille qui monte. Les autres apps : ••• en haut à droite. */
+function sortir(ios, m, app) {
   const nav = ios ? 'Safari' : 'Chrome';
+  const google = ios && app === 'google';
   return {
-    cas: 'integre', titre: `Continue dans ${nav}`, fleche: 'haut-droite', ligne: m.ouvrirDans(nav), ios26: false,
-    bouton: ios ? 'copier' : 'chrome', secours: ios ? null : 'copier',
-    etapes: [E('points', 'Touche **•••**, en haut à droite', 'barre'),
-      E('sortir', `Choisis **${m.ouvrirDans(nav)}** ou **${m.navigateur}**`, 'menu'),
+    cas: 'integre', titre: `Continue dans ${nav}`, fleche: google ? 'haut-partage' : 'haut-droite', ligne: m.ouvrirDans(nav),
+    ios26: false, bouton: ios ? 'copier' : 'chrome', secours: ios ? null : 'copier',
+    etapes: [google ? E('partager', `Touche **${m.partager}**, en haut, à côté de l’adresse`, 'barre')
+      : E('points', 'Touche **•••**, en haut à droite', 'barre'),
+      google ? E('sortir', `Plus bas, choisis **${m.ouvrirDans(nav)}**`, 'menu')
+        : E('sortir', `Choisis **${m.ouvrirDans(nav)}** ou **${m.navigateur}**`, 'menu'),
       E('folio', 'Mirandola t’y montrera la suite', 'nav')]
   };
 }
@@ -120,7 +128,7 @@ function guideIos(n, session, m, ios26) {
   const P = `**${m.partager}**`;
   const [cas, fleche, premiere] = n.nom === 'safari'
     ? (n.tablette ? ['ipad', 'haut-droite', E('partager', `Touche ${P}, en haut à droite`, 'barre')]
-      : n.version >= 26 ? ['ios26', 'bas-droite', E('points', `Touche **•••** en bas à droite, puis ${P}`, 'barre')]
+      : n.version >= 26 ? ['ios26', 'bas-gauche', E('menu3', `Touche **≡**, à gauche de l’adresse en bas, puis ${P}`, 'barre')]
         : ['ios', 'bas', E('partager', `Touche ${P}, en bas de l’écran`, 'barre')])
     : n.nom === 'chrome' ? ['ios-chrome', 'haut-droite', E('partager', `Touche ${P}, en haut à droite`, 'barre')]
       : n.nom === 'firefox' ? ['ios-firefox', 'bas-droite', E('menu3', `Touche **≡** en bas à droite, puis ${P}`, 'barre')]
