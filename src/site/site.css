@@ -818,11 +818,22 @@ button{font:inherit;color:inherit}
 .offre-infini .prix span,.offre-infini .prix-note{color:var(--creme2)}
 .offre-infini .inclus{border-color:rgba(243,238,227,.14)}
 .offre-infini .inclus li:not(:has(b))::before{background-color:#c084fc33;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F0ABFC' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
-.bt-holo{position:relative;overflow:hidden;color:#fff;text-shadow:0 1px 3px #3b0764a6;background:linear-gradient(#fff3,#0000 55%),linear-gradient(100deg,#22D3EE,#6366F1 20%,#A855F7 38%,#EC4899 56%,#F97316 74%,#FACC15 88%,#A3E635);
-  box-shadow:inset 0 1px 0 #fff8,0 14px 30px -12px #a855f7e6;animation:irise 6s ease-in-out infinite alternate}
-/* l'arc-en-ciel ondule autour de ses teintes : tout le spectre, jamais une zone sombre */
-@keyframes irise{from{filter:hue-rotate(-22deg) saturate(1.1)}to{filter:hue-rotate(22deg) saturate(1.25)}}
-.ruban-holo{background:linear-gradient(#fff3,#0000 55%),linear-gradient(100deg,#22D3EE,#6366F1 20%,#A855F7 38%,#EC4899 56%,#F97316 74%,#FACC15 88%,#A3E635);color:#fff;text-shadow:0 1px 2px #3b0764a6;box-shadow:inset 0 1px 0 #fff8,0 6px 16px -8px #a855f7cc}
+/* Infini qui s'écoule et rayonne (2026-11-15, « glowy, Apple level ») : sous le
+   texte, sa surface — l'arc-en-ciel en boucle, un éclat, un reflet — et sa
+   lueur floue qui respire */
+.bt-holo{--holo:linear-gradient(100deg,#22D3EE,#6366F1 16%,#A855F7 32%,#EC4899 48%,#F97316 64%,#FACC15 78%,#A3E635 89%,#22D3EE);position:relative;isolation:isolate;color:#fff;text-shadow:0 1px 3px #3b0764a6;background:none}
+.bt-holo::before,.bt-holo::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none}
+.bt-holo::before{inset:6px 4px -8px;background:var(--holo) 0 0/200% 100%;filter:blur(16px) saturate(1.5);
+  animation:flux 10s linear infinite,souffle 3.6s ease-in-out infinite alternate}
+.bt-holo::after{box-shadow:inset 0 1px 0 #fffa,inset 0 -1px 0 #3b07641f;
+  background:linear-gradient(110deg,#0000 38%,#fffa 50%,#0000 62%) 0 0/300% 100%,linear-gradient(#ffffff47,#0000 55%),var(--holo) 0 0/200% 100%;
+  animation:flux3 10s linear infinite}
+@keyframes flux{to{background-position:-200% 0}}
+@keyframes flux3{from{background-position:130% 0,0 0,0 0}to{background-position:-130% 0,0 0,-200% 0}}
+@keyframes souffle{from{opacity:.5}to{opacity:.95}}
+.ruban-holo{background:linear-gradient(#fff3,#0000 55%),linear-gradient(100deg,#22D3EE,#6366F1 16%,#A855F7 32%,#EC4899 48%,#F97316 64%,#FACC15 78%,#A3E635 89%,#22D3EE) 0 0/200% 100%;color:#fff;text-shadow:0 1px 2px #3b0764a6;
+  box-shadow:inset 0 1px 0 #fff8,0 6px 18px -6px #a855f7cc;animation:flux-ruban 10s linear infinite}
+@keyframes flux-ruban{to{background-position:0 0,-200% 0}}
 /* le milieu, mis en avant : plus haut et un peu plus grand que ses voisines */
 .offres .offre-plus{z-index:1}
 .offres .offre-plus.rv.vu{transform:translateY(-18px) scale(1.035)}

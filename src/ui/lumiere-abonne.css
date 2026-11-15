@@ -6,8 +6,7 @@
    offre, en relief (un éclat en haut, une ombre en bas) et traversé d'un
    reflet ; les barres d'avancement aussi ; le liseré des jetons tourne.
    Mirandola+ : un or métallique vif, son texte brun foncé (10:1 sur l'or).
-   Infini : un arc-en-ciel lumineux, tout le spectre visible même sur une
-   pastille, violet-rose sous le texte blanc, qui ondule doucement.
+   Infini : un arc-en-ciel lumineux qui s'écoule lentement, sa lueur autour.
    Chargée par ui/bridage.js pour un abonné seulement (html.offre-plus) : le
    démarrage de tout le monde n'en paie rien. Les variables vivent dans
    app.css (--plus, --plus-c, --plus-t, --holo). */
@@ -22,18 +21,32 @@ html.offre-infini #rail .brand span::after{content:'\2009∞'}
 html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab){
   background:linear-gradient(110deg,#0000 38%,#fffc 50%,#0000 62%) 0 0/300% 100%,var(--plus) 0 0/100% 100%;color:var(--plus-c);
   box-shadow:inset 0 1px 0 #fffb,inset 0 -2px 0 #7a46001f,0 12px 26px -12px #c27f0acc;animation:reflet 4.5s ease-in-out infinite}
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab){
-  background:linear-gradient(110deg,#0000 38%,#fff9 50%,#0000 62%) 0 0/300% 100%,linear-gradient(#fff3,#0000 55%),var(--holo);
-  box-shadow:inset 0 1px 0 #fff8,0 14px 30px -12px #a855f7cc;text-shadow:0 1px 3px #3b0764a6;
-  animation:reflet 4.5s ease-in-out infinite,irise 6s ease-in-out infinite alternate}
+/* Infini, « Apple level » (2026-11-15, demandé : « trop figé, qu'il bouge
+   lentement, glowy, magnifique ») : deux calques sous le texte — la surface,
+   où l'arc-en-ciel s'écoule en boucle sous un éclat et un reflet, et sa
+   lueur, le même arc-en-ciel flouté qui déborde et respire. L'élément devient
+   transparent et isole sa pile : les calques à z-index -1 passent sous le
+   texte, au-dessus de ce qu'il y a derrière. */
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab){background:none;box-shadow:none;isolation:isolate;animation:none;
+  text-shadow:0 1px 3px #3b0764a6}
+html.offre-infini .cta:not(:disabled){position:relative}
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before,
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none}
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before{inset:6px 4px -8px;background:var(--holo) 0 0/200% 100%;
+  filter:blur(15px) saturate(1.5);animation:flux 10s linear infinite,souffle 3.6s ease-in-out infinite alternate}
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::after{box-shadow:inset 0 1px 0 #fffa,inset 0 -1px 0 #3b07641f;
+  background:linear-gradient(110deg,#0000 38%,#fffa 50%,#0000 62%) 0 0/300% 100%,linear-gradient(#ffffff47,#0000 55%),var(--holo) 0 0/200% 100%;
+  animation:flux3 10s linear infinite}
 @keyframes reflet{0%,50%{background-position:130% 0,0 0}to{background-position:-30% 0,0 0}}
-/* l'arc-en-ciel ondule autour de ses teintes, sans jamais montrer de zone sombre */
-@keyframes irise{from{filter:hue-rotate(-22deg) saturate(1.1)}to{filter:hue-rotate(22deg) saturate(1.25)}}
+/* l'arc-en-ciel s'écoule d'une teinte à l'autre et revient à la première : une boucle sans couture */
+@keyframes flux{to{background-position:-200% 0}}
+@keyframes flux3{from{background-position:130% 0,0 0,0 0}to{background-position:-130% 0,0 0,-200% 0}}
+@keyframes souffle{from{opacity:.5}to{opacity:.95}}
 html.offre-plus .tabs button.on{color:var(--plus-c)}
 
 /* ce qui avance : la barre, dans la matière de l'offre */
 html.offre-plus .prog i{background:var(--plus) 0 0/200% 100%;animation:barre 5s ease-in-out infinite alternate}
-html.offre-infini .prog i{background:var(--holo);animation:irise 6s ease-in-out infinite alternate}
+html.offre-infini .prog i{background:var(--holo) 0 0/200% 100%;animation:flux 10s linear infinite;box-shadow:0 0 10px #a855f773}
 @keyframes barre{to{background-position:100% 0}}
 
 /* la barre latérale : l'icône allumée et l'entrée de l'offre */

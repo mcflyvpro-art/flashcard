@@ -25,7 +25,8 @@ DERNIER   2026-11-15 · Plus de quota de cartes neuves : toute carte
           La porte d'installation suit l'iPhone : ≡ à gauche de l'adresse
           dans Safari 26, Partager puis « Ouvrir dans Safari » dans l'app Google.
           Les abonnements inversés partout : Mirandola+ l'or vif, Infini
-          l'arc-en-ciel profond, en relief et à reflet (app et site).
+          l'arc-en-ciel profond, en relief et à reflet (app et site). Infini
+          s'écoule et rayonne : sa lueur floue respire sous les boutons.
           Avant : 2026-11-14 · La grande vérification avant la vente. Le
           premier passage : un paquet neuf se propose en entier, 20 neuves
           par jour ensuite. Les devis : émis par l'éditeur, acceptés en
