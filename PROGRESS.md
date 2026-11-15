@@ -28,7 +28,9 @@ DERNIER   2026-11-14 · La grande vérification avant la vente. Le
           docs/DOCUMENTS.md (circuit de vente, relances, modèles, RGPD). Un
           test à retardement de la purge corrigé. Le site : « l'alternative
           à Anki et Quizlet », les affiches et images de partage refaites
-          (elles montraient l'ancien vocabulaire et un ancien prix). Avant :
+          (elles montraient l'ancien vocabulaire et un ancien prix). Le
+          singe de nuit n'attend plus une cible partie (il échouait sans
+          qu'aucune erreur n'ait eu lieu). Avant :
           2026-11-13 · L'IA choisit le modèle le moins cher qui fait
           la tâche : Claude Haiku 5.5 pour un texte, un PDF, une retouche ;
           Sonnet pour des photos, un examen, une copie, des cartes de

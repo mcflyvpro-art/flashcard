@@ -74,8 +74,14 @@ for (const [ecran, vp] of ECRANS) {
         gestes.push(`${new URL(page.url()).pathname} → ${cibles[i]}`);
         const t0 = Date.now();
         const n = page.locator(`[data-singe="${i}"]`).first();
-        const tag = await n.evaluate(x => x.tagName).catch(() => '');
-        if (tag === 'SELECT') await n.selectOption({ index: 0 }).catch(() => {});
+        /* Un délai à chaque geste : entre la liste des cibles et le geste, l'écran a pu
+           se redessiner (« Recommencer la démo », une relecture) et la cible n'existe
+           plus. Sans délai, `evaluate` l'attendait jusqu'au bout du test — un seul geste
+           de 437 s, et le singe échouait chaque nuit sans qu'aucune erreur n'ait eu lieu
+           (trouvé le 2026-11-14, graines 5 à 7). */
+        const tag = await n.evaluate(x => x.tagName, null, { timeout: 800 }).catch(() => '');
+        if (!tag) { gestes.push('   (cible partie avant le geste)'); continue; }
+        if (tag === 'SELECT') await n.selectOption({ index: 0 }, { timeout: 800 }).catch(() => {});
         else await n.click({ timeout: 800, noWaitAfter: true }).catch(() => {});
         // un champ apparu ? on y tape un peu, pour que les formulaires vivent
         if (r() < 0.25) {

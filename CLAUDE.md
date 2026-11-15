@@ -1596,7 +1596,7 @@ npm run typecheck                    # tsc --noEmit, vérification douce sur src
 npm run mutation                     # les tests de mutation (Stryker) sur le noyau pur : reports/mutation/index.html ; seuil 75 % (78,4 % le 2026-11-07), le dimanche en CI (nuit.yml)
 PGURL=postgresql://… bash tools/sql/tests.sh   # toute la suite SQL contre une base (la pile locale de la CI) ; lit zz_res de chaque test, quelle que soit sa façon d'écrire son bilan
 bash tools/vigie/verifier.sh         # la vigie, à la main (SITE, SUPABASE_URL, SUPABASE_ANON_KEY, et SUPABASE_DB_URL pour vigie()) : vigie.json
-SINGE=150 GRAINE=7 SHOTS=dossier npx playwright test e2e/singe.e2e.js   # le singe : des gestes au hasard dans la démo, trois rôles, deux écrans ; échoue à la moindre erreur JavaScript
+SINGE=150 GRAINE=7 SHOTS=dossier npx playwright test e2e/singe.e2e.js   # le singe : des gestes au hasard dans la démo, trois rôles, deux écrans ; échoue à la moindre erreur JavaScript ; chaque geste a son délai (800 ms) et une cible partie entre la liste et le geste se saute — sans lui, `evaluate` l'attendait jusqu'au bout du test et la nuit échouait sans erreur (2026-11-14)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
 python3 tools/logo.py                # le logo (public/site/, public/favicon.svg, sprite de index.html)
