@@ -86,7 +86,7 @@ button{font:inherit;color:inherit}
    seul signe, le dégradé de « tout. » ne montrait que son violet */
 .plus{font-family:var(--sans);font-weight:800;background:linear-gradient(135deg,#4258B8 26%,#8A48AC 50%,#C8467A 74%);
   -webkit-background-clip:text;background-clip:text;color:transparent;padding:0 .03em}
-.offre-plus .plus{background-image:linear-gradient(135deg,#8DA2F0 24%,#B996EC 50%,#F38DB2 76%)}
+.offre-infini .plus{background-image:linear-gradient(135deg,#8DA2F0 24%,#B996EC 50%,#F38DB2 76%)}
 .centre{text-align:center}
 .surtitre{font:700 12px/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--doux);margin-bottom:18px}
 .texte{font-size:clamp(17px,1.5vw,20px);line-height:1.5;color:var(--encre2);max-width:32em;margin-top:18px;text-wrap:pretty}
@@ -721,17 +721,21 @@ button{font:inherit;color:inherit}
 .inclus li:not(:has(b))::before{content:'';position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;
   background:rgba(42,118,74,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232A764A' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/13px no-repeat}
 .inclus li:has(b){padding-left:0}
-.offre-plus{border:2px solid transparent;color:var(--creme);box-shadow:var(--ombre3),0 30px 60px -30px rgba(215,100,141,.45);transform:translateY(-10px);
-  background:linear-gradient(var(--nuit),var(--nuit)) padding-box,conic-gradient(from var(--angle,0deg),#8DA2F0,#B996EC,#F38DB2,#F6B59E,#8DA2F0) border-box;
+/* les abonnements (inversés le 2026-11-15, demandé : « l'or devient +,
+   l'arc-en-ciel devient Infini, ultra premium, brillant ; garde l'arc-en-ciel
+   des polices ») : Mirandola+, au milieu, le papier doré et un liseré d'or
+   poli qui tourne ; Infini, à droite, la nuit, deux lueurs et un liseré
+   d'arc-en-ciel qui tourne. Le « + » des titres garde la lumière de la marque. */
+.offre-plus{border:2.5px solid transparent;color:var(--encre);box-shadow:var(--ombre3),0 30px 60px -28px #e0a21b99;transform:translateY(-10px);
+  background:linear-gradient(180deg,#FFFDF5,#FBF0D2) padding-box,conic-gradient(from var(--angle,0deg),#8A5200,#E0A21B,#FFF1B8,#F5C542,#A86A00,#FFE07A,#8A5200) border-box;
   animation:tour 6s linear infinite}
 @property --angle{syntax:'<angle>';inherits:false;initial-value:0deg}
 @keyframes tour{to{--angle:360deg}}
-.offre-plus .prix span,.offre-plus .prix-note{color:var(--creme2)}
-.offre-plus .prix-note s{opacity:.75}
-.offre-plus .inclus{border-color:rgba(243,238,227,.14)}
-.offre-plus .inclus li:not(:has(b))::before{background-color:rgba(243,141,178,.18);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F6A8C5' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
-.offre-plus .bt-encre{background:var(--creme);color:var(--encre)}
-.offre-plus .bt-encre::after{background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.7) 50%,transparent 65%)}
+.offre-plus .inclus{border-color:#c27f0a33}
+.offre-plus .inclus li:not(:has(b))::before{background-color:#f5c54247;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A86400' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
+.offre-plus .bt-encre{background:linear-gradient(115deg,#A86400,#E9A91E 24%,#FFE58C 44%,#FFF6D2 50%,#F4BC3A 60%,#C27F0A 82%,#F6C64A);color:#3A2300;box-shadow:inset 0 1px 0 #fffb,inset 0 -2px 0 #7a46001f,0 14px 28px -14px #c27f0ae6}
+.offre-plus .bt-encre::after{background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.85) 50%,transparent 65%)}
+.offre-plus .ruban{background:linear-gradient(115deg,#A86400,#E9A91E 24%,#FFE58C 44%,#FFF6D2 50%,#F4BC3A 60%,#C27F0A 82%,#F6C64A);color:#3A2300;box-shadow:inset 0 1px 0 #fffb,0 6px 16px -8px #c27f0acc}
 /* le lancement (2026-11-07) : le code en tête de chaque page, au-dessus de
    l'en-tête ; il part avec le défilement, l'en-tête reste */
 .lancement{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;padding:8px 16px;
@@ -748,15 +752,15 @@ button{font:inherit;color:inherit}
 .promo-tarifs .lancement-code{margin:0 3px;border-color:var(--az4);color:var(--encre)}
 .promo-tarifs .lancement-ok{background:var(--encre);color:#fff}
 .promo-detail{display:inline-block;margin-top:4px;font-size:14px;color:var(--encre2)}
-/* Infini dans le bandeau : son or (2026-11-08) */
-.lancement-or{font-weight:750;font-style:italic;background:linear-gradient(135deg,#D4A23C,#F3D98C 55%,#E4B957);-webkit-background-clip:text;
+/* Infini dans le bandeau : son arc-en-ciel (2026-11-08 ; l'or jusqu'au 2026-11-15) */
+.lancement-infini{font-weight:750;font-style:italic;background:linear-gradient(115deg,#A5B4FC,#F0ABFC 40%,#FDA4AF 70%,#FDBA74);-webkit-background-clip:text;
   background-clip:text;color:transparent;padding-right:.06em}
 /* l'essai de Mirandola+ (2026-11-08) : une pastille au-dessus du bouton, une ligne dessous */
 .essai-plus{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin:2px 0 12px;padding:5px 12px;border-radius:99px;
-  background:var(--degrade);color:#fff;font-size:13.5px;line-height:1.2}
+  background:linear-gradient(115deg,#A86400,#E9A91E 24%,#FFE58C 44%,#FFF6D2 50%,#F4BC3A 60%,#C27F0A 82%,#F6C64A);color:#3A2300;font-size:13.5px;line-height:1.2;box-shadow:inset 0 1px 0 #fffb}
 .essai-plus .ic{width:15px;height:15px}
 .essai-plus b{font-weight:800}
-.essai-note{margin:8px 0 0;font-size:12.5px;text-align:center;color:var(--creme2)}
+.essai-note{margin:8px 0 0;font-size:12.5px;text-align:center;color:var(--doux)}
 @media (max-width:600px){ .lancement{font-size:13px;padding:7px 12px} .lancement-sur{display:none} }
 
 /* à cheval sur le bord du haut, centré (2026-11-07) : en haut à droite, il
@@ -768,7 +772,7 @@ button{font:inherit;color:inherit}
 .offres .rv:nth-child(2){transition-delay:.1s}.offres .rv:nth-child(3){transition-delay:.2s}
 .offres .offre-plus.rv.vu{transform:translateY(-10px)}
 /* l'apparition (.rv) prend la propriété animation : la bordure tourne de nouveau une fois la carte arrivée */
-.js .offres .offre-plus.rv.vu{animation:tour 6s linear infinite}
+.js .offres :is(.offre-plus,.offre-infini).rv.vu{animation:tour 6s linear infinite}
 
 .comparatif{margin-top:clamp(40px,6vw,64px);border:1px solid var(--filet);border-radius:28px;background:#FFF;box-shadow:var(--ombre1);overflow-x:auto;-webkit-overflow-scrolling:touch}
 .comparatif table{width:100%;min-width:680px;border-collapse:collapse}
@@ -780,13 +784,12 @@ button{font:inherit;color:inherit}
 .comparatif .o-n{white-space:nowrap}
 .comparatif tbody th{text-align:left;font-weight:600;color:var(--encre2)}
 .comparatif td{font-weight:650;color:var(--encre2)}
-.comparatif .col-plus{background:rgba(154,120,207,.09)}
+.comparatif .col-plus{background:#f5c54224}
 .comparatif thead .col-plus{border-radius:18px 18px 0 0}
-.comparatif .col-infini{background:rgba(212,162,60,.08)}
-/* l'or d'un texte : 5,1:1 sur le papier du site (#9A6F1E n'avait que 4,24,
-   sous les 4,5 d'un texte courant — e2e/accessibilite.e2e.js) */
-.comparatif .o-n.infini{font-style:italic;color:#8A6318}
-.comparatif .col-infini .ic.oui{color:#A8771C}
+.comparatif .col-infini{background:#9333ea0f}
+/* le violet d'Infini en texte : 7:1 sur le papier du site (e2e/accessibilite.e2e.js veut 4,5) */
+.comparatif .o-n.infini{font-style:italic;color:#6D28D9}
+.comparatif .col-infini .ic.oui{color:#7C3AED}
 .comparatif .ic{margin:0 auto;width:22px;height:22px}
 .comparatif .oui{color:var(--ok);stroke-width:2.6}
 .comparatif .non{color:#C8C3B9;stroke-width:2.4}
@@ -805,17 +808,20 @@ button{font:inherit;color:inherit}
 .tranches tr.ici td:first-child{box-shadow:inset 3px 0 0 var(--az4);padding-left:10px;transition:padding .3s var(--e)}
 
 /* les professeurs particuliers */
-/* Mirandola Infini (2026-11-07) : la troisième offre, à droite — le papier
-   ivoire et l'or, quand Mirandola+, au milieu, a la nuit et la lumière de la
-   marque. Le milieu reste ce que l'œil prend d'abord (plus haut, plus grand,
-   « Le plus choisi ») : Infini, au-dessus en prix, le rend raisonnable. */
-.offre-infini{background:linear-gradient(180deg,#FFFDF6,#F8F0DC);box-shadow:var(--ombre1),inset 0 0 0 1.5px #D9B25A}
-.offre-infini :is(h2,h3) em{font-style:italic;background:linear-gradient(135deg,#8A6114,#C9952E 45%,#B07F22);-webkit-background-clip:text;background-clip:text;color:transparent}
-.offre-infini .inclus{border-color:rgba(176,127,34,.25)}
-.offre-infini .inclus li:not(:has(b))::before{background-color:rgba(201,149,46,.16);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23996A16' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
-.bt-or{background:#16130C;color:#F3D98C;box-shadow:inset 0 0 0 1px rgba(243,217,140,.35)}
-.bt-or:hover{background:#221D12}
-.ruban-or{background:linear-gradient(135deg,#D4A23C,#F3D98C);color:#16130C}
+/* Mirandola Infini : la troisième offre, à droite — la nuit et l'arc-en-ciel
+   (l'ivoire et l'or jusqu'au 2026-11-15). Le milieu reste ce que l'œil prend
+   d'abord (plus haut, plus grand, « Le plus choisi »). */
+.offre-infini{border:2.5px solid transparent;color:var(--creme);box-shadow:var(--ombre3),0 30px 60px -28px #9333ea99;
+  background:radial-gradient(80% 55% at 100% 0%,#db277738,#0000 62%) padding-box,radial-gradient(80% 55% at 0% 100%,#4f46e547,#0000 62%) padding-box,
+    linear-gradient(var(--nuit),var(--nuit)) padding-box,conic-gradient(from var(--angle,0deg),#4F46E5,#9333EA,#DB2777,#F97316,#FACC15,#16A34A,#0EA5E9,#4F46E5) border-box;animation:tour 6s linear infinite}
+.offre-infini :is(h2,h3) em{font-style:italic;background:linear-gradient(115deg,#A5B4FC,#F0ABFC 40%,#FDA4AF 70%,#FDBA74);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
+.offre-infini .prix span,.offre-infini .prix-note{color:var(--creme2)}
+.offre-infini .inclus{border-color:rgba(243,238,227,.14)}
+.offre-infini .inclus li:not(:has(b))::before{background-color:#c084fc33;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F0ABFC' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
+.bt-holo{position:relative;overflow:hidden;color:#fff;text-shadow:0 1px 2px #1e1b4b59;background:linear-gradient(115deg,#4F46E5,#7C3AED 20%,#C026D3 38%,#DB2777 52%,#C2410C 66%,#0F766E 82%,#2563EB) 0 0/250% 100%;
+  box-shadow:inset 0 1px 0 #fff6,0 14px 30px -12px #9333eae6;animation:prisme 7s ease-in-out infinite alternate}
+@keyframes prisme{to{background-position:100% 0}}
+.ruban-holo{background:linear-gradient(115deg,#4F46E5,#7C3AED 20%,#C026D3 38%,#DB2777 52%,#C2410C 66%,#0F766E 82%,#2563EB);color:#fff;box-shadow:inset 0 1px 0 #fff6,0 6px 16px -8px #9333eacc}
 /* le milieu, mis en avant : plus haut et un peu plus grand que ses voisines */
 .offres .offre-plus{z-index:1}
 .offres .offre-plus.rv.vu{transform:translateY(-18px) scale(1.035)}

@@ -178,6 +178,10 @@ import { gzipSync } from 'node:zlib';
 import { SOUS_PAGES } from '../src/site/pages.js';
 
 // octets gzip, tous fichiers de la part cumulés
+// 2026-11-15 : les abonnements inversés (Mirandola+ l'or, Infini l'arc-en-
+// ciel), rendus brillants — liserés qui tournent, reflets, lueurs — dans
+// site.css, que chaque page charge : le site passe de 51 à 51,5 Ko, les
+// autres pages de 41 à 41,5.
 // 2026-11-07 : l'onglet Santé de la console de l'éditeur (ui/admin-sante.js :
 // les erreurs remontées par les appareils, la vigie) — les consoles passent
 // de 33 à 34 Ko. Au démarrage, le rapporteur d'erreurs (src/erreurs.js,
@@ -185,7 +189,7 @@ import { SOUS_PAGES } from '../src/site/pages.js';
 // démarrage passe de 124,3 à 127,0 Ko, sous ses 128.
 const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 72 * 1024, cssDemande: 27 * 1024, jsDemo: 33 * 1024, cssDemo: 3 * 1024,
   jsGestion: 34 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
-  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, jsRetouche: 5 * 1024, cssRetouche: 1024, jsDevis: 6 * 1024, cssDevis: 1024, site: 51 * 1024, pages: 41 * 1024, moteur: 56 * 1024 };
+  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, jsRetouche: 5 * 1024, cssRetouche: 1024, jsDevis: 6 * 1024, cssDevis: 1024, site: 51.5 * 1024, pages: 41.5 * 1024, moteur: 56 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',
   jsGestion: 'JS des consoles (référent, éditeur)', cssGestion: 'CSS des consoles (référent, éditeur)',
@@ -194,7 +198,7 @@ const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS 
   jsPremiers: 'JS des premiers pas (accueil, tuto)', cssPremiers: 'CSS des premiers pas (accueil, tuto)',
   jsSecurite: 'JS de la sécurité du compte', cssSecurite: 'CSS de la sécurité du compte',
   jsCode: 'JS de « J’ai un code »', cssCode: 'CSS de « J’ai un code »',
-  jsInfini: 'JS de Mirandola Infini (examen)', cssInfini: 'CSS de Mirandola Infini (examen)',
+  jsInfini: 'JS d’Infini (examen) et de la lumière des abonnés', cssInfini: 'CSS d’Infini (examen) et de la lumière des abonnés',
   jsDefis: 'JS d’un défi à son rythme', cssDefis: 'CSS d’un défi à son rythme',
   jsRetouche: 'JS de « Modifier avec l’IA »', cssRetouche: 'CSS de « Modifier avec l’IA »',
   jsDevis: 'JS des devis', cssDevis: 'CSS des devis',
@@ -221,7 +225,7 @@ for (const f of readdirSync(dir)) {
   const part = auDemarrage(f) ? ext : /^demo-/.test(f) ? ext + 'Demo' : /^pwa-/.test(f) ? ext + 'Porte'
     : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion'
       : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : /^(verif|securite|compte-auth)-/.test(f) ? ext + 'Securite'
-        : /^(code-entree|etablissement)-/.test(f) ? ext + 'Code' : /^(examen|infini)-/.test(f) ? ext + 'Infini' : /^duel-jeu-/.test(f) ? ext + 'Defis'
+        : /^(code-entree|etablissement)-/.test(f) ? ext + 'Code' : /^(examen|lumiere)-/.test(f) ? ext + 'Infini' : /^duel-jeu-/.test(f) ? ext + 'Defis'
           : /^retouche-/.test(f) ? ext + 'Retouche' : /^(devis|tarifs)-/.test(f) ? ext + 'Devis' : ext + 'Demande';
   total[part] += n;
 }
@@ -233,7 +237,7 @@ let ok = true;
 for (const k of Object.keys(BUDGET)) {
   const ko = (n) => (n / 1024).toFixed(1) + ' Ko';
   const dedans = total[k] <= BUDGET[k];
-  console.log(`${dedans ? "✓" : "✗"} ${NOMS[k]} ${ko(total[k])} gzip / budget ${ko(BUDGET[k])}${(k === "js" || k === "css") ? " (" + (BUDGET[k] - total[k]) + " octets de marge)" : ""}`);
+  console.log(`${dedans ? "✓" : "✗"} ${NOMS[k]} ${ko(total[k])} gzip / budget ${ko(BUDGET[k])}${" (" + (BUDGET[k] - total[k]) + " octets de marge)"}`);
   ok = ok && dedans;
 }
 process.exit(ok ? 0 : 1);

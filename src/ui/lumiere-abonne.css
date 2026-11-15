@@ -1,0 +1,46 @@
+/* ══════════ un abonné se voit (2026-10-27, inversé le 2026-11-15) ══════════
+   Demandé le 2026-11-15 : « inverse l'identité partout : l'or devient
+   Mirandola+, l'arc-en-ciel devient Infini, et rends les deux ultra premium,
+   brillants, magnifiques, pas pâles ni monotones ». Ce qu'on touche — le
+   bouton principal, l'onglet allumé, le bouton rond — prend la matière de son
+   offre, en relief (un éclat en haut, une ombre en bas) et traversé d'un
+   reflet ; les barres d'avancement aussi ; le liseré des jetons tourne.
+   Mirandola+ : un or métallique vif, son texte brun foncé (10:1 sur l'or).
+   Infini : un arc-en-ciel profond qui glisse, son texte blanc (5:1 au moins
+   sur chacune de ses teintes).
+   Chargée par ui/bridage.js pour un abonné seulement (html.offre-plus) : le
+   démarrage de tout le monde n'en paie rien. Les variables vivent dans
+   app.css (--plus, --plus-c, --plus-t, --holo). */
+html.offre-infini{--plus:var(--holo);--plus-c:#fff;--plus-t:linear-gradient(115deg,#4F46E5,#9333EA 40%,#DB2777 75%,#C2410C)}
+
+/* le signe après le nom : « + » d'or, « ∞ » d'arc-en-ciel */
+html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:var(--plus-t);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+html.offre-infini #rail .brand span::after{content:'\2009∞'}
+
+/* ce qu'on touche : la matière, son relief, son reflet */
+html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab){
+  background:linear-gradient(110deg,#0000 38%,#fffc 50%,#0000 62%) 0 0/300% 100%,var(--plus) 0 0/100% 100%;color:var(--plus-c);
+  box-shadow:inset 0 1px 0 #fffb,inset 0 -2px 0 #7a46001f,0 12px 26px -12px #c27f0acc;animation:reflet 4.5s ease-in-out infinite}
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab){
+  background:linear-gradient(110deg,#0000 38%,#fff8 50%,#0000 62%) 0 0/300% 100%,var(--holo) 0 0/250% 100%;
+  box-shadow:inset 0 1px 0 #fff6,inset 0 -2px 0 #1e1b4b33,0 14px 30px -12px #9333eacc;text-shadow:0 1px 2px #1e1b4b59;
+  animation:prisme 7s ease-in-out infinite}
+@keyframes reflet{0%,50%{background-position:130% 0,0 0}to{background-position:-30% 0,0 0}}
+@keyframes prisme{0%{background-position:130% 0,0 0}35%{background-position:-30% 0,100% 0}to{background-position:-30% 0,0 0}}
+html.offre-plus .tabs button.on{color:var(--plus-c)}
+
+/* ce qui avance : la barre, dans la matière de l'offre */
+html.offre-plus .prog i{background:var(--plus) 0 0/200% 100%;animation:barre 5s ease-in-out infinite alternate}
+@keyframes barre{to{background-position:100% 0}}
+
+/* la barre latérale : l'icône allumée et l'entrée de l'offre */
+html.offre-plus #rail nav button.on svg{color:#C27F0A}
+html.offre-infini #rail nav :is(button.on,.r-plus) svg{color:#9333EA}
+
+/* le liseré des jetons d'or et d'arc-en-ciel tourne lentement */
+@property --a{syntax:'<angle>';inherits:false;initial-value:200deg}
+html.offre-plus .jt:is(.jt-plus,.jt-infini){animation:lisere 6s linear infinite}
+@keyframes lisere{to{--a:560deg}}
+
+@media (prefers-reduced-motion:reduce){html.offre-plus *{animation:none!important}}

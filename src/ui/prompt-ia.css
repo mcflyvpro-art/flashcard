@@ -6,7 +6,7 @@
    Seize pixels dans la zone : en dessous, l'iPhone zoome sur le champ. */
 .pi{position:relative;display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:20px;
   border:1.5px solid transparent;background:linear-gradient(var(--card),var(--card)) padding-box,var(--plus) border-box;
-  box-shadow:0 10px 26px -20px rgba(90,118,208,.55)}
+  box-shadow:0 10px 26px -20px #c27f0a8c}
 .pi.payant{background:var(--card);border-color:var(--hair);box-shadow:var(--edge);cursor:pointer}
 .pi.payant[data-offre="plus"]::before{position:absolute;top:12px;right:12px;opacity:1}
 .pi.payant[data-astuce]:hover::after{white-space:normal;width:max-content;max-width:240px;text-align:center;line-height:1.35}
@@ -53,7 +53,7 @@
 .pi-env:disabled{opacity:.35}
 .pi-env svg{width:18px;height:18px}
 .pi-env.large{width:auto;display:inline-flex;align-items:center;gap:7px;padding:0 16px 0 13px;border-radius:99px;
-  font-size:14.5px;font-weight:700;background:var(--plus);box-shadow:0 8px 18px -10px rgba(90,118,208,.8)}
+  font-size:14.5px;font-weight:800;color:var(--plus-c);background:var(--plus);box-shadow:inset 0 1px 0 #fffb,0 8px 18px -10px #c27f0acc}
 
 /* ce qui attend l'IA : des photos (vignettes) ou un PDF (une étiquette) */
 .pi-pieces{display:flex;flex-wrap:wrap;gap:8px;padding:6px 6px 0 0}

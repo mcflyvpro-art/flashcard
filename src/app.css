@@ -35,9 +35,13 @@
   /* ce qui s'en va accélère et disparaît : jamais plus long que l'entrée */
   --out:cubic-bezier(.4,0,1,1);
   --pad:20px;
-  /* la lumière de Mirandola+ (la page d'accueil, l'écran Mirandola+) et son « + » tracé */
-  --plus:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);
-  --plus-s:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 1.7v6.6M1.7 5h6.6' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat;
+  /* les abonnements (inversés le 2026-11-15) : Mirandola+ l'or vif — son
+     aplat, son encre dessus (--plus-c), son texte (--plus-t) —, Infini
+     l'arc-en-ciel profond (--holo), assez soutenu pour un texte blanc */
+  --plus:linear-gradient(115deg,#A86400,#E9A91E 24%,#FFE58C 44%,#FFF6D2 50%,#F4BC3A 60%,#C27F0A 82%,#F6C64A);
+  --plus-c:#3A2300;--plus-t:linear-gradient(135deg,#8A5200,#C27F0A 55%,#9A5B00);
+  --holo:linear-gradient(115deg,#4F46E5,#7C3AED 20%,#C026D3 38%,#DB2777 52%,#C2410C 66%,#0F766E 82%,#2563EB);
+  --plus-s:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 1.7v6.6M1.7 5h6.6' stroke='%233A2300' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{height:100%;background:var(--bg)}
@@ -1327,44 +1331,28 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
   .cr-tabs .payant[data-offre="plus"]::before,html.offre-gratuit #app[data-view="deck"] > .acts :is([data-act="mcq"],[data-act="match"])::after{
     position:static;margin-left:-2px}
 }
-/* ---------- Mirandola+ se voit (2026-10-27) ----------
-   Qui l'a (html.offre-plus, ui/bridage.js) le voit partout : le « + » à côté
-   du nom, sa lumière sur ce qui avance (onglet allumé, bouton principal,
-   barres de progression, bouton rond) — et son jeton, comme celui de ses
-   amis qui l'ont (visuels() le dit), porte le liseré de la marque. */
-/* Le liseré dit l'offre de CETTE personne, jamais celle de qui regarde
-   (2026-11-08) : il ne lit donc pas --plus, que html.offre-infini passe à
-   l'or. Mirandola+ : un arc-en-ciel qui fait le tour ; Infini : l'or. */
-.jt{--lis:conic-gradient(from 200deg,#5A76D0,#9A78CF,#D7648D,#EE9A5A,#E9C85A,#6FC39A,#4FA6DA,#5A76D0)}
-/* Infini : un or poli, du bronze profond au champagne, un filet sombre qui
-   le détache du papier clair ; il tourne chez un abonné Infini (ui/infini-lumiere.css) */
-.jt.jt-infini{--lis:conic-gradient(from var(--a,200deg),#5C3D0A,#B98A2E,#FFF2C6,#D6A53F,#6B470D,#ECCB72,#5C3D0A)}
+/* ---------- les abonnements se voient (2026-10-27, inversés le 2026-11-15) ----------
+   Demandé le 2026-11-15 : « inverse : l'or devient +, l'arc-en-ciel devient
+   Infini, et rends les deux ultra premium, brillants, pas pâles ». Le
+   liseré dit l'offre de CETTE personne (visuels()), jamais celle de qui
+   regarde : Mirandola+ un or poli à reflet, Infini l'arc-en-ciel vif ;
+   un filet sombre les détache du papier. Ce qui se touche chez un abonné
+   (bouton principal, onglet, bouton rond, barres, le signe du nom) est dans
+   ui/lumiere-abonne.css, chargée par ui/bridage.js pour un abonné seulement. */
+.jt{--lis:conic-gradient(from var(--a,200deg),#8A5200,#E0A21B,#FFF1B8,#F5C542,#A86A00,#FFE07A,#8A5200)}
+.jt.jt-infini{--lis:conic-gradient(from var(--a,200deg),#4F46E5,#9333EA,#DB2777,#F97316,#FACC15,#16A34A,#0EA5E9,#4F46E5)}
 .jt:is(.jt-plus,.jt-infini){border:2.5px solid transparent;background:linear-gradient(var(--k,var(--ink2)) 0 0) padding-box,var(--lis) border-box;
-  box-shadow:0 4px 14px -4px rgba(154,120,207,.8)}
-.jt.jt-infini{box-shadow:0 0 0 1px rgba(92,61,10,.4),0 5px 16px -4px rgba(201,150,46,.95)}
+  box-shadow:0 0 0 1px #8a52004d,0 5px 16px -4px #e0a21bf2}
+.jt.jt-infini{box-shadow:0 0 0 1px #4f46e540,0 5px 18px -4px #9333eae6}
 .jt:is(.lg,.xl):is(.jt-plus,.jt-infini){border-width:3.5px}
 .jt.vis:is(.jt-plus,.jt-infini){background:linear-gradient(color-mix(in srgb,var(--k) 30%,#fff) 0 0) padding-box,var(--lis) border-box}
-html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:var(--plus);-webkit-background-clip:text;
-  background-clip:text;color:transparent}
-html.offre-plus :is(.tabs .sl,.fab,.prog i){background:var(--plus)}
-html.offre-plus .cta:not(:disabled){background:var(--plus);color:#fff;box-shadow:0 10px 22px -12px rgba(120,70,160,.75)}
-html.offre-plus #rail nav button.on svg{color:#8A6BCB}
-/* Mirandola Infini (refait le 2026-11-15, demandé : « le jaune est moche,
-   plat, sans contraste ; rends-le premium, au-dessus de + ») : la nuit et
-   l'or. Ce qu'on touche — le bouton principal, l'onglet allumé, le bouton
-   rond — passe sur une nuit chaude, son texte en champagne (13:1), cerné
-   d'un filet d'or, et un reflet le traverse lentement ; ce qui se mesure —
-   les barres, les pastilles — prend un or poli, du bronze au champagne. */
-html.offre-infini{--plus:linear-gradient(110deg,#8E6216,#D2A23F 28%,#FCEBB6 47%,#D9AC48 64%,#946A1C)}
-html.offre-infini #rail .brand span::after{content:'\2009∞';background-image:linear-gradient(135deg,#7A520F,#C08B2B)}
-/* la nuit de ce qu'on touche : ui/infini-lumiere.css, chargée pour un abonné Infini seulement (ui/bridage.js) */
-/* ce qui est dans Infini, dans un menu : sa pastille d'or */
-.mi .mi-offert{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#fff;background:var(--plus)}
-.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#F2DCA2;background:linear-gradient(135deg,#2B2215,#100C07)}
-/* l'onglet Mirandola+ d'un compte gratuit : son nom et son icône dans la lumière de la marque */
-.tabs .t-plus svg{color:#9A78CF;fill:rgba(154,120,207,.18)} .tabs .t-plus.on svg{color:var(--bg);fill:none}
-#rail nav .r-plus span{background:var(--plus);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:750}
-#rail nav .r-plus svg{color:#9A78CF}
+/* dans un menu : ce qui est offert (l'or), ce qui est dans Infini (l'arc-en-ciel) */
+.mi .mi-offert{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:var(--plus-c);background:var(--plus)}
+.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#fff;background:var(--holo)}
+/* l'onglet Mirandola+ d'un compte gratuit : son nom et son icône dans l'or */
+.tabs .t-plus svg{color:#C27F0A;fill:#f5c54233} .tabs .t-plus.on svg{color:var(--bg);fill:none}
+#rail nav .r-plus span{background:var(--plus-t);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:750}
+#rail nav .r-plus svg{color:#C27F0A}
 .ldemos{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:14px;padding-top:12px;border-top:1px solid var(--hair)}
 .ldemos .lnk{margin:0;border-radius:99px}
 

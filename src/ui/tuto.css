@@ -124,9 +124,14 @@
 .tu-fin:is(.plus,.campus) .tu-points svg{color:#F6A8C5}
 .tu-fin:is(.plus,.campus) .tu-a{background:rgba(243,238,227,.1);color:#F3EEE3}
 .tu-fin:is(.plus,.campus) .tu-a.pri{background:#F3EEE3;color:#1D1C19;box-shadow:none}
+/* la carte de Mirandola+ : son or (inversé le 2026-11-15), Campus garde la lumière de la marque */
+.tu-fin.plus{background:linear-gradient(#17161E,#17161E) padding-box,conic-gradient(from var(--tu-angle),#8A5200,#E0A21B,#FFF1B8,#F5C542,#A86A00,#FFE07A,#8A5200) border-box;
+  box-shadow:0 40px 90px -30px rgba(20,14,50,.8),0 30px 60px -30px #e0a21b73}
+.tu-fin.plus .tu-points svg{color:#F5C542}
+.tu-fin.plus .tu-a.pri{background:var(--plus);color:var(--plus-c)}
 .tu-marque{margin-top:6px;font-size:44px}
 .tu-plus{padding:0 .03em;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:800;font-style:normal;
-  background:linear-gradient(135deg,#8DA2F0 24%,#B996EC 50%,#F38DB2 76%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  background:linear-gradient(135deg,#F5C542 20%,#FFF1B8 50%,#E0A21B 80%);-webkit-background-clip:text;background-clip:text;color:transparent}
 /* la marque de Mirandola Campus, celle du site : le logo sur son carré de
    papier, l'école en écusson dégradé, « Campus » en italique dégradée */
 .tu-c h2.tu-campus{display:flex;align-items:center;justify-content:center;gap:16px;margin:8px 0 6px;

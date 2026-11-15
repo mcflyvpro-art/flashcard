@@ -50,8 +50,8 @@
   text-align:center;box-shadow:var(--s3)}
 .dm-envie::backdrop{background:rgba(29,28,25,.42);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
 .dm-envie-ic{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 14px;border-radius:17px;
-  background:linear-gradient(135deg,#5A76D0,#9A78CF 52%,#D7648D);color:#fff;box-shadow:0 12px 24px -12px rgba(120,70,160,.8)}
-.dm-envie-ic svg{width:26px;height:26px;fill:rgba(255,255,255,.25)}
+  background:var(--plus);color:var(--plus-c);box-shadow:inset 0 1px 0 #fffb,0 12px 24px -12px #c27f0acc}
+.dm-envie-ic svg{width:26px;height:26px;fill:#ffffff40}
 .dm-envie h2{margin:0;font:700 24px/1.15 var(--serif);letter-spacing:-.02em;text-wrap:balance}
 .dm-envie p{margin:10px 0 20px;color:var(--ink2);font-size:15px;line-height:1.45}
 .dm-envie .cta{text-decoration:none}
