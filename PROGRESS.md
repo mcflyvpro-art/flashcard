@@ -19,7 +19,10 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-16 · La matière des abonnés devient organique : Infini
+DERNIER   2026-11-16 · La barre du bas vivante, comme Instagram : à
+          l'appui la pastille grossit, suit le doigt sur un ressort, s'étire
+          et se pose sur l'onglet où l'on lâche (ui/barre.js). Et la matière
+          des abonnés devient organique : Infini
           en lampe à lave dans le bleu-rose de la marque (taches aux bords
           fondus qui dérivent chacune à son rythme, un halo discret qui
           respire ; l'arc-en-ciel, trop flashy, est parti), Mirandola+ en or

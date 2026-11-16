@@ -1,0 +1,21 @@
+/* ══════════ la barre du bas, vivante (2026-11-16, ui/barre.js) ══════════
+   Appuyée, la barre gonfle à peine et sa pastille grossit — plus haute que
+   la barre, comme une loupe posée dessus —, suit le doigt et s'étire quand
+   elle va vite (--etire, posé par ui/barre.js) ; l'icône qu'elle couvre
+   s'allume et grandit, celle qu'elle quitte s'éteint. Au lâcher, tout se
+   détend en ressort (.relache), y compris sur la barre redessinée. */
+.tabs{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:scale .4s var(--sp)}
+.tabs.presse{scale:1.035}
+.tabs.presse .sl{scale:calc(1.13 + var(--etire,0)) calc(1.22 - var(--etire,0) * .7);
+  box-shadow:0 14px 28px -12px #1d1c1980}
+.tabs .sl.relache{animation:relache .42s cubic-bezier(.34,1.32,.5,1)}
+.tabs.relache{animation:relache-barre .42s cubic-bezier(.34,1.32,.5,1)}
+@keyframes relache{from{scale:1.13 1.22}}
+@keyframes relache-barre{from{scale:1.035}}
+.tabs button svg{transition:scale .3s cubic-bezier(.34,1.32,.5,1)}
+.tabs.presse button.vise svg{scale:1.16}
+/* la couleur suit la pastille : allumée dessous, éteinte ailleurs */
+.tabs.presse button.on:not(.vise){color:var(--soft)}
+.tabs.presse button.vise{color:var(--bg)}
+html.offre-plus .tabs.presse button.vise{color:var(--plus-c)}
+@media (prefers-reduced-motion:reduce){.tabs.presse,.tabs.presse .sl{scale:none}.tabs .sl.relache,.tabs.relache{animation:none}}

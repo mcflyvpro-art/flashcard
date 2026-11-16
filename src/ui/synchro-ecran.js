@@ -38,6 +38,7 @@ export function prechauffer() {
   pret = true;
   const auCalme = window.requestIdleCallback || (f => setTimeout(f, 800));
   auCalme(() => {
+    import('./barre.js').catch(() => {});             // la barre du bas vivante (une panne : la barre reste un simple appui)
     prechargerCourrier();
     prechargerJournal();
     if (mailbox.list == null) mailPull();
