@@ -28,18 +28,35 @@ produit Infini mal nommé serait vendu… et lu comme Mirandola+.
 
 ## 1. Les comptes (une fois)
 
-1. **Apple Developer Program** : 99 $ par an, au nom de l'entreprise une
-   fois immatriculée (`docs/ENTREPRISE.md` ; un compte d'entreprise demande
-   un numéro D-U-N-S, gratuit, quelques jours). Puis, dans App Store Connect,
-   l'accord **« Paid Apps »** (banque, fiscalité) — sans lui, aucun
-   abonnement ne se vend — et la demande du **Small Business Program**
-   (15 % de commission au lieu de 30 %).
-2. **Google Play Console** : 25 $ une fois. **Prendre un compte
-   « organisation »** dès que l'entreprise existe : un compte personnel créé
-   après le 13 novembre 2023 doit faire tester l'app par **12 personnes
-   pendant 14 jours d'affilée** (test fermé) avant de pouvoir la publier. Puis
-   le **profil de paiement** (pour vendre) ; la commission est de 15 % sur
-   les abonnements.
+**D'abord l'entreprise** (`docs/ENTREPRISE.md`) : vendre dans un magasin,
+c'est vendre, et les fiches affichent qui vend. Une micro-entreprise (une
+entreprise individuelle) n'est pas une « organisation » pour Apple ni, en
+pratique, pour Google : les deux comptes s'ouvrent **à ton nom**, et c'est
+« Samuel François » qui s'affiche comme vendeur. Le nom « Mirandola » comme
+vendeur, et un compte Google sans la règle des 12 testeurs, viendront avec la
+SASU (numéro D-U-N-S à son nom, gratuit, une semaine environ ; Apple convertit
+un compte individuel en organisation sur demande).
+
+**Ce qui s'affiche en public (corrigé le 2026-11-17)** : pour vendre dans
+l'Union européenne, Apple publie sur la fiche une **adresse** (ou une boîte
+postale), un **téléphone** et une **adresse e-mail** (le règlement sur les
+services numériques, « trader status ») ; Google affiche aussi des
+coordonnées pour une app payante. Une domiciliation (10 à 30 € par mois) et
+un numéro à part évitent d'y mettre son domicile et son portable.
+
+1. **Apple Developer Program** : 99 $ par an, en « Individual » (souvent
+   validé dans la journée). Puis, dans App Store Connect, l'accord **« Paid
+   Apps »** (banque, fiscalité) — sans lui, aucun abonnement ne se vend —,
+   le statut de commerçant (ci-dessus) et la demande du **Small Business
+   Program** (15 % de commission au lieu de 30 %).
+2. **Google Play Console** : 25 $ une fois, compte **personnel** (pièce
+   d'identité vérifiée, quelques jours). Un compte personnel créé après le
+   13 novembre 2023 doit faire tester l'app par **12 personnes pendant
+   14 jours d'affilée** (test fermé) avant de demander la publication :
+   prévoir 12 comptes Google d'amis, de proches ou d'élèves volontaires
+   (majeurs ou avec l'accord d'un parent) qui gardent l'app installée deux
+   semaines. Puis le **profil de paiement** (pour vendre) ; la commission
+   est de 15 % sur les abonnements.
 3. **RevenueCat** : gratuit jusqu'à 2 500 $ de revenu par mois. Il vérifie
    les achats auprès d'Apple et de Google et prévient la base.
 
@@ -246,6 +263,14 @@ d'établissement (Mirandola Campus) sont vendus aux établissements hors de
 l'app (règle 3.1.3(c)), et que « Supprimer le compte » est dans les
 Réglages.
 
+**Le refus le plus probable chez Apple : la règle 4.2** (« fonctionnalité
+minimale ») vise les apps qui ne sont qu'un site dans une coque. Les notes
+doivent dire ce que l'app fait en propre : elle marche hors ligne (le moteur
+de révision tourne sur le téléphone), partage et enregistre des fichiers,
+ouvre les liens de classe et de défi, vend par l'achat intégré. Un refus
+arrive avec sa raison ; on répond dans App Store Connect, sans tout
+renvoyer.
+
 ## 8. Essayer avant de publier
 
 - **Android, tout de suite** : chaque poussée qui touche l'app lance
@@ -277,3 +302,28 @@ Réglages.
    Depuis le 28 avril 2026, Apple n'accepte que des compilations faites avec
    Xcode 26 et le SDK d'iOS 26 : le workflow prend le Xcode le plus récent
    de la machine de GitHub.
+
+## 10. Une fois publiée : le site mène aux magasins
+
+Les liens n'existent qu'après la publication (Apple donne un numéro, du
+genre `apps.apple.com/fr/app/mirandola/id1234567890` ; Google
+`play.google.com/store/apps/details?id=fr.mirandola.app`). Ce jour-là :
+
+1. `MAGASINS` de `src/plateformes.js` reçoit les deux adresses : la porte
+   d'installation d'un téléphone mène alors au magasin au lieu de l'écran
+   d'accueil (déjà écrit, `installer`). À décider : garder l'app de l'écran
+   d'accueil en second choix, ou n'offrir que le magasin.
+2. Le site : les badges officiels (« Télécharger dans l'App Store »,
+   « Disponible sur Google Play », pris chez Apple et Google, jamais
+   redessinés, de la même hauteur) dans le héros, les tarifs et le pied ;
+   copiés dans `public/site/` (la CSP refuse une image d'ailleurs) ; un lien
+   unique `mirandola.fr/telecharger` qui envoie un iPhone vers l'App Store,
+   un Android vers Google Play, un ordinateur vers `/app` ; la FAQ et
+   `test/site.test.js` (qui refuse aujourd'hui « App Store » et « Google
+   Play ») mis à jour ensemble.
+3. Dans Safari, la bannière d'Apple (`<meta name="apple-itunes-app"
+   content="app-id=…, app-argument=…">`) propose l'app en haut de chaque page
+   du site, ou l'ouvre si elle est installée.
+4. Le manifeste ajoute l'app Google Play à `related_applications` (à côté
+   de la `webapp` déjà là), sans `prefer_related_applications` : Chrome
+   saurait qu'elle existe sans cesser de proposer l'app web.
