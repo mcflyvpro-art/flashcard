@@ -103,7 +103,7 @@ export function loadResume() {
 }
 
 /* Retrouve la carte d'une file, y compris en marathon */
-function findCard(cid) {
+export function findCard(cid) {
   if (study.id === 'all') {
     for (const d of db.decks) { const c = d.cards.find(x => x.id === cid); if (c) return [c, d]; }
     return [null, null];
@@ -331,13 +331,11 @@ function paintStack() {
         ${faceHtml(true, back, bimg, baud, backLang, tag)}
       </div>
       <i class="swr" aria-hidden="true"></i>
-      <div class="ov y">${svg(I.check)}</div>
-      <div class="ov n">${svg(I.x)}</div>
     </div>`;
   paintMedia(st);
   const top = document.getElementById('top');
   requestAnimationFrame(() => top.classList.remove('in'));
-  if (!tf) bindDrag(top);
+  if (!tf) lierGeste(top);
 }
 
 /* QCM : les distracteurs sortent du paquet lui-même, ce sont donc des
@@ -480,8 +478,7 @@ function paintFoot() {
   const dc = study.flip && !study.simple ? findCard(c.id)[1] : null;
   f.innerHTML = study.flip && !study.simple
     ? `<div class="grades">
-        ${[[0, 'Encore', 'g0'], [1, 'Difficile', 'g1'], [2, 'Correct', 'g2'], [3, 'Facile', 'g3']]
-          .map(([r, lab, cl]) => `<button class="gr ${cl}" data-g="${r}">
+        ${NOTES.map((lab, r) => `<button class="gr g${r}" data-g="${r}">
             <span>${lab}</span><i>${esc(preview(c, r, dc))}</i></button>`).join('')}
       </div>`
     : `<div class="hint">${SWIPE}<span class="keys">
@@ -501,104 +498,19 @@ export function toggleFlip() {
 const turnPage = (top, on) => { if (top) top.classList.toggle('flip', !!on); };
 
 /* ---------- le geste ----------
-   La fiche ne suivait que l'axe horizontal : on la poussait à gauche ou à
-   droite et elle revenait sur un rail. C'était lisible, mais ça n'était
-   pas une carte — un objet posé sur une table se prend, se promène, se
-   repose, et part dans la direction où on l'a lancé.
+   La fiche se prend, se promène et se lance au doigt : les quatre notes
+   selon la distance, le contour à leur couleur, la bulle du délai — tout
+   le geste vit dans ui/geste.js, chargé au calme après l'ouverture ou à la
+   première fiche. Une panne de chargement : la fiche se retourne d'un
+   appui, et l'on note aux boutons. */
+export const NOTES = ['Encore', 'Difficile', 'Correct', 'Facile'];
+export const TEINTES = ['var(--ko)', 'var(--am)', 'var(--ok)', 'var(--az5)'];
+let geste = null;
 
-   Elle se déplace donc librement, dans les deux axes, aussi loin qu'on
-   veut. Trois choses font la fluidité :
-
-   — l'écran ne se repeint qu'une fois par image. Un doigt produit plus
-     d'événements que l'écran n'a de trames ; écrire la transformation à
-     chaque événement fait travailler le navigateur pour rien et saccade.
-   — la rotation dépend de l'endroit où l'on a saisi. Prise par le haut la
-     fiche penche dans un sens, prise par le bas dans l'autre, comme un
-     carton qu'on fait pivoter autour du point qu'on tient.
-   — le lancer garde sa direction. On relâche en diagonale, elle sort en
-     diagonale, à la vitesse qu'on lui a donnée, au lieu de rejoindre une
-     trajectoire décidée d'avance.
-
-   Ce qui ne change pas : la décision reste à gauche ou à droite. Un
-   déplacement vertical promène la fiche, il ne répond pas à sa place. */
-const tint = dx => Math.min(1, Math.max(0, (Math.abs(dx) - 6) / 60));
-
-function swipeTint(el, dx) {
-  const t = tint(dx);
-  el.style.setProperty('--sw', t.toFixed(3));
-  if (t) el.style.setProperty('--swc', dx > 0 ? 'var(--ok)' : 'var(--ko)');
-}
-
-function bindDrag(el) {
-  let x0 = 0, y0 = 0, dx = 0, dy = 0, on = false, moved = false;
-  let haut = true;                    // saisie au-dessus du milieu de la fiche
-  let raf = 0, pid = -1;
-  /* Les derniers instants du geste, pour connaître la vitesse au lâcher.
-     La moyenne depuis le départ mentirait : on ralentit souvent avant de
-     relâcher, et un long déplacement lent finirait par compter comme un
-     lancer. */
-  let trace = [];
-  const SUIVI = 90;                   // millisecondes retenues
-
-  const ov = (k, v) => { const n = el.querySelector('.ov.' + k); if (n) { n.style.opacity = v; n.style.transform = `scale(${.55 + v * .45})`; } };
-
-  const peindre = () => {
-    raf = 0;
-    /* La rotation suit l'écart horizontal, signée par le point de saisie,
-       et se plafonne : au-delà d'une vingtaine de degrés la fiche devient
-       illisible pendant qu'on la déplace. */
-    const rot = Math.max(-20, Math.min(20, dx * .07)) * (haut ? 1 : -1);
-    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) rotate(${rot}deg)`;
-    swipeTint(el, dx);
-    const t = tint(dx);
-    ov('y', dx > 0 ? t : 0);
-    ov('n', dx < 0 ? t : 0);
-  };
-  const demander = () => { if (!raf) raf = requestAnimationFrame(peindre); };
-
-  const vitesse = () => {
-    const t = Date.now();
-    const p = trace.filter(s => t - s.t < SUIVI);
-    if (p.length < 2) return { vx: 0, vy: 0 };
-    const a = p[0], b = p[p.length - 1];
-    const dt = Math.max(8, b.t - a.t);
-    return { vx: (b.x - a.x) / dt, vy: (b.y - a.y) / dt };   // pixels par milliseconde
-  };
-
-  el.addEventListener('pointerdown', e => {
-    if (e.target.closest('[data-snd],[data-say]')) return;   // le son ne retourne pas la fiche
-    on = true; moved = false; dx = 0; dy = 0;
-    x0 = e.clientX; y0 = e.clientY; pid = e.pointerId;
-    const r = el.getBoundingClientRect();
-    haut = e.clientY < r.top + r.height / 2;
-    trace = [{ x: 0, y: 0, t: Date.now() }];
-    try { el.setPointerCapture(pid); } catch (x) { /* capture refusée : le glissé marche quand même via pointermove */ }
-    el.style.transition = 'none';
-  });
-  el.addEventListener('pointermove', e => {
-    if (!on || e.pointerId !== pid) return;
-    dx = e.clientX - x0; dy = e.clientY - y0;
-    if (!moved && Math.hypot(dx, dy) > 5) moved = true;
-    const t = Date.now();
-    trace.push({ x: dx, y: dy, t });
-    while (trace.length > 2 && t - trace[0].t > SUIVI) trace.shift();
-    demander();
-  });
-  const end = () => {
-    if (!on) return; on = false;
-    if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    el.style.transition = '';
-    const v = vitesse();
-    /* Deux façons de valider : aller assez loin, ou lancer assez vite. La
-       seconde permet un geste court et sec, qui est celui qu'on fait quand
-       on enchaîne. */
-    if (Math.abs(dx) > 92 || (Math.abs(v.vx) > .45 && Math.abs(dx) > 26)) return fling(dx < 0 ? -1 : 1, v, dx, dy);
-    el.style.transform = ''; ov('y', 0); ov('n', 0);
-    el.style.setProperty('--sw', 0);           // la fiche revient au centre, la couleur s'efface
-    if (!moved) toggleFlip();
-  };
-  el.addEventListener('pointerup', end);
-  el.addEventListener('pointercancel', end);
+function lierGeste(top) {
+  if (geste) return geste.lier(top);
+  import('./geste.js').then(m => { geste = m; if (top.isConnected) m.lier(top); })
+    .catch(() => top.addEventListener('click', toggleFlip));
 }
 
 /* La fiche sort dans la direction où on l'a lancée, et non sur une
@@ -608,10 +520,13 @@ function bindDrag(el) {
 export function fling(dir, v, fx, fy) {
   const el = document.getElementById('top'); if (!el || el.dataset.gone) return;
   el.dataset.gone = 1; el.classList.add('gone');
-  /* Partie au bouton plutôt qu'au doigt, la fiche n'a jamais été teintée :
-     on l'allume au départ, sinon les deux façons de répondre ne donnent
-     pas le même retour. */
-  swipeTint(el, dir * 100);
+  /* Partie au bouton ou au clavier plutôt qu'au doigt, la fiche n'a jamais
+     été teintée : on l'allume au départ, de la couleur de la note, et la
+     bulle dit son délai — les façons de répondre donnent le même retour. */
+  const g = pendingGrade; setPendingGrade(null);
+  const z = g != null ? g : dir > 0 ? 2 : 0;
+  el.style.setProperty('--sw', 1); el.style.setProperty('--swc', TEINTES[z]);
+  if (geste) geste.partir(z);
   const vx = v ? v.vx : 0, vy = v ? v.vy : 0;
   const sp = Math.max(.5, Math.hypot(vx, vy));
   /* On garde la pente du lancer, mais on impose le côté : une fiche qui
@@ -624,9 +539,8 @@ export function fling(dir, v, fx, fy) {
   el.style.transform = `translate3d(${(fx || 0) + ux * loin}px, ${(fy || 0) + uy * loin}px, 0)`
     + ` rotate(${dir * (18 + Math.min(16, sp * 9))}deg)`;
   el.style.opacity = 0;
-  const g = pendingGrade; setPendingGrade(null);
-  /* À droite je sais, à gauche à revoir : le sens des applications de
-     cartes, et celui des deux pastilles qui apparaissent sous le doigt. */
+  /* Le côté suit la note : Encore et Difficile à gauche, Correct et
+     Facile à droite, là où sont leurs boutons. */
   setTimeout(() => commit(g != null ? g > 0 : dir > 0, g), 250);
 }
 

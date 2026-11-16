@@ -19,7 +19,12 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-16 · La barre du bas vivante, comme Instagram : à
+DERNIER   2026-11-16 · La fiche se note au doigt sur quatre notes, à
+          la Quizlet (ui/geste.js) : un peu à gauche Difficile, loin Encore,
+          un peu à droite Correct, loin Facile ; le contour prend la couleur
+          du bouton, le bouton s'allume, une bulle dit « Facile · dans
+          19 j », le lâcher donne cette note (e2e/geste.e2e.js).
+          · La barre du bas vivante, comme Instagram : à
           l'appui la pastille grossit, suit le doigt sur un ressort, s'étire
           et se pose sur l'onglet où l'on lâche (ui/barre.js) ; en changeant
           vite, elle finit toujours sous l'onglet ouvert, harcelée elle ne

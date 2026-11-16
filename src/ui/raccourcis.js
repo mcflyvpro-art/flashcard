@@ -38,7 +38,7 @@ function keyStudyMcq(e) {
 function keyStudyFlip(e) {
   if (!(study.flip && !study.simple && '1234'.includes(e.key))) return false;
   setPendingGrade(+e.key - 1);
-  fling(pendingGrade > 0 ? 1 : -1);
+  fling(pendingGrade > 1 ? 1 : -1);               // le côté de son bouton : Encore et Difficile à gauche
   return true;
 }
 

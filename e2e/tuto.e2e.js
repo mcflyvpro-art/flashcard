@@ -138,14 +138,27 @@ test('un particulier : son premier paquet, une carte révisée et notée, ses st
 
   // sa première page, le tuto l'écrit sous ses yeux : rien à taper, aucun clavier ne s'ouvre
   await etape(page, 'Ta première carte');
+  /* Le recto et le verso ne restent écrits qu'un instant : « Ajouter la
+     carte » les vide aussitôt. Sous la charge de toute la suite, une
+     lecture du champ de temps en temps les manquait ; on note donc tout ce
+     que les champs ont montré, image après image. */
+  await page.evaluate(() => {
+    const vus = window.__vus = { cf: [], cb: [] };
+    const lire = () => {
+      for (const k of ['cf', 'cb']) { const v = (document.getElementById(k) || {}).value; if (v && vus[k].at(-1) !== v) vus[k].push(v); }
+      requestAnimationFrame(lire);
+    };
+    lire();
+  });
+  const montre = (k, v) => expect.poll(() => page.evaluate(([k, v]) => window.__vus[k].includes(v), [k, v]), { timeout: 10000 }).toBe(true);
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'import');
   await expect(page.locator('#tu')).toHaveAttribute('data-mode', 'auto');
   const coller = await page.locator('[data-cmode="coller"]').boundingBox();   // une autre façon de créer attendra : le tuto la retient
   await page.mouse.click(coller.x + coller.width / 2, coller.y + coller.height / 2);
   await expect(page.locator('#cf')).toBeVisible();
   await expect(page.locator('#nm')).toHaveValue('Dates d’histoire', { timeout: 10000 });   // l'histoire d'abord
-  await expect(page.locator('#cf')).toHaveValue('1789', { timeout: 10000 });
-  await expect(page.locator('#cb')).toHaveValue('Prise de la Bastille', { timeout: 10000 });
+  await montre('cf', '1789');
+  await montre('cb', 'Prise de la Bastille');
   await expect(page.locator('#cn')).toHaveText('3', { timeout: 10000 });
   expect(await page.evaluate(() => document.activeElement && document.activeElement.tagName)).not.toBe('INPUT');
   await etape(page, 'Crée-le');

@@ -420,11 +420,6 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .face.bk.l .tx{font-size:clamp(18px,5.2vw,27px);line-height:1.26;letter-spacing:-.4px}
 .face.bk.xl .tx{font-size:clamp(15.5px,4.4vw,21px);line-height:1.32;letter-spacing:-.2px;font-weight:600}
 .face.bk.xxl .tx{font-size:clamp(14px,3.6vw,17px);line-height:1.38;letter-spacing:-.1px;font-weight:600}
-.ov{position:absolute;top:24px;width:54px;height:54px;border-radius:18px;display:grid;
-  place-items:center;opacity:0;transform:scale(.55);pointer-events:none;color:#fff;z-index:3;
-  transition:opacity .18s,transform .3s var(--sp);box-shadow:var(--s2)}
-.ov.y{right:22px;background:var(--ok)} .ov.n{left:22px;background:var(--ko)}
-.ov svg{width:26px;height:26px;stroke-width:2.8}
 .gone{transition:transform .36s cubic-bezier(.4,0,.55,1),opacity .32s !important}
 .acts{display:flex;gap:11px;padding:2px 0 2px;flex:none}
 .act{flex:1;height:58px;border-radius:16px;display:grid;place-items:center;
@@ -2266,13 +2261,10 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
   display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:800;color:var(--ink2)}
 
 /* ---------- le contour qui répond au doigt ----------
-   La pastille arrivait trop tard : elle ne commençait qu'à vingt pixels et
-   n'était pleine qu'à quatre-vingt-dix, soit à peu près au moment du
-   lâcher. Le contour, lui, s'allume dès six pixels et sature à
-   soixante-six — on sait donc où l'on va pendant qu'on peut encore
-   changer d'avis. */
+   Il prend la couleur de la note que le doigt vise (ui/geste.js) : on sait
+   où l'on va pendant qu'on peut encore changer d'avis. */
 .card{--sw:0;--swc:transparent}
-.swr{position:absolute;inset:0;border-radius:30px;pointer-events:none;z-index:2;
+.swr{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2;
   opacity:var(--sw);
   box-shadow:inset 0 0 0 calc(3px + var(--sw) * 4px) var(--swc),
              0 0 calc(var(--sw) * 28px) -6px var(--swc);

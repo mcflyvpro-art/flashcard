@@ -120,7 +120,7 @@ const tapSub = (a, ds) => openSubject(ds.sub || null);
 function tapGo(a, ds) { if (reorder) return; return go('deck', ds.go); }
 
 const tapDsA = (a, ds) => fling(ds.a === 'yes' ? 1 : -1);
-function tapDsG(a, ds) { setPendingGrade(+ds.g); return fling(+ds.g > 0 ? 1 : -1); }
+function tapDsG(a, ds) { setPendingGrade(+ds.g); return fling(+ds.g > 1 ? 1 : -1); }   // le côté de son bouton
 function tapRm(a, ds) { const d = deck(view.id); d.cards = d.cards.filter(c => c.id !== ds.rm); saveDeck(d); return render(); }
 
 function tapSus(a, ds) {
