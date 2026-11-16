@@ -3,7 +3,8 @@
    nulle part ») : des taches de couleur aux bords fondus qui dérivent chacune
    à son rythme sur un fond qui tourne lentement ; jamais une bande, un filet
    ni un reflet. Les mêmes que dans l'app (ui/lumiere-abonne.css). Infini :
-   la lave et son halo qui respire ; Mirandola+ : de l'or fondu.
+   la lave, dans le bleu-rose de la marque (« plus lisible, plus doux,
+   pro », le même jour), et son halo qui respire ; Mirandola+ : de l'or fondu.
    Une feuille à part, que seules les pages qui s'en servent chargent
    (l'accueil et /tarifs pour leurs offres, /flashcards-ia pour son bouton
    d'or) : dans site.css, chaque page du site en payait le poids. */
@@ -21,15 +22,15 @@
 @keyframes lave3{0%{--l3x:52%;--l3y:2%}45%{--l3x:8%;--l3y:66%}to{--l3x:96%;--l3y:36%}}
 @keyframes lave4{0%{--l4x:22%;--l4y:98%}50%{--l4x:74%;--l4y:20%}to{--l4x:44%;--l4y:74%}}
 @keyframes lave5{to{--la:495deg}}
-@keyframes lueur{from{opacity:.35}to{opacity:.7}}
-.bt-holo{position:relative;isolation:isolate;color:#fff;text-shadow:0 1px 2px #4c0d6b80;background:none}
+@keyframes lueur{from{opacity:.3}to{opacity:.55}}
+.bt-holo{position:relative;isolation:isolate;color:#fff;text-shadow:0 1px 2px #1e1b4b59;background:none}
 .bt-holo::before,.bt-holo::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none}
-.bt-holo::before,.bt-holo::after,.ruban-holo{background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FF8A1Ff0,#0000 70%),radial-gradient(62% 140% at var(--l2x) var(--l2y),#22D3EEe6,#0000 70%),
-  radial-gradient(48% 120% at var(--l3x) var(--l3y),#FFC83De0,#0000 70%),radial-gradient(52% 125% at var(--l4x) var(--l4y),#5EE07Ad0,#0000 70%),
-  linear-gradient(var(--la),#7C3AED,#DB2777 55%,#C026D3);
-  filter:saturate(1.45);animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite}
-.bt-holo::before{inset:8px 8px -6px;filter:blur(12px) saturate(1.45);animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite,lueur 7s ease-in-out infinite alternate}
-.ruban-holo{color:#fff;text-shadow:0 1px 2px #4c0d6b80;box-shadow:0 6px 18px -6px #a855f7cc}
+.bt-holo::before,.bt-holo::after,.ruban-holo{background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#6E88DE99,#0000 70%),radial-gradient(62% 140% at var(--l2x) var(--l2y),#D06A9299,#0000 70%),
+  radial-gradient(48% 120% at var(--l3x) var(--l3y),#9A78CF8c,#0000 70%),radial-gradient(52% 125% at var(--l4x) var(--l4y),#33479E80,#0000 70%),
+  linear-gradient(var(--la),#4F69C6,#8A6CC6 50%,#C65B88);
+  animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite}
+.bt-holo::before{inset:8px 8px -6px;filter:blur(12px);animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite,lueur 7s ease-in-out infinite alternate}
+.ruban-holo{color:#fff;text-shadow:0 1px 2px #1e1b4b59;box-shadow:0 6px 18px -6px #8a6cc6b3}
 .offre-plus .bt-encre{background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FFF2B8d0,#0000 70%),radial-gradient(55% 130% at var(--l2x) var(--l2y),#B87100b0,#0000 70%),radial-gradient(50% 120% at var(--l3x) var(--l3y),#FFE07Ac0,#0000 70%),linear-gradient(var(--la),#D9951A,#F5C542 50%,#E3A422);color:#3A2300;box-shadow:0 14px 28px -14px #c27f0ae6;
   animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave5 41s linear infinite}
 .offre-plus .ruban{animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave5 41s linear infinite;background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FFF2B8d0,#0000 70%),radial-gradient(55% 130% at var(--l2x) var(--l2y),#B87100b0,#0000 70%),radial-gradient(50% 120% at var(--l3x) var(--l3y),#FFE07Ac0,#0000 70%),linear-gradient(var(--la),#D9951A,#F5C542 50%,#E3A422);color:#3A2300;box-shadow:0 6px 16px -8px #c27f0acc}

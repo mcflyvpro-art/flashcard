@@ -8,7 +8,10 @@
    radiaux qui s'éteignent dans leur propre teinte : aucune ligne nulle
    part) qui dérivent chacune à son rythme sur un fond qui tourne lentement ;
    les cinq périodes ne tombent jamais ensemble, la forme ne se répète pas.
-   Infini : la lave, saturée, et son halo flou qui respire dessous.
+   Infini : la lave, puis dans le bleu-rose de la marque (le même jour,
+   demandé : « un peu trop flashy ; retourne sur du bleu-rose, comme
+   l'identité du début, plus lisible, plus doux, pro »), et son halo flou
+   qui respire dessous.
    Mirandola+ : de l'or fondu, les mêmes taches en or clair et en or brun.
    Jamais un reflet, jamais un filet blanc. ui/lumiere.js cale chaque
    animation sur l'horloge : un bouton redessiné reprend où en était
@@ -32,11 +35,11 @@
 @keyframes lave3{0%{--l3x:52%;--l3y:2%}45%{--l3x:8%;--l3y:66%}to{--l3x:96%;--l3y:36%}}
 @keyframes lave4{0%{--l4x:22%;--l4y:98%}50%{--l4x:74%;--l4y:20%}to{--l4x:44%;--l4y:74%}}
 @keyframes lave5{to{--la:495deg}}
-@keyframes lueur{from{opacity:.35}to{opacity:.7}}
+@keyframes lueur{from{opacity:.3}to{opacity:.55}}
 
-html.offre-infini{--plus:var(--holo);--plus-c:#fff;--plus-t:linear-gradient(115deg,#4F46E5,#9333EA 40%,#DB2777 75%,#EA580C)}
+html.offre-infini{--plus:var(--holo);--plus-c:#fff;--plus-t:linear-gradient(115deg,#4F69C6,#8A6CC6 50%,#C65B88)}
 
-/* le signe après le nom : « + » d'or, « ∞ » d'arc-en-ciel */
+/* le signe après le nom : « + » d'or, « ∞ » bleu-rose */
 html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:var(--plus-t);-webkit-background-clip:text;
   background-clip:text;color:transparent}
 html.offre-infini #rail .brand span::after{content:'\2009∞'}
@@ -55,25 +58,24 @@ html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab)::after,html.offre-plus .
     radial-gradient(50% 120% at var(--l3x) var(--l3y),#FFE07Ac0,#0000 70%),linear-gradient(var(--la),#D9951A,#F5C542 50%,#E3A422);
   animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave5 41s linear infinite}
 html.offre-plus .tabs button.on{color:var(--plus-c)}
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab){box-shadow:none;text-shadow:0 1px 2px #4c0d6b80}
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab){box-shadow:none;text-shadow:0 1px 2px #1e1b4b59}
 html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::after,
 html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before,html.offre-infini .prog i{
-  background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FF8A1Ff0,#0000 70%),radial-gradient(62% 140% at var(--l2x) var(--l2y),#22D3EEe6,#0000 70%),
-    radial-gradient(48% 120% at var(--l3x) var(--l3y),#FFC83De0,#0000 70%),radial-gradient(52% 125% at var(--l4x) var(--l4y),#5EE07Ad0,#0000 70%),
-    linear-gradient(var(--la),#7C3AED,#DB2777 55%,#C026D3);
-  filter:saturate(1.45);
+  background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#6E88DE99,#0000 70%),radial-gradient(62% 140% at var(--l2x) var(--l2y),#D06A9299,#0000 70%),
+    radial-gradient(48% 120% at var(--l3x) var(--l3y),#9A78CF8c,#0000 70%),radial-gradient(52% 125% at var(--l4x) var(--l4y),#33479E80,#0000 70%),
+    linear-gradient(var(--la),#4F69C6,#8A6CC6 50%,#C65B88);
   animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,
     lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite}
 /* le halo : la même lave, floue, qui déborde un peu sous l'élément et respire */
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before{inset:8px 8px -6px;filter:blur(12px) saturate(1.45);
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before{inset:8px 8px -6px;filter:blur(12px);
   animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,
     lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite,lueur 7s ease-in-out infinite alternate}
 
 /* la barre latérale : l'icône allumée et l'entrée de l'offre */
 html.offre-plus #rail nav button.on svg{color:#C27F0A}
-html.offre-infini #rail nav :is(button.on,.r-plus) svg{color:#9333EA}
+html.offre-infini #rail nav :is(button.on,.r-plus) svg{color:#6A55B5}
 
-/* le liseré des jetons d'or et d'arc-en-ciel tourne lentement */
+/* le liseré des jetons d'or et bleu-rose tourne lentement */
 @property --a{syntax:'<angle>';inherits:false;initial-value:200deg}
 html.offre-plus .jt:is(.jt-plus,.jt-infini){animation:lisere 6s linear infinite}
 @keyframes lisere{to{--a:560deg}}

@@ -35,14 +35,15 @@
   /* ce qui s'en va accélère et disparaît : jamais plus long que l'entrée */
   --out:cubic-bezier(.4,0,1,1);
   --pad:20px;
-  /* les abonnements : Mirandola+ l'or, Infini l'arc-en-ciel (inversés le
-     2026-11-15), en matière fondue depuis le 2026-11-16 — des taches aux
+  /* les abonnements : Mirandola+ l'or (inversés le 2026-11-15), Infini le
+     bleu-rose de la marque (l'arc-en-ciel jusqu'au 2026-11-16, « trop
+     flashy »), en matière fondue depuis le 2026-11-16 — des taches aux
      bords fondus sur un fond, jamais une bande ni un reflet blanc. Ici la
      matière figée (son aplat --plus, son encre --plus-c, son texte --plus-t,
      la lave --holo) ; ui/lumiere-abonne.css la fait couler */
   --plus:radial-gradient(60% 135% at 18% 12%,#FFF2B8d0,#0000 70%),radial-gradient(55% 130% at 88% 92%,#B87100b0,#0000 70%),linear-gradient(135deg,#D9951A,#F5C542 50%,#E3A422);
   --plus-c:#3A2300;--plus-t:linear-gradient(135deg,#8A5200,#C27F0A 55%,#9A5B00);
-  --holo:radial-gradient(60% 135% at 10% 15%,#FF8A1F,#0000 70%),radial-gradient(62% 140% at 90% 85%,#22D3EE,#0000 70%),radial-gradient(48% 120% at 55% 5%,#FFC83D,#0000 70%),linear-gradient(135deg,#7C3AED,#DB2777 55%,#C026D3);
+  --holo:radial-gradient(60% 135% at 12% 18%,#6E88DE99,#0000 70%),radial-gradient(62% 140% at 88% 82%,#D06A9299,#0000 70%),linear-gradient(135deg,#4F69C6,#8A6CC6 50%,#C65B88);
   --plus-s:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 1.7v6.6M1.7 5h6.6' stroke='%233A2300' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -1342,15 +1343,15 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
    (bouton principal, onglet, bouton rond, barres, le signe du nom) est dans
    ui/lumiere-abonne.css, chargée par ui/bridage.js pour un abonné seulement. */
 .jt{--lis:conic-gradient(from var(--a,200deg),#8A5200,#E0A21B,#FFF1B8,#F5C542,#A86A00,#FFE07A,#8A5200)}
-.jt.jt-infini{--lis:conic-gradient(from var(--a,200deg),#6366F1,#A855F7,#EC4899,#F97316,#FACC15,#A3E635,#22D3EE,#6366F1)}
+.jt.jt-infini{--lis:conic-gradient(from var(--a,200deg),#5A76D0,#9A78CF,#D7648D,#F0A9C4,#9A78CF,#A9B8F0,#5A76D0)}
 .jt:is(.jt-plus,.jt-infini){border:2.5px solid transparent;background:linear-gradient(var(--k,var(--ink2)) 0 0) padding-box,var(--lis) border-box;
   box-shadow:0 0 0 1px #8a52004d,0 5px 16px -4px #e0a21bf2}
-.jt.jt-infini{box-shadow:0 0 0 1px #4f46e540,0 5px 18px -4px #9333eae6}
+.jt.jt-infini{box-shadow:0 0 0 1px #4f69c640,0 5px 18px -4px #8a6cc6cc}
 .jt:is(.lg,.xl):is(.jt-plus,.jt-infini){border-width:3.5px}
 .jt.vis:is(.jt-plus,.jt-infini){background:linear-gradient(color-mix(in srgb,var(--k) 30%,#fff) 0 0) padding-box,var(--lis) border-box}
 /* dans un menu : ce qui est offert (l'or), ce qui est dans Infini (l'arc-en-ciel) */
 .mi .mi-offert{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:var(--plus-c);background:var(--plus)}
-.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 2px #3b0764a6;background:var(--holo)}
+.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 2px #1e1b4b59;background:var(--holo)}
 /* l'onglet Mirandola+ d'un compte gratuit : son nom et son icône dans l'or */
 .tabs .t-plus svg{color:#C27F0A;fill:#f5c54233} .tabs .t-plus.on svg{color:var(--bg);fill:none}
 #rail nav .r-plus span{background:var(--plus-t);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:750}

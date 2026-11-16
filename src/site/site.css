@@ -746,7 +746,7 @@ button{font:inherit;color:inherit}
 .promo-tarifs .lancement-ok{background:var(--encre);color:#fff}
 .promo-detail{display:inline-block;margin-top:4px;font-size:14px;color:var(--encre2)}
 /* Infini dans le bandeau : son arc-en-ciel (2026-11-08 ; l'or jusqu'au 2026-11-15) */
-.lancement-infini{font-weight:750;font-style:italic;background:linear-gradient(115deg,#A5B4FC,#F0ABFC 40%,#FDA4AF 70%,#FDBA74);-webkit-background-clip:text;
+.lancement-infini{font-weight:750;font-style:italic;background:linear-gradient(115deg,#A9B8F0,#C9B6EE 45%,#F0A9C4);-webkit-background-clip:text;
   background-clip:text;color:transparent;padding-right:.06em}
 /* l'essai de Mirandola+ (2026-11-08) : une pastille au-dessus du bouton, une ligne dessous */
 .essai-plus{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin:2px 0 12px;padding:5px 12px;border-radius:99px;
@@ -779,10 +779,10 @@ button{font:inherit;color:inherit}
 .comparatif td{font-weight:650;color:var(--encre2)}
 .comparatif .col-plus{background:#f5c54224}
 .comparatif thead :is(.col-plus,.col-infini){border-radius:18px 18px 0 0}
-.comparatif .col-infini{background:#9333ea0f}
+.comparatif .col-infini{background:#8a6cc612}
 /* le violet d'Infini en texte : 7:1 sur le papier du site (e2e/accessibilite.e2e.js veut 4,5) */
-.comparatif .o-n.infini{font-style:italic;color:#6D28D9}
-.comparatif .col-infini .ic.oui{color:#7C3AED}
+.comparatif .o-n.infini{font-style:italic;color:#5C49A6}
+.comparatif .col-infini .ic.oui{color:#6A55B5}
 .comparatif .ic{margin:0 auto;width:22px;height:22px}
 .comparatif .oui{color:var(--ok);stroke-width:2.6}
 .comparatif .non{color:#C8C3B9;stroke-width:2.4}
@@ -804,13 +804,13 @@ button{font:inherit;color:inherit}
 /* Mirandola Infini : la troisième offre, à droite — la nuit et l'arc-en-ciel
    (l'ivoire et l'or jusqu'au 2026-11-15). Le milieu reste ce que l'œil prend
    d'abord (plus haut, plus grand, « Le plus choisi »). */
-.offre-infini{border:2.5px solid transparent;color:var(--creme);box-shadow:var(--ombre3),0 30px 60px -28px #9333ea99;
-  background:radial-gradient(80% 55% at 100% 0%,#db277738,#0000 62%) padding-box,radial-gradient(80% 55% at 0% 100%,#4f46e547,#0000 62%) padding-box,
-    linear-gradient(var(--nuit),var(--nuit)) padding-box,conic-gradient(from var(--angle,0deg),#6366F1,#A855F7,#EC4899,#F97316,#FACC15,#A3E635,#22D3EE,#6366F1) border-box;animation:tour 6s linear infinite}
-.offre-infini :is(h2,h3) em{font-style:italic;background:linear-gradient(115deg,#A5B4FC,#F0ABFC 40%,#FDA4AF 70%,#FDBA74);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
+.offre-infini{border:2.5px solid transparent;color:var(--creme);box-shadow:var(--ombre3),0 30px 60px -28px #8a6cc699;
+  background:radial-gradient(80% 55% at 100% 0%,#c65b8838,#0000 62%) padding-box,radial-gradient(80% 55% at 0% 100%,#4f69c647,#0000 62%) padding-box,
+    linear-gradient(var(--nuit),var(--nuit)) padding-box,conic-gradient(from var(--angle,0deg),#5A76D0,#9A78CF,#D7648D,#F0A9C4,#9A78CF,#A9B8F0,#5A76D0) border-box;animation:tour 6s linear infinite}
+.offre-infini :is(h2,h3) em{font-style:italic;background:linear-gradient(115deg,#A9B8F0,#C9B6EE 45%,#F0A9C4);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
 .offre-infini .prix span,.offre-infini .prix-note{color:var(--creme2)}
 .offre-infini .inclus{border-color:rgba(243,238,227,.14)}
-.offre-infini .inclus li:not(:has(b))::before{background-color:#c084fc33;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F0ABFC' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
+.offre-infini .inclus li:not(:has(b))::before{background-color:#9a78cf40;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23DDB8EE' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")}
 /* le milieu, mis en avant : plus haut et un peu plus grand que ses voisines */
 .offres .offre-plus{z-index:1}
 .offres .offre-plus.rv.vu{transform:translateY(-18px) scale(1.035)}
