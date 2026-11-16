@@ -52,7 +52,7 @@ html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab){background:none;isolatio
   box-shadow:0 12px 26px -12px #c27f0acc}
 html.offre-plus .cta:not(:disabled){position:relative}
 html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab)::after,
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none}
+html.offre-infini :is(.cta:not(:disabled),.fab)::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none}
 html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab)::after,html.offre-plus .prog i{
   background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FFF2B8d0,#0000 70%),radial-gradient(55% 130% at var(--l2x) var(--l2y),#B87100b0,#0000 70%),
     radial-gradient(50% 120% at var(--l3x) var(--l3y),#FFE07Ac0,#0000 70%),linear-gradient(var(--la),#D9951A,#F5C542 50%,#E3A422);
@@ -60,14 +60,16 @@ html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab)::after,html.offre-plus .
 html.offre-plus .tabs button.on{color:var(--plus-c)}
 html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab){box-shadow:none;text-shadow:0 1px 2px #1e1b4b59}
 html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::after,
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before,html.offre-infini .prog i{
+html.offre-infini :is(.cta:not(:disabled),.fab)::before,html.offre-infini .prog i{
   background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#6E88DE99,#0000 70%),radial-gradient(62% 140% at var(--l2x) var(--l2y),#D06A9299,#0000 70%),
     radial-gradient(48% 120% at var(--l3x) var(--l3y),#9A78CF8c,#0000 70%),radial-gradient(52% 125% at var(--l4x) var(--l4y),#33479E80,#0000 70%),
     linear-gradient(var(--la),#4F69C6,#8A6CC6 50%,#C65B88);
   animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,
     lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite}
-/* le halo : la même lave, floue, qui déborde un peu sous l'élément et respire */
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before{inset:8px 8px -6px;filter:blur(12px);
+/* le halo : la même lave, floue, qui déborde un peu sous l'élément et respire
+   (pas sous l'onglet de la barre : il en débordait, et chaque image du
+   geste de la barre aurait refait ce flou) */
+html.offre-infini :is(.cta:not(:disabled),.fab)::before{inset:8px 8px -6px;filter:blur(12px);
   animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,
     lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite,lueur 7s ease-in-out infinite alternate}
 

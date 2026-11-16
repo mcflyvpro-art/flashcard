@@ -16,12 +16,10 @@ import { connecter, sansTuto } from './aide.js';
 
 /* Les animations d'entrée en cours, avec ce qu'elles animent (pour lire
    l'échec) : une transition (un fond qui s'éclaire sous le doigt) n'en est
-   pas une, ni la détente de la barre du bas après un appui (`relache`,
-   ui/barre.js : elle continue, sur la barre redessinée, le geste qu'on
-   vient de lâcher). */
+   pas une. */
 const entrees = page => page.evaluate(() => document.getAnimations()
   .filter(a => a.playState === 'running' && typeof CSSAnimation !== 'undefined' && a instanceof CSSAnimation
-    && a.effect.getComputedTiming().iterations !== Infinity && !/^relache/.test(a.animationName))
+    && a.effect.getComputedTiming().iterations !== Infinity)
   .map(a => `${a.animationName} sur ${a.effect.target.className || a.effect.target.tagName}`));
 
 function professeur() {

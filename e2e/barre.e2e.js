@@ -27,7 +27,8 @@ async function poseeSurLOnglet(page) {
     const nav = document.querySelector('.tabs'), sl = nav.querySelector('.sl');
     const i = [...nav.querySelectorAll('button')].findIndex(b => b.getAttribute('aria-current') === 'page');
     const x = new DOMMatrixReadOnly(getComputedStyle(sl).transform).m41;
-    return Math.abs(x - i * 74) < 1 && !nav.classList.contains('presse') ? 'posée' : `x=${x.toFixed(1)}, onglet ${i}`;
+    const enRoute = sl.getAnimations().length > 0;                      // la pose, sur le compositeur
+    return Math.abs(x - i * 74) < 1 && !enRoute && !nav.classList.contains('presse') ? 'posée' : `x=${x.toFixed(1)}, onglet ${i}`;
   }), { timeout: 4000 }).toBe('posée');
 }
 
@@ -62,8 +63,10 @@ test('changer vite d’onglet : la pastille finit toujours sous l’onglet ouver
   for (let k = 0; k < 9; k++) await page.mouse.click(...(k % 2 ? a : b), { delay: 15 });   // le dernier : « Mes amis »
   await expect(page.locator('.tabs button').nth(1)).toHaveAttribute('aria-current', 'page', { timeout: 5000 });
   await poseeSurLOnglet(page);
-  // l'icône de l'onglet ouvert n'est jamais blanche sur la barre
-  expect(await page.locator('.tabs button.vise').count()).toBe(0);
+  // posée, plus aucune icône n'est « visée » : l'onglet ouvert reprend sa couleur
+  await expect(page.locator('.tabs button.vise')).toHaveCount(0);
+  // une seule barre dans la page, quoi qu'il arrive
+  await expect(page.locator('.tabs')).toHaveCount(1);
 });
 
 // Au doigt, les événements d'un appui vont au bouton touché : redessiné pendant

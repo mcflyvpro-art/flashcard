@@ -1,21 +1,17 @@
 /* ══════════ la barre du bas, vivante (2026-11-16, ui/barre.js) ══════════
-   Appuyée, la barre gonfle à peine et sa pastille grossit — plus haute que
-   la barre, comme une loupe posée dessus —, suit le doigt et s'étire quand
-   elle va vite (--etire, posé par ui/barre.js) ; l'icône qu'elle couvre
-   s'allume et grandit, celle qu'elle quitte s'éteint. Au lâcher, tout se
-   détend en ressort (.relache), y compris sur la barre redessinée. */
+   La pastille vit sur son propre calque : sa position, sa loupe et son
+   étirement ne passent que par `transform`, écrit par ui/barre.js (pendant
+   l'appui) ou animé par le compositeur (la pose). Appuyée, la barre gonfle à
+   peine ; l'icône sous la pastille s'allume et grandit, celle de l'onglet
+   ouvert s'éteint tant qu'une autre est visée. */
 .tabs{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:scale .4s var(--sp)}
+.tabs .sl{will-change:transform}
 .tabs.presse{scale:1.035}
-.tabs.presse .sl{scale:calc(1.13 + var(--etire,0)) calc(1.22 - var(--etire,0) * .7);
-  box-shadow:0 14px 28px -12px #1d1c1980}
-.tabs .sl.relache{animation:relache .42s cubic-bezier(.34,1.32,.5,1)}
-.tabs.relache{animation:relache-barre .42s cubic-bezier(.34,1.32,.5,1)}
-@keyframes relache{from{scale:1.13 1.22}}
-@keyframes relache-barre{from{scale:1.035}}
+.tabs.presse .sl{box-shadow:0 14px 28px -12px #1d1c1980}
 .tabs button svg{transition:scale .3s cubic-bezier(.34,1.32,.5,1)}
 .tabs.presse button.vise svg{scale:1.16}
 /* la couleur suit la pastille : allumée dessous, éteinte ailleurs */
-.tabs.presse button.on:not(.vise){color:var(--soft)}
-.tabs.presse button.vise{color:var(--bg)}
-html.offre-plus .tabs.presse button.vise{color:var(--plus-c)}
-@media (prefers-reduced-motion:reduce){.tabs.presse,.tabs.presse .sl{scale:none}.tabs .sl.relache,.tabs.relache{animation:none}}
+.tabs button.vise{color:var(--bg)}
+html.offre-plus .tabs button.vise{color:var(--plus-c)}
+.tabs:has(button.vise) button.on:not(.vise){color:var(--soft)}
+@media (prefers-reduced-motion:reduce){.tabs.presse{scale:none}}
