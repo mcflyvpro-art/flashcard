@@ -67,8 +67,8 @@ document.addEventListener('click', ev => {
    (une fois par image) : gratuit, bibliothèque pleine, Mirandola+ ; et les
    volets du journal réservés (data-volet de ui/journal-ecran.js), floutés
    sous leur titre. */
-/* l'or de Mirandola+ et l'arc-en-ciel d'Infini sur ce qu'on touche, chargés
-   une fois pour un abonné ; une panne (hors ligne avant la mise en cache) se
+/* l'or de Mirandola+ et la lave d'Infini sur ce qu'on touche (ui/lumiere.js :
+   la feuille et l'horloge qui la cale), chargés une fois pour un abonné ; une panne (hors ligne avant la mise en cache) se
    retente au marquage suivant */
 let image = 0, lumiere = null;
 function marquer() {
@@ -78,7 +78,7 @@ function marquer() {
   html.classList.toggle('livres-plein', gratuit && plein());
   html.classList.toggle('offre-plus', aFolioPlus());
   html.classList.toggle('offre-infini', aInfini());
-  if (aFolioPlus() && !lumiere) lumiere = import('./lumiere-abonne.css').catch(() => { lumiere = null; });
+  if (aFolioPlus() && !lumiere) lumiere = import('./lumiere.js').catch(() => { lumiere = null; });
   for (const v of document.querySelectorAll('[data-volet]')) v.classList.toggle('plus-floute', gratuit && JOURNAL_PLUS.includes(v.dataset.volet));
 }
 export const remarquer = () => { if (!image) image = requestAnimationFrame(marquer); };

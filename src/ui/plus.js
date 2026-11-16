@@ -15,6 +15,8 @@ import { isProf } from './classement.js';
 import { ongletPlus } from './plus-porte.js';
 import { aDerriere } from './routeur.js';
 import { installed, openInstall } from './onboarding.js';
+// la lave d'Infini et l'or de Mirandola+, calés sur l'horloge (abonné ou non : l'écran les montre)
+import './lumiere.js';
 import './plus.css';
 
 /* ══════════ l'écran Mirandola+ (2026-10-27, refait le 2026-10-28) ══════════

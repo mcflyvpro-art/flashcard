@@ -178,6 +178,11 @@ import { gzipSync } from 'node:zlib';
 import { SOUS_PAGES } from '../src/site/pages.js';
 
 // octets gzip, tous fichiers de la part cumulés
+// 2026-11-16 : la lave d'Infini et l'or fondu de Mirandola+ (des taches qui
+// dérivent, @property et leurs chemins) dans une feuille à part,
+// src/site/lave.css, que seules les pages qui s'en servent chargent :
+// l'accueil, qui porte les offres, passe de 51,5 à 52 Ko ; les autres pages
+// retrouvent de la marge (le reflet des boutons d'encre est parti).
 // 2026-11-15 : les abonnements inversés (Mirandola+ l'or, Infini l'arc-en-
 // ciel), rendus brillants — liserés qui tournent, reflets, lueurs — dans
 // site.css, que chaque page charge : le site passe de 51 à 51,5 Ko, les
@@ -189,7 +194,7 @@ import { SOUS_PAGES } from '../src/site/pages.js';
 // démarrage passe de 124,3 à 127,0 Ko, sous ses 128.
 const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 72 * 1024, cssDemande: 27 * 1024, jsDemo: 33 * 1024, cssDemo: 3 * 1024,
   jsGestion: 34 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
-  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, jsRetouche: 5 * 1024, cssRetouche: 1024, jsDevis: 6 * 1024, cssDevis: 1024, site: 51.5 * 1024, pages: 41.5 * 1024, moteur: 56 * 1024 };
+  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, jsRetouche: 5 * 1024, cssRetouche: 1024, jsDevis: 6 * 1024, cssDevis: 1024, site: 52 * 1024, pages: 41.5 * 1024, moteur: 56 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',
   jsGestion: 'JS des consoles (référent, éditeur)', cssGestion: 'CSS des consoles (référent, éditeur)',

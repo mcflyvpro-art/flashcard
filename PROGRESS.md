@@ -19,7 +19,14 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-15 · Plus de quota de cartes neuves : toute carte
+DERNIER   2026-11-16 · La matière des abonnés devient organique : Infini
+          en lampe à lave (taches aux bords fondus qui dérivent chacune à
+          son rythme, saturées, un halo qui respire), Mirandola+ en or
+          fondu ; plus aucun reflet ni filet blanc, ni dans l'app ni sur le
+          site. Calée sur l'horloge (ui/lumiere.js) : elle ne saute plus
+          d'un écran à l'autre ni en appuyant sur le même onglet. Rendue au
+          passage : la courbe en pointillés de l'accueil, figée depuis la
+          veille. Avant : 2026-11-15 · Plus de quota de cartes neuves : toute carte
           Nouvelle est proposée, puis seul le moteur la ramène (des cartes
           ajoutées attendaient douze jours derrière les neuves anciennes).
           La porte d'installation suit l'iPhone : ≡ à gauche de l'adresse

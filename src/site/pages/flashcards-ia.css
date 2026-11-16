@@ -1,3 +1,4 @@
+@import '../lave.css';
 /* /flashcards-ia : un cours qui devient un livre, les cinq façons de commencer, les règles en exemples, deux offres. Chargée par sa seule page, après site.css et pages.css. */
 
 /* ---------- l'IA à qui l'on parle : une conversation dessinée ---------- */
@@ -121,7 +122,8 @@
 /* Mirandola+, l'or (2026-11-15 ; la nuit et la lumière de la marque avant) */
 .p-offre.or .p-offre-grand{background:linear-gradient(135deg,#8A5200,#C27F0A 55%,#9A5B00);-webkit-background-clip:text;background-clip:text;color:transparent}
 .p-offre.or .p-offre-grand small{-webkit-text-fill-color:var(--doux)}
-.bt-or-vif{overflow:hidden;background:linear-gradient(115deg,#A86400,#E9A91E 24%,#FFE58C 44%,#FFF6D2 50%,#F4BC3A 60%,#C27F0A 82%,#F6C64A);color:#3A2300;box-shadow:inset 0 1px 0 #fffb,inset 0 -2px 0 #7a46001f,0 14px 28px -14px #c27f0ae6}
+.bt-or-vif{background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FFF2B8d0,#0000 70%),radial-gradient(55% 130% at var(--l2x) var(--l2y),#B87100b0,#0000 70%),radial-gradient(50% 120% at var(--l3x) var(--l3y),#FFE07Ac0,#0000 70%),linear-gradient(var(--la),#D9951A,#F5C542 50%,#E3A422);color:#3A2300;box-shadow:0 14px 28px -14px #c27f0ae6;
+  animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave5 41s linear infinite}
 .bt-or-vif:hover{transform:translateY(-2px)}
 
 @media (max-width:980px){

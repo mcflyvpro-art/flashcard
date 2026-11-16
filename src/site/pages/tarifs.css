@@ -1,3 +1,4 @@
+@import '../lave.css';
 /* /tarifs : le haut de page court, ce qui ne change pas, les deux moteurs. Chargée par sa seule page, après site.css et pages.css. */
 
 /* le haut de page ne porte que le fil d'Ariane, les offres suivent ; la lumière du haut descend derrière leur titre */

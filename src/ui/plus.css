@@ -1,5 +1,5 @@
 /* ══════════ l'écran Mirandola+ (préfixe fp-, chargé avec ui/plus.js) ══════════
-   Mirandola+ a l'or, Infini l'arc-en-ciel (inversés le 2026-11-15, les
+   Mirandola+ a l’or fondu, Infini la lave d’arc-en-ciel (2026-11-16, les
    variables dans app.css : --plus, --plus-c, --plus-t, --holo) ; le reste
    suit la charte de l'app : surfaces blanches
    cernées d'un filet, l'encre pour habiller, l'azur pour ce qui se compte. */
@@ -47,7 +47,7 @@
 .fp-alerte svg{width:18px;height:18px;flex:none;margin-top:1px}
 /* ce que l'élève vient de toucher (ui/bridage.js) */
 .fp-raison{display:flex;gap:10px;align-items:center;margin:-4px 0 16px;padding:12px 16px;border-radius:16px;font-size:15px;font-weight:700;
-  line-height:1.35;color:var(--plus-c);background:var(--plus);box-shadow:inset 0 1px 0 #fffb,0 12px 24px -16px #c27f0ae6}
+  line-height:1.35;color:var(--plus-c);background:var(--plus);box-shadow:0 12px 24px -16px #c27f0ae6}
 .fp-raison svg{width:18px;height:18px;flex:none;fill:#ffffff40}
 .fp-restaurer{margin:-4px auto 0}
 
@@ -67,9 +67,9 @@
 .fp-f-note{font-size:12px;font-weight:600;color:var(--soft);line-height:1.35}
 .fp-payer{display:flex;align-items:center;justify-content:center;gap:8px;height:52px;border:0;border-radius:16px;color:var(--plus-c);
   font:inherit;font-size:16px;font-weight:800;cursor:pointer;
-  background:linear-gradient(110deg,#0000 38%,#fffc 50%,#0000 62%) 0 0/300% 100%,var(--plus);
-  box-shadow:inset 0 1px 0 #fffb,inset 0 -2px 0 #7a46001f,0 14px 28px -14px #c27f0ae6;animation:fp-reflet 4.5s ease-in-out infinite}
-@keyframes fp-reflet{0%,50%{background-position:130% 0,0 0}to{background-position:-30% 0,0 0}}
+  background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FFF2B8d0,#0000 70%),radial-gradient(55% 130% at var(--l2x) var(--l2y),#B87100b0,#0000 70%),
+    radial-gradient(50% 120% at var(--l3x) var(--l3y),#FFE07Ac0,#0000 70%),linear-gradient(var(--la),#D9951A,#F5C542 50%,#E3A422);
+  box-shadow:0 14px 28px -14px #c27f0ae6;animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave5 41s linear infinite}
 .fp-payer svg{width:18px;height:18px}
 .fp-payer:disabled{opacity:.6;cursor:default}
 .fp-note{margin:0;font-size:12.5px;font-weight:600;line-height:1.45;color:var(--soft);text-align:center;text-wrap:balance}
@@ -83,7 +83,7 @@
 .fp-merci h2{margin:4px 0 0;font:700 24px/1.15 var(--serif);letter-spacing:-.5px}
 .fp-merci p{margin:0;font-size:14.5px;font-weight:600;color:var(--soft);line-height:1.4}
 .fp-merci-ic{display:grid;place-items:center;width:56px;height:56px;border-radius:18px;color:var(--plus-c);
-  background:var(--plus);box-shadow:inset 0 1px 0 #fffb,0 12px 24px -12px #c27f0acc}
+  background:var(--plus);box-shadow:0 12px 24px -12px #c27f0acc}
 .fp-merci-ic svg{width:28px;height:28px;stroke-width:2.4}
 .fp-attente .fp-merci-ic{background:var(--surf2);color:var(--ink2);box-shadow:none}
 .fp-attente .fp-merci-ic svg{animation:fp-tourne 1.2s linear infinite}
@@ -96,7 +96,7 @@
 .fp-av{display:flex;flex-direction:column;gap:14px;margin:4px 0 0;padding:0;list-style:none}
 .fp-av li{display:flex;gap:12px;align-items:flex-start}
 .fp-av-ic{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:11px;color:var(--plus-c);
-  background:var(--plus);box-shadow:inset 0 1px 0 #fffb}
+  background:var(--plus)}
 .fp-av-ic svg{width:18px;height:18px}
 .fp-av span{display:flex;flex-direction:column;gap:2px;font-size:13.5px;font-weight:550;line-height:1.4;color:var(--soft)}
 .fp-av b{font-size:14.5px;font-weight:750;color:var(--ink)}
@@ -157,29 +157,33 @@
 .fp-n i.fp-essai{font-style:normal;font-size:10.5px;font-weight:750;letter-spacing:.01em;color:var(--plus-c);padding:2px 8px;border-radius:99px;
   margin:-2px 0 3px;background:var(--plus);white-space:nowrap}
 .fp-n[data-v="infini"].on span{color:#ffffffd9}
-/* Infini qui s'écoule et rayonne (2026-11-15) : sous le texte, sa surface — l'arc-en-ciel
-   en boucle, un éclat, un reflet — et sa lueur floue qui respire */
+/* Infini en lave (2026-11-16) : sous le texte, la matière — des taches de
+   couleur aux bords fondus qui dérivent chacune à son rythme, jamais une
+   ligne ni un reflet — et son halo flou qui respire ; les @property et les
+   @keyframes sont dans ui/lumiere-abonne.css, chargée avec cet écran */
 :is(.fp-n[data-v="infini"].on,.fp-payer-infini:not(:disabled),.fp-monter){position:relative;isolation:isolate;background:none;box-shadow:none;
-  color:#fff;text-shadow:0 1px 3px #3b0764a6;animation:none}
+  color:#fff;text-shadow:0 1px 2px #4c0d6b80}
 :is(.fp-n[data-v="infini"].on,.fp-payer-infini:not(:disabled),.fp-monter)::before,
 :is(.fp-n[data-v="infini"].on,.fp-payer-infini:not(:disabled),.fp-monter)::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none}
-:is(.fp-n[data-v="infini"].on,.fp-payer-infini:not(:disabled),.fp-monter)::before{inset:6px 4px -8px;background:var(--holo) 0 0/200% 100%;
-  filter:blur(15px) saturate(1.5);animation:fp-flux 10s linear infinite,fp-souffle 3.6s ease-in-out infinite alternate}
-:is(.fp-n[data-v="infini"].on,.fp-payer-infini:not(:disabled),.fp-monter)::after{box-shadow:inset 0 1px 0 #fffa,inset 0 -1px 0 #3b07641f;
-  background:linear-gradient(110deg,#0000 38%,#fffa 50%,#0000 62%) 0 0/300% 100%,linear-gradient(#ffffff47,#0000 55%),var(--holo) 0 0/200% 100%;
-  animation:fp-flux3 10s linear infinite}
-@keyframes fp-flux{to{background-position:-200% 0}}
-@keyframes fp-flux3{from{background-position:130% 0,0 0,0 0}to{background-position:-130% 0,0 0,-200% 0}}
-@keyframes fp-souffle{from{opacity:.5}to{opacity:.95}}
-/* les prix d'Infini : la formule choisie cernée de violet, sa remise en arc-en-ciel */
+:is(.fp-n[data-v="infini"].on,.fp-payer-infini:not(:disabled),.fp-monter)::before,
+:is(.fp-n[data-v="infini"].on,.fp-payer-infini:not(:disabled),.fp-monter)::after,
+.fp-offre-infini .fp-f-nom em,.fp-av-infini .fp-av:not(.fp-av-court) .fp-av-ic{
+  background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FF8A1Ff0,#0000 70%),radial-gradient(62% 140% at var(--l2x) var(--l2y),#22D3EEe6,#0000 70%),
+    radial-gradient(48% 120% at var(--l3x) var(--l3y),#FFC83De0,#0000 70%),radial-gradient(52% 125% at var(--l4x) var(--l4y),#5EE07Ad0,#0000 70%),
+    linear-gradient(var(--la),#7C3AED,#DB2777 55%,#C026D3);
+  filter:saturate(1.45);
+  animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,
+    lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite}
+:is(.fp-n[data-v="infini"].on,.fp-payer-infini:not(:disabled),.fp-monter)::before{inset:8px 8px -6px;filter:blur(12px) saturate(1.45);
+  animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,
+    lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite,lueur 7s ease-in-out infinite alternate}
+/* les prix d'Infini : la formule choisie cernée de violet, sa remise en lave */
 .fp-offre-infini .fp-f.on{box-shadow:inset 0 0 0 2px #7C3AED}
-.fp-offre-infini .fp-f-nom em{color:#fff;text-shadow:0 1px 2px #3b0764a6;background:var(--holo) 0 0/200% 100%;animation:fp-flux 10s linear infinite}
-.fp-payer-infini{color:#fff;text-shadow:0 1px 3px #3b0764a6;background:linear-gradient(#fff3,#0000 55%),var(--holo)}
-.fp-av-infini .fp-av:not(.fp-av-court) .fp-av-ic{color:#fff;background:linear-gradient(#fff3,#0000 55%),var(--holo) 0 0/200% 100%;
-  box-shadow:inset 0 1px 0 #fff8,0 6px 16px -6px #a855f7b3;animation:fp-flux2 10s linear infinite}
-@keyframes fp-flux2{to{background-position:0 0,-200% 0}}
-/* chaque icône à son moment du flux : la liste ondule au lieu de battre d'un bloc */
-.fp-av-infini .fp-av:not(.fp-av-court) li:nth-child(2n) .fp-av-ic{animation-delay:-3.3s}.fp-av-infini .fp-av:not(.fp-av-court) li:nth-child(3n) .fp-av-ic{animation-delay:-6.6s}
+.fp-offre-infini .fp-f-nom em{color:#fff;text-shadow:0 1px 2px #4c0d6b80}
+.fp-payer-infini{color:#fff;text-shadow:0 1px 2px #4c0d6b80;background:var(--holo);animation:none}
+.fp-av-infini .fp-av:not(.fp-av-court) .fp-av-ic{color:#fff;box-shadow:0 6px 16px -6px #a855f7b3}
+/* chaque icône à son moment de la lave : la liste ondule au lieu de battre d'un bloc */
+.fp-av-infini .fp-av:not(.fp-av-court) li:nth-child(2n) .fp-av-ic{animation-delay:-7s}.fp-av-infini .fp-av:not(.fp-av-court) li:nth-child(3n) .fp-av-ic{animation-delay:-13s}
 .fp-et{margin:6px 0 -2px;font-size:13px;font-weight:700;color:var(--soft)}
 .fp-av-court{gap:6px}
 .fp-av-court li{align-items:center}
@@ -207,4 +211,4 @@
 .fp-monter svg{width:17px;height:17px}
 .fp-arriere{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:0;font-size:14px;font-weight:650;color:var(--soft)}
 .fp-arriere svg{width:16px;height:16px}
-@media (prefers-reduced-motion:reduce){.fp *{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.fp *,.fp ::before,.fp ::after{animation:none!important}}

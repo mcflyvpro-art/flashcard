@@ -35,13 +35,14 @@
   /* ce qui s'en va accélère et disparaît : jamais plus long que l'entrée */
   --out:cubic-bezier(.4,0,1,1);
   --pad:20px;
-  /* les abonnements (inversés le 2026-11-15) : Mirandola+ l'or vif — son
-     aplat, son encre dessus (--plus-c), son texte (--plus-t) —, Infini
-     l'arc-en-ciel lumineux (--holo), une boucle — il finit sur sa première
-     teinte — pour s'écouler sans couture */
-  --plus:linear-gradient(115deg,#A86400,#E9A91E 24%,#FFE58C 44%,#FFF6D2 50%,#F4BC3A 60%,#C27F0A 82%,#F6C64A);
+  /* les abonnements : Mirandola+ l'or, Infini l'arc-en-ciel (inversés le
+     2026-11-15), en matière fondue depuis le 2026-11-16 — des taches aux
+     bords fondus sur un fond, jamais une bande ni un reflet blanc. Ici la
+     matière figée (son aplat --plus, son encre --plus-c, son texte --plus-t,
+     la lave --holo) ; ui/lumiere-abonne.css la fait couler */
+  --plus:radial-gradient(60% 135% at 18% 12%,#FFF2B8d0,#0000 70%),radial-gradient(55% 130% at 88% 92%,#B87100b0,#0000 70%),linear-gradient(135deg,#D9951A,#F5C542 50%,#E3A422);
   --plus-c:#3A2300;--plus-t:linear-gradient(135deg,#8A5200,#C27F0A 55%,#9A5B00);
-  --holo:linear-gradient(100deg,#22D3EE,#6366F1 16%,#A855F7 32%,#EC4899 48%,#F97316 64%,#FACC15 78%,#A3E635 89%,#22D3EE);
+  --holo:radial-gradient(60% 135% at 10% 15%,#FF8A1F,#0000 70%),radial-gradient(62% 140% at 90% 85%,#22D3EE,#0000 70%),radial-gradient(48% 120% at 55% 5%,#FFC83D,#0000 70%),linear-gradient(135deg,#7C3AED,#DB2777 55%,#C026D3);
   --plus-s:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 1.7v6.6M1.7 5h6.6' stroke='%233A2300' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/10px no-repeat;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}

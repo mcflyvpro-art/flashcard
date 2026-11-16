@@ -1,15 +1,39 @@
-/* ══════════ un abonné se voit (2026-10-27, inversé le 2026-11-15) ══════════
-   Demandé le 2026-11-15 : « inverse l'identité partout : l'or devient
-   Mirandola+, l'arc-en-ciel devient Infini, et rends les deux ultra premium,
-   brillants, magnifiques, pas pâles ni monotones ». Ce qu'on touche — le
-   bouton principal, l'onglet allumé, le bouton rond — prend la matière de son
-   offre, en relief (un éclat en haut, une ombre en bas) et traversé d'un
-   reflet ; les barres d'avancement aussi ; le liseré des jetons tourne.
-   Mirandola+ : un or métallique vif, son texte brun foncé (10:1 sur l'or).
-   Infini : un arc-en-ciel lumineux qui s'écoule lentement, sa lueur autour.
-   Chargée par ui/bridage.js pour un abonné seulement (html.offre-plus) : le
-   démarrage de tout le monde n'en paie rien. Les variables vivent dans
-   app.css (--plus, --plus-c, --plus-t, --holo). */
+/* ══════════ un abonné se voit (2026-10-27, inversé le 2026-11-15, en lave le 2026-11-16) ══════════
+   Mirandola+ est d'or, Infini d'arc-en-ciel (demandé le 2026-11-15). Le
+   2026-11-16, après l'arc-en-ciel qui s'écoulait en bandes sous un reflet
+   blanc : « très moche, des traits qui délimitent l'animation, le faisceau
+   blanc est horrible ; plus organique, une lampe à lave arc-en-ciel,
+   chaotique, lent, chaleureux, sans faisceau blanc nulle part ». La matière
+   est donc faite de taches de couleur aux bords fondus (des dégradés
+   radiaux qui s'éteignent dans leur propre teinte : aucune ligne nulle
+   part) qui dérivent chacune à son rythme sur un fond qui tourne lentement ;
+   les cinq périodes ne tombent jamais ensemble, la forme ne se répète pas.
+   Infini : la lave, saturée, et son halo flou qui respire dessous.
+   Mirandola+ : de l'or fondu, les mêmes taches en or clair et en or brun.
+   Jamais un reflet, jamais un filet blanc. ui/lumiere.js cale chaque
+   animation sur l'horloge : un bouton redessiné reprend où en était
+   l'ancien, la matière ne saute jamais.
+   Chargée par ui/lumiere.js, pour un abonné (ui/bridage.js) et l'écran
+   Mirandola+ (ui/plus.js) seulement : le démarrage de tout le monde n'en
+   paie rien. Les variables vivent dans app.css (--plus, --plus-c, --plus-t,
+   --holo : la lave figée, pour ce qui ne bouge pas). */
+@property --l1x{syntax:'<percentage>';inherits:false;initial-value:12%}
+@property --l1y{syntax:'<percentage>';inherits:false;initial-value:20%}
+@property --l2x{syntax:'<percentage>';inherits:false;initial-value:88%}
+@property --l2y{syntax:'<percentage>';inherits:false;initial-value:80%}
+@property --l3x{syntax:'<percentage>';inherits:false;initial-value:55%}
+@property --l3y{syntax:'<percentage>';inherits:false;initial-value:8%}
+@property --l4x{syntax:'<percentage>';inherits:false;initial-value:28%}
+@property --l4y{syntax:'<percentage>';inherits:false;initial-value:92%}
+@property --la{syntax:'<angle>';inherits:false;initial-value:135deg}
+/* chaque tache a son chemin et sa durée (ui/plus.css et la base s'en servent aussi) */
+@keyframes lave1{0%{--l1x:6%;--l1y:12%}30%{--l1x:58%;--l1y:90%}62%{--l1x:28%;--l1y:40%}to{--l1x:86%;--l1y:8%}}
+@keyframes lave2{0%{--l2x:94%;--l2y:88%}35%{--l2x:36%;--l2y:14%}70%{--l2x:78%;--l2y:62%}to{--l2x:12%;--l2y:78%}}
+@keyframes lave3{0%{--l3x:52%;--l3y:2%}45%{--l3x:8%;--l3y:66%}to{--l3x:96%;--l3y:36%}}
+@keyframes lave4{0%{--l4x:22%;--l4y:98%}50%{--l4x:74%;--l4y:20%}to{--l4x:44%;--l4y:74%}}
+@keyframes lave5{to{--la:495deg}}
+@keyframes lueur{from{opacity:.35}to{opacity:.7}}
+
 html.offre-infini{--plus:var(--holo);--plus-c:#fff;--plus-t:linear-gradient(115deg,#4F46E5,#9333EA 40%,#DB2777 75%,#EA580C)}
 
 /* le signe après le nom : « + » d'or, « ∞ » d'arc-en-ciel */
@@ -17,37 +41,33 @@ html.offre-plus #rail .brand span::after{content:'+';margin-left:1px;background:
   background-clip:text;color:transparent}
 html.offre-infini #rail .brand span::after{content:'\2009∞'}
 
-/* ce qu'on touche : la matière, son relief, son reflet */
-html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab){
-  background:linear-gradient(110deg,#0000 38%,#fffc 50%,#0000 62%) 0 0/300% 100%,var(--plus) 0 0/100% 100%;color:var(--plus-c);
-  box-shadow:inset 0 1px 0 #fffb,inset 0 -2px 0 #7a46001f,0 12px 26px -12px #c27f0acc;animation:reflet 4.5s ease-in-out infinite}
-/* Infini, « Apple level » (2026-11-15, demandé : « trop figé, qu'il bouge
-   lentement, glowy, magnifique ») : deux calques sous le texte — la surface,
-   où l'arc-en-ciel s'écoule en boucle sous un éclat et un reflet, et sa
-   lueur, le même arc-en-ciel flouté qui déborde et respire. L'élément devient
-   transparent et isole sa pile : les calques à z-index -1 passent sous le
-   texte, au-dessus de ce qu'il y a derrière. */
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab){background:none;box-shadow:none;isolation:isolate;animation:none;
-  text-shadow:0 1px 3px #3b0764a6}
-html.offre-infini .cta:not(:disabled){position:relative}
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before,
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none}
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before{inset:6px 4px -8px;background:var(--holo) 0 0/200% 100%;
-  filter:blur(15px) saturate(1.5);animation:flux 10s linear infinite,souffle 3.6s ease-in-out infinite alternate}
-html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::after{box-shadow:inset 0 1px 0 #fffa,inset 0 -1px 0 #3b07641f;
-  background:linear-gradient(110deg,#0000 38%,#fffa 50%,#0000 62%) 0 0/300% 100%,linear-gradient(#ffffff47,#0000 55%),var(--holo) 0 0/200% 100%;
-  animation:flux3 10s linear infinite}
-@keyframes reflet{0%,50%{background-position:130% 0,0 0}to{background-position:-30% 0,0 0}}
-/* l'arc-en-ciel s'écoule d'une teinte à l'autre et revient à la première : une boucle sans couture */
-@keyframes flux{to{background-position:-200% 0}}
-@keyframes flux3{from{background-position:130% 0,0 0,0 0}to{background-position:-130% 0,0 0,-200% 0}}
-@keyframes souffle{from{opacity:.5}to{opacity:.95}}
+/* ce qu'on touche — le bouton principal, l'onglet allumé, le bouton rond —
+   et ce qui avance. La matière vit sous le texte, sur ::after (et le halo
+   d'Infini sur ::before) : l'élément lui-même garde ses propres animations,
+   celles de son entrée (.neuf, .fade). */
+html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab){background:none;isolation:isolate;color:var(--plus-c);
+  box-shadow:0 12px 26px -12px #c27f0acc}
+html.offre-plus .cta:not(:disabled){position:relative}
+html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab)::after,
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none}
+html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab)::after,html.offre-plus .prog i{
+  background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FFF2B8d0,#0000 70%),radial-gradient(55% 130% at var(--l2x) var(--l2y),#B87100b0,#0000 70%),
+    radial-gradient(50% 120% at var(--l3x) var(--l3y),#FFE07Ac0,#0000 70%),linear-gradient(var(--la),#D9951A,#F5C542 50%,#E3A422);
+  animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,lave5 41s linear infinite}
 html.offre-plus .tabs button.on{color:var(--plus-c)}
-
-/* ce qui avance : la barre, dans la matière de l'offre */
-html.offre-plus .prog i{background:var(--plus) 0 0/200% 100%;animation:barre 5s ease-in-out infinite alternate}
-html.offre-infini .prog i{background:var(--holo) 0 0/200% 100%;animation:flux 10s linear infinite;box-shadow:0 0 10px #a855f773}
-@keyframes barre{to{background-position:100% 0}}
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab){box-shadow:none;text-shadow:0 1px 2px #4c0d6b80}
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::after,
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before,html.offre-infini .prog i{
+  background:radial-gradient(60% 135% at var(--l1x) var(--l1y),#FF8A1Ff0,#0000 70%),radial-gradient(62% 140% at var(--l2x) var(--l2y),#22D3EEe6,#0000 70%),
+    radial-gradient(48% 120% at var(--l3x) var(--l3y),#FFC83De0,#0000 70%),radial-gradient(52% 125% at var(--l4x) var(--l4y),#5EE07Ad0,#0000 70%),
+    linear-gradient(var(--la),#7C3AED,#DB2777 55%,#C026D3);
+  filter:saturate(1.45);
+  animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,
+    lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite}
+/* le halo : la même lave, floue, qui déborde un peu sous l'élément et respire */
+html.offre-infini :is(.cta:not(:disabled),.tabs .sl,.fab)::before{inset:8px 8px -6px;filter:blur(12px) saturate(1.45);
+  animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,
+    lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite,lueur 7s ease-in-out infinite alternate}
 
 /* la barre latérale : l'icône allumée et l'entrée de l'offre */
 html.offre-plus #rail nav button.on svg{color:#C27F0A}
@@ -58,4 +78,5 @@ html.offre-infini #rail nav :is(button.on,.r-plus) svg{color:#9333EA}
 html.offre-plus .jt:is(.jt-plus,.jt-infini){animation:lisere 6s linear infinite}
 @keyframes lisere{to{--a:560deg}}
 
-@media (prefers-reduced-motion:reduce){html.offre-plus *{animation:none!important}}
+/* sans mouvement : rien ne bouge, pas même la matière (« * » ne prend pas ::before ni ::after) */
+@media (prefers-reduced-motion:reduce){html.offre-plus *,html.offre-plus ::before,html.offre-plus ::after{animation:none!important}}
