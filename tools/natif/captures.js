@@ -39,10 +39,10 @@ const APPAREILS = {
    (iPad), où la barre latérale remplace celle du bas. */
 const SCENES = [
   { nom: '1-paquets', role: 'eleve', titre: 'Tes cours, <em>en flashcards.</em>',
-    sous: 'Écris-les, importe-les d’Anki ou de Quizlet,<br>ou laisse l’IA les écrire avec Mirandola+.',
+    sous: 'Écris-les, ou laisse l’IA les faire d’un cours<br>ou d’une photo, avec Mirandola+.',
     async aller(p, pc) { await p.click(pc ? '#rail [data-r="home"]' : '[data-act="tab-home"]'); } },
   { nom: '2-revision', role: 'eleve', titre: 'Révise juste <em>avant d’oublier.</em>',
-    sous: 'Le moteur FSRS, celui d’Anki,<br>sans un seul réglage.',
+    sous: 'Le moteur FSRS calcule pour chaque carte<br>le jour où tu allais l’oublier.',
     async aller(p, pc) {
       await p.click(pc ? '#rail [data-r="home"]' : '[data-act="tab-home"]');
       await p.getByText('La cellule', { exact: true }).first().click();

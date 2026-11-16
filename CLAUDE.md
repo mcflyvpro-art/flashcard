@@ -946,10 +946,19 @@ l'air de marcher ».
     **par Stripe dans un navigateur**
     (`versStripe`, la fonction `paiement`, puis `location.assign`), **par
     l'achat intégré dans l'app des magasins** (`vente(p)` de
-    `src/plateformes.js` ; `versMagasin`/`restaurerAchats` de
-    `core/abonnement.js` : le greffon RevenueCat sous
-    `Capacitor.Plugins.Purchases`, les clés publiques dans `REVENUECAT`,
-    puis la fonction `magasins` relit l'abonné ; « Restaurer mes achats »).
+    `src/plateformes.js` ; `versMagasin`/`restaurerAchats`/`prixMagasin` de
+    **`core/vente.js`** — sorti de `core/abonnement.js` le 2026-11-16 : le
+    démarrage n'en avait plus la place ; chargé avec l'écran — : le greffon
+    RevenueCat sous `Capacitor.Plugins.Purchases`, les clés publiques dans
+    `REVENUECAT`, le paquet de la formule par `paquetDe` de
+    **`src/magasin.js`** (pur et testé : le mot « infini » fait Infini, un
+    achat Infini n'achète plus Mirandola+), puis la fonction `magasins` relit
+    l'abonné ; « Restaurer mes achats »). **Dans l'app des magasins**
+    (2026-11-16, règle 3.1.2 d'Apple) l'écran montre les prix et l'essai que
+    dit le magasin (`prixDuMagasin`, jamais ceux du site), ni Stripe, ni le
+    code `LANCEMENT`, et le renouvellement automatique en toutes lettres sous
+    le bouton, avec les conditions et la confidentialité (`renouvellement`,
+    `accord` de `ui/plus.js`).
     Au
     retour d'un paiement (`?plus=merci`, ou la feuille du magasin refermée),
     l'écran relit la base toutes les 2 s, 30 s au plus. La vente est ouverte
@@ -1148,7 +1157,10 @@ l'air de marcher ».
     médiation), **confidentialité** (chaque donnée, sa raison, sa durée ;
     le stockage de l'appareil, sans cookie ni traceur ; qui voit quoi ; les
     prestataires — Supabase, Vercel, Anthropic, Stripe, Brevo, Google, les
-    magasins —, les droits), **mentions légales** (LCEN : éditeur,
+    magasins, RevenueCat (depuis le 2026-11-16 : seulement pour qui s'abonne
+    dans l'app native) —, les droits ; les conditions de vente disent aussi
+    le prix et le remboursement d'un abonnement pris chez Apple ou Google,
+    `CGV_VERSION` 2026-11-16), **mentions légales** (LCEN : éditeur,
     directeur de la publication, hébergeur `HEBERGEUR`, signalement, médiateur)
     et **logiciels libres** (`logiciels` : les notices de fsrs — BSD-3 —,
     py-fsrs — MIT —, Lucide — ISC — et Feather — MIT —, et
@@ -1512,18 +1524,42 @@ l'air de marcher ».
   secrets `SUPABASE_DB_URL`, `SAUVEGARDE_CLE`), `vigie.yml` (toutes les 3 h :
   site, app, en-têtes de sécurité, ancien domaine, Supabase, et `vigie()` ;
   un ticket « vigie » au moindre problème : `tools/vigie/verifier.sh`),
-  `revue-securite.yml` (chaque pull request relue par Claude, avec
+  `natif.yml` (l'app native : Android et iOS compilés à chaque poussée qui les touche, TestFlight sur demande ; `docs/MAGASINS.md` pour ses secrets), `revue-securite.yml` (chaque pull request relue par Claude, avec
   `ANTHROPIC_API_KEY` ; `.github/revue-securite.md`), `.github/dependabot.yml`.
   Ils lisent `vars.VITE_SUPABASE_URL` / `vars.VITE_SUPABASE_ANON_KEY`
   (Settings → Secrets and variables → Actions → onglet **Variables**, pas
   Secrets : la clé anon est publique par nature), mêmes valeurs que
   `.env.local`.
-- **Capacitor (en réserve, pas installé ; depuis le 2026-10-28 le téléphone
-  passe par l'app posée sur l'écran d'accueil, la porte d'installation)** : tout ce qui est prêt et tout ce qui
-  reste (`appId`, `webDir: 'dist'`, liens universels iOS et App Links
-  Android, `appUrlOpen` → `traiterLienEntrant`, session, Supabase Auth) est
-  dans `docs/CAPACITOR.md` — le lire avant d'y toucher. Le service worker ne
-  s'enregistre pas sous Capacitor (`window.Capacitor`, `ui/onboarding.js`).
+- **L'app native iPhone, iPad et Android (Capacitor 8, installée le
+  2026-11-16 ; pas encore publiée — la porte d'installation reste le chemin
+  du téléphone tant qu'elle ne l'est pas)** : `docs/CAPACITOR.md` dit
+  comment elle est faite, **`docs/MAGASINS.md` tout ce qui reste à faire à
+  la main** (comptes, produits, RevenueCat, secrets, fiches, questionnaires).
+  C'est le build de l'app web dans un WebView : `npm run natif` (build, puis
+  `tools/natif/web.js` écrit `dist-natif/` — `app.html` devenu `index.html`,
+  seulement les fichiers que l'app atteint, ni le site ni les `.map` —, puis
+  `cap sync`) ; projets `ios/` (Swift Package Manager, `Info.plist` en
+  français, `PrivacyInfo.xcprivacy`, liens universels) et `android/`
+  (App Links sur `CHEMINS_APP`, sauvegarde coupée, signature lue dans
+  l'environnement) ; `fr.mirandola.app`. **Rien de natif n'entre dans l'app
+  web** : `src/app.js` ne charge `src/ui/natif.js` que sous le vrai pont
+  (`window.androidBridge` ou `webkit.messageHandlers.bridge`), et ce morceau
+  et les greffons vivent dans des fichiers `natif-…` (`nomDuMorceau` de
+  `vite.config.js`, plafond à part dans `tools/budget.js`) que le web ne
+  télécharge jamais. `ui/natif.js` : écran de lancement, barres claires,
+  liens entrants (`appUrlOpen`, `getLaunchUrl`, filtrés par `lienDeLApp` de
+  **`src/natif.js`**, pur et testé, puis `traiterLienEntrant`), bouton
+  retour d'Android, `save`/`flush` en arrière-plan, et ce que le WebView n'a
+  pas (partage de fichiers, téléchargement, presse-papiers, vibreur, choix
+  photo ou galerie) ; la connexion Google y est cachée (règle 4.8). Le
+  service worker ne s'enregistre pas sous Capacitor, et `installed` de
+  `ui/onboarding.js` est `installee()` du routeur (plus d'« Installer
+  Mirandola » dans l'app native). Preuves : `test/natif.test.js`,
+  `e2e/natif.e2e.js` (le vrai `native-bridge.js` de Capacitor sur un faux
+  pont Android), `.github/workflows/natif.yml` (compile Android — APK de test
+  et `.aab` en artefacts — et iOS — simulateur et appareil sans signature —,
+  refuse un projet natif pas synchronisé ; envoie sur TestFlight sur
+  demande, « publier »).
 
 ## Règles non négociables
 
@@ -1591,7 +1627,7 @@ npm run dev                          # serveur local (http://localhost:5173)
 npm test                             # tests du noyau
 npx vitest run --coverage            # couverture du noyau (fsrs/fusion/file/parseur), cible ≥ 90 % lignes
 npm run check                        # lint + tests + build + budget de poids, comme la CI
-npm run budget                       # au démarrage JS ≤ 128 Ko (les visages, puis les codes qui attendent la connexion, 2026-10-29 ; 127,5 le 2026-11-04 avec la porte de la vérification en deux étapes), CSS ≤ 25 Ko ; la sécurité du compte à part (fichiers `verif-…`, `securite-…`, `compte-auth-…`) JS ≤ 12, CSS ≤ 4 ; « J'ai un code » à part (fichiers `code-entree-…`, `etablissement-…` ; sorti du démarrage le 2026-11-05, qui repasse à 123,6) JS ≤ 8, CSS ≤ 1 ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 72 (les textes du cadre disent l’examen blanc, 2026-11-06 ; la barre de l'IA de la création, 2026-11-07 ; une marge rendue le 2026-11-14 : plein à l'octet près, il basculait sur le bruit de la compression), CSS ≤ 27 ; les devis à part (fichiers `devis-…`, `tarifs-…`, 2026-11-14) JS ≤ 6, CSS ≤ 1 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 33 (le niveau Infini rejoué, 2026-11-06), CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 34,5 (une marge rendue le 2026-11-16, pleines à 2 octets près ; tous les comptes de l'éditeur, 2026-11-05 ; l'onglet Santé, 2026-11-07), CSS ≤ 8 ; Mirandola Infini à part (fichiers `examen-…` : l'objectif examen et l'examen blanc) JS ≤ 14, CSS ≤ 4 ; au démarrage, l'examen blanc offert du menu d'un paquet laisse 33 octets de marge (2026-11-08) (2026-11-08 ; le budget dit la marge du démarrage en octets depuis le 2026-11-15) ; jouer un défi à son rythme à part (fichiers `duel-jeu-…`, 2026-11-07) JS ≤ 4, CSS ≤ 1 ; « Modifier avec l'IA » à part (fichiers `retouche-…`, 2026-11-07) JS ≤ 5, CSS ≤ 1 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la barre du bas vivante à part (fichiers `barre-…`, 2026-11-16 ; une seule barre et la pose sur le compositeur, 2,2 Ko) JS ≤ 3, CSS ≤ 1 ; la page d'accueil du site (HTML + CSS + JS) ≤ 52 (les liens vers les autres pages, 2026-11-02 ; l'en-tête à deux menus, 2026-11-06 ; les abonnements inversés en or et en arc-en-ciel, 2026-11-15 ; leur matière fondue, `src/site/lave.css`, 2026-11-16), la plus lourde des autres pages du site ≤ 41,5, la page du moteur à part ≤ 56 (ses formules et ses graphiques écrits au build, 2026-11-04) (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
+npm run budget                       # au démarrage JS ≤ 128 Ko (les visages, puis les codes qui attendent la connexion, 2026-10-29 ; 127,5 le 2026-11-04 avec la porte de la vérification en deux étapes), CSS ≤ 25 Ko ; la sécurité du compte à part (fichiers `verif-…`, `securite-…`, `compte-auth-…`) JS ≤ 12, CSS ≤ 4 ; « J'ai un code » à part (fichiers `code-entree-…`, `etablissement-…` ; sorti du démarrage le 2026-11-05, qui repasse à 123,6) JS ≤ 8, CSS ≤ 1 ; l'accueil et le tuto à part (fichiers `bienvenue-…`, `tuto-…`) JS ≤ 22, CSS ≤ 6 ; chargés à la demande (prof, direct, journal, courrier, profil, classe, consoles du référent et de l'éditeur, demande de démo, sauvegarde, entretien… cumulés) JS ≤ 72 (les textes du cadre disent l’examen blanc, 2026-11-06 ; la barre de l'IA de la création, 2026-11-07 ; une marge rendue le 2026-11-14 : plein à l'octet près, il basculait sur le bruit de la compression), CSS ≤ 27 ; les devis à part (fichiers `devis-…`, `tarifs-…`, 2026-11-14) JS ≤ 6, CSS ≤ 1 ; la démo sans compte à part (fichiers `demo-…`, base locale comprise) JS ≤ 33 (le niveau Infini rejoué, 2026-11-06), CSS ≤ 3 ; les consoles du référent et de l'éditeur à part (fichiers `ref-…`, `admin-…`, `facture-…`, `documents-…`) JS ≤ 34,5 (une marge rendue le 2026-11-16, pleines à 2 octets près ; tous les comptes de l'éditeur, 2026-11-05 ; l'onglet Santé, 2026-11-07), CSS ≤ 8 ; Mirandola Infini à part (fichiers `examen-…` : l'objectif examen et l'examen blanc) JS ≤ 14, CSS ≤ 4 ; au démarrage, l'examen blanc offert du menu d'un paquet laisse 33 octets de marge (2026-11-08) (2026-11-08 ; le budget dit la marge du démarrage en octets depuis le 2026-11-15) ; jouer un défi à son rythme à part (fichiers `duel-jeu-…`, 2026-11-07) JS ≤ 4, CSS ≤ 1 ; « Modifier avec l'IA » à part (fichiers `retouche-…`, 2026-11-07) JS ≤ 5, CSS ≤ 1 ; la porte d'installation à part (fichiers `pwa-…`) JS ≤ 10, CSS ≤ 5 ; l'app native à part (fichiers `natif-…` : `ui/natif.js` et les greffons de Capacitor et de RevenueCat, que le web ne charge jamais, 2026-11-16) JS ≤ 20, CSS ≤ 1 ; l'écran Mirandola+ à part (fichiers `plus-…`) JS ≤ 10, CSS ≤ 4 ; la barre du bas vivante à part (fichiers `barre-…`, 2026-11-16 ; une seule barre et la pose sur le compositeur, 2,2 Ko) JS ≤ 3, CSS ≤ 1 ; la page d'accueil du site (HTML + CSS + JS) ≤ 52 (les liens vers les autres pages, 2026-11-02 ; l'en-tête à deux menus, 2026-11-06 ; les abonnements inversés en or et en arc-en-ciel, 2026-11-15 ; leur matière fondue, `src/site/lave.css`, 2026-11-16), la plus lourde des autres pages du site ≤ 41,5, la page du moteur à part ≤ 56 (ses formules et ses graphiques écrits au build, 2026-11-04) (gzip, tools/budget.js, M08.T2) — sur dist/, après un build
 npm run typecheck                    # tsc --noEmit, vérification douce sur src/core/ (M06.T8), puis le cliquet des types stricts (tools/types-cliquet.js : aucune erreur stricte de plus par fichier)
 npm run mutation                     # les tests de mutation (Stryker) sur le noyau pur : reports/mutation/index.html ; seuil 75 % (78,4 % le 2026-11-07), le dimanche en CI (nuit.yml)
 PGURL=postgresql://… bash tools/sql/tests.sh   # toute la suite SQL contre une base (la pile locale de la CI) ; lit zz_res de chaque test, quelle que soit sa façon d'écrire son bilan
@@ -1604,6 +1640,10 @@ node tools/affiches.js               # affiches du site, image de partage, captu
 node tools/icones.js                 # icônes de l'app installée (public/icons/), depuis public/site/icone.svg, et le favicon de la racine (favicon.ico, favicon-48.png, apple-touch-icon.png)
 node tools/affiches.js pages         # l'image de partage de chaque page du site (public/site/og/), sans serveur
 node tools/reseaux.js                # le kit des réseaux sociaux (marque/reseaux/ : avatars, bannières YouTube et LinkedIn, couvertures « À la une », filigrane, et TEXTES.md dont chaque longueur est vérifiée) ; notice : marque/reseaux/LISEZMOI.md
+npm run natif                        # l'app native : build, dist-natif/ (tools/natif/web.js), cap sync ; puis npx cap open ios|android (docs/CAPACITOR.md)
+node tools/natif/ressources.js       # les sources des icônes de l'app native (marque/natif/) et les images des fiches des magasins (marque/magasins/)
+node tools/natif/captures.js         # les captures des fiches des magasins depuis la démo (iPhone 6,9 pouces, iPad 13 pouces, Android), sur le build
+node tools/natif/liens.js --equipe … --empreinte …   # les fichiers des liens universels et des App Links, le jour où l'on a les identifiants (docs/MAGASINS.md § 5)
 node tools/indexnow.js               # après une mise en ligne qui change le texte d'une page : prévient Bing (IndexNow) ; `node tools/indexnow.js /tarifs` : celle-là seule
 node tools/ia/essai.js               # la fonction ai sous Deno (avec ce qu'elle importe de _shared/), face à une fausse base et un faux Anthropic : la réservation avant l'appel, le solde, l'annulation, une rafale de 20 appels au quota de 5 ; et la rentabilité — le plafond, un PDF « lourd » compté jamais lu, Haiku aux trois quarts et après les 150 d'Infini, trois appels pour la place d'un ; l'examen blanc offert — un en gratuit, deux en Mirandola+, sans limite pour Infini, 120 cartes au plus ; le modèle de chaque opération — Haiku pour un texte, un PDF, une retouche, Sonnet pour des photos, un examen, une copie, des cartes de mémoire, une réponse vide ou refusée de Haiku qui repart sur Sonnet, un gros PDF lu par Haiku seul (34 vérifications ; DENO=chemin, sinon npx deno@2)
 CSP_STRICTE=/tmp/csp.ndjson CI=1 npx playwright test -c tools/pw-csp.config.js   # toute la suite sous la CSP de vercel.json APPLIQUÉE (`cspStricte` de vite.config.js, port 4176) : chaque violation, n'importe quelle page, arrive par report-uri dans ce fichier, qui doit rester vide (M10.T5)

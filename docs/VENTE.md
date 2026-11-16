@@ -219,7 +219,9 @@ Mirandola+ offert.
 | `tools/paiement/essai.js` | les trois fonctions sous Deno, face à un faux Stripe et un faux RevenueCat : 32 vérifications |
 | `src/offres.js` | ce que chaque offre ouvre |
 | `src/abonnement.js`, `src/plateformes.js` | prix, statuts, où se gère un abonnement, appareil, la porte d'installation (testés : `test/abonnement.test.js`) |
-| `src/core/abonnement.js` | `offrePull()`, `offreLocale()`, `versStripe()`, `versMagasin()`, `restaurerAchats()` |
+| `src/core/abonnement.js` | `offrePull()`, `offreLocale()` |
+| `src/core/vente.js` | `versStripe()`, `versMagasin()`, `restaurerAchats()`, `prixMagasin()` (chargé avec l’écran Mirandola+, 2026-11-16) |
+| `src/magasin.js` | les paquets et les prix des magasins, pur et testé |
 | `src/ui/bridage.js` | le bridage de Mirandola gratuit (vrai compte et démo), les marques `html.offre-gratuit`, `livres-plein`, `offre-plus` |
 | `src/ui/plus-porte.js`, `src/ui/plus.js`, `src/ui/plus.css` | l'écran Mirandola+ (`…/folio-plus`, `?plus=…`) et l'onglet (`ongletPlus`) |
 | `src/ui/pwa-porte.js`, `src/ui/pwa.js`, `src/installation.js` | la porte d'installation : un téléphone dans son navigateur pose Mirandola sur son écran d'accueil (testé : `test/installation.test.js`, `e2e/installation.e2e.js`) |
@@ -334,56 +336,21 @@ portail client se règle alors dans Paramètres → Facturation → Portail clie
 
 ## 2. Apple, Google et RevenueCat (l'app des magasins)
 
-À faire une fois l'app construite avec Capacitor (`docs/CAPACITOR.md`).
+L'app native existe depuis le 2026-11-16 (`docs/CAPACITOR.md`). **Toute la
+marche à suivre — comptes, produits (`mirandola_plus_annuel`…,
+`mirandola_infini_…`), RevenueCat, secrets `RC_SECRET` et
+`RC_WEBHOOK_AUTH`, redéploiement de `magasins`, fiches, questionnaires —
+est dans `docs/MAGASINS.md`.** (Les identifiants `folio_plus_…` écrits
+ici avant ne servent plus.)
 
-1. **App Store Connect** (compte développeur : 99 $ par an) :
-   - Créer l'app, puis un **groupe d'abonnements** « Mirandola+ » et deux
-     abonnements renouvelables automatiquement : `folio_plus_annuel`
-     (49,99 €) et `folio_plus_mensuel` (6,99 €) — les identifiants gardent
-     « folio » : seul le mot « annuel » ou « mensuel » compte.
-   - Le mot « annuel » ou « mensuel » dans l'identifiant suffit à
-     `formuleDuProduit()`.
-   - Les conditions d'utilisation et la confidentialité vont dans la fiche.
-   - Le programme pour les petits développeurs (15 % de commission au lieu
-     de 30 %) se demande à part.
-2. **Google Play Console** (25 $, une fois) :
-   - Créer l'app, puis un abonnement `folio_plus` avec deux offres de base,
-     `annuel` et `mensuel` (identifiants `folio_plus:annuel` et
-     `folio_plus:mensuel`).
-   - La commission est de 15 % sur les abonnements.
-3. **RevenueCat** (gratuit jusqu'à 2 500 $ de revenu mensuel) :
-   - Créer le projet, puis y relier l'app iOS (clé d'API App Store Connect,
-     « In-App Purchase Key ») et l'app Android (compte de service Google).
-   - Créer le **droit** (« entitlement ») `plus`, qui reçoit les quatre
-     produits.
-   - Créer une **offre** (« offering ») par défaut avec deux paquets :
-     `$rc_annual` et `$rc_monthly`. L'app prend `current.annual` et
-     `current.monthly`.
-   - Les **clés publiques** de l'app (`appl_…` et `goog_…`) vont dans
-     `REVENUECAT` (`src/abonnement.js`). Elles sont publiques par nature,
-     comme la clé anon.
-   - La **clé secrète** de l'API (`sk_…`) va dans le secret `RC_SECRET`,
-     jamais dans le dépôt.
-   - **Webhook** :
-     - URL : `https://qqbzefpdeinlynjtarqr.supabase.co/functions/v1/magasins` ;
-     - en-tête d'autorisation : une longue valeur au hasard (par exemple
-       `Bearer ` suivi de 40 signes), recopiée telle quelle dans
-       `RC_WEBHOOK_AUTH`.
-   - Le greffon : `npm install @revenuecat/purchases-capacitor`, puis
-     `npx cap sync`. L'app web ne l'importe pas : `core/abonnement.js` le
-     trouve sous `Capacitor.Plugins.Purchases`.
-4. **Les règles à relire avant chaque soumission** (elles changent tous les
-   ans) :
-   - developer.apple.com/app-store/review/guidelines, sections 3.1.1,
-     3.1.2, 3.1.3 et 5.1.1(v) ;
-   - les règles de paiement de Google Play.
-
-   Ce que l'app fait pour s'y conformer :
-   - elle n'affiche ni lien ni mention de Stripe ;
-   - elle propose « Restaurer mes achats » ;
-   - elle dit, à la suppression du compte, qu'un abonnement des magasins
-     continue tant qu'il n'est pas résilié chez eux ;
-   - Campus ne demande rien à Apple (règle 3.1.3(c)).
+Ce que l'app fait pour s'y conformer :
+- elle n'affiche ni lien ni mention de Stripe, ni le code de lancement ;
+- elle montre les prix et l'essai que dit le magasin, et le renouvellement
+  automatique en toutes lettres, avec les conditions et la confidentialité ;
+- elle propose « Restaurer mes achats » ;
+- elle dit, à la suppression du compte, qu'un abonnement des magasins
+  continue tant qu'il n'est pas résilié chez eux ;
+- Campus ne demande rien à Apple (règle 3.1.3(c)).
 
 ## 3. Supabase : la base, les fonctions, les secrets
 
@@ -486,9 +453,11 @@ En local, sans aucun service :
 
 ## 6. Mirandola sur chaque appareil
 
-Décidé le 2026-10-28 : **pas de magasin pour l'instant**. Un téléphone pose
-Mirandola sur son écran d'accueil depuis le navigateur (la porte
-d'installation) ; Capacitor et les magasins restent en réserve.
+Décidé le 2026-10-28 : un téléphone pose Mirandola sur son écran d'accueil
+depuis le navigateur (la porte d'installation). **Depuis le 2026-11-16, l'app
+native est prête** (`docs/CAPACITOR.md`) ; sa publication attend les comptes
+des magasins (`docs/MAGASINS.md`). Le tableau ci-dessous dit encore
+« aujourd'hui » tant qu'elle n'est pas publiée.
 
 | Appareil | Aujourd'hui | Si l'app est un jour publiée | Coût |
 |---|---|---|---|

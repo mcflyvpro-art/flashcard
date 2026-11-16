@@ -19,7 +19,15 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-16 · La barre du bas vivante, comme Instagram : à
+DERNIER   2026-11-16 · L'app native iPhone, iPad et Android
+          (Capacitor 8), prête pour les magasins sans rien changer au web :
+          le build de l'app dans un WebView, projets ios/ et android/,
+          icônes, fiches et captures, liens universels et App Links, bouton
+          retour, partage et téléchargement natifs, la vente par Apple et
+          Google aux prix du magasin avec le renouvellement dit en toutes
+          lettres (un achat Infini achetait Mirandola+ : corrigé), les deux
+          apps compilées par la CI (natif.yml). Reste, à la main :
+          docs/MAGASINS.md. Avant, le même jour · La barre du bas vivante, comme Instagram : à
           l'appui la pastille grossit, suit le doigt sur un ressort, s'étire
           et se pose sur l'onglet où l'on lâche (ui/barre.js) ; en changeant
           vite, elle finit toujours sous l'onglet ouvert, harcelée elle ne
