@@ -7,8 +7,10 @@ import { ESSAI_JOURS, FORMULES, PROMO, erreurDe, euros, formuleDe, gestion, lign
 import { AVANTAGES_DETAIL, AVANTAGES_INFINI, RAISONS, iaDuMois, licence } from '../licence.js';
 import { iaParMois } from '../offres.js';
 import { NOMS, mobile, plateforme, vente } from '../plateformes.js';
+import { dureeEssai } from '../magasin.js';
 import { qrSvg } from '../qr.js';
-import { offrePull, restaurerAchats, versMagasin, versStripe } from '../core/abonnement.js';
+import { offrePull } from '../core/abonnement.js';
+import { prixMagasin, restaurerAchats, versMagasin, versStripe } from '../core/vente.js';
 import { esc } from '../core/coeur-sync.js';
 import { go, render, tabs } from './bibliotheque.js';
 import { isProf } from './classement.js';
@@ -43,6 +45,22 @@ const IC = {
 const ici = () => plateforme({ ua: navigator.userAgent, touches: navigator.maxTouchPoints || 0,
   capacitor: window.Capacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : null });
 const actif = () => !!offre && offre.offre !== 'gratuit';
+
+/* ---------- les prix de l'app des magasins (2026-11-16) ----------
+   Dans l'app des magasins, l'écran montre le prix que la feuille d'Apple
+   ou de Google demandera — celui du magasin, dans la devise du compte
+   (prixMagasin, core/vente.js) —, et l'essai gratuit seulement si le
+   magasin en offre un. Tant que le magasin n'a pas répondu (ou s'il ne
+   vend pas encore la formule), ce sont ceux du site : les mêmes en France.
+   `undefined` : pas demandé ; `null` : en cours ou sans réponse. */
+let prixMag;
+const enMagasin = p => vente(p) === 'magasin';
+function lirePrixMagasin(p) {
+  if (!enMagasin(p) || prixMag !== undefined) return;
+  prixMag = null;
+  prixMagasin(p.os).then(r => { prixMag = r; if (r && view.name === 'plus') render(); });
+}
+const duMagasin = f => (prixMag && prixMag[f]) || null;
 
 /* ---------- après le paiement ----------
    Stripe ramène ici avant, parfois, que son évènement ait écrit
@@ -124,9 +142,10 @@ function monter() {
   if (!peutMonter()) return '';
   const a = offre.abonnement, periode = a && FORMULES[a.formule] && FORMULES[a.formule].par === 'mois' ? 'mensuel' : 'annuel';
   const de = FORMULES[periode], vers = FORMULES['infini_' + periode];
-  const ecart = periode === 'annuel' ? `+${euros(vers.mois - de.mois)}/mois` : `+${euros(vers.prix - de.prix)}/mois`;
+  // l'écart se dit en prix du site ; dans l'app des magasins, la feuille du magasin dira le sien
+  const ecart = enMagasin(ici()) ? '' : periode === 'annuel' ? `+${euros(vers.mois - de.mois)}/mois` : `+${euros(vers.prix - de.prix)}/mois`;
   return `<section class="fp-montee">
-      <div class="fp-m-tete"><h2>Mirandola <em>Infini</em></h2><span>${ecart}</span></div>
+      <div class="fp-m-tete"><h2>Mirandola <em>Infini</em></h2>${ecart ? `<span>${ecart}</span>` : ''}</div>
       <ul>${AVANTAGES_INFINI.map(x => `<li>${svg(I[x.ic] || I.check)}<b>${esc(x.t)}</b></li>`).join('')}</ul>
       <button class="fp-monter" data-fp="monter" data-v="${periode}">Passer à Infini${svg(I.arrow)}</button>
     </section>`;
@@ -140,21 +159,30 @@ const commande = () => formuleDe(plus.niveau, plus.formule);
 
 function niveaux() {
   // l'essai se voit sur Mirandola+ dès le choix du niveau (2026-11-08, demandé : « mets en avant l'essai de 7 jours »)
-  const essai = cle => (cle === 'plus' && premier() ? `<i class="fp-essai">${ESSAI_JOURS} jours gratuits</i>` : '');
-  const n = (cle, nom, depuis) => `<button class="fp-n${plus.niveau === cle ? ' on' : ''}" role="radio" aria-checked="${plus.niveau === cle}"
-      data-fp="niveau" data-v="${cle}">${essai(cle)}<b>${nom}</b><span>dès ${euros(depuis)}/mois</span></button>`;
-  return `<div class="fp-niveaux" role="radiogroup" aria-label="Niveau">${n('plus', 'Mirandola+', FORMULES.annuel.mois)}${
-    n('infini', 'Infini', FORMULES.infini_annuel.mois)}</div>`;
+  const essai = cle => {
+    if (cle !== 'plus' || !premier()) return '';
+    const e = enMagasin(ici()) ? essaiMagasin('plus') : `${ESSAI_JOURS} jours`;
+    return e ? `<i class="fp-essai">${e} gratuits</i>` : '';
+  };
+  const des = (cle, f) => { const m = duMagasin(f); return m ? m.parMois || m.prix : euros(FORMULES[f].mois); };
+  const n = (cle, nom, f) => `<button class="fp-n${plus.niveau === cle ? ' on' : ''}" role="radio" aria-checked="${plus.niveau === cle}"
+      data-fp="niveau" data-v="${cle}">${essai(cle)}<b>${nom}</b><span>dès ${esc(des(cle, f))}/mois</span></button>`;
+  return `<div class="fp-niveaux" role="radiogroup" aria-label="Niveau">${n('plus', 'Mirandola+', 'annuel')}${
+    n('infini', 'Infini', 'infini_annuel')}</div>`;
 }
 
 function formule(cle) {
-  const f = FORMULES[formuleDe(plus.niveau, cle)], on = plus.formule === cle;
-  const prix = cle === 'annuel' ? euros(f.mois) : euros(f.prix);
+  const f = FORMULES[formuleDe(plus.niveau, cle)], on = plus.formule === cle, m = duMagasin(formuleDe(plus.niveau, cle));
+  /* le prix du magasin quand il l'a dit (l'annuel ramené au mois s'il sait
+     le faire, sinon son prix à l'année) ; sinon celui du site */
+  const prix = m ? (cle === 'annuel' ? m.parMois || m.prix : m.prix) : cle === 'annuel' ? euros(f.mois) : euros(f.prix);
+  const parMois = !m || cle !== 'annuel' || !!m.parMois;
   // jamais un prix barré : 83,88 € n'a jamais été un prix de vente (article L112-1-1)
-  const note = cle === 'annuel' ? `${euros(f.prix)} par an, ${f.remise}&#8239;% de moins qu’au mois` : 'Sans engagement';
+  const note = cle !== 'annuel' ? 'Sans engagement' : m ? `${esc(m.prix)} par an`
+    : `${euros(f.prix)} par an, ${f.remise}&#8239;% de moins qu’au mois`;
   return `<button class="fp-f${on ? ' on' : ''}" role="radio" aria-checked="${on}" data-fp="formule" data-v="${cle}">
-      <span class="fp-f-nom">${cle === 'annuel' ? 'Annuel' : 'Mensuel'}${cle === 'annuel' ? `<em>−${f.remise}&#8239;%</em>` : ''}</span>
-      <span class="fp-f-prix"><b>${prix}</b>/mois</span><span class="fp-f-note">${note}</span></button>`;
+      <span class="fp-f-nom">${cle === 'annuel' ? 'Annuel' : 'Mensuel'}${cle === 'annuel' && !m ? `<em>−${f.remise}&#8239;%</em>` : ''}</span>
+      <span class="fp-f-prix"><b>${esc(prix)}</b>${parMois ? '/mois' : '/an'}</span><span class="fp-f-note">${note}</span></button>`;
 }
 
 /* L'accord, avant de payer (2026-11-05) : les conditions de vente, et la
@@ -162,9 +190,22 @@ function formule(cle) {
    service ne pourrait pas s'ouvrir pendant les 14 jours de rétractation
    (article L221-25). Le bouton reste éteint tant qu'on n'a pas coché ; la
    version acceptée part avec la commande (CGV_VERSION). */
-const accord = () => `<label class="fp-accord" id="fp-accord"><input type="checkbox" data-fp="accord"${plus.accord ? ' checked' : ''}>
-    <span>J’accepte les <button type="button" class="lnk" data-legal="cgv">conditions de vente</button> et je demande que
-    ${infini() ? 'Mirandola Infini' : 'Mirandola+'} commence tout de suite. Si je me rétracte dans les 14 jours, je ne paie que les jours écoulés.</span></label>`;
+const accord = p => `<label class="fp-accord" id="fp-accord"><input type="checkbox" data-fp="accord"${plus.accord ? ' checked' : ''}>
+    <span>J’accepte les <button type="button" class="lnk" data-legal="cgv">conditions de vente</button>${enMagasin(p)
+    ? ` et les <button type="button" class="lnk" data-legal="cgu">conditions d’utilisation</button>. ${NOMS[p.os] || 'Le magasin'} encaisse
+    le paiement, selon ses propres conditions.` : ` et je demande que
+    ${infini() ? 'Mirandola Infini' : 'Mirandola+'} commence tout de suite. Si je me rétracte dans les 14 jours, je ne paie que les jours écoulés.`}</span></label>`;
+
+/* Ce qu'Apple (règle 3.1.2) et Google exigent sous le bouton d'un
+   abonnement de leur magasin : qui encaisse, le renouvellement
+   automatique et comment l'arrêter, et la confidentialité à un geste. */
+function renouvellement(p) {
+  const nom = NOMS[p.os] || 'du magasin', m = duMagasin(commande());
+  const apres = m ? `${esc(m.prix)} ${FORMULES[commande()].par === 'an' ? 'par an' : 'par mois'}` : 'au prix affiché';
+  return `Payé par ton compte ${esc(nom)}, ${apres}, renouvelé automatiquement sauf résiliation au moins 24&#8239;h
+    avant la fin de la période, dans les réglages de ton compte ${esc(nom)}.
+    <button type="button" class="lnk" data-legal="vie">Confidentialité</button>`;
+}
 
 // qui encaisse, dit sous le bouton : Stripe sur le web, le magasin dans son app
 const garantie = p => (vente(p) === 'stripe' ? 'Paiement sécurisé par Stripe · Résiliable en un geste'
@@ -176,7 +217,10 @@ const garantie = p => (vente(p) === 'stripe' ? 'Paiement sécurisé par Stripe �
 // un premier abonnement : jamais d'abonnement payé — un Mirandola+ offert compte comme tel (la fonction paiement en décide pareil)
 const premier = () => !offre.abonnement || offre.abonnement.source === 'offert';
 // l'essai : un premier abonnement à Mirandola+, jamais à Infini (2026-11-08, demandé : « pas d'essai gratuit pour Infini »)
-const essaiPossible = () => premier() && !infini();
+const essaiPossible = () => premier() && !infini() && (!enMagasin(ici()) || !!essaiMagasin(plus.niveau));
+/* L'essai que le magasin offre sur la formule choisie (« 7 jours »), ou
+   rien : dans l'app des magasins, jamais l'essai de Stripe. */
+const essaiMagasin = niveau => { const m = duMagasin(formuleDe(niveau, plus.formule)); return m && m.essai ? dureeEssai(m.essai) : ''; };
 const finEssai = () => new Date(Date.now() + ESSAI_JOURS * 864e5).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 
 /* Le code d'un lien des réseaux, gardé 14 jours par ui/plus-porte.js. */
@@ -193,6 +237,7 @@ export function promoGardee() {
    s'applique pas. Un code que Stripe dit fini ne revient plus. */
 const lancementFini = () => { try { return !!localStorage.getItem('folio.promo.fini'); } catch (e) { return false; } };
 function promoActive(monte) {
+  if (enMagasin(ici())) return '';                             // un code de Stripe ne vaut rien dans le magasin d'Apple ou de Google
   if (monte && offre.abonnement && offre.abonnement.source === 'stripe') return '';
   return promoGardee() || (PROMO.enCours && premier() && !lancementFini() ? PROMO.code : '');
 }
@@ -203,10 +248,12 @@ const promoHtml = code => (code === PROMO.code
 
 // le bouton d'achat et ce qu'il engage, dit dessous
 function payer(p, monte) {
-  const libelle = plus.envoi === 'payer' ? 'Ouverture du paiement…' : essaiPossible() ? `Essayer ${ESSAI_JOURS} jours gratuits`
-    : infini() ? 'Passer à Mirandola Infini' : 'Passer à Mirandola+';
-  const note = monte && offre.abonnement && offre.abonnement.source === 'stripe' ? 'Au prorata de ta période en cours, sur la page de Stripe'
-    : essaiPossible() && vente(p) === 'stripe' ? `Rien n’est prélevé avant le ${finEssai()}. Résiliable d’un geste.` : garantie(p);
+  const libelle = plus.envoi === 'payer' ? 'Ouverture du paiement…'
+    : essaiPossible() ? `Essayer ${enMagasin(p) ? essaiMagasin('plus') : ESSAI_JOURS + ' jours'} gratuits`
+      : infini() ? 'Passer à Mirandola Infini' : 'Passer à Mirandola+';
+  const note = enMagasin(p) ? renouvellement(p)
+    : monte && offre.abonnement && offre.abonnement.source === 'stripe' ? 'Au prorata de ta période en cours, sur la page de Stripe'
+      : essaiPossible() ? `Rien n’est prélevé avant le ${finEssai()}. Résiliable d’un geste.` : garantie(p);
   return `<button class="fp-payer${infini() ? ' fp-payer-infini' : ''}" data-fp="payer" ${plus.envoi || !plus.accord ? 'disabled' : ''}
       aria-describedby="fp-accord">${libelle}${svg(I.arrow)}</button>
     <p class="fp-note">${svg(I.lock)}${note}</p>`;
@@ -219,7 +266,7 @@ function offreHtml(p) {
       ${monte ? `<button class="lnk fp-arriere" data-fp="licence">${svg(I.back)}Ma licence</button>` : niveaux()}
       ${promo ? promoHtml(promo) : ''}
       <div class="fp-formules" role="radiogroup" aria-label="Formule">${formule('annuel')}${formule('mensuel')}</div>
-      ${accord()}
+      ${accord(p)}
       ${payer(p, monte)}
       ${p.natif ? `<button class="lnk fp-restaurer" data-fp="restaurer" ${plus.envoi ? 'disabled' : ''}>${
         plus.envoi === 'restaurer' ? 'Recherche…' : 'Restaurer mes achats'}</button>` : ''}
@@ -279,6 +326,7 @@ const titre = () => (offre && offre.offre === 'campus' && offre.etablissement ? 
 
 export function plusEcran() {
   const p = ici(), onglet = ongletPlus() && !plus.etape;
+  lirePrixMagasin(p);
   $.innerHTML = `
     ${onglet ? '' : `<div class="bar"><button class="ic" data-fp="retour" aria-label="Retour">${svg(I.back)}</button></div>`}
     <div class="page fp">

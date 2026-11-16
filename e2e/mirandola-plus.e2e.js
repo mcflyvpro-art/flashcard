@@ -287,8 +287,17 @@ test('dans l’app des magasins : l’achat intégré, jamais Stripe', async ({ 
   await inscrire(page);
   await page.goto('./eleve/mirandola-plus');
   await expect(ecran(page)).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('.fp-offre')).toContainText('Paiement par Google Play');
+  // ce qu'Apple et Google exigent sous le bouton : qui encaisse, le renouvellement, la confidentialité
+  await expect(page.locator('.fp-offre')).toContainText('Payé par ton compte Google Play');
+  await expect(page.locator('.fp-offre')).toContainText('renouvelé automatiquement sauf résiliation au moins 24');
+  await expect(page.locator('.fp-offre').getByRole('button', { name: 'Confidentialité' })).toBeVisible();
+  await expect(page.locator('#fp-accord').getByRole('button', { name: 'conditions d’utilisation' })).toBeVisible();
+  // jamais Stripe, ni son code de lancement, ni son essai de 7 jours (2026-11-16)
   await expect(page.locator('.fp-offre')).not.toContainText('Stripe');
+  await expect(page.locator('.fp-offre')).not.toContainText('LANCEMENT');
+  await expect(page.locator('.fp-promo')).toHaveCount(0);
+  await expect(page.locator('.fp-essai')).toHaveCount(0);
+  await expect(page.locator('.fp-payer')).toContainText('Passer à Mirandola+');
   await expect(page.getByRole('button', { name: 'Restaurer mes achats' })).toBeVisible();
   await accepter(page);
   await page.locator('.fp-payer').click();

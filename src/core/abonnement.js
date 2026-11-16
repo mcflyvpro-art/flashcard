@@ -8,8 +8,8 @@
    n'a de sens qu'en ligne, maintenant — hors ligne, l'écran le dit. La
    réponse de mon_offre est gardée par compte (folio.offre.<uid>) pour
    s'afficher hors ligne ; jamais en démo, qui ne touche pas au stockage. */
-import { auth, demoEtab, ia, offre, online, plus, setIa, setOffre } from '../data/etat.js';
-import { CGV_VERSION, REVENUECAT, lireOffre } from '../abonnement.js';
+import { auth, demoEtab, ia, offre, plus, setIa, setOffre } from '../data/etat.js';
+import { lireOffre } from '../abonnement.js';
 import { api, apiPage } from './coeur-sync.js';
 
 const cle = () => 'folio.offre.' + (auth && auth.uid);
@@ -86,85 +86,5 @@ export async function iaPull() {
   return ia;
 }
 
-/* Le code d'erreur de la fonction : son corps le dit ({ error }) ; une
-   fonction pas encore déployée répond 404 sans corps — « bientôt ». */
-function codeDe(e) {
-  let code = '';
-  try { code = JSON.parse(e.message).error || ''; } catch (x) { /* pas du JSON : la page d'erreur du serveur */ }
-  if (code) return code;
-  if (e.status === 404) return 'bientot';
-  if (e.status === 401) return 'auth';
-  return navigator.onLine === false ? 'hors' : 'stripe';
-}
-
-/* `action` : « payer » (avec la formule) ou « gerer ». Rend l'adresse de la
-   page Stripe ; sinon lève une Error dont le message est un code de
-   src/abonnement.js (erreurDe). */
-export async function versStripe(action, formule, accord, promo) {
-  if (demoEtab) throw new Error('demo');
-  if (!online) throw new Error('hors');
-  let r;
-  // l'accord (conditions de vente et démarrage immédiat) ne voyage qu'avec un paiement
-  const corps = action === 'payer' ? { action, formule, cgv: accord ? CGV_VERSION : null, promo: promo || undefined }
-    : { action, formule };
-  try { r = await api('/functions/v1/paiement', 'POST', corps); }
-  catch (e) { throw new Error(codeDe(e), { cause: e }); }
-  if (!r || typeof r.url !== 'string' || !/^https:\/\//.test(r.url) && !r.url.startsWith('/app?')) throw new Error('stripe');
-  return r.url;
-}
-
-/* ---------- l'app des magasins : l'achat intégré, par RevenueCat ----------
-   Le greffon @revenuecat/purchases-capacitor (docs/CAPACITOR.md) n'est pas
-   une dépendance de l'app web : on le trouve sous Capacitor.Plugins une fois
-   l'app native construite, et nulle part ailleurs. Le compte RevenueCat est
-   le compte Mirandola (logIn) : l'achat suit l'élève d'un appareil à l'autre, et
-   un autre compte sur le même téléphone n'hérite de rien. Après l'achat, la
-   fonction magasins relit RevenueCat et écrit l'abonnement sans attendre son
-   évènement. Les codes d'erreur sont ceux de src/abonnement.js (erreurDe). */
-const greffon = () => {
-  const cap = /** @type {any} */ (window).Capacitor;
-  return (cap && cap.Plugins && cap.Plugins.Purchases) || null;
-};
-let configure = null;
-
-async function magasin(os) {
-  if (demoEtab) throw new Error('demo');
-  if (!online) throw new Error('hors');
-  const P = greffon(), cleRC = REVENUECAT[os];
-  if (!P || !cleRC) throw new Error('bientot');
-  try {
-    if (!configure) configure = P.configure({ apiKey: cleRC, appUserID: auth.uid }).catch(e => { configure = null; throw e; });
-    await configure;
-    await P.logIn({ appUserID: auth.uid });
-  } catch (e) { throw new Error('magasin', { cause: e }); }
-  return P;
-}
-
-// relire l'abonné chez RevenueCat, puis ce que la base dit du compte
-async function relireMagasin() {
-  try { await api('/functions/v1/magasins', 'POST', {}); }
-  catch (e) { /* l'évènement de RevenueCat écrira l'abonnement : l'écran relit la base quelques secondes */ }
-  return offrePull();
-}
-
-export async function versMagasin(os, formule) {
-  const P = await magasin(os);
-  let paquet;
-  try {
-    const o = (await P.getOfferings() || {}).current;
-    paquet = o && (formule === 'mensuel' ? o.monthly : o.annual);
-  } catch (e) { throw new Error('magasin', { cause: e }); }
-  if (!paquet) throw new Error('bientot');               // les produits pas encore créés dans les magasins
-  try { await P.purchasePackage({ aPackage: paquet }); }
-  catch (e) { throw new Error(e && (e.userCancelled || String(e.code) === '1') ? 'annule' : 'magasin', { cause: e }); }
-  return relireMagasin();
-}
-
-// « Restaurer mes achats » (demandé par Apple) : un abonnement pris sur un autre appareil, ou avant une réinstallation
-export async function restaurerAchats(os) {
-  const P = await magasin(os);
-  try { await P.restorePurchases(); } catch (e) { throw new Error('magasin', { cause: e }); }
-  const o = await relireMagasin();
-  if (!o || o.offre === 'gratuit') throw new Error('rien');
-  return o;
-}
+/* Payer (Stripe, ou l'achat intégré de l'app des magasins) : core/vente.js,
+   chargé avec l'écran Mirandola+ seulement. */

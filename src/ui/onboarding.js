@@ -146,9 +146,9 @@ export const instLoad = () => { try { return JSON.parse(localStorage.getItem(INS
 
 const instSave = o => { try { localStorage.setItem(INSTKEY, JSON.stringify(o)); } catch (e) { /* stockage indisponible : la prochaine relance proposera l'install à nouveau, sans gravité */ } };
 
-/* déjà posée sur l'écran d'accueil ou dans le Dock : plus jamais un mot à ce sujet */
-export const installed = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches)
-  || navigator.standalone === true;
+/* déjà posée sur l'écran d'accueil ou dans le Dock, ou l'app des magasins
+   (Capacitor) : plus jamais un mot à ce sujet (routeur.js, installee) */
+export const installed = installee;
 
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); setBip(e); });
 

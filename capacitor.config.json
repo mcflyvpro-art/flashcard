@@ -1,0 +1,41 @@
+{
+  "appId": "fr.mirandola.app",
+  "appName": "Mirandola",
+  "webDir": "dist-natif",
+  "backgroundColor": "#F6F5F1",
+  "loggingBehavior": "debug",
+  "server": {
+    "androidScheme": "https",
+    "hostname": "localhost"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "backgroundColor": "#F6F5F1"
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#F6F5F1",
+    "limitsNavigationsToAppBoundDomains": false,
+    "handleApplicationNotifications": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 200,
+      "backgroundColor": "#F6F5F1",
+      "showSpinner": false,
+      "splashFullScreen": false,
+      "splashImmersive": false
+    },
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover",
+      "style": "LIGHT"
+    },
+    "CapacitorHttp": {
+      "enabled": false
+    }
+  }
+}

@@ -28,3 +28,7 @@ import './ui/quiz.js';
 import './ui/interactions.js';
 import './ui/raccourcis.js';
 import './ui/onboarding.js';
+/* L'app des magasins (Capacitor, docs/CAPACITOR.md) : son pont natif et ses
+   greffons, chargés à part et seulement sous le vrai pont d'iOS ou
+   d'Android — jamais dans un navigateur ni dans la PWA, où rien ne change. */
+if (window.Capacitor && (window.androidBridge || window.webkit?.messageHandlers?.bridge)) import('./ui/natif.js');

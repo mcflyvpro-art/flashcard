@@ -40,3 +40,6 @@ __pycache__/
 # les tests de mutation (npm run mutation)
 reports/
 .stryker-tmp/
+
+# l'app des magasins : le dossier web qu'elle embarque, refait par tools/natif/web.js (docs/CAPACITOR.md)
+dist-natif/

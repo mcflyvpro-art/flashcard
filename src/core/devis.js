@@ -27,7 +27,7 @@ export async function agirDevis(nom, args, bon) {
     /* 404 : la base ne connaît pas encore la fonction — la migration des
        devis (20261114090000) n'y est pas appliquée. On le dit, plutôt que le
        message de PostgREST sur son « schema cache ». */
-    const absente = e && e.status === 404;
+    const absente = e && /** @type {any} */ (e).status === 404;
     toast(I.x, absente ? 'Les devis attendent leur migration en base (20261114090000)'
       : messageErreur(e).slice(0, 140) || 'Impossible pour l’instant');
     return null;
