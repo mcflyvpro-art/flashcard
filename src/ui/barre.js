@@ -23,29 +23,52 @@ import './barre.css';
 const PAS = 74, BORD = 5;          // la largeur d'un onglet, la marge de la barre (app.css)
 const DETENTE = 420;               // la durée de `.relache` (barre.css)
 const RESSORT = 'scale .32s cubic-bezier(.34,1.32,.5,1)';
-let jeu = null, lache = -1e9, depart = null;
+let jeu = null, lache = -1e9, avale = null;
 
 const borne = (v, a, b) => Math.max(a, Math.min(b, v));
 
+/* Le geste ne doit JAMAIS rester coincé (2026-11-16, « quand je harcèle le
+   bouton, ça part en vrille ») : sur iPhone, Safari adresse toute la suite
+   d'un appui au nœud touché, même quand la barre a été redessinée entre-temps
+   et que ce nœud a quitté la page — le lâcher ne remontait plus jusqu'à la
+   fenêtre, la pastille restait grossie et plus aucun appui ne répondait. On
+   écoute donc la fin de l'appui à la fois sur la fenêtre et sur le nœud
+   touché ; un nouvel appui principal veut dire que l'ancien doigt est parti
+   (il n'y en a qu'un à la fois) ; la fenêtre qui perd la main, ou six secondes
+   sans signe du doigt, l'abandonnent. */
+const FIN = ['pointerup', 'pointercancel'];
+function ecouter(j, oui) {
+  const f = oui ? 'addEventListener' : 'removeEventListener';
+  for (const c of [window, j.noeud]) {
+    if (!c) continue;
+    c[f]('pointermove', bouger, { passive: true });
+    for (const t of FIN) c[f](t, lacher);
+  }
+}
+
 function demarrer(e) {
   const nav = e.target.closest('.tabs');
-  // un geste qui se termine encore (la pastille se pose) cède au suivant :
-  // des appuis rapides répondent tous
-  if (!nav || (jeu && !jeu.fin) || e.button > 0 || !e.isPrimary || tuto || sansMouvement()) return;
+  if (!nav || e.button > 0 || !e.isPrimary || tuto || sansMouvement()) return;
+  if (jeu && !jeu.fin) {
+    if (e.pointerId === jeu.id) return;
+    finir(jeu, false);                                // l'ancien doigt est parti sans qu'on l'ait vu
+  }
+  // le clic natif d'un appui arrive toujours avant l'appui suivant : un nouvel
+  // appui n'a plus rien à avaler (sinon son propre clic l'était)
+  avale = null;
   const sl = nav.querySelector('.sl'), boutons = [...nav.querySelectorAll('button')];
   if (!sl || boutons.length < 2) return;
-  const r = nav.getBoundingClientRect();
-  const appuye = boutons.indexOf(e.target.closest('button'));
-  const p = new DOMMatrixReadOnly(getComputedStyle(sl).transform).m41;
-  jeu = { nav, sl, boutons, x0: e.clientX, gauche: r.left + BORD + PAS / 2, max: (boutons.length - 1) * PAS,
-    appuye, p, v: 0, cible: p, glisse: false, fin: false, vise: -1, t: performance.now(), id: e.pointerId };
+  const r = nav.getBoundingClientRect(), bouton = e.target.closest('button');
+  const p = new DOMMatrixReadOnly(getComputedStyle(sl).transform).m41, maintenant = performance.now();
+  jeu = { nav, sl, boutons, bouton, noeud: e.target, appuye: boutons.indexOf(bouton), x0: e.clientX,
+    gauche: r.left + BORD + PAS / 2, max: (boutons.length - 1) * PAS, p, v: 0, glisse: false, fin: false, vise: -1,
+    t: maintenant, vu: maintenant, id: e.pointerId };
   jeu.cible = borne(e.clientX - jeu.gauche, 0, jeu.max);
   for (const x of [nav, sl]) { x.classList.remove('relache'); x.style.animationDelay = ''; }
+  sl.style.transform = `translateX(${p}px)`;          // là où on la voit, avant de couper sa transition
   sl.style.transition = RESSORT;
   nav.classList.add('presse');
-  addEventListener('pointermove', bouger, { passive: true });
-  addEventListener('pointerup', lacher);
-  addEventListener('pointercancel', lacher);
+  ecouter(jeu, true);
   const j = jeu;
   requestAnimationFrame(t => image(t, j));
 }
@@ -53,6 +76,7 @@ function demarrer(e) {
 function bouger(e) {
   const j = jeu;
   if (!j || e.pointerId !== j.id || j.fin) return;
+  j.vu = performance.now();
   if (Math.abs(e.clientX - j.x0) > 8) j.glisse = true;
   j.cible = borne(e.clientX - j.gauche, 0, j.max);
 }
@@ -60,36 +84,62 @@ function bouger(e) {
 function lacher(e) {
   const j = jeu;
   if (!j || e.pointerId !== j.id || j.fin) return;
-  removeEventListener('pointermove', bouger);
-  removeEventListener('pointerup', lacher);
-  removeEventListener('pointercancel', lacher);
+  finir(j, e.type === 'pointerup');
+}
+
+/* La barre redessinée pendant l'appui : le geste passe sur la neuve. */
+function actualiser(j) {
+  if (j.sl.isConnected) return true;
+  const nav = $.querySelector('.tabs'), sl = nav && nav.querySelector('.sl');
+  if (!sl) return false;
+  Object.assign(j, { nav, sl, boutons: [...nav.querySelectorAll('button')], vise: -1 });
+  if (!j.fin) { nav.classList.add('presse'); sl.style.transition = RESSORT; }
+  return true;
+}
+
+/* La fin d'un appui : lâché (on ouvre l'onglet du dessous) ou abandonné (la
+   pastille revient sur l'onglet ouvert). */
+function finir(j, lache_) {
+  ecouter(j, false);
+  actualiser(j);
   const ici = j.boutons.findIndex(b => b.classList.contains('on'));
-  const i = e.type === 'pointercancel' ? Math.max(0, ici)
-    : j.glisse ? Math.round(j.cible / PAS) : (j.appuye < 0 ? Math.max(0, ici) : j.appuye);
+  const i = !lache_ ? Math.max(0, ici)
+    : j.glisse ? Math.round(j.cible / PAS) : borne(j.appuye < 0 ? Math.max(0, ici) : j.appuye, 0, j.boutons.length - 1);
   j.cible = i * PAS; j.fin = true;
   lache = performance.now();
-  j.nav.classList.remove('presse');
+  for (const n of $.querySelectorAll('.tabs.presse')) n.classList.remove('presse');
+  for (const b of $.querySelectorAll('.tabs button.vise')) b.classList.remove('vise');
   j.sl.classList.add('relache');
   j.nav.classList.add('relache-vu');                 // la barre qui reste se détend par sa transition
   suivreRendu();
-  // glissé : on ouvre l'onglet du dessous, et le clic natif, qui viserait
-  // le bouton du départ, est avalé — lui seul : un appui rapide qui suit,
-  // sur un autre onglet, passe (avant le 2026-11-16, il était avalé aussi,
-  // et la pastille restait sur un onglet qui ne s'ouvrait pas)
-  if (j.glisse && e.type === 'pointerup') {
-    if (i !== ici) j.boutons[i].click();
-    depart = j.appuye < 0 ? null : j.boutons[j.appuye];
+  if (!lache_) return;
+  // glissé : on ouvre l'onglet du dessous ; touché, mais le bouton touché a
+  // quitté la page (redessinée sous le doigt) : son clic natif ne viendra pas,
+  // on l'ouvre aussi. Le clic natif qui viserait encore le bouton du départ
+  // est avalé — lui seul (un appui rapide qui suit, sur un autre onglet, passe).
+  const perdu = !j.bouton || !j.bouton.isConnected;
+  if (j.glisse ? i !== ici : perdu) j.boutons[i].click();
+  if (j.glisse || perdu) {
+    avale = { bouton: j.bouton, perdu, jusqua: lache + 400 };
     addEventListener('click', avaler, true);
-    setTimeout(() => { depart = null; removeEventListener('click', avaler, true); }, 400);
+    setTimeout(() => { avale = null; removeEventListener('click', avaler, true); }, 400);
   }
 }
 
 function avaler(e) {
-  if (!depart || !e.isTrusted || !depart.isConnected || e.target.closest?.('button') !== depart) return;
+  const a = avale;
+  if (!a || !e.isTrusted || performance.now() > a.jusqua || !e.detail) return;     // le clavier (detail 0) passe toujours
+  const b = e.target.closest?.('button');
+  if (a.bouton && a.bouton.isConnected ? b !== a.bouton : !(a.perdu && e.target.closest?.('.tabs'))) return;
   e.stopPropagation(); e.preventDefault();
-  depart = null;
+  avale = null;
   removeEventListener('click', avaler, true);
 }
+
+// la fenêtre perd la main (une autre app, un appel) : le doigt ne reviendra pas
+const abandon = () => { if (jeu && !jeu.fin) finir(jeu, false); };
+addEventListener('blur', abandon);
+document.addEventListener('visibilitychange', () => { if (document.hidden) abandon(); });
 
 /* La barre redessinée pendant la détente : sa glissière et sa barre
    reprennent l'animation au point où en étaient les anciennes. L'observateur
@@ -118,7 +168,10 @@ function suivreRendu() {
 const allume = j => j.boutons.findIndex(b => b.classList.contains('on'));
 function image(t, j) {
   if (jeu !== j) return;
-  if (!j.sl.isConnected && !rebrancher(j)) { jeu = null; return; }
+  // redessinée : pendant l'appui le geste passe sur la neuve ; après le lâcher,
+  // c'est une navigation, la glissière neuve glisse d'elle-même
+  if (!j.sl.isConnected && (j.fin || !actualiser(j))) { jeu = null; return; }
+  if (!j.fin && t - j.vu > 6000) finir(j, false);     // garde-fou : six secondes sans signe du doigt
   const dt = Math.min(2, (t - j.t) / 16.67); j.t = t;
   // la vérité est l'onglet ouvert : un appui qui n'a rien ouvert (un clic
   // refusé, l'onglet où l'on est) ne laisse jamais la pastille ailleurs
@@ -140,19 +193,6 @@ function image(t, j) {
     return;
   }
   requestAnimationFrame(t2 => image(t2, j));
-}
-
-/* La barre redessinée pendant que le doigt est encore dessus (un rendu de
-   fond, une relecture) : le geste passe sur la neuve, rien ne se perd.
-   Après le lâcher, c'est une navigation : on la laisse faire. */
-function rebrancher(j) {
-  if (j.fin) return false;
-  const nav = $.querySelector('.tabs'), sl = nav && nav.querySelector('.sl');
-  if (!sl) return false;
-  Object.assign(j, { nav, sl, boutons: [...nav.querySelectorAll('button')], vise: -1 });
-  nav.classList.add('presse');
-  sl.style.transition = RESSORT;
-  return true;
 }
 
 document.addEventListener('pointerdown', demarrer);

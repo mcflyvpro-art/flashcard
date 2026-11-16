@@ -65,3 +65,66 @@ test('changer vite d’onglet : la pastille finit toujours sous l’onglet ouver
   // l'icône de l'onglet ouvert n'est jamais blanche sur la barre
   expect(await page.locator('.tabs button.vise').count()).toBe(0);
 });
+
+// Au doigt, les événements d'un appui vont au bouton touché : redessiné pendant
+// l'appui (une relecture de fond), il quitte la page et le lâcher ne remontait
+// plus — la pastille restait grossie, et plus aucun appui ne répondait.
+// Le toucher passe par Chromium (CDP) : WebKit le saute.
+test('au doigt, harcelée, redessinée pendant l’appui : la barre ne reste jamais coincée', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'le toucher simulé passe par CDP');
+  const [a, b] = await ouvrir(page);
+  const cdp = await page.context().newCDPSession(page);
+  const touche = (type, [x, y] = [0, 0]) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+  const redessiner = () => page.evaluate(() => { const n = document.querySelector('.tabs'); n.replaceWith(n.cloneNode(true)); });
+
+  // la barre redessinée sous le doigt, puis le doigt se lève
+  await touche('touchStart', a);
+  await touche('touchMove', [(a[0] + b[0]) / 2, a[1]]);
+  await redessiner();
+  await touche('touchMove', b);
+  await touche('touchEnd');
+  await poseeSurLOnglet(page);
+
+  // le harcèlement : des appuis partout, très vite, des glisser, des rendus au milieu
+  const points = [a, b, [(a[0] + b[0]) / 2, a[1]], [a[0] - 20, a[1] + 8], [b[0] + 25, b[1] - 10]];
+  for (let k = 0; k < 40; k++) {
+    const p = points[(k * 7) % points.length], q = points[(k * 3 + 1) % points.length];
+    await touche('touchStart', p);
+    if (k % 3 === 0) await touche('touchMove', q);
+    if (k % 5 === 0) await redessiner();
+    if (k % 4 === 1) await redessiner();                               // le rendu juste avant le lâcher
+    await touche('touchEnd');
+  }
+  await poseeSurLOnglet(page);
+  expect(await page.locator('.tabs.presse, .tabs button.vise').count()).toBe(0);
+
+  // et elle répond toujours : un appui sur l'autre onglet l'ouvre
+  const ouvert = await page.locator('.tabs button[aria-current="page"]').getAttribute('aria-label');
+  const autre = ouvert === 'Paquets' ? b : a;
+  await touche('touchStart', autre); await touche('touchEnd');
+  await expect(page.locator('.tabs button[aria-current="page"]')).not.toHaveAttribute('aria-label', ouvert);
+  await poseeSurLOnglet(page);
+});
+
+// Ce que fait Safari sur iPhone : les événements d'un appui restent adressés au
+// bouton touché, même s'il a quitté la page (la barre redessinée pendant
+// l'appui) — le lâcher ne remonte plus jusqu'à la fenêtre. On le joue tel quel :
+// le lâcher envoyé au bouton détaché.
+test('le lâcher adressé au bouton disparu (Safari) ne coince pas la barre', async ({ page }) => {
+  const [a, b] = await ouvrir(page);
+  const coince = await page.evaluate(([a, b]) => {
+    const evt = (type, [x, y], id) => new PointerEvent(type, { bubbles: true, cancelable: true, composed: true, pointerId: id, isPrimary: true, pointerType: 'touch', clientX: x, clientY: y, button: 0, buttons: type === 'pointerup' ? 0 : 1 });
+    const bouton = document.elementFromPoint(...a).closest('button');
+    bouton.dispatchEvent(evt('pointerdown', a, 41));
+    const n = document.querySelector('.tabs'); n.replaceWith(n.cloneNode(true));   // le rendu pendant l'appui
+    bouton.dispatchEvent(evt('pointermove', b, 41));
+    bouton.dispatchEvent(evt('pointerup', b, 41));                                   // adressé au bouton parti
+    return new Promise(r => setTimeout(() => r(document.querySelectorAll('.tabs.presse').length), 900));
+  }, [a, b]);
+  expect(coince).toBe(0);
+  await poseeSurLOnglet(page);
+  // un appui suivant répond
+  await page.mouse.click(...b);
+  await expect(page.locator('.tabs button').nth(1)).toHaveAttribute('aria-current', 'page');
+  await poseeSurLOnglet(page);
+});
