@@ -23,13 +23,15 @@ import './barre.css';
 const PAS = 74, BORD = 5;          // la largeur d'un onglet, la marge de la barre (app.css)
 const DETENTE = 420;               // la durée de `.relache` (barre.css)
 const RESSORT = 'scale .32s cubic-bezier(.34,1.32,.5,1)';
-let jeu = null, lache = -1e9;
+let jeu = null, lache = -1e9, depart = null;
 
 const borne = (v, a, b) => Math.max(a, Math.min(b, v));
 
 function demarrer(e) {
   const nav = e.target.closest('.tabs');
-  if (!nav || jeu || e.button > 0 || !e.isPrimary || tuto || sansMouvement()) return;
+  // un geste qui se termine encore (la pastille se pose) cède au suivant :
+  // des appuis rapides répondent tous
+  if (!nav || (jeu && !jeu.fin) || e.button > 0 || !e.isPrimary || tuto || sansMouvement()) return;
   const sl = nav.querySelector('.sl'), boutons = [...nav.querySelectorAll('button')];
   if (!sl || boutons.length < 2) return;
   const r = nav.getBoundingClientRect();
@@ -44,7 +46,8 @@ function demarrer(e) {
   addEventListener('pointermove', bouger, { passive: true });
   addEventListener('pointerup', lacher);
   addEventListener('pointercancel', lacher);
-  requestAnimationFrame(image);
+  const j = jeu;
+  requestAnimationFrame(t => image(t, j));
 }
 
 function bouger(e) {
@@ -70,17 +73,21 @@ function lacher(e) {
   j.nav.classList.add('relache-vu');                 // la barre qui reste se détend par sa transition
   suivreRendu();
   // glissé : on ouvre l'onglet du dessous, et le clic natif, qui viserait
-  // le bouton du départ, est avalé (seulement lui : dans la barre, de suite)
+  // le bouton du départ, est avalé — lui seul : un appui rapide qui suit,
+  // sur un autre onglet, passe (avant le 2026-11-16, il était avalé aussi,
+  // et la pastille restait sur un onglet qui ne s'ouvrait pas)
   if (j.glisse && e.type === 'pointerup') {
     if (i !== ici) j.boutons[i].click();
+    depart = j.appuye < 0 ? null : j.boutons[j.appuye];
     addEventListener('click', avaler, true);
-    setTimeout(() => removeEventListener('click', avaler, true), 400);
+    setTimeout(() => { depart = null; removeEventListener('click', avaler, true); }, 400);
   }
 }
 
 function avaler(e) {
-  if (!e.isTrusted || performance.now() - lache > 400 || !e.target.closest?.('.tabs')) return;
+  if (!depart || !e.isTrusted || !depart.isConnected || e.target.closest?.('button') !== depart) return;
   e.stopPropagation(); e.preventDefault();
+  depart = null;
   removeEventListener('click', avaler, true);
 }
 
@@ -105,14 +112,19 @@ function suivreRendu() {
 
 /* Un ressort amorti : la pastille rattrape sa cible, la dépasse un peu,
    revient ; sa vitesse l'étire. Elle s'arrête quand elle est posée, ou quand
-   la barre a été redessinée (la glissière neuve glisse d'elle-même). */
-function image(t) {
-  const j = jeu;
-  if (!j) return;
+   la barre a été redessinée après le lâcher (la glissière neuve glisse
+   d'elle-même, de la bonne place). Chaque geste a sa boucle : celle d'un
+   geste remplacé s'arrête. */
+const allume = j => j.boutons.findIndex(b => b.classList.contains('on'));
+function image(t, j) {
+  if (jeu !== j) return;
+  if (!j.sl.isConnected && !rebrancher(j)) { jeu = null; return; }
   const dt = Math.min(2, (t - j.t) / 16.67); j.t = t;
+  // la vérité est l'onglet ouvert : un appui qui n'a rien ouvert (un clic
+  // refusé, l'onglet où l'on est) ne laisse jamais la pastille ailleurs
+  if (j.fin && t - lache > 180) { const on = allume(j); if (on >= 0) j.cible = on * PAS; }
   j.v = (j.v + (j.cible - j.p) * 0.2 * dt) * Math.pow(0.7, dt);
   j.p += j.v * dt;
-  if (!j.sl.isConnected) { jeu = null; return; }
   j.sl.style.transform = `translateX(${j.p.toFixed(2)}px)`;
   j.sl.style.setProperty('--etire', Math.min(0.2, Math.abs(j.v) / 70).toFixed(3));
   const vise = j.fin ? -1 : Math.round(j.p / PAS);
@@ -127,7 +139,20 @@ function image(t) {
     jeu = null;
     return;
   }
-  requestAnimationFrame(image);
+  requestAnimationFrame(t2 => image(t2, j));
+}
+
+/* La barre redessinée pendant que le doigt est encore dessus (un rendu de
+   fond, une relecture) : le geste passe sur la neuve, rien ne se perd.
+   Après le lâcher, c'est une navigation : on la laisse faire. */
+function rebrancher(j) {
+  if (j.fin) return false;
+  const nav = $.querySelector('.tabs'), sl = nav && nav.querySelector('.sl');
+  if (!sl) return false;
+  Object.assign(j, { nav, sl, boutons: [...nav.querySelectorAll('button')], vise: -1 });
+  nav.classList.add('presse');
+  sl.style.transition = RESSORT;
+  return true;
 }
 
 document.addEventListener('pointerdown', demarrer);
