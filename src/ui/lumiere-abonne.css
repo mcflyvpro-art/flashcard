@@ -50,7 +50,11 @@ html.offre-infini #rail .brand span::after{content:'\2009∞'}
    celles de son entrée (.neuf, .fade). */
 html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab){background:none;isolation:isolate;color:var(--plus-c);
   box-shadow:0 12px 26px -12px #c27f0acc}
-html.offre-plus .cta:not(:disabled){position:relative}
+/* positionné pour ses calques, mais sans écraser une place qu'il a déjà :
+   « Ouvrir la salle », « Créer » sont collés au bas de l'écran (sticky) —
+   forcés en relative, leur décalage du bas les remontait de 48 px sur la
+   dernière rangée, qu'on ne voyait plus (2026-11-16) */
+:where(html.offre-plus .cta:not(:disabled)){position:relative}
 html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab)::after,
 html.offre-infini :is(.cta:not(:disabled),.fab)::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none}
 html.offre-plus :is(.cta:not(:disabled),.tabs .sl,.fab)::after,html.offre-plus .prog i{

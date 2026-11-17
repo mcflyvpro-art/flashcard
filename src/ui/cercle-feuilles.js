@@ -186,6 +186,8 @@ const FEUILLES = { moi: feuilleMoi, pin: feuillePin, 'club-form': feuilleForm, '
 
 function peindre() { if (menu === 'cc') openMenu('cc'); }
 
+let encodeur = null;
+
 export function paintMenuCercle(w) {
   const f = FEUILLES[cercle.feuille];
   const html = f ? f() : '';
@@ -197,8 +199,13 @@ export function paintMenuCercle(w) {
   /* L'encodeur QR ne sert qu'ici et dans l'espace professeur : il arrive à
      la demande, au lieu de peser sur le démarrage de tout le monde. */
   const qr = document.getElementById('cfqr');
-  if (qr) import('../qr.js').then(m => { if (qr.isConnected) qr.innerHTML = m.qrSvg(qr.dataset.lien, qr.dataset.titre); })
-    .catch(() => { qr.remove(); });                 // hors ligne et jamais chargé : le code suffit
+  if (qr) {
+    /* l'encodeur gardé : une feuille redessinée (« Nouveau code ») a son QR
+       dans le même rendu, sans repasser par un carré vide */
+    const dessiner = m => { encodeur = m; if (qr.isConnected) qr.innerHTML = m.qrSvg(qr.dataset.lien, qr.dataset.titre); };
+    if (encodeur) dessiner(encodeur);
+    else import('../qr.js').then(dessiner).catch(() => { qr.remove(); });   // hors ligne et jamais chargé : le code suffit
+  }
   for (const id of ['ccpinf', 'cccodef']) {
     const form = document.getElementById(id);
     if (form) form.onsubmit = e => { e.preventDefault(); return id === 'ccpinf' ? entrerPin() : entrerCode(); };

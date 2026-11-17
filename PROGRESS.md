@@ -19,7 +19,15 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-16 · La fiche se note au doigt sur quatre notes, à
+DERNIER   2026-11-16 · La séance ne tourne plus en rond : une carte
+          en apprentissage revient à son heure, la plus proche d'abord ;
+          la file vue, seules les ratées reviennent ; les sues attendent
+          leur palier et le bilan propose « Revoir maintenant » ; « Rejouer »
+          reprend les cartes de la séance (e2e/seance.e2e.js). L'en-tête de
+          l'accueil ne se casse plus, l'anneau abrège (1,2k), le bas de
+          « Nouveau défi » se voit chez un abonné, le QR du club ne saute
+          plus.
+          · La fiche se note au doigt sur quatre notes, à
           la Quizlet (ui/geste.js) : un peu à gauche Difficile, loin Encore,
           un peu à droite Correct, loin Facile ; le contour prend la couleur
           du bouton, le bouton s'allume, une bulle dit « Facile · dans

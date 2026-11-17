@@ -2,14 +2,14 @@
 import { $ } from '../racine.js';
 import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
-import { buildQueue, reprise, shuffle } from '../file.js';
+import { aRevoir, buildQueue, ramener, reprise, shuffle } from '../file.js';
 import {
   auth, db, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
   study
 } from '../data/etat.js';
 import { go, liveBump } from './bibliotheque.js';
 import {
-  TTS, grade, mimg, paintMedia, plain, preview, rt
+  TTS, grade, mimg, nextIn, paintMedia, plain, preview, rt
 } from './carte-media.js';
 import {
   DEFMETA, deck, enqueue, esc, live, metaOf, pushHist, save, scheduleFlush, sty, subj, uid
@@ -31,7 +31,8 @@ function studySource(id) {
 function studyIds(id, cards, subset, o, sm) {
   if (subset && subset.length) {
     const keep = new Set(subset);
-    return cards.filter(c => keep.has(c.id)).map(c => c.id);
+    const ids = cards.filter(c => keep.has(c.id)).map(c => c.id);
+    return o.order === 'random' ? shuffle(ids) : ids;
   }
   const now = Date.now();
   if (sm) return buildQueue(cards, { order: o.order || 'random', only: o.only === 'leech' ? 'leech' : '' }, now).map(c => c.id);
@@ -56,7 +57,9 @@ function mcqPoolAndIds(cards, ids) {
 }
 
 export function startStudy(id, rev, subset, opt) {
-  const o = opt || {};
+  /* les cartes choisies (les erreurs, une séance rejouée) suivent la séance :
+     « Mélanger » en cours de route les garde */
+  const o = subset && subset.length ? { ...opt, cartes: subset } : (opt || {});
   const sm = simpleMode();          // figé pour toute la session : pas de bascule à chaud
   const src = studySource(id);
   if (!src) return;
@@ -70,7 +73,7 @@ export function startStudy(id, rev, subset, opt) {
     if (mcq.error) { toast(I.x, mcq.error); return; }
     pool = mcq.pool; ids = mcq.ids;
   }
-  setStudy({ id, name: src.name, langf: dm.langf, langb: dm.langb, mode, pool, rev: !!rev, both: !!o.both, queue: ids, i: 0, again: [], flip: false,
+  setStudy({ id, name: src.name, langf: dm.langf, langb: dm.langb, mode, pool, rev: !!rev, both: !!o.both, queue: ids, i: 0, attente: [], flip: false,
             ok: 0, total: ids.length, t0: Date.now(), tq: Date.now(), tried: {}, missSet: {},
             miss: [], log: [], saved: false, opt: o, simple: sm,
             dirs: Object.fromEntries(ids.map(x => [x, o.both ? Math.random() < .5 : !!rev])) });
@@ -140,6 +143,17 @@ const mmss = ms => {
 
 const bestRun = log => { let b = 0, c = 0; for (const v of log) { c = v ? c + 1 : 0; if (c > b) b = c; } return b; };
 
+/* Les fiches sues qui attendent encore leur palier (1 min, 10 min) ne
+   retiennent plus la séance : le bilan dit quand elles reviennent, et les
+   ramène à qui veut les revoir tout de suite. */
+function enCours(attente) {
+  if (!attente || !attente.length) return '';
+  const n = attente.length, d = Math.max(...attente.map(a => a.d));
+  return `<div class="rv-att">${svg(I.clock)}<span><b>${n} carte${n > 1 ? 's' : ''} en cours</b>${
+    n > 1 ? 'reviennent' : 'revient'} ${('dans ' + nextIn({ d })).replace(/ /g, '\u00a0')}</span>
+    <button data-act="revoiratt">Revoir maintenant</button></div>`;
+}
+
 /* bilan de fin de session : chiffres, séries, historique, liste des ratés */
 export function review(o) {
   const per = o.log.length ? o.ms / o.log.length : 0;
@@ -162,6 +176,7 @@ export function review(o) {
       <div class="hist">${hist.slice(-12).map((h, i, a) =>
         `<div class="hb ${i === a.length - 1 ? 'now' : ''}"><i style="height:${Math.max(4, h.p * 100)}%"></i></div>`
       ).join('')}</div>` : ''}
+    ${enCours(o.attente)}
     <div class="b">
       ${o.miss.length ? `<button data-act="${o.redo}">${svg(I.target)}Erreurs</button>` : ''}
       <button data-act="${o.again}">${svg(I.redo)}Rejouer</button>
@@ -187,18 +202,19 @@ export function studyView() {
       <button class="ic ${study.rev ? 'solid' : ''}" data-act="swap" aria-label="Inverser le sens">${svg(I.swap)}</button>
       <button class="ic" data-act="restart" aria-label="Mélanger">${svg(I.shuffle)}</button>
     </div>`;
+  if (study.i >= study.queue.length) suite();
   if (study.i >= study.queue.length) {
-    if (study.again.length) { study.queue = study.again; study.again = []; study.i = 0; study.flip = false; }
-    else {
-      if (!study.saved) { study.saved = true; study.ms = Date.now() - study.t0;
-        study.hist = pushHist(study.id, 'study', study.total ? study.ok / study.total : 0);
-        saveResume(); }
-      $.innerHTML = bar('') + review({
-        ok: study.ok, total: study.total, log: study.log, ms: study.ms, hist: study.hist,
-        miss: study.miss, redo: 'redostudy', again: 'restart', done: 'deck'
-      });
-      return fillRing(study.ok, study.total);
-    }
+    /* le bilan : la durée court jusqu'à lui (« Revoir maintenant » prolonge
+       la séance), l'historique ne compte la séance qu'une fois */
+    study.ms = Date.now() - study.t0;
+    if (!study.saved) { study.saved = true;
+      study.hist = pushHist(study.id, 'study', study.total ? study.ok / study.total : 0);
+      saveResume(); }
+    $.innerHTML = bar('') + review({
+      ok: study.ok, total: study.total, log: study.log, ms: study.ms, hist: study.hist,
+      miss: study.miss, redo: 'redostudy', again: 'rejouer', done: 'deck', attente: study.attente
+    });
+    return fillRing(study.ok, study.total);
   }
   if (study.mode === 'match') {
     if (!study.batch) nextBatch();
@@ -616,19 +632,26 @@ function scoreCard(id, ok, rating) {
 
 export const paintQ = () => { study.mode === 'mcq' ? paintMCQ() : (paintStack(), paintFoot()); };
 
+/* Les fiches qui attendent rejoignent la file : celles dont l'heure est
+   venue, et, la file vue, celles qu'on n'a pas sues ; `tout` (« Revoir
+   maintenant », depuis le bilan) ramène aussi celles qu'on a sues. */
+export function suite(tout) {
+  const r = ramener(study.queue, study.i, study.attente || [], Date.now(), tout);
+  study.queue = r.file; study.attente = r.attente;
+}
+
 export function commit(ok, rating) {
   const id = study.queue[study.i];
   const [card] = scoreCard(id, ok, rating);
-  /* Une fiche quitte la séance quand elle est acquise, pas quand elle est
-     juste juste. FSRS la fait passer par des paliers — une minute, dix
-     minutes — avant de l'envoyer à des jours de distance : tant qu'elle
-     est sur ces paliers, elle revient avant la fin de la séance. C'est la
-     file d'apprentissage d'Anki, et c'est ce qui donne son sens aux
-     paliers : sans ça, la fiche sortait de l'écran et revenait dix
-     minutes plus tard sans qu'on s'y attende. */
-  const learning = card && !study.simple && (card.st === 1 || card.st === 3);
-  if (!ok || learning) study.again.push(id);
+  /* Une fiche sur un palier d'apprentissage (1 min, 10 min) revient dans
+     la séance à son heure, comme dans la file d'apprentissage d'Anki ; une
+     ratée revient aussi, sans attendre, une fois la file vue — mais une
+     fiche sue ne retient plus la séance (`aRevoir`, `ramener` de
+     src/file.js, 2026-11-16 : on tournait en rond). */
+  const r = aRevoir(id, card, ok, study.simple, Date.now());
+  if (r) (study.attente = study.attente || []).push(r);
   study.i++; study.flip = false; study.pick = null; study.opts = null;
+  suite();
   saveResume();
   if (study.i >= study.queue.length) return studyView();
   paintQ();

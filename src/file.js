@@ -128,6 +128,45 @@ export function entrelacer(a, b) {
   return out;
 }
 
+/* ---------- ce qui revient pendant la séance ----------
+   Demandé le 2026-11-16 : « tant que ce n'est pas su, la carte revient
+   dans la même séance — mais on reste bloqué à l'infini ». Avant, toute
+   carte encore sur un palier d'apprentissage (1 min, 10 min ; rechute
+   10 min) repartait en fin de file, quel que soit son délai : il fallait
+   « Correct » deux fois ou « Facile » une fois sur chaque carte neuve pour
+   sortir, et « Difficile », qui garde le palier, tournait en rond.
+
+   Comme dans Anki, une carte en apprentissage revient quand son heure est
+   venue, pendant qu'on révise encore : la plus proche d'abord, donc celle
+   au plus long délai en dernier. Une fois toute la file vue, seules les
+   cartes qu'on n'a pas sues (« Encore ») reviennent sans attendre leur
+   heure ; celles qu'on a sues et qui attendent leur palier ne retiennent
+   plus la séance — le bilan dit quand elles reviennent, et « Revoir
+   maintenant » les ramène pour qui veut (`tout` : la limite d'avance
+   d'Anki, au choix). Le moteur, lui, ne change pas : elles sont dues à
+   leur heure, et la prochaine séance les montre. */
+export const RETOUR_SIMPLE = 60000;      // le mode simple n'a pas d'heure : une ratée revient au bout d'une minute
+
+/* Après une note : la carte revient-elle dans cette séance, et quand ?
+   `c` est la carte telle que la note l'a laissée (son palier `st`, son
+   heure `d`). Rend `{ id, d, sue }` ou null. */
+export function aRevoir(id, c, ok, simple, now) {
+  if (simple) return ok ? null : { id, d: now + RETOUR_SIMPLE, sue: false };
+  return c && (c.st === 1 || c.st === 3) ? { id, d: c.d || now, sue: !!ok } : null;
+}
+
+/* Les cartes qui attendent (`attente`) rejoignent la file à la place `i` :
+   celles dont l'heure est venue ; la file vue en entier, celles qu'on n'a
+   pas sues ; avec `tout`, toutes. Les plus proches d'abord. Pur : rend une
+   nouvelle file et ce qui attend encore. */
+export function ramener(file, i, attente, now, tout) {
+  const fin = i >= file.length;
+  const pretes = attente.filter(a => a.d <= now || (fin && (tout || !a.sue))).sort((a, b) => a.d - b.d);
+  if (!pretes.length) return { file, attente };
+  const ids = new Set(pretes.map(a => a.id));
+  return { file: [...file.slice(0, i), ...pretes.map(a => a.id), ...file.slice(i)], attente: attente.filter(a => !ids.has(a.id)) };
+}
+
 /* La reprise d'une lecture interrompue (`cartes.resume.<uid>`) photographie
    la file : des identifiants de pages. Entre-temps, le livre a pu partir à la
    corbeille ou perdre des pages, ailleurs ou ici : on ne garde que les pages
@@ -138,5 +177,9 @@ export function reprise(r, existe) {
   if (!r || !Array.isArray(r.queue) || !(r.i >= 0)) return null;
   const reste = r.queue.slice(r.i).filter(existe);
   if (!reste.length) return null;
-  return { ...r, queue: [...r.queue.slice(0, r.i), ...reste] };
+  /* une séance rangée avant le 2026-11-16 n'a pas d'attente, mais une liste
+     `again` de cartes à revoir sans heure : elles reviennent comme des ratées */
+  const attente = (Array.isArray(r.attente) ? r.attente : (r.again || []).map(id => ({ id, d: 0, sue: false })))
+    .filter(a => a && existe(a.id));
+  return { ...r, queue: [...r.queue.slice(0, r.i), ...reste], attente };
 }

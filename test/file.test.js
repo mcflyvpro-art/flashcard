@@ -3,7 +3,7 @@
    limite finale. `now` et `rand` sont toujours fournis explicitement, ce
    qui rend le mélange et les échéances vérifiables sans horloge réelle. */
 import { describe, it, expect } from 'vitest';
-import { isDue, isLeech, shuffle, buildQueue, reprise } from '../src/file.js';
+import { isDue, isLeech, shuffle, buildQueue, reprise, aRevoir, ramener, RETOUR_SIMPLE } from '../src/file.js';
 
 /* même graine → même suite, comme test/concurrence.test.js */
 function mulberry32(graine) {
@@ -261,5 +261,62 @@ describe('reprise — un livre parti ne se reprend pas', () => {
   it('une reprise abîmée ne passe pas', () => {
     expect(reprise(null, () => true)).toBe(null);
     expect(reprise({ i: 0 }, () => true)).toBe(null);
+  });
+  it('ce qui attend suit la reprise, sans les pages parties', () => {
+    const a = [{ id: 'x', d: 5, sue: true }, { id: 'b', d: 6, sue: false }];
+    expect(reprise({ ...r, attente: a }, id => id !== 'b').attente).toEqual([{ id: 'x', d: 5, sue: true }]);
+  });
+  it('une reprise d’avant le 2026-11-16 : sa liste « again » revient comme des ratées', () => {
+    expect(reprise({ ...r, again: ['z'] }, () => true).attente).toEqual([{ id: 'z', d: 0, sue: false }]);
+    expect(reprise(r, () => true).attente).toEqual([]);
+  });
+});
+
+/* ---------- ce qui revient pendant la séance (2026-11-16) ---------- */
+describe('aRevoir — la carte revient-elle dans la séance ?', () => {
+  const T = 1_000_000;
+  it('en apprentissage ou en rechute : oui, à son heure ; sue si la note n’était pas « Encore »', () => {
+    expect(aRevoir('a', { st: 1, d: T + 600000 }, true, false, T)).toEqual({ id: 'a', d: T + 600000, sue: true });
+    expect(aRevoir('a', { st: 3, d: T + 600000 }, false, false, T)).toEqual({ id: 'a', d: T + 600000, sue: false });
+  });
+  it('passée en révision (des jours) : non, quelle que soit la note', () => {
+    expect(aRevoir('a', { st: 2, d: T + 3 * 864e5 }, true, false, T)).toBe(null);
+  });
+  it('mode simple : seule une ratée revient, une minute plus tard', () => {
+    expect(aRevoir('a', { st: 2 }, false, true, T)).toEqual({ id: 'a', d: T + RETOUR_SIMPLE, sue: false });
+    expect(aRevoir('a', { st: 1, d: T }, true, true, T)).toBe(null);
+  });
+  it('sans carte, rien', () => { expect(aRevoir('a', null, false, false, T)).toBe(null); });
+});
+
+describe('ramener — la file ne tourne plus en rond', () => {
+  const T = 1_000_000, MIN = 60000;
+  it('au milieu de la file, une carte dont l’heure est venue passe devant ; les autres attendent', () => {
+    const at = [{ id: 'x', d: T - 1, sue: false }, { id: 'y', d: T + 10 * MIN, sue: true }];
+    const r = ramener(['a', 'b', 'c'], 1, at, T);
+    expect(r.file).toEqual(['a', 'x', 'b', 'c']);
+    expect(r.attente).toEqual([at[1]]);
+  });
+  it('la file vue en entier : les ratées reviennent sans attendre, la plus proche d’abord ; les sues attendent', () => {
+    const at = [{ id: 'y', d: T + 10 * MIN, sue: true }, { id: 'z', d: T + 2 * MIN, sue: false }, { id: 'x', d: T + MIN, sue: false }];
+    const r = ramener(['a', 'b'], 2, at, T);
+    expect(r.file).toEqual(['a', 'b', 'x', 'z']);
+    expect(r.attente).toEqual([at[0]]);
+  });
+  it('« Revoir maintenant » ramène aussi les sues, la plus proche d’abord : le plus long délai en dernier', () => {
+    const at = [{ id: 'c', d: T + 10 * MIN, sue: true }, { id: 'd', d: T + 6 * MIN, sue: true }];
+    expect(ramener(['a'], 1, at, T, true)).toEqual({ file: ['a', 'd', 'c'], attente: [] });
+  });
+  it('tout est su et rien n’est l’heure : la séance finit', () => {
+    const at = [{ id: 'c', d: T + 10 * MIN, sue: true }];
+    const r = ramener(['a', 'b'], 2, at, T);
+    expect(r.file).toEqual(['a', 'b']);
+    expect(r.attente).toBe(at);
+  });
+  it('ne touche à rien de ce qu’on lui donne', () => {
+    const file = ['a'], at = [{ id: 'x', d: 0, sue: false }];
+    ramener(file, 1, at, T);
+    expect(file).toEqual(['a']);
+    expect(at).toHaveLength(1);
   });
 });

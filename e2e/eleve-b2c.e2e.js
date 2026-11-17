@@ -22,8 +22,9 @@ test('inscription, un paquet de 10 cartes, une séance, des chiffres justes', as
   await page.getByRole('button', { name: 'Réviser 10' }).click();
   await expect(page.getByText('1/10')).toBeVisible();
   for (let k = 0; k < 10; k++) await noter(page, k < 7 ? 'Facile' : 'Encore');
-  // ...que la séance représente aussitôt, et qui passent cette fois
-  await expect(page.getByText('1/3')).toBeVisible();
+  // ...que la séance représente aussitôt, à la suite de la file (src/file.js,
+  // `ramener` : la file vue, les ratées reviennent sans attendre), et qui passent cette fois
+  await expect(page.getByText('11/13')).toBeVisible();
   for (let k = 0; k < 3; k++) await noter(page, 'Facile');
 
   // fin de séance : 7 sur 10 du premier coup

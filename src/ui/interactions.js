@@ -44,7 +44,7 @@ import {
 } from '../core/reglages-corbeille.js';
 import {
   answerTF, cardOf, cardOrigin, commit, fling, isTF, loadResume, paintQ, pickMCQ, pickMatch,
-  saveResume, startStudy
+  saveResume, startStudy, suite
 } from './revision.js';
 import { lancerTuto } from './tuto-porte.js';
 import { ouvrirSecurite } from './securite-porte.js';
@@ -328,9 +328,18 @@ const tapQuizdeck = () => startQuiz(view.id);
    filtre (le marathon reste sur les cartes dues). */
 function tapRestart() {
   const o = (study && study.opt) || {};
-  return startStudy(study ? study.id : view.id, study && study.rev, null,
+  return startStudy(study ? study.id : view.id, study && study.rev, o.cartes || null,
     study ? { ...o, mode: study.mode, both: study.both, order: 'random' } : { order: 'random' });
 }
+
+/* « Rejouer » du bilan : les cartes de cette séance, mélangées — pas celles
+   qui sont dues. Relancée sur le filtre « dues », une séance finie ne
+   trouvait plus rien (tout venait d'être noté) : « Rien à revoir ici ».
+   Rejouées, elles sont notées pour de vrai, comme une révision anticipée
+   d'Anki : le moteur sait ce qu'est une révision du jour même. */
+const tapRejouer = () => startStudy(study.id, study.rev, Object.keys(study.dirs || {}),
+  { mode: study.mode, both: study.both, order: 'random' });
+const tapRevoiratt = () => { suite(true); return render(); };
 
 function tapSwap() {
   if (!study) return;
@@ -497,6 +506,8 @@ const CLICK_RULES = [
   [a => a === 'studyleech', tapStudyleech],
   [a => a === 'quizdeck', tapQuizdeck],
   [a => a === 'restart', tapRestart],
+  [a => a === 'rejouer', tapRejouer],
+  [a => a === 'revoiratt', tapRevoiratt],
   [a => a === 'swap', tapSwap],
   [a => a === 'swapq', tapSwapq],
   [a => a === 'anyway', tapAnyway],

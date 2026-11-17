@@ -462,15 +462,20 @@ function sortDecks(list) {
   return [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || by(a, b));
 }
 
+/* Le nombre du jour dans l'anneau : en entier jusqu'à 999, puis abrégé
+   vers le bas (« 1,2k », « 12k ») — en entier, 1 250 débordait de
+   l'anneau. Le nombre exact reste dans le titre du bouton. */
+const court = n => n < 1000 ? String(n) : n < 1e4 ? String(Math.floor(n / 100) / 10).replace('.', ',') + 'k' : Math.floor(n / 1000) + 'k';
+
 /* Anneau d'objectif du jour, en tête de l'accueil */
 function goalRing() {
   const n = todayCount(), g = Math.max(1, prefs.goal || 30);
-  const p = Math.min(1, n / g);
+  const p = Math.min(1, n / g), c = court(n);
   return `<button class="goal" data-act="goalinfo" title="${n} / ${g} aujourd'hui">
     <svg viewBox="0 0 44 44"><circle class="b" cx="22" cy="22" r="18"/>
       <circle class="f" cx="22" cy="22" r="18"
         style="stroke-dasharray:113;stroke-dashoffset:${(113 * (1 - p)).toFixed(1)}"/></svg>
-    <b>${n}</b></button>`;
+    <b${c.length > 3 ? ' class="l"' : ''}>${c}</b></button>`;
 }
 
 /* Le point gris disait « hors ligne » sans dire ce qui attendait. Un
@@ -495,7 +500,7 @@ const nomCourrier = () => 'Boîte de réception' + (mailbox.n ? `, ${nonLus()} n
 
 function peekButton(hidden) {
   if (!hidden) return '';
-  return `<button class="ic ${peek ? 'solid' : ''}" data-act="peek">${svg(peek ? I.eye : I.eyeoff)}</button>`;
+  return `<button class="ic ${peek ? 'solid' : ''}" data-act="peek" aria-label="Paquets masqués" aria-pressed="${!!peek}">${svg(peek ? I.eye : I.eyeoff)}</button>`;
 }
 
 function sortRow(list) {
@@ -536,15 +541,17 @@ function home() {
   const list = db.decks.filter(d => (peek || !d.hidden) && (!filter || d.subject === filter));
   $.innerHTML = `
     <div class="page ${reorder ? 'frozen' : ''}" id="page">
-      <div class="top">
+      <div class="top accueil">
         <div class="hero">Mes paquets</div>
-        ${queueChip()}
         ${goalRing()}
-        <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
-        ${reorder ? '' : `<button class="pbtn pri newbtn" data-act="new">${svg(I.plus)}Nouveau paquet</button>`}
-        <button class="ic icmail" data-act="mail" aria-label="${nomCourrier()}">${svg(I.mail)}${mailBadge()}</button>
-        <button class="ic" data-act="settings" aria-label="Réglages">${svg(I.gear)}</button>
-        ${peekButton(hidden)}
+        <div class="outils">
+          ${queueChip()}
+          <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
+          ${reorder ? '' : `<button class="pbtn pri newbtn" data-act="new">${svg(I.plus)}Nouveau paquet</button>`}
+          <button class="ic icmail" data-act="mail" aria-label="${nomCourrier()}">${svg(I.mail)}${mailBadge()}</button>
+          <button class="ic" data-act="settings" aria-label="Réglages">${svg(I.gear)}</button>
+          ${peekButton(hidden)}
+        </div>
       </div>
       ${resumeBanner()}
       ${marathonBanner()}
