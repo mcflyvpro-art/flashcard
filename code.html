@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Un code Mirandola</title>
+<meta name="description" content="Un code à entrer dans Mirandola : copie-le, puis colle-le dans Mes amis, Entrer un code.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F6F5F1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-48.png" sizes="48x48" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+</head>
+<body>
+<!-- La page d'un lien partagé (2026-11-16) : un club, une partie, une classe,
+     un paquet ou un ami. Une app posée sur l'écran d'accueil ne s'ouvre pas
+     d'un lien : la page montre le code, le copie, et dit où l'entrer.
+     src/site/code.js, src/site/code.css ; l'aiguillage d'index.html y mène. -->
+<main class="cd">
+  <a class="cd-marque" href="/?site"><img src="/site/logo.svg" alt="" width="26" height="28"><b>Mirandola</b></a>
+  <section class="cd-carte" aria-live="polite">
+    <p class="cd-quoi" id="cdquoi">Un code Mirandola</p>
+    <h1 class="cd-titre" id="cdtitre">Entre ce code dans l’app</h1>
+    <p class="cd-code" id="cdcode">…</p>
+    <button class="cd-copier" id="cdcopier" type="button">Copier le code</button>
+  </section>
+  <ol class="cd-etapes">
+    <li><b>Ouvre Mirandola</b><span id="cdouvrir">l’icône sur ton écran d’accueil</span></li>
+    <li><b>Mes amis</b><span>puis « Entrer un code »</span></li>
+    <li><b>Colle le code</b><span>tout se fait seul</span></li>
+  </ol>
+  <div class="cd-bas">
+    <a class="cd-bt" id="cdapp" href="/app">Ouvrir dans Mirandola</a>
+    <a class="cd-lien" id="cdcompte" href="/app">Pas encore de compte ? Créer le mien</a>
+  </div>
+  <noscript><p class="cd-lien">Le code est dans l’adresse de cette page.</p></noscript>
+</main>
+<script type="module" src="/src/site/code.js"></script>
+</body>
+</html>

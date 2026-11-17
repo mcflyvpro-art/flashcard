@@ -107,10 +107,19 @@ test('« J’ai un code » : six chiffres, c’est une partie en direct', async 
   await expect(page.locator('#passage')).toContainText('482 913', { timeout: 10000 });
 });
 
-test('l’aiguillage : un lien de l’app arrivé à la racine passe dans l’app', async ({ page }) => {
+test('l’aiguillage : un code partagé arrivé à la racine mène à la page du code, qui mène à l’app', async ({ page }) => {
   await page.goto('./?defi=482913');
+  await expect(page).toHaveURL(/\/code\?defi=482913$/);
+  await expect(page.locator('#cdcode')).toHaveText('482 913', { timeout: 10000 });
+  await expect(page.locator('#cdquoi')).toHaveText('Une partie en direct');
+  // au téléphone, l'app est l'icône de l'écran d'accueil : la page mène à la
+  // porte d'installation, qui montre le code à recopier ; sur ordinateur,
+  // l'app s'ouvre dans le navigateur et reprend le code à la connexion
+  const ouvrir = page.getByRole('link', { name: 'Ouvrir dans Mirandola' });
+  const tel = !(await ouvrir.isVisible());
+  await (tel ? page.getByRole('link', { name: /L’installer/ }) : ouvrir).click();
   await expect(page.locator('#passage')).toContainText('482 913', { timeout: 10000 });
-  await expect(page).toHaveURL(/\/connexion$/);
+  if (!tel) await expect(page).toHaveURL(/\/connexion$/);
 });
 
 test('l’aiguillage : avec une session, la racine ouvre l’app ; « ?site » montre l’accueil', async ({ page }) => {

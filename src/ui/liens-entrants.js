@@ -16,12 +16,13 @@ import { I } from '../icones.js';
 import { openShared } from '../core/reglages-corbeille.js';
 import { garder, prendre } from '../lien-garde.js';
 import { tokComplet, tokDepuisTexte } from '../livre-code.js';
+import { ouvrirCode } from './code-porte.js';
 
 /* ══════════ les liens qui entrent dans l'app ══════════
    Une seule porte pour tout lien qui ouvre l'app : « #i= » / « #s= » (un
    livre partagé), « ?go= » (raccourci de
    l'icône), « ?rejoindre= » (une classe), « ?defi= » (une partie en
-   direct), « ?club= » (un club), « ?plus= » (l'écran Mirandola+ : un bouton du
+   direct), « ?club= » (un club), « ?ami= » (un ami), « ?plus= » (l'écran Mirandola+ : un bouton du
    site, le retour de Stripe). Chacun a son consommateur, qui lit
    l'adresse et la nettoie ; ce fichier ne fait que les appeler dans le
    bon ordre — le même au démarrage (`boot()`) qu'à l'arrivée d'un lien
@@ -65,6 +66,7 @@ async function consumeRetour() {
    la porte d'installation (ui/pwa.js), qui les confie à l'app installée. */
 export async function rangerLiens() {
   rangerLivre();
+  consumeAmi(false);
   consumeRejoindre(false);
   await consumeDefi(false);
   consumeClub(false);
@@ -109,7 +111,25 @@ export async function lienApresRole() {
   if (await consumeDefi(true)) return true;
   if (consumeClub(true)) return true;
   if (consumeLivre()) return true;
+  if (consumeAmi(true)) return true;
   return consumePlus(true);
+}
+
+/* « ?ami=pseudo » (2026-11-16) : le lien d'un ami. Dans l'app (Android,
+   l'app native), la feuille « J'ai un code » s'ouvre sur son pseudo ; un
+   appui envoie la demande. Sans session, il attend comme les autres. */
+function consumeAmi(connecte) {
+  const p = new URLSearchParams(location.search), a = p.get('ami');
+  if (a) {
+    p.delete('ami');
+    history.replaceState(history.state, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
+    garder('folio.ami', a.replace(/^@/, '').toLowerCase());
+  }
+  if (!connecte) return false;
+  const h = prendre('folio.ami');
+  if (!h) return false;
+  ouvrirCode('@' + h, { attendre: true });
+  return true;
 }
 
 /* Les premiers pas finis (le tuto s'en va pour de bon, ui/tuto.js) : ce

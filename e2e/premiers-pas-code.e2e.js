@@ -150,6 +150,6 @@ test('le code d’un club tapé sur le site : il attend la fin de l’accueil et
   await page.locator('[data-bv="passer"]').click();
   await passerTuto(page);
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'commu', { timeout: 10000 });
-  await expect(page.locator('#cccode')).toBeVisible();
+  await expect(page.locator('#cecode')).toHaveValue(code.slice(0, 4) + '-' + code.slice(4));   // « J'ai un code », le code du club prêt
   expect(await page.evaluate(() => localStorage.getItem('folio.club'))).toBeNull();
 });

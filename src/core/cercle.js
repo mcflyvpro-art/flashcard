@@ -93,10 +93,14 @@ export async function modifierClub(id, f) {
 
 /* Un code faux ne lève pas d'erreur côté base (elle doit pouvoir compter
    l'essai) : elle ne renvoie simplement aucun club. */
-export async function rejoindreClub(code) {
+/* `muet` (« J'ai un code », qui essaie un club après l'établissement) : un
+   code qui n'est pas celui d'un club rend 0, sans rien dire — la feuille le
+   dit elle-même ; une panne rend null, comme toujours. */
+export async function rejoindreClub(code, muet) {
   if (horsLigne('rejoindre un club')) return null;
   try {
     const [g] = await rpc('join_group', { join_code: code }) || [];
+    if (!g && muet) return 0;
     if (!g) { toast(I.x, 'Aucun club avec ce code'); return null; }
     toast(I.check, 'Bienvenue dans ' + g.name);
     await clubsPull();

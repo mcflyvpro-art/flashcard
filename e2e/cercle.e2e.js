@@ -55,10 +55,35 @@ test('un club : on le crée, on le personnalise, un ami entre avec son code', as
   await connecter(tom, 'tom@exemple.fr').catch(() => {});      // pas de livre : l'accueil est vide, la session est ouverte
   await versCercle(tom);
   await tom.getByRole('button', { name: 'J’ai un code' }).click();
-  await tom.getByRole('textbox', { name: 'Code du club' }).fill(club.code.toLowerCase());
-  await tom.getByRole('button', { name: 'Rejoindre' }).click();
+  await tom.getByRole('textbox', { name: 'Code' }).fill(club.code.toLowerCase());   // « J'ai un code » : tous les codes
+  await tom.getByRole('button', { name: 'Continuer' }).click();
   await expect(tom.locator('.cl-ban')).toContainText('Les Hiboux');
   await expect(tom.getByRole('button', { name: 'Personnaliser' })).toHaveCount(0);   // pas chef : pas de pinceau
+  expect(store.tables.group_members.filter(m => m.group_id === club.id)).toHaveLength(2);
+});
+
+/* « J'ai un code » est universel (2026-11-16) : un @pseudo y demande un ami,
+   un message d'invitation collé tel quel y ouvre le club qu'il nomme. */
+test('« J’ai un code » : un @pseudo demande un ami, une invitation collée entière ouvre son club', async ({ page }) => {
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  semerPseudo(store, 'lea@exemple.fr', 'lea', 'Léa Martin');
+  semerCompte(store, 'tom@exemple.fr'); semerPseudo(store, 'tom@exemple.fr', 'tom', 'Tom Bernard');
+  semerCompte(store, 'ines@exemple.fr');
+  const club = semerClub(store, 'ines@exemple.fr', 'Les Chouettes');
+
+  await versCercle(page);
+  await page.getByRole('button', { name: 'J’ai un code' }).click();
+  await page.getByRole('textbox', { name: 'Code' }).fill('@tom');
+  await page.getByRole('button', { name: 'Continuer' }).click();
+  await expect.poll(() => (store.tables.friends || []).filter(f => f.status === 'pending').length).toBe(1);
+
+  await page.getByRole('button', { name: 'J’ai un code' }).click();
+  const code = club.code.slice(0, 4) + '-' + club.code.slice(4);
+  await page.getByRole('textbox', { name: 'Code' }).fill(`Rejoins « Les Chouettes » sur Mirandola : code ${code}, dans Mes amis › Entrer un code`);
+  await page.getByRole('button', { name: 'Continuer' }).click();
+  await expect(page.locator('.cl-ban')).toContainText('Les Chouettes');
   expect(store.tables.group_members.filter(m => m.group_id === club.id)).toHaveLength(2);
 });
 
@@ -94,7 +119,7 @@ test('défi en direct : un hôte, deux joueurs, un code, un podium', async ({ pa
     await connecter(p, n + '@exemple.fr').catch(() => {});
     await versCercle(p);
     await p.getByRole('button', { name: 'Entrer un code' }).click();
-    await p.getByRole('textbox', { name: 'Code de la partie' }).fill(pin);
+    await p.getByRole('textbox', { name: 'Code' }).fill(pin);
     await expect(p.locator('.dx-moi')).toHaveText(n, { timeout: 10000 });
     joueurs.push(p);
   }

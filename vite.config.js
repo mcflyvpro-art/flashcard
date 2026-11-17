@@ -46,12 +46,13 @@ function serviceWorker(base) {
       for (const f of Object.values(bundle)) hash.update(f.code ?? f.source ?? '');
       /* Les autres pages du site (src/site/pages.js) : le service worker ne
          touche pas à leurs navigations — sans cela, /tarifs, rangé sous
-         « app », prenait la place de l'app hors ligne. */
+         « app », prenait la place de l'app hors ligne. La page d'un lien
+         partagé (/code) non plus. */
       const code = readFileSync('src/sw.js', 'utf8')
         .replace('__BUILD__', hash.digest('hex').slice(0, 12))
         .replace('__BASE__', base)
         .replace('__SHELL__', JSON.stringify(shell))
-        .replace('__PAGES__', JSON.stringify(SOUS_PAGES.map(p => abs(p.chemin))));
+        .replace('__PAGES__', JSON.stringify([...SOUS_PAGES.map(p => abs(p.chemin)), abs('/code')]));
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: code });
     }
   };

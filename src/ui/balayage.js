@@ -29,7 +29,7 @@ function rendre(k) {
   fantome = true; setView({ name: k, id: null });
   Object.defineProperty($, 'innerHTML', { configurable: true, get: () => html, set: v => { html = v; } });
   try { vueOnglet(k)(); }
-  catch (e) { html = ''; console.warn('aperçu', k, e); }   // sans aperçu, le bord reste élastique
+  catch (e) { html = ''; console.warn('aperçu', k, e); }   // sans aperçu, la page reste où elle est
   finally { delete $.innerHTML; fantome = false; setView(avant); }
   return html;
 }
@@ -92,10 +92,13 @@ export function bindPager() {
     raf = 0;
     if (!on) return;
     const c = dx < 0 ? 1 : -1, k = ordre[ici + c];
-    if (!k) { retirer(); x = dx * .26; }                 // au bout : la page résiste, rien derrière
+    /* Au bout (rien derrière), ou sans aperçu de la voisine : la page ne
+       bouge pas. Elle résistait au quart du doigt, et l'on voyait le vide
+       à côté d'elle (2026-11-16 : « on ne doit jamais sortir de l'écran »). */
+    if (!k) { retirer(); x = 0; }
     else {
       if (!voisin || voisin.k !== k) { retirer(); voisin = poserVoisine(k, c); transition('none'); }
-      x = voisin ? dx : dx * .26;
+      x = voisin ? dx : 0;
     }
     placer();
   };

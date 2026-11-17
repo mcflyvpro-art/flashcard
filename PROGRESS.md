@@ -19,7 +19,15 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-16 · La séance ne tourne plus en rond : une carte
+DERNIER   2026-11-17 · « J'ai un code » est universel (src/codes.js) :
+          partie, paquet, @pseudo, établissement, professeur, classe ou club,
+          tapé, lien ou message collé entier ; un lien partagé ouvert dans un
+          navigateur mène à la page du code (code.html : le copier, où
+          l'entrer) ; l'app ne rebondit plus (overscroll none) et se
+          rafraîchit en tirant d'en haut (ui/tirer.js) ; un club a la même
+          couleur sur tous les comptes ; un ami se partage par @pseudo
+          (e2e/cercle.e2e.js, e2e/site.e2e.js).
+          · 2026-11-16 · La séance ne tourne plus en rond : une carte
           en apprentissage revient à son heure, la plus proche d'abord ;
           la file vue, seules les ratées reviennent ; les sues attendent
           leur palier et le bilan propose « Revoir maintenant » ; « Rejouer »

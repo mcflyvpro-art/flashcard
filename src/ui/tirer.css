@@ -1,0 +1,12 @@
+/* ══════════ tirer pour rafraîchir (2026-11-16, ui/tirer.js) ══════════
+   Un rond qui descend du haut de l'écran sans rien déplacer : il tourne
+   avec le doigt, se fonce une fois armé, tourne seul pendant la relecture,
+   puis remonte. */
+.tirer{position:fixed;left:50%;top:calc(env(safe-area-inset-top) - 44px);z-index:60;width:38px;height:38px;margin-left:-19px;
+  border-radius:50%;display:grid;place-items:center;background:var(--card);color:var(--ink2);
+  box-shadow:0 8px 20px -8px #1d1c1966,var(--edge);opacity:0;pointer-events:none;will-change:transform,opacity}
+.tirer svg{width:19px;height:19px;stroke-width:2.2}
+.tirer.arme{background:var(--ink);color:var(--bg)}
+.tirer.rentre{transition:transform .32s var(--e),opacity .26s,background-color .2s}
+.tirer.tourne svg{animation:spin .75s linear infinite}
+@media (prefers-reduced-motion:reduce){.tirer.tourne svg{animation:none}}

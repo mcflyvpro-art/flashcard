@@ -78,7 +78,9 @@ test.describe('le lien d’un paquet, sans session', () => {
     const p2 = await hugo.newPage();
     await inscrire(p2, 'hugo@exemple.fr');
     await p2.evaluate(() => localStorage.removeItem('cartes.auth'));        // déconnecté, le compte existe
-    await p2.goto('./#s=' + tok);                                            // par la page d'accueil et son aiguillage
+    await p2.goto('./#s=' + tok);                                            // par la page d'accueil et son aiguillage…
+    await expect(p2.locator('#cdcode')).toHaveText(code);                    // …la page du code (code.html)
+    await p2.getByRole('link', { name: 'Ouvrir dans Mirandola' }).click();   // sur ordinateur : l'app, dans le navigateur
     await expect(p2.locator('#passage')).toContainText(code);
     await expect(p2).not.toHaveURL(/#s=/);                                  // le jeton ne traîne pas dans l'adresse
     await p2.getByRole('textbox', { name: 'Adresse e-mail' }).fill('hugo@exemple.fr');
@@ -103,7 +105,7 @@ test.describe('le lien d’un paquet, sans session', () => {
 test.describe('le lien d’un paquet, dans Safari sur iPhone', () => {
   test.use({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1' });
 
-  test('la porte d’installation montre le code à recopier dans l’app', async ({ page, browser }) => {
+  test('la page du code le montre, à copier dans l’app ; la porte d’installation aussi', async ({ page, browser }) => {
     const store = nouveauStore();
     await brancher(page, store);
     const code = await codeDeLea(page);
@@ -113,6 +115,13 @@ test.describe('le lien d’un paquet, dans Safari sur iPhone', () => {
     await brancher(autre, store, { navigateur: true });
     const p2 = await autre.newPage();
     await p2.goto('./#s=' + code.replace(/-/g, '').toLowerCase());
+    // la page du code : le code, « Copier », où l'entrer ; rien à ouvrir d'ici au téléphone
+    await expect(p2.locator('#cdcode')).toHaveText(code, { timeout: 10000 });
+    await expect(p2.getByRole('button', { name: 'Copier le code' })).toBeVisible();
+    await expect(p2.locator('.cd-etapes')).toContainText('Entrer un code');
+    await expect(p2.getByRole('link', { name: 'Ouvrir dans Mirandola' })).toBeHidden();
+    // pas encore installée : la porte d'installation, qui garde le code
+    await p2.getByRole('link', { name: /L’installer/ }).click();
     await expect(p2.getByRole('heading', { name: 'Installe Mirandola' })).toBeVisible({ timeout: 10000 });
     await expect(p2.locator('#passage')).toContainText(code);
     await expect(p2.locator('#passage')).toContainText('J’ai un code');

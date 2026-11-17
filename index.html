@@ -5,9 +5,10 @@
 <script>
 /* L'aiguillage. Cette page est l'accueil du site ; l'app vit à /app. Qui a
    déjà l'app (une session sur cet appareil, l'icône installée, l'app
-   native) ou arrive par un de ses liens (code de classe, de partie ou de
-   club, livre partagé, raccourci, retour d'un
-   e-mail de connexion) y passe aussitôt, avant le moindre affichage.
+   native) ou arrive par un de ses liens (raccourci, retour d'un e-mail de
+   connexion) y passe aussitôt, avant le moindre affichage. Un code partagé
+   (classe, partie, club, ami, paquet) ouvert dans un navigateur va à la
+   page du code (code.html) : l'app installée ne s'ouvre pas d'un lien.
    « ?site » montre l'accueil même avec une session. Premier script de la
    page, sans dépendance, et il ne doit jamais jeter. docs/LANDING.md. */
 (function () {
@@ -16,10 +17,13 @@
     document.documentElement.className = 'js';
     if (/[?&]site(=|&|$)/.test(q)) return;
     try { s = !!localStorage.getItem('cartes.auth'); } catch (e) { s = false; }
-    var lien = /[?&](rejoindre|defi|club|go)=/.test(q) || /^#[si]=/.test(h)
-      || /(access_token|error_code|error_description)=/.test(h + q);
     var app = !!(window.Capacitor || navigator.standalone
       || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
+    /* Un code partagé ouvert dans un navigateur : la page du code, qui le
+       montre et dit où l'entrer (une app installée ne s'ouvre pas d'un lien). */
+    if (!app && (/[?&](rejoindre|defi|club|ami)=/.test(q) || /^#s=/.test(h))) return l.replace('/code' + q + h);
+    var lien = /[?&](rejoindre|defi|club|ami|go)=/.test(q) || /^#[si]=/.test(h)
+      || /(access_token|error_code|error_description)=/.test(h + q);
     if (lien || app || s) l.replace((window.Capacitor ? '/app.html' : '/app') + q + h);
   } catch (e) { /* au pire, l'accueil s'affiche : il mène aussi à l'app */ }
 })();

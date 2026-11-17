@@ -288,7 +288,8 @@ export function friendsView() {
           ${eleve ? '' : `<form class="cc-ajout" id="ccadd" autocomplete="off">
             <span class="cc-at">@</span><input id="addq" type="search" placeholder="Pseudo d’un ami" enterkeyhint="send"
               autocomplete="off" autocapitalize="none" spellcheck="false" value="${esc(addQ)}" aria-label="Pseudo d’un ami">
-            <button class="cc-btn pri" data-act="doadd">Ajouter</button></form>`}
+            <button class="cc-btn pri" data-act="doadd">Ajouter</button></form>
+          ${me && me.handle ? `<button class="cc-btn cc-partage" data-cc="ami-partager">${svg(I.share)}Partager @${esc(me.handle)}</button>` : ''}`}
           ${demandesHtml()}
           ${eleve && (mates2 || []).length ? camaradesHtml() : ''}
           <section class="cc-sec"><h2 class="cc-h">Amis <span>${(mates || []).length || ''}</span></h2>

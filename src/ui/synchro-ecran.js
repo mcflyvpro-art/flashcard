@@ -39,6 +39,7 @@ export function prechauffer() {
   const auCalme = window.requestIdleCallback || (f => setTimeout(f, 800));
   auCalme(() => {
     import('./barre.js').catch(() => {});             // la barre du bas vivante (une panne : la barre reste un simple appui)
+    import('./tirer.js').catch(() => {});             // tirer pour rafraîchir (une panne : l'écran reste figé, sans plus)
     import('./geste.js').catch(() => {});             // le geste de la fiche (une panne : ui/revision.js le retentera à la première fiche)
     prechargerCourrier();
     prechargerJournal();
@@ -53,7 +54,7 @@ export function prechauffer() {
 const CALMES = /^(home|deck|stats|classes|classe|commu|friends|club|mail|lettre|settings|trash|profil|prof|profclasse|profagenda|plus)$/;
 const tranquille = () => CALMES.test(view.name) && !study && !quiz && !tuto;
 
-function peutRepeindre() {
+export function peutRepeindre() {
   if (!tranquille() || menu || sel || cardEdit) return false;
   const a = document.activeElement;
   return !(a && a.closest && a.closest('#app') && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));

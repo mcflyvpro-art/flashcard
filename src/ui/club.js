@@ -6,7 +6,7 @@ import { esc } from '../core/coeur-sync.js';
 import { clubsPull, membresPull, sallesPull, termineesPull } from '../core/cercle.js';
 import { classement, codeClubLisible } from '../club.js';
 import { medailleHtml } from './jeton.js';
-import { teinte } from '../jeton.js';
+import { jetonGroupe } from '../jeton.js';
 import { hlp } from './connexion.js';
 import { JEUX, placeTexte } from '../defi.js';
 import { avatar, defiLigne, enDirectHtml, iconeClub, ident, infos, parDefi, rangLigne } from './cercle.js';
@@ -24,8 +24,11 @@ export const ONGLETS = { defis: 'Défis', classement: 'Classement', membres: 'Me
 
 export const clubOuvert = () => (cercle.clubs || []).find(g => g.id === view.id);
 
+/* La liste des clubs est relue à chaque ouverture : un club personnalisé
+   ailleurs (sa couleur, son nom, sur un autre appareil) se montre tel qu'il
+   est, pas tel qu'on l'avait gardé (2026-11-16). */
 export function clubPull(id) {
-  if (cercle.clubs === null) clubsPull();
+  clubsPull(cercle.clubs !== null);
   if (!duels.list) duelsPull();
   membresPull(id);
   termineesPull(id, null);
@@ -34,7 +37,8 @@ export function clubPull(id) {
 
 function banniereHtml(g) {
   const n = (cercle.membres[g.id] || []).length || g.membres;
-  return `<section class="cl-ban" style="--k:${teinte(g.teinte)}">
+  // la couleur même de son blason (une teinte absente : tirée de l'identifiant, partout la même)
+  return `<section class="cl-ban" style="--k:${jetonGroupe(g.id, { teinte: g.teinte }).couleur}">
     <i class="cl-emb">${iconeClub(g)}</i>
     <div class="cl-ban-t"><h1>${esc(g.nom)}</h1>${g.devise ? `<p>${esc(g.devise)}</p>` : ''}</div>
     <div class="cl-stats"><span title="Membres">${svg(I.users)}<b>${n}</b></span>

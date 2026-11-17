@@ -5,13 +5,13 @@ import { auth, cercle, compte, friends, me, menu, setAnimate, setMenu, view, vis
 import { go, monIdent, render } from './bibliotheque.js';
 import { esc } from '../core/coeur-sync.js';
 import {
-  clubsPull, creerClub, exclureMembre, modifierClub, nouveauCodeClub, quitterClub, rejoindreClub, rejoindreSalle
+  clubsPull, creerClub, exclureMembre, modifierClub, nouveauCodeClub, quitterClub, rejoindreSalle
 } from '../core/cercle.js';
 import { codeClubDepuisTexte, codeClubLisible, deviseValide, lienClub, nomClubValide } from '../club.js';
 import { COULEURS, couleurDe, embleme, rangCouleur, teinte } from '../jeton.js';
 import { auHasard, avatarDe, avatarDeCle, ecrireAvatar } from '../avatar.js';
 import { choisirMonJeton } from '../core/visuels.js';
-import { messageSalle, pinComplet, pinDepuisTexte, pinLisible } from '../defi.js';
+import { messageSalle } from '../defi.js';
 import { avatar, blasonClub, grilleCouleurs, grilleEmblemes, grilleTrait, iconeEmbleme, ongletsAvatar } from './jeton.js';
 import { isPupil } from './classement.js';
 import { clubOuvert, clubPull } from './club.js';
@@ -22,6 +22,7 @@ import { toast } from './import-cartes.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { askFriend } from '../core/reglages-corbeille.js';
 import { ouvrirPseudo } from './pseudo-porte.js';
+import { ouvrirCode } from './code-porte.js';
 import { garder, lire, oublier } from '../lien-garde.js';
 
 /* ══════════ les feuilles du cercle, et ses gestes ══════════
@@ -37,26 +38,6 @@ const tete = (ic, titre, sous) => `<div class="mhd">${ic}<span class="mhx"><b>${
 const coque = corps => `<div class="scrim" data-mact="close"></div><div class="menu cc-f">${corps}</div>`;
 
 /* ---------- entrer dans une partie en direct ---------- */
-function feuillePin() {
-  return coque(`${tete(svg(I.hash), 'Code de la partie')}
-    <form class="cc-pinf" id="ccpinf" autocomplete="off">
-      <input class="cc-pin" id="ccpin" data-ccin="pin" inputmode="numeric" pattern="[0-9 ]*" enterkeyhint="go"
-        placeholder="000 000" maxlength="7" value="${esc(pinLisible(cercle.code))}" aria-label="Code de la partie">
-      <p class="cc-rep${cercle.reponse ? ' ko' : ''}" id="ccrep">${esc(cercle.reponse ? messageSalle(cercle.reponse) || '' : '')}</p>
-      <button class="cta" data-cc="pin-ok" id="ccpingo" ${pinComplet(cercle.code) && !cercle.envoi ? '' : 'disabled'}>Entrer</button>
-    </form>`);
-}
-
-async function entrerPin() {
-  const p = pinDepuisTexte(cercle.code);
-  if (!pinComplet(p) || cercle.envoi) return;
-  cercle.envoi = true; peindre();
-  const r = await rejoindreSalle(p);
-  cercle.envoi = false;
-  if (r.statut === 'ok' || r.statut === 'hote') { cercle.code = ''; cercle.reponse = null; closeMenu(); return ouvrirDirect(r.salle); }
-  cercle.reponse = r.statut; peindre();
-}
-
 /* ---------- créer, personnaliser un club ---------- */
 function apercuClub(f) {
   return `<div class="cf-apercu" id="cfap" style="--k:${teinte(f.teinte)}"><i class="jt groupe club lg" id="cfapj">${iconeEmbleme(f.embleme)}</i>
@@ -90,27 +71,6 @@ async function validerForm() {
 }
 
 /* ---------- rejoindre un club avec son code ---------- */
-function feuilleCode() {
-  const k = codeClubDepuisTexte(cercle.code);
-  return coque(`${tete(svg(I.users), 'Code du club')}
-    <form class="cc-pinf" id="cccodef" autocomplete="off">
-      <input class="cc-pin code" id="cccode" data-ccin="code" autocapitalize="characters" autocorrect="off" spellcheck="false"
-        enterkeyhint="go" placeholder="XXXX-XXXX" maxlength="40" value="${esc(codeClubLisible(k))}" aria-label="Code du club">
-      <p class="cc-rep" id="ccrep"></p>
-      <button class="cta" data-cc="code-ok" id="cccodego" ${k.length >= 5 && !cercle.envoi ? '' : 'disabled'}>Rejoindre</button>
-    </form>`);
-}
-
-async function entrerCode() {
-  const k = codeClubDepuisTexte(cercle.code);
-  if (k.length < 5 || cercle.envoi) return;
-  cercle.envoi = true; peindre();
-  const id = await rejoindreClub(k);
-  cercle.envoi = false;
-  if (!id) return peindre();
-  cercle.code = ''; closeMenu(); cercle.onglet = 'defis'; clubPull(id); go('club', id);
-}
-
 /* ---------- inviter ---------- */
 function feuilleInviter() {
   const g = clubOuvert(); if (!g) { setMenu(null); return ''; }
@@ -181,7 +141,7 @@ function feuilleMoi() {
       : grilleTrait(monAvatar(), trait, couleurDe(auth.uid, maTeinte()), 'data-cc="av" data-id', !!v.cle)}</div>`);
 }
 
-const FEUILLES = { moi: feuilleMoi, pin: feuillePin, 'club-form': feuilleForm, 'club-code': feuilleCode, 'club-inviter': feuilleInviter,
+const FEUILLES = { moi: feuilleMoi, 'club-form': feuilleForm, 'club-inviter': feuilleInviter,
   'club-menu': feuilleMenuClub, membre: feuilleMembre };
 
 function peindre() { if (menu === 'cc') openMenu('cc'); }
@@ -194,8 +154,6 @@ export function paintMenuCercle(w) {
   if (!html) { setMenu(null); return; }
   w.innerHTML = html;
   mountMenu(w);
-  const champ = document.getElementById({ pin: 'ccpin', 'club-code': 'cccode' }[cercle.feuille]);
-  if (champ) setTimeout(() => { champ.focus(); champ.setSelectionRange(champ.value.length, champ.value.length); }, 80);
   /* L'encodeur QR ne sert qu'ici et dans l'espace professeur : il arrive à
      la demande, au lieu de peser sur le démarrage de tout le monde. */
   const qr = document.getElementById('cfqr');
@@ -205,10 +163,6 @@ export function paintMenuCercle(w) {
     const dessiner = m => { encodeur = m; if (qr.isConnected) qr.innerHTML = m.qrSvg(qr.dataset.lien, qr.dataset.titre); };
     if (encodeur) dessiner(encodeur);
     else import('../qr.js').then(dessiner).catch(() => { qr.remove(); });   // hors ligne et jamais chargé : le code suffit
-  }
-  for (const id of ['ccpinf', 'cccodef']) {
-    const form = document.getElementById(id);
-    if (form) form.onsubmit = e => { e.preventDefault(); return id === 'ccpinf' ? entrerPin() : entrerCode(); };
   }
 }
 
@@ -220,9 +174,20 @@ function copier(t, ok) {
 function partagerClub() {
   const g = clubOuvert(); if (!g) return;
   const url = lienClub(SITE, g.code);
-  const text = `Rejoins « ${g.nom} » sur Mirandola : code ${codeClubLisible(g.code)}`;
+  // le code dans le message même : une app installée ne s'ouvre pas d'un lien, on le recopie
+  const text = `Rejoins « ${g.nom} » sur Mirandola : code ${codeClubLisible(g.code)}, dans Mes amis › Entrer un code`;
   if (navigator.share) navigator.share({ title: g.nom, text, url }).catch(() => {});   // annulé par l'utilisateur : rien à dire
-  else copier(url, 'Lien copié');
+  else copier(text + ' ' + url, 'Invitation copiée');
+}
+
+/* Son pseudo est son code d'ami (2026-11-16) : on le partage avec la place
+   où l'entrer ; le lien mène à la page du code (code.html), qui le montre. */
+function partagerPseudo() {
+  const h = me && me.handle; if (!h) return;
+  const u = new URL(SITE); u.search = '?ami=' + h; u.hash = '';
+  const text = `Ajoute-moi sur Mirandola : @${h}, dans Mes amis › Entrer un code`;
+  if (navigator.share) navigator.share({ title: 'Mirandola', text, url: u.toString() }).catch(() => {});   // annulé : rien à dire
+  else copier(text + ' ' + u, 'Invitation copiée');
 }
 
 /* Les gestes qui détruisent demandent un second appui (le bouton change de
@@ -242,8 +207,8 @@ const ACTIONS = {
     closeMenu();
     ouvrirDefi({ ou: b.dataset.ou || null, mode: b.dataset.mode || 'direct', livre: b.dataset.livre || null, retour: r });
   },
-  pin: () => { cercle.code = ''; cercle.reponse = null; ouvrir('pin'); },
-  'pin-ok': () => entrerPin(),
+  // une partie, un club, un paquet, une classe, un ami : un seul champ (ui/code-entree.js)
+  pin: () => ouvrirCode(),
   salle: async (id, b) => {
     if (b.dataset.dedans) return ouvrirDirect(id);
     const r = await rejoindreSalle(b.dataset.pin);
@@ -260,12 +225,12 @@ const ACTIONS = {
     cercle.form = { id: g.id, nom: g.nom, devise: g.devise || '', embleme: g.embleme, teinte: g.teinte };
     ouvrir('club-form');
   },
-  'club-rejoindre': () => { cercle.code = ''; ouvrir('club-code'); },
-  'code-ok': () => entrerCode(),
+  'club-rejoindre': () => ouvrirCode(),
   'club-inviter': () => ouvrir('club-inviter'),
   'club-menu': () => ouvrir('club-menu'),
   'club-copier': () => { const g = clubOuvert(); if (g) copier(codeClubLisible(g.code), 'Code copié'); },
   'club-partager': () => partagerClub(),
+  'ami-partager': () => partagerPseudo(),
   'club-code-neuf': async (id, b) => {
     if (!arme(b, 'Confirmer : l’ancien ne marchera plus')) return;
     const g = clubOuvert(); if (!g) return;
@@ -321,22 +286,6 @@ document.addEventListener('click', e => {
 
 const desactiver = (id, non) => { const b = document.getElementById(id); if (b) b.disabled = non; };
 
-function saisiePin(n) {
-  cercle.code = pinDepuisTexte(n.value); cercle.reponse = null;
-  const v = pinLisible(cercle.code);
-  if (n.value !== v) n.value = v;
-  desactiver('ccpingo', !pinComplet(cercle.code));
-  const rep = document.getElementById('ccrep'); if (rep) { rep.textContent = ''; rep.classList.remove('ko'); }
-  if (pinComplet(cercle.code)) entrerPin();               // six chiffres : on entre sans chercher le bouton
-}
-
-function saisieCode(n) {
-  cercle.code = n.value;
-  const c = codeClubDepuisTexte(n.value), v = codeClubLisible(c);
-  if (n.value !== v && /club=/.test(n.value)) n.value = v;   // un lien collé se réduit à son code
-  desactiver('cccodego', c.length < 5);
-}
-
 function saisieClub(k, n) {
   if (!cercle.form) return;
   cercle.form[k] = n.value;
@@ -348,8 +297,6 @@ function saisieClub(k, n) {
 document.addEventListener('input', e => {
   const n = e.target.closest('[data-ccin]'); if (!n) return;
   const k = n.dataset.ccin;
-  if (k === 'pin') return saisiePin(n);
-  if (k === 'code') return saisieCode(n);
   return saisieClub(k, n);
 });
 
@@ -367,7 +314,6 @@ export function consumeClub(connecte) {
   connecte ? oublier('folio.club') : garder('folio.club', k);             // src/lien-garde.js
   if (!connecte) return false;
   if (cercle.clubs === null) clubsPull();
-  cercle.code = codeClubLisible(k);
-  go('commu'); ouvrir('club-code');
+  go('commu'); ouvrirCode('?club=' + k, { attendre: true });   // la feuille montre le code : on entre d'un appui
   return true;
 }

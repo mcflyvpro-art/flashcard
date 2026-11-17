@@ -321,9 +321,10 @@ export function pagesDuSite() {
   };
 }
 
-/** Les entrées du build : l'app et chaque page du site. */
-export const entrees = () => Object.fromEntries([['app', 'app.html'],
+/** Les entrées du build : l'app, chaque page du site, et la page d'un lien
+    partagé (code.html, 2026-11-16 : hors du référencement, `noindex`). */
+export const entrees = () => Object.fromEntries([['app', 'app.html'], ['code', 'code.html'],
   ...PAGES.map(p => [p.chemin === '/' ? 'site' : 'page-' + p.chemin.slice(1), p.fichier])]);
 
 /** L'adresse d'une page sous `npm run dev` et `vite preview` : /tarifs → /tarifs.html. */
-export const fichierDe = chemin => SOUS_PAGES.find(p => p.chemin === chemin)?.fichier;
+export const fichierDe = chemin => (chemin === '/code' ? 'code.html' : SOUS_PAGES.find(p => p.chemin === chemin)?.fichier);

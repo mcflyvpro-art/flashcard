@@ -143,7 +143,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 @media (hover:hover){.pbtn:hover:not(:disabled):not(.pri){background:var(--surf)}.pbtn.pri:hover:not(:disabled){background:#34322D}}
 
 /* ---------- pastilles de matière ---------- */
-.pills{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;
+.pills{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;overscroll-behavior:none;
   margin:0 calc(var(--pad) * -1) 16px;padding:2px var(--pad) 6px;scroll-padding:var(--pad)}
 .pills::-webkit-scrollbar{display:none}
 .p{flex:none;display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;
@@ -719,9 +719,10 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);animation:fadein .28s var(--e)}
 /* La feuille elle-même ne défile plus jamais : elle a une hauteur
    plafonnée et c'est .mbody, en dessous de la poignée, qui prend le
-   débordement. overscroll-behavior:contain empêche un swipe qui
+   débordement. overscroll-behavior:none empêche un swipe qui
    atteint le haut ou le bas de .mbody de continuer sur l'écran
-   derrière — c'était exactement le défaut signalé. */
+   derrière — c'était exactement le défaut signalé —, et la feuille de
+   s'étirer au-delà de son bord. */
 .menu{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
   z-index:41;background:var(--card);border-radius:20px;box-shadow:var(--s3);
   max-height:min(78vh,calc(100svh - 96px));display:flex;flex-direction:column;
@@ -747,7 +748,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
    hauteur sur la base flexible du corps — 0 avec `flex:1` —, si bien que
    la boîte se réduisait à une bande où ne restait que le champ focalisé :
    « rien ne s'ouvre ». min-height:0 la laisse rétrécir sous max-height. */
-.mbody{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+.mbody{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:none;
   -webkit-overflow-scrolling:touch;padding:2px 7px 7px}
 .mi{display:flex;align-items:center;gap:13px;width:100%;height:50px;padding:0 14px;
   border-radius:12px;font-weight:600;font-size:15.5px;letter-spacing:-.2px;
@@ -758,7 +759,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .mi .tail{margin-left:auto;font-size:14px;font-weight:700;color:var(--soft)}
 .msep{height:1px;background:var(--hair);margin:5px 16px}
 /* liste de paquets dans une feuille : au-delà de six elle défile toute seule */
-.mscroll{max-height:46vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.mscroll{max-height:46vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
 .mscroll .tri{margin-right:-2px}
 .tok{width:calc(100% - 14px);margin:2px 7px 4px;padding:14px 16px;border-radius:12px;
   background:var(--surf);font-size:15px;font-weight:600;letter-spacing:.2px}
@@ -1091,7 +1092,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
      mille pages et la page entière défilait de nouveau. */
   #app[data-view="deck"]{height:100vh;min-height:0;overflow:hidden;padding-bottom:0;
     grid-template-rows:auto auto auto auto auto minmax(0,1fr)}
-  #app[data-view="deck"] .rows{min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  #app[data-view="deck"] .rows{min-height:0;overflow-y:auto;overscroll-behavior:none;
     margin-inline:-6px;padding:2px 6px 48px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   .row{padding:9px 8px 9px 14px}
   /* les actions d'une page n'apparaissent qu'à son survol : la liste se lit
@@ -1757,6 +1758,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,[contenteditable
 .cc-btn svg{width:16px;height:16px}
 .cc-btn.pri{background:var(--ink);color:#fff}
 .cc-btn:active{transform:scale(.97)}
+.cc-partage{align-self:flex-start}
 
 /* qui je suis */
 .cc-moi{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:16px;
@@ -2289,9 +2291,13 @@ input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;
 
    La fiche qu'on déplace, elle, est déjà protégée par son touch-action :
    un doigt qui part d'elle ne fait rien défiler. */
+/* Aucun rebond (2026-11-16, « une vraie app, on ne sort jamais de
+   l'écran ») : ni la page, ni une feuille, ni une bande de pastilles ne
+   s'étirent plus au-delà de leur bord. Tirer en haut d'un écran le
+   rafraîchit (ui/tirer.js) sans le déplacer. */
 html{height:100%;overflow:hidden;overscroll-behavior:none}
 body{height:100%;overflow-y:auto;overflow-x:hidden;
-  overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+  overscroll-behavior:none;-webkit-overflow-scrolling:touch}
 
 /* ══════════ l'élève dans son établissement ══════════
    Sa carte d'identité ne s'ouvre sur rien : le pseudo vient de
