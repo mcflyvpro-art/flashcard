@@ -4,7 +4,9 @@ import globals from 'globals';
 export default [
   /* les rapports de Playwright embarquent la visionneuse de traces (du JS
      minifié) : un `npm run check` lancé après un parcours raté les lisait */
-  { ignores: ['dist/', 'node_modules/', 'supabase/functions/', 'playwright-report/', 'test-results/', '.academie/'] },
+  { ignores: ['dist/', 'node_modules/', 'supabase/functions/', 'playwright-report/', 'test-results/', '.academie/',
+    // l'app des magasins : le dossier web qu'elle embarque et ses copies dans les projets natifs (tools/natif/web.js)
+    'dist-natif/', 'ios/', 'android/'] },
   js.configs.recommended,
   {
     files: ['src/**/*.js'],
@@ -47,7 +49,7 @@ export default [
   },
   /* les affiches du site et le kit des réseaux : Node, et le navigateur dans page.evaluate() */
   {
-    files: ['tools/affiches.js', 'tools/reseaux.js'],
+    files: ['tools/affiches.js', 'tools/reseaux.js', 'tools/natif/ressources.js', 'tools/natif/captures.js'],
     languageOptions: { sourceType: 'module', globals: { ...globals.node, ...globals.browser } }
   },
   /* la Mirandola Academy : Node, et la page cadre dans page.evaluate() (son objet A) */

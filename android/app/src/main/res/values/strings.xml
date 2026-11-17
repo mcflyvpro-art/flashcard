@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mirandola</string>
+    <string name="title_activity_main">Mirandola</string>
+    <string name="package_name">fr.mirandola.app</string>
+    <string name="custom_url_scheme">fr.mirandola.app</string>
+</resources>

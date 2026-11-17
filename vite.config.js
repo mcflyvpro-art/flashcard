@@ -136,6 +136,17 @@ function identifiantDuBuild() {
   try { return execSync('git rev-parse --short=12 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch { return 'dev'; }
 }
 
+/* Les morceaux de l'app des magasins (Capacitor, docs/CAPACITOR.md) :
+   src/ui/natif.js et les greffons, que seul le vrai pont d'iOS ou d'Android
+   charge — jamais un navigateur. Préfixés « natif- », pour que le budget de
+   poids (tools/budget.js) les compte à part et que personne ne les croie
+   chargés sur le web. Tous les autres gardent le nom par défaut de Vite. */
+const NATIF = /node_modules[\\/](@capacitor|@revenuecat)[\\/]|[\\/]src[\\/](ui[\\/])?natif\.js$/;
+function nomDuMorceau(c) {
+  const natif = c.moduleIds.length > 0 && c.moduleIds.every(id => NATIF.test(id.replace(/\0/g, '')));
+  return 'assets/' + (natif && !c.name.startsWith('natif') ? 'natif-' : '') + '[name]-[hash].js';
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   /* Sans ces deux valeurs, l'app se construirait quand même et
@@ -160,7 +171,7 @@ export default defineConfig(({ mode }) => {
     /* Les pages du site (index.html, servie à `/`, et une par sujet :
        tarifs.html à `/tarifs`… src/site/pages.js, docs/SEO.md) et l'app
        (app.html, servie à `/app`). docs/LANDING.md. */
-    build: { target: 'es2022', sourcemap: true, rollupOptions: { input: entrees() } },
+    build: { target: 'es2022', sourcemap: true, rollupOptions: { input: entrees(), output: { chunkFileNames: nomDuMorceau } } },
     server: { port: 5173 }
   };
 });

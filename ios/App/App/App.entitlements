@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Les domaines associés (docs/CAPACITOR.md, « Liens universels ») :
+     applinks — un lien mirandola.fr (le QR d'une classe, d'une partie, d'un
+     club, un e-mail) ouvre l'app connectée au lieu de Safari ;
+     webcredentials — le trousseau iCloud propose dans l'app les mots de
+     passe enregistrés pour mirandola.fr. Les deux ne prennent effet qu'une
+     fois public/.well-known/apple-app-site-association en ligne, avec le
+     vrai identifiant d'équipe (node tools/natif/liens.js). -->
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:mirandola.fr</string>
+		<string>webcredentials:mirandola.fr</string>
+	</array>
+</dict>
+</plist>

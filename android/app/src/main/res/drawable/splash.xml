@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Le lancement sur un Android d'avant la version 12 : le papier seul, comme
+     sur iPhone (tools/natif/ressources.js dit pourquoi) ; une couleur, pas
+     une image. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/papier" />
+</shape>

@@ -24,7 +24,15 @@ DERNIER   2026-11-16 · La fiche se note au doigt sur quatre notes, à
           un peu à droite Correct, loin Facile ; le contour prend la couleur
           du bouton, le bouton s'allume, une bulle dit « Facile · dans
           19 j », le lâcher donne cette note (e2e/geste.e2e.js).
-          · La barre du bas vivante, comme Instagram : à
+          · L'app native iPhone, iPad et Android
+          (Capacitor 8), prête pour les magasins sans rien changer au web :
+          le build de l'app dans un WebView, projets ios/ et android/,
+          icônes, fiches et captures, liens universels et App Links, bouton
+          retour, partage et téléchargement natifs, la vente par Apple et
+          Google aux prix du magasin avec le renouvellement dit en toutes
+          lettres (un achat Infini achetait Mirandola+ : corrigé), les deux
+          apps compilées par la CI (natif.yml). Reste, à la main :
+          docs/MAGASINS.md. Avant, le même jour · La barre du bas vivante, comme Instagram : à
           l'appui la pastille grossit, suit le doigt sur un ressort, s'étire
           et se pose sur l'onglet où l'on lâche (ui/barre.js) ; en changeant
           vite, elle finit toujours sous l'onglet ouvert, harcelée elle ne

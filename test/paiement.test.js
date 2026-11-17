@@ -219,6 +219,16 @@ describe('l’app des magasins : un abonné RevenueCat devient sa ligne apple ou
     expect(formuleDuProduit('folio_plus_monthly')).toBe('mensuel');
     expect(formuleDuProduit('autre')).toBeNull();
   });
+  it('Mirandola Infini acheté dans un magasin reste Infini (2026-11-16)', () => {
+    expect(formuleDuProduit('mirandola_infini_annuel')).toBe('infini_annuel');
+    expect(formuleDuProduit('mirandola_infini:mensuel')).toBe('infini_mensuel');
+    expect(formuleDuProduit('mirandola_plus_annuel')).toBe('annuel');
+    expect(formuleDuProduit('mirandola_plus:mensuel')).toBe('mensuel');
+    expect(formuleDuProduit('mirandola_infini')).toBeNull();          // sans période, rien d'inventé
+    const l = ligneMagasin({ entitlements: { plus: { product_identifier: 'mirandola_infini:annuel', expires_date: '2027-11-01T00:00:00Z' } },
+      subscriptions: { 'mirandola_infini:annuel': { store: 'play_store', expires_date: '2027-11-01T00:00:00Z', period_type: 'normal' } } }, U, MAINTENANT);
+    expect(l).toMatchObject({ formule: 'infini_annuel', source: 'google', statut: 'actif' });
+  });
   it('les comptes Mirandola d’un évènement, sans les identifiants anonymes', () => {
     const V = '99999999-2222-4333-8444-555555555555';
     expect(comptesDeLEvenementRC({ event: { app_user_id: U, original_app_user_id: '$RCAnonymousID:abc' } })).toEqual([U]);

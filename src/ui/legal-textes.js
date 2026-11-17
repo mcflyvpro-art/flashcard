@@ -25,7 +25,7 @@ import { PWMIN } from './connexion.js';
    (LCEN) et les logiciels libres (les notices que leurs licences exigent).
    Les prix et les quotas viennent des modules qui les appliquent : le texte
    ne peut pas dire autre chose que l'app. */
-const LEGALV = '13 novembre 2026';  // le modèle de chaque génération (le 8 : l'usage raisonnable de l'IA, l'essai pour Mirandola+ seul, l'examen blanc offert ; le 7 : le vocabulaire classique ; le 6, l'examen blanc)
+const LEGALV = '16 novembre 2026';  // l'app des magasins : le prix et la rétractation d'un achat chez Apple ou Google, RevenueCat ; le 13 : le modèle de chaque génération ; le 8 : l'usage raisonnable de l'IA, l'essai pour Mirandola+ seul, l'examen blanc offert ; le 7 : le vocabulaire classique ; le 6, l'examen blanc
 const E = ENTREPRISE;
 const mois = FORMULES.mensuel, an = FORMULES.annuel, imois = FORMULES.infini_mensuel, ian = FORMULES.infini_annuel;
 
@@ -209,8 +209,10 @@ et ta facture t’arrivent par e-mail.
 traité par Stripe Payments Europe ; nous ne voyons jamais ton numéro de
 carte. Si un prélèvement échoue, Stripe réessaie pendant quelques jours ;
 s’il échoue encore, ton compte repasse à Mirandola gratuit, sans rien perdre
-de tes paquets. Dans l’app d’un magasin (App Store, Google Play), le paiement
-et le remboursement suivent aussi les conditions du magasin.
+de tes paquets. Dans l’app d’un magasin (App Store, Google Play), c’est Apple
+ou Google qui encaisse, au prix que l’app affiche au moment de l’achat (celui
+du magasin, dans la devise de ton compte) ; le paiement et le remboursement
+suivent aussi les conditions du magasin.
 
 **6. Durée et renouvellement.** La formule au mois se renouvelle chaque mois,
 la formule à l’année chaque année, jusqu’à ce que tu résilies. Pour la
@@ -234,7 +236,10 @@ qui correspond aux jours déjà écoulés (article L221-25). Pour te rétracter,
 ${EDITEUR}, ${E.adresse}, ${CONTACT} : je vous notifie par la présente ma
 rétractation du contrat portant sur l’abonnement Mirandola+, souscrit le …,
 au nom de …, avec l’adresse e-mail de mon compte …, le … (date). » Le
-remboursement arrive sous 14 jours, sur le moyen de paiement utilisé.
+remboursement arrive sous 14 jours, sur le moyen de paiement utilisé. Pour
+un abonnement pris dans l’app d’un magasin, c’est le magasin qui rembourse :
+demande-le à Apple (reportaproblem.apple.com) ou à Google Play (ton compte,
+Paiements et abonnements), ou écris-nous et nous t’aidons à le faire.
 
 **9. Garantie de conformité.** Mirandola+ doit être conforme à ce que
 décrivent ces conditions pendant toute la durée de ton abonnement (articles
@@ -286,7 +291,8 @@ par un contrat de sous-traitance.
 - *Ta classe* : si tu rejoins un établissement ou un professeur, ton nom
   « Prénom NOM », ta classe, tes devoirs et leur avancement.
 - *L’abonnement* : ta formule, son état, ses dates et son montant. Le paiement
-  lui-même est chez Stripe, qui garde tes coordonnées de paiement. Les
+  lui-même est chez Stripe, ou chez Apple ou Google si tu t’abonnes depuis
+  leur magasin : eux seuls gardent tes coordonnées de paiement. Les
   factures sont conservées dix ans (obligation comptable).
 - *L’IA* : le nombre de générations et leur coût, pour tenir les plafonds.
   Le texte, la photo ou le document que tu envoies ne sont pas gardés par
@@ -337,7 +343,10 @@ reste. Ce que voient les autres :
 - *Stripe* (paiement), en Irlande, seulement si tu t’abonnes ;
 - *Brevo* (envoi des e-mails : codes, alertes, accusés), en France ;
 - *Google*, seulement si tu te connectes avec ton compte Google ; *Apple* ou
-  *Google Play*, seulement si tu t’abonnes depuis leur magasin.
+  *Google Play*, seulement si tu t’abonnes depuis leur magasin ;
+- *RevenueCat* (le suivi des achats faits dans l’app iPhone ou Android), aux
+  États-Unis, seulement si tu t’abonnes depuis un magasin : il reçoit
+  l’identifiant de ton compte et tes achats, jamais ton nom ni ton adresse.
 
 Plusieurs sont des sociétés américaines : leurs transferts de données sont
 encadrés par les clauses contractuelles types de la Commission européenne

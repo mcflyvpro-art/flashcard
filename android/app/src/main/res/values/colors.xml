@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Les couleurs de Mirandola (src/app.css, :root) : le papier sous tout,
+     l'encre pour ce qui se lit. L'app n'a pas de thème sombre. -->
+<resources>
+    <color name="papier">#F6F5F1</color>
+    <color name="encre">#1D1C19</color>
+    <color name="colorPrimary">#1D1C19</color>
+    <color name="colorPrimaryDark">#F6F5F1</color>
+    <color name="colorAccent">#1D1C19</color>
+</resources>

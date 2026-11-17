@@ -26,6 +26,8 @@ export function periodeScolaire(auj = new Date()) {
 /* La ligne proposée : la licence pour tant de places, au prix convenu s'il y
    en a un (`prix`, en euros HT par an), sinon à celui de la grille
    (src/tarifs.js). L'éditeur la change à sa guise avant d'émettre. */
+/* saisies d'un formulaire : nombres ou textes */
+/** @param {{ places?: any, prix?: any, debut?: string|null, fin?: string|null }} [o] */
 export function ligneLicence({ places, prix, debut, fin } = {}) {
   const n = Math.max(0, Math.floor(+places || 0));
   const periode = debut && fin ? `, du ${dateFr(debut)} au ${dateFr(fin)}` : fin ? `, jusqu’au ${dateFr(fin)}` : '';
@@ -91,6 +93,7 @@ export function porteeDevis(d = {}) {
    L'éditeur l'envoie au contact avec le PDF en pièce jointe (« Imprimer ou
    PDF ») ; `enLigne` : l'établissement a un référent, qui peut l'accepter
    depuis sa console. */
+/** @param {{ devis?: any, etab?: string, contact?: any, enLigne?: boolean, signature?: string }} [o] */
 export function courrielDevis({ devis: d, etab, contact, enLigne, signature } = {}) {
   const sujet = `Devis ${d.numero} · Mirandola Campus${etab ? ' · ' + etab : ''}`;
   const corps = [

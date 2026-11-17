@@ -345,10 +345,15 @@ const MAGASINS = { app_store: 'apple', mac_app_store: 'apple', play_store: 'goog
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /* La formule d'un produit des magasins, d'après son identifiant (créé dans
-   App Store Connect et la Play Console : folio_plus_annuel, folio_plus:mensuel…). */
+   App Store Connect et la Play Console : mirandola_plus_annuel,
+   mirandola_infini:mensuel… — docs/MAGASINS.md). Le mot « infini » fait
+   Mirandola Infini (2026-11-16 : avant, un Infini acheté dans l'app était
+   écrit Mirandola+, et son IA bridée comme tel) ; la période se lit comme
+   avant. Le même partage que paquetDe de src/magasin.js, côté app. */
 export function formuleDuProduit(id) {
   const s = String(id || '').toLowerCase();
-  return /annu|year|p1y/.test(s) ? 'annuel' : /mens|month|p1m/.test(s) ? 'mensuel' : null;
+  const periode = /annu|year|p1y/.test(s) ? 'annuel' : /mens|month|p1m/.test(s) ? 'mensuel' : null;
+  return periode && /infini/.test(s) ? 'infini_' + periode : periode;
 }
 
 const iso = d => (d ? new Date(d).toISOString() : null);

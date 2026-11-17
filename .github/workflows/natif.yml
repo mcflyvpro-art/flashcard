@@ -1,0 +1,182 @@
+name: App des magasins
+
+# L'app iOS et Android (Capacitor, docs/CAPACITOR.md, docs/MAGASINS.md).
+# À chaque changement de ce qu'elle embarque : on la construit pour de vrai,
+# sur les machines d'Apple et de Google — un Mac pour iOS, un Linux avec le
+# SDK d'Android —, ce qu'aucun poste de l'équipe n'a besoin d'avoir.
+#
+#   android  le dossier web natif (npm run natif), puis Gradle : un APK de
+#            test à installer sur un téléphone (artefact « android-test »)
+#            et le paquet de publication .aab (« android-publication »),
+#            signé si les secrets de la clé sont posés ;
+#   ios      la même chose, puis Xcode : l'app pour le simulateur et pour
+#            un iPhone, sans signature — la preuve qu'elle compile ;
+#            « publier » (lancement à la main, secrets d'Apple posés) :
+#            l'archive signée part sur TestFlight.
+#
+# Secrets (Settings → Secrets and variables → Actions), docs/MAGASINS.md § 4 :
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS,
+#   ANDROID_KEY_PASSWORD — la clé d'importation de Google Play ;
+#   APPLE_TEAM_ID, APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID,
+#   APP_STORE_CONNECT_KEY_P8 — la clé d'API d'App Store Connect (rôle
+#   Admin : Xcode crée lui-même certificats et profils, « cloud signing »).
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'app.html'
+      - 'vite.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - 'android/**'
+      - 'ios/**'
+      - 'tools/natif/**'
+      - '.github/workflows/natif.yml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'ios/**'
+      - 'capacitor.config.json'
+      - 'package.json'
+      - 'tools/natif/**'
+  workflow_dispatch:
+    inputs:
+      publier:
+        description: 'Signer et envoyer : l’app iOS sur TestFlight, l’app Android en .aab signé'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# « bash » nommé : GitHub y ajoute pipefail — un xcodebuild qui échoue derrière « | tail » échoue l'étape
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: natif-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # valeurs publiques (clé anon), nécessaires pour que le build aboutisse
+  VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+  # le numéro de build monte à chaque course : Google Play et App Store
+  # Connect refusent deux envois du même numéro
+  MIRANDOLA_VERSION_CODE: ${{ github.run_number }}
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - name: Le dossier web de l'app, puis les projets natifs à jour
+        run: npm run natif
+      - name: Les projets natifs versionnés sont ceux que Capacitor écrit
+        # cap sync ne doit rien changer à ce qui est dans le dépôt (hors copies
+        # ignorées) : sinon, un greffon ajouté sans `npm run natif` derrière
+        run: git diff --exit-code -- android ios capacitor.config.json
+      - name: La clé de signature (publication seulement)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publier }}
+        env:
+          CLE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$CLE" ]; then echo "::warning::ANDROID_KEYSTORE_BASE64 absent : le .aab sort non signé"; exit 0; fi
+          echo "$CLE" | base64 -d > "$RUNNER_TEMP/mirandola-import.jks"
+          echo "MIRANDOLA_KEYSTORE=$RUNNER_TEMP/mirandola-import.jks" >> "$GITHUB_ENV"
+      - name: Gradle — l'APK de test et le paquet de publication
+        working-directory: android
+        env:
+          MIRANDOLA_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          MIRANDOLA_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          MIRANDOLA_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon --stacktrace assembleDebug bundleRelease
+      - name: Ce que contient l'APK
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          ls -la "$APK" android/app/build/outputs/bundle/release/
+          unzip -l "$APK" | grep -E "assets/public/index.html|assets/public/fsrs.wasm|assets/capacitor.config.json"
+          unzip -p "$APK" assets/public/index.html | grep -q '/assets/app-' && echo "✓ l'APK embarque l'app"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-test
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-publication
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Le Xcode le plus récent de la machine (Apple exige le SDK de l'année)
+        run: |
+          XC=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -v beta | sort -V | tail -1)
+          if [ -n "$XC" ]; then sudo xcode-select -s "$XC"; fi
+          xcodebuild -version
+      - run: npm ci
+      - name: Le dossier web de l'app, puis les projets natifs à jour
+        run: npm run natif
+      - name: Les paquets Swift (Capacitor, greffons, RevenueCat)
+        run: xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj -scheme App
+      - name: L'app pour le simulateur
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO build | tail -20
+          test -f "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/App.app/public/index.html"
+          echo "✓ l'app embarque son index.html"
+      - name: L'app pour un iPhone, en publication (sans signature)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd" \
+            CURRENT_PROJECT_VERSION=$MIRANDOLA_VERSION_CODE CODE_SIGNING_ALLOWED=NO build | tail -20
+          APP="$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/App.app"
+          plutil -p "$APP/Info.plist" | grep -E "CFBundleShortVersionString|CFBundleVersion|NSCameraUsageDescription"
+          test -f "$APP/PrivacyInfo.xcprivacy" && echo "✓ le manifeste de confidentialité est dans l'app"
+      - name: Archiver, signer et envoyer sur TestFlight
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publier }}
+        env:
+          EQUIPE: ${{ secrets.APPLE_TEAM_ID }}
+          CLE_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          EMETTEUR: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          CLE_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+        run: |
+          if [ -z "$EQUIPE" ] || [ -z "$CLE_ID" ] || [ -z "$EMETTEUR" ] || [ -z "$CLE_P8" ]; then
+            echo "::error::Secrets d'Apple absents (docs/MAGASINS.md § 4) : rien n'est envoyé"; exit 1
+          fi
+          CLE="$RUNNER_TEMP/AuthKey_$CLE_ID.p8"
+          printf '%s' "$CLE_P8" > "$CLE"
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$CLE" -authenticationKeyID "$CLE_ID" -authenticationKeyIssuerID "$EMETTEUR")
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Mirandola.xcarchive" \
+            DEVELOPMENT_TEAM="$EQUIPE" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=$MIRANDOLA_VERSION_CODE \
+            "${AUTH[@]}" archive | tail -30
+          cp ios/ExportOptions.plist "$RUNNER_TEMP/ExportOptions.plist"
+          plutil -replace teamID -string "$EQUIPE" "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Mirandola.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" "${AUTH[@]}" | tail -30
+          rm -f "$CLE"
+          echo "✓ build $MIRANDOLA_VERSION_CODE envoyé à App Store Connect : il paraît dans TestFlight après son traitement (quelques minutes)"

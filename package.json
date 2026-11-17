@@ -12,6 +12,7 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "budget": "node tools/budget.js",
+    "natif": "npm run build && node tools/natif/web.js && cap sync",
     "mutation": "stryker run"
   },
   "repository": {
@@ -25,6 +26,7 @@
   "homepage": "https://github.com/mcflyvpro-art/flashcard#readme",
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
+    "@capacitor/cli": "8.6.2",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.64",
     "@stryker-mutator/core": "^10.1.1",
@@ -40,5 +42,17 @@
   "private": true,
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.2",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/clipboard": "8.0.1",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.6.2",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@revenuecat/purchases-capacitor": "14.1.0"
   }
 }
