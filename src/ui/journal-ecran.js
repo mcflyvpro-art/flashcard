@@ -1,6 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import './journal.css';
 import { $ } from '../racine.js';
+import { chargeur } from './chargeur.js';
 import { I, svg } from '../icones.js';
 import { db, setAnimate, stats } from '../data/etat.js';
 import { render } from './bibliotheque.js';
@@ -223,7 +224,7 @@ export function journalEcran() {
   const barre = `<div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>`;
   if (!st.rep && !st.locaux.length) {
     $.innerHTML = `${barre}<div class="page jr">${entete()}
-      ${stats.err ? `<div class="empty">${svg(I.cloud)}<p>Statistiques indisponibles hors ligne</p></div>` : '<div class="jr-attente"><i></i><i></i><i></i></div>'}</div>`;
+      ${stats.err ? `<div class="empty">${svg(I.cloud)}<p>Statistiques indisponibles hors ligne</p></div>` : chargeur()}</div>`;
     return lier();
   }
   const a = activite(J, { depuis, aujourdhui: auj });

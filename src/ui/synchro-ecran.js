@@ -13,6 +13,11 @@ import { isProf } from './classement.js';
 import { prechargerJournal } from './ecran-groupe.js';
 import { prechargerCourrier } from './reglages-corbeille.js';
 import { bindPager } from './balayage.js';
+import { chargerCreation } from './creation-porte.js';
+import { chargerQuiz } from './quiz-porte.js';
+import { chargerClub } from './club-porte.js';
+import { chargerDefi } from './defi-porte.js';
+import { chargerFeuilles } from './cercle-feuilles-porte.js';
 
 /* ══════════ des écrans prêts, des appareils d'accord (2026-10-28) ══════════
    Deux choses que l'on sentait : un écran vide le temps d'un battement en
@@ -50,6 +55,14 @@ export function prechauffer() {
     commuPull(true);                                  // relecture de fond : la copie gardée (core/memoire-ecrans.js) est déjà à l'écran
     iaPull();                                         // l'IA du mois : la barre de l'IA, les examens blancs offerts du menu d'un paquet
     if (aUneClasse() && !isProf()) { eleveClassesPull(); sallesPull(); duelsPull(); }
+    /* Puis, un calme plus loin, les écrans sortis du démarrage le
+       2026-11-18 : la création, la récitation, un club, un défi, les
+       feuilles du cercle. Le premier toucher les trouve là ; hors ligne,
+       ils sont déjà dans le cache du service worker. Une panne n'y fait
+       rien : leur porte les redemandera au toucher. */
+    auCalme(() => {
+      for (const charger of [chargerCreation, chargerQuiz, chargerFeuilles, chargerClub, chargerDefi]) charger().catch(() => {});
+    }, { timeout: 6000 });
   }, { timeout: 3000 });
 }
 

@@ -6,9 +6,9 @@ import { auth, me, menu, online, prefs, prof, setAnimate, view, visuels } from '
 import { go, render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
 import {
-  codeComplet, codeDepuisTexte, dansJours, etatInscriptions, formatCode, iso, lienRejoindre, messageStatut,
-  nomPropre, normCode
+  codeComplet, codeDepuisTexte, formatCode, iso, lienRejoindre, messageStatut, nomPropre, normCode
 } from '../classe.js';
+import { dansJours, etatInscriptions } from '../classe-suivi.js';
 import { deck, plur } from '../core/coeur-sync.js';
 import { DUELQ } from '../core/defis.js';
 import {
@@ -21,9 +21,9 @@ import { toast } from './import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from './menus-a.js';
 import { classeOuverte } from './prof-accueil.js';
 import { baseApp, devoirOuvert, listeLivres } from './prof-feuilles.js';
-import { resetComp } from './creation.js';
+import { resetComp } from './creation-porte.js';
 import { actionsEtab, chercherEleves, majBoutonGroupe } from './prof-etab.js';
-import { ouvrirDefi } from './defi-nouveau.js';
+import { ouvrirDefi } from './defi-porte.js';
 import { choisirJetonClasse, surVisuels } from '../core/visuels.js';
 import { emblemeDe, rangCouleur } from '../jeton.js';
 

@@ -85,22 +85,33 @@ function adressesDeLApp() {
   };
 }
 
-/* La page du moteur (/moteur) fait tourner le moteur de l'app, src/fsrs.js.
-   Importé tel quel, il devenait un morceau partagé entre l'app et le site,
-   et l'app le chargeait à part au démarrage (0,3 Ko de plus, au-delà du
-   budget). Le site en reçoit donc sa propre copie : un module virtuel au
-   texte identique, que seuls les fichiers de src/site/ voient. Le code
-   source garde son import ordinaire — Node (le gabarit du build) et les
-   tests le lisent tel quel. */
-function moteurDuSite() {
-  const ID = '\0fsrs-du-site';
+/* Le site emploie quelques règles de l'app : le moteur (src/fsrs.js, pour la
+   page /moteur), la forme d'un code de classe et d'un code de partie
+   (src/classe.js, src/defi.js, pour « J'ai un code »). Importées telles
+   quelles, elles devenaient des morceaux partagés entre l'app et le site :
+   l'app chargeait le moteur à part au démarrage (0,3 Ko de trop, le
+   2026-11-04), et chaque page du site téléchargeait tout src/classe.js et
+   tout src/defi.js — 5,4 Ko pour quatre fonctions (relevé le 2026-11-18).
+   Le site reçoit donc sa propre copie de chaque module de l'app qu'il
+   importe, et des modules que ceux-là importent : le même fichier, sous un
+   autre nom (« …?site »), que seuls src/site/ et ces copies voient — le
+   build n'en garde que ce que le site appelle. Le code source garde ses
+   imports ordinaires : Node (le gabarit du build) et les tests les lisent
+   tels quels. */
+const DU_SITE = /[\\/]src[\\/]site[\\/]/;
+function copiesDuSite() {
   return {
-    name: 'fsrs-du-site',
+    name: 'copies-du-site',
     enforce: 'pre',
-    resolveId(source, importer) {
-      return source === '../fsrs.js' && importer && /[\\/]src[\\/]site[\\/]/.test(importer) ? ID : null;
+    async resolveId(source, importer, options) {
+      if (!importer || !/^\.\.?\//.test(source) || !/\.js$/.test(source)) return null;
+      const copie = importer.endsWith('?site');
+      if (!copie && !(DU_SITE.test(importer) && !importer.includes('?'))) return null;
+      const r = await this.resolve(source, copie ? importer.slice(0, -5) : importer, { ...options, skipSelf: true });
+      if (!r || r.external || DU_SITE.test(r.id) || !/[\\/]src[\\/].*\.js$/.test(r.id)) return null;
+      return r.id + '?site';
     },
-    load(id) { return id === ID ? readFileSync('src/fsrs.js', 'utf8') : null; }
+    load(id) { return id.endsWith('?site') ? readFileSync(id.slice(0, -5), 'utf8') : null; }
   };
 }
 
@@ -168,7 +179,7 @@ export default defineConfig(({ mode }) => {
        née avec telle mise en ligne. Le commit que Vercel construit, sinon
        celui du dépôt local. */
     define: { 'import.meta.env.VITE_BUILD': JSON.stringify(identifiantDuBuild()) },
-    plugins: [pagesDuSite(), moteurDuSite(), serviceWorker(base), adressesDeLApp(), cspStricte()].filter(Boolean),
+    plugins: [pagesDuSite(), copiesDuSite(), serviceWorker(base), adressesDeLApp(), cspStricte()].filter(Boolean),
     /* Les pages du site (index.html, servie à `/`, et une par sujet :
        tarifs.html à `/tarifs`… src/site/pages.js, docs/SEO.md) et l'app
        (app.html, servie à `/app`). docs/LANDING.md. */

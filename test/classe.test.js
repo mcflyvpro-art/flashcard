@@ -4,12 +4,14 @@
 import process from 'node:process';
 import { afterEach, describe, it, expect } from 'vitest';
 import {
-  ALPHABET, DUREES, aTraiter, codeComplet, codeDepuisTexte, dansJours, echeance,
-  correspond, erreurPlaces, etatDevoir, etatDevoirEleve, etatEleve, etatInscriptions, filtrerEleves, finTexte,
-  formatCode, grilleMois, iso, jourCourt, jourLong, joursEntre, lienRejoindre,
-  lireComptes, lireListeEleves, messageStatut, nomPropre, nomValide, normCode, parJour, tableurComptes,
-  rangerClasses, syntheseAccueil, syntheseClasse, trierEleves
+  ALPHABET, codeComplet, codeDepuisTexte, echeance, etatDevoirEleve, formatCode, iso, joursEntre,
+  lienRejoindre, messageStatut, nomPropre, nomValide, normCode, jourCourt, rangerClasses
 } from '../src/classe.js';
+import {
+  DUREES, aTraiter, dansJours, correspond, erreurPlaces, etatDevoir, etatEleve, etatInscriptions,
+  filtrerEleves, finTexte, grilleMois, jourLong, lireComptes, lireListeEleves, parJour,
+  tableurComptes, syntheseAccueil, syntheseClasse, trierEleves
+} from '../src/classe-suivi.js';
 
 describe('le code d’une classe', () => {
   it('31 symboles, sans 0, O, 1, I ni L', () => {

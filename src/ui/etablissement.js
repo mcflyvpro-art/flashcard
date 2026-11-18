@@ -1,6 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
-import { I, svg } from '../icones.js';
+import { I } from '../icones.js';
 import { iso, joursEntre } from '../classe.js';
 import { ref, setAnimate, view } from '../data/etat.js';
 import { refPull } from '../core/classement.js';
@@ -26,7 +27,7 @@ function charger() {
 export function refView() {
   if (ecran) return ecran.consoleRef();
   $.innerHTML = `<div class="page"><div class="top"><div class="hero">Mon établissement</div></div>
-    <div class="empty">${svg(I.school)}</div></div>`;
+    ${chargeur()}</div>`;
   charger().then(() => { if (view.name === 'ref') { setAnimate(false); render(); } })
     .catch(() => toast(I.x, 'La console n’a pas pu s’ouvrir : vérifie ta connexion'));
 }

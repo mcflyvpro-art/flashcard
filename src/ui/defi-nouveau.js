@@ -15,6 +15,7 @@ import { hlp } from './connexion.js';
 import { plain } from './carte-media.js';
 import { ouvrirDirect } from './direct-porte.js';
 import { toast } from './import-cartes.js';
+import './defi-nouveau.css';
 
 /* ══════════ lancer un défi ══════════
    Un seul écran, quatre questions dans l'ordre où on se les pose : avec
@@ -142,6 +143,15 @@ export const ACTIONS_DEFI = {
   'dn-duree': s => { defi.duree = +s; repeint(); },
   'dn-go': () => lancer()
 };
+
+/* ses gestes, écoutés ici : l'écran n'est là qu'avec son morceau (ui/defi-porte.js) */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-cc]');
+  const f = b && !b.disabled && ACTIONS_DEFI[b.dataset.cc];
+  if (!f) return;
+  e.preventDefault();
+  f(b.dataset.id, b);
+});
 
 async function lancer() {
   const d = db.decks.find(x => x.id === defi.livre); if (!d || defi.envoi) return;

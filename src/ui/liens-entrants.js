@@ -1,10 +1,9 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
-import { auth, demoEtab, myRole, prefs, setView, tuto, view } from '../data/etat.js';
-import { render } from './bibliotheque.js';
+import { auth, cercle, demoEtab, myRole, prefs, setView, tuto, view } from '../data/etat.js';
+import { go, render } from './bibliotheque.js';
 import { boot, consumeHash } from './onboarding.js';
 import { consumeRejoindre } from './eleve-classes.js';
 import { consumeDefi } from './direct-porte.js';
-import { consumeClub } from './cercle-feuilles.js';
 import { consumeGoto } from './raccourcis.js';
 import { consumePlus } from './plus-porte.js';
 import { aInstaller } from './pwa-porte.js';
@@ -14,7 +13,9 @@ import { demanderNouveauMdp } from './mdp-porte.js';
 import { toast } from './import-cartes.js';
 import { I } from '../icones.js';
 import { openShared } from '../core/reglages-corbeille.js';
-import { garder, prendre } from '../lien-garde.js';
+import { garder, lire, oublier, prendre } from '../lien-garde.js';
+import { codeClubDepuisTexte } from '../club.js';
+import { clubsPull } from '../core/cercle.js';
 import { tokComplet, tokDepuisTexte } from '../livre-code.js';
 import { ouvrirCode } from './code-porte.js';
 
@@ -129,6 +130,24 @@ function consumeAmi(connecte) {
   const h = prendre('folio.ami');
   if (!h) return false;
   ouvrirCode('@' + h, { attendre: true });
+  return true;
+}
+
+/* « ?club=CODE » : un lien d'invitation. Sans session, il attend la
+   connexion (src/lien-garde.js), comme « ?rejoindre= » pour une classe. */
+function consumeClub(connecte) {
+  const p = new URLSearchParams(location.search), brut = p.get('club');
+  let k = brut ? codeClubDepuisTexte(brut) : '';
+  if (brut) {
+    p.delete('club');
+    history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
+  }
+  k = k || lire('folio.club');
+  if (!k) return false;
+  connecte ? oublier('folio.club') : garder('folio.club', k);
+  if (!connecte) return false;
+  if (cercle.clubs === null) clubsPull();
+  go('commu'); ouvrirCode('?club=' + k, { attendre: true });   // la feuille montre le code : on entre d'un appui
   return true;
 }
 

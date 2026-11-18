@@ -1,5 +1,6 @@
 import { I } from '../icones.js';
-import { dansJours, iso } from '../classe.js';
+import { iso } from '../classe.js';
+import { dansJours } from '../classe-suivi.js';
 import { auth, menu, online, prof, setAnimate, view } from '../data/etat.js';
 import { render } from '../ui/bibliotheque.js';
 import { api } from './coeur-sync.js';

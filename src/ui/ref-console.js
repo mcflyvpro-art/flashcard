@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
@@ -8,7 +9,8 @@ import {
   PAGE, refAgir, refAjouterProf, refCharger, refOuvrirComptes, refEquipePull, refJournalPull, refNouveauCode, refPersonnesPull,
   refProfsPull, refRetirer, refRythme, refServicePull
 } from '../core/referent.js';
-import { formatCode, lienRejoindre, lireComptes, nomPropre, nomValide, tableurComptes } from '../classe.js';
+import { formatCode, lienRejoindre, nomPropre, nomValide } from '../classe.js';
+import { lireComptes, tableurComptes } from '../classe-suivi.js';
 import { changeLe, cycleDe, etatLicence, motDePasseProvisoire, NIVEAUX, RYTHMES } from '../etablissement.js';
 import { render } from './bibliotheque.js';
 import { avatar } from './jeton.js';
@@ -95,7 +97,7 @@ function aRegler(b) {
 
 function accueil() {
   const b = ref.board || {}, c = ref.codes;
-  if (c === null) return vide(I.build, 'Chargement…');
+  if (c === null) return chargeur();
   if (!c) return vide(I.lock, 'Réservé au référent de l’établissement');
   return `<div class="rf-accueil">
       <div class="rf-codes">${tuilesCodes(c)}</div>
@@ -186,7 +188,7 @@ function filtres() {
 function liste() {
   const l = ref.gens;
   const pages = Math.ceil(ref.total / PAGE) || 1;
-  if (!l) return vide(I.users, 'Chargement…');
+  if (!l) return chargeur();
   if (!l.length) return vide(I.search, 'Personne');
   return `<div class="rf-compte">${ref.total} ${ref.role === 'prof' ? 'professeur' : 'élève'}${ref.total > 1 ? 's' : ''}</div>
     ${l.map(g => `<button class="rf-ligne${ref.who && ref.who.id === g.id ? ' on' : ''}" data-rf="personne" data-id="${esc(g.id)}">
@@ -265,7 +267,7 @@ function detailPersonne(g) {
 function servicesProf(g, cl) {
   const s = ref.service;
   return `<h2 class="rf-h2">Ses classes</h2>
-    ${!s ? '<p class="rf-rien">Chargement…</p>' : s.map(x => `<div class="rf-ligne fixe">${svg(I.school)}
+    ${!s ? chargeur(true) : s.map(x => `<div class="rf-ligne fixe">${svg(I.school)}
       <span class="rf-l1"><b>${esc(x.classe)}</b><i>${esc(x.matiere)}${x.principal ? ' · PP' : ''}</i></span>
       <button class="rf-b sm ko" data-rf="retirer-service" data-id="${esc(x.teaching_id)}" aria-label="Retirer">${svg(I.x)}</button></div>`).join('')
       || '<p class="rf-rien">Aucune classe : chaque professeur choisit les siennes dans son espace.</p>'}
@@ -292,7 +294,7 @@ function detailTrace(d, acte) {
 
 function journal() {
   const l = ref.trace;
-  if (!l) return vide(I.clock, 'Chargement…');
+  if (!l) return chargeur();
   if (!l.length) return vide(I.clock, 'Rien encore');
   return `<div class="rf-journal">${l.map(r => `<div class="rf-jl"><b>${esc(r.acte)}</b><i>${esc(detailTrace(r.detail, r.acte))}</i>
     <span>${timeAgo(r.created_at)}</span></div>`).join('')}</div>`;
@@ -347,7 +349,7 @@ function resultatsLot(k) {
 /* ---------- au téléphone : l'essentiel ---------- */
 function telephone() {
   const c = ref.codes;
-  if (c === null) return vide(I.build, 'Chargement…');
+  if (c === null) return chargeur();
   if (!c) return vide(I.lock, 'Réservé au référent de l’établissement');
   return `<div class="rf-tel">${tuilesCodes(c)}
     ${tuileLicence(c)}<p class="rf-rien">${svg(I.build)}Classes, élèves et professeurs se gèrent sur ordinateur.</p></div>`;

@@ -10,7 +10,7 @@ import { compter } from '../ia-mois.js';
 import {
   SB, api, doUndo, esc, flush, pushUndo, refreshToken, save, saveDeck, setOnline, uid
 } from '../core/coeur-sync.js';
-import { norm } from './quiz.js';
+import { norm } from '../normaliser.js';
 import { snapVersion } from '../core/reglages-corbeille.js';
 import { matiereLocale } from '../core/matieres.js';
 import { installee } from './routeur.js';

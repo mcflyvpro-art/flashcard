@@ -10,8 +10,8 @@ import {
 } from '../data/etat.js';
 import { examenView } from './examen-porte.js';
 import { commuPull, commuView, friendsView, profilView } from './cercle.js';
-import { clubPull, clubView } from './club.js';
-import { defiView } from './defi-nouveau.js';
+import { clubPull, clubView } from './club-porte.js';
+import { defiView } from './defi-porte.js';
 import { directView } from './direct-porte.js';
 import { avatar } from './jeton.js';
 import { bindPager } from './balayage.js';
@@ -38,8 +38,8 @@ import {
   applyFont, dropBoot, dueCount, savePrefs, simpleMode, todayCount
 } from './import-cartes.js';
 import { closeMenu, openMenu, paintMenu } from './menus-a.js';
-import { quizView, stopTimer } from './quiz.js';
-import { importView } from './creation.js';
+import { quizView, stopTimer } from './quiz-porte.js';
+import { importView } from './creation-porte.js';
 import {
   lettreView, mailView, settingsView, sharedView, trashView
 } from './reglages-corbeille.js';

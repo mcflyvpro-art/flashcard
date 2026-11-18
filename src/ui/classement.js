@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import {
@@ -100,7 +101,7 @@ export function modView() {
     <div class="bar"><button class="ic" data-act="settings" aria-label="Retour">${svg(I.back)}</button>
       <h1>Signalements</h1></div>
     <div class="page">
-      ${!l ? `<div class="empty">${svg(I.warn)}<p>${mods.err ? 'Liste indisponible' : 'Chargement…'}</p></div>`
+      ${!l ? (mods.err ? `<div class="empty">${svg(I.warn)}<p>Liste indisponible</p></div>` : chargeur())
       : !l.length ? `<div class="empty">${svg(I.check)}<p><b>Rien à traiter</b>Tous les signalements sont classés.</p></div>`
       : `<div class="note" style="padding:0 0 14px">Un contenu signalé par deux comptes différents est déjà
            masqué automatiquement. Ce qui suit attend une décision.</div>
@@ -144,7 +145,7 @@ export function admAller(sous, id) {
 export function adminView() {
   if (consoleAdm) return consoleAdm.consoleAdmin();
   $.innerHTML = `<div class="page"><div class="top"><div class="hero">Administration</div></div>
-    <div class="empty">${svg(I.key)}</div></div>`;
+    ${chargeur()}</div>`;
   chargerAdmin().then(() => { if (view.name === 'admin') { setAnimate(false); render(); } })
     .catch(() => toast(I.x, 'La console n’a pas pu s’ouvrir : vérifie ta connexion'));
 }

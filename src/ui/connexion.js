@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { isLeech } from '../file.js';
@@ -21,7 +22,7 @@ import { dueCount, simpleMode, toast } from './import-cartes.js';
 import { consumeGoto } from './raccourcis.js';
 import { consumeHash, noterConnexion, premiereOuverture } from './onboarding.js';
 import { maybeTuto } from './tuto-porte.js';
-import { norm } from './quiz.js';
+import { norm } from '../normaliser.js';
 import { cartePassage, lierPassage } from './passage.js';
 import { fournisseurs } from '../core/connexion-externe.js';
 import { bindReorder } from './reordonner.js';
@@ -340,7 +341,7 @@ export function pubTete(retour = true) {
       ${installee() ? `<span class="pub-marque">${m}</span>` : `<a class="pub-marque" href="/" aria-label="Mirandola, la page d’accueil">${m}</a>`}
     </header>`;
 }
-const attente = () => `<div class="pub">${pubTete()}<div class="pub-attente">${svg(I.school)}</div></div>`;
+const attente = () => `<div class="pub">${pubTete()}<div class="pub-attente">${chargeur()}</div></div>`;
 
 /* « Demander une démo » : un établissement qui découvre Mirandola, sans compte
    (ui/demande-demo.js et sa feuille, chargés à l'ouverture). */
@@ -371,7 +372,7 @@ export function legalView() {
   const onglets = `<div class="pills" id="lgTabs">${Object.entries(LEGAL_TITRES).map(([k, t]) =>
         `<button class="p${legalTab === k ? ' on' : ''}" data-legal="${k}">${esc(t)}</button>`).join('')}</div>`;
   const page = `${barre}<div class="page">${onglets}
-      <div class="legal">${textes ? textes.legalHtml(textes.LEGAL[legalTab][1]) : '<p>Chargement…</p>'}</div></div>`;
+      <div class="legal">${textes ? textes.legalHtml(textes.LEGAL[legalTab][1]) : chargeur(true)}</div></div>`;
   $.innerHTML = pub ? `<div class="pub pub-texte">${page}</div>` : page;
   if (!textes) {
     import('./legal-textes.js').then(m => { textes = m; if (view.name === 'legal') render(); })

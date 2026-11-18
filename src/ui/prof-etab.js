@@ -1,8 +1,10 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { prof, setMenu } from '../data/etat.js';
-import { formatCode, jourLong, lienRejoindre } from '../classe.js';
+import { formatCode, lienRejoindre } from '../classe.js';
+import { jourLong } from '../classe-suivi.js';
 import { qrSvg } from '../qr.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
@@ -88,8 +90,7 @@ export function inviterCode(c) {
 function places(w) {
   const l = prof.licence;
   if (l === null) licencePull();
-  const corps = !l ? `<p class="pf-note">${l === null ? 'Chargement…'
-      : 'Pas encore de places : demandez-en, Mirandola vous répond vite.'}</p>`
+  const corps = !l ? (l === null ? chargeur(true) : '<p class="pf-note">Pas encore de places : demandez-en, Mirandola vous répond vite.</p>')
     : `<div class="pf-mini">
         <span><b>${l.inscrits}<small>/${l.places}</small></b><i>élèves</i></span>
         <span class="${l.attente ? 'am' : ''}"><b>${l.attente}</b><i>en attente</i></span>

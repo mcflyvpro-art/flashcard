@@ -1,6 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
-import { I, svg } from '../icones.js';
+import { I } from '../icones.js';
 import { demoEtab, myRole, offre, plusNeuf, setPlus, view } from '../data/etat.js';
 import { lireRetour } from '../abonnement.js';
 import { iaMoisPull, offrePull } from '../core/abonnement.js';
@@ -24,7 +25,7 @@ function charger() {
 
 export function plusView() {
   if (mod) return mod.plusEcran();
-  $.innerHTML = `<div class="page"><div class="empty">${svg(I.spark)}</div></div>`;
+  $.innerHTML = `<div class="page">${chargeur()}</div>`;
   charger().then(() => { if (view.name === 'plus') render(); })
     .catch(() => toast(I.x, 'Mirandola+ n’a pas pu s’ouvrir : vérifie ta connexion'));
 }

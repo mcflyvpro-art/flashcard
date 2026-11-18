@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { parseText } from '../parseur.js';
-import { comp, db, demoEtab, ia, offre, prefs, setComp, tuto, view } from '../data/etat.js';
+import { comp, db, demoEtab, ia, offre, prefs, tuto, view } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { donnerLivre } from './prof-porte.js';
 import { MAXB, MAXF, markDups, markOver } from './carte-media.js';
@@ -11,6 +11,8 @@ import { addDeck, toast } from './import-cartes.js';
 import { bride, envie, tiennent } from './bridage.js';
 import { etatIA } from '../ia-mois.js';
 import { iaPull } from '../core/abonnement.js';
+import { resetComp } from './creation-porte.js';
+import './creation.css';
 
 /* ---------- création / import ----------
    Un seul écran pour toutes les façons de remplir un livre. Il y en avait
@@ -27,8 +29,6 @@ import { iaPull } from '../core/abonnement.js';
    sous chaque façon de créer (ui/prompt-ia.js). Les photos et le PDF y
    attendent avec la consigne qu'on veut ; sans rien, elle crée ou retouche
    la liste. */
-export const resetComp = extra => { setComp({ subject: '', cards: [], edit: -1, mode: 'ecrire',
-  text: '', dups: false, ...(extra || {}) }); };
 
 const MODES = [
   { id: 'ecrire', icon: 'pen', nom: 'Écrire', aide: 'Carte par carte, au clavier. Entrée passe au verso, puis ajoute la carte.' },

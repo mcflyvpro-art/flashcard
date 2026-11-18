@@ -2,10 +2,8 @@
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { prof, setMenu, visuels } from '../data/etat.js';
-import {
-  codeComplet, dansJours, echeance, etatDevoir, etatEleve, grilleMois, iso,
-  auJour, jourCourt, jourLong, messageStatut, MOIS, pc
-} from '../classe.js';
+import { codeComplet, echeance, iso, auJour, messageStatut, jourCourt } from '../classe.js';
+import { dansJours, etatDevoir, etatEleve, grilleMois, jourLong, MOIS, pc } from '../classe-suivi.js';
 import { esc, live, plur } from '../core/coeur-sync.js';
 import { avatar, btn, chargement, classeOuverte, couleur, pastilleClasse, pill } from './prof-accueil.js';
 import { grilleCouleurs, grilleEmblemes } from './jeton.js';

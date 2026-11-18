@@ -5,25 +5,20 @@ import { auth, cercle, compte, friends, me, menu, setAnimate, setMenu, view, vis
 import { go, monIdent, render } from './bibliotheque.js';
 import { esc } from '../core/coeur-sync.js';
 import {
-  clubsPull, creerClub, exclureMembre, modifierClub, nouveauCodeClub, quitterClub, rejoindreSalle
+  creerClub, exclureMembre, modifierClub, nouveauCodeClub, quitterClub
 } from '../core/cercle.js';
-import { codeClubDepuisTexte, codeClubLisible, deviseValide, lienClub, nomClubValide } from '../club.js';
+import { codeClubLisible, deviseValide, lienClub, nomClubValide } from '../club.js';
 import { COULEURS, couleurDe, embleme, rangCouleur, teinte } from '../jeton.js';
 import { auHasard, avatarDe, avatarDeCle, ecrireAvatar } from '../avatar.js';
 import { choisirMonJeton } from '../core/visuels.js';
-import { messageSalle } from '../defi.js';
 import { avatar, blasonClub, grilleCouleurs, grilleEmblemes, grilleTrait, iconeEmbleme, ongletsAvatar } from './jeton.js';
 import { isPupil } from './classement.js';
-import { clubOuvert, clubPull } from './club.js';
-import { ouvrirProfil } from './cercle.js';
-import { ACTIONS_DEFI, ouvrirDefi } from './defi-nouveau.js';
-import { ouvrirDirect } from './direct-porte.js';
+import { clubOuvert, clubPull } from './club-porte.js';
 import { toast } from './import-cartes.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { askFriend } from '../core/reglages-corbeille.js';
 import { ouvrirPseudo } from './pseudo-porte.js';
-import { ouvrirCode } from './code-porte.js';
-import { garder, lire, oublier } from '../lien-garde.js';
+import './cercle-feuilles.css';
 
 /* ══════════ les feuilles du cercle, et ses gestes ══════════
    Une seule entrée `cc` dans la table des menus (menus-a.js) ; laquelle
@@ -200,32 +195,16 @@ function arme(b, texte) {
   return false;
 }
 
+/* Les gestes qui mènent ailleurs (un club, un défi, une partie, un code, un
+   profil) restent à la porte, ui/cercle-feuilles-porte.js ; ceux-ci ouvrent
+   ou remplissent une feuille. */
 const ACTIONS = {
-  ...ACTIONS_DEFI,
-  defi: (id, b) => {
-    const r = view.name === 'club' ? { name: 'club', id: view.id } : { name: view.name === 'friends' ? 'friends' : 'commu' };
-    closeMenu();
-    ouvrirDefi({ ou: b.dataset.ou || null, mode: b.dataset.mode || 'direct', livre: b.dataset.livre || null, retour: r });
-  },
-  // une partie, un club, un paquet, une classe, un ami : un seul champ (ui/code-entree.js)
-  pin: () => ouvrirCode(),
-  salle: async (id, b) => {
-    if (b.dataset.dedans) return ouvrirDirect(id);
-    const r = await rejoindreSalle(b.dataset.pin);
-    if (r.statut === 'ok' || r.statut === 'hote') return ouvrirDirect(r.salle);
-    toast(I.x, messageSalle(r.statut) || 'Impossible d’entrer');
-  },
-  tous: () => { cercle.tous = !cercle.tous; repeint(); },
-  club: id => { cercle.onglet = 'defis'; clubPull(id); go('club', id); },
-  onglet: k => { cercle.onglet = k; const p = document.querySelector('.cl'); if (p) p.dataset.onglet = k;
-    document.querySelectorAll('.cl-tabs button').forEach(x => { x.classList.toggle('on', x.dataset.id === k); x.setAttribute('aria-selected', x.dataset.id === k); }); },
   'club-creer': () => { cercle.form = { nom: '', devise: '', embleme: 'livre', teinte: Math.floor(Math.random() * COULEURS.length) }; ouvrir('club-form'); },
   'club-perso': () => {
     const g = clubOuvert(); if (!g) return;
     cercle.form = { id: g.id, nom: g.nom, devise: g.devise || '', embleme: g.embleme, teinte: g.teinte };
     ouvrir('club-form');
   },
-  'club-rejoindre': () => ouvrirCode(),
   'club-inviter': () => ouvrir('club-inviter'),
   'club-menu': () => ouvrir('club-menu'),
   'club-copier': () => { const g = clubOuvert(); if (g) copier(codeClubLisible(g.code), 'Code copié'); },
@@ -241,8 +220,6 @@ const ACTIONS = {
     if (!arme(b, g.chef ? 'Confirmer : supprimer pour tous' : 'Confirmer : quitter')) return;
     return quitterClub(g.id, g.chef);
   },
-  // toucher un membre ouvre son profil ; le chef y retrouve « Retirer du club »
-  membre: id => { const g = clubOuvert(); cercle.membre = id; ouvrirProfil(id, { club: g && g.id }); },
   'membre-ami': async () => {
     const g = clubOuvert(), m = g && (cercle.membres[g.id] || []).find(x => x.user_id === cercle.membre);
     if (m && m.pseudo && await askFriend(m.pseudo)) closeMenu();
@@ -275,6 +252,13 @@ const ACTIONS = {
   'form-ok': () => validerForm()
 };
 
+/* le geste qui a fait venir le morceau, rejoué par la porte ; ensuite,
+   l'écouteur d'ici prend les suivants */
+export function agir(b) {
+  const f = ACTIONS[b.dataset.cc];
+  if (f) f(b.dataset.id, b);
+}
+
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-cc]');
   if (!b || b.disabled) return;
@@ -299,21 +283,3 @@ document.addEventListener('input', e => {
   const k = n.dataset.ccin;
   return saisieClub(k, n);
 });
-
-/* « ?club=CODE » : un lien d'invitation. Sans session, il attend la
-   connexion (sessionStorage), comme « ?rejoindre= » pour une classe. */
-export function consumeClub(connecte) {
-  const p = new URLSearchParams(location.search), brut = p.get('club');
-  let k = brut ? codeClubDepuisTexte(brut) : '';
-  if (brut) {
-    p.delete('club');
-    history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '') + location.hash);
-  }
-  k = k || lire('folio.club');
-  if (!k) return false;
-  connecte ? oublier('folio.club') : garder('folio.club', k);             // src/lien-garde.js
-  if (!connecte) return false;
-  if (cercle.clubs === null) clubsPull();
-  go('commu'); ouvrirCode('?club=' + k, { attendre: true });   // la feuille montre le code : on entre d'un appui
-  return true;
-}

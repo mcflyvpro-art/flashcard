@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { I, svg } from '../icones.js';
 import {
   auth, cardEdit, conflicts, db, duels, fnr, friends, helpKey,
@@ -230,7 +231,7 @@ export function paintMenuVers(w) {
         <div class="mhd">${svg(I.clock)}
           <span class="mhx"><b>Historique de « ${esc(d.name)} »</b>
             <i>les ${VERSN} dernières versions, avant chaque remplacement</i></span></div>
-        ${!l ? `<div class="note">${vers.err ? 'Historique indisponible.' : 'Chargement…'}</div>`
+        ${!l ? (vers.err ? '<div class="note">Historique indisponible.</div>' : chargeur(true))
           : !l.length ? `<div class="note">Rien encore. Une version est gardée avant chaque
               remplacement, fusion, découpe ou réimport.</div>`
           : `<div class="mscroll">${l.map(v => `<button class="mi" data-vers="${v.id}">
@@ -302,7 +303,7 @@ export function paintMenuSendfriend(w) {
       <div class="menu">
         <div class="mi" style="font-weight:750">${svg(I.mail)}Envoyer « ${esc(d.name)} » à</div>
         <div class="mscroll">${friends === null
-          ? `<div class="mi" style="color:var(--soft)">Chargement…</div>`
+          ? chargeur(true)
           : !list.length ? `<div class="mi" style="color:var(--soft)">Aucun ami pour l’instant.</div>`
           : list.map(p => `<button class="mi ${sendTo === p.id ? 'on' : ''}" data-friend="${p.id}">
               <i class="tri" style="--c:var(--soft)"></i>${esc(p.name || p.email)}

@@ -155,10 +155,6 @@ html:not(.offre-gratuit) :is([data-volet=memoire],[data-volet=pause],[data-volet
 
 .jr-tout{display:flex;align-items:center;justify-content:center;gap:6px;margin:18px 0 0;font-size:12px;font-weight:600;color:var(--soft)}
 .jr-tout svg{width:13px;height:13px}
-.jr-attente{display:grid;gap:12px}
-.jr-attente i{display:block;height:110px;border-radius:16px;background:var(--surf);animation:jrRespire 1.4s ease-in-out infinite}
-.jr-attente i:nth-child(2){height:180px;animation-delay:.15s} .jr-attente i:nth-child(3){animation-delay:.3s}
-@keyframes jrRespire{50%{opacity:.45}}
 
 /* ---------- ordinateur : un vrai tableau de bord, pas le téléphone étiré ---------- */
 @media (min-width:900px){

@@ -20,7 +20,7 @@ import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { allerAccueil, rejoindreCollegue } from './prof-porte.js';
 import { versClasse } from './eleve-classes.js';
 import { apresEntree } from './tuto-porte.js';
-import { clubPull } from './club.js';
+import { clubPull } from './club-porte.js';
 import { ouvrirDirect } from './direct-porte.js';
 
 /* ══════════ « J'ai un code » ══════════

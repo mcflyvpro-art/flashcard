@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { I, svg } from '../icones.js';
 import { adm, setAnimate, view } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
@@ -41,7 +42,7 @@ const val = id => ((document.getElementById(id) || {}).value || '').trim();
 /* ---------- dans la fiche d'un établissement ---------- */
 export function blocFacturation(o) {
   const l = adm.licence && adm.licence.org_id === o.id ? adm.licence : null;
-  if (!l) return `<h2 class="ed-h2">Facturation</h2>${vide(I.money, 'Chargement…')}`;
+  if (!l) return `<h2 class="ed-h2">Facturation</h2>${chargeur()}`;
   // dans l'ordre du travail : le devis, puis la facture
   return `${devis() ? dv.blocEditeur(o, l) : ''}<h2 class="ed-h2">Facturation${nonLus(l.echanges, 'folio') ? '<em class="ed-dr chaud">message</em>' : ''}</h2>
     ${pieces(l)}${emettre(o, l)}${coordonnees(l)}${fil(l)}`;
@@ -115,10 +116,10 @@ function fil(l) {
 
 /* ---------- une pièce ---------- */
 export function vuePiece() {
-  if (estDevis(adm.fid)) return devis() ? dv.pieceEditeur() : vide(I.file, 'Chargement…');
+  if (estDevis(adm.fid)) return devis() ? dv.pieceEditeur() : chargeur();
   const f = adm.facture;
   const retour = `<button class="ed-b sm" data-adm="piece-fin">${svg(I.back)}Retour</button>`;
-  if (f === null) return `<div class="ed-barre-piece">${retour}</div>${vide(I.file, 'Chargement…')}`;
+  if (f === null) return `<div class="ed-barre-piece">${retour}</div>${chargeur()}`;
   if (!f) return `<div class="ed-barre-piece">${retour}</div>${vide(I.lock, 'Facture introuvable')}`;
   const liste = adm.licence && adm.licence.factures ? adm.licence.factures : [f], e = etatFacture(f, liste);
   const facture = f.genre === 'facture' && !f.avoir_numero;
@@ -138,7 +139,7 @@ const VENDEUR = [['raison_sociale', 'Raison sociale ou nom'], ['forme', 'Forme (
 
 export function vueEntreprise() {
   const v = adm.vendeur;
-  if (!v) return vide(I.build, 'Chargement…');
+  if (!v) return chargeur();
   return `<div class="ed-fiche ed-entreprise"><div class="ed-qui">
       <div><b title="Ce que chaque facture imprime ; une facture déjà émise garde ce qu’elle disait">Mon entreprise</b></div></div>
       <form id="edvendeur" class="ed-grille-f" autocomplete="off">

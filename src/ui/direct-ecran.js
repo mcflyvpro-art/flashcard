@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import './direct.css';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
@@ -235,7 +236,7 @@ const ECRANS = {
 };
 
 function corpsEcran(e) {
-  if (!e) return `${tete(null)}<div class="dx-j"><div class="cc-load"></div></div>`;
+  if (!e) return `${tete(null)}<div class="dx-j">${chargeur()}</div>`;
   if (e.etat === 'absent' || e.etat === 'exclu') return absent(e);
   return (ECRANS[e.hote ? 'hote' : 'joueur'][e.etat] || absent)(e);
 }

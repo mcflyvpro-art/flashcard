@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { I, svg } from '../icones.js';
 import { adm, ref, setAnimate, view } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
@@ -147,7 +148,7 @@ export function blocEditeur(o, l) {
 export function pieceEditeur() {
   const d = adm.devis;
   const retour = `<button class="ed-b sm" data-adm="piece-fin">${svg(I.back)}Retour</button>`;
-  if (d === null || d === undefined) return `<div class="ed-barre-piece">${retour}</div>${vide(I.file, 'Chargement…')}`;
+  if (d === null || d === undefined) return `<div class="ed-barre-piece">${retour}</div>${chargeur()}`;
   if (!d) return `<div class="ed-barre-piece">${retour}</div>${vide(I.lock, 'Devis introuvable')}`;
   const e = etatDevis(d), g = gestesEditeur(d), o = (adm.orgs || []).find(x => x.id === d.org_id) || {};
   const c = courrielDevis({ devis: d, etab: o.name, contact: o.contact_nom, enLigne: !!o.refs });
@@ -180,7 +181,7 @@ export function pieceReferent() {
       ${e ? `<em class="rf-etat ${e.k}">${e.t}</em>` : ''}
       ${d && d.facture_id ? `<button class="rf-b sm" data-rf="lic-piece" data-id="${esc(d.facture_id)}">${svg(I.file)}Facture ${esc(d.facture_numero || '')}</button>` : ''}
       <button class="rf-b pri" data-rf="imprimer">${svg(I.file)}Imprimer ou PDF</button></div>`;
-  if (d === null || d === undefined) return barre() + vide(I.file, 'Chargement…');
+  if (d === null || d === undefined) return barre() + chargeur();
   if (!d) return barre() + vide(I.lock, 'Ce devis n’est pas à toi');
   const repondre = peutRepondre(d) ? `<form id="dvaccord" class="dv-repondre" autocomplete="off">
       <b>Bon pour accord</b>

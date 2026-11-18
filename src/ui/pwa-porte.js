@@ -1,6 +1,6 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
-import { I, svg } from '../icones.js';
 import { demoEtab, view } from '../data/etat.js';
 import { plateforme, porte } from '../plateformes.js';
 import { estArme, installee } from './routeur.js';
@@ -43,7 +43,7 @@ const charger = () => charge || (charge = import('./pwa.js').then(m => (mod = m)
 
 export function porteView() {
   if (mod) return mod.pwaEcran();
-  if (!$.querySelector('.pub')) $.innerHTML = `<div class="pub"><div class="pub-attente">${svg(I.down)}</div></div>`;
+  if (!$.querySelector('.pub')) $.innerHTML = `<div class="pub"><div class="pub-attente">${chargeur()}</div></div>`;
   charger().then(() => { if (aInstaller()) render(); }).catch(() => {
     /* hors ligne au premier passage : le geste, sans son animation */
     if (aInstaller()) $.innerHTML = `<div class="pub"><div class="pub-attente"><p style="max-width:280px;text-align:center">

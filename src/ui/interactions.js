@@ -35,10 +35,9 @@ import { ouvrirPseudo } from './pseudo-porte.js';
 import { ouvrirPlus } from './plus-porte.js';
 import { tiennent } from './bridage.js';
 import { ouvrirSauvegarde } from './sauvegarde-porte.js';
-import {
-  dictate, fail, nextQ, norm, pickQuiz, startQuiz, submit
-} from './quiz.js';
-import { poserMatiere, resetComp } from './creation.js';
+import { dictate, fail, nextQ, pickQuiz, startQuiz, submit } from './quiz-porte.js';
+import { norm } from '../normaliser.js';
+import { poserMatiere, resetComp } from './creation-porte.js';
 import { cb, cf, openSubject } from './reglages-corbeille.js';
 import {
   answerFriend, askFriend, friendsPull, mailPull, openMail,

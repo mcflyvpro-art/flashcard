@@ -14,7 +14,7 @@ import {
 import { deDevoir } from '../file.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
 import { closeMenu, paintMenu } from '../ui/menus-a.js';
-import { norm } from '../ui/quiz.js';
+import { norm } from '../normaliser.js';
 import { retenir } from './memoire-ecrans.js';
 
 /* ---------- corbeille ----------

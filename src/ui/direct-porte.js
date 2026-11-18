@@ -1,6 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
-import { I, svg } from '../icones.js';
+import { I } from '../icones.js';
 import { defi, directNeuf, setDirect, view } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { rejoindreSalle } from '../core/cercle.js';
@@ -34,7 +35,7 @@ export function ouvrirDirect(id) {
 
 export function directView() {
   if (ecran) return ecran.directEcran();
-  $.innerHTML = `<div class="dx-porte">${svg(I.bolt)}<p>Ouverture de la partie…</p></div>`;
+  $.innerHTML = `<div class="page">${chargeur()}</div>`;
   chargerDirect().then(() => { if (view.name === 'direct') render(); }).catch(() => {
     toast(I.x, 'La partie n’a pas pu s’ouvrir : vérifie ta connexion');
     go('commu');

@@ -15,7 +15,7 @@ import {
   DEFMETA, deck, enqueue, esc, live, metaOf, pushHist, save, scheduleFlush, sty, subj, uid
 } from '../core/coeur-sync.js';
 import { beep, bumpToday, simpleMode, toast } from './import-cartes.js';
-import { norm } from './quiz.js';
+import { norm } from '../normaliser.js';
 import { avancer } from './mouvement.js';
 import { noterLocale } from '../core/ecran-groupe.js';
 

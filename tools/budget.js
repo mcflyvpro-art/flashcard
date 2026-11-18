@@ -178,6 +178,20 @@ import { gzipSync } from 'node:zlib';
 import { SOUS_PAGES } from '../src/site/pages.js';
 
 // octets gzip, tous fichiers de la part cumulés
+// 2026-11-18 : les écrans sortis du démarrage (`creation-…`, `quiz-…`,
+// `club-…`, `defi-nouveau-…`, `cercle-feuilles-…` : l'écran de création, la
+// récitation, la page d'un club, « Nouveau défi », les feuilles du cercle) ont
+// leur plafond, 20 Ko JS et 6 Ko CSS, préchauffés au calme après l'accueil ;
+// le démarrage passe de 127,3 à 115 Ko JS et de 24,9 à 22,2 Ko CSS. Le même
+// jour, le suivi d'une classe (src/classe-suivi.js : tris, filtres, synthèses,
+// listes collées — l'espace professeur et la console du référent) quitte
+// src/classe.js et le démarrage (2,5 Ko) : « à la demande » passe de 72 à
+// 75 Ko. Et le site ne partage plus rien avec l'app (copiesDuSite de
+// vite.config.js) : la page d'accueil passe de 52 à 46,7 Ko, les autres
+// pages de 41,1 à 35,9, le moteur de 53,1 à 47,9 — les plafonds restent.
+// Au bout du compte, 112,2 Ko JS et 22,5 Ko CSS au démarrage (le chargeur
+// animé compris) : les plafonds du démarrage descendent de 128 à 120 Ko JS
+// et de 25 à 24 Ko CSS, pour que ce qui a été gagné ne se reperde pas.
 // 2026-11-18 : la sauvegarde (`sauvegarde-…` : ui/sauvegarde.js, son noyau
 // core/sauvegarde.js et src/sauvegarde.js — exporter, restaurer, la limite de
 // l'offre dite avant d'écrire) a son plafond, 4 Ko JS et 1 Ko CSS ; la feuille
@@ -219,9 +233,9 @@ import { SOUS_PAGES } from '../src/site/pages.js';
 // fichiers `natif-…` (nomDuMorceau de vite.config.js). Le démarrage, lui,
 // ne gagne que la ligne qui les appelle — et perd l'achat (core/vente.js,
 // sorti de core/abonnement.js avec l'écran Mirandola+) : 127,6 Ko.
-const BUDGET = { js: 128 * 1024, css: 25 * 1024, jsDemande: 72 * 1024, cssDemande: 27 * 1024, jsDemo: 33 * 1024, cssDemo: 3 * 1024,
+const BUDGET = { js: 120 * 1024, css: 24 * 1024, jsDemande: 75 * 1024, cssDemande: 27 * 1024, jsDemo: 33 * 1024, cssDemo: 3 * 1024,
   jsGestion: 34.5 * 1024, cssGestion: 8 * 1024, jsPorte: 10 * 1024, cssPorte: 5 * 1024, jsPlus: 10 * 1024, cssPlus: 4 * 1024,
-  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, jsRetouche: 5 * 1024, cssRetouche: 1024, jsDevis: 6 * 1024, cssDevis: 1024, jsBarre: 3 * 1024, cssBarre: 1024, jsNatif: 20 * 1024, cssNatif: 1024, jsGeste: 3 * 1024, cssGeste: 1024, jsTirer: 2 * 1024, cssTirer: 1024, jsBalayage: 5 * 1024, cssBalayage: 1024, jsSauvegarde: 4 * 1024, cssSauvegarde: 1024, site: 52 * 1024, pages: 41.5 * 1024, moteur: 56 * 1024 };
+  jsPremiers: 22 * 1024, cssPremiers: 6 * 1024, jsSecurite: 12 * 1024, cssSecurite: 4 * 1024, jsCode: 8 * 1024, cssCode: 1024, jsInfini: 14 * 1024, cssInfini: 4 * 1024, jsDefis: 4 * 1024, cssDefis: 1024, jsRetouche: 5 * 1024, cssRetouche: 1024, jsDevis: 6 * 1024, cssDevis: 1024, jsBarre: 3 * 1024, cssBarre: 1024, jsNatif: 20 * 1024, cssNatif: 1024, jsGeste: 3 * 1024, cssGeste: 1024, jsTirer: 2 * 1024, cssTirer: 1024, jsBalayage: 5 * 1024, cssBalayage: 1024, jsSauvegarde: 4 * 1024, cssSauvegarde: 1024, jsEcrans: 20 * 1024, cssEcrans: 6 * 1024, site: 52 * 1024, pages: 41.5 * 1024, moteur: 56 * 1024 };
 const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS à la demande', cssDemande: 'CSS à la demande',
   jsDemo: 'JS de la démo sans compte', cssDemo: 'CSS de la démo sans compte',
   jsGestion: 'JS des consoles (référent, éditeur)', cssGestion: 'CSS des consoles (référent, éditeur)',
@@ -238,6 +252,7 @@ const NOMS = { js: 'JS au démarrage', css: 'CSS au démarrage', jsDemande: 'JS 
   jsTirer: 'JS de « tirer pour rafraîchir »', cssTirer: 'CSS de « tirer pour rafraîchir »',
   jsBalayage: 'JS du balayage entre onglets', cssBalayage: 'CSS du balayage entre onglets',
   jsSauvegarde: 'JS de la sauvegarde', cssSauvegarde: 'CSS de la sauvegarde',
+  jsEcrans: 'JS des écrans à la demande (création, récitation, club, défi, feuilles du cercle)', cssEcrans: 'CSS des écrans à la demande',
   jsNatif: 'JS de l’app des magasins (pont natif, greffons)', cssNatif: 'CSS de l’app des magasins',
   jsDevis: 'JS des devis', cssDevis: 'CSS des devis',
   site: 'Page d’accueil (HTML + CSS + JS)', pages: 'Autres pages du site, la plus lourde (HTML + CSS + JS)',
@@ -253,7 +268,7 @@ const auDemarrage = f => app.includes('/assets/' + f);
 const duSite = f => site.includes('/assets/' + f);
 const dUnePage = f => autres.some(x => x.html.includes('/assets/' + f));
 const total = { js: 0, css: 0, jsDemande: 0, cssDemande: 0, jsDemo: 0, cssDemo: 0, jsGestion: 0, cssGestion: 0,
-  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, jsSecurite: 0, cssSecurite: 0, jsCode: 0, cssCode: 0, jsInfini: 0, cssInfini: 0, jsDefis: 0, cssDefis: 0, jsRetouche: 0, cssRetouche: 0, jsDevis: 0, cssDevis: 0, jsBarre: 0, cssBarre: 0, jsNatif: 0, cssNatif: 0, jsGeste: 0, cssGeste: 0, jsTirer: 0, cssTirer: 0, jsBalayage: 0, cssBalayage: 0, jsSauvegarde: 0, cssSauvegarde: 0, site: gz(site), pages: 0, moteur: 0 };
+  jsPorte: 0, cssPorte: 0, jsPlus: 0, cssPlus: 0, jsPremiers: 0, cssPremiers: 0, jsSecurite: 0, cssSecurite: 0, jsCode: 0, cssCode: 0, jsInfini: 0, cssInfini: 0, jsDefis: 0, cssDefis: 0, jsRetouche: 0, cssRetouche: 0, jsDevis: 0, cssDevis: 0, jsBarre: 0, cssBarre: 0, jsNatif: 0, cssNatif: 0, jsGeste: 0, cssGeste: 0, jsTirer: 0, cssTirer: 0, jsBalayage: 0, cssBalayage: 0, jsSauvegarde: 0, cssSauvegarde: 0, jsEcrans: 0, cssEcrans: 0, site: gz(site), pages: 0, moteur: 0 };
 const parPage = Object.fromEntries(autres.map(x => [x.nom, gz(x.html)]));
 for (const f of readdirSync(dir)) {
   const ext = f.split('.').pop();
@@ -266,7 +281,8 @@ for (const f of readdirSync(dir)) {
     : /^plus-/.test(f) ? ext + 'Plus' : /^(ref-|admin-|facture-|documents-)/.test(f) ? ext + 'Gestion'
       : /^(tuto|bienvenue)-/.test(f) ? ext + 'Premiers' : /^(verif|securite|compte-auth)-/.test(f) ? ext + 'Securite'
         : /^(code-entree|etablissement)-/.test(f) ? ext + 'Code' : /^(examen|lumiere)-/.test(f) ? ext + 'Infini' : /^duel-jeu-/.test(f) ? ext + 'Defis'
-          : /^retouche-/.test(f) ? ext + 'Retouche' : /^(devis|tarifs)-/.test(f) ? ext + 'Devis' : /^barre-/.test(f) ? ext + 'Barre' : /^natif-/.test(f) ? ext + 'Natif' : /^geste-/.test(f) ? ext + 'Geste' : /^tirer-/.test(f) ? ext + 'Tirer' : /^balayage-/.test(f) ? ext + 'Balayage' : /^sauvegarde-/.test(f) ? ext + 'Sauvegarde' : ext + 'Demande';
+          : /^retouche-/.test(f) ? ext + 'Retouche' : /^(devis|tarifs)-/.test(f) ? ext + 'Devis' : /^barre-/.test(f) ? ext + 'Barre' : /^natif-/.test(f) ? ext + 'Natif' : /^geste-/.test(f) ? ext + 'Geste' : /^tirer-/.test(f) ? ext + 'Tirer' : /^balayage-/.test(f) ? ext + 'Balayage' : /^sauvegarde-/.test(f) ? ext + 'Sauvegarde'
+            : /^(creation|quiz|club|defi-nouveau|cercle-feuilles)-/.test(f) ? ext + 'Ecrans' : ext + 'Demande';
   total[part] += n;
 }
 total.moteur = parPage['moteur.html'] || 0;

@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import {
@@ -129,7 +130,7 @@ export const parDefi = l => (l || []).slice().sort((a, b) => (myScore(a.id) ? 1 
 
 function defisHtml() {
   const l = duels.list;
-  if (!l) return `<section class="cc-sec"><h2 class="cc-h">Défis</h2><div class="cc-load"></div></section>`;
+  if (!l) return `<section class="cc-sec"><h2 class="cc-h">Défis</h2>${chargeur(true)}</section>`;
   const tri = parDefi(l), max = cercle.tous ? 40 : 4;
   return `<section class="cc-sec"><div class="cc-h"><h2>Défis</h2>${
     tri.length > 4 ? `<button class="cc-lnk" data-cc="tous">${cercle.tous ? 'Moins' : 'Tout voir · ' + tri.length}</button>` : ''}</div>
@@ -149,7 +150,7 @@ export function clubCarte(g) {
 
 function clubsHtml() {
   const l = cercle.clubs;
-  if (l === null) return `<section class="cc-sec"><h2 class="cc-h">Mes clubs</h2><div class="cc-load"></div></section>`;
+  if (l === null) return `<section class="cc-sec"><h2 class="cc-h">Mes clubs</h2>${chargeur(true)}</section>`;
   if (!l.length) return `<section class="cc-sec"><h2 class="cc-h">Mes clubs</h2>
     <div class="cc-nouveau"><i class="jt groupe xl" style="--k:var(--ink)">${svg(I.owl)}</i>
       <div class="cc-nv-b"><button class="cc-btn pri" data-cc="club-creer">${svg(I.plus)}Créer un club</button>
@@ -191,7 +192,7 @@ export function ouvrirProfil(id, o = {}) {
 }
 export function profilView() {
   if (profilMorceau) return profilMorceau.profilEcran();
-  $.innerHTML = `<div class="page cc"><div class="cc-load"></div></div>`;
+  $.innerHTML = `<div class="page cc">${chargeur()}</div>`;
   import('./profil.js').then(m => { profilMorceau = m; if (view.name === 'profil') render(); })
     .catch(() => toast(I.x, 'Le profil n’a pas pu s’ouvrir : vérifie ta connexion'));
 }
@@ -201,7 +202,7 @@ document.addEventListener('click', e => {
 });
 
 function classementCourt() {
-  if (!board.rows) return `<div class="cc-load"></div>`;
+  if (!board.rows) return `${chargeur(true)}`;
   const l = classement(board.rows, 'n', auth.uid);
   if (l.length < 2) return `<p class="cc-vide">${svg(I.trophy)}Ajoute des amis</p>`;
   const top = l.slice(0, 5), moi = l.find(r => r.moi);
@@ -263,7 +264,7 @@ function demandesHtml() {
 function mesAmisHtml(eleve) {
   const l = mates || [];
   const pages = new Map((board.rows || []).map(r => [r.uid, +r.n]));
-  if (!friends) return `<div class="cc-load"></div>`;
+  if (!friends) return `${chargeur(true)}`;
   if (!l.length) return `<p class="cc-vide">${svg(I.users)}Personne pour l’instant</p>`;
   return `<div class="cc-list">${l.map(f => `<button class="cc-ligne" data-mate="${esc(f.id)}">${avatar(f.id, f.handle || f.name)}
     <span class="cc-ligne-t"><b>${esc(f.name || '')}</b><i>${f.handle ? '@' + esc(f.handle) : ''}</i></span>
@@ -273,7 +274,7 @@ function mesAmisHtml(eleve) {
 function classementLong() {
   const seg = `<div class="seg" id="bRange">${Object.entries(BRANGE).map(([k, n]) =>
     `<button class="${board.range === +k ? 'on' : ''}" data-brange="${k}">${n}</button>`).join('')}</div>`;
-  if (!board.rows) return seg + `<div class="cc-load"></div>`;
+  if (!board.rows) return seg + `${chargeur(true)}`;
   const l = classement(board.rows, 'n', auth.uid);
   if (!l.length) return seg + `<p class="cc-vide">${svg(I.trophy)}Aucune révision</p>`;
   return seg + `<div class="cc-rank">${l.map(r => rangLigne(r, shortWho(r.who) || 'Membre',

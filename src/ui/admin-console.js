@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { ACTIONS_STRIPE } from './admin-stripe.js';
 import { ACTIONS_SANTE, vueSante } from './admin-sante.js';
 import { $ } from '../racine.js';
@@ -84,7 +85,7 @@ function ligneOrg(o, auj) {
 
 function listeSuivi() {
   const auj = iso(new Date()), tout = adm.orgs;
-  if (!tout) return vide(I.build, 'Chargement…');
+  if (!tout) return chargeur();
   const n = compterEtapes(tout), l = trierSuivi(filtrerSuivi(tout, adm.etape, adm.q), auj);
   return `<div class="ed-filtres">
       <div class="ed-puces">${['tous', ...ORDRE_ETAPES].map(k => `<button class="${adm.etape === k ? 'on' : ''}"
@@ -259,7 +260,7 @@ function ligneCompte(a) {
 }
 
 function listeComptes() {
-  if (!accounts) return vide(I.users, 'Chargement…');
+  if (!accounts) return chargeur();
   const n = r => accounts.filter(a => a.role === r).length, l = comptesVus(), montres = l.slice(0, 300);
   return `${demandesProfs()}<div class="ed-filtres">
       <div class="ed-puces">${['', 'eleve', 'prof', 'ref', 'admin'].map(k => `<button class="${adm.crole === k ? 'on' : ''}"

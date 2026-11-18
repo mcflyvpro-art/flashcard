@@ -10,7 +10,7 @@ import { statsPull } from '../core/ecran-groupe.js';
 import { toast } from './import-cartes.js';
 import { closeMenu } from './menus-a.js';
 import { mailPull } from '../core/reglages-corbeille.js';
-import { resetComp } from './creation.js';
+import { resetComp } from './creation-porte.js';
 import { ouvrirSecurite } from './securite-porte.js';
 import {
   answerTF, cardOf, fling, isTF, pickMCQ, startStudy, toggleFlip

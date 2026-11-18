@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { auth, db, mailbox, view } from '../data/etat.js';
@@ -66,7 +67,7 @@ export function boiteView() {
     <div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
     <div class="page">
       <div class="top"><div class="hero">Messages</div>${mailbox.n ? `<span class="co-nb">${mailbox.n}</span>` : ''}</div>
-      ${!l ? `<div class="empty">${svg(I.mail)}<p>${mailbox.err ? 'Boîte indisponible' : 'Chargement…'}</p></div>`
+      ${!l ? (mailbox.err ? `<div class="empty">${svg(I.mail)}<p>Boîte indisponible</p></div>` : chargeur())
         : !l.length ? `<div class="empty">${svg(I.mail)}<p><b>Aucun message</b></p></div>`
         : `<div class="co-boite">${l.map(ligne).join('')}</div>`}
     </div>`;

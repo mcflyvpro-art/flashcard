@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { cercle, friends, view } from '../data/etat.js';
@@ -107,7 +108,7 @@ function gestes(id, p) {
 export function profilEcran() {
   const id = view.id, p = cercle.profils[id];
   const barre = `<div class="bar"><button class="ic" data-lp="retour" aria-label="Retour">${svg(I.back)}</button><div style="flex:1"></div></div>`;
-  if (!p) { $.innerHTML = barre + '<div class="page lp"><div class="cc-load"></div></div>'; return; }
+  if (!p) { $.innerHTML = barre + `<div class="page lp">${chargeur()}</div>`; return; }
   if (p.statut !== 'ok' && p.statut !== 'prive') {
     $.innerHTML = barre + `<div class="page lp"><div class="empty">${svg(I.user)}<p>${p.statut === 'erreur'
       ? 'Profil indisponible hors ligne' : 'Ce profil n’est pas visible'}</p></div></div>`;

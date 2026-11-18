@@ -1,12 +1,14 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { prof } from '../data/etat.js';
 import { go } from './bibliotheque.js';
+import { formatCode, iso, auJour, jourCourt } from '../classe.js';
 import {
-  FILTRES, TRIS, correspond, etatDevoir, etatEleve, filtrerEleves, finTexte,
-  formatCode, grilleMois, iso, auJour, jourCourt, MOIS, parJour, pc, syntheseClasse, trierEleves
-} from '../classe.js';
+  FILTRES, TRIS, correspond, etatDevoir, etatEleve, filtrerEleves, finTexte, grilleMois, MOIS,
+  parJour, pc, syntheseClasse, trierEleves
+} from '../classe-suivi.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import {
   avatar, btn, chargement, classeOuverte, couleur, kpi, metaClasse, navProf, pastilleClasse, pill
@@ -308,7 +310,7 @@ const ONGLETS = { eleves: elevesOnglet, demandes: demandesOnglet, devoirs: devoi
 export function profClasseView() {
   const c = classeOuverte();
   /* ouverte par son adresse, la classe arrive avec la liste : on attend */
-  if (!c && !prof.classes) { $.innerHTML = '<div class="pf"><main class="pf-main"><div class="pf-load"><i></i><i></i><i></i></div></main></div>'; return; }
+  if (!c && !prof.classes) { $.innerHTML = `<div class="pf"><main class="pf-main">${chargeur()}</main></div>`; return; }
   if (!c) return go('prof');
   const s = syntheseClasse(prof.roster || []);
   $.innerHTML = `<div class="pf">${navProf('classe')}<main class="pf-main">

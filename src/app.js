@@ -24,7 +24,7 @@ import './ui/menus-a.js';
 import './ui/menus-b.js';
 import './ui/menus-c.js';
 import './ui/revision.js';
-import './ui/quiz.js';
+// ui/quiz.js (la récitation) arrive à la demande par sa porte, ui/quiz-porte.js (2026-11-18)
 import './ui/interactions.js';
 import './ui/raccourcis.js';
 import './ui/onboarding.js';

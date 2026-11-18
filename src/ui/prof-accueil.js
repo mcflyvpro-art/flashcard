@@ -1,11 +1,10 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { prefs, prof } from '../data/etat.js';
-import {
-  JOURS, MOIS, aTraiter, auJour, echeance, grilleMois, iso,
-  jourLong, parJour, rangerClasses, syntheseAccueil
-} from '../classe.js';
+import { auJour, echeance, iso, rangerClasses } from '../classe.js';
+import { JOURS, MOIS, aTraiter, grilleMois, jourLong, parJour, syntheseAccueil } from '../classe-suivi.js';
 import { avatar as jeton, blason, couleurClasse } from './jeton.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import { codeBande, etab } from './prof-etab.js';
@@ -34,7 +33,7 @@ export const kpi = (ic, val, lab, ton, act) => `<${act ? `button data-pf="${act}
 export const btn = (act, ic, lab, cls, extra) =>
   `<button class="pf-btn ${cls || ''}" data-pf="${act}" ${extra || ''}>${ic ? svg(ic) : ''}${lab ? `<span>${lab}</span>` : ''}</button>`;
 
-export const chargement = () => `<div class="pf-load"><i></i><i></i><i></i></div>`;
+export const chargement = () => chargeur(true);
 
 export const tete = (titre, sous, actions) => `<header class="pf-h">
   <div><h1>${titre}</h1>${sous ? `<p>${sous}</p>` : ''}</div>

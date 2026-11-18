@@ -10,7 +10,7 @@ import {
   SB, esc, refreshToken, save, scheduleFlush
 } from '../core/coeur-sync.js';
 import { fsrsTune } from '../core/carte-media.js';
-import { norm } from './quiz.js';
+import { norm } from '../normaliser.js';
 import { debutJour, estNeuve } from '../file.js';
 import { moteurLite, aInfini } from './bridage.js';
 import { reglageExamen } from '../examen.js';

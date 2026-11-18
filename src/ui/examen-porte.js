@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { I, svg } from '../icones.js';
 import { ia, offre, setMenu, view } from '../data/etat.js';
 import { examensRestants } from '../offres.js';
@@ -67,7 +68,7 @@ export async function ouvrirExamenBlanc(id) {
 
 export function examenView() {
   if (blancPret) return blancPret.ecran();
-  $.innerHTML = '<div class="page"><div class="empty"></div></div>';
+  $.innerHTML = `<div class="page">${chargeur()}</div>`;
   chargerBlanc().then(m => { blancPret = m; if (view.name === 'examen') render(); })
     .catch(() => { blanc = null; toast(I.x, 'L’examen blanc n’a pas pu s’ouvrir : vérifie ta connexion'); });
 }

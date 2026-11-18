@@ -30,7 +30,7 @@ import {
 import { clickPartage, ouvrirPartage } from './partage-porte.js';
 import { duelStart } from './defis.js';
 import { duelDrop } from '../core/defis.js';
-import { ouvrirDefi } from './defi-nouveau.js';
+import { ouvrirDefi } from './defi-porte.js';
 import {
   cloneDeck, fnrApply, mergeDecks, savePrefs, splitDeck, spreadBacklog, toast
 } from './import-cartes.js';

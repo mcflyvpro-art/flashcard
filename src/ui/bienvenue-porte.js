@@ -1,6 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
-import { I, svg } from '../icones.js';
+import { I } from '../icones.js';
 import { view } from '../data/etat.js';
 import { render } from './bibliotheque.js';
 import { toast } from './import-cartes.js';
@@ -19,7 +20,7 @@ function charger() {
 
 export function bienvenueView() {
   if (mod) return mod.bienvenueEcran();
-  $.innerHTML = `<div class="page"><div class="empty">${svg(I.spark)}</div></div>`;
+  $.innerHTML = `<div class="page">${chargeur()}</div>`;
   charger().then(() => { if (view.name === 'bienvenue') render(); })
     .catch(() => toast(I.x, 'L’accueil n’a pas pu s’ouvrir : vérifie ta connexion'));
 }

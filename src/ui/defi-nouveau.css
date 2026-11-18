@@ -1,0 +1,52 @@
+/* « Nouveau défi » (ui/defi-nouveau.js), chargé avec lui (ui/defi-porte.js, 2026-11-18) : sorti de app.css. Préfixe dn-. */
+.dn-main{display:flex;flex-direction:column;gap:22px;min-width:0}
+.dn-cote{display:contents}
+.dn-step h2{display:flex;align-items:center;gap:10px;margin:0 2px 12px;font-size:17px;font-weight:650;letter-spacing:-.3px}
+.dn-step h2 i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;
+  background:var(--ink);color:#fff;font-style:normal;font-size:13px;font-weight:700}
+.dn-ou{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.dn-choix,.dn-mode,.dn-jeu{display:flex;align-items:center;gap:11px;min-width:0;padding:12px;border-radius:14px;
+  background:var(--card);box-shadow:var(--edge);text-align:left;transition:box-shadow .15s,opacity .15s}
+.dn-choix.on,.dn-mode.on,.dn-jeu.on{box-shadow:inset 0 0 0 2px var(--ink)}
+.dn-choix b,.dn-mode b,.dn-jeu b{display:block;min-width:0;font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dn-choix .jt{--s:36px}
+.dn-cherche{display:flex;align-items:center;gap:9px;height:44px;padding:0 13px;margin-bottom:8px;border-radius:12px;
+  background:var(--card);box-shadow:var(--edge)}
+.dn-cherche:focus-within{box-shadow:var(--edge),var(--ring)}
+.dn-cherche svg{width:17px;height:17px;color:var(--soft)}
+.dn-cherche input{flex:1;min-width:0;height:100%;font-size:15px}
+.dn-livres{display:flex;flex-direction:column;max-height:50vh;overflow:auto;border-radius:14px;
+  background:var(--card);box-shadow:var(--edge)}
+.dn-livres > * + *{border-top:1px solid var(--hair)}
+.dn-livre{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;text-align:left}
+.dn-livre span{flex:1;min-width:0}
+.dn-livre b{display:block;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.dn-livre i{display:block;font-style:normal;font-size:12.5px;color:var(--soft)}
+.dn-livre > svg{width:18px;height:18px;flex:none}
+.dn-livre.on{background:color-mix(in srgb,var(--ink) 5%,var(--card))}
+.dn-livre[disabled],.dn-mode[disabled]{opacity:.42;cursor:default}
+.dn-dot{width:10px;height:10px;border-radius:50%;background:var(--d,var(--line));flex:none}
+.dn-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dn-mode{padding:14px}
+.dn-mode > svg{width:22px;height:22px;flex:none}
+.dn-jeux{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.dn-jeu{flex-direction:column;align-items:center;gap:8px;padding:14px 8px;text-align:center}
+.dn-jeu > svg{width:24px;height:24px}
+.dn-jeu b{white-space:normal;font-size:13.5px;line-height:1.2}
+.dn-reglages{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.dn-reglage{display:flex;align-items:center;gap:10px}
+.dn-reglage > svg{width:20px;height:20px;flex:none;color:var(--soft)}
+.dn-reglage .dn-seg{flex:1}
+.dn-seg{display:flex;gap:3px;padding:3px;border-radius:12px;background:var(--bg2)}
+.dn-seg button{flex:1;height:36px;border-radius:9px;font-size:14px;font-weight:650;color:var(--soft);
+  font-variant-numeric:tabular-nums;transition:background .15s,color .15s}
+.dn-seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--s1),var(--edge)}
+.dn-go{position:sticky;bottom:calc(14px + env(safe-area-inset-bottom));z-index:20;box-shadow:0 8px 24px rgba(29,28,25,.18)}
+.dn-go[disabled]{opacity:1;background:#C9C6BE;box-shadow:none}
+@media (min-width:900px){
+  .dn-cote{display:flex;flex-direction:column;gap:14px;position:sticky;top:24px}
+  .dn-ou{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .dn-livres{max-height:min(60vh,560px)}
+  .dn-go{position:relative;bottom:auto;box-shadow:none}
+  .dn-go[disabled]{opacity:.28;background:var(--ink)}
+}

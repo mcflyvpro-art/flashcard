@@ -1,10 +1,12 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { duels, eleve, view } from '../data/etat.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import { eleveClassesPull, messageErreur, quitterClasse } from '../core/eleve-classes.js';
 import { iso, jourCourt } from '../classe.js';
+
 import { go } from './bibliotheque.js';
 import { defiLigne, ident, parDefi } from './cercle.js';
 import { devoirLigne } from './eleve-classes.js';
@@ -76,7 +78,7 @@ function pied(c, f) {
 export function classeEcran() {
   const c = view.id, f = eleve.fiches[c];
   const barre = `<div class="bar"><button class="ic" data-ec="retour" aria-label="Retour">${svg(I.back)}</button><div style="flex:1"></div></div>`;
-  if (!f) { $.innerHTML = barre + '<div class="page el-page"><div class="el-carte el-load"></div></div>'; return; }
+  if (!f) { $.innerHTML = barre + `<div class="page el-page">${chargeur()}</div>`; return; }
   if (f.statut !== 'inscrit') {
     $.innerHTML = barre + `<div class="page el-page"><div class="empty">${svg(I.school)}<p>${f.statut === 'attente'
       ? 'En attente de ton professeur' : f.statut === 'erreur' ? 'Classe indisponible hors ligne' : 'Tu n’es plus dans cette classe'}</p></div></div>`;

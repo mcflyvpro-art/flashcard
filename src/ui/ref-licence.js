@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { I, svg } from '../icones.js';
 import { ref, setAnimate, view } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
@@ -45,7 +46,7 @@ export function licence() {
   if (ref.open) return vuePiece();
   if (ref.doc) return vueDocument();
   const l = ref.licence;
-  if (l === null) return vide(I.build, 'Chargement…');
+  if (l === null) return chargeur();
   if (!l) return vide(I.lock, 'Réservé au référent de l’établissement');
   if ((l.devis || []).length && !dv) chargerDevis().then(repeint).catch(() => {});
   return `<div class="rf-ltab">
@@ -121,14 +122,14 @@ function tuileFacturation(l) {
 
 /* ---------- une pièce ---------- */
 function vuePiece() {
-  if (estDevis(ref.open)) return dv ? dv.pieceReferent() : vide(I.file, 'Chargement…');
+  if (estDevis(ref.open)) return dv ? dv.pieceReferent() : chargeur();
   const f = ref.facture, l = ref.licence || {};
   const barre = e => `<div class="rf-barre-piece">
       <button class="rf-b sm" data-rf="lic-retour">${svg(I.back)}Licence</button>
       ${e ? `<em class="rf-etat ${e.k}">${e.t}</em>` : ''}
       ${f && f.avoir_numero ? `<em class="rf-etat annulee">Annulée par l’avoir ${esc(f.avoir_numero)}</em>` : ''}
       <button class="rf-b pri" data-rf="imprimer">${svg(I.file)}Imprimer ou PDF</button></div>`;
-  if (f === null) return barre() + vide(I.file, 'Chargement…');
+  if (f === null) return barre() + chargeur();
   if (!f) return barre() + vide(I.lock, 'Cette facture n’est pas à toi');
   return `${barre(etatFacture(f, l.factures || []))}<div class="rf-impression-f">${factureHtml(f)}</div>`;
 }
@@ -139,7 +140,7 @@ function vueDocument() {
       <button class="rf-b pri" data-rf="imprimer">${svg(I.file)}Imprimer ou PDF</button></div>`;
   if (!documents) {
     chargerDocuments().then(repeint).catch(() => toast(I.x, 'Le document n’a pas pu s’ouvrir : vérifie ta connexion'));
-    return barre + vide(I.file, 'Chargement…');
+    return barre + chargeur();
   }
   return `${barre}<div class="rf-impression-f">${documents.documentHtml(ref.doc, ref.licence || {})}</div>`;
 }

@@ -15,7 +15,8 @@ import { cle, saisie, valide } from '../src/pseudo.js';
 import { parseText } from '../src/parseur.js';
 import { prixCampus } from '../src/tarifs.js';
 import { nettoyer, pileCourte, empreinte, rapport, MAX_MESSAGE, MAX_PILE } from '../src/erreurs.js';
-import { codeDepuisTexte, formatCode, lireListeEleves, ALPHABET, LONGUEUR_CODE } from '../src/classe.js';
+import { codeDepuisTexte, formatCode, ALPHABET, LONGUEUR_CODE } from '../src/classe.js';
+import { lireListeEleves } from '../src/classe-suivi.js';
 import { qrSvg } from '../src/qr.js';
 
 const graine = process.env.FC_GRAINE ? { seed: +process.env.FC_GRAINE } : {};

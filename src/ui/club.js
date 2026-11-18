@@ -1,17 +1,19 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
-import { auth, cercle, duels, view } from '../data/etat.js';
+import { auth, cercle, duels } from '../data/etat.js';
 import { esc } from '../core/coeur-sync.js';
-import { clubsPull, membresPull, sallesPull, termineesPull } from '../core/cercle.js';
+// relire un club et savoir lequel est ouvert : dans sa porte, qui sert aussi sans la page
+import { clubOuvert } from './club-porte.js';
 import { classement, codeClubLisible } from '../club.js';
 import { medailleHtml } from './jeton.js';
 import { jetonGroupe } from '../jeton.js';
 import { hlp } from './connexion.js';
 import { JEUX, placeTexte } from '../defi.js';
 import { avatar, defiLigne, enDirectHtml, iconeClub, ident, infos, parDefi, rangLigne } from './cercle.js';
-import { duelsPull } from '../core/defis.js';
 import { timeAgo } from './reglages-corbeille.js';
+import './club.css';
 
 /* ══════════ la page d'un club ══════════
    Ce qui fait vivre un club : son identité (emblème, couleur, devise, que
@@ -22,18 +24,6 @@ import { timeAgo } from './reglages-corbeille.js';
 
 export const ONGLETS = { defis: 'Défis', classement: 'Classement', membres: 'Membres' };
 
-export const clubOuvert = () => (cercle.clubs || []).find(g => g.id === view.id);
-
-/* La liste des clubs est relue à chaque ouverture : un club personnalisé
-   ailleurs (sa couleur, son nom, sur un autre appareil) se montre tel qu'il
-   est, pas tel qu'on l'avait gardé (2026-11-16). */
-export function clubPull(id) {
-  clubsPull(cercle.clubs !== null);
-  if (!duels.list) duelsPull();
-  membresPull(id);
-  termineesPull(id, null);
-  sallesPull();
-}
 
 function banniereHtml(g) {
   const n = (cercle.membres[g.id] || []).length || g.membres;
@@ -56,7 +46,7 @@ function defisPane(g) {
   const fin = cercle.terminees[g.id];
   return `<section class="cl-pane" data-pane="defis">
     <h2 class="cc-h">Défis</h2>
-    ${!duels.list ? '<div class="cc-load"></div>' : l.length ? `<div class="cc-list">${l.map(d => defiLigne(d, false)).join('')}</div>`
+    ${!duels.list ? chargeur(true) : l.length ? `<div class="cc-list">${l.map(d => defiLigne(d, false)).join('')}</div>`
       : `<p class="cc-vide">${svg(I.bolt)}Aucun défi</p>`}
     ${fin && fin.length ? `<h2 class="cc-h">Parties</h2><div class="cc-list">${fin.map(p => `
       <div class="cl-partie"><i class="cc-defi-i">${svg(I.podium)}</i>
@@ -69,7 +59,7 @@ function defisPane(g) {
 
 function classementPane(g) {
   const m = cercle.membres[g.id];
-  if (!m) return `<section class="cl-pane" data-pane="classement"><h2 class="cc-h">Classement</h2><div class="cc-load"></div></section>`;
+  if (!m) return `<section class="cl-pane" data-pane="classement"><h2 class="cc-h">Classement</h2>${chargeur(true)}</section>`;
   const l = classement(m, 'pages', auth.uid);
   const champion = l[0] && l[0].pages ? l[0] : null;
   return `<section class="cl-pane" data-pane="classement">
@@ -86,7 +76,7 @@ function membresPane(g) {
   return `<section class="cl-pane" data-pane="membres">
     <div class="cc-h"><h2>Membres <span>${m ? m.length : ''}</span></h2>
       <button class="cc-lnk" data-cc="club-inviter" aria-label="Inviter">${svg(I.plus)}</button></div>
-    ${!m ? '<div class="cc-load"></div>' : `<div class="cc-list">${m.map(x => `
+    ${!m ? chargeur(true) : `<div class="cc-list">${m.map(x => `
       <button class="cc-ligne" data-cc="membre" data-id="${esc(x.user_id)}">${avatar(x.user_id, ident(x.pseudo, x.nom))}
         <span class="cc-ligne-t"><b>${esc(x.nom)}${x.moi ? ' <small>toi</small>' : ''}</b><i>${x.pseudo ? '@' + esc(x.pseudo) : ''}</i></span>
         ${x.chef ? `<em class="cc-tag or" title="Chef du club">${svg(I.crown)}</em>` : ''}</button>`).join('')}</div>`}
@@ -97,7 +87,7 @@ export function clubView() {
   const g = clubOuvert();
   if (!g) {
     $.innerHTML = `<div class="bar"><button class="ic" data-act="commu" aria-label="Retour">${svg(I.back)}</button><h1>Club</h1></div>
-      <div class="page cc">${cercle.clubs === null ? '<div class="cc-load"></div>'
+      <div class="page cc">${cercle.clubs === null ? chargeur(true)
         : `<p class="cc-vide">${svg(I.users)}Ce club n’existe plus, ou tu n’en fais plus partie.</p>`}</div>`;
     return;
   }

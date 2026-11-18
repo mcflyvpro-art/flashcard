@@ -19,7 +19,14 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-18 · La sauvegarde ne contourne plus l'offre : jamais plus
+DERNIER   2026-11-18 · Un seul chargeur, animé, partout (trois flashcards
+          qu'on bat, dans la matière de l'offre ; e2e/chargeur.e2e.js). Sortis
+          du démarrage : la création, la récitation, un club, un défi, les
+          feuilles du cercle, le suivi d'une classe (src/classe-suivi.js),
+          préchauffés au calme ; démarrage 127,3 → 112,2 Ko JS, 24,9 → 22,5
+          CSS, plafonds abaissés à 120 et 24. Le site ne partage plus rien
+          avec l'app (copiesDuSite) : accueil 52 → 46,7 Ko.
+          · 2026-11-18 · La sauvegarde ne contourne plus l'offre : jamais plus
           de paquets que Mirandola gratuit n'en garde (la feuille le dit avant
           d'écrire), ni image en data:, ni faux devoir ; le lien recto/verso
           est parti (e2e/sauvegarde.e2e.js). La mémoire d'une carte en trois

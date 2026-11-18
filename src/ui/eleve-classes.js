@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { atSchool, isProf, isPupil } from './classement.js';
@@ -72,7 +73,7 @@ export function devoirLigne(d, auj) {
 
 function devoirsHtml() {
   const l = eleve.devoirs;
-  if (!l) return `<div class="el-carte el-load"></div>`;
+  if (!l) return chargeur(true);
   const auj = iso(new Date());
   const afaire = l.filter(d => d.etat !== 'rendu');
   const rendus = l.length - afaire.length;
@@ -243,7 +244,7 @@ export function ouvrirClasse(id) {
 }
 export function classeEleveView() {
   if (classeMorceau) return classeMorceau.classeEcran();
-  $.innerHTML = `<div class="page el-page"><div class="el-carte el-load"></div></div>`;
+  $.innerHTML = `<div class="page el-page">${chargeur()}</div>`;
   import('./classe-eleve.js').then(m => { classeMorceau = m; if (view.name === 'classe') render(); })
     .catch(() => toast(I.x, 'La classe n’a pas pu s’ouvrir : vérifie ta connexion'));
 }

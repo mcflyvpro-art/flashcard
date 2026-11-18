@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { cleTeinte } from '../couleurs.js';
 import { couleurLibre } from '../matieres.js';
@@ -24,7 +25,7 @@ import { hlp } from './connexion.js';
 import { applyFont, savePrefs, toast } from './import-cartes.js';
 import { closeMenu, openMenu } from './menus-a.js';
 import { installed } from './onboarding.js';
-import { norm } from './quiz.js';
+import { norm } from '../normaliser.js';
 
 /* ---------- réglages ---------- */
 export function openSubject(id) {
@@ -274,7 +275,7 @@ export function trashView() {
     <div class="page">
       <div class="top"><div class="hero">Corbeille</div></div>
       <div class="note">Gardés ${KEEP} jours, cartes et progression comprises.</div>
-      ${!l ? `<div class="empty">${svg(I.clock)}<p>${trash.err ? 'Corbeille indisponible' : 'Chargement…'}</p></div>`
+      ${!l ? (trash.err ? `<div class="empty">${svg(I.clock)}<p>Corbeille indisponible</p></div>` : chargeur())
         : !l.length ? `<div class="empty">${svg(I.trash)}<p><b>Corbeille vide</b></p></div>`
         : `<div class="slist">${l.map(t => {
             const s = subj(t.subject), d = leftFor(t.at);
@@ -317,8 +318,7 @@ export function prechargerCourrier() {
 }
 
 function attendreCourrier() {
-  $.innerHTML = `<div class="page"><div class="top"><div class="hero">Messages</div></div>
-    <div class="empty">${svg(I.mail)}<p>Chargement…</p></div></div>`;
+  $.innerHTML = `<div class="page"><div class="top"><div class="hero">Messages</div></div>${chargeur()}</div>`;
   prechargerCourrier().then(() => {
     if (view.name === 'mail' || view.name === 'lettre') render();
   }).catch(() => toast(I.x, 'Les messages n’ont pas pu s’ouvrir : vérifie ta connexion'));

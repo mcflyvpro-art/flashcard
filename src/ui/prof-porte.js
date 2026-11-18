@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I } from '../icones.js';
 import { setMenu, view } from '../data/etat.js';
@@ -32,7 +33,7 @@ export function chargerEspace() {
    parti ailleurs entre-temps. */
 const vue = nom => () => {
   if (espace) return espace[nom]();
-  $.innerHTML = '<div class="pf"><main class="pf-main"><div class="pf-load"><i></i><i></i><i></i></div></main></div>';
+  $.innerHTML = `<div class="pf"><main class="pf-main">${chargeur()}</main></div>`;
   chargerEspace().then(m => {
     if (m && /^prof/.test(view.name)) render();
     else if (!m && /^prof/.test(view.name)) go('home');

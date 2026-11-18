@@ -1,6 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
 import { $ } from '../racine.js';
+import { chargeur } from './chargeur.js';
 import { online, view } from '../data/etat.js';
 import { deck, esc, sty, subj } from '../core/coeur-sync.js';
 import { composer, corriger, examensPull, garder, historiqueDe } from '../core/examen.js';
@@ -133,7 +134,7 @@ function resultat() {
     </div>`;
 }
 
-const attente = texte => `<div class="eb-attente"><i class="eb-spin"></i><p>${texte}</p></div>`;
+const attente = texte => `<div class="eb-attente">${chargeur()}<p>${texte}</p></div>`;
 
 export function ecran() {
   const d = deck(view.id);

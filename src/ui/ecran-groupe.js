@@ -1,4 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
+import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { findQ, quiz, setAnimate, setFindQ, study, view } from '../data/etat.js';
@@ -6,7 +7,7 @@ import { render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
 import { esc, live, sty, subj } from '../core/coeur-sync.js';
 import { toast } from './import-cartes.js';
-import { norm } from './quiz.js';
+import { norm } from '../normaliser.js';
 
 /* ══════════ le journal de lecture : la porte ══════════
    L'écran du journal (ses graphiques, sa feuille de style, l'export) est un
@@ -30,7 +31,7 @@ function chargerJournal() {
 export function statsView() {
   if (ecranJournal) return ecranJournal.journalEcran();
   $.innerHTML = `<div class="bar"><button class="ic" data-act="home" aria-label="Retour">${svg(I.back)}</button></div>
-    <div class="page"><div class="top"><div class="hero">Statistiques</div></div><div class="empty">${svg(I.chart)}</div></div>`;
+    <div class="page"><div class="top"><div class="hero">Statistiques</div></div>${chargeur()}</div>`;
   chargerJournal().then(() => { if (view.name === 'stats') { setAnimate(false); render(); } })
     .catch(() => toast(I.x, 'Les statistiques n’ont pas pu s’ouvrir : vérifie ta connexion'));
 }
