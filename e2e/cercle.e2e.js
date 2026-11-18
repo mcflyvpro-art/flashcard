@@ -150,12 +150,17 @@ test('défi en direct : un hôte, deux joueurs, un code, un podium', async ({ pa
   }
   await expect(page.locator('.dx-n b')).toHaveText('2', { timeout: 10000 });
 
-  // cinq questions : tom répond toujours la première case, ines la deuxième
+  /* cinq questions : tom répond juste, ines faux. Avant, l'un prenait la
+     première case et l'autre la deuxième : la bonne réponse, tirée au hasard
+     parmi quatre, n'y tombait jamais une fois sur trente-deux, et le parcours
+     échouait sans le moindre défaut (2026-11-18). */
   await page.locator('[data-dx="avancer"]').click();
   for (let q = 0; q < 5; q++) {
     for (const [k, p] of joueurs.entries()) {
       await expect(p.locator('[data-dx="choix"]').first()).toBeVisible({ timeout: 10000 });
-      await p.locator('[data-dx="choix"]').nth(k).click();
+      const s = store.ce.salles[store.ce.salles.length - 1], bonne = store.ce.questions[s.id][s.rang].b;
+      const n = await p.locator('[data-dx="choix"]').count();
+      await p.locator('[data-dx="choix"]').nth(k === 0 ? bonne : (bonne + 1) % n).click();
     }
     // tout le monde a répondu : la correction tombe sans attendre la fin du chrono
     await expect(page.locator('.dx-bilan')).toContainText('/2', { timeout: 10000 });
@@ -167,8 +172,9 @@ test('défi en direct : un hôte, deux joueurs, un code, un podium', async ({ pa
   await expect(page.locator('.dx-podium')).toContainText('tom');
   await expect(page.locator('.dx-podium')).toContainText('ines');
   for (const p of joueurs) await expect(p.locator('.dx-bravo')).toBeVisible({ timeout: 10000 });
-  const scores = store.ce.joueurs.map(j => j.score);
-  expect(scores.reduce((a, b) => a + b, 0)).toBeGreaterThan(0);    // des bonnes réponses ont rapporté des points
+  const [tom, ines] = store.ce.joueurs.map(j => j.score);
+  expect(tom).toBeGreaterThan(0);                                   // ses bonnes réponses ont rapporté des points
+  expect(ines).toBe(0);
   expect(store.ce.reponses).toHaveLength(10);                      // 5 questions × 2 joueurs, une réponse chacun
 });
 
