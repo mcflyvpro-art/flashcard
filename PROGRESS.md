@@ -24,7 +24,8 @@ DERNIER   2026-11-18 · La sauvegarde ne contourne plus l'offre : jamais plus
           d'écrire), ni image en data:, ni faux devoir ; le lien recto/verso
           est parti (e2e/sauvegarde.e2e.js). La mémoire d'une carte en trois
           tuiles, une vraie carte pour régler la taille du texte, les
-          fonctions + et Infini marquées à la couleur de l'offre.
+          fonctions + en or et celles d'Infini en bleu-rose, pour tous ;
+          fermées, grisées sous leur pastille d'or ou d'Infini.
           · 2026-11-18 · La barre ne garde plus un mauvais onglet allumé après
           un geste abandonné ; « Créer un club » ne change plus de couleur ;
           les onglets n'empilent plus l'historique, et l'app de l'écran

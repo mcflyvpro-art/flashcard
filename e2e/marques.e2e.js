@@ -1,9 +1,9 @@
 // Le menu d'une carte, l'aperçu de la taille du texte et les fonctions
 // marquées (2026-11-18) : « l'affichage mémoire n'est pas beau, fouillis,
 // pas clair » ; « l'aperçu : une vraie carte où l'on écrit ce qu'on veut,
-// qu'on retourne » ; « même avec l'abonnement, on différencie : le texte de
-// la couleur de l'abonnement, la pastille + grise pour ce qui n'est pas
-// débloqué ».
+// qu'on retourne » ; « les features + en or, celles d'Infini à la couleur
+// d'Infini, peu importe le profil ; pas dispo : la feature grisée, le badge
+// comme avant ».
 import { test, expect } from '@playwright/test';
 import { brancher, nouveauStore, semerLivre } from './faux-supabase.js';
 import { semerCompte } from './faux-cercle.js';
@@ -69,32 +69,42 @@ test('la taille du texte se règle sur une vraie carte, qu’on écrit et qu’o
   await expect(recto).toHaveText('el perro');
 });
 
-test('une fonction réservée se voit : grise et fermée en gratuit, à la couleur de l’offre une fois ouverte', async ({ browser }) => {
-  const couleur = async offre => {
+test('une fonction des offres se voit pour tous : l’or de Mirandola+, le bleu-rose d’Infini ; fermée, grisée sous sa pastille', async ({ browser }) => {
+  const OR = 'rgb(160, 98, 0)', INFINI = 'rgb(106, 85, 181)', GRIS = 'rgb(109, 105, 99)';
+  const voir = async offre => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     await brancher(page, compte(offre));
     await connecter(page);
     await ouvrirPaquet(page);
-    const qcm = page.locator('.acts [data-act="mcq"]');
     await expect(page.locator('html')).toHaveClass(offre === 'gratuit' ? /offre-gratuit/ : /offre-plus/, { timeout: 10000 });
-    if (offre !== 'gratuit') await expect.poll(() => qcm.evaluate(n => getComputedStyle(n).color), { timeout: 10000 }).not.toBe('rgb(29, 28, 25)');
-    const r = await qcm.evaluate(n => [getComputedStyle(n).color, getComputedStyle(n, '::after').filter]);
+    const qcm = page.locator('.acts [data-act="mcq"]');
+    if (offre !== 'gratuit') await expect.poll(() => qcm.evaluate(n => getComputedStyle(n).color), { timeout: 10000 }).toBe(OR);
+    const r = { qcm: await qcm.evaluate(n => [getComputedStyle(n).color, getComputedStyle(n, '::after').backgroundImage]) };
+    await page.getByRole('button', { name: 'Menu du paquet' }).click();
+    const examen = page.locator('.menu .mi[data-mact^="examen"]').first();
+    r.examen = await examen.evaluate(n => [n.dataset.mact, getComputedStyle(n).color, (n.querySelector('.mi-infini') || {}).textContent || '']);
     await ctx.close();
     return r;
   };
-  expect((await couleur('gratuit'))[1]).toContain('grayscale');
-  expect((await couleur('plus'))[0]).toBe('rgb(160, 98, 0)');          // l'or de Mirandola+
-  expect((await couleur('infini'))[0]).toBe('rgb(106, 85, 181)');      // le bleu-rose d'Infini
+  const g = await voir('gratuit'), p = await voir('plus'), i = await voir('infini');
+  // fermée : le nom grisé, la pastille « + » d'or comme avant (pas grise)
+  expect(g.qcm[0]).toBe(GRIS);
+  expect(g.qcm[1]).toContain('gradient');
+  // ouverte : l'or de Mirandola+, chez un abonné Mirandola+ comme chez un abonné Infini
+  expect(p.qcm[0]).toBe(OR);
+  expect(i.qcm[0]).toBe(OR);
+  // Objectif examen : fermé chez Mirandola+ (grisé, pastille « Infini »), au bleu-rose chez Infini
+  expect(p.examen).toEqual(['examen-infini', GRIS, 'Infini']);
+  expect(i.examen).toEqual(['examen', INFINI, '']);
 });
 
-test('Infini pas encore pris : sa pastille est grise dans le menu d’un paquet', async ({ page }) => {
+test('la pastille « Infini » d’une fonction fermée garde la couleur d’Infini', async ({ page }) => {
   await brancher(page, compte('plus'));
   await connecter(page);
   await ouvrirPaquet(page);
   await page.getByRole('button', { name: 'Menu du paquet' }).click();
   const pastille = page.locator('.menu [data-mact="examen-infini"] .mi-infini');
   await expect(pastille).toHaveText('Infini');
-  expect(await pastille.evaluate(n => getComputedStyle(n).backgroundImage)).toBe('none');
+  expect(await pastille.evaluate(n => getComputedStyle(n).backgroundImage)).toContain('gradient');
 });
-

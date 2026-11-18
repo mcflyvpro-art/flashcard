@@ -34,7 +34,7 @@ export function examenBlancMi() {
   if (sansFolioPlus() || !offre) return '';
   const n = examensOfferts();
   const queue = n === 0 ? '<span class="tail mi-infini">Infini</span>' : n > 0 && n < 9 ? `<span class="tail mi-offert">${n} offert${n > 1 ? 's' : ''}</span>` : '';
-  return `<button class="mi" data-mact="examen-blanc">${svg(I.pen)}Examen blanc${queue}</button>`;
+  return `<button class="mi${n === 0 ? ' ferme' : ''}" data-mact="examen-blanc">${svg(I.pen)}Examen blanc${queue}</button>`;
 }
 export const ouvrirEntreeBlanc = id => (examensOfferts() === 0 ? (closeMenu(), ouvrirPlus({ niveau: 'infini', raison: 'examen' })) : ouvrirExamenBlanc(id));
 

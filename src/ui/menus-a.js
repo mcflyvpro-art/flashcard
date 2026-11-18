@@ -378,7 +378,7 @@ function paintMenuDeck(w) {
       <button class="mi" data-mact="match">${svg(I.link)}Association</button>
       <button class="mi" data-mact="retouche">${svg(I.spark)}Modifier avec l’IA</button>
       ${aInfini() ? `<button class="mi" data-mact="examen">${svg(I.target)}Objectif examen</button>`
-    : infiniAPrendre() ? `<button class="mi" data-mact="examen-infini">${svg(I.target)}Objectif examen<span class="tail mi-infini">Infini</span></button>` : ''}
+    : infiniAPrendre() ? `<button class="mi ferme" data-mact="examen-infini">${svg(I.target)}Objectif examen<span class="tail mi-infini">Infini</span></button>` : ''}
       ${examenBlancMi()}
       <button class="mi" data-mact="deckset">${svg(I.gear)}Réglages du paquet</button>
       ${d.cards.filter(isLeech).length ? `<button class="mi" data-mact="studyleech">${svg(I.target)}Cartes coriaces<span class="tail">${d.cards.filter(isLeech).length}</span></button>` : ''}

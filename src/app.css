@@ -1326,15 +1326,14 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   font-size:12px;font-weight:650;white-space:nowrap;z-index:5;pointer-events:none}
 /* ---------- Mirandola gratuit (ui/bridage.js) ----------
    Ce qui est dans Mirandola+ : un « + » tracé (centré au pixel, le signe d'une
-   police ne l'était pas), gris tant que ce n'est pas débloqué (2026-11-18 ;
-   ouvert, le nom prend la couleur de l'offre, ui/lumiere-abonne.css), collé à l'étiquette — en ligne il suit le mot,
+   police ne l'était pas), doré, collé à l'étiquette — en ligne il suit le mot,
    en colonne il coiffe l'icône. Les onglets de création (.payant), les
    QCM, les associations, les images et les sons ; « Nouveau livre » quand
    la bibliothèque est pleine ; les volets du journal, floutés (journal.css,
    chargée avec lui : le démarrage n'en payait rien d'utile). */
 .payant[data-offre="plus"]::before,html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"],[data-act="retouche"],[data-mact="retouche"])::after,
 html.livres-plein [data-act="new"]::after{content:'';order:9;flex:none;width:16px;height:16px;border-radius:50%;
-  pointer-events:none;background:var(--plus-s),var(--plus);filter:grayscale(1) contrast(.8)}
+  pointer-events:none;background:var(--plus-s),var(--plus)}
 html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"],[data-act="retouche"],[data-mact="retouche"]){position:relative;color:var(--soft)}
 html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"],[data-act="retouche"],[data-mact="retouche"]) svg{opacity:.45}
 .cr-tabs .payant[data-offre="plus"]::before,html.offre-gratuit .acts :is([data-act="mcq"],[data-act="match"])::after{position:absolute;top:5px;left:calc(50% + 3px)}
@@ -1362,10 +1361,17 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
 .jt.jt-infini{box-shadow:0 0 0 1px #4f69c640,0 5px 18px -4px #8a6cc6cc}
 .jt:is(.lg,.xl):is(.jt-plus,.jt-infini){border-width:3.5px}
 .jt.vis:is(.jt-plus,.jt-infini){background:linear-gradient(color-mix(in srgb,var(--k) 30%,#fff) 0 0) padding-box,var(--lis) border-box}
-/* dans un menu : ce qui est offert (l'or) ; ce qui est dans Infini, pas encore ouvert, en gris (2026-11-18) */
+/* dans un menu : ce qui est offert (l'or), ce qui est dans Infini (sa lave figée) */
 .mi .mi-offert{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:var(--plus-c);background:var(--plus)}
-.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:var(--soft);background:var(--bg2);box-shadow:inset 0 0 0 1px var(--line)}
-.mi[data-mact="examen-infini"]{color:var(--soft)}
+.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 2px #1e1b4b59;background:var(--holo)}
+/* une fonction des offres se voit, pour tous (2026-11-18, demandé : « les features + en or, celles d'Infini
+   à la couleur d'Infini, peu importe le profil ; pas dispo : la feature grisée, le badge comme avant ») :
+   ouverte, son nom et son icône dans l'or de Mirandola+ ou le bleu-rose d'Infini ; fermée, son nom grisé
+   (html.offre-gratuit plus haut, .mi.ferme ici) et sa pastille, « + » d'or ou « Infini », gardée. Une encre
+   assez sombre pour un texte courant (≥ 4,5:1). */
+html:not(.offre-gratuit) :is(.acts [data-act=mcq],.acts [data-act=match],.mi:is([data-mact=mcq],[data-mact=match],[data-mact=retouche]),.pick.ia,.mb[data-mact^=med-],.cr-tabs :is([data-cmode=photo],[data-cmode=fichier]):not(.payant),.pi-tete b),html:not(.offre-gratuit) :is(.acts [data-act=mcq],.acts [data-act=match],.mi:is([data-mact=mcq],[data-mact=match],[data-mact=retouche]),.pick.ia,.mb[data-mact^=med-],.cr-tabs :is([data-cmode=photo],[data-cmode=fichier]):not(.payant),.pi-tete b) svg{color:#A06200}
+.mi:is([data-mact=examen],[data-mact=examen-blanc]):not(.ferme),.mi:is([data-mact=examen],[data-mact=examen-blanc]):not(.ferme) svg{color:#6A55B5}
+.mi.ferme{color:var(--soft)}
 /* l'onglet Mirandola+ d'un compte gratuit : son nom et son icône dans l'or */
 .tabs .t-plus svg{color:#C27F0A;fill:#f5c54233} .tabs .t-plus.on svg{color:var(--bg);fill:none}
 #rail nav .r-plus span{background:var(--plus-t);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:750}
