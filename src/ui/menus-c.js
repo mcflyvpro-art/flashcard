@@ -131,7 +131,7 @@ function clickMerge(a, b, d) {
   const r = mergeDecks(d, src);
   closeMenu(); render();
   return toast(I.link, r.added + ' carte' + (r.added > 1 ? 's' : '') + ' ajoutée'
-    + (r.added > 1 ? 's' : '') + (r.skipped ? ' · ' + r.skipped + ' en double ignorée' + (r.skipped > 1 ? 's' : '') : ''), true);
+    + (r.added > 1 ? 's' : '') + (r.skipped ? ', ' + r.skipped + ' en double ignorée' + (r.skipped > 1 ? 's' : '') : ''), true);
 }
 
 /* réglages propres au paquet, dans leur feuille */
@@ -536,5 +536,5 @@ export function rallumerMoteur() {
   prefs.simple = false;
   prefs.simpleAt = 0;
   save(); savePrefs();
-  if (days > 1) toast(I.brain, `Moteur rallumé · rattrapage sur ${days} jours`);
+  if (days > 1) toast(I.brain, `Moteur rallumé : le retard s’étale sur ${days} jours`);
 }

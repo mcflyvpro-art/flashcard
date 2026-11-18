@@ -3,16 +3,17 @@ import { chargeur } from './chargeur.js';
 import { $ } from '../racine.js';
 import { I, svg } from '../icones.js';
 import { auth, cercle, duels } from '../data/etat.js';
-import { esc } from '../core/coeur-sync.js';
+import { esc, plur } from '../core/coeur-sync.js';
+import { nombre } from './tuiles.js';
 // relire un club et savoir lequel est ouvert : dans sa porte, qui sert aussi sans la page
 import { clubOuvert } from './club-porte.js';
 import { classement, codeClubLisible } from '../club.js';
 import { medailleHtml } from './jeton.js';
 import { jetonGroupe } from '../jeton.js';
 import { hlp } from './connexion.js';
-import { JEUX, placeTexte } from '../defi.js';
-import { avatar, defiLigne, enDirectHtml, iconeClub, ident, infos, parDefi, rangLigne } from './cercle.js';
-import { timeAgo } from './reglages-corbeille.js';
+import { placeTexte } from '../defi.js';
+import { avatar, defiLigne, enDirectHtml, iconeClub, ident, parDefi, rangLigne, reussite } from './cercle.js';
+import { ilYa } from './reglages-corbeille.js';
 import './club.css';
 
 /* ══════════ la page d'un club ══════════
@@ -31,9 +32,9 @@ function banniereHtml(g) {
   return `<section class="cl-ban" style="--k:${jetonGroupe(g.id, { teinte: g.teinte }).couleur}">
     <i class="cl-emb">${iconeClub(g)}</i>
     <div class="cl-ban-t"><h1>${esc(g.nom)}</h1>${g.devise ? `<p>${esc(g.devise)}</p>` : ''}</div>
-    <div class="cl-stats"><span title="Membres">${svg(I.users)}<b>${n}</b></span>
-      <span title="Cartes révisées cette semaine">${svg(I.book)}<b>${g.pages}</b></span>
-      ${n > 1 && g.mes_pages ? `<span title="Ta place">${svg(I.trophy)}<b>${placeTexte(g.mon_rang)}</b></span>` : ''}</div>
+    <div class="cl-stats"><span><b>${n}</b><i>membre${n > 1 ? 's' : ''}</i></span>
+      <span><b>${nombre(g.pages)}</b><i>cartes cette semaine</i></span>
+      ${n > 1 && g.mes_pages ? `<span><b>${placeTexte(g.mon_rang)}</b><i>ta place</i></span>` : ''}</div>
     <div class="cl-ban-a">
       <button class="cl-chip" data-cc="club-inviter">${svg(I.plus)}Inviter<b>${esc(codeClubLisible(g.code))}</b></button>
       ${g.chef ? `<button class="cl-chip ic" data-cc="club-perso" aria-label="Personnaliser">${svg(I.pen)}</button>` : ''}
@@ -50,8 +51,7 @@ function defisPane(g) {
       : `<p class="cc-vide">${svg(I.bolt)}Aucun défi</p>`}
     ${fin && fin.length ? `<h2 class="cc-h">Parties</h2><div class="cc-list">${fin.map(p => `
       <div class="cl-partie"><i class="cc-defi-i">${svg(I.podium)}</i>
-        <span class="cl-partie-t"><b>${esc(p.titre)}</b>${infos([['bolt', JEUX[p.jeu] ? JEUX[p.jeu].nom : ''], ['play', p.joueurs, 'Joueurs'],
-          ['clock', p.fini_at ? timeAgo(p.fini_at) : '']])}
+        <span class="cl-partie-t"><b>${esc(p.titre)}</b><i>${plur(p.joueurs || 0, 'joueur')}${p.fini_at ? ', ' + ilYa(p.fini_at) : ''}</i>
           <span class="cl-podium">${(p.podium || []).map((x, i) => `<span>${medailleHtml(i + 1)} ${esc(x.nom)} <small>${x.score}</small></span>`).join('')}</span></span>
         ${p.moi ? `<em class="cc-score"><b>${placeTexte(p.moi.place)}</b>${p.moi.score} pts</em>` : ''}</div>`).join('')}</div>` : ''}
   </section>`;
@@ -65,9 +65,8 @@ function classementPane(g) {
   return `<section class="cl-pane" data-pane="classement">
     <h2 class="cc-h">Classement ${hlp('classementClub')}</h2>
     ${champion && l.length > 1 ? `<div class="cl-champion">${svg(I.crown)}${avatar(champion.user_id, ident(champion.pseudo, champion.nom))}<span>
-      <b>${esc(champion.nom)}</b></span><em>${svg(I.book)}${champion.pages}</em></div>` : ''}
-    <div class="cc-rank">${l.map(r => rangLigne(r, r.nom, [['check', Math.round(r.justes / (r.pages || 1) * 100) + ' %', 'Réponses justes'],
-      ['cal', r.jours, 'Jours de révision']])).join('')}</div>
+      <b>${esc(champion.nom)}</b></span><em>${nombre(champion.pages)} <small>cartes</small></em></div>` : ''}
+    <div class="cc-rank">${l.map(r => rangLigne(r, r.nom, reussite(r.justes, r.pages))).join('')}</div>
   </section>`;
 }
 

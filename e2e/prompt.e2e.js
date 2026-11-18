@@ -172,7 +172,7 @@ test('un PDF et une consigne ; un texte collé et une consigne, sans doublon de 
   await ia(page).fill('garde tout');
   await page.getByRole('button', { name: 'Créer les cartes' }).click();
   await expect(cartes(page)).toHaveCount(2, { timeout: 10000 });
-  await expect(page.locator('.pi-b.ia').last()).toContainText('1 carte ajoutée · 1 déjà là');
+  await expect(page.locator('.pi-b.ia').last()).toContainText('1 carte ajoutée, 1 déjà là');
   await expect(page.locator('#tx')).toHaveValue('');                       // le texte est devenu des cartes
   expect(store.iaDemande.message).toContain('garde tout');
   expect(store.iaDemande.message).toContain('prise = Bastille');

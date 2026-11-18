@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
 import { demoEtab, ia, menu, offre, view } from '../data/etat.js';
-import { deck, esc, plur, pushUndo, saveDeck, uid } from '../core/coeur-sync.js';
+import { deck, esc, pushUndo, saveDeck, uid } from '../core/coeur-sync.js';
 import { iaPull } from '../core/abonnement.js';
 import { etatIA } from '../ia-mois.js';
 import { aChange, appliquer, bilanTexte, pourIA, retouchable } from '../retouche.js';
@@ -99,7 +99,7 @@ export function peindre(w) {
   if (!d) return;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu retouche">
-      <div class="mhd">${svg(I.spark)}<span class="mhx"><b>Modifier avec l’IA</b><i>${esc(d.name)} · ${plur(d.cards.length, 'carte')}</i></span></div>
+      <div class="mhd">${svg(I.spark)}<span class="mhx"><b>Modifier avec l’IA</b><i>${esc(d.name)}</i></span></div>
       <div class="pi" id="rtpi" style="min-height:${Math.round(hauteurBarre)}px"></div>
     </div>`;
   mountMenu(w);                         // la feuille passe dans la page : on y cherche la barre

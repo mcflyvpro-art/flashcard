@@ -13,7 +13,7 @@ import { esc, plur } from '../core/coeur-sync.js';
 import {
   avatar, btn, chargement, classeOuverte, couleur, kpi, metaClasse, navProf, pastilleClasse, pill
 } from './prof-accueil.js';
-import { timeAgo } from './reglages-corbeille.js';
+import { ilYa, timeAgo } from './reglages-corbeille.js';
 
 /* ══════════ une classe ══════════
    L'en-tête dit qui elle est et ce qu'on peut y faire tout de suite ; les
@@ -51,7 +51,7 @@ function enteteClasse(c) {
     ${c.gere ? `<button class="pf-blason" data-pf="blason" aria-label="Emblème de la classe">${pastilleClasse(c, true)}${svg(I.pen)}</button>`
       : pastilleClasse(c, true)}
     <div class="pf-cht"><h1>${esc(c.name)}</h1>
-      <p>${metaClasse(c)}${metaClasse(c) ? ' · ' : ''}${esc(c.annee_scolaire || '')}</p>
+      <p>${metaClasse(c) || esc(c.annee_scolaire || '')}</p>
       <div class="pf-chips">${c.genre === 'groupe' ? '<span class="pf-tag">Groupe</span>' : ''}${c.archivee ? pill('neutre', 'Archivée') : ''}
         <span class="pf-chip" title="${c.etab ? 'Élèves' : 'Élèves inscrits / places'}">${svg(I.users)}${c.effectif}${c.etab ? '' : '/' + c.places}</span>
         ${c.principal ? '<span class="pf-tag">Professeur principal</span>' : ''}
@@ -100,7 +100,7 @@ function ligneEleve(m) {
     <span class="pf-num pf-c-rendu"><b>${m.rendus}</b><i>/${m.donnes}</i>
       <span class="pf-mb"><i style="width:${m.rendus ? Math.max(4, taux) : 0}%"></i></span></span>
     <span class="pf-num pf-c-pct"><b>${m.pct || '—'}</b><i>${m.pct ? '%' : ''}</i></span>
-    <span class="pf-num pf-c-act"><b>${m.pages7 || 0}</b><i>p · ${m.jours7 || 0} j</i></span>
+    <span class="pf-num pf-c-act" title="${plur(m.jours7 || 0, 'jour')} de révision"><b>${m.pages7 || 0}</b><i>cartes</i></span>
     <span class="pf-dim pf-c-vu">${m.jamais ? '—' : m.vu ? timeAgo(m.vu) : 'aucun rendu'}</span>
   </div>`;
 }
@@ -165,7 +165,7 @@ function demandesOnglet(c) {
       <span>Vérifiez le prénom et le nom. Refusé, l’élève recommence et sa place vous revient.</span>
       ${btn('admettre-tout', I.check, 'Tout accepter', 'pri')}</div>
     <div class="pf-list">${l.map(d => `<div class="pf-li pf-dem">
-      ${avatar(d.user_id, d.who)}<span class="pf-lit"><b>${esc(d.who)}</b><i>${d.handle ? '@' + esc(d.handle) + ' · ' : ''}${timeAgo(d.depuis)}</i></span>
+      ${avatar(d.user_id, d.who)}<span class="pf-lit"><b>${esc(d.who)}</b><i>Demande ${ilYa(d.depuis)}</i></span>
       ${btn('admettre', I.check, 'Accepter', 'sm pri', `data-id="${esc(d.user_id)}"`)}
       ${btn('refuser', I.x, 'Refuser', 'sm', `data-id="${esc(d.user_id)}"`)}
       ${btn('bloquer', I.lock, '', 'sm ic warn', `data-id="${esc(d.user_id)}" aria-label="Refuser et bloquer" title="Refuser et bloquer"`)}
@@ -176,8 +176,7 @@ function demandesOnglet(c) {
 function ligneDevoir(d) {
   const e = etatDevoir(d, iso(new Date()));
   return `<div class="pf-tr" role="button" tabindex="0" data-pf="devoir" data-id="${esc(d.id)}">
-    <span class="pf-who"><i class="pf-di">${svg(I.card)}</i><span><b>${esc(d.nom)}</b><i>${plur(d.n, 'carte')}${
-      d.matiere ? ' · ' + esc(d.matiere) : ''}${d.mien ? '' : ' · ' + esc(d.auteur)}</i></span></span>
+    <span class="pf-who"><i class="pf-di">${svg(I.card)}</i><span><b>${esc(d.nom)}</b><i>${plur(d.n, 'carte')}${d.mien ? '' : ', de ' + esc(d.auteur)}</i></span></span>
     <span class="pf-c-due ${e.tard ? 'ko' : ''}"><b>${esc(jourCourt(d.due))}</b><i>${esc(e.echeance)}</i></span>
     <span class="pf-num pf-c-rendu"><b>${d.rendu}</b><i>/${d.effectif}</i>
       <span class="pf-mb"><i style="width:${d.rendu ? Math.max(4, e.taux) : 0}%"></i></span></span>
@@ -236,7 +235,7 @@ function bilanOnglet() {
     </section></div>
     <section class="pf-panel"><h2>À reprendre <span>${s.aReprendre.length}</span></h2>
       ${s.aReprendre.length ? `<div class="pf-chipsl">${s.aReprendre.map(m => `<button class="pf-pe" data-pf="eleve" data-id="${esc(m.user_id)}">
-        ${avatar(m.user_id, m.who)}<span><b>${esc(m.who)}</b><i>${esc(etatEleve(m).t)}${m.pct && m.pct < 45 ? ` · ${m.pct} %` : ''}</i></span></button>`).join('')}</div>`
+        ${avatar(m.user_id, m.who)}<span><b>${esc(m.who)}</b><i>${esc(etatEleve(m).t)}</i></span></button>`).join('')}</div>`
       : `<div class="pf-ok">${svg(I.check)}<span>Personne à reprendre</span></div>`}
     </section>`;
 }
@@ -262,7 +261,7 @@ function reglagesEquipe(c) {
   const moi = l.find(t => t.moi);
   return `<section class="pf-panel"><h2>Équipe <span>${l.length}</span></h2>
     <div class="pf-list">${l.map(t => `<div class="pf-li">${avatar(t.teacher, t.nom)}
-      <span class="pf-lit"><b>${esc(t.nom)}${t.moi ? ' (vous)' : ''}</b><i>${esc(t.matiere)}${t.createur ? ' · créateur' : ''}${t.principal ? ' · PP' : ''}</i></span>
+      <span class="pf-lit"><b>${esc(t.nom)}${t.moi ? ' (vous)' : ''}</b><i>${esc(t.matiere)}${t.principal ? ', professeur principal' : ''}</i></span>
       ${c.createur && !t.moi ? btn('retirer-collegue', I.x, '', 'sm ic warn', `data-id="${esc(t.teacher)}" aria-label="Retirer ${esc(t.nom)}"`) : ''}
     </div>`).join('')}</div>
     ${c.etab ? (c.genre === 'classe' && !c.createur

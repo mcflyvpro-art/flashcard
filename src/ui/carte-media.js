@@ -476,27 +476,22 @@ export function nextIn(c) {
   return (an < 10 ? an.toFixed(1).replace('.0', '').replace('.', ',') : Math.round(an)) + ' ans';
 }
 
-/* Ce que le moteur sait d'une page, dit en clair. La stabilité est le
-   nombre de jours au bout duquel le souvenir retombe à 90 % ; la
-   difficulté, la peine intrinsèque de la page sur dix. Ces deux nombres,
-   plus la date du dernier passage, suffisent à placer le suivant. */
-function memDays(v) {
-  if (v < 1) return Math.max(1, Math.round(v * 24)) + ' h';
-  if (v < 31) return Math.round(v) + ' j';
-  if (v < 365) return Math.round(v / 30) + ' mois';
-  const an = v / 365;
-  return (an < 10 ? an.toFixed(1).replace('.0', '').replace('.', ',') : Math.round(an)) + ' ans';
-}
-
 /* La mémoire d'une carte, dans son menu (refaite le 2026-11-18, demandé :
    « pas beau, fouillis, pas clair ») : trois tuiles qu'on lit d'un coup
    d'œil — le souvenir d'aujourd'hui en anneau, quand elle revient, sa
-   difficulté en jauge —, puis son âge et ce qui les explique (sa
-   stabilité, ses réussites, ses oublis) sur une ligne. En azur, ce qui se
+   difficulté en jauge —, puis son âge et son histoire en une phrase
+   (« Réussie 3 fois, oubliée une fois » : plus de ligne à points). En azur, ce qui se
    compte (src/couleurs.js). Une carte jamais révisée le dit, sans plus. */
+// « réussie 3 fois, oubliée une fois » : son histoire, en une phrase
+const fois = n => (n === 1 ? 'une fois' : n + ' fois');
+function histoire(n, l) {
+  if (!n && !l) return '';
+  return n ? `Réussie ${fois(n)}${l ? `, oubliée ${fois(l)}` : ''}` : `Oubliée ${fois(l)}`;
+}
+
 export function memoire(c) {
-  const k = cstate(c), age = `<i class="cst ${k}"></i>${STATE[k]}`;
-  if (!c.S) return `<p class="mem-s">${age} · jamais révisée</p>`;
+  const k = cstate(c), age = `<b class="mem-a"><i class="cst ${k}"></i>${STATE[k]}</b>`;
+  if (!c.S) return `<p class="mem-s">${age}<span>Pas encore révisée</span></p>`;
   const p = Math.round(recall(c, Date.now()) * 100), D = Math.round((c.D || 5) * 10) / 10, n = c.n || 0, l = c.l || 0,
     r = nextIn(c) || '—';
   return `<div class="mem">
@@ -504,7 +499,7 @@ export function memoire(c) {
       <div class="mem-t"><b${r.length > 6 ? ' class="l"' : ''}>${r}</b><span>Revient</span></div>
       <div class="mem-t"><b>${String(D).replace('.', ',')}<small>/10</small></b><i class="mem-d" style="--d:${D}"></i><span>Difficulté</span></div>
     </div>
-    <p class="mem-s">${age} · stable ${memDays(c.S)} · ${n} réussite${n > 1 ? 's' : ''} · ${l} oubli${l > 1 ? 's' : ''}</p>`;
+    <p class="mem-s">${age}<span>${histoire(n, l)}</span></p>`;
 }
 
 /* Ce que proposerait chaque bouton, pour l'afficher dessus. Le flou étant

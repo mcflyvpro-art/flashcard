@@ -142,7 +142,7 @@ test.describe('sur ordinateur', () => {
     await page.locator('#rflliste').fill('MOREAU Inès ; ines.moreau@lycee.fr\nhugo@gmail.com\tPetit\tHugo\nlea@lycee.fr ; MARTIN Léa');
     await expect(page.locator('#rflapercu')).toContainText('3 élèves');
     await page.getByRole('button', { name: 'Ouvrir les comptes' }).click();
-    await expect(page.locator('.rf-lot h2')).toHaveText('2 comptes ouverts · 1re B');
+    await expect(page.locator('.rf-lot h2')).toHaveText('2 comptes ouverts en 1re B');
     await expect(page.locator('.rf-lot-ko')).toContainText('déjà un compte');            // Léa en a un : les autres passent quand même
     await expect(page.locator('.rf-mdps tbody tr')).toHaveCount(2);
     const ines = store.users.find(u => u.email === 'ines.moreau@lycee.fr');

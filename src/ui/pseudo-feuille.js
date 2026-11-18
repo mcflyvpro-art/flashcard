@@ -35,8 +35,8 @@ const date = iso => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', 
 function verdictHtml() {
   if (e.statut === 'ok') return `<span class="ps-libre">${svg(I.check)}Libre</span>`;
   if (e.statut === 'verif') return '<span class="ps-verif">…</span>';
-  if (!e.statut || (e.statut === 'meme' && e.valeur === actuel())) return '<span>3 à 20 caractères · a-z 0-9 . _</span>';
-  const txt = e.statut === 'trop' && e.jusqua ? `${message('trop')} · à nouveau le ${date(e.jusqua)}` : message(e.statut);
+  if (!e.statut || (e.statut === 'meme' && e.valeur === actuel())) return '<span>3 à 20 lettres, chiffres, points ou tirets bas</span>';
+  const txt = e.statut === 'trop' && e.jusqua ? `${message('trop')} : à nouveau le ${date(e.jusqua)}` : message(e.statut);
   return `<span class="ps-non">${esc(txt)}</span>${e.suggestion
     ? `<button class="ps-sug" data-ps="sug">@${esc(e.suggestion)}</button>` : ''}`;
 }

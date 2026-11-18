@@ -19,6 +19,7 @@ import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { askFriend } from '../core/reglages-corbeille.js';
 import { ouvrirPseudo } from './pseudo-porte.js';
 import './cercle-feuilles.css';
+import { nombre, tuiles } from './tuiles.js';
 
 /* ══════════ les feuilles du cercle, et ses gestes ══════════
    Une seule entrée `cc` dans la table des menus (menus-a.js) ; laquelle
@@ -103,8 +104,7 @@ function feuilleMembre() {
   const pct = m.pages ? Math.round(m.justes / m.pages * 100) : 0;
   return coque(`${tete(avatar(m.user_id, m.pseudo || m.nom, 'lg'), esc(m.nom) + (m.chef ? ' ' + svg(I.crown) : ''),
       m.pseudo ? `<i>@${esc(m.pseudo)}</i>` : '')}
-    <div class="cf-stats"><span title="Cartes révisées cette semaine">${svg(I.book)}<b>${m.pages}</b></span>
-      <span title="Réponses justes">${svg(I.check)}<b>${pct} %</b></span><span title="Jours de révision">${svg(I.cal)}<b>${m.jours}</b></span></div>
+    ${tuiles([[nombre(m.pages), 'cartes cette semaine'], [pct + ' %', 'de bonnes réponses'], [m.jours, m.jours > 1 ? 'jours de révision' : 'jour de révision']])}
     ${gestesMembre(g, m)}`);
 }
 

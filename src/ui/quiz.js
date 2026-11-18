@@ -313,7 +313,7 @@ export function quizView() {
         <div class="ask ${quiz.state}">${rt(q.f)}
           ${canSay ? `<button class="snd sm" data-qsay aria-label="Écouter">${svg(I.sound)}</button>` : ''}</div>
         ${ask && quiz.hint ? `<div class="hmask">${esc(hintMask(q, quiz.hint))}</div>` : ''}
-        ${quiz.state === 'bad' ? `<div class="sol" data-k="sol:${esc(quiz.id)}:${quiz.i}">${svg(I.check)}${q.a.map(rt).join('  ·  ')}</div>` : ''}
+        ${quiz.state === 'bad' ? `<div class="sol" data-k="sol:${esc(quiz.id)}:${quiz.i}">${svg(I.check)}${q.a.map(rt).join(' <span class="ou">ou</span> ')}</div>` : ''}
       </div>
       ${qcm ? `<div class="opts qopts">${quizOptionsHtml(q, ask)}</div>` : quizTypedRowHtml(ask)}
       ${quizFooterHtml(qcm, ask)}

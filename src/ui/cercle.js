@@ -8,7 +8,8 @@ import {
 import { bindPager, go, monIdent, render, tabs } from './bibliotheque.js';
 import { isPupil } from './classement.js';
 import { boardPull, schoolPull } from '../core/classement.js';
-import { esc, shortWho } from '../core/coeur-sync.js';
+import { esc, plur, shortWho } from '../core/coeur-sync.js';
+import { nombre } from './tuiles.js';
 import { clubsPull, profilPull, sallesPull } from '../core/cercle.js';
 import { toast } from './import-cartes.js';
 import { classement, medaille } from '../club.js';
@@ -37,9 +38,13 @@ export const BRANGE = { 7: '7 jours', 30: '30 jours', 365: 'Toujours' };
 export { avatar };
 export const iconeClub = g => iconeEmbleme(g.embleme);
 
-/* Une ligne de petites infos, en icônes : [[icône, valeur, ce qu'elle dit], …] */
-export const infos = l => `<span class="cc-infos">${l.filter(x => x && x[1] !== '' && x[1] != null).map(([ic, v, t]) =>
-  `<span${t ? ` title="${esc(t)}"` : ''}>${ic ? svg(I[ic]) : ''}${esc(String(v))}</span>`).join('')}</span>`;
+/* Sous un titre, une seule information, dite en mots (2026-11-18, demandé :
+   « ces micro-infos ne sont pas claires et chargent l'écran ») : plus de
+   ligne d'icônes et de chiffres sans nom. Le détail va dans la fiche, en
+   tuiles nommées (ui/tuiles.js). */
+const ligne = t => (t ? `<i>${t}</i>` : '');
+// la période du classement, dite en mots (BRANGE)
+const PERIODE = { 7: ' cette semaine', 30: ' ces 30 derniers jours', 365: '' };
 
 /* tout ce que l'écran a besoin de savoir, lancé en parallèle */
 /* relire : on OUVRE l'onglet — les amis, le classement, les clubs et les
@@ -66,25 +71,27 @@ function maLigne() {
   return classement(board.rows || [], 'n', auth.uid).find(r => r.moi);
 }
 
-function moiInfos() {
-  const r = maLigne(), n = (board.rows || []).length;
-  return infos([['book', r ? +r.n : 0, 'Cartes révisées cette semaine'],
-    r && +r.n && n > 1 ? ['trophy', placeTexte(r.place) + ' / ' + n, 'Ta place face à tes amis'] : null]);
+/* Ma place parmi mes amis, en une phrase ; seul, ce que j'ai révisé. */
+function moiLigne() {
+  const r = maLigne(), n = (board.rows || []).length, quand = PERIODE[board.range] || '';
+  if (!r || !+r.n) return '';
+  return ligne(n > 1 ? `${placeTexte(r.place)} de tes amis${quand}`
+    : `${nombre(r.n)} carte${+r.n > 1 ? 's' : ''} révisée${+r.n > 1 ? 's' : ''}${quand}`);
 }
 
 function moiEleve() {
   const nom = (compte && compte.nom) || (me && me.name) || 'Élève';
-  const ou = school && school.classe ? `${school.classe}${school.org ? ' · ' + school.org : ''}` : 'Ma classe';
+  // son nom de classe en titre ; dessous, le pseudo que voient ses camarades
+  const sous = me && me.handle ? '@' + esc(me.handle) : school && school.classe ? esc(school.classe) : '';
   return `<button class="cc-moi" data-cc="moi">${avatar(auth.uid, monIdent(), 'lg')}
-    <span class="cc-moi-t"><b>${esc(nom)}</b>${infos([['school', ou], me && me.handle ? ['hash', '@' + me.handle, 'Ton pseudo'] : null])}${
-      moiInfos()}</span>${svg(I.pen)}</button>`;
+    <span class="cc-moi-t"><b>${esc(nom)}</b>${ligne(sous)}</span>${svg(I.pen)}</button>`;
 }
 
 function moiHtml(eleve) {
   if (eleve) return moiEleve();
   const h = me && me.handle;
   return `<button class="cc-moi" data-cc="moi">${avatar(auth.uid, monIdent(), 'lg')}
-    <span class="cc-moi-t"><b>${h ? '@' + esc(h) : '…'}</b>${moiInfos()}</span>${svg(I.pen)}</button>`;
+    <span class="cc-moi-t"><b>${h ? '@' + esc(h) : '…'}</b>${moiLigne()}</span>${svg(I.pen)}</button>`;
 }
 
 function actionsHtml(eleve) {
@@ -100,28 +107,30 @@ export function enDirectHtml(salles) {
   if (!l.length) return '';
   return `<section class="cc-sec"><h2 class="cc-h">En direct</h2><div class="cc-lives">${l.map(s => `
     <div class="cc-live"><span class="cc-pulse" aria-hidden="true"></span>
-      <span class="cc-live-t"><b>${esc(s.titre)}</b>${infos([['user', s.hote ? 'Toi' : s.hote_nom], s.classe || s.club ? ['users', s.classe || s.club] : null,
-        ['play', s.joueurs, 'Joueurs']])}</span>
+      <span class="cc-live-t"><b>${esc(s.titre)}</b>${ligne((s.hote ? 'Ta partie' : 'Lancée par ' + esc(s.hote_nom || 'un ami'))
+        + (s.joueurs ? ', ' + plur(s.joueurs, 'joueur') : ''))}</span>
       <button class="cc-btn pri" data-cc="salle" data-id="${esc(s.id)}" data-pin="${esc(s.pin)}"
         data-dedans="${s.dedans || s.hote ? 1 : ''}">${s.hote ? 'Reprendre' : s.dedans ? 'Revenir' : 'Rejoindre'}</button>
     </div>`).join('')}</div></section>`;
 }
 
 /* Un défi « à son rythme » : à jouer en premier, puis ceux déjà joués, avec
-   ma place. `ou` dit d'où il vient (un club, la classe, les amis). */
+   ma place. Dessous, qui l'a lancé et, s'il vient d'un club ou de la
+   classe, d'où (dans Mes amis, les amis vont sans dire) ; le nombre de
+   questions, le jeu et les joueurs sont dans sa fiche. */
 function ouDefi(du) {
-  if (du.class_id) return 'Ta classe';
-  if (du.group_id) { const g = (cercle.clubs || []).find(x => x.id === du.group_id); return g ? g.nom : 'Un club'; }
-  return 'Amis';
+  if (du.class_id) return ' pour ta classe';
+  if (du.group_id) { const g = (cercle.clubs || []).find(x => x.id === du.group_id); return ' dans ' + (g ? esc(g.nom) : 'un club'); }
+  return '';
 }
+export const lanceur = du => (du.owner === auth.uid ? 'Lancé par toi' : 'Lancé par ' + esc(shortWho(du.who) || 'un ami'));
 
 export function defiLigne(du, avecOu = true) {
   const m = myScore(du.id), r = rankOf(du.id);
   const pos = m ? r.findIndex(x => x.user_id === auth.uid) + 1 : 0;
   return `<button class="cc-defi" data-duel="${esc(du.id)}">
     <i class="cc-defi-i">${svg(I.bolt)}</i>
-    <span class="cc-defi-t"><b>${esc(du.name)}</b>${infos([['user', shortWho(du.who) || 'Un ami'], avecOu ? ['users', ouDefi(du)] : null,
-      ['card', du.total, 'Questions'], r.length ? ['play', r.length, 'Joueurs'] : null])}</span>
+    <span class="cc-defi-t"><b>${esc(du.name)}</b>${ligne(lanceur(du) + (avecOu ? ouDefi(du) : ''))}</span>
     ${m ? `<em class="cc-score">${medaille(pos) ? medailleHtml(pos) : placeTexte(pos)}<b>${m.score}/${du.total}</b></em>`
       : `<em class="cc-ajouer">${svg(I.play)}Jouer</em>`}</button>`;
 }
@@ -133,7 +142,7 @@ function defisHtml() {
   if (!l) return `<section class="cc-sec"><h2 class="cc-h">Défis</h2>${chargeur(true)}</section>`;
   const tri = parDefi(l), max = cercle.tous ? 40 : 4;
   return `<section class="cc-sec"><div class="cc-h"><h2>Défis</h2>${
-    tri.length > 4 ? `<button class="cc-lnk" data-cc="tous">${cercle.tous ? 'Moins' : 'Tout voir · ' + tri.length}</button>` : ''}</div>
+    tri.length > 4 ? `<button class="cc-lnk" data-cc="tous">${cercle.tous ? 'Moins' : 'Voir les ' + tri.length}</button>` : ''}</div>
     ${tri.length ? `<div class="cc-list">${tri.slice(0, max).map(du => defiLigne(du)).join('')}</div>`
       : `<p class="cc-vide">${svg(I.bolt)}Aucun défi</p>`}
   </section>`;
@@ -144,7 +153,7 @@ export function clubCarte(g) {
   const rang = g.membres > 1 && g.mes_pages ? placeTexte(g.mon_rang) : '';
   return `<button class="cc-club" data-cc="club" data-id="${esc(g.id)}">
     ${blasonClub(g)}
-    <span class="cc-club-t"><b>${esc(g.nom)}</b>${infos([['users', g.membres, 'Membres'], ['book', g.pages, 'Cartes révisées cette semaine']])}</span>
+    <span class="cc-club-t"><b>${esc(g.nom)}</b>${ligne(plur(g.membres || 1, 'membre'))}</span>
     ${g.en_direct ? '<em class="cc-tag live">En direct</em>' : rang ? `<em class="cc-tag">${rang}</em>` : ''}</button>`;
 }
 
@@ -169,11 +178,14 @@ function clubsHtml() {
    personne ait le même visage d'un écran à l'autre. */
 export const ident = (pseudo, nom) => pseudo || nom || '';
 
+// sous une ligne de classement : la part de bonnes réponses, en mots
+export const reussite = (justes, n) => (+n ? `${Math.round(justes / n * 100)} % de bonnes réponses` : '');
+
 export function rangLigne(r, nom, sous) {
   return `<button class="cc-rk${r.moi ? ' moi' : ''}" data-lecteur="${esc(r.uid || r.user_id)}"><span class="cc-pl">${medailleHtml(r.place)}</span>
     ${avatar(r.uid || r.user_id, ident(r.handle || r.pseudo, nom), 'sm')}
     <span class="cc-rk-t"><b>${esc(nom)}${r.moi ? ' <small>toi</small>' : ''}</b>
-      ${sous ? (Array.isArray(sous) ? infos(sous) : `<i>${esc(sous)}</i>`) : ''}<span class="cc-bar"><em style="width:${r.part}%"></em></span></span>
+      ${sous ? `<i>${esc(sous)}</i>` : ''}<span class="cc-bar"><em style="width:${r.part}%"></em></span></span>
     <span class="cc-rk-n">${r.n != null ? r.n : r.pages}</span></button>`;
 }
 
@@ -263,12 +275,11 @@ function demandesHtml() {
 
 function mesAmisHtml(eleve) {
   const l = mates || [];
-  const pages = new Map((board.rows || []).map(r => [r.uid, +r.n]));
   if (!friends) return `${chargeur(true)}`;
   if (!l.length) return `<p class="cc-vide">${svg(I.users)}Personne pour l’instant</p>`;
   return `<div class="cc-list">${l.map(f => `<button class="cc-ligne" data-mate="${esc(f.id)}">${avatar(f.id, f.handle || f.name)}
     <span class="cc-ligne-t"><b>${esc(f.name || '')}</b><i>${f.handle ? '@' + esc(f.handle) : ''}</i></span>
-    ${infos([['book', pages.get(f.id) || 0, 'Cartes révisées']])}${svg(I.arrow)}</button>`).join('')}</div>`;
+    ${svg(I.arrow)}</button>`).join('')}</div>`;
 }
 
 function classementLong() {
@@ -278,7 +289,7 @@ function classementLong() {
   const l = classement(board.rows, 'n', auth.uid);
   if (!l.length) return seg + `<p class="cc-vide">${svg(I.trophy)}Aucune révision</p>`;
   return seg + `<div class="cc-rank">${l.map(r => rangLigne(r, shortWho(r.who) || 'Membre',
-    [['check', Math.round(r.ok / (r.n || 1) * 100) + ' %', 'Réponses justes'], ['cal', +r.jours, 'Jours de révision']])).join('')}</div>`;
+    reussite(r.ok, r.n))).join('')}</div>`;
 }
 
 export function friendsView() {

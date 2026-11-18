@@ -132,7 +132,7 @@ test('le code d’une classe tapé sur le site avant d’avoir un compte : conne
   await page.locator('[data-cein="nom"]').fill('Bernard');
   await page.locator('.ce-cl', { hasText: '2nde A' }).click();
   await page.locator('#cego').click();
-  await expect(page.locator('.bv-ecole')).toHaveText('Lycée Camus · 2nde A', { timeout: 10000 });
+  await expect(page.locator('.bv-ecole')).toHaveText('2nde A, Lycée Camus', { timeout: 10000 });
   expect(await page.evaluate(() => localStorage.getItem('folio.rejoindre'))).toBeNull();
 });
 

@@ -41,9 +41,7 @@ export function reportSheet(w) {
   if (!r) { setMenu(null); return; }
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
-      <div class="mhd">${svg(I.warn)}<span class="mhx"><b>Signaler</b>
-        <span class="msub">${esc(r.label || 'Ce contenu')} — le contenu est joint au signalement,
-          même s’il est effacé ensuite. Rien n’est envoyé à la personne visée.</span></span></div>
+      <div class="mhd">${svg(I.warn)}<span class="mhx"><b>Signaler${r.label ? ' ' + esc(r.label) : ''}</b></span></div>
       <div class="rlist">${RAISONS.map(([k, t]) =>
         `<button class="mi${reportWhy === k ? ' on' : ''}" data-why="${k}">
           ${svg(reportWhy === k ? I.check : I.arrow)}${t}</button>`).join('')}</div>
@@ -62,8 +60,7 @@ export function blockedSheet(w) {
   const l = blocks || [];
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
-      <div class="mhd">${svg(I.lock)}<span class="mhx"><b>Comptes bloqués</b>
-        <span class="msub">Ils ne voient plus rien de toi, et toi non plus.</span></span></div>
+      <div class="mhd">${svg(I.lock)}<span class="mhx"><b>Comptes bloqués</b></span></div>
       ${!l.length ? `<div class="note" style="padding:4px 18px 14px">Aucun compte bloqué.</div>`
         : `<div class="mscroll">${l.map(b => `<button class="mi" data-unblock="${esc(b.blocked_id)}">
              ${svg(I.redo)}<span>${esc(b.who || 'Un compte')}</span>

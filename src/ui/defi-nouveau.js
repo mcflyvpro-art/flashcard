@@ -4,12 +4,11 @@ import { I, svg } from '../icones.js';
 import { cercle, db, defi, defiNeuf, prof, setDefi, view } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import { isProf, isPupil } from './classement.js';
-import { esc, subj } from '../core/coeur-sync.js';
+import { esc, plur, subj } from '../core/coeur-sync.js';
 import { ouvrirSalle } from '../core/cercle.js';
 import { duelMake } from '../core/defis.js';
 import { rangerClasses } from '../classe.js';
 import { DUREES, JEUX, NOMBRES, fabriquerQuestions, jouable, pagesJouables, rythmePossible } from '../defi.js';
-import { infos } from './cercle.js';
 import { blason, blasonClub } from './jeton.js';
 import { hlp } from './connexion.js';
 import { plain } from './carte-media.js';
@@ -80,7 +79,7 @@ function livresHtml() {
         const ok = livrePossible(d);
         return `<button class="dn-livre ${defi.livre === d.id ? 'on' : ''}" data-cc="dn-livre" data-id="${esc(d.id)}" ${ok ? '' : 'disabled'}>
           <i class="dn-dot" style="--d:${subj(d.subject).d}"></i>
-          <span><b>${esc(d.name)}</b>${ok ? infos([['card', d.cards.length, 'Cartes']]) : '<i>Trop court</i>'}</span>
+          <span><b>${esc(d.name)}</b><i>${ok ? plur(d.cards.length, 'carte') : 'Trop court'}</i></span>
           ${defi.livre === d.id ? svg(I.check) : ''}</button>`;
       }).join('') || `<p class="cc-vide">Aucun paquet ne s’appelle ainsi.</p>`}</div>`}
   </section>`;

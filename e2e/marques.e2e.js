@@ -36,13 +36,13 @@ test('la mémoire d’une carte : trois tuiles, puis son âge et ce qui les expl
   await expect(mem.locator('.mem-t span')).toHaveText(['Souvenir', 'Revient', 'Difficulté']);
   await expect(mem.locator('.mem-t').nth(1).locator('b')).toHaveText('12 j');
   await expect(mem.locator('.mem-t').nth(2).locator('b')).toHaveText('1,3/10');
-  await expect(page.locator('.menu .mem-s')).toHaveText(/Récente · stable 14 j · 3 réussites · 1 oubli/);
+  await expect(page.locator('.menu .mem-s')).toHaveText(/Récente\s*Réussie 3 fois, oubliée une fois/);
   await expect(page.locator('.menu')).not.toContainText('Prochain passage');
   // une carte jamais révisée le dit, sans tuiles
   await page.locator('.menu:not(.sort) .mx').click();
   await page.locator('[data-card]').nth(1).click();
   await expect(page.locator('.menu .mem')).toHaveCount(0);
-  await expect(page.locator('.menu .mem-s')).toHaveText(/Nouvelle · jamais révisée/);
+  await expect(page.locator('.menu .mem-s')).toHaveText(/Nouvelle\s*Pas encore révisée/);
 });
 
 test('la taille du texte se règle sur une vraie carte, qu’on écrit et qu’on retourne', async ({ page }) => {

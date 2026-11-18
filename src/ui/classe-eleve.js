@@ -5,7 +5,7 @@ import { I, svg } from '../icones.js';
 import { duels, eleve, view } from '../data/etat.js';
 import { esc, plur } from '../core/coeur-sync.js';
 import { eleveClassesPull, messageErreur, quitterClasse } from '../core/eleve-classes.js';
-import { iso, jourCourt } from '../classe.js';
+import { iso } from '../classe.js';
 
 import { go } from './bibliotheque.js';
 import { defiLigne, ident, parDefi } from './cercle.js';
@@ -27,11 +27,11 @@ function tete(c, f) {
   const n = (f.eleves || []).length;
   return `<section class="ec-tete">${blason(c, 'xl')}
       <div class="ec-titre"><h1>${esc(f.nom)}</h1>
-        <span>${[f.niveau, f.etab || 'Hors établissement'].filter(Boolean).map(esc).join(' · ')}</span></div>
+        <span>${esc(f.etab || f.niveau || '')}</span></div>
       <div class="ec-puces">
         <span>${svg(I.users)}${plur(n, 'élève')}</span>
         ${matieres.map(m => `<span>${svg(I.book)}${esc(m)}</span>`).join('')}
-        ${f.depuis ? `<span title="Inscrit le">${svg(I.clock)}${esc(jourCourt(String(f.depuis).slice(0, 10)))}</span>` : ''}
+        ${f.depuis ? `<span>${svg(I.clock)}Depuis le ${esc(new Date(String(f.depuis).slice(0, 10) + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }))}</span>` : ''}
       </div>
     </section>`;
 }

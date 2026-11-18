@@ -214,7 +214,7 @@ test('« J’ai un code » dès l’accueil : l’accueil de sa classe, son tuto
   await page.locator('#cego').click();
 
   // élève de sa classe : son lycée, son pseudo, son visage
-  await expect(page.locator('.bv-ecole')).toHaveText('Lycée Camus · 2nde A', { timeout: 10000 });
+  await expect(page.locator('.bv-ecole')).toHaveText('2nde A, Lycée Camus', { timeout: 10000 });
   await page.getByRole('button', { name: 'Continuer' }).click();
   await page.getByRole('button', { name: 'C’est parti' }).click();
 

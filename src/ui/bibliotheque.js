@@ -419,7 +419,7 @@ const tile = (d, i) => {
   ${d.pinned ? `<i class="pind">${svg(I.pin)}</i>` : ''}
   ${s.id ? `<span class="mt">${esc(s.name)}</span>` : ''}
   <span class="n">${esc(d.name)}</span>
-  <span class="m" title="${plur(d.cards.length, 'carte')}">${svg(d.hidden ? I.eyeoff : I.card)}${d.cards.length}</span>
+  <span class="m">${d.hidden ? svg(I.eyeoff) : ''}${plur(d.cards.length, 'carte')}</span>
   ${p ? `<i class="tbar"><b style="width:${p}%"></b></i>` : ''}
 </button>`;
 };
@@ -435,8 +435,8 @@ const listRow = (d, i, mixte) => {
     <i class="ldot" aria-hidden="true"></i>${reorder ? `<i class="grip">${svg(I.grip)}</i>` : ''}
     <button class="lmain" data-go="${d.id}" data-peek="${d.id}">
       <span class="n">${esc(d.name)}${d.pinned ? svg(I.pin) : ''}</span>
-      <span class="s" title="${plur(d.cards.length, 'carte')}">${mixte && s.id ? `<b class="mt">${esc(s.name)}</b>` : ''}${
-        svg(I.card)}${d.cards.length}${p ? ` · ${p} %` : ''}</span>
+      <span class="s">${mixte && s.id ? `<b class="mt">${esc(s.name)}</b>` : ''}${
+        plur(d.cards.length, 'carte')}${p ? `, ${p} % acquises` : ''}</span>
     </button>
     ${due ? `<i class="ldue" title="À réviser aujourd’hui">${due}</i>` : ''}
   </div>`;

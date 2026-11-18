@@ -83,8 +83,8 @@ function paintFind() {
         ${r.cards.length ? `<div class="lbl"><span>Cartes</span><span>${r.cards.length}</span></div>
           <div class="slist">${r.cards.map(({ c, d }) => `<button class="sr flat" data-go="${d.id}">
             <span class="ml2"><span class="n">${hl(plain(c.f), findQ)}</span>
-              <span class="sub">${hl(plain(c.b), findQ)} · ${esc(d.name)}</span></span>
-            ${svg(I.arrow)}</button>`).join('')}</div>` : ''}`}`;
+              <span class="sub">${hl(plain(c.b), findQ)}</span></span>
+            <em class="sr-p">${esc(d.name)}</em>${svg(I.arrow)}</button>`).join('')}</div>` : ''}`}`;
 }
 function bindFind() {
   const f = document.getElementById('fq');

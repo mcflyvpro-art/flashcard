@@ -110,7 +110,7 @@ test('un élève de son lycée : son lycée et sa classe, son pseudo, son visage
 
   await expect(page.locator('#app')).toHaveAttribute('data-view', 'bienvenue', { timeout: 10000 });
   await expect(page.getByRole('heading', { name: 'Choisis ton pseudo' })).toBeVisible();
-  await expect(page.locator('.bv-ecole')).toHaveText('Lycée Camus · 2nde A');
+  await expect(page.locator('.bv-ecole')).toHaveText('2nde A, Lycée Camus');
   await expect(page.locator('.bv-classe')).toContainText('Tom PETIT');
   await page.getByRole('button', { name: 'Continuer' }).click();            // le pseudo donné d'office lui va
   await expect(page.getByRole('heading', { name: 'Ton visage' })).toBeVisible();

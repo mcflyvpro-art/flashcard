@@ -30,7 +30,7 @@ function tete(id, p) {
       ${avatar(id, ident(p.pseudo, p.nom), 'xl')}
       <h1>${esc(p.nom)}</h1>
       <div class="lp-sous">${p.pseudo ? `<span>@${esc(p.pseudo)}</span>` : ''}
-        ${p.depuis ? `<span title="Révise sur Mirandola depuis">${svg(I.cal)}${depuis(p.depuis)}</span>` : ''}
+        ${p.depuis ? `<span>Depuis ${depuis(p.depuis)}</span>` : ''}
         ${ami && !p.moi ? `<span class="lp-ami">${svg(I.check)}Ami</span>` : ''}</div>
       ${(p.clubs || []).length ? `<div class="lp-clubs">${p.clubs.map(g =>
         `<span class="lp-club">${blasonClub(g, 'xs')}${esc(g.nom)}</span>`).join('')}</div>` : ''}
@@ -62,16 +62,16 @@ function matieres(l) {
 
 function chiffres(p) {
   const faits = [
-    p.heure != null ? [I.clock, `vers ${p.heure} h`, 'Heure de révision préférée'] : null,
-    p.livres ? [I.book, plur(p.livres, 'paquet'), 'Paquets révisés ces 30 jours'] : null,
-    [I.layers, nb(p.toujours) + ' cartes', 'Depuis toujours']
+    p.heure != null ? [I.clock, `Révise vers ${p.heure} h`, 'Heure de révision préférée'] : null,
+    p.livres ? [I.book, plur(p.livres, 'paquet') + ' ce mois', 'Paquets révisés ces 30 jours'] : null,
+    [I.layers, nb(p.toujours) + ' cartes en tout', 'Depuis toujours']
   ].filter(Boolean);
   return `<section class="lp-chiffres">
       <div class="lp-tuiles">
-        ${tuile('flame', p.serie ? p.serie + ' j' : '0', 'Série', p.record > p.serie ? 'record ' + p.record + ' j' : '')}
-        ${tuile('book', nb(p.semaine), '7 jours')}
-        ${tuile('chart', nb(p.mois), '30 jours')}
-        ${tuile('check', p.justes != null ? p.justes + ' %' : '—', 'Justes')}
+        ${tuile('flame', p.serie ? p.serie + ' j' : '0', 'de suite', p.record > p.serie ? 'record ' + p.record + ' j' : '')}
+        ${tuile('book', nb(p.semaine), 'cartes en 7 jours')}
+        ${tuile('chart', nb(p.mois), 'cartes en 30 jours')}
+        ${tuile('check', p.justes != null ? p.justes + ' %' : '—', 'de bonnes réponses')}
       </div>
       <div class="lp-duo">
         <div class="lp-carte"><h2>${svg(I.cal)}5 semaines</h2>${calendrier(p.jours)}</div>

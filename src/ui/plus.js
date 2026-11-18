@@ -208,8 +208,8 @@ function renouvellement(p) {
 }
 
 // qui encaisse, dit sous le bouton : Stripe sur le web, le magasin dans son app
-const garantie = p => (vente(p) === 'stripe' ? 'Paiement sécurisé par Stripe · Résiliable en un geste'
-  : `Paiement par ${NOMS[p.os] || 'le magasin'} · Résiliable à tout moment`);
+const garantie = p => (vente(p) === 'stripe' ? 'Paiement sécurisé par Stripe, résiliable en un geste'
+  : `Paiement par ${NOMS[p.os] || 'le magasin'}, résiliable à tout moment`);
 
 /* L'essai (2026-11-05) : un compte qui n'a jamais eu d'abonnement Stripe a
    7 jours gratuits — la fonction paiement en décide, l'écran le dit, avec

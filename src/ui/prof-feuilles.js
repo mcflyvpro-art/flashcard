@@ -2,7 +2,7 @@
 import { I, svg } from '../icones.js';
 import { SITE } from '../adresse.js';
 import { prof, setMenu, visuels } from '../data/etat.js';
-import { codeComplet, echeance, iso, auJour, messageStatut, jourCourt } from '../classe.js';
+import { codeComplet, echeance, iso, auJour, joursEntre, messageStatut, jourCourt } from '../classe.js';
 import { dansJours, etatDevoir, etatEleve, grilleMois, jourLong, MOIS, pc } from '../classe-suivi.js';
 import { esc, live, plur } from '../core/coeur-sync.js';
 import { avatar, btn, chargement, classeOuverte, couleur, pastilleClasse, pill } from './prof-accueil.js';
@@ -10,7 +10,7 @@ import { grilleCouleurs, grilleEmblemes } from './jeton.js';
 import { emblemeDe, rangCouleur } from '../jeton.js';
 import { ETATS } from './prof-classe.js';
 import { mountMenu } from './menus-a.js';
-import { timeAgo } from './reglages-corbeille.js';
+import { ilYa } from './reglages-corbeille.js';
 import { FEUILLES_ETAB, inviterCode as inviterUnCode, tableauCode } from './prof-etab.js';
 
 /* ══════════ les feuilles de l'espace professeur ══════════
@@ -75,7 +75,7 @@ function devoirsEleve() {
   if (!f.length) return `<p class="pf-note">Aucun devoir dans cette classe.</p>`;
   const ETAT = { rendu: 'ok', 'commencé': 'am', 'non rendu': 'ko', 'pas ouvert': 'neutre' };
   return `<div class="pf-list">${f.map(x => `<div class="pf-li">
-    <span class="pf-lit"><b>${esc(x.devoir)}</b><i>${jourCourt(x.due)} · ${esc(echeance(x.due))}${x.mien ? '' : ' · un collègue'}</i></span>
+    <span class="pf-lit"><b>${esc(x.devoir)}</b><i>${pourQuand(x.due)}</i></span>
     <span class="pf-num"><b>${x.pct || '—'}</b><i>${x.pct ? '%' : ''}</i></span>
     ${pill(ETAT[x.etat] || 'neutre', x.etat)}</div>`).join('')}</div>`;
 }
@@ -91,7 +91,7 @@ function chiffresEleve(m) {
       <span><b>${m.rendus}<small>/${m.donnes}</small></b><i>rendus</i></span>
       <span><b>${m.pct || '—'}${m.pct ? '<small>%</small>' : ''}</b><i>réussite</i></span>
       <span class="${m.retard ? 'ko' : ''}"><b>${m.retard}</b><i>en retard</i></span>
-      <span><b>${m.pages7}</b><i>cartes · 7 j</i></span></div>
+      <span><b>${m.pages7}</b><i>cartes en 7 jours</i></span></div>
     ${m.jamais ? `<p class="pf-alerte">${svg(I.lock)}Ce compte ne s’est jamais connecté.</p>` : ''}`;
 }
 
@@ -100,7 +100,7 @@ function eleveFiche(w) {
   if (!c || !m) return setMenu(null);
   const e = etatEleve(m);
   feuille(w, 'pf-tiroir', `<span class="pf-sh-av">${avatar(m.user_id, m.who)}<span><b>${esc(m.who)}</b>${pill(ETATS[e.k], e.t)}</span></span>`,
-    `${m.handle ? '@' + esc(m.handle) + ' · ' : ''}inscrit ${timeAgo(m.inscrit)}`,
+    `Inscrit ${ilYa(m.inscrit)}`,
     `${chiffresEleve(m)}<h3 class="pf-h3">Devoirs</h3>${devoirsEleve()}`,
     `<div class="pf-acts">${actionsEleve(c, m)}</div>`);
 }
@@ -167,19 +167,26 @@ function chiffresDevoir(d, e) {
 }
 
 /* Ce que la classe rate le plus : des comptes, jamais des noms. */
+/* Pour quand, en mots : « Pour demain », « Pour le 12/11 », « Échu hier » */
+function pourQuand(due) {
+  if (!due) return '';
+  const j = joursEntre(iso(new Date()), due);
+  return j < 0 ? 'Échu ' + esc(echeance(due)) : j <= 1 ? 'Pour ' + esc(echeance(due)) : 'Pour le ' + esc(jourCourt(due));
+}
+
 function bloqueHtml(ca) {
   if (!ca) return chargement();
   if (!ca.length) return `<p class="pf-note">Pas encore assez de réponses.</p>`;
   return `<div class="pf-list">${ca.slice(0, 12).map(x => `<div class="pf-li"><span class="pf-lit"><b>${esc(x.recto)} → ${esc(x.verso)}</b>
-      <i>${x.ratees} erreurs sur ${x.vues} · ${plur(x.eleves, 'élève')}</i></span>
+      <i>${x.ratees} erreurs sur ${x.vues}, chez ${plur(x.eleves, 'élève')}</i></span>
       <span class="pf-mb court"><i class="ko" style="width:${pc(x.ratees, x.vues)}%"></i></span></div>`).join('')}</div>`;
 }
 
 function devoirFeuille(w) {
   const d = devoirOuvert(); if (!d) return setMenu(null);
   const e = etatDevoir(d, iso(new Date()));
-  const sous = `${plur(d.n, 'carte')}${d.matiere ? ' · ' + esc(d.matiere) : ''}${d.classe ? ' · ' + esc(d.classe) : ''} · ${
-    d.mien ? 'à rendre ' + esc(echeance(d.due)) : 'donné par ' + esc(d.auteur || 'un collègue')}`;
+  // une chose sous le titre : sa classe ; d'un collègue, qui l'a donné (la date est dessous)
+  const sous = d.mien ? esc(d.classe || plur(d.n, 'carte')) : 'Donné par ' + esc(d.auteur || 'un collègue');
   feuille(w, 'pf-tiroir', `<b>${esc(d.nom)}</b>`, sous,
     `${chiffresDevoir(d, e)}
     ${d.mien ? `<h3 class="pf-h3">À rendre le ${esc(jourLong(d.due))}</h3>${choixDate(d.due, 'echeance')}` : ''}
@@ -209,13 +216,13 @@ function donnerDetails(w) {
   const k = prof.comp;
   const cl = (prof.classes || []).filter(c => !c.archivee);
   const n = (k.cartes || []).length, pret = k.nom.trim() && n && k.cibles.size && k.due;
-  feuille(w, 'large', '<b>Donner un devoir</b>', `${plur(n, 'carte')}${k.riches ? ` · ${k.riches} avec image ou son` : ''}`, `
+  feuille(w, 'large', '<b>Donner un devoir</b>', plur(n, 'carte'), `
     <div class="pf-form deux">${champ('Titre', 'nom', 'data-pfcomp="nom" maxlength="120"', k.nom)}${champ('Matière', 'matiere', 'data-pfcomp="matiere" maxlength="60"', k.matiere)}</div>
     <h3 class="pf-h3">Classes <span>${k.cibles.size || ''}</span></h3>
     <div class="pf-cibles">${cl.map(c => `<button class="${k.cibles.has(c.id) ? 'on' : ''}" data-pf="cible" data-id="${esc(c.id)}" style="--k:${couleur(c.id)}">
       <i>${svg(I.check)}</i>${esc(c.name)}<em>${c.effectif}</em></button>`).join('') || '<p class="pf-note">Aucune classe active.</p>'}</div>
     <h3 class="pf-h3">À rendre ${k.due ? 'le ' + esc(jourLong(k.due)) : ''}</h3>${choixDate(k.due, 'due')}`,
-    `<span class="pf-sf-t">${plur(n, 'carte')} · ${k.cibles.size ? plur(k.cibles.size, 'classe') : 'aucune classe'}${k.due ? ' · ' + esc(jourCourt(k.due)) : ''}</span>
+    `<span class="pf-sf-t">${plur(n, 'carte')} pour ${k.cibles.size ? plur(k.cibles.size, 'classe') : 'aucune classe'}</span>
      ${btn('donner-go', I.share, 'Donner', 'pri lg', pret ? '' : 'disabled')}`);
 }
 
@@ -244,11 +251,10 @@ function supprimer(w) {
 /* ---------- rejoindre l'équipe d'une classe ---------- */
 function rejoindre(w) {
   const a = prof.f.apercu, r = prof.f.reponse ? messageStatut(prof.f.reponse) : null;
-  feuille(w, '', '<b>Rejoindre une classe</b>', 'Avec le code collègue donné par son créateur', `
+  feuille(w, '', '<b>Rejoindre une classe</b>', '', `
     <label class="pf-fl">Code collègue<input id="pfcode" class="pf-codein" data-pfin="f.code" value="${esc(prof.f.code || '')}"
       placeholder="XXXX-XXXX" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
-    ${a ? `<div class="pf-li pf-ap"><i class="jt groupe lg vide">${svg(I.school)}</i><span class="pf-lit"><b>${esc(a.nom)}</b><i>${
-      [a.niveau, a.prof, a.etab].filter(Boolean).map(esc).join(' · ')}</i></span></div>` : ''}
+    ${a ? `<div class="pf-li pf-ap"><i class="jt groupe lg vide">${svg(I.school)}</i><span class="pf-lit"><b>${esc(a.nom)}</b><i>${esc(a.prof || a.etab || a.niveau || '')}</i></span></div>` : ''}
     ${r ? `<p class="pf-alerte">${svg(I.warn)}<span><b>${esc(r.titre)}</b>${r.texte ? ' ' + esc(r.texte) : ''}</span></p>` : ''}`,
     a ? btn('rejoindre-go', I.check, 'Rejoindre l’équipe', 'pri lg')
       : btn('rejoindre-voir', I.search, 'Vérifier le code', 'pri lg', `id="pfrv" ${codeComplet(prof.f.code) ? '' : 'disabled'}`));

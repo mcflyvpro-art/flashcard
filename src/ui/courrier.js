@@ -39,7 +39,7 @@ function quand(iso) {
   const jour = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long',
     ...(d.getFullYear() !== maintenant.getFullYear() ? { year: 'numeric' } : {}) });
   const ms = maintenant - d;
-  return ms < 864e5 ? `aujourd’hui · ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+  return ms < 864e5 ? `aujourd’hui à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
     : `le ${jour}`;
 }
 

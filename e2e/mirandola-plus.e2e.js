@@ -47,7 +47,7 @@ test('un compte gratuit : l’onglet Mirandola+, le paiement, le retour ; l’on
   await page.locator('.fp-payer').click();
   await expect(page.getByRole('heading', { name: 'Bienvenue dans Mirandola+' })).toBeVisible({ timeout: 10000 });
   await expect(page).toHaveURL(/\/eleve\/mirandola-plus$/);                // ?plus=merci&session=… consommé
-  await expect(page.locator('.fp-merci')).toContainText('Mensuel · renouvelé le');
+  await expect(page.locator('.fp-merci')).toContainText('Mensuel, renouvelé le');
   await expect(page.locator('.fp-payer')).toHaveCount(0);
   const u = store.users.find(x => x.email === 'lea@exemple.fr');
   expect(store.tables.abonnements.find(a => a.user_id === u.id)).toMatchObject({ statut: 'actif', formule: 'mensuel' });

@@ -45,7 +45,7 @@ describe('ce que l’écran en dit', () => {
   it('Mirandola+ annuel : la date de renouvellement, et le portail', () => {
     const r = resume({ offre: 'plus', abonnement: ab() });
     expect(r.titre).toBe('Mirandola+');
-    expect(r.ligne).toBe('Annuel · renouvelé le 2 novembre 2027');
+    expect(r.ligne).toBe('Annuel, renouvelé le 2 novembre 2027');
     expect(r.payer).toBe(false);
     expect(r.gerer).toBe(true);
   });
@@ -58,7 +58,7 @@ describe('ce que l’écran en dit', () => {
   it('acheté dans un magasin : géré là-bas, jamais par le portail Stripe', () => {
     const a = ab({ source: 'apple', formule: 'mensuel' });
     const r = resume({ offre: 'plus', abonnement: a });
-    expect(r.ligne).toBe('Mensuel · renouvelé le 2 novembre 2027 · géré dans l’App Store');
+    expect(r.ligne).toBe('Mensuel, renouvelé le 2 novembre 2027, géré dans l’App Store');
     expect(r.gerer).toBe(true);
     expect(gestion(a, { os: 'ios', natif: true })).toEqual({ type: 'lien', lien: GERER.apple });
     expect(gestion(a, { os: 'windows', natif: false }).type).toBe('texte');

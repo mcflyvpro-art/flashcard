@@ -179,7 +179,8 @@ function ouEntre() {
   const ec = school || {};
   const lieu = ec.org || cl.etab || cl.prof || '', classe = ec.classe || cl.nom || '';
   if (!lieu && !classe) return '';
-  return `<p class="bv-ecole">${svg(I.school)}<span>${[lieu && esc(lieu), classe && `<b>${esc(classe)}</b>`].filter(Boolean).join(' · ')}</span></p>`;
+  // « 2nde B, Lycée Démo Mirandola » : la classe d'abord, une virgule, pas un point
+  return `<p class="bv-ecole">${svg(I.school)}<span>${[classe && `<b>${esc(classe)}</b>`, lieu && esc(lieu)].filter(Boolean).join(', ')}</span></p>`;
 }
 
 /* En salle d'attente : qui doit valider, et rien d'autre à faire qu'attendre. */

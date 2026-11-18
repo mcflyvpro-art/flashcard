@@ -188,7 +188,7 @@ test('Mirandola gratuit : un examen blanc offert, puis Infini', async ({ page })
   await page.getByRole('button', { name: 'Menu du paquet' }).click();
   await page.getByRole('button', { name: /Examen blanc/ }).click();
   await expect(page).toHaveURL(/\/paquets\/[^/]+\/examen-blanc$/, { timeout: 10000 });
-  await expect(page.locator('.eb-offert')).toContainText('il t’en reste 1', { timeout: 10000 });
+  await expect(page.locator('.eb-offert')).toContainText('Il te reste 1 examen blanc offert', { timeout: 10000 });
   await page.getByRole('button', { name: 'Composer le sujet' }).click();
   const reponses = page.locator('.eb-q textarea');
   await expect(reponses).toHaveCount(6, { timeout: 10000 });

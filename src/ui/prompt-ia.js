@@ -166,7 +166,7 @@ export function joindre(fichiers) {
 
 /* ---------- l'envoi ---------- */
 const ajoutDit = (a, extra) => (a.n ? `${plur(a.n, 'carte')} ajoutée${a.n > 1 ? 's' : ''}` : 'Aucune carte nouvelle')
-  + (a.dup ? ` · ${a.dup} déjà là` : '') + (a.big ? ` · ${a.big} trop longue${a.big > 1 ? 's' : ''}` : '') + (extra || '');
+  + (a.dup ? `, ${a.dup} déjà là` : '') + (a.big ? `, ${a.big} trop longue${a.big > 1 ? 's' : ''}` : '') + (extra || '');
 
 const libelleDe = (sup, p) => (sup === 'photo' ? plur(p.pieces.fichiers.length, 'photo')
   : sup === 'pdf' ? p.pieces.fichiers[0].name : sup === 'texte' ? 'Ton texte' : '');
@@ -177,7 +177,7 @@ async function faire(ctx, sup, msg, hist, p) {
     const r = await aiPhotos(p.pieces.fichiers, opts);
     if (!r.cards.length) throw new Error('empty');
     liberer(p);
-    return ajoutDit(ctx.ajouter(r.cards), r.echec ? ` · ${plur(r.echec, 'photo')} en échec` : '');
+    return ajoutDit(ctx.ajouter(r.cards), r.echec ? `, ${plur(r.echec, 'photo')} en échec` : '');
   }
   if (sup === 'pdf') {
     const r = await aiPdf(p.pieces.fichiers[0], opts);
@@ -194,7 +194,7 @@ async function faire(ctx, sup, msg, hist, p) {
   const r = await aiCall({ op: 'prompt', message: msg, cards: ctx.liste(), historique: hist, hint: opts.contexte }, true);
   // la création rend combien de cartes trop longues elle a écartées ; la retouche, aussi ce qui a changé
   const res = ctx.remplacer(r.cards), big = typeof res === 'number' ? res : res.big;
-  return (r.note || plur(r.cards.length, 'carte')) + (big ? ` · ${big} trop longue${big > 1 ? 's' : ''} écartée${big > 1 ? 's' : ''}` : '')
+  return (r.note || plur(r.cards.length, 'carte')) + (big ? `, ${big} trop longue${big > 1 ? 's' : ''} écartée${big > 1 ? 's' : ''}` : '')
     + (res && res.dit ? '\n' + res.dit : '');
 }
 

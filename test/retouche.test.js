@@ -66,7 +66,7 @@ describe('remettre la liste de l’IA dans le paquet', () => {
     expect(r.cartes.map(c => c.id)).toEqual(['c4', 'c1', expect.stringMatching(/^n\d+$/)]);
     expect(r.cartes[2]).toEqual({ f: 'Lisbonne', b: 'Capitale du Portugal', id: r.cartes[2].id });
     expect(r.bilan).toEqual({ gardees: 2, modifiees: 0, ajoutees: 1, retirees: 2 });
-    expect(bilanTexte(r.bilan)).toBe('1 ajoutée · 2 retirées');
+    expect(bilanTexte(r.bilan)).toBe('1 ajoutée, 2 retirées');
   });
 
   it('deux cartes identiques ne prennent jamais la même ancienne ; les vides sont écartées', () => {

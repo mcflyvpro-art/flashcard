@@ -34,7 +34,7 @@ export function openSubject(id) {
      entre son cours et les livres de toute la classe. La base refuse déjà
      la modification comme l'effacement — ouvrir le formulaire ne ferait
      qu'annoncer un enregistrement qui n'aurait pas lieu. */
-  if (t0 && t0.locked) return toast(I.lock, 'Matière du cours · posée par ton professeur');
+  if (t0 && t0.locked) return toast(I.lock, 'Matière posée par ton professeur');
   setSubjEdit(id);
   const t = t0;
   // une ancienne clé (corail, ambre) s'ouvre sur la teinte qui l'a remplacée
@@ -300,6 +300,9 @@ export function timeAgo(iso) {
   const j = Math.round(ms / DAY);
   return j < 31 ? j + ' j' : Math.round(j / 30) + ' mois';
 }
+
+/* « il y a 16 h », « à l'instant » : timeAgo dans une phrase */
+export const ilYa = iso => { const t = timeAgo(iso); return t === 'à l’instant' ? t : 'il y a ' + t; };
 
 /* ---------- la porte du courrier ----------
    La boîte et les lettres vivent dans ui/courrier.js, chargé à la demande

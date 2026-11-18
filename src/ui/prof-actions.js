@@ -106,7 +106,7 @@ async function admettre(ids) {
   const n = await ecrire('prof_admettre', { cid: cid(), qui: ids });
   if (n !== null) {
     const reste = ids.length - (+n || 0);
-    toast(I.check, `${plur(+n || 0, 'élève')} accepté${(+n || 0) > 1 ? 's' : ''}${reste > 0 ? ` · ${reste} en attente (plus de place)` : ''}`);
+    toast(I.check, `${plur(+n || 0, 'élève')} accepté${(+n || 0) > 1 ? 's' : ''}${reste > 0 ? `, ${reste} attendent une place` : ''}`);
   }
   relire();
 }

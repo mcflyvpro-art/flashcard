@@ -79,7 +79,7 @@ function tuileFactures(l) {
       ${f.length ? `<div class="rf-pieces">${f.map(x => {
         const e = etatFacture(x, f);
         return `<button class="rf-piece" data-rf="lic-piece" data-id="${esc(x.id)}">
-          <span class="rf-l1"><b>${esc(x.numero)}</b><i>${dateFr(x.emise_le)}${x.objet ? ' · ' + esc(x.objet) : ''}</i></span>
+          <span class="rf-l1"><b>${esc(x.numero)}</b><i>${dateFr(x.emise_le)}</i></span>
           <span class="rf-montant">${euros(x.total_ttc)}</span><em class="rf-etat ${e.k}">${e.t}</em>${svg(I.arrow)}</button>`;
       }).join('')}</div>` : '<p class="rf-rien">Aucune facture</p>'}
     </div>`;

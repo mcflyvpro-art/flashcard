@@ -37,10 +37,10 @@ const jusque = l => (l.k === 'echue' ? 'finie le ' + l.fin : l.fin === 'sans fin
 
 /* ---------- l'en-tête : l'établissement et sa licence ---------- */
 function tete(b, c) {
-  const l = c ? licence(c) : null, ou = [b && b.ville, b && b.uai && 'UAI ' + b.uai].filter(Boolean).join(' · ');
+  const l = c ? licence(c) : null, ou = (b && b.ville) || '';      // la ville ; l'UAI est dans la Licence
   return `<div class="top"><div class="hero">${esc((b && b.org) || 'Mon établissement')}</div>
       ${ou ? `<span class="rf-ou">${esc(ou)}</span>` : ''}
-      ${l ? `<span class="rf-lic ${l.k}" title="Licence">${svg(l.k === 'ok' ? I.check : I.warn)}${l.offre} · ${l.places} · ${jusque(l)}</span>` : ''}
+      ${l ? `<span class="rf-lic ${l.k}" title="Licence">${svg(l.k === 'ok' ? I.check : I.warn)}${l.offre}, ${jusque(l)}</span>` : ''}
     </div>`;
 }
 
@@ -78,7 +78,7 @@ function tuileLicence(c) {
   return `<div class="rf-tuile rf-licence">
       <div class="rf-tl">${l.offre}<span>${jusque(l)}</span></div>
       <div class="rf-barre"><i style="width:${l.pc}%"></i></div>
-      <div class="rf-tl-p" title="Une place par élève, par professeur et par référent"><b>${l.places}</b> places${l.libre != null ? ` · ${l.libre} libre${l.libre > 1 ? 's' : ''}` : ''}</div>
+      <div class="rf-tl-p" title="Une place par élève, par professeur et par référent"><b>${l.places}</b> places${l.libre != null ? `, dont ${l.libre} libre${l.libre > 1 ? 's' : ''}` : ''}</div>
       ${alerte ? `<p class="rf-alerte ${l.k}">${svg(I.warn)}${alerte}</p>` : ''}
     </div>`;
 }
@@ -280,16 +280,16 @@ function servicesProf(g, cl) {
 /* ---------- le journal ---------- */
 const QUI_CODE = { eleve: 'élèves', prof: 'professeurs', ref: 'référent' };
 
-/* Un code changé, renouvelé, ou son rythme : « code élèves · chaque semaine ». */
+/* Un code changé, renouvelé, ou son rythme : « code élèves, chaque semaine ». */
 const detailCode = d => [QUI_CODE[d.role] && 'code ' + QUI_CODE[d.role], (RYTHMES[d.rythme] || '').toLowerCase()]
-  .filter(Boolean).join(' · ');
+  .filter(Boolean).join(', ');
 
 function detailTrace(d, acte) {
   if (!d || typeof d !== 'object') return '';
   if (/code/.test(acte || '')) return detailCode(d);
   if (d.avant && d.apres && typeof d.avant === 'object') return `${d.avant.nom || ''} → ${d.apres.nom || d.avant.nom || ''}`;
   if (d.avant || d.apres) return `${d.avant || '—'} → ${d.apres || '—'}`;
-  return [d.nom, d.classe, d.matiere, d.role].filter(Boolean).join(' · ');
+  return [d.nom, d.classe, d.matiere, d.role].filter(Boolean).join(', ');
 }
 
 function journal() {
@@ -333,7 +333,7 @@ function resultatsLot(k) {
   const faits = k.res.filter(r => r.ok), autres = k.res.filter(r => !r.ok);
   const classe = ((ref.classes || []).find(c => c.id === k.cid) || {}).name || '';
   return `<div class="rf-lot">
-      <h2>${plur(faits.length, 'compte')} ouvert${faits.length > 1 ? 's' : ''}${classe ? ' · ' + esc(classe) : ''}</h2>
+      <h2>${plur(faits.length, 'compte')} ouvert${faits.length > 1 ? 's' : ''}${classe ? ' en ' + esc(classe) : ''}</h2>
       ${faits.length ? `<p class="rf-alerte">${svg(I.warn)}Les mots de passe ne seront plus montrés : copie-les ou imprime la liste maintenant.</p>
       <div class="rf-b-l"><button class="rf-b pri" data-rf="lot-copier">${svg(I.copy)}Copier pour un tableur</button>
         <button class="rf-b" data-rf="imprimer">${svg(I.file)}Imprimer</button>
@@ -360,7 +360,7 @@ function projection() {
   const c = ref.codes || {}, code = c[ref.projo];
   return `<div class="rf-projo" role="dialog" aria-label="Code">
       <button class="rf-projo-x" data-rf="projo-fin" aria-label="Fermer">${svg(I.x)}</button>
-      <span class="rf-projo-t">${ref.projo === 'eleve' ? 'Élèves' : 'Professeurs'} · ${esc((ref.board || {}).org || '')}</span>
+      <span class="rf-projo-t">${esc((ref.board || {}).org || '')}, code ${ref.projo === 'eleve' ? 'élèves' : 'professeurs'}</span>
       <b class="rf-projo-c">${formatCode(code || '')}</b>
       <i class="rf-qr grand" data-lien="${esc(lienRejoindre(SITE, code || ''))}"></i>
       <span class="rf-projo-a">Mirandola → Réglages → J’ai un code</span>

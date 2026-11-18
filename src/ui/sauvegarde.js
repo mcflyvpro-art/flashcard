@@ -35,7 +35,7 @@ export function peindre(w) {
 
 function accueil() {
   const n = db.decks.length, c = db.decks.reduce((a, x) => a + x.cards.length, 0);
-  return `<div class="mhd">${svg(I.cloud)}<span class="mhx"><b>Sauvegarde</b><i>${plur(n, 'paquet')} · ${plur(c, 'carte')}</i></span></div>
+  return `<div class="mhd">${svg(I.cloud)}<span class="mhx"><b>Sauvegarde</b><i>${plur(c, 'carte')} dans ${plur(n, 'paquet')}</i></span></div>
     <button class="mi" data-sv="exporter">${svg(I.down)}Exporter tous mes paquets</button>
     <button class="mi" data-sv="restaurer">${svg(I.redo)}Restaurer depuis un fichier</button>`;
 }

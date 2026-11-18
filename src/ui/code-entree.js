@@ -96,7 +96,7 @@ function feuilleNom(e, f) {
   const pret = nomValide(e.prenom) && nomValide(e.nom) && (!(f.classes || []).length || e.classe);
   const m = message(e.reponse);
   return coque(`<div class="mhd"><i class="jt groupe vide">${svg(f.type === 'prof' ? I.user : I.school)}</i>
-      <span class="mhx"><b>${esc(f.nom)}</b><i>${esc([role, f.ville].filter(Boolean).join(' · '))}</i></span></div>
+      <span class="mhx"><b>${esc(f.nom)}</b><i>${esc(role + (f.ville ? (role ? ' à ' : '') + f.ville : ''))}</i></span></div>
     <div class="ce-form">
       <div class="ce-noms">
         <input id="cepre" data-cein="prenom" value="${esc(e.prenom)}" placeholder="Prénom" autocomplete="given-name" maxlength="40" aria-label="Prénom">

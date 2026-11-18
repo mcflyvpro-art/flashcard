@@ -143,7 +143,7 @@ function lotHtml(mode) {
     <input type="file" id="fshot" accept="image/*" multiple hidden>`;
   const vide = !comp.text.trim() && mode === 'fichier';
   return `
-    ${mode === 'fichier' ? depotHtml('aipdf', I.file, 'Choisir un fichier', 'PDF · CSV · Anki · Quizlet') : ''}
+    ${mode === 'fichier' ? depotHtml('aipdf', I.file, 'Choisir un fichier', 'PDF, CSV, Anki ou Quizlet') : ''}
     <div class="cr-lot" id="lot" ${vide ? 'hidden' : ''}>
       ${mode === 'fichier' ? '<div class="cr-sous">À vérifier avant d’ajouter</div>' : ''}
       <div class="cr-ta"><textarea id="tx" placeholder="${PLACE[mode]}" aria-label="Cartes à ajouter"
@@ -332,8 +332,7 @@ function apercuHtml({ cards, dup, big }) {
     </div>` : '')
     + (dup.total ? `<div class="dupb">
       <span>${dup.total} doublon${dup.total > 1 ? 's' : ''}${
-        dup.already ? ` · ${dup.already} déjà dans le paquet` : ''}${
-        dup.inside ? ` · ${dup.inside} en double dans le texte` : ''}</span>
+        !dup.inside ? ' déjà dans le paquet' : !dup.already ? ' dans le texte' : ''}</span>
       <button class="dupt ${comp.dups ? 'on' : ''}" id="dupt">${
         comp.dups ? 'Les ajouter quand même' : 'Ignorés'}</button>
     </div>` : '')
@@ -377,8 +376,8 @@ function bindLot(t, mode) {
     comp.cards.push(...keep); comp.text = '';
     render();
     toast(I.check, plur(keep.length, 'carte')
-      + (!comp.dups && dup.total ? ` · ${dup.total} doublon${dup.total > 1 ? 's' : ''} écarté${dup.total > 1 ? 's' : ''}` : '')
-      + (big ? ` · ${big} trop longue${big > 1 ? 's' : ''}` : ''));
+      + (!comp.dups && dup.total ? `, ${dup.total} doublon${dup.total > 1 ? 's' : ''} écarté${dup.total > 1 ? 's' : ''}` : '')
+      + (big ? `, ${big} trop longue${big > 1 ? 's' : ''}` : ''));
   };
   if (mode === 'fichier') bindDepots(verser);
 }

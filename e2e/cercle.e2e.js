@@ -204,9 +204,9 @@ test('un défi à son rythme se règle : un vrai ou faux en 5, une réponse écr
   };
   await versCercle(page);
   await lancer('vf', 5);
-  await expect(page.locator('.toast:not(.sort)')).toContainText('5 questions · Vrai ou faux', { timeout: 10000 });
+  await expect(page.locator('.toast:not(.sort)')).toContainText('5 questions (vrai ou faux)', { timeout: 10000 });
   await lancer('ecrit', 5);
-  await expect(page.locator('.toast:not(.sort)')).toContainText('5 questions · Réponse écrite', { timeout: 10000 });
+  await expect(page.locator('.toast:not(.sort)')).toContainText('5 questions (réponse écrite)', { timeout: 10000 });
   const vf = store.tables.duels.find(d => d.jeu === 'vf'), ecrit = store.tables.duels.find(d => d.jeu === 'ecrit');
   expect(vf.total).toBe(5);
   for (const q of vf.cards) expect(q).toHaveLength(3);                     // la réponse proposée, figée pour tous

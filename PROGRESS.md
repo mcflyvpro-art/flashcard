@@ -19,7 +19,12 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-18 · Un seul chargeur, animé, partout (trois flashcards
+DERNIER   2026-11-18 · Sous un titre, une seule information, en mots :
+          plus de ligne d'icônes et de chiffres ni de points (Mes amis, défis,
+          clubs, profil, classe, devoirs, mémoire d'une carte, espace prof,
+          console du référent) ; le détail en tuiles nommées (ui/tuiles.js) ;
+          « Signaler tom » sans texte dessous.
+          · 2026-11-18 · Un seul chargeur, animé, partout (trois flashcards
           qu'on bat, dans la matière de l'offre ; e2e/chargeur.e2e.js). Sortis
           du démarrage : la création, la récitation, un club, un défi, les
           feuilles du cercle, le suivi d'une classe (src/classe-suivi.js),

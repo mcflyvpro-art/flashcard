@@ -66,7 +66,7 @@ export async function duelMake(d, ou = {}, reglage = {}) {
          name: d.name, total: cards.length, cards, jeu, group_id: ou.club || null, class_id: ou.classe || null }],
       { Prefer: 'return=minimal' });
     duels.list = null; duelsPull();
-    toast(I.bolt, `Défi lancé · ${plur(cards.length, 'question')} · ${JEUX[jeu].nom}`);
+    toast(I.bolt, `Défi lancé, ${plur(cards.length, 'question')} (${jeu === 'qcm' ? 'QCM' : JEUX[jeu].nom.toLowerCase()})`);
     return true;
   } catch (e) { toast(I.x, 'Défi impossible'); return false; }
 }

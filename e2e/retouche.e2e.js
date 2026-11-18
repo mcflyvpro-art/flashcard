@@ -55,7 +55,7 @@ test('corriger, retirer, annuler, ajouter : le paquet suit, une carte corrigée 
 
   await page.locator('[data-act="retouche"]').click();
   await expect(page.locator('.menu.retouche')).toBeVisible();
-  await expect(page.locator('.menu.retouche .mhx i')).toContainText('4 cartes');
+  await expect(page.locator('.menu.retouche .mhx i')).toHaveText('Capitales');          // sous le titre, le paquet seul (2026-11-18 : plus « Capitales · 4 cartes »)
 
   // une faute corrigée : la même carte, son état gardé
   await demander(page, 'corrige Rmoe en Rome');

@@ -115,9 +115,11 @@ function ligneAbonne(a) {
   if (a.source === 'offert') return date ? `Offert jusqu’au ${date}` : 'Offert';
   if (a.finPrevue) return date ? `Se termine le ${date}` : 'Résilié';
   if (a.statut === 'essai') return date ? `Essai jusqu’au ${date}` : 'Essai';
-  const f = FORMULES[a.formule] ? (niveauDe(a.formule) === 'infini' ? 'Infini · ' : '') + (FORMULES[a.formule].par === 'an' ? 'Annuel' : 'Mensuel')
-    : 'Abonnement';
-  return date ? `${f} · renouvelé le ${date}` : f;
+  // une phrase, sans points : « Annuel, renouvelé le 2 novembre 2027 », « Infini mensuel, … »
+  const rythme = FORMULES[a.formule] && FORMULES[a.formule].par === 'an' ? 'annuel' : 'mensuel';
+  const f = !FORMULES[a.formule] ? 'Abonnement'
+    : niveauDe(a.formule) === 'infini' ? 'Infini ' + rythme : rythme[0].toUpperCase() + rythme.slice(1);
+  return date ? `${f}, renouvelé le ${date}` : f;
 }
 
 /* Un compte Campus : celui d'un établissement (Mirandola Campus), ou, sans
@@ -156,7 +158,7 @@ export function resume(o) {
   return {
     cle: 'plus',
     titre: 'Mirandola+',
-    ligne: ligneAbonne(a) + (MAGASIN[a.source] ? ` · géré dans ${MAGASIN[a.source]}` : ''),
+    ligne: ligneAbonne(a) + (MAGASIN[a.source] ? `, géré dans ${MAGASIN[a.source]}` : ''),
     alerte: a.statut === 'impaye' ? (a.source === 'stripe' ? 'Stripe va réessayer ta carte : mets-la à jour pour garder Mirandola+.'
       : `Mets à jour ton moyen de paiement dans ${MAGASIN[a.source] || 'le magasin'} pour garder Mirandola+.`) : '',
     payer: false, gerer: a.source !== 'offert'

@@ -1,6 +1,6 @@
 /* Les feuilles du cercle (ui/cercle-feuilles.js, chargées à la demande
    depuis le 2026-11-18) : créer ou personnaliser un club, mon jeton, un
-   membre. Le code et le QR d'une invitation (.cf-invit) restent dans
+   membre (ses chiffres en tuiles nommées, ui/tuiles.js). Le code et le QR d'une invitation (.cf-invit) restent dans
    app.css : la feuille de partage d'un paquet s'en sert aussi. */
 .cc-f .cta{margin:4px 16px 14px;width:calc(100% - 32px)}
 .cf-apercu{display:flex;align-items:center;gap:13px;margin:0 16px 14px;padding:14px;border-radius:16px;
@@ -25,8 +25,3 @@
 .jt-pseudo{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:18px;background:var(--surf);
   font-size:15px;font-weight:650}
 .jt-pseudo svg{width:15px;height:15px;color:var(--soft)}
-.cf-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 16px 12px}
-.cf-stats span{display:flex;flex-direction:column;align-items:center;padding:10px 6px;border-radius:12px;
-  background:var(--bg);font-size:12px;color:var(--soft);text-align:center}
-.cf-stats b{font-size:18px;color:var(--ink)}
-.cf-stats svg{width:17px;height:17px;margin-bottom:3px;color:var(--ink2)}

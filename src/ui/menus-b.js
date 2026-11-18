@@ -18,8 +18,8 @@ import {
   dueCount, fnrNote, fnrScan, simpleMode
 } from './import-cartes.js';
 import { mountMenu } from './menus-a.js';
-import { timeAgo } from './reglages-corbeille.js';
-import { VERSN } from '../core/reglages-corbeille.js';
+import { ilYa } from './reglages-corbeille.js';
+import { tuiles } from './tuiles.js';
 import { JEUX, jeuRythme } from '../defi.js';
 
 export function paintMenuCard(w) {
@@ -173,7 +173,7 @@ export function paintMenuPreview(w) {
       <div class="menu">
         <div class="mhd">${svg(I.card)}
           <span class="mhx"><b>${esc(d.name)}</b>
-            <i>${esc(subj(d.subject).name)} · ${plur(d.cards.length, 'carte')}${due ? ' · ' + due + ' à revoir' : ''}</i>
+            <i>${plur(d.cards.length, 'carte')}${due ? `, dont ${due} à revoir` : ''}</i>
           </span>
         </div>
         <div class="mpick">
@@ -229,15 +229,14 @@ export function paintMenuVers(w) {
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
         <div class="mhd">${svg(I.clock)}
-          <span class="mhx"><b>Historique de « ${esc(d.name)} »</b>
-            <i>les ${VERSN} dernières versions, avant chaque remplacement</i></span></div>
+          <span class="mhx"><b>Historique de « ${esc(d.name)} »</b></span></div>
         ${!l ? (vers.err ? '<div class="note">Historique indisponible.</div>' : chargeur(true))
           : !l.length ? `<div class="note">Rien encore. Une version est gardée avant chaque
               remplacement, fusion, découpe ou réimport.</div>`
           : `<div class="mscroll">${l.map(v => `<button class="mi" data-vers="${v.id}">
               ${svg(I.redo)}<span class="ml2"><span class="n">${esc(v.why || 'version')}</span>
-                <span class="sub">${plur((v.cards || []).length, 'carte')} · ${timeAgo(v.created_at)}</span></span>
-              </button>`).join('')}</div>`}
+                <span class="sub">${plur((v.cards || []).length, 'carte')}</span></span>
+              <span class="tail">${ilYa(v.created_at)}</span></button>`).join('')}</div>`}
       </div>`;
     mountMenu(w);
     return;
@@ -247,7 +246,7 @@ export function paintMenuConflict(w) {
   const c = conflicts[0];
     if (!c) { setMenu(null); return; }
     const side = (v, lab, when) => `<div class="cside">
-      <b>${lab}</b><i>${plur(v.cards.length, 'carte')}${when ? ' · ' + when : ''}</i>
+      <b>${lab}</b><i>${plur(v.cards.length, 'carte')}${when ? ', ' + when : ''}</i>
       <span>${esc(v.name)}</span></div>`;
     w.innerHTML = `<div class="scrim" data-mact="close"></div>
       <div class="menu">
@@ -257,7 +256,7 @@ export function paintMenuConflict(w) {
         <div class="note">Rien n’est perdu : tu peux garder les deux.</div>
         <div class="csides">
           ${side(c.mine, 'Ici', null)}
-          ${side(c.theirs, 'Ailleurs', c.theirs.at ? timeAgo(c.theirs.at) : null)}
+          ${side(c.theirs, 'Ailleurs', c.theirs.at ? ilYa(c.theirs.at) : null)}
         </div>
         <button class="mi" data-mact="cfboth" style="justify-content:center;font-weight:700">
           ${svg(I.copy)}Garder les deux</button>
@@ -276,13 +275,13 @@ export function paintMenuDuelitem(w) {
       <div class="menu">
         <div class="mhd">${svg(I.bolt)}
           <span class="mhx"><b>${esc(du.name)}</b>
-            <i>lancé par ${esc(noDetect(shortWho(du.who) || 'un compte'))} · ${plur(du.total, 'question')}
-              · ${JEUX[jeuRythme(du.jeu)].nom} · ${timeAgo(du.created_at)}</i></span>
+            <i>${mine ? 'Lancé par toi' : 'Lancé par ' + esc(noDetect(shortWho(du.who) || 'un compte'))} ${ilYa(du.created_at)}</i></span>
         </div>
+        ${tuiles([[du.total, 'questions'], [JEUX[jeuRythme(du.jeu)].nom, 'jeu'], r.length ? [r.length, r.length > 1 ? 'joueurs' : 'joueur'] : null])}
         <div class="mscroll">${r.length ? r.map((sc, i) => `<div class="bdr ${sc.user_id === auth.uid ? 'me' : ''}">
             <span class="bdp">${medailleHtml(i + 1)}</span>
             <span class="bdn"><b>${esc(shortWho(sc.who) || 'Compte')}</b>
-              <i>${sc.score}/${du.total} · ${Math.round(sc.ms / 1000)} s</i></span></div>`).join('')
+              <i>en ${Math.round(sc.ms / 1000)} s</i></span><b class="bds">${sc.score}/${du.total}</b></div>`).join('')
           : '<div class="note">Personne n’a encore joué.</div>'}</div>
         ${me ? ``
           : `<button class="mi" data-mact="duelgo" style="justify-content:center;font-weight:700">

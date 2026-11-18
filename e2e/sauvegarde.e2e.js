@@ -95,7 +95,7 @@ test('Mirandola+ : tout se restaure d’un coup, et l’export rend le fichier c
   await expect(page.locator('.menu.sv')).toHaveCount(0);
 
   await ouvrirSauvegarde(page);
-  await expect(page.locator('.mhd')).toContainText('7 paquets · 7 cartes');
+  await expect(page.locator('.mhd')).toContainText('7 cartes dans 7 paquets');
   const dl = page.waitForEvent('download');
   await page.locator('[data-sv="exporter"]').click();
   const f = await dl;

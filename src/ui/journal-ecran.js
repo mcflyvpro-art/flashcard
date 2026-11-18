@@ -203,7 +203,9 @@ function depuisToujours(J) {
   const t = J.toujours;
   if (!t || !t.n) return '';
   const d = t.depuis ? new Date(t.depuis) : null;
-  return `<p class="jr-tout">${svg(I.star)}${d ? `Depuis le ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()} · ` : ''}${nb(t.n)} cartes · ${duree(t.ms)}</p>`;
+  // une phrase : « 1 234 cartes en 12 h depuis le 3 mars 2026 »
+  return `<p class="jr-tout">${svg(I.star)}${nb(t.n)} cartes${t.ms ? ' en ' + duree(t.ms) : ''}${
+    d ? ` depuis le ${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}` : ''}</p>`;
 }
 
 /* ---------- l'écran ---------- */

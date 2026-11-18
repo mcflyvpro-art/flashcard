@@ -30,7 +30,7 @@ test('le profil d’un ami, d’une demande en attente, d’un membre de club', 
   for (const t of ['Tom Bernard', '@tom', 'Ami']) await expect(tete).toContainText(t);
   const tuiles = page.locator('.lp-tuile');
   await expect(tuiles.filter({ hasText: '7 jours' })).toContainText('12');
-  await expect(tuiles.filter({ hasText: 'Justes' })).toContainText('75 %');
+  await expect(tuiles.filter({ hasText: 'de bonnes réponses' })).toContainText('75 %');
   await expect(page.locator('.lp-cal i:not(.vide)')).toHaveCount(35);
   await expect(page.getByRole('button', { name: 'Lui envoyer un paquet' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);

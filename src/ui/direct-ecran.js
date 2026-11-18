@@ -56,7 +56,8 @@ function tic() {
 function lancerTic() { if (!raf) raf = requestAnimationFrame(tic); }
 
 /* ---------- morceaux communs ---------- */
-const sousTitre = e => [JEUX[e.jeu] ? JEUX[e.jeu].nom : '', e.classe || e.club || ''].filter(Boolean).map(esc).join(' · ');
+// sous le titre d'une partie : son jeu, et, s'il y en a, la classe ou le club — en mots, sans points
+const sousTitre = e => esc((JEUX[e.jeu] ? JEUX[e.jeu].nom : '') + (e.classe || e.club ? (JEUX[e.jeu] ? ', ' : '') + (e.classe || e.club) : ''));
 
 function tete(e, droite = '') {
   return `<header class="dx-tete">
@@ -217,7 +218,7 @@ function joueurFini(e) {
   return `${tete(e)}
     <div class="dx-j dx-j-fin">
       <h2 class="dx-bravo">${svg(I.trophy)}${m.place === 1 ? 'Tu gagnes !' : `Tu termines ${placeTexte(m.place)}`}</h2>
-      <p class="dx-k"><b>${m.score}</b> pts · ${svg(I.check)}${m.justes || 0}/${e.total}</p>
+      <p class="dx-k"><b>${m.score}</b> points, ${m.justes || 0} sur ${e.total} justes</p>
       ${e.top && e.top.length ? podiumHtml(e.top) : ''}
       <button class="cta" data-dx="terminer">Terminer</button>
     </div>`;

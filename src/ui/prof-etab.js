@@ -13,7 +13,7 @@ import {
 import { atSchool } from './classement.js';
 import { toast } from './import-cartes.js';
 import { closeMenu, paintMenu } from './menus-a.js';
-import { timeAgo } from './reglages-corbeille.js';
+import { ilYa } from './reglages-corbeille.js';
 import { btn, chargement, classeOuverte, pastilleClasse } from './prof-accueil.js';
 import { champ, feuille, focus } from './prof-feuilles.js';
 
@@ -96,11 +96,11 @@ function places(w) {
         <span class="${l.attente ? 'am' : ''}"><b>${l.attente}</b><i>en attente</i></span>
         <span class="${libresDe(l) ? '' : 'ko'}"><b>${libresDe(l)}</b><i>libres</i></span>
         <span><b>${l.ia_mois}<small>/${l.ia_prof}</small></b><i>IA ce mois</i></span></div>
-      <p class="pf-note">${l.fin ? (l.fin < aujourdhui() ? 'Licence finie le ' : 'Licence jusqu’au ') + esc(jourLong(l.fin)) : 'Licence sans date de fin'}
-        · ${plur(l.ia_eleve, 'génération')} IA par élève et par mois</p>`;
+      <p class="pf-note">${l.fin ? (l.fin < aujourdhui() ? 'Licence finie le ' : 'Licence jusqu’au ') + esc(jourLong(l.fin)) : 'Licence sans date de fin'}.
+        Chaque élève a ${plur(l.ia_eleve, 'génération')} d’IA par mois.</p>`;
   const d = l && l.demande;
   feuille(w, '', '<b>Mes places</b>', 'Cours particuliers', `${corps}
-      ${d ? `<p class="pf-alerte">${svg(I.clock)}Demande envoyée : ${plur(d.places, 'place')} de plus · ${timeAgo(d.le)}</p>` : ''}
+      ${d ? `<p class="pf-alerte">${svg(I.clock)}Demande de ${plur(d.places, 'place')} de plus envoyée ${ilYa(d.le)}</p>` : ''}
       <h3 class="pf-h3">Commander des places</h3>
       ${champ('Combien de places de plus ?', 'nb', 'id="pfnb" inputmode="numeric" maxlength="4"', prof.f.nb ?? '10')}
       ${champ('Un mot pour Mirandola (facultatif)', 'mot', 'maxlength="300"')}`,
@@ -130,7 +130,7 @@ function listeClasses() {
   if (!l) return chargement();
   if (!l.length) return '<p class="pf-note">Le référent n’a pas encore créé de classe.</p>';
   return l.map(c => `<div class="pf-li">${pastilleClasse({ id: c.id })}
-    <span class="pf-lit"><b>${esc(c.nom)}</b><i>${esc([c.niveau, plur(c.effectif, 'élève'), c.enseigne && c.matiere].filter(Boolean).join(' · '))}</i></span>
+    <span class="pf-lit"><b>${esc(c.nom)}</b><i>${plur(c.effectif, 'élève')}</i></span>
     ${c.enseigne ? btn('enseigner', I.check, 'J’y enseigne', 'sm on', `data-id="${esc(c.id)}" data-v="0"`)
       : btn('enseigner', I.plus, 'Ajouter', 'sm', `data-id="${esc(c.id)}" data-v="1"`)}</div>`).join('');
 }

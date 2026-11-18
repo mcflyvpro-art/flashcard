@@ -118,7 +118,7 @@ export function bilanTexte(b) {
   if (b.modifiees) l.push(accord(b.modifiees, 'modifiée'));
   if (b.ajoutees) l.push(accord(b.ajoutees, 'ajoutée'));
   if (b.retirees) l.push(accord(b.retirees, 'retirée'));
-  return l.length ? l.join(' · ') : 'Rien n’a changé';
+  return l.length ? l.join(', ') : 'Rien n’a changé';
 }
 
 export const aChange = b => !!(b.modifiees || b.ajoutees || b.retirees);

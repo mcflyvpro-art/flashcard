@@ -7,7 +7,7 @@ import { auth, cercle, compte, db, duels, eleve, mates2, online, setAnimate, vie
 import { bindPager, go, render, tabs } from './bibliotheque.js';
 import { defiLigne, enDirectHtml, parDefi } from './cercle.js';
 import {
-  codeDepuisTexte, echeance, etatDevoirEleve, formatCode, iso,
+  codeDepuisTexte, etatDevoirEleve, formatCode, iso, joursEntre,
   messageStatut, nomPropre, nomValide, normCode
 } from '../classe.js';
 import { avatar, blason, couleurClasse } from './jeton.js';
@@ -44,8 +44,7 @@ function rejoindreHtml() {
     const demander = !nomConnu();
     const ok = !demander || (nomValide(eleve.prenom) && nomValide(eleve.nom));
     return `<div class="el-carte el-apercu" data-k="apercu">
-      <div class="el-ap-h">${neutre()}<span><b>${esc(a.nom)}</b><i>${
-        [a.niveau, a.prof, a.etab].filter(Boolean).map(esc).join(' · ')}</i></span></div>
+      <div class="el-ap-h">${neutre()}<span><b>${esc(a.nom)}</b><i>${esc(a.prof || a.etab || a.niveau || '')}</i></span></div>
       ${a.validation ? `<p class="el-note">${svg(I.lock)}Ton professeur validera ta demande.</p>` : ''}
       ${demander ? `<div class="el-noms">
           <input id="elpre" data-elin="prenom" value="${esc(eleve.prenom)}" placeholder="Prénom" autocomplete="given-name" maxlength="40" aria-label="Prénom">
@@ -63,11 +62,23 @@ function rejoindreHtml() {
 }
 
 /* ---------- les devoirs ---------- */
+/* Sous un devoir, une chose en mots : pour quand (ou le retard) ; sans
+   échéance, sa taille. La classe se lit à la couleur de sa pastille. */
+function quand(d, auj) {
+  if (!d.due || d.etat === 'rendu') return plur(d.n, 'carte');      // rendu : sa pastille le dit déjà
+  const j = joursEntre(auj, d.due);
+  if (j < 0) return `${plur(-j, 'jour')} de retard`;
+  return j === 0 ? 'Pour aujourd’hui' : j === 1 ? 'Pour demain' : `Pour ${esc(jourSemaine(d.due, j))}`;
+}
+// dans la semaine : « jeudi » ; plus loin : « le 12 décembre »
+const jourSemaine = (due, j) => new Date(due + 'T12:00').toLocaleDateString('fr-FR',
+  j < 7 ? { weekday: 'long' } : { day: 'numeric', month: 'long' }).replace(/^(\d)/, 'le $1');
+
 export function devoirLigne(d, auj) {
   const e = etatDevoirEleve(d, auj);
   return `<button class="el-dv ${e.k}" data-el="devoir" data-id="${esc(d.id)}">
         <i class="el-dot" style="--k:${couleurClasse(d.class_id)}"></i>
-        <span class="el-dvt"><b>${esc(d.nom)}</b><i>${esc(d.classe)} · ${plur(d.n, 'carte')}${d.due ? ' · ' + esc(echeance(d.due, auj)) : ''}</i></span>
+        <span class="el-dvt"><b>${esc(d.nom)}</b><i>${quand(d, auj)}</i></span>
         <em class="el-pill ${e.k}">${esc(e.t)}</em>${svg(I.arrow)}</button>`;
 }
 
@@ -92,7 +103,7 @@ function classesHtml() {
       <span class="el-clt"><b>${esc(c.nom)}</b><i>En attente de ${esc(c.prof || 'ton professeur')}</i></span>
       <button class="el-btn sm" data-el="annuler" data-id="${esc(c.class_id)}">Annuler</button></div>`).join('')}
     ${ins.map(c => `<button class="el-cl" data-el="classe" data-id="${esc(c.class_id)}">${pastille(c.class_id)}
-      <span class="el-clt"><b>${esc(c.nom)}</b><i>${[c.prof, c.matieres].filter(Boolean).map(esc).join(' · ') || esc(c.etab)}</i></span>
+      <span class="el-clt"><b>${esc(c.nom)}</b><i>${esc(c.prof || c.etab || '')}</i></span>
       ${c.a_faire ? `<em class="el-badge">${c.a_faire}</em>` : ''}${svg(I.arrow)}</button>`).join('')}
     ${!l.length ? '<p class="el-vide">Tu n’es dans aucune classe.</p>' : ''}`;
 }

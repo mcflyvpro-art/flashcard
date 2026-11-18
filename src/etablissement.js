@@ -52,11 +52,11 @@ export function messageEtab(statut, type) {
 
 /* Ce qu'on dit en entrant, selon qui l'on devient. */
 export function bienvenue(r) {
-  const ou = [r.nom, r.classe].filter(Boolean).join(' · ');
-  if (r.type === 'prof' && r.statut === 'attente') return `Demande envoyée · ${ou}`;
-  if (r.type === 'prof') return `Tu suis ${ou}`;
-  if (r.quel === 'ref') return `Tu es référent · ${r.nom}`;
-  return `Bienvenue · ${ou}`;
+  // une phrase, sans points (2026-11-18)
+  if (r.type === 'prof' && r.statut === 'attente') return `Demande envoyée à ${r.nom}`;
+  if (r.type === 'prof') return `Tu suis ${r.nom}`;
+  if (r.quel === 'ref') return `Tu es référent de ${r.nom}`;
+  return r.classe ? `Bienvenue en ${r.classe}` : `Tu as rejoint ${r.nom}`;
 }
 
 /* Le suivi d'un établissement, du premier contact au client. */

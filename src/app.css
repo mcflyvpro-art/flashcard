@@ -542,6 +542,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   font-size:clamp(19px,5.2vw,27px);letter-spacing:-.5px;text-align:center}
 .sol.neuf{animation:pop .26s var(--e) both}
 .sol svg{width:20px;height:20px;stroke-width:2.6;flex:none}
+.sol .ou{font-size:.82em;font-weight:500;opacity:.7}
 .ans{width:100%;border-radius:14px;background:var(--card);box-shadow:var(--edge);
   padding:19px 22px;font-size:19px;font-weight:700;text-align:center;letter-spacing:-.3px;
   transition:background .32s var(--e),color .32s,box-shadow .3s}
@@ -764,6 +765,8 @@ body > #app:has(> .pub){padding:0;position:relative;z-index:0}
 .sr .c{font-size:13.5px;font-weight:750;color:var(--soft);font-variant-numeric:tabular-nums;
   white-space:nowrap;flex:none}
 .sr > svg{width:17px;height:17px;color:var(--soft);opacity:.5;flex:none}
+/* le paquet d'une carte trouvée, à droite : plus « verso · paquet » sur une ligne */
+.sr-p{flex:none;max-width:38%;font-style:normal;font-size:12.5px;font-weight:600;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sr.add{color:var(--soft)}
 .sr.add > svg:first-child{width:19px;height:19px;opacity:1;color:var(--ink)}
 .sr.flat{box-shadow:var(--edge)}
@@ -1428,7 +1431,9 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
   background:radial-gradient(closest-side,var(--bg2) 77%,#0000 79%),conic-gradient(var(--az4) calc(var(--p)*1%),var(--line) 0)}
 .mem-o b{font-size:17px}
 .mem-d{width:64%;height:5px;border-radius:5px;background:linear-gradient(90deg,var(--az4) calc(var(--d)*10%),var(--line) 0)}
-.mem-s{display:flex;align-items:center;gap:6px;margin:0;padding:9px 16px 4px;font-size:13px;font-weight:600;color:var(--soft)}
+.mem-s{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0;padding:10px 16px 4px;font-size:13px;color:var(--soft)}
+.mem-a{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:99px;background:var(--bg);
+  font-size:12.5px;font-weight:650;color:var(--ink2)}
 .mrow{display:flex;align-items:center;gap:9px;padding:7px 12px}
 .mrow.col{flex-direction:column;align-items:stretch;gap:9px}
 /* chercher et remplacer : le « Aa » se glisse dans le champ de recherche */
@@ -1528,6 +1533,15 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,[contenteditable
 .bdn i{display:block;font-style:normal;font-size:12.5px;color:var(--soft);margin-top:1px}
 .bdn em{display:block;height:4px;border-radius:4px;background:var(--az3);margin-top:6px}
 .bdr.me .bdn em{background:var(--az5)}
+.bds{flex:none;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+/* des tuiles nommées (ui/tuiles.js, 2026-11-18) : une valeur en gros, son nom
+   dessous, en mots — le détail d'une fiche, à la place d'une ligne de points */
+.tuiles{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;margin:2px 16px 14px}
+.tuiles > span{display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 6px;border-radius:13px;
+  background:var(--bg);text-align:center;min-width:0}
+.tuiles b{max-width:100%;font-size:17px;font-weight:700;letter-spacing:-.3px;font-variant-numeric:tabular-nums;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tuiles i{max-width:100%;font-style:normal;font-size:12px;line-height:1.25;color:var(--soft);text-wrap:balance}
 /* progression du défi : la même barre fine que le chrono du quiz */
 .dbar{height:4px;border-radius:4px;background:var(--surf);overflow:hidden;margin:2px 1px 14px;flex:none}
 .dbar i{display:block;height:100%;border-radius:4px;background:var(--az4);
@@ -1611,10 +1625,6 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,[contenteditable
   display:inline-flex;align-items:center;gap:5px;padding:4px 2px}
 .cc-badge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--ko);color:#fff;
   font-size:11px;font-weight:800;line-height:18px;text-align:center;font-style:normal}
-.cc-infos{display:flex;flex-wrap:wrap;align-items:center;gap:3px 12px;min-width:0;font-size:13px;color:var(--soft);
-  font-variant-numeric:tabular-nums}
-.cc-infos > span{display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cc-infos svg{width:14px;height:14px;flex:none;opacity:.8}
 /* les jetons d'identité (ui/jeton.js) : la forme dit ce que c'est, avant la
    couleur — un rond et un visage pour une personne, un carré arrondi pour
    une classe (ses repères dans les listes aussi : jamais un rond, qui est

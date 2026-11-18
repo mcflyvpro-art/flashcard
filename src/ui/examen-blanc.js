@@ -42,7 +42,7 @@ function offert() {
   if (n == null || n === Infinity) return '';
   if (!n) return `<div class="eb-offert fini">${svg(I.target)}<p>Tes examens blancs offerts sont faits</p>
       <button class="eb-infini" data-eb="infini">Passer à Infini</button></div>`;
-  return `<p class="eb-offert">${svg(I.spark)}<span>Examen blanc offert · il t’en reste <b>${n}</b></span></p>`;
+  return `<p class="eb-offert">${svg(I.spark)}<span>Il te reste <b>${n}</b> examen${n > 1 ? 's' : ''} blanc${n > 1 ? 's' : ''} offert${n > 1 ? 's' : ''}</span></p>`;
 }
 
 function liberer() { for (const u of e.apercus) URL.revokeObjectURL(u); }

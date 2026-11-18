@@ -41,7 +41,8 @@ export const tete = (titre, sous, actions) => `<header class="pf-h">
 
 export const classeOuverte = () => (prof.classes || []).find(c => c.id === prof.open) || null;
 
-export const metaClasse = c => [c.niveau, c.matiere].filter(Boolean).map(esc).join(' · ');
+// sous le nom d'une classe, une chose : sa matière (la vôtre), sinon son niveau — jamais une suite à points
+export const metaClasse = c => esc(c.matiere || c.niveau || '');
 
 /* ---------- la barre latérale ---------- */
 function ligneNav(c, actif) {
@@ -57,7 +58,7 @@ export function navProf(actif) {
   return `<nav class="pf-nav" aria-label="Espace professeur">
     <button class="pf-ni${actif === 'accueil' ? ' on' : ''}" data-pf="accueil">${svg(I.grid)}<span>Tableau de bord</span></button>
     <button class="pf-ni${actif === 'agenda' ? ' on' : ''}" data-pf="agenda">${svg(I.cal)}<span>Agenda</span></button>
-    <div class="pf-nl"><span>Classes${an.length > 1 ? '' : prof.annee ? ' · ' + esc(prof.annee) : ''}</span>
+    <div class="pf-nl"><span>Classes${an.length > 1 ? '' : prof.annee ? ' ' + esc(prof.annee) : ''}</span>
       <span>${etab() ? `<button class="pf-nadd" data-pf="choisir" aria-label="Mes classes de l’établissement"
         title="Mes classes de l’établissement">${svg(I.school)}</button><button class="pf-nadd" data-pf="groupe"
         aria-label="Nouveau groupe" title="Nouveau groupe">${svg(I.plus)}</button>`
@@ -199,9 +200,9 @@ export function profAccueilView() {
     ? btn('choisir', I.school, 'Mes classes') + btn('donner', I.card, 'Donner un devoir') + btn('groupe', I.users, 'Nouveau groupe', 'pri')
     : btn('rejoindre', I.link, '', 'ic', 'aria-label="Rejoindre avec un code collègue" title="Rejoindre avec un code collègue"')
       + btn('donner', I.card, 'Donner un devoir') + btn('creer', I.plus, 'Nouvelle classe', 'pri');
-  const an = anneeChoix() || (prof.annee ? esc(prof.annee) : '');
+  const an = anneeChoix();      // le sélecteur, s'il y a plusieurs années ; une seule : la barre latérale la dit
   $.innerHTML = `<div class="pf">${navProf('accueil')}<main class="pf-main" id="pfmain">
-    ${tete(bonjour(), `${esc(jourLong(iso(new Date())))}${an ? ' · ' + an : ''}`, actions)}
+    ${tete(bonjour(), `${esc(jourLong(iso(new Date())))}${an ? ' ' + an : ''}`, actions)}
     ${!l ? (prof.err ? `<div class="pf-vide">${svg(I.cloud)}<h2>Classes indisponibles</h2>${btn('relire', I.refresh, 'Réessayer')}</div>` : chargement())
       : !rangerClasses(l).actives.length ? accueilVide() : accueilCorps(l)}
   </main></div>`;
@@ -218,7 +219,7 @@ function moisAgenda(ancre) {
       const ds = jours[k] || [];
       return `<button class="pf-agj${k === auj ? ' auj' : ''}${k === prof.jour ? ' on' : ''}${k < auj ? ' passe' : ''}"
         data-pf="jour" data-v="${k}"><b>${+k.slice(8)}</b>${ds.slice(0, 3).map(x =>
-          `<span class="pf-agi" style="--k:${couleur(x.class_id)}"><i></i><span>${esc(x.classe)} · ${esc(x.nom)}</span></span>`).join('')}${
+          `<span class="pf-agi" style="--k:${couleur(x.class_id)}" title="${esc(x.classe)}"><i></i><span>${esc(x.nom)}</span></span>`).join('')}${
           ds.length > 3 ? `<em>+${ds.length - 3}</em>` : ''}</button>`;
     }).join('')}</div>`;
 }
@@ -229,7 +230,7 @@ function jourAgenda() {
   return `<section class="pf-panel"><h2>${esc(jourLong(prof.jour))} <span>${ds.length}</span></h2>
     ${ds.length ? `<div class="pf-list">${ds.map(x => `<button class="pf-li" data-pf="devoir" data-id="${esc(x.id)}">
       <i class="pf-dot" style="--k:${couleur(x.class_id)}"></i>
-      <span class="pf-lit"><b>${esc(x.nom)}</b><i>${esc(x.classe)}${x.mien ? '' : ' · un collègue'} · ${plur(x.n, 'carte')}</i></span>
+      <span class="pf-lit"><b>${esc(x.nom)}</b><i>${esc(x.classe)}${x.mien ? '' : ', donné par un collègue'}</i></span>
       <span class="pf-num"><b>${x.rendu}</b><i>/${x.effectif}</i></span>${svg(I.arrow)}</button>`).join('')}</div>`
       : `<div class="pf-ok">${svg(I.check)}<span>Rien à rendre ce jour-là</span></div>`}</section>`;
 }

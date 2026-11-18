@@ -43,9 +43,9 @@ import './demo.css';
 const POUR_SOI = { href: '/inscription', icone: 'user', long: 'Créer mon compte gratuit', court: 'Créer mon compte' };
 const POUR_L_ETAB = { href: '/demande-demo', icone: 'school', long: 'Essayer dans mon établissement', court: 'Mon établissement' };
 const ROLES = [
-  { k: 'eleve', n: 1, t: 'Élève', c: 'Élève', s: 'Léa · 2nde B', suite: POUR_SOI },
-  { k: 'prof', n: 2, t: 'Professeur', c: 'Prof', s: 'Marc · mathématiques', suite: POUR_L_ETAB },
-  { k: 'ref', n: 3, t: 'Référent de l’établissement', c: 'Référent', s: 'Claire · le lycée', suite: POUR_L_ETAB }
+  { k: 'eleve', n: 1, t: 'Élève', c: 'Élève', s: 'Léa, en 2nde B', suite: POUR_SOI },
+  { k: 'prof', n: 2, t: 'Professeur', c: 'Prof', s: 'Marc, professeur de mathématiques', suite: POUR_L_ETAB },
+  { k: 'ref', n: 3, t: 'Référent de l’établissement', c: 'Référent', s: 'Claire, référente du lycée', suite: POUR_L_ETAB }
 ];
 const CLE = 'folio.demo';
 /* Le tuto de chaque rôle se joue la première fois qu'on le prend : entrer en
