@@ -4,7 +4,6 @@ import { isLeech } from '../file.js';
 import {
   db, menu, setMenu, setSubjName, subjColor, subjEdit, subjName, view
 } from '../data/etat.js';
-import { render } from './bibliotheque.js';
 import { sansMouvement } from './mouvement.js';
 import { paintMenuCercle } from './cercle-feuilles.js';
 import { paintMenuCode } from './code-porte.js';
@@ -86,7 +85,7 @@ export function mountMenu(w) {
     box.setAttribute('role', 'dialog');
     box.setAttribute('aria-modal', 'true');
     box.appendChild(body);
-    if (!PC.matches) bindSheetDrag(box, body);
+    if (!PC.matches) bindSheetDrag(box);
   }
   const scrim = w.querySelector('.scrim');
   const vue = avant; avant = null;
@@ -234,63 +233,83 @@ function placerSurPC(box) {
   box.style.top = Math.round(y) + 'px';
 }
 
-/* Tirer la feuille vers le bas la ferme, comme partout ailleurs sur un
-   téléphone. Sans ça, une feuille courte — une explication, un code —
-   n'avait aucune réponse au geste : on tirait et il ne se passait rien.
-   Le geste ne prend la main que si le contenu est déjà en haut, sinon
-   c'est le texte qui doit défiler. */
-function bindSheetDrag(box, body) {
-  const head = box.querySelector('.mtop');
-  let y0 = 0, dy = 0, on = false, lock = 0, t0 = 0, pid = -1, pts = 0;
-  /* Un seul doigt, et seulement vers le bas. Sans ces deux gardes, la
-     feuille suivait n'importe quel geste — deux doigts la déplaçaient et
-     la pinçaient comme une image. */
-  const cancel = () => {
-    on = false; pid = -1;
-    box.style.transition = ''; box.style.transform = '';
-    const sc = document.querySelector('.scrim'); if (sc) sc.style.opacity = '';
-  };
-  const start = e => {
-    pts++;
-    if (pts > 1) return cancel();
-    if (e.pointerType === 'mouse' && e.button) return;
-    if (e.target.closest('input,textarea,button,.seg,.rng,.mgrid')) return;
-    if (body.scrollTop > 2 && !head.contains(e.target)) return;
-    on = true; lock = 0; dy = 0; y0 = e.clientY; t0 = Date.now(); pid = e.pointerId;
-    box.style.transition = 'none';
-  };
-  const move = e => {
-    if (!on || e.pointerId !== pid || pts > 1) return;
-    dy = e.clientY - y0;
-    if (!lock) {
-      if (Math.abs(dy) < 7) return;
-      /* vers le haut : ce n'est pas une fermeture, on rend la main */
-      if (dy < 0) { on = false; box.style.transition = ''; box.style.transform = ''; return; }
-      lock = 1;
+/* Tirer la feuille vers le bas la ferme, comme une feuille d'iOS (refait le
+   2026-11-17, demandé : « les feuilles se ferment mal au swipe vers le bas,
+   pas pro, pas fluide ») : d'où que parte le doigt — la poignée, une grille
+   de visages, une liste de boutons —, dès que ce qui défile sous lui est en
+   haut ; elle suit le doigt, résiste vers le haut, et part avec l'élan du
+   doigt ou revient en douceur. Avant : seule la poignée la prenait (tout
+   bouton était ignoré), le navigateur reprenait le geste en route (la
+   feuille revenait d'un coup), et la fermeture était coupée net au milieu
+   de son animation. Au toucher (touch*, non passif) : c'est le seul moyen
+   d'empêcher le navigateur de prendre un glissé vertical pour lui. */
+const SANS_TIRER = 'input,textarea,select,.rng,.seg';
+function bindSheetDrag(box) {
+  let t = null;
+  box.addEventListener('touchstart', e => {
+    t = null;
+    if (e.touches.length !== 1 || box.classList.contains('sort') || e.target.closest(SANS_TIRER)) return;
+    const sc = e.target.closest(DEFILANTS + ',.mbody'), p = e.touches[0];
+    t = { x0: p.clientX, y0: p.clientY, haut: !sc || sc.scrollTop <= 0 || !!e.target.closest('.mtop'), on: false, y: 0, pts: [] };
+  }, { passive: true });
+  box.addEventListener('touchmove', e => {
+    if (!t) return;
+    const p = e.touches[0], dx = p.clientX - t.x0, dy = p.clientY - t.y0;
+    if (!t.on) {
+      if (Math.abs(dx) < 7 && Math.abs(dy) < 7) return;
+      // vers le haut, de côté, ou du contenu à remonter : le défilement garde la main
+      if (dy <= 0 || Math.abs(dx) > dy || !t.haut || e.touches.length > 1) { t = null; return; }
+      t.on = true; t.h = box.getBoundingClientRect().height; t.y0 = p.clientY;
+      box.style.transition = 'none'; box.style.animation = 'none';
     }
-    box.style.transform = `translateY(${dy.toFixed(1)}px)`;
-    const sc = document.querySelector('.scrim');
-    if (sc) sc.style.opacity = Math.max(0, 1 - dy / 320);
+    if (e.cancelable) e.preventDefault();
+    const d = p.clientY - t.y0;
+    t.y = d >= 0 ? d : -Math.sqrt(-d) * 3;          // au-dessus de sa place, elle résiste
+    const now = performance.now();                 // l'horloge du moment : des mouvements regroupés portent la même heure
+    t.pts.push([now, p.clientY]);
+    while (t.pts.length > 2 && now - t.pts[0][0] > 90) t.pts.shift();
+    box.style.transform = `translateY(${t.y.toFixed(1)}px)`;
+    const sc = voile(); if (sc) { sc.style.transition = 'none'; sc.style.opacity = Math.max(0, 1 - t.y / t.h).toFixed(3); }
+  }, { passive: false });
+  const fin = e => {
+    const g = t; t = null;
+    if (!g || !g.on) return;
+    avalerClic(box);
+    const a = g.pts[0], b = g.pts[g.pts.length - 1];
+    const v = a && b && b[0] > a[0] ? (b[1] - a[1]) / (b[0] - a[0]) : 0;    // px/ms, vers le bas
+    // assez loin (le tiers d'une petite feuille, 150 px d'une grande) ou d'un geste vif
+    if (e.type !== 'touchcancel' && ((g.y > Math.min(g.h * 0.3, 150) && v > -0.25) || v > 0.5)) return partir(box, g.y, g.h, v);
+    const ms = 300, courbe = 'cubic-bezier(.25,1,.4,1)';
+    box.style.transition = `transform ${ms}ms ${courbe}`; box.style.transform = '';
+    const sc = voile(); if (sc) { sc.style.transition = `opacity ${ms}ms ${courbe}`; sc.style.opacity = ''; }
+    setTimeout(() => { if (!box.style.transform) box.style.transition = ''; }, ms + 40);
   };
-  const end = () => {
-    pts = Math.max(0, pts - 1);
-    if (!on) return; on = false; pid = -1;
-    box.style.transition = '';
-    const v = dy / Math.max(1, Date.now() - t0);
-    if (dy > 110 || (v > .55 && dy > 40)) {
-      box.style.transform = 'translateY(110%)';
-      const sc = document.querySelector('.scrim'); if (sc) sc.style.opacity = 0;
-      setTimeout(() => { closeMenu(); render(); }, 220);
-      return;
-    }
-    box.style.transform = '';
-    const sc = document.querySelector('.scrim'); if (sc) sc.style.opacity = '';
+  box.addEventListener('touchend', fin);
+  box.addEventListener('touchcancel', fin);
+}
+const voile = () => document.querySelector('.scrim:not(.sort)');
+
+/* Elle part du point où le doigt la lâche, à la vitesse du doigt, puis la
+   feuille est fermée pour de bon (comme la croix) : rien ne la coupe en
+   route, la page derrière ne se redessine pas. */
+function partir(box, y, h, v) {
+  const sc = voile(), reste = h + 30 - y;
+  const ms = Math.round(Math.min(320, Math.max(150, reste / Math.max(v, 1.3))));
+  for (const n of [box, sc]) { if (n) { n.classList.add('sort'); n.inert = true; } }
+  const animer = (n, de, vers) => {
+    try { n.animate([de, vers], { duration: ms, easing: 'cubic-bezier(.2,.75,.35,1)', fill: 'forwards' }).onfinish = () => n.remove(); } catch (x) { n.remove(); }
+    setTimeout(() => n.remove(), ms + 150);
   };
-  box.addEventListener('pointerdown', start);
-  box.addEventListener('pointermove', move);
-  box.addEventListener('pointerup', end);
-  box.addEventListener('pointercancel', () => { pts = Math.max(0, pts - 1); cancel(); });
-  box.addEventListener('gesturestart', e => { e.preventDefault(); cancel(); });
+  animer(box, { transform: `translateY(${y}px)` }, { transform: `translateY(${h + 30}px)` });
+  if (sc) animer(sc, { opacity: getComputedStyle(sc).opacity }, { opacity: 0 });
+  closeMenu();
+}
+
+/* Un glissé de la feuille ne vaut pas un appui sur le bouton où il est parti. */
+function avalerClic(box) {
+  const stop = e => { e.stopPropagation(); e.preventDefault(); };
+  box.addEventListener('click', stop, true);
+  setTimeout(() => box.removeEventListener('click', stop, true), 400);
 }
 
 /* Table de correspondance construite à l'appel, jamais au niveau module :
@@ -345,6 +364,7 @@ function paintMenuDeck(w) {
   const d = deck(view.id); if (!d) return;
   w.innerHTML = `<div class="scrim" data-mact="close"></div>
     <div class="menu">
+      <div class="mhd">${svg(I.layers)}<span class="mhx"><b>${esc(d.name)}</b></span></div>
       <div class="mgrid">
         ${db.subjects.map(x => subj(x.id)).map(s => `<button class="ms ${d.subject === s.id ? 'on' : ''}"
           data-msubj="${s.id}" style="${sty(s)}"><i></i><span>${esc(s.name)}</span></button>`).join('')}

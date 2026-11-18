@@ -1,0 +1,29 @@
+/* ══════════ le balayage et le retour au doigt (ui/balayage-geste.js) ══════════
+   Chargée avec le morceau : le démarrage n'en paie rien, et rien de tout ça
+   ne sert avant le premier geste. */
+
+/* Pendant que la page finit sa course, ou sur une page annexe qu'on tire
+   pour revenir, le doigt peut se poser sur le fond : lui aussi laisse le
+   glissé de côté à l'app — sinon le navigateur prend le geste et l'annule.
+   Une bande qui défile de côté (des puces) garde le sien : la règle
+   s'arrête à elle. */
+#app:is([data-view="home"],[data-view="classes"],[data-view="commu"],[data-view="deck"],[data-view="settings"],
+  [data-view="trash"],[data-view="mail"],[data-view="lettre"],[data-view="stats"],[data-view="find"],[data-view="shared"],
+  [data-view="friends"],[data-view="profil"],[data-view="club"],[data-view="defi"],[data-view="classe"],
+  [data-view="import"],[data-view="run"],[data-view="plus"],[data-view="mod"]){touch-action:pan-y}
+
+/* une voisine : une couche fixe qui ne déborde jamais de l'écran, la page
+   dedans à sa place de défilement */
+.balai{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1;contain:strict}
+.balai-v{position:absolute;inset:0;background:var(--bg);will-change:transform}
+.balai-app{position:absolute;min-height:100svh;display:flex;flex-direction:column}
+/* sa barre du bas ne se montre que sous un retour au doigt : entre onglets,
+   la vraie barre reste où elle est */
+.balai:not(.avec-barre) .tabs{display:none}
+
+/* le retour au doigt : l'onglet découvert dessous est voilé, de moins en
+   moins à mesure qu'il se découvre, et la page tirée porte une ombre douce
+   sur son bord gauche */
+.balai-voile{position:absolute;inset:0;background:rgba(20,18,23,.14);pointer-events:none;will-change:opacity}
+.retour-ombre{position:fixed;top:0;bottom:0;left:-24px;width:24px;z-index:2;pointer-events:none;
+  background:linear-gradient(to right,transparent,rgba(20,18,23,.08));will-change:transform}

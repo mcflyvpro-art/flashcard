@@ -8,7 +8,10 @@ import { pushUndo, saveDeck } from '../core/coeur-sync.js';
    Seule la poignée prend le doigt (touch-action:none) : partout ailleurs
    la page défile normalement. Pendant le glissé rien n'est reconstruit —
    les lignes se décalent par transform, une écriture par image — et
-   l'ordre n'est enregistré qu'au lâcher. */
+   l'ordre n'est enregistré qu'au lâcher. La poignée est au bord gauche,
+   là où part le retour au doigt (2026-11-17) : elle attend que le doigt
+   parte en hauteur pour prendre la carte ; vers la droite, c'est le retour
+   (ui/balayage-geste.js). */
 export function bindReorder(d) {
   const wrap = $.querySelector('.rows'); if (!wrap || sel) return;
   let g = null;
@@ -29,22 +32,31 @@ export function bindReorder(d) {
     const rows = [...wrap.querySelectorAll('.row')];
     const row = h.closest('.row'), from = rows.indexOf(row);
     if (from < 0 || rows.length < 2) return;
-    g = { row, rows, from, to: from, dy: 0, raf: 0, y0: e.clientY,
+    g = { row, rows, from, to: from, dy: 0, raf: 0, y0: e.clientY, x0: e.clientX, h, pris: false,
           step: rows[1].offsetTop - rows[0].offsetTop, pid: e.pointerId };
+    e.preventDefault();
+  });
+  // la carte n'est prise qu'une fois le doigt parti en hauteur
+  const prendre = e => {
+    const ax = Math.abs(e.clientX - g.x0), ay = Math.abs(e.clientY - g.y0);
+    if (ax < 6 && ay < 6) return false;
+    if (ax > ay) { g = null; return false; }      // de côté : le retour au doigt
+    g.pris = true; g.y0 = e.clientY;
     /* le doigt garde la poignée même s'il sort de la liste ; si la capture
        est refusée (doigt déjà relâché), le glissé marche quand même, les
        mouvements étant écoutés sur la liste elle-même */
-    try { h.setPointerCapture(e.pointerId); } catch (x) { /* voir le commentaire au-dessus */ }
-    row.classList.add('drag'); wrap.classList.add('dragging');
-    e.preventDefault();
-  });
+    try { g.h.setPointerCapture(e.pointerId); } catch (x) { /* voir le commentaire au-dessus */ }
+    g.row.classList.add('drag'); wrap.classList.add('dragging');
+    return true;
+  };
   wrap.addEventListener('pointermove', e => {
-    if (!g || e.pointerId !== g.pid) return;
+    if (!g || e.pointerId !== g.pid || (!g.pris && !prendre(e))) return;
     g.dy = e.clientY - g.y0;
     if (!g.raf) g.raf = requestAnimationFrame(draw);
   });
   const drop = e => {
     if (!g || (e && e.pointerId !== g.pid)) return;
+    if (!g.pris) { g = null; return; }
     cancelAnimationFrame(g.raf);
     const { from, to, rows, row } = g;
     rows.forEach(r => r.style.transform = '');

@@ -101,15 +101,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 @keyframes inR{from{opacity:0;transform:translateX(48px)}}
 @keyframes inL{from{opacity:0;transform:translateX(-48px)}}
 #page{touch-action:pan-y}
-/* pendant que la page finit sa course, le doigt peut se poser sur le fond :
-   lui aussi laisse le glissé de côté au balayage (ui/balayage-geste.js), sinon
-   le navigateur prend le geste et l'annule */
-#app:is([data-view="home"],[data-view="classes"],[data-view="commu"]){touch-action:pan-y}
-/* l'onglet voisin pendant un balayage (balayage.js) : une couche fixe qui
-   ne déborde jamais de l'écran, la page dedans à sa place de défilement */
-.balai{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1;contain:strict}
-.balai-v{position:absolute;inset:0;background:var(--bg);will-change:transform}
-.balai-app{position:absolute;min-height:100svh;display:flex;flex-direction:column}
+/* les couches du balayage et du retour au doigt : ui/balayage.css, avec leur morceau */
 
 .top{display:flex;align-items:flex-end;gap:10px;margin:14px 1px 20px}
 /* le titre cède la place aux boutons plutôt que de les pousser dehors ;
@@ -741,7 +733,9 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .mbody.change{animation:fadein .2s var(--e) both}
 .mtop{flex:none;position:relative;display:flex;align-items:center;justify-content:center;padding:11px 7px 5px}
 .mgrip{width:34px;height:4px;border-radius:3px;background:var(--hair)}
-.mx{position:absolute;right:8px;top:8px;width:30px;height:30px;border-radius:11px;
+/* la croix passe toujours au-dessus (le contenu qui défile se peignait sur
+   elle : dans le menu d'un paquet, la matière choisie la cachait) */
+.mx{position:absolute;z-index:2;right:8px;top:8px;width:30px;height:30px;border-radius:11px;
   display:grid;place-items:center;color:var(--soft);background:var(--surf);
   transition:background .2s,transform .2s var(--sp)}
 .mx svg{width:15px;height:15px;stroke-width:2.4}
@@ -919,6 +913,7 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
 /* en-tête d'un message ouvert : le paquet est le sujet, l'expéditeur, le
    nombre de cartes et la date passent derrière, sur une seule ligne */
 .mhd{display:flex;align-items:flex-start;gap:13px;padding:8px 16px 11px}
+.mbody > .mhd:first-child{padding-right:46px}
 .mhd > svg{width:20px;height:20px;color:var(--soft);flex:none;margin-top:3px}
 .mhx{display:flex;flex-direction:column;gap:3px;min-width:0}
 .mhx b{font-weight:780;font-size:17px;letter-spacing:-.3px;overflow-wrap:anywhere}

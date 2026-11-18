@@ -36,6 +36,13 @@ async function telephone(browser, store) {
   const touche = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
   /* `pas` mouvements de 16 ms : peu de pas, un geste vif ; beaucoup, un geste lent. À la hauteur
      d'un titre de section, jamais d'un champ : un doigt posé sur un champ y déplace le curseur */
+  // tirer vers le bas, d'un point à un autre (une feuille qu'on referme)
+  page.tirer = async (x, de, a, pas = 8) => {
+    await touche('touchStart', x, de);
+    for (let k = 1; k <= pas; k++) { await touche('touchMove', x, de + (a - de) * k / pas); await page.waitForTimeout(16); }
+    await touche('touchEnd', x, a);
+    await page.waitForTimeout(500);
+  };
   page.glisser = async (de, a, { pas = 14, pendant, y = 140, avant = 450 } = {}) => {
     await touche('touchStart', de, y);
     for (let k = 1; k <= pas; k++) { await touche('touchMove', de + (a - de) * k / pas, y); await page.waitForTimeout(16); }
@@ -122,6 +129,68 @@ test('balayer très vite : chaque geste compte, la pastille suit, rien ne reste'
   await page.glisser(200, 205, { pas: 1 });
   await expect(page.locator('.balai')).toHaveCount(0);
   expect(erreurs).toEqual([]);
+});
+
+/* Revenir au doigt (2026-11-17) : sur un paquet, un glissé de gauche à
+   droite tire la page et découvre dessous l'onglet d'où l'on vient, puis
+   y revient ; un glissé court revient à sa place. */
+test('revenir au doigt : d’un paquet à « Mes paquets », l’onglet visible dessous', async ({ browser, browserName }) => {
+  test.skip(browserName === 'webkit', 'un doigt qui glisse passe par CDP, que seul Chromium a');
+  const page = await telephone(browser, eleveEnClasse());
+  const erreurs = [];
+  page.on('pageerror', e => erreurs.push(e.message));
+  await page.locator('[data-go]', { hasText: 'Verbes' }).first().click();
+  await expect(ecran(page)).toHaveAttribute('data-view', 'deck', { timeout: 10000 });
+  await page.waitForTimeout(400);
+
+  await page.glisser(60, 110, { pas: 20, y: 420 });                 // court et lent : la page revient
+  await expect(ecran(page)).toHaveAttribute('data-view', 'deck');
+  const carte = await page.locator('.rows .row input[data-k="f"]').first().boundingBox();
+  await page.glisser(carte.x + 10, 330, { y: carte.y + carte.height / 2, pendant: async () => {
+    await expect(page.locator('.balai.avec-barre')).toHaveCount(1);
+    await expect(page.locator('.balai.avec-barre')).toContainText('Mes paquets');
+  } });
+  await expect(ecran(page)).toHaveAttribute('data-view', 'home');
+  await expect(page.locator('.balai, .retour-ombre')).toHaveCount(0);
+  await expect(page.locator('#app')).not.toHaveClass(/fade/);
+  expect(erreurs).toEqual([]);
+});
+
+/* Une feuille se referme en la tirant vers le bas d'où que parte le doigt :
+   sa grille de matières, pas seulement sa poignée ; tirée un peu, elle revient. */
+test('une feuille se tire vers le bas depuis sa grille, et revient si on la lâche tôt', async ({ browser, browserName }) => {
+  test.skip(browserName === 'webkit', 'un doigt qui glisse passe par CDP, que seul Chromium a');
+  const page = await telephone(browser, eleveEnClasse());
+  await page.locator('[data-go]', { hasText: 'Verbes' }).first().click();
+  await expect(ecran(page)).toHaveAttribute('data-view', 'deck', { timeout: 10000 });
+  await page.locator('.bar .ic').last().click();
+  await expect(page.locator('.menu .mgrid')).toBeVisible();
+  await expect(page.locator('.menu .mhd')).toContainText('Verbes');
+  await page.waitForTimeout(500);                                    // la feuille a fini de monter
+  const g = await page.locator('.menu .mgrid').boundingBox();
+  await page.tirer(g.x + 60, g.y + 20, g.y + 50, 12);              // un peu, lentement : elle revient
+  await expect(page.locator('.menu')).toHaveCount(1);
+  await expect.poll(() => page.locator('.menu').evaluate(n => n.style.transform)).toBe('');
+  expect(await page.locator('.menu .mgrid').boundingBox()).toEqual(g);   // à sa place exacte
+  await page.tirer(g.x + 60, g.y + 20, g.y + 260);                 // franchement : elle part
+  await expect(page.locator('.menu, .scrim')).toHaveCount(0);
+  await expect(ecran(page)).toHaveAttribute('data-view', 'deck');
+});
+
+/* La poignée de rangement est au bord gauche, là où part le retour au
+   doigt : tirée en hauteur, elle range toujours la carte. */
+test('la poignée d’une carte la range encore, tirée vers le bas', async ({ browser, browserName }) => {
+  test.skip(browserName === 'webkit', 'un doigt qui glisse passe par CDP, que seul Chromium a');
+  const page = await telephone(browser, eleveEnClasse());
+  await page.locator('[data-go]', { hasText: 'Verbes' }).first().click();
+  await expect(ecran(page)).toHaveAttribute('data-view', 'deck', { timeout: 10000 });
+  const recto = page.locator('.rows .row input[data-k="f"]').first();
+  await expect(recto).toHaveValue('être');
+  const p = await page.locator('.rows .row .grip').first().boundingBox();
+  const pas = await page.locator('.rows .row').nth(1).evaluate(n => n.offsetTop - n.previousElementSibling.offsetTop);
+  await page.tirer(p.x + p.width / 2, p.y + p.height / 2, p.y + p.height / 2 + pas + 4, 10);
+  await expect(recto).toHaveValue('avoir');
+  await expect(ecran(page)).toHaveAttribute('data-view', 'deck');
 });
 
 test('sur ordinateur, rien ne glisse', async ({ browser }) => {

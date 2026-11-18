@@ -12,6 +12,7 @@ import { commuPull } from './cercle.js';
 import { isProf } from './classement.js';
 import { prechargerJournal } from './ecran-groupe.js';
 import { prechargerCourrier } from './reglages-corbeille.js';
+import { bindPager } from './balayage.js';
 
 /* ══════════ des écrans prêts, des appareils d'accord (2026-10-28) ══════════
    Deux choses que l'on sentait : un écran vide le temps d'un battement en
@@ -41,6 +42,7 @@ export function prechauffer() {
     import('./barre.js').catch(() => {});             // la barre du bas vivante (une panne : la barre reste un simple appui)
     import('./tirer.js').catch(() => {});             // tirer pour rafraîchir (une panne : l'écran reste figé, sans plus)
     import('./geste.js').catch(() => {});             // le geste de la fiche (une panne : ui/revision.js le retentera à la première fiche)
+    bindPager();                                      // les gestes entre écrans, quel que soit l'écran d'arrivée (le retour au doigt compris)
     prechargerCourrier();
     prechargerJournal();
     if (mailbox.list == null) mailPull();
