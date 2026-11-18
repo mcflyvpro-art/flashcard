@@ -333,13 +333,7 @@ export function say(text, lang) {
   } catch (e) { /* TTS refusée ou indisponible : la carte reste utilisable sans voix */ }
 }
 
-/* ---------- base64url <-> unicode ---------- */
-export function enc(o) {
-  const b = new TextEncoder().encode(JSON.stringify(o)); let s = '';
-  b.forEach(c => s += String.fromCharCode(c));
-  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
+/* ---------- base64url -> unicode : un ancien lien « #i= » (le lien n'est plus fabriqué depuis le 2026-11-18) ---------- */
 export function dec(t) {
   const s = atob(t.replace(/-/g, '+').replace(/_/g, '/'));
   const b = new Uint8Array(s.length);
@@ -494,11 +488,23 @@ function memDays(v) {
   return (an < 10 ? an.toFixed(1).replace('.0', '').replace('.', ',') : Math.round(an)) + ' ans';
 }
 
-export function memLine(c) {
-  if (!c.S) return '';
-  return `souvenir ${Math.round(recall(c, Date.now()) * 100)} %`
-    + ` · tient ${memDays(c.S)}`
-    + ` · difficulté ${(Math.round((c.D || 5) * 10) / 10).toString().replace('.', ',')}/10`;
+/* La mémoire d'une carte, dans son menu (refaite le 2026-11-18, demandé :
+   « pas beau, fouillis, pas clair ») : trois tuiles qu'on lit d'un coup
+   d'œil — le souvenir d'aujourd'hui en anneau, quand elle revient, sa
+   difficulté en jauge —, puis son âge et ce qui les explique (sa
+   stabilité, ses réussites, ses oublis) sur une ligne. En azur, ce qui se
+   compte (src/couleurs.js). Une carte jamais révisée le dit, sans plus. */
+export function memoire(c) {
+  const k = cstate(c), age = `<i class="cst ${k}"></i>${STATE[k]}`;
+  if (!c.S) return `<p class="mem-s">${age} · jamais révisée</p>`;
+  const p = Math.round(recall(c, Date.now()) * 100), D = Math.round((c.D || 5) * 10) / 10, n = c.n || 0, l = c.l || 0,
+    r = nextIn(c) || '—';
+  return `<div class="mem">
+      <div class="mem-t"><i class="mem-o" style="--p:${p}"><b>${p}<small>%</small></b></i><span>Souvenir</span></div>
+      <div class="mem-t"><b${r.length > 6 ? ' class="l"' : ''}>${r}</b><span>Revient</span></div>
+      <div class="mem-t"><b>${String(D).replace('.', ',')}<small>/10</small></b><i class="mem-d" style="--d:${D}"></i><span>Difficulté</span></div>
+    </div>
+    <p class="mem-s">${age} · stable ${memDays(c.S)} · ${n} réussite${n > 1 ? 's' : ''} · ${l} oubli${l > 1 ? 's' : ''}</p>`;
 }
 
 /* Ce que proposerait chaque bouton, pour l'afficher dessus. Le flou étant

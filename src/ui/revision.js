@@ -261,7 +261,7 @@ export function cardOrigin(c) {
    définition déborde d'une carte à hauteur fixe. Au-delà, le repli est un
    vrai défilement interne (la carte reste lisible en entier, sans jamais
    couper le contenu ou sortir du cadre). */
-const faceSize = txt => {
+export const faceSize = txt => {
   const n = plain(txt).length;
   return n > 260 ? ' xxl' : n > 160 ? ' xl' : n > 90 ? ' l' : '';
 };

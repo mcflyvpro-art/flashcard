@@ -19,7 +19,13 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-18 · La barre ne garde plus un mauvais onglet allumé après
+DERNIER   2026-11-18 · La sauvegarde ne contourne plus l'offre : jamais plus
+          de paquets que Mirandola gratuit n'en garde (la feuille le dit avant
+          d'écrire), ni image en data:, ni faux devoir ; le lien recto/verso
+          est parti (e2e/sauvegarde.e2e.js). La mémoire d'une carte en trois
+          tuiles, une vraie carte pour régler la taille du texte, les
+          fonctions + et Infini marquées à la couleur de l'offre.
+          · 2026-11-18 · La barre ne garde plus un mauvais onglet allumé après
           un geste abandonné ; « Créer un club » ne change plus de couleur ;
           les onglets n'empilent plus l'historique, et l'app de l'écran
           d'accueil d'un iPhone n'en garde qu'une entrée : plus d'animation

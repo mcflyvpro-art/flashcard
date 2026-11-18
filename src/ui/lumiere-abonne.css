@@ -72,10 +72,30 @@ html.offre-infini :is(.cta:not(:disabled),.fab)::before,html.offre-infini .prog 
     lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite}
 /* le halo : la même lave, floue, qui déborde un peu sous l'élément et respire
    (pas sous l'onglet de la barre : il en débordait, et chaque image du
-   geste de la barre aurait refait ce flou) */
-html.offre-infini :is(.cta:not(:disabled),.fab)::before{inset:8px 8px -6px;filter:blur(12px);
+   geste de la barre aurait refait ce flou). Sur son propre calque
+   (2026-11-18, « au début de l'animation, l'ombre s'enlève du bouton
+   Réviser ») : une page qu'on tire au doigt, ou qui entre, passe sur un
+   calque le temps du mouvement, et Safari y redessinait le flou — le halo
+   manquait au premier instant du geste, puis revenait. Le sien ne change
+   jamais de calque. */
+html.offre-infini :is(.cta:not(:disabled),.fab)::before{inset:8px 8px -6px;filter:blur(12px);will-change:transform;
   animation:lave1 19s ease-in-out infinite alternate,lave2 26s ease-in-out infinite alternate,lave3 15s ease-in-out infinite alternate,
     lave4 22s ease-in-out infinite alternate,lave5 41s linear infinite,lueur 7s ease-in-out infinite alternate}
+
+/* ce que l'abonnement ouvre se voit, même ouvert (2026-11-18, demandé :
+   « même quand on a l'abonnement, on différencie : les fonctions marquées du
+   texte de la couleur de l'abonnement ; la pastille grise pour ce qui n'est
+   pas débloqué ») : le nom et l'icône d'une fonction de Mirandola+ à la
+   couleur de l'offre (l'or ; le bleu-rose chez Infini), celles d'Infini
+   dans le sien. Fermées, la pastille grise (app.css). Une encre assez
+   sombre pour un texte courant sur le papier (≥ 4,5:1). */
+html.offre-plus{--plus-x:#A06200}
+html.offre-infini{--plus-x:#6A55B5}
+html.offre-plus :is(.acts [data-act=mcq],.acts [data-act=match],.mi:is([data-mact=mcq],[data-mact=match],[data-mact=retouche]),
+  .pick.ia,.mb[data-mact^=med-],.cr-tabs :is([data-cmode=photo],[data-cmode=fichier]),.pi-tete b),
+html.offre-plus :is(.acts [data-act=mcq],.acts [data-act=match],.mi:is([data-mact=mcq],[data-mact=match],[data-mact=retouche]),
+  .pick.ia,.mb[data-mact^=med-],.cr-tabs :is([data-cmode=photo],[data-cmode=fichier]),.pi-tete b) svg,
+html.offre-infini .mi:is([data-mact=examen],[data-mact=examen-blanc]),html.offre-infini .mi:is([data-mact=examen],[data-mact=examen-blanc]) svg{color:var(--plus-x)}
 
 /* la barre latérale : l'icône allumée et l'entrée de l'offre */
 html.offre-plus #rail nav button.on svg{color:#C27F0A}

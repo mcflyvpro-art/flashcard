@@ -10,6 +10,7 @@ import {
 } from '../data/etat.js';
 import { gestion, render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
+import { faceSize } from './revision.js';
 import { atSchool, isAdmin } from './classement.js';
 import {
   COLORS, PALETTE, canUndo, deck, esc, pending, plur, pushUndo, saveDeck,
@@ -64,6 +65,45 @@ function settingsRevisionHtml() {
       </div>`;
 }
 
+/* L'aperçu de la taille du texte (2026-11-18, demandé : « une vraie carte,
+   où l'on écrit ce qu'on veut, qu'on retourne, pour tester la taille qui
+   convient ») : la fiche d'une révision, au papier de sa première matière,
+   avec les mêmes classes (.face, .tx, et le palier selon la longueur,
+   faceSize de ui/revision.js) — ce qu'on y voit est ce qu'on verra en
+   révisant, recto et verso. Le crayon met le texte en écriture, la flèche
+   retourne la carte, comme un appui ailleurs sur elle. Ce qu'on y écrit
+   reste le temps de la session. */
+const essai = { f: 'la casa', b: 'la maison' };
+
+function carteEssai() {
+  const t = db.subjects[0], face = k => `<div class="face${k === 'b' ? ' bk' : ''}${faceSize(essai[k])}">
+        ${t && k === 'f' ? `<span class="sbj"><i></i>${esc(t.name)}</span>` : ''}
+        <div class="fbody"><div class="tx" data-fc="${k}" contenteditable="plaintext-only" spellcheck="false" enterkeyhint="done"
+          aria-label="${k === 'f' ? 'Recto' : 'Verso'} de la carte d’essai">${esc(essai[k])}</div></div></div>`;
+  return `<div class="fcarte" style="${sty(PALETTE[t && t.color] || PALETTE.bleu)}">
+          <div class="card" id="fcard"><div class="flipper">${face('f')}${face('b')}</div></div>
+          <div class="fc-gestes"><button class="ic" data-fc="ecrire" aria-label="Écrire sur la carte">${svg(I.pen)}</button>
+            <button class="ic" data-fc="tour" aria-label="Retourner la carte">${svg(I.redo)}</button></div></div>`;
+}
+
+function lierCarteEssai() {
+  const box = document.querySelector('.fcarte'); if (!box) return;
+  const carte = box.querySelector('.card');
+  const visible = () => box.querySelector(`.tx[data-fc="${carte.classList.contains('flip') ? 'b' : 'f'}"]`);
+  box.addEventListener('click', e => {
+    const b = e.target.closest('[data-fc]');
+    if (b && b.dataset.fc === 'ecrire') {
+      const t = visible(); t.focus();
+      getSelection().selectAllChildren(t);
+    } else if (!b || b.dataset.fc === 'tour') { document.activeElement.blur(); carte.classList.toggle('flip'); }
+  });
+  box.addEventListener('input', e => {
+    const t = e.target, k = t.dataset.fc;
+    essai[k] = t.textContent.slice(0, 600);
+    t.closest('.face').className = 'face' + (k === 'b' ? ' bk' : '') + faceSize(essai[k]);
+  });
+}
+
 function settingsAffichageHtml(sansSons) {
   return `
       <div class="lbl"><span>Affichage</span></div>
@@ -73,7 +113,7 @@ function settingsAffichageHtml(sansSons) {
             <span class="c">${Math.round((prefs.font || 1) * 100)} %</span></div>
           <input class="rng" id="pFont" type="range" min="80" max="140" step="5"
             value="${Math.round((prefs.font || 1) * 100)}" aria-label="Taille du texte">
-          <div class="fprev" style="font-size:calc(17px * var(--fs,1))">Aperçu : la casa</div>
+          ${carteEssai()}
         </div>
         ${sansSons ? '' : `<button class="sr flat" data-act="tglsound">${svg(I.sound)}
           <span class="n">Sons</span>
@@ -217,6 +257,7 @@ export function settingsView() {
     prefs.goal = +g.value; savePrefs();
     g.closest('.sr').querySelector('.c').textContent = prefs.goal + ' cartes';
   });
+  lierCarteEssai();
   const fo = document.getElementById('pFont');
   if (fo) fo.addEventListener('input', () => {
     prefs.font = +fo.value / 100; savePrefs(); applyFont();

@@ -44,4 +44,6 @@ export const examensRestants = (niveau, faits) => (niveau === 'infini' ? Infinit
 
 export const permis = (offre, fonction) => offre !== 'gratuit' || !PLUS_SEUL.includes(fonction);
 export const livresPermis = (offre, n) => offre !== 'gratuit' || n < LIVRES_GRATUITS;
+// combien de paquets à soi peuvent encore entrer, quand on en a déjà n (2026-11-18 : restaurer, dupliquer, recevoir)
+export const placeLivres = (offre, n) => (offre === 'gratuit' ? Math.max(0, LIVRES_GRATUITS - n) : Infinity);
 export const voletPermis = (offre, volet) => offre !== 'gratuit' || !JOURNAL_PLUS.includes(volet);

@@ -8,7 +8,7 @@ import {
 import { SORTS } from './bibliotheque.js';
 import { avatar, medailleHtml } from './jeton.js';
 import {
-  LANGS, memLine, mimg, nextIn, plain
+  LANGS, memoire, mimg, plain
 } from './carte-media.js';
 import { deck, esc, metaOf, noDetect, plur, shortWho, subj } from '../core/coeur-sync.js';
 import { HELP } from './connexion.js';
@@ -36,10 +36,7 @@ export function paintMenuCard(w) {
         <div class="mhd">${svg(I.card)}
           <span class="mhx"><b>${esc(plain(c.f) || 'Carte')}</b>
             <i>${esc(plain(c.b)) || 'verso vide'}</i></span></div>
-        ${c.S ? `<div class="mrow"><span class="ml">${svg(I.brain)}Mémoire</span>
-          <span class="tail">${memLine(c)}</span></div>
-          <div class="mrow"><span class="ml">${svg(I.clock)}Prochain passage</span>
-          <span class="tail">${nextIn(c) || '—'}</span></div>` : ''}
+        ${memoire(c)}
         <div class="seg mseg">
           ${[['', 'Basique'], ['tf', 'Vrai / faux']].map(([v, l]) =>
             `<button data-ct="${v}" class="${(c.t || '') === v ? 'on' : ''}">${l}</button>`).join('')}

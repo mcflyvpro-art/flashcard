@@ -33,6 +33,16 @@
 .jr-c{background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:16px 16px 16px;min-width:0}
 .jr-an{margin-bottom:12px}
 .jr-h{display:flex;align-items:center;gap:8px;min-height:24px}
+/* les volets réservés à Mirandola+ chez un compte gratuit (ui/bridage.js) : floutés sous leur titre, la pastille « + » grise */
+.plus-floute{position:relative;cursor:pointer}
+.plus-floute>:not(.jr-h){filter:blur(7px);opacity:.7;pointer-events:none;user-select:none}
+.plus-floute::after{content:'Avec Mirandola+';position:absolute;left:50%;top:calc(50% + 14px);transform:translate(-50%,-50%);
+  padding:9px 15px;border-radius:99px;background:var(--card);color:var(--ink);font-size:13px;font-weight:750;line-height:1;white-space:nowrap;
+  box-shadow:var(--edge),0 10px 24px -14px rgba(29,28,25,.5)}
+.plus-floute .jr-h::after{content:'';display:inline-block;order:9;flex:none;width:16px;height:16px;border-radius:50%;pointer-events:none;
+  background:var(--plus-s),var(--plus);filter:grayscale(1) contrast(.8)}
+/* les volets du journal complet, chez un abonné : leur titre à la couleur de l'offre (ui/lumiere-abonne.css, 2026-11-18) */
+html.offre-plus :is([data-volet=memoire],[data-volet=pause],[data-volet=heures],[data-volet=matieres],[data-volet=livres],[data-volet=resistent]) .jr-h h2{color:var(--plus-x)}
 .jr-h h2{flex:1;margin:0;font-size:15px;font-weight:750;letter-spacing:-.2px;display:flex;align-items:center;gap:6px}
 .jr-mt{margin:2px 0 14px;font-size:12px;font-weight:550;color:var(--soft)}
 .jr-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;background:var(--surf);

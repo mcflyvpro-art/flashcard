@@ -423,10 +423,10 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .card.flip .face{opacity:0}
 .card.flip .face.bk{opacity:1}
 
-.face.bk .tx{font-weight:650;font-size:clamp(22px,6vw,36px);letter-spacing:-.6px}
-.face.bk.l .tx{font-size:clamp(18px,5.2vw,27px);line-height:1.26;letter-spacing:-.4px}
-.face.bk.xl .tx{font-size:clamp(15.5px,4.4vw,21px);line-height:1.32;letter-spacing:-.2px;font-weight:600}
-.face.bk.xxl .tx{font-size:clamp(14px,3.6vw,17px);line-height:1.38;letter-spacing:-.1px;font-weight:600}
+.face.bk .tx{font-weight:650;font-size:calc(clamp(22px,6vw,36px) * var(--fs,1));letter-spacing:-.6px}
+.face.bk.l .tx{font-size:calc(clamp(18px,5.2vw,27px) * var(--fs,1));line-height:1.26;letter-spacing:-.4px}
+.face.bk.xl .tx{font-size:calc(clamp(15.5px,4.4vw,21px) * var(--fs,1));line-height:1.32;letter-spacing:-.2px;font-weight:600}
+.face.bk.xxl .tx{font-size:calc(clamp(14px,3.6vw,17px) * var(--fs,1));line-height:1.38;letter-spacing:-.1px;font-weight:600}
 .gone{transition:transform .36s cubic-bezier(.4,0,.55,1),opacity .32s !important}
 .acts{display:flex;gap:11px;padding:2px 0 2px;flex:none}
 .act{flex:1;height:58px;border-radius:16px;display:grid;place-items:center;
@@ -884,7 +884,16 @@ body > #app:has(> .pub){padding:0;position:relative;z-index:0}
 mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2px}
 
 /* aperçu du réglage de taille, juste sous le curseur */
-.fprev{padding:2px 2px 0;font-weight:750;letter-spacing:-.3px;color:var(--soft)}
+/* l'aperçu de la taille du texte : une vraie fiche, à écrire et à retourner (carteEssai de ui/reglages-corbeille.js) */
+.fcarte{position:relative;height:clamp(250px,40svh,330px);margin:6px 0 52px;perspective:1500px}
+.fcarte .card{touch-action:auto;cursor:pointer}
+.fcarte .card:not(.flip) .face.bk,.fcarte .card.flip .face:not(.bk){pointer-events:none}
+.fcarte .face{padding:34px 24px}
+.fcarte .tx{-webkit-user-select:text;user-select:text;outline:0;cursor:text;min-width:1ch;border-radius:6px}
+.fcarte .tx:focus{box-shadow:0 0 0 6px color-mix(in srgb,var(--d) 14%,#0000)}
+.fc-gestes{position:absolute;left:0;right:0;bottom:-50px;display:flex;justify-content:center;gap:10px}
+.fc-gestes .ic{width:40px;height:40px;border-radius:50%;background:var(--card);box-shadow:var(--edge)}
+.fc-gestes svg{width:17px;height:17px}
 
 /* ---------- mode sans distraction ----------
    Tout ce qui n'est pas la carte s'efface : il reste le geste et le mot.
@@ -1317,13 +1326,15 @@ mark{background:rgba(201,165,38,.28);color:inherit;border-radius:4px;padding:0 2
   font-size:12px;font-weight:650;white-space:nowrap;z-index:5;pointer-events:none}
 /* ---------- Mirandola gratuit (ui/bridage.js) ----------
    Ce qui est dans Mirandola+ : un « + » tracé (centré au pixel, le signe d'une
-   police ne l'était pas), collé à l'étiquette — en ligne il suit le mot,
+   police ne l'était pas), gris tant que ce n'est pas débloqué (2026-11-18 ;
+   ouvert, le nom prend la couleur de l'offre, ui/lumiere-abonne.css), collé à l'étiquette — en ligne il suit le mot,
    en colonne il coiffe l'icône. Les onglets de création (.payant), les
    QCM, les associations, les images et les sons ; « Nouveau livre » quand
-   la bibliothèque est pleine ; les volets du journal, floutés. */
+   la bibliothèque est pleine ; les volets du journal, floutés (journal.css,
+   chargée avec lui : le démarrage n'en payait rien d'utile). */
 .payant[data-offre="plus"]::before,html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"],[data-act="retouche"],[data-mact="retouche"])::after,
-html.livres-plein [data-act="new"]::after,.plus-floute .jr-h::after{content:'';order:9;flex:none;width:16px;height:16px;border-radius:50%;
-  pointer-events:none;background:var(--plus-s),var(--plus)}
+html.livres-plein [data-act="new"]::after{content:'';order:9;flex:none;width:16px;height:16px;border-radius:50%;
+  pointer-events:none;background:var(--plus-s),var(--plus);filter:grayscale(1) contrast(.8)}
 html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"],[data-act="retouche"],[data-mact="retouche"]){position:relative;color:var(--soft)}
 html.offre-gratuit :is([data-act="mcq"],[data-act="match"],[data-mact="mcq"],[data-mact="match"],[data-mact^="med-"],[data-act="retouche"],[data-mact="retouche"]) svg{opacity:.45}
 .cr-tabs .payant[data-offre="plus"]::before,html.offre-gratuit .acts :is([data-act="mcq"],[data-act="match"])::after{position:absolute;top:5px;left:calc(50% + 3px)}
@@ -1332,12 +1343,6 @@ html.livres-plein [data-act="new"]:not(.fab){position:relative}
 html.livres-plein [data-act="new"]{background:var(--bg2)!important;color:var(--soft)!important;box-shadow:var(--edge)!important}
 html.livres-plein [data-act="new"] svg{opacity:.5}
 html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-3px}
-.plus-floute{position:relative;cursor:pointer}
-.plus-floute>:not(.jr-h){filter:blur(7px);opacity:.7;pointer-events:none;user-select:none}
-.plus-floute::after{content:'Avec Mirandola+';position:absolute;left:50%;top:calc(50% + 14px);transform:translate(-50%,-50%);
-  padding:9px 15px;border-radius:99px;background:var(--card);color:var(--ink);font-size:13px;font-weight:750;line-height:1;white-space:nowrap;
-  box-shadow:var(--edge),0 10px 24px -14px rgba(29,28,25,.5)}
-.plus-floute .jr-h::after{display:inline-block}
 @media (min-width:900px){
   .cr-tabs .payant[data-offre="plus"]::before,html.offre-gratuit #app[data-view="deck"] > .acts :is([data-act="mcq"],[data-act="match"])::after{
     position:static;margin-left:-2px}
@@ -1357,9 +1362,10 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
 .jt.jt-infini{box-shadow:0 0 0 1px #4f69c640,0 5px 18px -4px #8a6cc6cc}
 .jt:is(.lg,.xl):is(.jt-plus,.jt-infini){border-width:3.5px}
 .jt.vis:is(.jt-plus,.jt-infini){background:linear-gradient(color-mix(in srgb,var(--k) 30%,#fff) 0 0) padding-box,var(--lis) border-box}
-/* dans un menu : ce qui est offert (l'or), ce qui est dans Infini (l'arc-en-ciel) */
+/* dans un menu : ce qui est offert (l'or) ; ce qui est dans Infini, pas encore ouvert, en gris (2026-11-18) */
 .mi .mi-offert{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:var(--plus-c);background:var(--plus)}
-.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:#fff;text-shadow:0 1px 2px #1e1b4b59;background:var(--holo)}
+.mi .mi-infini{padding:2px 8px;border-radius:99px;font-size:11.5px;font-weight:800;color:var(--soft);background:var(--bg2);box-shadow:inset 0 0 0 1px var(--line)}
+.mi[data-mact="examen-infini"]{color:var(--soft)}
 /* l'onglet Mirandola+ d'un compte gratuit : son nom et son icône dans l'or */
 .tabs .t-plus svg{color:#C27F0A;fill:#f5c54233} .tabs .t-plus.on svg{color:var(--bg);fill:none}
 #rail nav .r-plus span{background:var(--plus-t);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:750}
@@ -1522,6 +1528,17 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
 @keyframes shk{25%{transform:translateX(-7px)}55%{transform:translateX(6px)}80%{transform:translateX(-3px)}}
 
 /* ══════════ feuilles : lignes de réglage ══════════ */
+/* la mémoire d'une carte, dans son menu (memoire() de ui/carte-media.js) */
+.mem{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:2px 12px 0}
+.mem-t{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:96px;padding:10px 4px;border-radius:16px;background:var(--bg2)}
+.mem-t b{font:700 23px/1 var(--serif);letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mem-t small{font-size:.58em;color:var(--soft)} .mem-t b.l{font-size:17px}
+.mem-t span{font-size:11px;font-weight:750;letter-spacing:.07em;text-transform:uppercase;color:var(--soft)}
+.mem-o{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;
+  background:radial-gradient(closest-side,var(--bg2) 77%,#0000 79%),conic-gradient(var(--az4) calc(var(--p)*1%),var(--line) 0)}
+.mem-o b{font-size:17px}
+.mem-d{width:64%;height:5px;border-radius:5px;background:linear-gradient(90deg,var(--az4) calc(var(--d)*10%),var(--line) 0)}
+.mem-s{display:flex;align-items:center;gap:6px;margin:0;padding:9px 16px 4px;font-size:13px;font-weight:600;color:var(--soft)}
 .mrow{display:flex;align-items:center;gap:9px;padding:7px 12px}
 .mrow.col{flex-direction:column;align-items:stretch;gap:9px}
 /* chercher et remplacer : le « Aa » se glisse dans le champ de recherche */

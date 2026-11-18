@@ -59,7 +59,7 @@ const tranquille = () => CALMES.test(view.name) && !study && !quiz && !tuto;
 export function peutRepeindre() {
   if (!tranquille() || menu || sel || cardEdit) return false;
   const a = document.activeElement;
-  return !(a && a.closest && a.closest('#app') && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+  return !(a && a.closest && a.closest('#app') && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable));
 }
 
 let dernier = 0, actif = Date.now();

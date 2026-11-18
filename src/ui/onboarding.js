@@ -3,7 +3,7 @@ import { I, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
 import {
   DECKPAGE, DEFPREFS, auth, bip, cercleNeuf, defiNeuf, demoEtab, directNeuf,
-  mediaCache, menu, quiz,
+  db, mediaCache, menu, quiz,
   setAccounts, setAddQ, setAdm, setAnimate, setAsks, setBip, setBlocks, setBoard,
   setCardEdit, setCercle, setComp, setCompte, setConflicts, setDb, setDeckOpen, setDeckQ, setDefi, setDirect,
   setDeckShow, setDirty, setDuelRun, setDuels, setEleve, setFilter, setFindQ, setFriends,
@@ -24,6 +24,7 @@ import { aInstaller } from './pwa-porte.js';
 import { armer, armerSansSession, cibleDepart, desarmer, installee } from './routeur.js';
 import { effacerDemo, ouvrirDemo } from './demo-porte.js';
 import { importPayload, toast } from './import-cartes.js';
+import { tiennent } from './bridage.js';
 import { consumeGoto } from './raccourcis.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { openShared } from '../core/reglages-corbeille.js';
@@ -46,8 +47,11 @@ export function consumeHash() {
   }
   if (!location.hash.startsWith('#i=')) return false;
   try {
-    const d = importPayload(dec(location.hash.slice(3)));
+    const p = [].concat(dec(location.hash.slice(3)));
     history.replaceState(null, '', location.pathname);
+    // ce qui ne remplace pas un paquet du même nom en fait entrer un : pas au-delà de ce que l'offre garde (2026-11-18)
+    if (!tiennent(p.filter(k => k && !db.decks.some(d => d.name === k.name)).length)) return true;
+    const d = importPayload(p);
     if (d) { go('deck', d.id); toast(I.check, plur(d.cards.length, 'carte')); return true; }
   } catch (e) { history.replaceState(null, '', location.pathname); }
   return false;

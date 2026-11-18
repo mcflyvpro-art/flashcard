@@ -1,6 +1,5 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { I, svg } from '../icones.js';
-import { SITE } from '../adresse.js';
 import {
   auth, cardEdit, db, dirty, duels, fnr, friends, gone,
   leaving, mailOpen, mailbox, mateOpen, mateProf, mates,
@@ -12,7 +11,7 @@ import {
 } from '../data/etat.js';
 import { go, render } from './bibliotheque.js';
 import {
-  REC, enc, pickFile, recStart, recStop, upErr
+  REC, pickFile, recStart, recStop, upErr
 } from './carte-media.js';
 import { upload } from '../core/carte-media.js';
 import { openReport } from './classement.js';
@@ -23,9 +22,10 @@ import { trouverParNom } from '../matieres.js';
 import { clickPdf } from './pdf-porte.js';
 import { ouvrirEntreeBlanc, ouvrirExamen } from './examen-porte.js';
 import { ouvrirPlus } from './plus-porte.js';
+import { tiennent } from './bridage.js';
 import {
-  deck, delSubject, doUndo, esc, flush, plur, pushSubject, pushUndo, save, saveDeck,
-  setMeta, slugify, solveConflict, subj
+  deck, delSubject, doUndo, esc, flush, pushSubject, pushUndo, save, saveDeck,
+  setMeta, slugify, solveConflict
 } from '../core/coeur-sync.js';
 import { clickPartage, ouvrirPartage } from './partage-porte.js';
 import { duelStart } from './defis.js';
@@ -39,7 +39,7 @@ import { deleteAccount, mateProfPull } from '../core/menus-c.js';
 import { doPrompt, logout } from './onboarding.js';
 import { versRestore } from './reglages-corbeille.js';
 import {
-  addMail, backupData, backupRestore, delMail, dropFriend, lireSauvegarde
+  addMail, delMail, dropFriend
 } from '../core/reglages-corbeille.js';
 import {
   friendsPull, sendDeck, versPull
@@ -288,46 +288,10 @@ function clickSubjdel(a, b) {
   delSubject(subjEdit); flush(); closeMenu(); return render();
 }
 
-function clickBackup() {
-  closeMenu();
-  const url = SITE + '#i=' + enc(db.decks.map(x =>
-    ({ key: x.key || x.id, name: x.name, subject: x.subject, sn: x.subject ? subj(x.subject).name : '', cards: x.cards.map(c => [c.f, c.b]) })));
-  if (navigator.share) partager({ url });
-  else navigator.clipboard.writeText(url).then(() => toast(I.check, 'Sauvegarde copiée'));
-}
-
-/* M04.T6 : le fichier complet, état d'apprentissage compris — le lien
-   ci-dessus ne garde que recto et verso. */
-async function clickBackupFile() {
-  closeMenu();
-  const blob = new Blob([JSON.stringify(await backupData())], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'mirandola-bibliotheque-' + new Date().toISOString().slice(0, 10) + '.json';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  toast(I.check, 'Paquets exportés');
-}
-
-function clickBackupRestore() {
-  closeMenu();
-  const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'application/json,.json';
-  inp.onchange = async () => {
-    const f = inp.files && inp.files[0]; if (!f) return;
-    let txt;
-    try { txt = await f.text(); } catch (e) { return toast(I.x, 'Fichier illisible'); }
-    const r = await lireSauvegarde(txt);
-    if (!r.ok) return toast(I.x, r.error);
-    const done = await backupRestore(r.data);
-    toast(I.check, plur(done.decks.length, 'paquet') + ' restauré' + (done.decks.length > 1 ? 's' : ''), true);
-  };
-  inp.click();
-}
-
 function clickHide(a, b, d) { d.hidden = !d.hidden; saveDeck(d); closeMenu(); render(); toast(d.hidden ? I.eyeoff : I.eye); }
 
 function clickClone(a, b, d) {
+  if (!tiennent(1)) return;
   const n = cloneDeck(d); closeMenu(); go('deck', n.id);
   return toast(I.copy, n.cards.length + ' carte' + (n.cards.length > 1 ? 's' : '') + ' dupliquée' + (n.cards.length > 1 ? 's' : ''), true);
 }
@@ -346,7 +310,9 @@ const clickMergeopen = () => openMenu('merge');
 function clickSplitopen(a, b, d) { setSplitSize(Math.min(splitSize, d.cards.length - 1)); return openMenu('split'); }
 
 function clickDosplit(a, b, d) {
-  const made = splitDeck(d, Math.min(Math.max(2, splitSize), d.cards.length - 1));
+  const t = Math.min(Math.max(2, splitSize), d.cards.length - 1);
+  if (!tiennent(Math.ceil(d.cards.length / t) - 1)) return;
+  const made = splitDeck(d, t);
   closeMenu();
   if (!made) return toast(I.split, 'Rien à scinder');
   go('home');
@@ -440,7 +406,7 @@ function clickSendmail(a, b, d) {
 }
 
 function clickAddmail() {
-  const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen); if (!it) return;
+  const it = mailbox.list && mailbox.list.find(x => x.id === mailOpen); if (!it || !tiennent(1)) return;
   return addMail(it);
 }
 
@@ -503,9 +469,6 @@ const CLICK_RULES = [
   [a => a === 'mcq' || a === 'match', clickQuickMode],
   [a => a === 'subjok', clickSubjok],
   [a => a === 'subjdel', clickSubjdel],
-  [a => a === 'backup', clickBackup],
-  [a => a === 'backup-file', clickBackupFile],
-  [a => a === 'backup-restore', clickBackupRestore],
   [a => a === 'hide', clickHide],
   [a => a === 'clone', clickClone],
   [a => a === 'undo', clickUndo],

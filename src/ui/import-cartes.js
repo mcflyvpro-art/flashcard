@@ -326,10 +326,18 @@ export function fnrApply(d) {
    chez celui qui l'envoie — c'est lui qui voyage, jamais l'identifiant
    (src/matieres.js). Sans nom, un identifiant n'est gardé que s'il existe
    ici (un lien de sauvegarde du même compte). */
-export function importPayload(p, fresh) {
+/* `devoir` (2026-11-18) : seul un devoir (ui/eleve-classes.js) garde ses
+   identifiants « a:… » et ses images. Ailleurs — un paquet reçu par message,
+   un lien —, une carte arrive en recto, verso, type et étiquettes : des
+   identifiants « a:… » écrits à la main faisaient passer un paquet pour un
+   devoir, que la limite de Mirandola gratuit ne compte pas, et une image en
+   `data:` donnait des images à qui ne les a pas (celles d'un autre compte ne
+   se lisent pas, de toute façon). */
+export function importPayload(p, fresh, devoir) {
   let last = null;
   for (const k of (Array.isArray(p) ? p : [p])) {
-    const cards = (k.cards || []).map(c => Array.isArray(c) ? { f: c[0], b: c[1] } : c).filter(c => c && c.f);
+    const cards = (k.cards || []).map(c => (Array.isArray(c) ? { f: c[0], b: c[1] } : devoir ? c
+      : c && { f: c.f, b: c.b, t: c.t, g: c.g })).filter(c => c && c.f);
     if (!cards.length) continue;
     const nom = k.subjectName || k.sn;
     const subject = matiereLocale(nom ? { nom } : { id: k.subject });

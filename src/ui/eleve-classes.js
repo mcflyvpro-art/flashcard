@@ -185,7 +185,7 @@ async function ouvrirDevoir(aid) {
       if (!Array.isArray(c)) for (const k of MEDIAS) if (c[k]) o[k] = c[k];
       return { id: `a:${aid}:${i}`, ...o };
     });
-    const d = importPayload({ name: r.nom, subjectName: r.matiere, cards }, true);   // la matière du professeur, retrouvée ou créée chez l'élève
+    const d = importPayload({ name: r.nom, subjectName: r.matiere, cards }, true, true);   // la matière du professeur, retrouvée ou créée chez l'élève
     eleveClassesPull();
     if (d) { go('deck', d.id); toast(I.check, 'Devoir ajouté à tes paquets'); }
   } catch (e) { toast(I.x, messageErreur(e).slice(0, 120) || 'Impossible pour l’instant'); }

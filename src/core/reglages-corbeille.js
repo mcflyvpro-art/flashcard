@@ -9,7 +9,7 @@ import {
 import { go, render } from '../ui/bibliotheque.js';
 import { fsrsW, plain } from '../ui/carte-media.js';
 import {
-  api, deck, metaOf, plur, pull, pushSubject, pushUndo, save, saveDeck, setMeta, setOnline, subj, uid
+  api, deck, metaOf, plur, pull, pushUndo, save, saveDeck, setMeta, setOnline, subj, uid
 } from './coeur-sync.js';
 import { deDevoir } from '../file.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
@@ -344,36 +344,3 @@ export async function entretienAuto() {
   return tous.size;
 }
 
-/* ---------- sauvegarde intégrale (M04.T6) ----------
-   Le format, la lecture et la restauration sont purs et testés
-   (src/sauvegarde.js) ; ici, seulement l'état courant et l'écriture :
-   chaque paquet restauré passe par saveDeck (donc la file hors ligne), et
-   toute la restauration s'annule d'un geste (pushUndo, avec les
-   identifiants tirés d'avance quand le fichier vient d'un autre compte). */
-/* src/sauvegarde.js ne se charge qu'ici, à la demande : une sauvegarde se
-   fait rarement, et le démarrage n'a plus un octet de marge (tools/budget.js). */
-const sauvegarde = () => import('../sauvegarde.js');
-
-export async function backupData() {
-  const { exportLibrary } = await sauvegarde();
-  return exportLibrary(db, auth && auth.uid, Date.now());
-}
-
-export async function lireSauvegarde(txt) {
-  const { readBackup } = await sauvegarde();
-  return readBackup(txt);
-}
-
-export async function backupRestore(data) {
-  const { restoreLibrary } = await sauvegarde();
-  const owner = auth && auth.uid;
-  const foreign = !!data.owner && data.owner !== owner;
-  const ids = data.decks.map(d => (foreign ? uid() : d.id));
-  pushUndo('Restauration', ids);
-  let k = 0;
-  const r = restoreLibrary(db, data, owner, () => ids[k++]);
-  for (const d of r.decks) saveDeck(d);
-  if (auth) for (const s of r.subjects) pushSubject(s);
-  save(); render();
-  return r;
-}

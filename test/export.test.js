@@ -2,7 +2,7 @@
    l'état d'arrivée doit être identique au bit près à celui de départ. */
 import { describe, it, expect } from 'vitest';
 import { W6, fsrsReplayCard } from '../src/fsrs.js';
-import { FORMAT, VERSION, exportLibrary, readBackup, restoreLibrary } from '../src/sauvegarde.js';
+import { BORNES, FORMAT, VERSION, exportLibrary, mediaGarde, planRestauration, readBackup, restoreLibrary } from '../src/sauvegarde.js';
 
 const NOW = Date.UTC(2026, 9, 16, 10);
 const ME = 'compte-a';
@@ -125,5 +125,80 @@ describe('un fichier qui n’en est pas un', () => {
     const r = readBackup(txt);
     expect(r.ok).toBe(false);
     expect(r.error).toContain(msg);
+  });
+});
+
+/* 2026-11-18 : un fichier est lu comme s'il venait de n'importe qui (« évite
+   les douilles d'abonnement en exportant et en réintégrant »). */
+const fichierDe = (decks, owner = ME, subjects = []) => ({ format: FORMAT, version: VERSION, owner, subjects, decks });
+const paquet = (id, cards = [{ id: id + '-1', f: 'a', b: 'b' }]) => ({ id, name: 'P ' + id, subject: '', cards });
+
+describe('ce que l’offre garde', () => {
+  it('Mirandola gratuit : seulement ce qui tient, dans l’ordre du fichier, et ce qui reste est compté', () => {
+    const db = { subjects: [], decks: [], hist: {} };
+    let n = 0;
+    const r = restoreLibrary(db, fichierDe(['a', 'b', 'c', 'd'].map(x => paquet(x))), ME, () => 'neuf-' + n++, 2);
+    expect(db.decks.map(d => d.id)).toEqual(['a', 'b']);
+    expect(r).toMatchObject({ added: 2, refuses: 2 });
+  });
+
+  it('remettre ses propres paquets à l’état du fichier ne prend aucune place', () => {
+    const db = { subjects: [], decks: [paquet('a'), paquet('b')], hist: {} };
+    const plan = planRestauration(db, fichierDe([paquet('a'), paquet('b'), paquet('c')]), ME, 0);
+    expect(plan.garder.map(d => d.id)).toEqual(['a', 'b']);
+    expect(plan.refuses.map(d => d.id)).toEqual(['c']);
+  });
+
+  it('le fichier d’un autre compte ne remplace rien : chaque paquet prend une place', () => {
+    const db = { subjects: [], decks: [paquet('a')], hist: {} };
+    const plan = planRestauration(db, fichierDe([paquet('a')], 'compte-b'), ME, 0);
+    expect(plan.refuses).toHaveLength(1);
+  });
+
+  it('un fichier sans compte écrit est d’ailleurs : de nouveaux identifiants', () => {
+    const db = { subjects: [], decks: [], hist: {} };
+    const r = restoreLibrary(db, fichierDe([paquet('a')], null), ME, () => 'neuf');
+    expect(r.foreign).toBe(true);
+    expect(db.decks[0].id).toBe('neuf');
+  });
+
+  it('un « devoir » écrit à la main compte comme un paquet à soi en Mirandola gratuit', () => {
+    const faux = paquet('x', [{ id: 'a:faux:0', f: 'q', b: 'r' }, { id: 'a:faux:1', f: 'q2', b: 'r2' }]);
+    let n = 0;
+    const db = { subjects: [], decks: [], hist: {} };
+    restoreLibrary(db, fichierDe([faux]), ME, () => 'id-' + n++, 5);
+    expect(db.decks[0].cards.map(c => c.id)).toEqual(['id-0', 'id-1']);
+    // sans borne (Mirandola+), rien ne change : un devoir reste un devoir
+    const db2 = { subjects: [], decks: [], hist: {} };
+    restoreLibrary(db2, fichierDe([faux]), ME, () => 'z');
+    expect(db2.decks[0].cards[0].id).toBe('a:faux:0');
+  });
+});
+
+describe('une carte écrite à la main', () => {
+  it('garde les images et les sons de son compte et des cours, pas les autres', () => {
+    expect(mediaGarde(ME + '/abc.jpg', ME)).toBe(true);
+    expect(mediaGarde('cours/prof-1/abc.jpg', ME)).toBe(true);
+    expect(mediaGarde('https://qqbz.supabase.co/storage/v1/object/public/media/' + ME + '/v.webm', ME)).toBe(true);
+    for (const v of ['data:image/png;base64,AAAA', 'blob:https://x/1', 'https://ailleurs.fr/i.png', 'javascript:alert(1)',
+      'compte-b/abc.jpg', ME + '/../compte-b/x.jpg', '/etc/x', 42, ''])
+      expect(mediaGarde(v, ME)).toBe(false);
+  });
+
+  it('arrive avec un recto et un verso en texte, sans média étranger, bornée', () => {
+    const db = { subjects: [], decks: [], hist: {} };
+    const c = { id: 'c1', f: 12, b: null, fi: 'data:image/png;base64,AAAA', bi: ME + '/ok.jpg', S: 3 };
+    restoreLibrary(db, fichierDe([paquet('p', [c, { f: 'x'.repeat(30000), b: 'y' }])]), ME, () => 'neuf');
+    const [a, b] = db.decks[0].cards;
+    expect(a).toEqual({ id: 'c1', f: '12', b: '', bi: ME + '/ok.jpg', S: 3 });
+    expect(b.f).toHaveLength(BORNES.texte);
+    expect(b.id).toBe('neuf');
+  });
+
+  it('un fichier trop grand est refusé avant d’être lu en entier', () => {
+    const decks = Array.from({ length: BORNES.paquets + 1 }, (_, i) => paquet('p' + i));
+    const r = readBackup(JSON.stringify(fichierDe(decks)));
+    expect(r.ok).toBe(false);
+    expect(r.error).toContain('trop grande');
   });
 });

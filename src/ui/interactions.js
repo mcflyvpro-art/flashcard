@@ -33,6 +33,8 @@ import { logout, openInstall } from './onboarding.js';
 import { allerAccueil, donnerLivre } from './prof-porte.js';
 import { ouvrirPseudo } from './pseudo-porte.js';
 import { ouvrirPlus } from './plus-porte.js';
+import { tiennent } from './bridage.js';
+import { ouvrirSauvegarde } from './sauvegarde-porte.js';
 import {
   dictate, fail, nextQ, norm, pickQuiz, startQuiz, submit
 } from './quiz.js';
@@ -202,7 +204,7 @@ const tapInstall = () => openInstall();
 const tapDuelquit = () => { setDuelRun(null); const r = cercle.retour || { name: 'commu' }; return go(r.name, r.id); };
 
 function tapAddshared() {
-  const sd = shared && shared.d; if (!sd) return;
+  const sd = shared && shared.d; if (!sd || !tiennent(1)) return;
   const cards = (sd.cards || []).map(c => [cf(c), cb(c)]);
   const nd = importPayload({ name: sd.name, subjectName: sd.subject_name, cards }, true);
   setShared(null);
@@ -260,7 +262,7 @@ function tapPretour() {
   return allerAccueil();
 }
 
-const tapBackup2 = () => openMenu('backup');
+const tapBackup2 = () => ouvrirSauvegarde();
 const tapUndo2 = () => { doUndo(); };
 const tapMailScreen = () => { mailPull(); return go('mail'); };
 const tapTrash = () => { trash.list = null; trashPull(); return go('trash'); };
@@ -302,7 +304,6 @@ const tapTglsound = () => { prefs.sound = !prefs.sound; savePrefs(); render(); i
 const tapRename = () => openMenu('rename');
 const tapSecu = () => ouvrirSecurite();
 const tapDelacc = () => openMenu('delacc');
-const tapPuball = () => openMenu('backup');
 const tapNew = () => { resetComp(); return go('import'); };
 const tapPaste = () => { resetComp({ mode: 'coller' }); return go('import', view.name === 'deck' ? view.id : null); };
 
@@ -499,7 +500,6 @@ const CLICK_RULES = [
   [a => a === 'rename', tapRename],
   [a => a === 'secu', tapSecu],
   [a => a === 'delacc', tapDelacc],
-  [a => a === 'puball', tapPuball],
   [a => a === 'new', tapNew],
   [a => a === 'paste', tapPaste],
   [a => a === 'deck', tapDeckAction],

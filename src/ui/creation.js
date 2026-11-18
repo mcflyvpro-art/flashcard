@@ -8,7 +8,7 @@ import { donnerLivre } from './prof-porte.js';
 import { MAXB, MAXF, markDups, markOver } from './carte-media.js';
 import { deck, esc, plur, saveDeck, sty, subj, uid } from '../core/coeur-sync.js';
 import { addDeck, toast } from './import-cartes.js';
-import { bride, envie } from './bridage.js';
+import { bride, envie, tiennent } from './bridage.js';
 import { etatIA } from '../ia-mois.js';
 import { iaPull } from '../core/abonnement.js';
 
@@ -430,6 +430,7 @@ function bindOk(t) {
       t.cards.push(...cards.map(c => ({ ...c, id: uid() })));
       saveDeck(t); resetComp(); go('deck', t.id);
     } else {
+      if (!tiennent(1)) return;           // une création ouverte d'ailleurs que « Nouveau paquet », bibliothèque pleine
       const d = addDeck(comp.name, cards, comp.subject);
       if (comp.cours) { d.cours = true; saveDeck(d); }
       resetComp();

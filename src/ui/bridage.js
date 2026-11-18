@@ -1,7 +1,7 @@
 // @ts-nocheck — M06.T8 : la vérification douce (checkJs + JSDoc) ne couvre que src/core/
 import { db, demoEtab, offre } from '../data/etat.js';
 import { deDevoir } from '../file.js';
-import { JOURNAL_PLUS, LIVRES_GRATUITS, MOTEUR, permis } from '../offres.js';
+import { JOURNAL_PLUS, MOTEUR, permis, placeLivres } from '../offres.js';
 import { ouvrirPlus } from './plus-porte.js';
 import { ouvrirEnvie } from './demo-porte.js';
 
@@ -37,12 +37,23 @@ export const aFolioPlus = () => !demoEtab && !!offre && offre.offre === 'plus';
 export const aInfini = () => !demoEtab && !!offre && offre.niveau === 'infini';
 
 const mesLivres = () => ((db && db.decks) || []).filter(d => !d.deleted_at && !deDevoir(d.cards || [])).length;
-export const plein = () => offreActive() === 'gratuit' && mesLivres() >= LIVRES_GRATUITS;
+export const place = () => placeLivres(offreActive(), mesLivres());
+export const plein = () => place() < 1;
 
 // le geste bridé : ce que ferait la fonction, et comment l'avoir
 export function envie(cle) {
   if (demoEtab) return ouvrirEnvie(cle);
   ouvrirPlus({ raison: cle });
+}
+
+/* n paquets à soi de plus (2026-11-18) : vrai s'ils tiennent, sinon
+   l'écran Mirandola+ dit pourquoi. Dupliquer, scinder, ajouter un paquet
+   reçu, un lien : tout ce qui en fait entrer passe ici (la restauration a
+   sa propre feuille, ui/sauvegarde.js, qui dit combien entreront). */
+export function tiennent(n) {
+  if (n <= place()) return true;
+  envie('livres');
+  return false;
 }
 
 /* Ce qui est dans Mirandola+ et se touche ailleurs que sur un onglet de la

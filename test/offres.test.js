@@ -1,13 +1,17 @@
 // Ce que chaque offre ouvre (src/offres.js) : la règle que la démo applique
 // déjà et que la vraie app appliquera avec le paiement.
 import { describe, expect, it } from 'vitest';
-import { IA_PAR_MOIS, IA_PROF_PAR_MOIS, LIVRES_GRATUITS, MOTEUR, OFFRES, iaParMois, livresPermis, permis, voletPermis } from '../src/offres.js';
+import { IA_PAR_MOIS, IA_PROF_PAR_MOIS, LIVRES_GRATUITS, MOTEUR, OFFRES, iaParMois, livresPermis, permis, placeLivres, voletPermis } from '../src/offres.js';
 
 describe('les offres', () => {
   it('Mirandola gratuit : Lite, 5 livres, sans IA ni exercices ni images', () => {
     expect(MOTEUR.gratuit).toBe('lite');
     expect(livresPermis('gratuit', LIVRES_GRATUITS - 1)).toBe(true);
     expect(livresPermis('gratuit', LIVRES_GRATUITS)).toBe(false);
+    // ce qui peut encore entrer : jamais négatif, sans borne ailleurs (2026-11-18)
+    expect(placeLivres('gratuit', 2)).toBe(LIVRES_GRATUITS - 2);
+    expect(placeLivres('gratuit', 9)).toBe(0);
+    expect(placeLivres('plus', 900)).toBe(Infinity);
     for (const f of ['ia', 'photo', 'fichier', 'exercices', 'media', 'journal']) expect(permis('gratuit', f)).toBe(false);
     expect(permis('gratuit', 'recitation')).toBe(true);
     expect(IA_PAR_MOIS.gratuit).toBe(0);
