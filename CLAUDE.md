@@ -261,7 +261,18 @@ l'air de marcher ».
     Parcours : `e2e/site.e2e.js`. **Tout est dans `docs/LANDING.md`** (dont
     comment insérer les vidéos).
     `app.html` — l'app (`noindex`) : écran d'ouverture inline, charge
-    `/src/app.css` puis `/src/app.js` ; et **l'écran de secours** (2026-11-07,
+    `/src/app.css` puis `/src/app.js` ; **l'ouverture** (refaite le
+    2026-11-18, demandé : « celle avec la barre est moche, je veux un truc
+    incroyable ») : plus de barre — un halo bleu-rose qui dérive, la pile du
+    logo qui se construit livre après livre (ils tombent et rebondissent,
+    l'étiquette se pose, trois éclats s'allument, la pile flotte au-dessus de
+    son ombre) et « Mirandola » lettre par lettre ; toute l'animation de la
+    pile est dans **`public/ouverture.svg`**, écrit par `python3 tools/logo.py`
+    (une image SVG anime son propre CSS sans script : rien à ajouter à la
+    CSP), le halo et les lettres dans le `<style>` d'`app.html` ; `app.css`
+    n'en garde que la sortie (`#boot.off`) ; mouvement réduit : tout est
+    posé d'emblée ; le service worker la garde hors ligne, l'app native
+    aussi (`GARDES` de `tools/natif/web.js`) ; et **l'écran de secours** (2026-11-07,
     son seul script en ligne, empreinte dans la CSP, `test/demarrage.test.js`) :
     rien dans `#app` au bout de 15 s — un morceau du build qui ne se charge
     pas, un démarrage qui bloque —, l'ouverture le dit et propose
@@ -1785,7 +1796,7 @@ bash tools/vigie/verifier.sh         # la vigie, à la main (SITE, SUPABASE_URL,
 SINGE=150 GRAINE=7 SHOTS=dossier npx playwright test e2e/singe.e2e.js   # le singe : des gestes au hasard dans la démo, trois rôles, deux écrans ; échoue à la moindre erreur JavaScript ; chaque geste a son délai (800 ms) et une cible partie entre la liste et le geste se saute — sans lui, `evaluate` l'attendait jusqu'au bout du test et la nuit échouait sans erreur (2026-11-14)
 npm run e2e                          # parcours de bout en bout (Playwright, e2e/*.e2e.js) sur le build servi par vite preview (M07)
 grep -n -- "---------- " src/ui/*.js # table des matières des écrans
-python3 tools/logo.py                # le logo (public/site/, public/favicon.svg, sprite de index.html)
+python3 tools/logo.py                # le logo (public/site/, public/favicon.svg, sprite de index.html) et l'ouverture de l'app (public/ouverture.svg)
 node tools/affiches.js               # affiches du site, image de partage, captures du manifeste, depuis la démo (vite preview --port 4190 d'abord) ; `node tools/affiches.js prof-mobile` : celles-là seules
 node tools/icones.js                 # icônes de l'app installée (public/icons/), depuis public/site/icone.svg, et le favicon de la racine (favicon.ico, favicon-48.png, apple-touch-icon.png)
 node tools/affiches.js pages         # l'image de partage de chaque page du site (public/site/og/), sans serveur

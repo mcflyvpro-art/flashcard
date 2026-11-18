@@ -19,7 +19,10 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-18 · Sous un titre, une seule information, en mots :
+DERNIER   2026-11-18 · L'ouverture de l'app sans barre : la pile du logo
+          se construit (public/ouverture.svg, tools/logo.py), un halo
+          bleu-rose dérive, le nom arrive lettre par lettre.
+          · 2026-11-18 · Sous un titre, une seule information, en mots :
           plus de ligne d'icônes et de chiffres ni de points (Mes amis, défis,
           clubs, profil, classe, devoirs, mémoire d'une carte, espace prof,
           console du référent) ; le détail en tuiles nommées (ui/tuiles.js) ;

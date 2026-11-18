@@ -34,7 +34,7 @@ const DIST = join(RACINE, 'dist');
 export const SORTIE = join(RACINE, 'dist-natif');
 
 // ce que l'app lit hors de assets/ et qui doit voyager avec elle
-const GARDES = [/^icons\//, /^fsrs\.wasm$/, /^licences\.txt$/, /^site\/logo\.svg$/, /^site\/icone\.svg$/];
+const GARDES = [/^icons\//, /^fsrs\.wasm$/, /^licences\.txt$/, /^site\/logo\.svg$/, /^site\/icone\.svg$/, /^ouverture\.svg$/];
 
 /* Les fichiers de assets/ que l'app atteint, depuis son HTML. Un nom de
    fichier haché ne se rencontre que là où il est employé : un morceau qui

@@ -15,6 +15,9 @@ Sorties :
   public/site/logo.svg   la marque seule, fond transparent (page d'accueil)
   public/site/icone.svg  la marque sur son carré crème arrondi (512 × 512)
   public/favicon.svg     le même carré, sans les feuillets (16-32 px)
+  public/ouverture.svg   l'ouverture de l'app : les trois livres tombent l'un
+                         sur l'autre, l'étiquette se pose, puis la pile flotte
+                         sous des étincelles (app.html, 2026-11-18)
 Lancer : python3 tools/logo.py
 """
 import math
@@ -264,6 +267,68 @@ def svg_marque():
             f'<defs>{OMBRE.format(s=6)}</defs>{ombre}{corps}</svg>')
 
 
+# L'ouverture de l'app (2026-11-18, demandé : « l'animation au lancement,
+# avec la barre, est moche ; je veux un truc incroyable »). La marque se
+# construit sous les yeux : chaque livre tombe et rebondit sur le précédent
+# (le geste du héros de la page d'accueil, `pose` de site.css), l'ombre
+# s'étend à chaque atterrissage, l'étiquette se pose ; puis, tant que l'app
+# se charge, la pile flotte et des étincelles aux couleurs de la marque
+# s'allument autour d'elle. Son animation vit dans le fichier même : une
+# image chargée par <img> joue ses animations CSS, sans aucun script — la
+# CSP n'a rien à en savoir, et le service worker la garde hors ligne (elle
+# est à la racine de public/, pas sous site/).
+CHUTE = 150          # la place laissée au-dessus de la pile pour sa chute
+ETOILE = 'M0 -1 L.22 -.22 L1 0 L.22 .22 L0 1 L-.22 .22 L-1 0 L-.22 -.22 Z'
+
+
+def svg_ouverture():
+    corps, (x0, y0, x1, y1) = marque()
+    m = 10
+    vb = f'{f(x0 - m)} {f(y0 - m - CHUTE)} {f(x1 - x0 + 2 * m)} {f(y1 - y0 + 2 * m + CHUTE + 30)}'
+    livres = []
+    for i, (k, (dx, dy)) in enumerate(PILE):
+        o = P(dx, dy, i * T)
+        livres.append(f'<g class="l l-{k}">' + ''.join(livre(o, COULEURS[k], k)) + '</g>')
+        if k == 'clair':
+            etiq = '<g class="etiq">' + ''.join(etiquette_de(o)) + '</g>'
+    cx = P(W * .5 - 6, L * .55, 0)
+    ombre = (f'<ellipse class="ombre" cx="{f(cx[0])}" cy="{f(y1 + 4)}" rx="{f((x1 - x0) * .47)}" ry="22" '
+             f'fill="url(#om)"/>')
+    # trois étincelles : au-dessus à droite, à gauche, et une petite tout en haut
+    etoiles = ''.join(
+        # la place dans un groupe : le `transform` CSS de l'animation remplacerait celui du dessin
+        f'<g transform="translate({f(x)} {f(y)}) scale({r})"><path class="et et{n}" d="{ETOILE}" fill="url(#br)"/></g>'
+        for n, (x, y, r) in enumerate([(x1 - 18, y0 - 34, 30), (x0 + 30, y0 + 40, 20), (x0 + (x1 - x0) * .55, y0 - 92, 15)], 1))
+    style = (
+        '.l{animation:pose .95s cubic-bezier(.34,1.3,.5,1) both}'
+        '.l-noir{animation-delay:.12s}.l-gris{animation-delay:.38s}.l-clair{animation-delay:.64s}'
+        '@keyframes pose{0%{opacity:0;transform:translateY(-330px) rotate(-4deg)}40%{opacity:1}'
+        '64%{transform:translateY(12px)}80%{transform:translateY(-4px)}100%{transform:none}}'
+        '.etiq,.ombre,.et{transform-box:fill-box;transform-origin:center}'
+        '.etiq{animation:etiq .6s cubic-bezier(.3,1.6,.5,1) 1.32s both}'
+        '@keyframes etiq{from{opacity:0;transform:scale(.2) rotate(-25deg)}}'
+        '.ombre{animation:ombre 1.7s cubic-bezier(.2,.8,.3,1) both,respire 3.4s ease-in-out 1.9s infinite alternate}'
+        '@keyframes ombre{0%{opacity:0;transform:scale(.3)}45%{opacity:.55;transform:scale(.72)}'
+        '62%{opacity:.75;transform:scale(.9)}80%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:none}}'
+        '@keyframes respire{to{opacity:.7;transform:scale(.88)}}'
+        '.pile{animation:flotte 3.4s ease-in-out 1.9s infinite alternate}'
+        '@keyframes flotte{to{transform:translateY(-9px)}}'
+        '.et{opacity:0;animation:brille 2.6s ease-in-out infinite}'
+        '.et1{animation-delay:1.55s}.et2{animation-delay:2.25s}.et3{animation-delay:2.9s}'
+        '@keyframes brille{0%{opacity:0;transform:scale(.2) rotate(0)}18%{opacity:1;transform:scale(1) rotate(45deg)}'
+        '42%,100%{opacity:0;transform:scale(.3) rotate(90deg)}}'
+        '@media (prefers-reduced-motion:reduce){.l,.etiq,.ombre,.pile,.et{animation:none}.et{opacity:0}}'
+    )
+    defs = ('<radialGradient id="om"><stop offset="0" stop-color="#33479E" stop-opacity=".26"/>'
+            '<stop offset=".55" stop-color="#1D1C19" stop-opacity=".1"/><stop offset="1" stop-color="#1D1C19" stop-opacity="0"/>'
+            '</radialGradient>'
+            '<radialGradient id="br"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".35" stop-color="#9A78CF"/>'
+            '<stop offset="1" stop-color="#D06A92"/></radialGradient>')
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}" role="img" aria-label="Mirandola">'
+            f'<style>{style}</style><defs>{defs}</defs>{ombre}'
+            f'<g class="pile">{"".join(livres)}{etiq}</g>{etoiles}</svg>')
+
+
 def svg_icone(detail=True, remplir=362):
     corps, (x0, y0, x1, y1) = marque(detail)
     w, h = x1 - x0, y1 - y0
@@ -325,5 +390,6 @@ if __name__ == '__main__':
     ecrire(os.path.join(ROOT, 'public', 'site', 'icone.svg'), svg_icone())
     # l'onglet d'un navigateur : 16 px, la pile remplit le carré
     ecrire(os.path.join(ROOT, 'public', 'favicon.svg'), svg_icone(detail=False, remplir=440))
+    ecrire(os.path.join(ROOT, 'public', 'ouverture.svg'), svg_ouverture())
     n = injecter(os.path.join(ROOT, 'index.html'))
-    print('logo.svg, icone.svg, favicon.svg écrits' + (' ; sprite de index.html à jour' if n else ''))
+    print('logo.svg, icone.svg, favicon.svg, ouverture.svg écrits' + (' ; sprite de index.html à jour' if n else ''))
