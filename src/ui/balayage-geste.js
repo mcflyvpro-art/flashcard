@@ -129,7 +129,7 @@ function cacher(n) {
 function recycler(k, noeuds) {
   for (const n of noeuds) { n.style.transform = ''; n.style.transition = ''; n.style.willChange = ''; }
   const n = couche(k, '', noeuds);
-  n.app.querySelectorAll('.neuf').forEach(x => x.classList.remove('neuf'));
+  n.app.querySelectorAll('[data-k].neuf').forEach(x => x.classList.remove('neuf'));   // seulement la marque d'une entrée (ui/mouvement.js)
   n.neuve = true;                       // la vraie page à l'instant : rien à refaire au calme, sauf si les données bougent
   prets.set(k, n);
 }
@@ -180,6 +180,7 @@ function prendreGlissiere() {
   const sl = glissiere();
   // la pose ou une transition, jamais la matière des abonnés (CSSAnimation : la lave)
   if (sl) for (const a of sl.getAnimations()) if (!(window.CSSAnimation && a instanceof CSSAnimation)) a.cancel();
+  $.querySelectorAll('.tabs .vise').forEach(b => b.classList.remove('vise'));   // l'icône que visait la pose arrêtée
 }
 
 const xActuel = () => {
@@ -296,6 +297,10 @@ function passer(fini) {
 function nettoyer(ici) {
   for (const n of bouge()) { n.style.transform = ''; n.style.transition = ''; n.style.willChange = ''; }
   const sl = glissiere(); if (sl) { sl.style.transform = `translateX(${ici * PAS}px)`; sl.style.transition = ''; }
+  /* l'onglet allumé redevient celui de la page : un geste abandonné en route
+     (un second doigt, l'app qui passe derrière) laissait allumé celui de la
+     voisine — son icône blanche sur la barre claire, la pastille ailleurs */
+  $.querySelectorAll('.tabs button').forEach((b, j) => b.classList.toggle('on', j === ici));
 }
 
 function abandonner() {

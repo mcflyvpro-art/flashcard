@@ -157,7 +157,7 @@ function clubsHtml() {
   return `<section class="cc-sec"><div class="cc-h"><h2>Mes clubs</h2>
       <button class="cc-lnk" data-cc="club-rejoindre">${svg(I.hash)}Code</button></div>
     <div class="cc-clubs">${l.map(clubCarte).join('')}
-      <button class="cc-club neuf" data-cc="club-creer"><i class="jt groupe vide">${svg(I.plus)}</i>
+      <button class="cc-club cc-creer" data-cc="club-creer"><i class="jt groupe vide">${svg(I.plus)}</i>
         <span class="cc-club-t"><b>Créer un club</b></span></button>
     </div></section>`;
 }

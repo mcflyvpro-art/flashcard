@@ -131,6 +131,34 @@ test('balayer très vite : chaque geste compte, la pastille suit, rien ne reste'
   expect(erreurs).toEqual([]);
 });
 
+/* Un geste abandonné en route (l'app qui passe derrière) rend la barre à
+   l'onglet de la page : l'onglet voisin, allumé à mi-course, restait allumé
+   — son icône blanche sur la barre claire (2026-11-18). Et changer
+   d'onglet n'empile rien dans l'historique : sur l'iPhone, le glissé de
+   retour d'iOS le suivait et emportait la page. */
+test('un geste abandonné rend la barre à son onglet ; les onglets n’empilent rien', async ({ browser, browserName }) => {
+  test.skip(browserName === 'webkit', 'un doigt qui glisse passe par CDP, que seul Chromium a');
+  const page = await telephone(browser, eleveEnClasse());
+  await expect(page.locator('.tabs button')).toHaveCount(3, { timeout: 10000 });
+  const pile = await page.evaluate(() => history.length);
+  await page.getByRole('button', { name: 'Classe', exact: true }).click();
+  await page.getByRole('button', { name: /^Mes amis/ }).click();
+  await page.getByRole('button', { name: 'Paquets', exact: true }).click();
+  await expect(ecran(page)).toHaveAttribute('data-view', 'home');
+  expect(await page.evaluate(() => history.length)).toBe(pile);
+  await page.waitForTimeout(500);
+
+  await page.glisser(330, 120, { pendant: async () => {
+    await expect(page.locator('#app > .tabs button.on')).toHaveAttribute('aria-label', 'Classe');   // allumé à mi-course
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+  } });
+  await expect(ecran(page)).toHaveAttribute('data-view', 'home');
+  await expect(page.locator('#app > .tabs button.on')).toHaveCount(1);
+  await expect(page.locator('#app > .tabs button.on')).toHaveAttribute('aria-label', 'Paquets');
+  await expect(page.locator('#app > .tabs button.vise')).toHaveCount(0);
+  await expect(page.locator('.balai')).toHaveCount(0);
+});
+
 /* Revenir au doigt (2026-11-17) : sur un paquet, un glissé de gauche à
    droite tire la page et découvre dessous l'onglet d'où l'on vient, puis
    y revient ; un glissé court revient à sa place. */

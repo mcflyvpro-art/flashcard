@@ -19,7 +19,12 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-18 · Revenir au doigt : sur un paquet, les réglages, un
+DERNIER   2026-11-18 · La barre ne garde plus un mauvais onglet allumé après
+          un geste abandonné ; « Créer un club » ne change plus de couleur ;
+          les onglets n'empilent plus l'historique, et l'app de l'écran
+          d'accueil d'un iPhone n'en garde qu'une entrée : plus d'animation
+          de retour d'iOS en plein balayage (e2e/navigation.e2e.js).
+          · 2026-11-18 · Revenir au doigt : sur un paquet, les réglages, un
           club, la création… un glissé vers la droite découvre l'onglet
           d'origine dessous et y revient (ui/balayage-geste.js). Les
           feuilles se tirent vers le bas d'où que parte le doigt, avec

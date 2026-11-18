@@ -53,6 +53,16 @@ const dePassage = p => { const e = lireChemin(p || ''); return !!(e && PASSAGE.t
 /* Passer d'un texte du cadre à un autre (ses onglets) n'est pas un nouvel
    écran : « Retour » ramène là d'où l'on venait, pas au texte d'avant. */
 const unTexte = p => { const e = lireChemin(p || ''); return !!(e && e.name === 'legal'); };
+/* Passer d'un onglet à l'autre (Paquets, Classe, Mes amis) n'empile rien,
+   comme dans une app native : les onglets ne sont pas une pile (2026-11-18). */
+const unOnglet = p => { const e = lireChemin(p || ''); return !!(e && /^(home|classes|commu)$/.test(e.name)); };
+/* Sur l'iPhone, l'app posée sur l'écran d'accueil (`navigator.standalone`)
+   a les glissés de retour et d'avance d'iOS : ils suivaient l'historique et
+   emportaient la page dans l'animation d'iOS — coins arrondis, page d'avant
+   assombrie —, parfois en plein balayage entre onglets (2026-11-18). Elle y
+   garde une seule entrée : ses propres gestes (balayage, retour au doigt) et
+   ses boutons mènent partout, iOS n'a plus rien à suivre. */
+const uneSeule = () => navigator.standalone === true;
 
 function lireCibleRangee() {
   try { return JSON.parse(sessionStorage.getItem(CIBLE) || 'null'); }
@@ -92,7 +102,8 @@ export function synchroniser() {
   if (!arme || enRetour) return;
   const p = cheminActuel();
   if (!p || p === location.pathname) { remplacer = false; return; }
-  if (remplacer || dePassage(location.pathname) || (unTexte(location.pathname) && unTexte(p))) {
+  if (remplacer || uneSeule() || dePassage(location.pathname) || (unTexte(location.pathname) && unTexte(p))
+    || (unOnglet(location.pathname) && unOnglet(p))) {
     history.replaceState({ folio: rang }, '', p + (remplacer ? location.search + location.hash : ''));
     pile[rang] = p;
   } else if (rang > 0 && pile[rang - 1] === p) {

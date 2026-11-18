@@ -69,6 +69,8 @@ function poser(sl, x, opts) {
   sl.style.transform = `translateX(${x}px)`;
   const anim = sl.animate([{ transform: de }, { transform: tr(x) }], opts);
   pose = { sl, anim, x };
+  // arrêtée d'ailleurs (le balayage prend la pastille) : l'icône qu'elle visait ne reste pas allumée
+  anim.oncancel = () => { if (sl.parentNode && !(jeu && !jeu.fin)) viser(sl.parentNode, -1); };
   anim.onfinish = () => {
     if (pose && pose.anim === anim) pose = null;
     sl.style.transition = '';
