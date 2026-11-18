@@ -19,7 +19,16 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-17 · « J'ai un code » est universel (src/codes.js) :
+DERNIER   2026-11-18 · Le balayage entre onglets refait (ui/balayage-geste.js,
+          à part) : voisines prêtes d'avance, la page quittée recyclée, un
+          geste pendant la course la rattrape — huit balayages rapides, huit
+          changements ; plus aucune couche figée par-dessus l'écran ; .page
+          sans calque permanent (les bandes vides des Réglages) ; un onglet
+          s'ouvre net. « Mes amis » et « Classe » gardés sur l'appareil
+          (core/memoire-ecrans.js) : plus de blocs gris. L'en-tête de
+          l'accueil sur une ligne, l'engrenage au bout (e2e/navigation,
+          cercle, animations).
+          · 2026-11-17 · « J'ai un code » est universel (src/codes.js) :
           partie, paquet, @pseudo, établissement, professeur, classe ou club,
           tapé, lien ou message collé entier ; un lien partagé ouvert dans un
           navigateur mène à la page du code (code.html : le copier, où

@@ -1,6 +1,7 @@
 import { eleve, setAnimate, setCompte, view } from '../data/etat.js';
 import { render } from '../ui/bibliotheque.js';
 import { api } from './coeur-sync.js';
+import { retenir } from './memoire-ecrans.js';
 
 /* ══════════ « Mes classes », côté élève : ce qui part et ce qui revient ══════════
    Rejoindre passe toujours par la base (`class_preview`, `class_join`) : c'est
@@ -26,6 +27,7 @@ export async function eleveClassesPull() {
   eleve.classes = r[0].status === 'fulfilled' ? r[0].value || [] : eleve.classes || [];
   eleve.devoirs = r[1].status === 'fulfilled' ? r[1].value || [] : eleve.devoirs || [];
   eleve.err = r.some(x => x.status === 'rejected') ? 1 : 0;
+  if (!eleve.err) retenir();
   /* Admis dans une classe (ou sorti) : l'onglet « Classe » apparaît (ou
      s'en va) sur l'écran d'accueil aussi, pas seulement dans le cercle. */
   if (view.name === 'classes' || view.name === 'commu' || (view.name === 'home' && avant !== enClasse())) { setAnimate(false); render(); }

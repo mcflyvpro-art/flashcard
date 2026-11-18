@@ -83,7 +83,10 @@ for (const largeur of [390, 1440]) {
   });
 }
 
-test('dix appuis sur le même onglet ne rejouent pas l’écran ; une vraie arrivée s’anime, une fois', async ({ page }) => {
+/* Un onglet touché s'ouvre net (2026-11-17, « moins virevoltant ») : ni dix
+   appuis sur le même, ni le passage à un autre ne font voler l'écran ; un
+   écran qu'on ouvre d'ailleurs (un paquet) garde son entrée, une seule fois. */
+test('dix appuis sur le même onglet ne rejouent pas l’écran ; changer d’onglet est net ; ouvrir un paquet s’anime, une fois', async ({ page }) => {
   const store = nouveauStore();
   semerCompte(store, 'lea@exemple.fr');
   semerLivre(store, 'lea@exemple.fr', 'Capitales', [['France', 'Paris'], ['Italie', 'Rome']]);
@@ -111,12 +114,16 @@ test('dix appuis sur le même onglet ne rejouent pas l’écran ; une vraie arri
   expect(await arrivees(), 'Paquets est déjà à l’écran : rien n’arrive').toBe(0);
 
   const cercle = page.getByRole('button', { name: 'Mes amis' });
-  await cercle.click();
-  await expect.poll(arrivees, { message: 'arriver sur le Cercle s’anime' }).toBe(1);
-  await page.waitForTimeout(800);
-  for (let k = 0; k < 5; k++) {
+  for (let k = 0; k < 6; k++) {
     await cercle.click();
     expect(await entrees(page), `appui ${k + 1} sur « Mes amis »`).toEqual([]);
   }
-  expect(await arrivees(), 'une seule entrée pour six appuis').toBe(1);
+  await expect(page.locator('#app')).toHaveAttribute('data-view', 'commu');
+  expect(await arrivees(), 'un onglet s’ouvre net').toBe(0);
+
+  await livres.click();
+  await page.locator('[data-go]', { hasText: 'Capitales' }).first().click();
+  await expect.poll(arrivees, { message: 'ouvrir un paquet s’anime' }).toBe(1);
+  await page.waitForTimeout(800);
+  expect(await arrivees(), 'une seule entrée').toBe(1);
 });

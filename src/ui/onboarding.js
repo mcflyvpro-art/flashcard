@@ -28,6 +28,7 @@ import { consumeGoto } from './raccourcis.js';
 import { closeMenu, mountMenu, openMenu } from './menus-a.js';
 import { openShared } from '../core/reglages-corbeille.js';
 import { oublierVisuels } from '../core/visuels.js';
+import { oublier as oublierEcrans } from '../core/memoire-ecrans.js';
 import { offreLocale } from '../core/abonnement.js';
 import { oublierSynchro } from './synchro-ecran.js';
 import { arreterTuto, maybeTuto } from './tuto-porte.js';
@@ -120,6 +121,7 @@ export function logout() {
   /* la session est révoquée chez Supabase aussi : un jeton de
      renouvellement resté sur l'appareil ne rouvrirait plus rien */
   if (auth) fetch(SB.url + '/auth/v1/logout?scope=local', { method: 'POST', headers: { apikey: SB.key, Authorization: 'Bearer ' + auth.token } }).catch(() => {});
+  oublierEcrans();
   saveAuth(null);
   if (key) { try { localStorage.removeItem(key); } catch (e) { /* stockage indisponible : la déconnexion continue sans ce nettoyage */ } }
   resetSession();

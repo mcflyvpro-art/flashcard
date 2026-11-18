@@ -5,6 +5,7 @@ import { api } from './coeur-sync.js';
 import { messageErreur } from './eleve-classes.js';
 import { toast } from '../ui/import-cartes.js';
 import { closeMenu, paintMenu } from '../ui/menus-a.js';
+import { retenir } from './memoire-ecrans.js';
 
 /* ══════════ le cercle des lecteurs : réseau ══════════
    Refait le 2026-10-24 (migration 20261024232855). Trois choses seulement :
@@ -31,7 +32,7 @@ const horsLigne = quoi => { if (online) return false; toast(I.cloud, 'Hors ligne
 // `bg` : relecture de fond, l'écran n'est repeint que si la liste a changé
 let sigClubs = '';
 export async function clubsPull(bg) {
-  try { cercle.clubs = await rpc('mes_clubs') || []; cercle.err = 0; }
+  try { cercle.clubs = await rpc('mes_clubs') || []; cercle.err = 0; retenir(); }
   catch (e) { cercle.clubs = cercle.clubs || []; cercle.err = 1; }
   const sig = JSON.stringify(cercle.clubs) + cercle.err;
   if (bg && sig === sigClubs) return;

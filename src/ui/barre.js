@@ -35,7 +35,8 @@ import './barre.css';
 const PAS = 74, BORD = 5;                  // la largeur d'un onglet, la marge de la barre (app.css)
 const LOUPE_X = 0.13, LOUPE_Y = 0.22;      // de combien la pastille grossit sous le doigt
 // la pose au lâcher : un ressort (il dépasse un peu, revient), sur le compositeur
-const POSE = { duration: 460, easing: 'cubic-bezier(.3,1.45,.45,1)' };
+// (2026-11-17 : « moins virevoltant » — elle dépasse à peine, elle ne rebondit plus)
+const POSE = { duration: 420, easing: 'cubic-bezier(.3,1.22,.45,1)' };
 // un onglet changé d'ailleurs (le balayage, un lien) : un glissé simple
 const GLISSE = { duration: 340, easing: 'cubic-bezier(.22,1,.36,1)' };
 let jeu = null, avale = null, pose = null;
@@ -47,8 +48,11 @@ const allume = nav => [...nav.querySelectorAll('button')].findIndex(b => b.class
 const viser = (nav, i) => nav.querySelectorAll('button').forEach((b, k) => b.classList.toggle('vise', k === i));
 
 /* ---------- la pose : une animation du compositeur ---------- */
+// une pose annulée (le balayage prend la pastille, ui/balayage-geste.js) n'est plus en route
+const enRoute = () => (pose && pose.anim.playState !== 'running' ? (pose = null) : pose);
+
 function figer(sl) {
-  if (!pose || pose.sl !== sl) return;
+  if (!enRoute() || pose.sl !== sl) return;
   const l = lire(sl), p = pose;
   pose = null;
   p.anim.cancel();
@@ -115,6 +119,7 @@ function fondre(v, n) {
 // la glissière vers l'onglet que dit le rendu, sauf si le doigt décide
 function suivre(sl, x) {
   if (jeu && !jeu.fin && jeu.sl === sl) return;
+  enRoute();
   if (pose && pose.sl === sl && Math.abs(pose.x - x) < 0.5) return;   // déjà en route
   if (!pose && Math.abs(lire(sl).x - x) < 0.5) { sl.style.transform = `translateX(${x}px)`; return; }
   poser(sl, x, pose ? POSE : GLISSE);
@@ -133,6 +138,8 @@ const veilleur = new MutationObserver(recs => {
   fondre(vieille, neuve);
 });
 veilleur.observe($, { childList: true });
+// la glissière d'un rendu n'est plus animée par ui/mouvement.js : c'est celle-ci qui reste
+document.documentElement.classList.add('barre-vive');
 
 /* ---------- le geste ---------- */
 const FIN = ['pointerup', 'pointercancel'];

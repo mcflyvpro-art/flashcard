@@ -18,6 +18,7 @@ import { addDeck, freeName, toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu } from '../ui/menus-a.js';
 import { maybeAskInstall, resetSession } from '../ui/onboarding.js';
 import { upsertProfile } from './reglages-corbeille.js';
+import { reprendre as reprendreEcrans } from './memoire-ecrans.js';
 
 /* Cartes — révision + quiz. PWA, comptes cloisonnés sur Supabase. */
 export const SB = {
@@ -127,6 +128,7 @@ export const cacheKey = () => 'cartes.cache.' + (auth && auth.uid);
    donc noté noir sur blanc, et repart dès que le réseau revient. */
 export function load() {
   loadBases();                          // toujours, même sans cache : jamais celles d'un autre compte
+  reprendreEcrans();                    // Mes amis et Classe s'ouvrent pleins (core/memoire-ecrans.js)
   try {
     const d = JSON.parse(localStorage.getItem(cacheKey()));
     if (d && Array.isArray(d.decks)) {
@@ -620,11 +622,8 @@ export function setOnline(v) {
   /* la pastille porte un compteur : elle change aussi quand la file bouge,
      pas seulement quand le réseau bascule */
   if (view.name === 'home' && (was !== v || document.querySelector('.qchip'))) {
-    const top = $.querySelector('.top');
-    if (top) {
-      const old = top.querySelector('.qchip,#offdot');
-      if (old) old.outerHTML = queueChip();
-    }
+    const old = $.querySelector('.qchip,#offdot');   // dans la rangée d'outils de l'accueil
+    if (old) old.outerHTML = queueChip();
   }
 }
 

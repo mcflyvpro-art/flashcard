@@ -300,11 +300,11 @@ function railNavHome(on, classeNom) {
     ${moiRail()}`;
 }
 
-export function allerClasses() {
+export function allerClasses(calme) {
   if (myRole === 'admin') { admPull(); return go('admin'); }
   if (myRole === 'ref' && atSchool()) { refPull(); return go('ref'); }
   if (isProf()) return allerAccueil();
-  eleveClassesPull(); sallesPull(); duelsPull(); return go('classes');
+  eleveClassesPull(); sallesPull(); duelsPull(); return go('classes', null, 0, calme);
 }
 
 function railClick(e) {
@@ -500,15 +500,24 @@ const nomCourrier = () => 'Boîte de réception' + (mailbox.n ? `, ${nonLus()} n
 
 function peekButton(hidden) {
   if (!hidden) return '';
-  return `<button class="ic ${peek ? 'solid' : ''}" data-act="peek" aria-label="Paquets masqués" aria-pressed="${!!peek}">${svg(peek ? I.eye : I.eyeoff)}</button>`;
+  return `<button class="lnk ${peek ? 'on' : ''}" data-act="peek" aria-label="Paquets masqués" aria-pressed="${!!peek}">${svg(peek ? I.eye : I.eyeoff)}</button>`;
 }
 
-function sortRow(list) {
-  if (list.length <= 2 || reorder) return '';
+/* La rangée d'outils de la collection (2026-11-17, demandé : « tout sur la
+   même ligne que Mes paquets, l'engrenage toujours le plus à droite ») : ce
+   qui agit sur les paquets — trier, chercher, voir les masqués, changer
+   d'affichage — et ce qui attend d'être envoyé vivent ici, sous le titre ;
+   l'en-tête ne garde que le titre, l'anneau du jour, les messages et les
+   réglages, sur une seule ligne. */
+function barreOutils(list, hidden) {
+  const tri = list.length > 2 && !reorder;
+  if (!db.decks.length && online && !pending()) return '';
   return `<div class="hbar">
-    <button class="lnk" data-act="sortpick">${svg(I.sort)}${SORTS[prefs.sort] || 'Manuel'}</button>
+    ${tri ? `<button class="lnk" data-act="sortpick">${svg(I.sort)}${SORTS[prefs.sort] || 'Manuel'}</button>` : ''}
     <div style="flex:1"></div>
-    <button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>
+    ${queueChip()}${peekButton(hidden)}
+    ${db.decks.length ? `<button class="lnk" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>` : ''}
+    ${tri ? `<button class="lnk" data-act="listview" aria-label="Changer d’affichage">${svg(prefs.list ? I.grid : I.rows)}</button>` : ''}
   </div>`;
 }
 
@@ -545,19 +554,16 @@ function home() {
         <div class="hero">Mes paquets</div>
         ${goalRing()}
         <div class="outils">
-          ${queueChip()}
-          <button class="ic" data-act="find" aria-label="Rechercher">${svg(I.search)}</button>
           ${reorder ? '' : `<button class="pbtn pri newbtn" data-act="new">${svg(I.plus)}Nouveau paquet</button>`}
           <button class="ic icmail" data-act="mail" aria-label="${nomCourrier()}">${svg(I.mail)}${mailBadge()}</button>
           <button class="ic" data-act="settings" aria-label="Réglages">${svg(I.gear)}</button>
-          ${peekButton(hidden)}
         </div>
       </div>
       ${resumeBanner()}
       ${marathonBanner()}
       ${used.length > 1 ? pills(filter, used, 'filt') : ''}
       ${list.length ? subBar(list) : ''}
-      ${sortRow(list)}
+      ${barreOutils(list, hidden)}
       ${deckList(list)}
     </div>
     ${homeFab()}

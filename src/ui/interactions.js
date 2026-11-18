@@ -159,10 +159,13 @@ function tapSndSay(a, ds, b) {
 }
 
 // un compte de gestion n'a pas de bibliothèque : son « accueil », c'est sa console
-const tapHome = () => (gestion() ? allerClasses() : go('home'));
+/* Un onglet touché s'ouvre net, comme dans une app native : rien n'y vole
+   (2026-11-17, « moins virevoltant ») ; le même écran ouvert d'ailleurs
+   garde son entrée. */
+const tapHome = a => (gestion() ? allerClasses() : go('home', null, 0, a === 'tab-home'));
 // le « Retour » d'un livre : là d'où on l'a ouvert (« Ma classe » pour un devoir)
 const tapDeckback = () => { const o = retourLivre(); return o.name === 'classes' ? allerClasses() : go(o.name, o.id); };
-const tapCommu = () => { commuPull(true); return go('commu'); };
+const tapCommu = a => { commuPull(true); return go('commu', null, 0, a === 'tab-commu'); };
 const tapFriends = () => { friendsPull(!!friends); return go('friends'); };
 const tapFriendsBoard = () => { if (!board.rows) boardPull(); return tapFriends(); };
 const tapDoadd = () => doAdd();
@@ -246,7 +249,7 @@ const tapBlocked = () => { blocksPull().then(() => paintMenu()); return openMenu
 /* Trois publics, trois écrans derrière le même bouton : le référent gère
    son établissement, le professeur ses classes, l'élève — scolaire ou
    non — ses devoirs et les classes qu'il a rejointes. */
-const tapClasses = () => allerClasses();
+const tapClasses = a => allerClasses(a === 'tab-classes');
 
 const tapRef = () => { refPull(); return go('ref'); };
 

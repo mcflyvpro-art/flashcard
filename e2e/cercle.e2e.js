@@ -62,6 +62,31 @@ test('un club : on le crée, on le personnalise, un ami entre avec son code', as
   expect(store.tables.group_members.filter(m => m.group_id === club.id)).toHaveLength(2);
 });
 
+/* « Mes amis » ne montre jamais de blocs gris qui se remplissent
+   (2026-11-17) : la dernière copie est gardée sur l'appareil
+   (core/memoire-ecrans.js) et l'écran s'ouvre plein, réseau coupé compris. */
+test('« Mes amis » s’ouvre plein au redémarrage, même sans réseau', async ({ page }) => {
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  semerPseudo(store, 'lea@exemple.fr', 'lea', 'Léa Martin');
+  semerCompte(store, 'tom@exemple.fr'); semerPseudo(store, 'tom@exemple.fr', 'tom', 'Tom Bernard');
+  semerAmis(store, 'lea@exemple.fr', 'tom@exemple.fr');
+  semerClub(store, 'lea@exemple.fr', 'Les Lecteurs', ['tom@exemple.fr']);
+  await versCercle(page);
+  await expect(page.locator('.cc-ami', { hasText: 'Tom' })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.cc-club', { hasText: 'Les Lecteurs' })).toBeVisible();
+  await page.waitForTimeout(900);                     // la copie s'écrit peu après la lecture
+
+  store.online = false;
+  await page.reload();
+  await versCercle(page);
+  await expect(page.locator('.cc-ami', { hasText: 'Tom' })).toBeVisible();
+  await expect(page.locator('.cc-club', { hasText: 'Les Lecteurs' })).toBeVisible();
+  await expect(page.locator('.cc-moi')).toContainText('@lea');
+  await expect(page.locator('.cc-load')).toHaveCount(0);
+});
+
 /* « J'ai un code » est universel (2026-11-16) : un @pseudo y demande un ami,
    un message d'invitation collé tel quel y ouvre le club qu'il nomme. */
 test('« J’ai un code » : un @pseudo demande un ami, une invitation collée entière ouvre son club', async ({ page }) => {

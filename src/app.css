@@ -90,38 +90,41 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
   font-variant-numeric:tabular-nums;letter-spacing:0;padding-right:2px}
 .hero{margin:10px 1px 18px;font:700 30px/1.1 var(--serif);letter-spacing:-.7px}
 /* pages balayables */
-.page{flex:1;min-height:0;display:flex;flex-direction:column;will-change:transform;
-  transition:transform .4s var(--e)}
+/* Pas de calque permanent (2026-11-17) : sur iPhone, un calque de composition
+   aussi haut qu'une longue page se peint par morceaux pendant un défilement
+   rapide — des bandes vides en haut des Réglages. Le balayage le pose sur la
+   page le temps d'un geste (ui/balayage-geste.js), pas plus. */
+.page{flex:1;min-height:0;display:flex;flex-direction:column}
 #page{padding-bottom:150px}
 .page.in-right{animation:inR .42s var(--e) both}
 .page.in-left{animation:inL .42s var(--e) both}
 @keyframes inR{from{opacity:0;transform:translateX(48px)}}
 @keyframes inL{from{opacity:0;transform:translateX(-48px)}}
 #page{touch-action:pan-y}
+/* pendant que la page finit sa course, le doigt peut se poser sur le fond :
+   lui aussi laisse le glissé de côté au balayage (ui/balayage-geste.js), sinon
+   le navigateur prend le geste et l'annule */
+#app:is([data-view="home"],[data-view="classes"],[data-view="commu"]){touch-action:pan-y}
 /* l'onglet voisin pendant un balayage (balayage.js) : une couche fixe qui
    ne déborde jamais de l'écran, la page dedans à sa place de défilement */
 .balai{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1;contain:strict}
 .balai-v{position:absolute;inset:0;background:var(--bg);will-change:transform}
 .balai-app{position:absolute;min-height:100svh;display:flex;flex-direction:column}
-.balai-app .page{transition:none}
 
 .top{display:flex;align-items:flex-end;gap:10px;margin:14px 1px 20px}
 /* le titre cède la place aux boutons plutôt que de les pousser dehors ;
    il rétrécit, il ne se coupe jamais au milieu d'un mot */
 .top .hero{flex:1;min-width:0;margin:0;font-size:clamp(26px,7.4vw,30px)}
 .top .ic{margin-bottom:3px}
-/* L'accueil au téléphone (2026-11-16) : ses boutons sur une ligne au-dessus,
-   le titre et l'anneau du jour sur la leur. En une seule rangée, « Mes
-   paquets » se cassait en deux dès quatre boutons (un paquet masqué ajoute
-   l'œil, une file en attente sa pastille). */
+/* L'accueil (2026-11-17) : une seule ligne — le titre, l'anneau du jour, les
+   messages, les réglages toujours au bout. Le reste (chercher, les paquets
+   masqués, l'envoi en attente) est dans la rangée d'outils, sous le titre :
+   à quatre ou cinq boutons, « Mes paquets » se cassait en deux. */
 .top .outils{display:contents}
-@media (max-width:899px){
-  .top.accueil{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;row-gap:6px;margin-top:4px}
-  .top.accueil .outils{grid-row:1;grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center;gap:8px}
-  .top.accueil :is(.hero,.goal){grid-row:2;margin:0}
-  .top.accueil .hero{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .top.accueil .ic{margin:0}
-}
+.top.accueil{align-items:center}
+.top.accueil .hero{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top.accueil :is(.ic,.goal){margin:0}
+.hbar .qchip{height:32px}
 .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;
   background:var(--surf);color:var(--ink2);
   transition:transform .32s var(--sp),background .25s var(--e),color .25s}

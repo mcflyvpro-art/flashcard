@@ -15,6 +15,7 @@ import { deDevoir } from '../file.js';
 import { importPayload, toast } from '../ui/import-cartes.js';
 import { closeMenu, paintMenu } from '../ui/menus-a.js';
 import { norm } from '../ui/quiz.js';
+import { retenir } from './memoire-ecrans.js';
 
 /* ---------- corbeille ----------
    Supprimer un paquet le marque d'une date au lieu de l'effacer. Il reste
@@ -84,6 +85,7 @@ export async function friendsPull(bg) {
     setFriends(rows || []);
     setMates(friends.filter(f => f.status === 'ok'));
     setAsks(friends.filter(f => f.status === 'pending' && f.sens === 'recue'));
+    retenir();
   } catch (e) { setFriends(friends || []); setMates(mates || []); setAsks(asks || []); }
   if (bg && JSON.stringify(friends) === avant) return;
   if (view.name === 'commu' || view.name === 'friends') { setAnimate(false); render(); }
@@ -161,6 +163,7 @@ export async function mePull() {
   try {
     const r = (await api('/rest/v1/profiles?select=id,handle,name&id=eq.' + auth.uid) || [])[0];
     setMe(r || { id: auth.uid, handle: '' });
+    retenir();
   } catch (e) { setMe(me || { id: auth.uid, handle: '' }); }
 }
 

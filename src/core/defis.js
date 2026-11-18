@@ -8,6 +8,7 @@ import { plain } from '../ui/carte-media.js';
 import { api, plur } from './coeur-sync.js';
 import { toast } from '../ui/import-cartes.js';
 import { closeMenu, openMenu } from '../ui/menus-a.js';
+import { retenir } from './memoire-ecrans.js';
 
 /* ---------- défis ----------
    Les questions sont figées à la création : tout le monde répond
@@ -37,6 +38,7 @@ export async function duelsPull(bg) {
       else scores.push(row);
     }
     duels.list = ds || []; duels.scores = scores; duels.err = 0;
+    retenir();
   } catch (e) { duels.err = 1; }
   const sig = JSON.stringify([duels.list, duels.scores, duels.err]);
   if (bg && sig === sigDefis) return;

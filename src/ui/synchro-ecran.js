@@ -45,7 +45,7 @@ export function prechauffer() {
     prechargerJournal();
     if (mailbox.list == null) mailPull();
     statsPull(1);                                     // de fond : ne repeint que si le journal est à l'écran et a bougé
-    commuPull();
+    commuPull(true);                                  // relecture de fond : la copie gardée (core/memoire-ecrans.js) est déjà à l'écran
     iaPull();                                         // l'IA du mois : la barre de l'IA, les examens blancs offerts du menu d'un paquet
     if (aUneClasse() && !isProf()) { eleveClassesPull(); sallesPull(); duelsPull(); }
   }, { timeout: 3000 });

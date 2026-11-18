@@ -81,7 +81,7 @@ export const glissiereAvant = () => {
 
 export function glisserOnglet(avant) {
   const sl = $.querySelector('.tabs .sl');
-  if (!sl || avant === null || RALENTI.matches) return;
+  if (!sl || avant === null || RALENTI.matches || document.documentElement.classList.contains('barre-vive')) return;
   const cible = sl.style.transform;
   if (Math.abs(new DOMMatrixReadOnly(getComputedStyle(sl).transform).m41 - avant) < 1) return;
   sl.style.transition = 'none';

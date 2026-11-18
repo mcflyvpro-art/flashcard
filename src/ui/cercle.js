@@ -48,7 +48,10 @@ export const infos = l => `<span class="cc-infos">${l.filter(x => x && x[1] !== 
    pendant que l'app était ouverte n'apparaissait qu'au redémarrage (le
    préchargement avait déjà lu la liste ; trouvé par e2e/profil.e2e.js). */
 export function commuPull(relire = false) {
-  if (!me) mePull().then(() => { if (view.name === 'commu') { setAnimate(false); render(); } });
+  if (!me || relire) {
+    const avant = JSON.stringify(me);                // une copie gardée : on ne repeint que si le profil a bougé
+    mePull().then(() => { if (view.name === 'commu' && JSON.stringify(me) !== avant) { setAnimate(false); render(); } });
+  }
   if (!friends || relire) friendsPull(relire);
   if (!duels.list || relire) duelsPull(relire);
   if (!board.rows || relire) boardPull(relire);

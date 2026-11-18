@@ -20,6 +20,7 @@ import { friendsPull, mailPull } from './reglages-corbeille.js';
 import { sallesPull } from './cercle.js';
 import { offrePull } from './abonnement.js';
 import { prechauffer } from '../ui/synchro-ecran.js';
+import { retenir } from './memoire-ecrans.js';
 
 /* ---------- classement ----------
    Les révisions de chacun restent privées : la fonction côté serveur ne
@@ -29,6 +30,7 @@ export async function boardPull(bg) {
   try {
     board.rows = await api('/rest/v1/rpc/leaderboard', 'POST', { days: board.range, gid: null }) || [];
     board.err = 0;
+    retenir();
   } catch (e) { board.err = 1; }
   const sig = JSON.stringify(board.rows) + ':' + board.err;
   const same = bg && sig === board.sig;        // rien de neuf : on ne fait pas clignoter l'écran
@@ -172,7 +174,7 @@ async function rolePull() {
 }
 
 export async function matesPull() {
-  try { setMates2(await api('/rest/v1/rpc/my_classmates', 'POST', {}) || []); }
+  try { setMates2(await api('/rest/v1/rpc/my_classmates', 'POST', {}) || []); retenir(); }
   catch (e) { setMates2([]); }
   if (view.name === 'classes') { setAnimate(false); render(); }
 }

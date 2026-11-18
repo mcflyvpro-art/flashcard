@@ -36,12 +36,12 @@ async function telephone(browser, store) {
   const touche = (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
   /* `pas` mouvements de 16 ms : peu de pas, un geste vif ; beaucoup, un geste lent. À la hauteur
      d'un titre de section, jamais d'un champ : un doigt posé sur un champ y déplace le curseur */
-  page.glisser = async (de, a, { pas = 14, pendant, y = 140 } = {}) => {
+  page.glisser = async (de, a, { pas = 14, pendant, y = 140, avant = 450 } = {}) => {
     await touche('touchStart', de, y);
     for (let k = 1; k <= pas; k++) { await touche('touchMove', de + (a - de) * k / pas, y); await page.waitForTimeout(16); }
     if (pendant) await pendant();
     await touche('touchEnd', a, y);
-    await page.waitForTimeout(450);
+    await page.waitForTimeout(avant || 90);
   };
   return page;
 }
@@ -91,6 +91,36 @@ test('balayer : Paquets → Classe → Mes amis, la voisine visible sous le doig
   await page.glisser(80, 300);
   await expect(ecran(page)).toHaveAttribute('data-view', 'home');
   await expect(page.locator('.tabs button.on')).toHaveAttribute('aria-label', 'Paquets');
+  expect(erreurs).toEqual([]);
+});
+
+/* Huit balayages enchaînés, chacun lancé pendant que la page d'avant finit
+   sa course (2026-11-17, « quand je swipe très vite, ça bugue ») : avant, un
+   geste sur deux tombait dans le vide et l'on finissait sur le mauvais
+   onglet. Chacun compte désormais, la pastille suit, et aucune couche de
+   voisine ne reste dans la page. */
+test('balayer très vite : chaque geste compte, la pastille suit, rien ne reste', async ({ browser, browserName }) => {
+  test.skip(browserName === 'webkit', 'un doigt qui glisse passe par CDP, que seul Chromium a');
+  const page = await telephone(browser, eleveEnClasse());
+  const erreurs = [];
+  page.on('pageerror', e => erreurs.push(e.message));
+  await expect(page.locator('.tabs button')).toHaveCount(3, { timeout: 10000 });
+  const vif = async (de, a) => {
+    await page.glisser(de, a, { pas: 4, avant: 0 });
+  };
+  // Paquets → Classe → Mes amis → Classe → Paquets → Classe, sans attendre la fin des courses
+  for (const [de, a] of [[330, 60], [330, 60], [60, 330], [60, 330], [330, 60]]) await vif(de, a);
+  await expect(ecran(page)).toHaveAttribute('data-view', 'classes');
+  await expect(page.locator('.tabs button.on')).toHaveAttribute('aria-label', 'Classe');
+  await expect.poll(() => page.evaluate(() => Math.round(new DOMMatrixReadOnly(getComputedStyle(document.querySelector('.tabs .sl')).transform).m41)))
+    .toBe(74);
+  await expect(page.locator('.balai')).toHaveCount(0);
+  await expect(page.locator('#page')).not.toHaveAttribute('style', /translate/);
+
+  // une couche orpheline (un geste perdu) ne survit pas au toucher suivant
+  await page.evaluate(() => { const n = document.createElement('div'); n.className = 'balai'; document.body.append(n); });
+  await page.glisser(200, 205, { pas: 1 });
+  await expect(page.locator('.balai')).toHaveCount(0);
   expect(erreurs).toEqual([]);
 });
 
