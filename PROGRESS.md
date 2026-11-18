@@ -19,7 +19,13 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-18 · Le balayage entre onglets refait (ui/balayage-geste.js,
+DERNIER   2026-11-18 · Revenir au doigt : sur un paquet, les réglages, un
+          club, la création… un glissé vers la droite découvre l'onglet
+          d'origine dessous et y revient (ui/balayage-geste.js). Les
+          feuilles se tirent vers le bas d'où que parte le doigt, avec
+          l'élan, sans être coupées (ui/menus-a.js) ; la croix du menu d'un
+          paquet ne chevauche plus rien (e2e/navigation.e2e.js).
+          · 2026-11-18 · Le balayage entre onglets refait (ui/balayage-geste.js,
           à part) : voisines prêtes d'avance, la page quittée recyclée, un
           geste pendant la course la rattrape — huit balayages rapides, huit
           changements ; plus aucune couche figée par-dessus l'écran ; .page
