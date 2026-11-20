@@ -11,7 +11,7 @@ import {
 } from '../data/etat.js';
 import { gestion, render } from './bibliotheque.js';
 import { plain } from './carte-media.js';
-import { faceSize } from './revision.js';
+import { ajusterTextes, faceSize } from './revision.js';
 import { atSchool, isAdmin } from './classement.js';
 import {
   COLORS, PALETTE, canUndo, deck, esc, pending, plur, pushUndo, saveDeck,
@@ -102,7 +102,9 @@ function lierCarteEssai() {
     const t = e.target, k = t.dataset.fc;
     essai[k] = t.textContent.slice(0, 600);
     t.closest('.face').className = 'face' + (k === 'b' ? ' bk' : '') + faceSize(essai[k]);
+    ajusterTextes(box);
   });
+  ajusterTextes(box);
 }
 
 function settingsAffichageHtml(sansSons) {
@@ -262,6 +264,7 @@ export function settingsView() {
   const fo = document.getElementById('pFont');
   if (fo) fo.addEventListener('input', () => {
     prefs.font = +fo.value / 100; savePrefs(); applyFont();
+    ajusterTextes(document.querySelector('.fcarte'));
     fo.closest('.sr').querySelector('.c').textContent = fo.value + ' %';
   });
 }

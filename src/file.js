@@ -167,6 +167,21 @@ export function ramener(file, i, attente, now, tout) {
   return { file: [...file.slice(0, i), ...pretes.map(a => a.id), ...file.slice(i)], attente: attente.filter(a => !ids.has(a.id)) };
 }
 
+/* Le compteur de la séance, « 13/77 » : la 13e carte sur les 77 de la
+   séance. Une carte qui revient (une ratée, un palier de 1 ou 10 min, comme
+   dans Anki) n'est pas une carte de plus : le total reste le nombre de
+   cartes différentes, et le rang ne bouge pas tant qu'on revoit une carte
+   déjà vue — `revue` le dit. Avant le 2026-11-20, chaque retour allongeait
+   la file et donc le total (12/83, 13/84, 14/86 pour un paquet de 77) : on
+   croyait que la séance fabriquait des cartes. Pur : `file` et `i` comme
+   dans la séance, `attente` ce qui attend son palier. */
+export function compteSeance(file, i, attente) {
+  const vues = new Set(file.slice(0, Math.min(i + 1, file.length)));
+  const toutes = new Set(file);
+  for (const a of attente || []) toutes.add(a.id);
+  return { vue: vues.size, total: toutes.size, revue: i < file.length && file.indexOf(file[i]) < i };
+}
+
 /* La reprise d'une lecture interrompue (`cartes.resume.<uid>`) photographie
    la file : des identifiants de pages. Entre-temps, le livre a pu partir à la
    corbeille ou perdre des pages, ailleurs ou ici : on ne garde que les pages

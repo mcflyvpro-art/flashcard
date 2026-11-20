@@ -19,7 +19,10 @@
 CURSEUR   M08.T3 (hors ligne complet) — M05.T4 se lit dans l'onglet Santé ; M22.T5 attend tes secrets GitHub (docs/FIABILITE.md)
 PHASE     P0 — lancement B2C
 FAIT      54 / 148
-DERNIER   2026-11-18 · L'ouverture de l'app sans barre : la pile du logo
+DERNIER   2026-11-20 · La séance : le compteur ne grossit plus quand une
+          carte revient (compteSeance, « 13/77 » et une flèche), un mot plus
+          large que la carte rétrécit au lieu d'en sortir (ajusterTextes).
+          · 2026-11-18 · L'ouverture de l'app sans barre : la pile du logo
           se construit (public/ouverture.svg, tools/logo.py), un halo
           bleu-rose dérive, le nom arrive lettre par lettre.
           · 2026-11-18 · Sous un titre, une seule information, en mots :

@@ -87,7 +87,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .bar h1{flex:1;margin:0;font:700 19px/1.25 var(--serif);letter-spacing:-.3px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar .num{font-size:14px;font-weight:700;color:var(--soft);
-  font-variant-numeric:tabular-nums;letter-spacing:0;padding-right:2px}
+  font-variant-numeric:tabular-nums;letter-spacing:0;padding-right:2px;display:inline-flex;align-items:center;gap:3px}
+.bar .num svg{width:13px;height:13px;stroke-width:2.4}
 .hero{margin:10px 1px 18px;font:700 30px/1.1 var(--serif);letter-spacing:-.7px}
 /* pages balayables */
 /* Pas de calque permanent (2026-11-17) : sur iPhone, un calque de composition
@@ -419,6 +420,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .face.l .tx{font-size:calc(clamp(21px,6.6vw,34px) * var(--fs,1));line-height:1.26;letter-spacing:-.3px}
 .face.xl .tx{font-size:calc(clamp(17px,5.2vw,26px) * var(--fs,1));line-height:1.3;letter-spacing:-.4px;font-weight:750}
 .face.xxl .tx{font-size:calc(clamp(15px,4.2vw,20px) * var(--fs,1));line-height:1.36;letter-spacing:-.2px;font-weight:700}
+.face .tx.coupe{overflow-wrap:anywhere}
 .face.bk{transform:rotateY(180deg) translateZ(0);background:color-mix(in srgb,var(--c) 45%,var(--card));color:var(--ink);opacity:0}
 .card.flip .face{opacity:0}
 .card.flip .face.bk{opacity:1}
@@ -1330,7 +1332,11 @@ html.livres-plein .fab[data-act="new"]::after{position:absolute;top:-3px;right:-
    sans texte ni image paraître vide. */
 .fbody{position:relative;z-index:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:13px;
-  width:100%;max-width:100%;max-height:100%;min-height:0}
+  width:100%;max-width:100%;max-height:100%;min-height:0;
+  /* sans ce plancher, la grille de .face élargit la boîte au plus long mot
+     (« conventionnalité ») et le texte sort de la carte au lieu d'y
+     rétrécir (ajusterTextes de ui/revision.js) */
+  min-width:0}
 .snds{display:flex;gap:10px;flex:none}
 .snd{width:44px;height:44px;flex:none;
   border-radius:15px;display:grid;place-items:center;color:inherit;

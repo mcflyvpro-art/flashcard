@@ -320,3 +320,26 @@ describe('ramener — la file ne tourne plus en rond', () => {
     expect(at).toHaveLength(1);
   });
 });
+
+import { compteSeance } from '../src/file.js';
+
+describe('compteSeance — le total ne grossit plus quand une carte revient', () => {
+  it('au fil de la file : le rang de la carte, sur le nombre de cartes différentes', () => {
+    expect(compteSeance(['a', 'b', 'c'], 0, [])).toEqual({ vue: 1, total: 3, revue: false });
+    expect(compteSeance(['a', 'b', 'c'], 2, [])).toEqual({ vue: 3, total: 3, revue: false });
+  });
+  it('une ratée ramenée au milieu : le rang ne bouge pas, le total non plus, et l’on sait qu’elle revient', () => {
+    // un paquet de 77 : a ratée, revenue après b et c — la file a 78 entrées, la séance 77 cartes
+    const autres = Array.from({ length: 74 }, (_, k) => 'p' + k);
+    const file = ['a', 'b', 'c', 'a', ...autres];
+    expect(compteSeance(file, 3, [])).toEqual({ vue: 3, total: 77, revue: true });
+    expect(compteSeance(file, 4, [])).toEqual({ vue: 4, total: 77, revue: false });
+  });
+  it('une carte qui attend son palier compte dans le total, une seule fois', () => {
+    const at = [{ id: 'a', d: 0, sue: true }, { id: 'z', d: 0, sue: false }];
+    expect(compteSeance(['a', 'b'], 1, at)).toEqual({ vue: 2, total: 3, revue: false });
+  });
+  it('la file vue : le rang reste au total, jamais au-delà', () => {
+    expect(compteSeance(['a', 'b'], 2, [])).toEqual({ vue: 2, total: 2, revue: false });
+  });
+});

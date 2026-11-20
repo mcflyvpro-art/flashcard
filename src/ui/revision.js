@@ -2,7 +2,7 @@
 import { $ } from '../racine.js';
 import { I, SWIPE, svg } from '../icones.js';
 import { DAY } from '../fsrs.js';
-import { aRevoir, buildQueue, ramener, reprise, shuffle } from '../file.js';
+import { aRevoir, buildQueue, compteSeance, ramener, reprise, shuffle } from '../file.js';
 import {
   auth, db, dirty, flipAt, pendingGrade, prefs, setFlipAt, setPendingGrade, setStudy,
   study
@@ -226,7 +226,7 @@ export function studyView() {
     avancer(study, document.getElementById('pg'), pct());
     return;
   }
-  $.innerHTML = bar(`<span class="num">${Math.min(study.i + 1, study.queue.length)}/${study.queue.length}</span>`)
+  $.innerHTML = bar(numHtml())
     + `<div class="study${study.mode === 'mcq' ? ' mcq' : ''}">
       <div class="prog"><i id="pg" style="width:0%"></i></div>
       ${study.mode === 'mcq'
@@ -239,6 +239,16 @@ export function studyView() {
 }
 
 const pct = () => study.total ? Math.round(study.ok / study.total * 100) : 0;
+
+/* « 13/77 » en haut de la séance (compteSeance de src/file.js) : une carte
+   qui revient garde son rang et le total ne grossit pas ; la flèche qui
+   tourne dit qu'on la revoit. */
+function numHtml() {
+  const { vue, total, revue } = compteSeance(study.queue, study.i, study.attente);
+  const dit = `Carte ${vue} sur ${total}${revue ? ', qui revient' : ''}`;
+  return `<span class="num"${revue ? ' data-revue' : ''} role="status" aria-label="${dit}" title="${dit}">`
+    + `${revue ? svg(I.redo) : ''}${vue}/${total}</span>`;
+}
 
 export const cardOf = n => findCard(study.queue[study.i + n])[0];
 
@@ -265,6 +275,26 @@ export const faceSize = txt => {
   const n = plain(txt).length;
   return n > 260 ? ' xxl' : n > 160 ? ' xl' : n > 90 ? ' l' : '';
 };
+
+/* Le palier ne lit que la longueur du texte : un mot plus large que la
+   carte (« conventionnalité » en grand, sur un téléphone, avec un texte un
+   peu agrandi) dépassait du cadre et se perdait sous son bord. Une fois la
+   carte posée, on mesure : un texte qui déborde de côté rétrécit juste
+   assez pour que son plus long mot tienne. Au plancher seulement, le mot se
+   coupe (`.coupe`) plutôt que de sortir. */
+const PLANCHER = 15;
+export function ajusterTextes(racine) {
+  if (!racine) return;
+  for (const t of racine.querySelectorAll('.face .tx')) {
+    t.style.fontSize = ''; t.classList.remove('coupe');
+    for (let k = 0; k < 4 && t.scrollWidth > t.clientWidth + 1; k++) {
+      const px = parseFloat(getComputedStyle(t).fontSize);
+      if (!(px > PLANCHER)) { t.classList.add('coupe'); break; }
+      t.style.fontSize = Math.max(PLANCHER, Math.floor(px * t.clientWidth / t.scrollWidth * 0.97)) + 'px';
+    }
+  }
+}
+addEventListener('resize', () => ajusterTextes(document.getElementById('stack')));
 
 /* Une face peut ne porter qu'un son, qu'une image, qu'un texte, ou les
    trois. Les commandes de son étaient collées dans un coin : sur une fiche
@@ -349,6 +379,7 @@ function paintStack() {
       <i class="swr" aria-hidden="true"></i>
     </div>`;
   paintMedia(st);
+  ajusterTextes(st);
   const top = document.getElementById('top');
   requestAnimationFrame(() => top.classList.remove('in'));
   if (!tf) lierGeste(top);
@@ -657,5 +688,5 @@ export function commit(ok, rating) {
   paintQ();
   avancer(study, document.getElementById('pg'), pct());
   const n = document.querySelector('.bar .num');
-  if (n) n.textContent = `${study.i + 1}/${study.queue.length}`;
+  if (n) n.outerHTML = numHtml();
 }
