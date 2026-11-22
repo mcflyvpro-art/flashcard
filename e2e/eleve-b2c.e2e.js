@@ -23,8 +23,11 @@ test('inscription, un paquet de 10 cartes, une séance, des chiffres justes', as
   await expect(page.getByText('1/10')).toBeVisible();
   for (let k = 0; k < 10; k++) await noter(page, k < 7 ? 'Facile' : 'Encore');
   // ...que la séance représente aussitôt, à la suite de la file (src/file.js,
-  // `ramener` : la file vue, les ratées reviennent sans attendre), et qui passent cette fois
-  await expect(page.getByText('11/13')).toBeVisible();
+  // `ramener` : la file vue, les ratées reviennent sans attendre), et qui passent cette fois ;
+  // une carte qui revient n'est pas une carte de plus (`compteSeance`, 2026-11-20) : « 10/10 »
+  // et sa flèche, plus « 11/13 »
+  await expect(page.locator('.bar .num')).toHaveText('10/10');
+  await expect(page.locator('.bar .num')).toHaveAttribute('data-revue', '');
   for (let k = 0; k < 3; k++) await noter(page, 'Facile');
 
   // fin de séance : 7 sur 10 du premier coup
