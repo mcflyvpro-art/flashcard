@@ -115,3 +115,37 @@ test('un mot plus large que la carte rétrécit et tient dans le cadre', async (
     await noter(page, 'Facile');
   }
 });
+
+// Le 2026-11-22 : une longue définition, la taille de texte agrandie à 150 %
+// dans les Réglages, se coupait en bas de la carte (elle défilait sans le dire).
+const PARLEMENT = 'Ses membres sont élus au suffrage universel direct depuis 1979, en nombre proportionnel au poids démographique de chaque État ; il vote les textes proposés par la Commission et incarne donc le pouvoir législatif (avec le Conseil de l\'UE), exerce depuis 1992 un pouvoir de codécision dans de nombreux domaines, élit le président de la Commission et peut voter une motion de censure contre celle-ci.';
+
+async function verso(page, recto, texte) {
+  const store = nouveauStore();
+  await brancher(page, store);
+  await inscrire(page);
+  semerLivre(store, 'lea@exemple.fr', 'Droit européen', [[recto, texte]]);
+  const u = store.users.find(x => x.email === 'lea@exemple.fr');
+  (store.tables.prefs = store.tables.prefs || []).push({ id: u.id, user_id: u.id, data: { font: 1.5 } });
+  await page.reload();
+  await ouvrirPaquet(page, 'Droit européen');
+  await page.locator('#top').click();
+  await expect(page.locator('#top.flip')).toHaveCount(1);
+  return page.locator('#top .face.bk .tx').evaluate(t => ({
+    deborde: t.scrollHeight - t.clientHeight, defile: t.classList.contains('defile'),
+    taille: parseFloat(getComputedStyle(t).fontSize)
+  }));
+}
+
+test('une longue définition, texte agrandi : elle rétrécit et tient en entier dans la carte', async ({ page }) => {
+  const m = await verso(page, 'Le Parlement européen', PARLEMENT);
+  expect(m.deborde).toBeLessThanOrEqual(1);
+  expect(m.defile).toBe(false);
+  expect(m.taille).toBeGreaterThanOrEqual(15);
+});
+
+test('un texte trop long même au plus petit défile, et un fondu le dit', async ({ page }) => {
+  const m = await verso(page, 'Tout le chapitre', (PARLEMENT + ' ').repeat(5));
+  expect(m.defile).toBe(true);
+  expect(m.taille).toBe(15);
+});

@@ -421,6 +421,10 @@ svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-l
 .face.xl .tx{font-size:calc(clamp(17px,5.2vw,26px) * var(--fs,1));line-height:1.3;letter-spacing:-.4px;font-weight:750}
 .face.xxl .tx{font-size:calc(clamp(15px,4.2vw,20px) * var(--fs,1));line-height:1.36;letter-spacing:-.2px;font-weight:700}
 .face .tx.coupe{overflow-wrap:anywhere}
+/* au plancher, un texte encore trop long défile : un fondu en bas le dit,
+   et la dernière ligne peut remonter au-dessus de lui */
+.face .tx.defile{padding-bottom:1.6em;-webkit-mask-image:linear-gradient(#000 calc(100% - 2.4em),transparent);
+  mask-image:linear-gradient(#000 calc(100% - 2.4em),transparent)}
 .face.bk{transform:rotateY(180deg) translateZ(0);background:color-mix(in srgb,var(--c) 45%,var(--card));color:var(--ink);opacity:0}
 .card.flip .face{opacity:0}
 .card.flip .face.bk{opacity:1}

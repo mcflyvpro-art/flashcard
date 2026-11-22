@@ -278,20 +278,30 @@ export const faceSize = txt => {
 
 /* Le palier ne lit que la longueur du texte : un mot plus large que la
    carte (« conventionnalité » en grand, sur un téléphone, avec un texte un
-   peu agrandi) dépassait du cadre et se perdait sous son bord. Une fois la
-   carte posée, on mesure : un texte qui déborde de côté rétrécit juste
-   assez pour que son plus long mot tienne. Au plancher seulement, le mot se
-   coupe (`.coupe`) plutôt que de sortir. */
+   peu agrandi) dépassait du cadre, et une longue définition, avec la taille
+   de texte agrandie dans les Réglages, se coupait en bas de la carte — elle
+   défilait, mais rien ne le disait. Une fois la carte posée, on mesure : un
+   texte qui déborde, de côté ou en bas, rétrécit juste assez pour tenir en
+   entier (la hauteur d'un texte qui passe à la ligne suit à peu près le
+   carré de sa taille, d'où la racine). Au plancher seulement, le mot trop
+   large se coupe (`.coupe`) et le texte trop long défile, un fondu en bas
+   disant qu'il y a une suite (`.defile`). */
 const PLANCHER = 15;
+const deborde = t => [t.scrollWidth > t.clientWidth + 1, t.scrollHeight > t.clientHeight + 1];
 export function ajusterTextes(racine) {
   if (!racine) return;
   for (const t of racine.querySelectorAll('.face .tx')) {
-    t.style.fontSize = ''; t.classList.remove('coupe');
-    for (let k = 0; k < 4 && t.scrollWidth > t.clientWidth + 1; k++) {
+    t.style.fontSize = ''; t.classList.remove('coupe', 'defile');
+    for (let k = 0; k < 6; k++) {
+      const [large, haut] = deborde(t);
+      if (!large && !haut) break;
       const px = parseFloat(getComputedStyle(t).fontSize);
-      if (!(px > PLANCHER)) { t.classList.add('coupe'); break; }
-      t.style.fontSize = Math.max(PLANCHER, Math.floor(px * t.clientWidth / t.scrollWidth * 0.97)) + 'px';
+      if (!(px > PLANCHER)) break;
+      const r = Math.min(large ? t.clientWidth / t.scrollWidth : 1, haut ? Math.sqrt(t.clientHeight / t.scrollHeight) : 1);
+      t.style.fontSize = Math.max(PLANCHER, Math.floor(px * r * 0.97)) + 'px';
     }
+    if (deborde(t)[0]) t.classList.add('coupe');
+    if (deborde(t)[1]) t.classList.add('defile');
   }
 }
 addEventListener('resize', () => ajusterTextes(document.getElementById('stack')));
