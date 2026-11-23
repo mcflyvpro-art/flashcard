@@ -53,6 +53,6 @@
     "@capacitor/ios": "8.6.2",
     "@capacitor/share": "8.0.3",
     "@capacitor/splash-screen": "8.0.2",
-    "@revenuecat/purchases-capacitor": "14.1.0"
+    "@revenuecat/purchases-capacitor": "14.1.2"
   }
 }
